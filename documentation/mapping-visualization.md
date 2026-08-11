@@ -24,8 +24,10 @@ The first map should support:
 ## Candidate USGS Overlays
 
 - Recent earthquake events.
-- Hydrography or water reference layers.
-- Elevation/topographic reference layers.
+- Hydrography or water reference layers from The National Map after the earthquake overlay is stable.
+- Elevation/topographic reference layers from The National Map in a later advanced map slice.
+
+The National Map evaluation is captured in [USGS National Map Evaluation](usgs-national-map-evaluation.md). The recommended follow-on path is a single hydrography reference overlay, preferably from the 3D Hydrography Program source family, rendered as a raster reference layer first and only expanded to WFS feature summaries if needed.
 
 ## USGS Attribution And Freshness
 

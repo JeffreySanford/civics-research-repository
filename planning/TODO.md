@@ -145,7 +145,7 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 ### Sprint 2.3 - USGS Overlay Sources
 
 - [ ] Add USGS earthquake feed adapter.
-- [ ] Evaluate USGS National Map layer options.
+- [x] Evaluate USGS National Map layer options.
 - [x] Document overlay attribution requirements.
 - [x] Normalize USGS overlay metadata.
 - [x] Add sample overlay fixture for local map development.
