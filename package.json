@@ -5,6 +5,14 @@
   "description": "Federal open-science repository and mapping visualization demo using Nx, Angular, Material Design, DSpace, Solr, PostgreSQL, Census public data, and USGS overlays.",
   "license": "MIT",
   "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "overrides": {
+      "@hono/node-server": "2.0.10",
+      "brace-expansion": "5.0.9",
+      "postcss": "8.5.26",
+      "uuid": "11.1.1"
+    }
+  },
   "scripts": {
     "nx": "nx",
     "dev": "pnpm run start:all",
