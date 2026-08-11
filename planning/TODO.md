@@ -15,7 +15,7 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [x] Capture mapping visualization and USGS overlay direction.
 - [x] Capture Docker, DSpace, Solr, and PostgreSQL direction.
 - [x] Create GitHub repository.
-- [ ] Push initial documentation scaffold.
+- [x] Push initial documentation scaffold.
 
 ### Sprint 0.2 - Architecture and Prototype Scope
 
