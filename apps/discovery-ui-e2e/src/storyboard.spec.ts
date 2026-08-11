@@ -100,6 +100,44 @@ test.describe('demo storyboard checks', () => {
     await expect(page.locator('.maplibregl-canvas')).toHaveCount(1);
   });
 
+  test('map layer controls update visible layer evidence @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps');
+
+    await expect(
+      page.getByText('North Dakota TIGER/Line preview'),
+    ).toBeVisible();
+    await expect(page.getByText('USGS event overlay')).toBeVisible();
+    await expect(
+      page.getByText('USGS Earthquake Catalog GeoJSON fallback fixture'),
+    ).toBeVisible();
+
+    await page.getByLabel('TIGER/Line boundary').uncheck();
+    await expect(page.getByText('North Dakota TIGER/Line preview')).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByText('2025 TIGER/Line Census area preview'),
+    ).toHaveCount(0);
+
+    await page.getByLabel('USGS earthquake overlay').uncheck();
+    await expect(page.getByText('USGS event overlay')).toHaveCount(0);
+    await expect(
+      page.getByText('USGS Earthquake Catalog GeoJSON fallback fixture'),
+    ).toHaveCount(0);
+    await expect(page.getByText('Western North Dakota')).toHaveCount(0);
+
+    await page.getByLabel('TIGER/Line boundary').check();
+    await page.getByLabel('USGS earthquake overlay').check();
+
+    await expect(
+      page.getByText('North Dakota TIGER/Line preview'),
+    ).toBeVisible();
+    await expect(page.getByText('USGS event overlay')).toBeVisible();
+    await expect(page.getByText('Western North Dakota')).toBeVisible();
+  });
+
   test('admin sync storyboard shows planned repository actions @storyboard', async ({
     page,
   }) => {

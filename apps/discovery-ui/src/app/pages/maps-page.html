@@ -54,11 +54,13 @@
     <aside class="map-legend" aria-label="Visible map layer legend">
       <h2>Visible layers</h2>
       <ul>
+        @if (tigerVisible$ | async) {
         <li>
           <span class="swatch census"></span>
           @if (selectedBoundary$ | async; as boundary) { {{ boundary.geography
           }} TIGER/Line preview } @else { TIGER/Line preview }
         </li>
+        } @if (earthquakeVisible$ | async) {
         <li>
           <span class="swatch usgs"></span>
           USGS event overlay @if (earthquakeOverlay$ | async; as overlay) {
@@ -67,6 +69,7 @@
           >
           }
         </li>
+        }
       </ul>
     </aside>
   </div>
@@ -76,11 +79,13 @@
   <h2 id="features-heading">Accessible feature list</h2>
   <ul class="feature-list">
     @if (layers$ | async; as layers) { @for (layer of layers; track layer.id) {
+    @if (tigerVisible$ | async) {
     <li>
       <strong>{{ layer.label }}</strong>
       <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
     </li>
-    } } @if (earthquakeOverlay$ | async; as overlay) {
+    } } } @if (earthquakeVisible$ | async) { @if (earthquakeOverlay$ | async; as
+    overlay) {
     <li>
       <strong>{{ overlay.source }}</strong>
       <span>Updated {{ overlay.updatedAt | date: 'medium' }}</span>
@@ -93,6 +98,6 @@
         'medium' }}
       </span>
     </li>
-    } }
+    } } }
   </ul>
 </section>
