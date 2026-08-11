@@ -10,6 +10,8 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { appRoutes } from './app.routes';
+import { MapsEffects } from './state/maps/maps.effects';
+import { mapsFeatureKey, mapsReducer } from './state/maps/maps.reducer';
 import { SyncEffects } from './state/sync/sync.effects';
 import { syncFeatureKey, syncReducer } from './state/sync/sync.reducer';
 
@@ -31,8 +33,9 @@ export const appConfig: ApplicationConfig = {
         },
       },
     ),
+    provideState(mapsFeatureKey, mapsReducer),
     provideState(syncFeatureKey, syncReducer),
-    provideEffects([SyncEffects]),
+    provideEffects([MapsEffects, SyncEffects]),
     provideRouterStore(),
     provideStoreDevtools({
       maxAge: 25,

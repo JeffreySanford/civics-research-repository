@@ -1,5 +1,11 @@
 import { firstValueFrom, of } from 'rxjs';
-import { RepositoryAdminApi, type SyncJob } from './repository-api-client';
+import {
+  RepositoryAdminApi,
+  RepositoryMapsApi,
+  type MapLayer,
+  type SyncJob,
+  type UsgsEarthquakeOverlay,
+} from './repository-api-client';
 
 describe('RepositoryAdminApi', () => {
   it('starts a typed sync job and lists history', async () => {
@@ -30,5 +36,49 @@ describe('RepositoryAdminApi', () => {
 
     await expect(firstValueFrom(api.listSyncJobs())).resolves.toEqual([job]);
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/admin/sync');
+  });
+});
+
+describe('RepositoryMapsApi', () => {
+  it('loads typed map layers and USGS overlays', async () => {
+    const layer: MapLayer = {
+      id: 'tiger-line-nd-boundary',
+      label: '2025 TIGER/Line - Census Tracts - North Dakota',
+      layerType: 'CENSUS_BOUNDARY',
+      sourceUrl: 'https://example.test/tiger',
+      attribution: 'U.S. Census Bureau TIGER/Line',
+      visibleByDefault: true,
+    };
+    const overlay: UsgsEarthquakeOverlay = {
+      source: 'USGS Earthquake Catalog GeoJSON',
+      updatedAt: '2026-08-11T19:00:00Z',
+      features: [],
+    };
+    const http = {
+      get: vi.fn((url: string) =>
+        of(url.includes('/overlays/') ? overlay : [layer]),
+      ),
+    };
+    const api = new RepositoryMapsApi(http as never, 'http://api.test/api');
+
+    await expect(
+      firstValueFrom(api.getDatasetMapLayers('tiger-line-nd')),
+    ).resolves.toEqual([layer]);
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/datasets/tiger-line-nd/map-layers',
+    );
+
+    await expect(
+      firstValueFrom(api.getUsgsEarthquakeOverlay(1, 14)),
+    ).resolves.toEqual(overlay);
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/overlays/usgs/earthquakes',
+      {
+        params: {
+          minMagnitude: 1,
+          days: 14,
+        },
+      },
+    );
   });
 });

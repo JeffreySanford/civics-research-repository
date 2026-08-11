@@ -15,6 +15,11 @@ export type SyncSource = components['schemas']['SyncSource'];
 export type SyncRequest = components['schemas']['SyncRequest'];
 export type SyncJob = components['schemas']['SyncJob'];
 export type SyncAction = components['schemas']['SyncAction'];
+export type MapLayer = components['schemas']['MapLayer'];
+export type UsgsEarthquakeOverlay =
+  components['schemas']['UsgsEarthquakeOverlay'];
+export type UsgsEarthquakeFeature =
+  components['schemas']['UsgsEarthquakeFeature'];
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryAdminApi {
@@ -33,5 +38,34 @@ export class RepositoryAdminApi {
 
   getSyncJob(syncJobId: string): Observable<SyncJob> {
     return this.http.get<SyncJob>(`${this.baseUrl}/admin/sync/${syncJobId}`);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class RepositoryMapsApi {
+  constructor(
+    private readonly http: HttpClient,
+    @Inject(REPOSITORY_API_BASE_URL) private readonly baseUrl: string,
+  ) {}
+
+  getDatasetMapLayers(datasetId: string): Observable<MapLayer[]> {
+    return this.http.get<MapLayer[]>(
+      `${this.baseUrl}/datasets/${datasetId}/map-layers`,
+    );
+  }
+
+  getUsgsEarthquakeOverlay(
+    minMagnitude = 0,
+    days = 7,
+  ): Observable<UsgsEarthquakeOverlay> {
+    return this.http.get<UsgsEarthquakeOverlay>(
+      `${this.baseUrl}/overlays/usgs/earthquakes`,
+      {
+        params: {
+          minMagnitude,
+          days,
+        },
+      },
+    );
   }
 }

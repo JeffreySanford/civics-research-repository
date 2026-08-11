@@ -9,7 +9,7 @@
       <label>
         <input
           type="checkbox"
-          [checked]="tigerVisible"
+          [checked]="tigerVisible$ | async"
           (change)="toggleTigerLayer($any($event.target).checked)"
         />
         TIGER/Line boundary
@@ -17,13 +17,19 @@
       <label>
         <input
           type="checkbox"
-          [checked]="earthquakeVisible"
+          [checked]="earthquakeVisible$ | async"
           (change)="toggleEarthquakeLayer($any($event.target).checked)"
         />
         USGS earthquake overlay
       </label>
     </fieldset>
   </div>
+
+  @if (loading$ | async) {
+  <p class="inline-status" role="status">Loading map data from the API</p>
+  } @if (error$ | async; as error) {
+  <p class="error-message" role="alert">{{ error }}</p>
+  }
 
   <div class="map-stage">
     <div #mapCanvas class="map-canvas" aria-label="Interactive map"></div>
@@ -40,15 +46,24 @@
 <section aria-labelledby="features-heading" class="content-panel">
   <h3 id="features-heading">Accessible feature list</h3>
   <ul class="feature-list">
+    @if (layers$ | async; as layers) { @for (layer of layers; track layer.id) {
     <li>
-      <strong>2025 TIGER/Line - Census Tracts - North Dakota</strong>
-      <span>Boundary preview prepared for repository layer metadata.</span>
+      <strong>{{ layer.label }}</strong>
+      <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
     </li>
+    } } @if (earthquakeOverlay$ | async; as overlay) {
     <li>
-      <strong>USGS earthquake overlay</strong>
-      <span
-        >Sample point layer that will be replaced by synced USGS feeds.</span
-      >
+      <strong>{{ overlay.source }}</strong>
+      <span>Updated {{ overlay.updatedAt | date: 'medium' }}</span>
     </li>
+    @for (feature of overlay.features; track feature.id) {
+    <li>
+      <strong>{{ feature.place }}</strong>
+      <span>
+        Magnitude {{ feature.magnitude }} on {{ feature.occurredAt | date:
+        'medium' }}
+      </span>
+    </li>
+    } }
   </ul>
 </section>

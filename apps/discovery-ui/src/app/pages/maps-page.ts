@@ -1,30 +1,99 @@
-import { isPlatformBrowser } from '@angular/common';
+import { AsyncPipe, DatePipe, isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
+  OnInit,
   OnDestroy,
   PLATFORM_ID,
   ViewChild,
   inject,
 } from '@angular/core';
-import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Store } from '@ngrx/store';
+import { combineLatest } from 'rxjs';
+import type {
+  GeoJSONSource,
+  Map as MapLibreMap,
+  StyleSpecification,
+} from 'maplibre-gl';
+import type { UsgsEarthquakeOverlay } from 'repository-api-client';
+import { MapsActions } from '../state/maps/maps.actions';
+import {
+  selectEarthquakeOverlay,
+  selectEarthquakeVisible,
+  selectMapLayers,
+  selectMapsError,
+  selectMapsLoading,
+  selectTigerVisible,
+} from '../state/maps/maps.selectors';
+
+type EarthquakeFeatureCollection = {
+  type: 'FeatureCollection';
+  features: {
+    type: 'Feature';
+    properties: {
+      place: string;
+      magnitude: number;
+      occurredAt: string;
+    };
+    geometry: {
+      type: 'Point';
+      coordinates: [number, number];
+    };
+  }[];
+};
 
 @Component({
   selector: 'app-maps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AsyncPipe, DatePipe],
   templateUrl: './maps-page.html',
 })
-export class MapsPage implements AfterViewInit, OnDestroy {
+export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapCanvas', { static: true })
   private readonly mapCanvas!: ElementRef<HTMLDivElement>;
 
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly store = inject(Store);
   private map: MapLibreMap | null = null;
+  private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
+  private mapLoaded = false;
 
-  protected tigerVisible = true;
-  protected earthquakeVisible = true;
+  protected readonly layers$ = this.store.select(selectMapLayers);
+  protected readonly earthquakeOverlay$ = this.store.select(
+    selectEarthquakeOverlay,
+  );
+  protected readonly tigerVisible$ = this.store.select(selectTigerVisible);
+  protected readonly earthquakeVisible$ = this.store.select(
+    selectEarthquakeVisible,
+  );
+  protected readonly loading$ = this.store.select(selectMapsLoading);
+  protected readonly error$ = this.store.select(selectMapsError);
+
+  ngOnInit(): void {
+    this.store.dispatch(MapsActions.mapOpened());
+
+    this.earthquakeOverlay$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((overlay) => {
+        this.pendingEarthquakeOverlay = overlay;
+        this.renderEarthquakeOverlay();
+      });
+
+    combineLatest([this.tigerVisible$, this.earthquakeVisible$])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([tigerVisible, earthquakeVisible]) => {
+        this.setLayerVisibility(
+          ['north-dakota-fill', 'north-dakota-outline'],
+          tigerVisible,
+        );
+        this.setLayerVisibility(['usgs-earthquake-points'], earthquakeVisible);
+      });
+  }
 
   ngAfterViewInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -39,16 +108,11 @@ export class MapsPage implements AfterViewInit, OnDestroy {
   }
 
   protected toggleTigerLayer(visible: boolean): void {
-    this.tigerVisible = visible;
-    this.setLayerVisibility(
-      ['north-dakota-fill', 'north-dakota-outline'],
-      visible,
-    );
+    this.store.dispatch(MapsActions.tigerLayerToggled({ visible }));
   }
 
   protected toggleEarthquakeLayer(visible: boolean): void {
-    this.earthquakeVisible = visible;
-    this.setLayerVisibility(['usgs-earthquake-points'], visible);
+    this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
   }
 
   private async initializeMap(): Promise<void> {
@@ -68,10 +132,14 @@ export class MapsPage implements AfterViewInit, OnDestroy {
       'top-right',
     );
 
-    this.map.on('load', () => this.addDemoLayers());
+    this.map.on('load', () => {
+      this.mapLoaded = true;
+      this.addCensusBoundaryLayer();
+      this.renderEarthquakeOverlay();
+    });
   }
 
-  private addDemoLayers(): void {
+  private addCensusBoundaryLayer(): void {
     if (!this.map) {
       return;
     }
@@ -122,29 +190,26 @@ export class MapsPage implements AfterViewInit, OnDestroy {
         'line-width': 2,
       },
     });
+  }
+
+  private renderEarthquakeOverlay(): void {
+    if (!this.map || !this.mapLoaded || !this.pendingEarthquakeOverlay) {
+      return;
+    }
+
+    const data = this.createEarthquakeGeoJson(this.pendingEarthquakeOverlay);
+    const existingSource = this.map.getSource(
+      'usgs-earthquakes',
+    ) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+      return;
+    }
 
     this.map.addSource('usgs-earthquakes', {
       type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: { place: 'Western North Dakota', magnitude: 2.4 },
-            geometry: { type: 'Point', coordinates: [-103.21, 47.35] },
-          },
-          {
-            type: 'Feature',
-            properties: { place: 'Central North Dakota', magnitude: 1.8 },
-            geometry: { type: 'Point', coordinates: [-100.78, 47.02] },
-          },
-          {
-            type: 'Feature',
-            properties: { place: 'Eastern North Dakota', magnitude: 2.1 },
-            geometry: { type: 'Point', coordinates: [-97.73, 48.1] },
-          },
-        ],
-      },
+      data,
     });
 
     this.map.addLayer({
@@ -166,6 +231,26 @@ export class MapsPage implements AfterViewInit, OnDestroy {
         'circle-stroke-width': 2,
       },
     });
+  }
+
+  private createEarthquakeGeoJson(
+    overlay: UsgsEarthquakeOverlay,
+  ): EarthquakeFeatureCollection {
+    return {
+      type: 'FeatureCollection',
+      features: overlay.features.map((feature) => ({
+        type: 'Feature',
+        properties: {
+          place: feature.place,
+          magnitude: feature.magnitude,
+          occurredAt: feature.occurredAt,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [feature.longitude, feature.latitude],
+        },
+      })),
+    };
   }
 
   private setLayerVisibility(layerIds: string[], visible: boolean): void {

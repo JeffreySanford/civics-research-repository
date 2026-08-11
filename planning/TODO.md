@@ -84,7 +84,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Generate Angular TypeScript API client methods from OpenAPI.
 - [ ] Add typed NgRx feature state for search.
 - [ ] Add typed NgRx feature state for dataset detail.
-- [ ] Add typed NgRx feature state for map overlays.
+- [x] Add typed NgRx feature state for map overlays.
 - [ ] Add typed NgRx feature state for accessibility evidence.
 - [x] Add typed NgRx feature state for admin sync.
 
@@ -147,7 +147,7 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 - [ ] Evaluate USGS National Map layer options.
 - [ ] Document overlay attribution requirements.
 - [ ] Normalize USGS overlay metadata.
-- [ ] Add sample overlay fixture for local map development.
+- [x] Add sample overlay fixture for local map development.
 
 ### Sprint 2.4 - Optional Cross-Agency Federation
 
@@ -199,7 +199,7 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 
 - [x] Select MapLibre GL first.
 - [x] Build MapLibre GL map shell component.
-- [ ] Add dataset-driven layer loading.
+- [x] Add dataset-driven layer loading.
 - [x] Add layer toggle controls.
 - [x] Add source attribution display.
 - [x] Add accessible feature list.
@@ -216,9 +216,9 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 ### Sprint 4.3 - USGS Overlay Integration
 
 - [x] Add USGS earthquake overlay.
-- [ ] Add overlay filter by time range or magnitude.
-- [ ] Add visible source and update timestamp.
-- [ ] Add accessible event list synchronized with map selection.
+- [x] Add overlay filter by time range or magnitude.
+- [x] Add visible source and update timestamp.
+- [x] Add accessible event list synchronized with map data.
 - [ ] Add overlay error and stale-data states.
 
 ## PI 5 - Section 508 and WCAG Evidence
