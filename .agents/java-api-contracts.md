@@ -9,6 +9,8 @@ Prefer Java/Spring Boot for the backend API. NestJS is acceptable for prototypes
 - OpenAPI schemas come before controller code.
 - Java DTOs must be generated or manually kept in sync with OpenAPI.
 - Angular TypeScript API types must be generated from the same OpenAPI contract.
+- Frontend DTO/type imports must come from `libs/repository/api-client/src/generated/repository-api.types.ts`.
+- Run `pnpm run openapi:generate` after contract edits and `pnpm run openapi:check` before committing.
 - Do not use `any`, raw maps, or loose JSON passthroughs for application-owned data.
 - External metadata can be modeled as unknown only at integration boundaries.
 

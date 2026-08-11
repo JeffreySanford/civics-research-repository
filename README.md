@@ -93,8 +93,12 @@ Public dataset metadata
 pnpm run start:all
 pnpm run test:all
 pnpm run quality:all
+pnpm run openapi:generate
+pnpm run openapi:check
 pnpm run wcag:report
 pnpm run section508:report
 ```
 
 `wcag:report` and `section508:report` run the Playwright/axe checks with a console reporter so pass/fail results are visible in terminal output.
+
+Frontend API types are generated from [schemas/openapi/repository-api.yaml](schemas/openapi/repository-api.yaml). Run `pnpm run openapi:generate` after contract changes and `pnpm run openapi:check` before committing to prevent OpenAPI/frontend type drift.

@@ -3,14 +3,22 @@ info:
   title: Civics Research Repository API
   version: 0.1.0
   description: Typed backend API contract for public research discovery, datasets, map overlays, and accessibility evidence.
+  license:
+    name: MIT
+    identifier: MIT
 servers:
-  - url: http://localhost:8080/api
-    description: Local Java API
+  - url: https://api.civics-research-repository.local/api
+    description: Local development API host alias
+security: []
 tags:
   - name: Search
+    description: Research object search and faceted discovery.
   - name: Datasets
+    description: Dataset detail, files, versions, citations, and relationships.
   - name: Maps
+    description: Dataset map layers and USGS overlays.
   - name: Evidence
+    description: WCAG and Section 508 evidence summaries.
 paths:
   /search:
     get:
@@ -65,6 +73,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DatasetVersion'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /datasets/{datasetId}/map-layers:
     get:
       tags: [Maps]
@@ -81,6 +91,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MapLayer'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /overlays/usgs/earthquakes:
     get:
       tags: [Maps]
@@ -108,6 +120,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UsgsEarthquakeOverlay'
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /accessibility/evidence:
     get:
       tags: [Evidence]
@@ -122,6 +136,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AccessibilityEvidence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 components:
   parameters:
     SearchQuery:

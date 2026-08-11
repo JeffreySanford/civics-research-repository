@@ -33,6 +33,25 @@ OpenAPI schema
 
 Do not add untyped maps, raw JSON passthroughs, implicit `any`, or loosely shaped DTOs unless the value is explicitly modeled as unknown external metadata and isolated.
 
+## OpenAPI to Frontend Type Flow
+
+The Angular frontend must not hand-author API DTOs. Frontend API request/response types are generated from `schemas/openapi/repository-api.yaml` into:
+
+```text
+libs/repository/api-client/src/generated/repository-api.types.ts
+```
+
+Use:
+
+```bash
+pnpm run openapi:generate
+pnpm run openapi:check
+```
+
+`openapi:check` regenerates the frontend types and fails if git detects drift in the generated file. `quality:all` includes this check so schema/frontend drift blocks the quality gate.
+
+The same OpenAPI contract should later feed Java DTO generation once `apps/repository-api` is generated. Until then, the OpenAPI file is the source of truth.
+
 ## Suggested Java Package Boundaries
 
 ```text

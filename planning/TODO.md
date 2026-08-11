@@ -62,6 +62,9 @@ Goal: run the repository stack locally with DSpace, PostgreSQL, Solr, and seed m
 - [x] Decide backend direction: Java/Spring Boot preferred over NestJS for federal alignment.
 - [x] Add backend Java API documentation.
 - [x] Add OpenAPI-first repository API contract.
+- [x] Add OpenAPI-to-frontend type generation.
+- [x] Add OpenAPI generated type drift check.
+- [x] Add OpenAPI lint/check into `quality:all`.
 - [x] Add Java API contract agent guidance.
 - [x] Add Java API MCP template notes.
 - [x] Add NgRx packages compatible with Angular 22.
@@ -72,7 +75,8 @@ Goal: run the repository stack locally with DSpace, PostgreSQL, Solr, and seed m
 - [ ] Select Nx Java integration plugin.
 - [ ] Generate `apps/repository-api`.
 - [ ] Generate Java DTOs from OpenAPI.
-- [ ] Generate Angular TypeScript API client from OpenAPI.
+- [x] Generate Angular TypeScript API types from OpenAPI.
+- [ ] Generate Angular TypeScript API client methods from OpenAPI.
 - [ ] Add typed NgRx feature state for search.
 - [ ] Add typed NgRx feature state for dataset detail.
 - [ ] Add typed NgRx feature state for map overlays.
