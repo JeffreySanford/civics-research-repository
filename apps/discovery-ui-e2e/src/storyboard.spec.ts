@@ -81,6 +81,46 @@ test.describe('demo storyboard checks', () => {
     ).toHaveCount(0);
   });
 
+  test('discovery search filters and result links are keyboard operable @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery');
+    await expect(
+      page.getByRole('heading', { name: 'Find research objects' }),
+    ).toBeVisible();
+
+    await page.getByLabel('Search terms').focus();
+    await page.keyboard.insertText('Texas');
+    await page.keyboard.press('Enter');
+
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - Texas',
+      }),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'California (3)' }).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - California',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'California (3)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    await page.getByRole('link', { name: 'Dataset detail' }).first().focus();
+    await page.keyboard.press('Enter');
+
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - California',
+      }),
+    ).toBeVisible();
+  });
+
   test('dataset detail shows repository metadata, files, citation, and map layers @storyboard', async ({
     page,
   }) => {
@@ -189,6 +229,39 @@ test.describe('demo storyboard checks', () => {
 
     await page.getByLabel('TIGER/Line boundary').check();
     await page.getByLabel('USGS earthquake overlay').check();
+
+    await expect(
+      page.getByText('North Dakota TIGER/Line preview'),
+    ).toBeVisible();
+    await expect(page.getByText('USGS event overlay')).toBeVisible();
+    await expect(page.getByText('Western North Dakota')).toBeVisible();
+  });
+
+  test('map layer controls are keyboard operable @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps');
+
+    await expect(
+      page.getByText('North Dakota TIGER/Line preview'),
+    ).toBeVisible();
+    await expect(page.getByText('USGS event overlay')).toBeVisible();
+
+    await page.getByLabel('TIGER/Line boundary').focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByText('North Dakota TIGER/Line preview')).toHaveCount(
+      0,
+    );
+
+    await page.getByLabel('USGS earthquake overlay').focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByText('USGS event overlay')).toHaveCount(0);
+    await expect(page.getByText('Western North Dakota')).toHaveCount(0);
+
+    await page.getByLabel('TIGER/Line boundary').focus();
+    await page.keyboard.press('Space');
+    await page.getByLabel('USGS earthquake overlay').focus();
+    await page.keyboard.press('Space');
 
     await expect(
       page.getByText('North Dakota TIGER/Line preview'),

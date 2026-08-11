@@ -12,7 +12,7 @@
     class="search-form"
     role="search"
     aria-label="Repository search"
-    (ngSubmit)="submitSearch()"
+    (submit)="$event.preventDefault(); submitSearch()"
   >
     <label for="repository-search">Search terms</label>
     <div class="search-row">

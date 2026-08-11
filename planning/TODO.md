@@ -171,7 +171,7 @@ Goal: build an accessible Angular UI for search, facets, dataset details, versio
 - [x] Build facet panel.
 - [ ] Add URL-driven search state.
 - [x] Add loading, empty, and error states.
-- [ ] Add keyboard interaction tests.
+- [x] Add keyboard interaction tests.
 - [x] Add Playwright storyboard checks for primary demo workflows.
 
 ### Sprint 3.2 - Dataset Details
@@ -236,9 +236,9 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 - [x] Expand automated scans to search route.
 - [x] Expand automated scans to dataset detail route.
 - [x] Expand automated scans to map route or map tab.
-- [ ] Add keyboard navigation tests for search.
+- [x] Add keyboard navigation tests for search.
 - [x] Add keyboard navigation tests for dataset detail tabs.
-- [ ] Add keyboard navigation tests for map layer controls.
+- [x] Add keyboard navigation tests for map layer controls.
 - [x] Add storyboard checks across discovery, map, admin sync, and evidence routes.
 - [ ] Add dialog focus tests if dialogs are introduced.
 - [ ] Add responsive reflow checks.
