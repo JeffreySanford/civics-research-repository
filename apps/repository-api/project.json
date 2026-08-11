@@ -25,9 +25,15 @@
       }
     },
     "sync": {
+      "dependsOn": ["build"],
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose exec repository-api java -jar /app/repository-api.jar --civics.sync.mode=DRY_RUN"
+        "command": "docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=DRY_RUN --civics.sync.source=TIGER_LINE"
+      },
+      "configurations": {
+        "apply": {
+          "command": "docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=APPLY --civics.sync.source=TIGER_LINE"
+        }
       }
     }
   }

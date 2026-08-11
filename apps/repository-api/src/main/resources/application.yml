@@ -6,6 +6,7 @@ server:
 civics:
   sync:
     startup-enabled: true
+    cli-enabled: false
     mode: DRY_RUN
     source: TIGER_LINE
   dspace:

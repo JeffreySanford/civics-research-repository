@@ -21,6 +21,11 @@ public class StartupSyncRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (syncProperties.cliEnabled()) {
+            LOGGER.info("Startup sync is skipped because CLI sync is enabled.");
+            return;
+        }
+
         if (!syncProperties.startupEnabled()) {
             LOGGER.info("Startup sync is disabled.");
             return;

@@ -141,6 +141,20 @@ The platform should support three sync paths:
 - Admin UI sync: a button in the Angular admin workflow triggers sync, shows status, and displays dry-run/apply results.
 - Script sync: a command-line entry point runs the same sync flow for repeatable local and CI/demo use.
 
+CLI sync commands:
+
+```bash
+pnpm run sync:dry-run
+pnpm run sync:apply
+```
+
+These commands build the local Java API image, start required Docker Compose dependencies, run Spring Boot without the web server, execute the configured sync job, and exit. The admin HTTP sync path remains available when the API is already running:
+
+```bash
+pnpm run sync:api:dry-run
+pnpm run sync:api:apply
+```
+
 ## Sync State
 
 Track sync state in the Java API persistence layer and expose it through typed API responses:

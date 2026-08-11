@@ -125,7 +125,7 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 - [ ] Implement TIGER/Line or LODES metadata source adapter for first visual slice.
 - [x] Add startup sync path.
 - [x] Add admin UI-triggered sync endpoint.
-- [ ] Add script/CLI sync entry point.
+- [x] Add script/CLI sync entry point.
 - [ ] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
 - [ ] Generate DSpace-ready item payload.
 - [x] Add dry-run mode.
