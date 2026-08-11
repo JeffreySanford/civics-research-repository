@@ -393,6 +393,24 @@ input:focus-visible {
   font-weight: 800;
 }
 
+:host ::ng-deep .area-select {
+  display: grid;
+  gap: 0.35rem;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+:host ::ng-deep .area-select select {
+  min-width: min(18rem, 100%);
+  border: 1px solid #9aa8ba;
+  border-radius: 0.35rem;
+  background: #ffffff;
+  color: #253041;
+  font: inherit;
+  padding: 0.55rem 0.65rem;
+}
+
 :host ::ng-deep .layer-controls input {
   flex: 0 0 auto;
   min-height: 1.125rem;

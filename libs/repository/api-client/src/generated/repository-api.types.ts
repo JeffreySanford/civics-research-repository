@@ -72,6 +72,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/maps/census-areas': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List selectable Census area map boundaries. */
+    get: operations['listCensusAreaBoundaries'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/overlays/usgs/earthquakes': {
     parameters: {
       query?: never;
@@ -216,6 +233,25 @@ export interface components {
       attribution: string;
       /** @default false */
       visibleByDefault: boolean;
+    };
+    CensusAreaBoundary: {
+      id: string;
+      label: string;
+      geography: string;
+      /** Format: double */
+      west: number;
+      /** Format: double */
+      south: number;
+      /** Format: double */
+      east: number;
+      /** Format: double */
+      north: number;
+      /** Format: double */
+      centerLatitude: number;
+      /** Format: double */
+      centerLongitude: number;
+      /** Format: double */
+      defaultZoom: number;
     };
     UsgsEarthquakeOverlay: {
       source: string;
@@ -467,6 +503,27 @@ export interface operations {
         };
       };
       404: components['responses']['NotFound'];
+    };
+  };
+  listCensusAreaBoundaries: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Census area boundary summaries. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CensusAreaBoundary'][];
+        };
+      };
+      400: components['responses']['BadRequest'];
     };
   };
   getUsgsEarthquakeOverlay: {

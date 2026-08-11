@@ -5,6 +5,19 @@
       <h2 id="maps-heading">MapLibre geospatial workspace</h2>
     </div>
 
+    <label class="area-select">
+      Census area
+      <select
+        #censusAreaSelect
+        [value]="(selectedBoundary$ | async)?.geography ?? 'North Dakota'"
+        (change)="selectCensusArea(censusAreaSelect.value)"
+      >
+        @for (boundary of censusAreaBoundaries$ | async; track boundary.id) {
+        <option [value]="boundary.geography">{{ boundary.geography }}</option>
+        }
+      </select>
+    </label>
+
     <fieldset class="layer-controls" aria-label="Map layer controls">
       <label>
         <input
@@ -36,7 +49,11 @@
     <aside class="map-legend" aria-label="Visible map layer legend">
       <h3>Visible layers</h3>
       <ul>
-        <li><span class="swatch census"></span>2025 TIGER/Line preview</li>
+        <li>
+          <span class="swatch census"></span>
+          @if (selectedBoundary$ | async; as boundary) { {{ boundary.geography
+          }} TIGER/Line preview } @else { TIGER/Line preview }
+        </li>
         <li>
           <span class="swatch usgs"></span>
           USGS event overlay @if (earthquakeOverlay$ | async; as overlay) {

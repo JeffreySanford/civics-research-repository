@@ -8,6 +8,24 @@ export const selectMapLayers = createSelector(
   (state) => state.layers,
 );
 
+export const selectCensusAreaBoundaries = createSelector(
+  selectMapsState,
+  (state) => state.censusAreaBoundaries,
+);
+
+export const selectSelectedGeography = createSelector(
+  selectMapsState,
+  (state) => state.selectedGeography,
+);
+
+export const selectSelectedCensusAreaBoundary = createSelector(
+  selectCensusAreaBoundaries,
+  selectSelectedGeography,
+  (boundaries, selectedGeography) =>
+    boundaries.find((boundary) => boundary.geography === selectedGeography) ??
+    null,
+);
+
 export const selectEarthquakeOverlay = createSelector(
   selectMapsState,
   (state) => state.earthquakeOverlay,

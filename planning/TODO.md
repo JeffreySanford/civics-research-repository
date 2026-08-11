@@ -210,7 +210,7 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 
 - [x] Add TIGER/Line boundary preview.
 - [ ] Add LODES sample layer or fixture.
-- [ ] Add geography filter integration.
+- [x] Add geography filter integration.
 - [ ] Add dataset detail map tab.
 - [ ] Add map state to URL where practical.
 

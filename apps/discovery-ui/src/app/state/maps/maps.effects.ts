@@ -14,11 +14,18 @@ export class MapsEffects {
       ofType(MapsActions.mapOpened),
       mergeMap(() =>
         forkJoin({
-          layers: this.mapsApi.getDatasetMapLayers('tiger-line-nd'),
+          layers: this.mapsApi.getDatasetMapLayers(
+            'tiger-line-north-dakota-2025',
+          ),
+          censusAreaBoundaries: this.mapsApi.listCensusAreaBoundaries(),
           earthquakeOverlay: this.mapsApi.getUsgsEarthquakeOverlay(0, 7),
         }).pipe(
-          map(({ layers, earthquakeOverlay }) =>
-            MapsActions.mapDataLoaded({ layers, earthquakeOverlay }),
+          map(({ layers, censusAreaBoundaries, earthquakeOverlay }) =>
+            MapsActions.mapDataLoaded({
+              layers,
+              censusAreaBoundaries,
+              earthquakeOverlay,
+            }),
           ),
           catchError((error: unknown) =>
             of(

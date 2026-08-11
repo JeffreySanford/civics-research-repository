@@ -3,6 +3,19 @@ import { initialMapsState, mapsReducer } from './maps.reducer';
 import { selectEarthquakeOverlay } from './maps.selectors';
 
 describe('mapsReducer', () => {
+  const censusAreaBoundary = {
+    id: 'north-dakota',
+    label: 'North Dakota Census area boundary preview',
+    geography: 'North Dakota',
+    west: -104.0489,
+    south: 45.9351,
+    east: -96.5545,
+    north: 49.0007,
+    centerLatitude: 47.5515,
+    centerLongitude: -101.002,
+    defaultZoom: 6,
+  };
+
   it('stores map layers and overlay data', () => {
     const earthquakeOverlay = {
       source: 'USGS Earthquake Catalog GeoJSON',
@@ -20,10 +33,15 @@ describe('mapsReducer', () => {
 
     const state = mapsReducer(
       initialMapsState,
-      MapsActions.mapDataLoaded({ layers: [layer], earthquakeOverlay }),
+      MapsActions.mapDataLoaded({
+        layers: [layer],
+        censusAreaBoundaries: [censusAreaBoundary],
+        earthquakeOverlay,
+      }),
     );
 
     expect(state.layers).toEqual([layer]);
+    expect(state.censusAreaBoundaries).toEqual([censusAreaBoundary]);
     expect(state.earthquakeOverlay).toEqual(earthquakeOverlay);
     expect(state.loading).toBe(false);
   });
@@ -35,6 +53,15 @@ describe('mapsReducer', () => {
     );
 
     expect(state.earthquakeVisible).toBe(false);
+  });
+
+  it('tracks selected census geography', () => {
+    const state = mapsReducer(
+      initialMapsState,
+      MapsActions.censusAreaSelected({ geography: 'California' }),
+    );
+
+    expect(state.selectedGeography).toBe('California');
   });
 
   it('selects the earthquake overlay', () => {

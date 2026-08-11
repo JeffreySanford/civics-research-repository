@@ -1,11 +1,17 @@
 import { createReducer, on } from '@ngrx/store';
-import type { MapLayer, UsgsEarthquakeOverlay } from 'repository-api-client';
+import type {
+  CensusAreaBoundary,
+  MapLayer,
+  UsgsEarthquakeOverlay,
+} from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 
 export const mapsFeatureKey = 'maps';
 
 export interface MapsState {
   readonly layers: readonly MapLayer[];
+  readonly censusAreaBoundaries: readonly CensusAreaBoundary[];
+  readonly selectedGeography: string;
   readonly earthquakeOverlay: UsgsEarthquakeOverlay | null;
   readonly tigerVisible: boolean;
   readonly earthquakeVisible: boolean;
@@ -15,6 +21,8 @@ export interface MapsState {
 
 export const initialMapsState: MapsState = {
   layers: [],
+  censusAreaBoundaries: [],
+  selectedGeography: 'North Dakota',
   earthquakeOverlay: null,
   tigerVisible: true,
   earthquakeVisible: true,
@@ -29,12 +37,20 @@ export const mapsReducer = createReducer(
     loading: true,
     error: null,
   })),
-  on(MapsActions.mapDataLoaded, (state, { layers, earthquakeOverlay }) => ({
+  on(
+    MapsActions.mapDataLoaded,
+    (state, { layers, censusAreaBoundaries, earthquakeOverlay }) => ({
+      ...state,
+      layers,
+      censusAreaBoundaries,
+      earthquakeOverlay,
+      loading: false,
+      error: null,
+    }),
+  ),
+  on(MapsActions.censusAreaSelected, (state, { geography }) => ({
     ...state,
-    layers,
-    earthquakeOverlay,
-    loading: false,
-    error: null,
+    selectedGeography: geography,
   })),
   on(MapsActions.mapDataFailed, (state, { error }) => ({
     ...state,

@@ -19,14 +19,19 @@ import type {
   Map as MapLibreMap,
   StyleSpecification,
 } from 'maplibre-gl';
-import type { UsgsEarthquakeOverlay } from 'repository-api-client';
+import type {
+  CensusAreaBoundary,
+  UsgsEarthquakeOverlay,
+} from 'repository-api-client';
 import { MapsActions } from '../state/maps/maps.actions';
 import {
+  selectCensusAreaBoundaries,
   selectEarthquakeOverlay,
   selectEarthquakeVisible,
   selectMapLayers,
   selectMapsError,
   selectMapsLoading,
+  selectSelectedCensusAreaBoundary,
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
 
@@ -46,6 +51,21 @@ type EarthquakeFeatureCollection = {
   }[];
 };
 
+type BoundaryFeatureCollection = {
+  type: 'FeatureCollection';
+  features: {
+    type: 'Feature';
+    properties: {
+      label: string;
+      geography: string;
+    };
+    geometry: {
+      type: 'Polygon';
+      coordinates: [number, number][][];
+    };
+  }[];
+};
+
 @Component({
   selector: 'app-maps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,12 +80,19 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(Store);
   private map: MapLibreMap | null = null;
+  private pendingBoundary: CensusAreaBoundary | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
   private mapLoaded = false;
   private tigerVisible = true;
   private earthquakeVisible = true;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
+  protected readonly censusAreaBoundaries$ = this.store.select(
+    selectCensusAreaBoundaries,
+  );
+  protected readonly selectedBoundary$ = this.store.select(
+    selectSelectedCensusAreaBoundary,
+  );
   protected readonly earthquakeOverlay$ = this.store.select(
     selectEarthquakeOverlay,
   );
@@ -86,13 +113,20 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         this.renderEarthquakeOverlay();
       });
 
+    this.selectedBoundary$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((boundary) => {
+        this.pendingBoundary = boundary;
+        this.renderCensusBoundary();
+      });
+
     combineLatest([this.tigerVisible$, this.earthquakeVisible$])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(([tigerVisible, earthquakeVisible]) => {
         this.tigerVisible = tigerVisible;
         this.earthquakeVisible = earthquakeVisible;
         this.setLayerVisibility(
-          ['north-dakota-fill', 'north-dakota-outline'],
+          ['census-area-fill', 'census-area-outline'],
           tigerVisible,
         );
         this.setLayerVisibility(
@@ -122,6 +156,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
   }
 
+  protected selectCensusArea(geography: string): void {
+    this.store.dispatch(MapsActions.censusAreaSelected({ geography }));
+  }
+
   private async initializeMap(): Promise<void> {
     const maplibregl = await import('maplibre-gl');
 
@@ -141,48 +179,38 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
     this.map.on('load', () => {
       this.mapLoaded = true;
-      this.addCensusBoundaryLayer();
+      this.renderCensusBoundary();
       this.renderEarthquakeOverlay();
       this.applyLayerVisibility();
     });
   }
 
-  private addCensusBoundaryLayer(): void {
-    if (!this.map) {
+  private renderCensusBoundary(): void {
+    if (!this.map || !this.mapLoaded || !this.pendingBoundary) {
       return;
     }
 
-    this.map.addSource('north-dakota-boundary', {
+    const data = this.createBoundaryGeoJson(this.pendingBoundary);
+    const existingSource = this.map.getSource(
+      'census-area-boundary',
+    ) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+      this.fitSelectedBoundary(this.pendingBoundary);
+      this.applyLayerVisibility();
+      return;
+    }
+
+    this.map.addSource('census-area-boundary', {
       type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: {
-              label: '2025 TIGER/Line Census Tracts - North Dakota',
-            },
-            geometry: {
-              type: 'Polygon',
-              coordinates: [
-                [
-                  [-104.0489, 45.9351],
-                  [-96.5545, 45.9351],
-                  [-96.5545, 49.0007],
-                  [-104.0489, 49.0007],
-                  [-104.0489, 45.9351],
-                ],
-              ],
-            },
-          },
-        ],
-      },
+      data,
     });
 
     this.map.addLayer({
-      id: 'north-dakota-fill',
+      id: 'census-area-fill',
       type: 'fill',
-      source: 'north-dakota-boundary',
+      source: 'census-area-boundary',
       paint: {
         'fill-color': '#2f6f8f',
         'fill-opacity': 0.18,
@@ -190,14 +218,17 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.map.addLayer({
-      id: 'north-dakota-outline',
+      id: 'census-area-outline',
       type: 'line',
-      source: 'north-dakota-boundary',
+      source: 'census-area-boundary',
       paint: {
         'line-color': '#164e63',
         'line-width': 2,
       },
     });
+
+    this.fitSelectedBoundary(this.pendingBoundary);
+    this.applyLayerVisibility();
   }
 
   private renderEarthquakeOverlay(): void {
@@ -284,6 +315,45 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+  private createBoundaryGeoJson(
+    boundary: CensusAreaBoundary,
+  ): BoundaryFeatureCollection {
+    return {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            label: boundary.label,
+            geography: boundary.geography,
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [boundary.west, boundary.south],
+                [boundary.east, boundary.south],
+                [boundary.east, boundary.north],
+                [boundary.west, boundary.north],
+                [boundary.west, boundary.south],
+              ],
+            ],
+          },
+        },
+      ],
+    };
+  }
+
+  private fitSelectedBoundary(boundary: CensusAreaBoundary): void {
+    this.map?.fitBounds(
+      [
+        [boundary.west, boundary.south],
+        [boundary.east, boundary.north],
+      ],
+      { padding: 56, duration: 500, maxZoom: boundary.defaultZoom },
+    );
+  }
+
   private setLayerVisibility(layerIds: string[], visible: boolean): void {
     for (const layerId of layerIds) {
       if (this.map?.getLayer(layerId)) {
@@ -298,7 +368,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   private applyLayerVisibility(): void {
     this.setLayerVisibility(
-      ['north-dakota-fill', 'north-dakota-outline'],
+      ['census-area-fill', 'census-area-outline'],
       this.tigerVisible,
     );
     this.setLayerVisibility(

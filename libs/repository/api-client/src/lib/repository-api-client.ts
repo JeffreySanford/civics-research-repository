@@ -16,6 +16,7 @@ export type SyncRequest = components['schemas']['SyncRequest'];
 export type SyncJob = components['schemas']['SyncJob'];
 export type SyncAction = components['schemas']['SyncAction'];
 export type MapLayer = components['schemas']['MapLayer'];
+export type CensusAreaBoundary = components['schemas']['CensusAreaBoundary'];
 export type UsgsEarthquakeOverlay =
   components['schemas']['UsgsEarthquakeOverlay'];
 export type UsgsEarthquakeFeature =
@@ -65,6 +66,12 @@ export class RepositoryMapsApi {
   getDatasetMapLayers(datasetId: string): Observable<MapLayer[]> {
     return this.http.get<MapLayer[]>(
       `${this.baseUrl}/datasets/${datasetId}/map-layers`,
+    );
+  }
+
+  listCensusAreaBoundaries(): Observable<CensusAreaBoundary[]> {
+    return this.http.get<CensusAreaBoundary[]>(
+      `${this.baseUrl}/maps/census-areas`,
     );
   }
 

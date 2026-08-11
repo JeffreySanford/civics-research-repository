@@ -10,10 +10,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping
 public class MapsController {
+    private final CensusAreaBoundaryService censusAreaBoundaryService;
     private final MapLayerService mapLayerService;
     private final UsgsEarthquakeService usgsEarthquakeService;
 
-    public MapsController(MapLayerService mapLayerService, UsgsEarthquakeService usgsEarthquakeService) {
+    public MapsController(
+            CensusAreaBoundaryService censusAreaBoundaryService,
+            MapLayerService mapLayerService,
+            UsgsEarthquakeService usgsEarthquakeService) {
+        this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.mapLayerService = mapLayerService;
         this.usgsEarthquakeService = usgsEarthquakeService;
     }
@@ -21,6 +26,11 @@ public class MapsController {
     @GetMapping("/datasets/{datasetId}/map-layers")
     public List<MapLayer> getDatasetMapLayers(@PathVariable String datasetId) {
         return mapLayerService.findDatasetLayers(datasetId);
+    }
+
+    @GetMapping("/maps/census-areas")
+    public List<CensusAreaBoundary> listCensusAreaBoundaries() {
+        return censusAreaBoundaryService.listBoundaries();
     }
 
     @GetMapping("/overlays/usgs/earthquakes")

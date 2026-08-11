@@ -95,6 +95,22 @@ paths:
                   $ref: '#/components/schemas/MapLayer'
         '404':
           $ref: '#/components/responses/NotFound'
+  /maps/census-areas:
+    get:
+      tags: [Maps]
+      operationId: listCensusAreaBoundaries
+      summary: List selectable Census area map boundaries.
+      responses:
+        '200':
+          description: Census area boundary summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CensusAreaBoundary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /overlays/usgs/earthquakes:
     get:
       tags: [Maps]
@@ -417,6 +433,49 @@ components:
         visibleByDefault:
           type: boolean
           default: false
+    CensusAreaBoundary:
+      type: object
+      required:
+        [
+          id,
+          label,
+          geography,
+          west,
+          south,
+          east,
+          north,
+          centerLatitude,
+          centerLongitude,
+          defaultZoom,
+        ]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        geography:
+          type: string
+        west:
+          type: number
+          format: double
+        south:
+          type: number
+          format: double
+        east:
+          type: number
+          format: double
+        north:
+          type: number
+          format: double
+        centerLatitude:
+          type: number
+          format: double
+        centerLongitude:
+          type: number
+          format: double
+        defaultZoom:
+          type: number
+          format: double
     UsgsEarthquakeOverlay:
       type: object
       required: [source, updatedAt, features]
