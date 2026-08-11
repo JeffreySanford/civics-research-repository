@@ -210,7 +210,7 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 ### Sprint 4.2 - Census Geospatial Layers
 
 - [x] Add TIGER/Line boundary preview.
-- [ ] Add LODES sample layer or fixture.
+- [x] Add LODES sample layer or fixture.
 - [x] Add geography filter integration.
 - [x] Add dataset detail map tab.
 - [x] Add map state to URL where practical.

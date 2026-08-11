@@ -141,6 +141,9 @@ test.describe('demo storyboard checks', () => {
     await expect(page.getByText('Current')).toBeVisible();
 
     await page.getByRole('tab', { name: 'Map Layers' }).click();
+    await expect(
+      page.getByText('2023 LODES workplace flow sample'),
+    ).toBeVisible();
     await expect(page.getByText('USGS earthquake overlay')).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Open map workspace' }),
@@ -205,12 +208,18 @@ test.describe('demo storyboard checks', () => {
     await expect(page.locator('select option')).toHaveCount(3);
     await expect(page.getByLabel('Census area')).toHaveValue('California');
     await expect(page.getByText('California TIGER/Line preview')).toBeVisible();
+    await expect(
+      page.getByText('LODES workplace flow sample', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('3 loaded')).toBeVisible();
 
     await page.getByLabel('Census area').selectOption('Texas');
 
     await expect(page.getByLabel('Census area')).toHaveValue('Texas');
     await expect(page.getByText('Texas TIGER/Line preview')).toBeVisible();
+    await expect(
+      page.getByText('2023 LODES workplace flow sample'),
+    ).toBeVisible();
     await expect(page).toHaveURL(/area=Texas/);
     await expect(page.locator('.maplibregl-canvas')).toHaveCount(1);
   });
@@ -226,6 +235,9 @@ test.describe('demo storyboard checks', () => {
     await expect(page.getByText('USGS event overlay')).toBeVisible();
     await expect(
       page.getByText('USGS Earthquake Catalog GeoJSON fallback fixture'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('LODES workplace flow sample', { exact: true }),
     ).toBeVisible();
 
     await page.getByLabel('TIGER/Line boundary').uncheck();

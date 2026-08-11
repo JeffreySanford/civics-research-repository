@@ -22,6 +22,7 @@ import type {
 } from 'maplibre-gl';
 import type {
   CensusAreaBoundary,
+  MapLayer,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { MapsActions } from '../state/maps/maps.actions';
@@ -68,6 +69,28 @@ type BoundaryFeatureCollection = {
   }[];
 };
 
+type LodesFeatureCollection = {
+  type: 'FeatureCollection';
+  features: (
+    | {
+        type: 'Feature';
+        properties: { label: string };
+        geometry: {
+          type: 'LineString';
+          coordinates: [number, number][];
+        };
+      }
+    | {
+        type: 'Feature';
+        properties: { label: string };
+        geometry: {
+          type: 'Point';
+          coordinates: [number, number];
+        };
+      }
+  )[];
+};
+
 @Component({
   selector: 'app-maps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,11 +109,17 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private map: MapLibreMap | null = null;
   private pendingBoundary: CensusAreaBoundary | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
+  private pendingLodesLayers: readonly MapLayer[] = [];
   private mapLoaded = false;
   private tigerVisible = true;
   private earthquakeVisible = true;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
+  protected readonly lodesLayers$ = this.layers$.pipe(
+    map((layers) =>
+      layers.filter((layer) => layer.layerType === 'CENSUS_DATA'),
+    ),
+  );
   protected readonly censusAreaBoundaries$ = this.store.select(
     selectCensusAreaBoundaries,
   );
@@ -126,6 +155,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       .subscribe((boundary) => {
         this.pendingBoundary = boundary;
         this.renderCensusBoundary();
+        this.renderLodesSampleLayer();
+      });
+
+    this.lodesLayers$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((layers) => {
+        this.pendingLodesLayers = layers;
+        this.renderLodesSampleLayer();
       });
 
     combineLatest([this.tigerVisible$, this.earthquakeVisible$])
@@ -267,6 +304,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.map.on('load', () => {
       this.mapLoaded = true;
       this.renderCensusBoundary();
+      this.renderLodesSampleLayer();
       this.renderEarthquakeOverlay();
       this.applyLayerVisibility();
     });
@@ -382,6 +420,57 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.applyLayerVisibility();
   }
 
+  private renderLodesSampleLayer(): void {
+    if (
+      !this.map ||
+      !this.mapLoaded ||
+      !this.pendingBoundary ||
+      this.pendingLodesLayers.length === 0
+    ) {
+      return;
+    }
+
+    const data = this.createLodesSampleGeoJson(this.pendingBoundary);
+    const existingSource = this.map.getSource(
+      'lodes-workplace-flow',
+    ) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+      return;
+    }
+
+    this.map.addSource('lodes-workplace-flow', {
+      type: 'geojson',
+      data,
+    });
+
+    this.map.addLayer({
+      id: 'lodes-workplace-flow-line',
+      type: 'line',
+      source: 'lodes-workplace-flow',
+      filter: ['==', ['geometry-type'], 'LineString'],
+      paint: {
+        'line-color': '#6d5dfc',
+        'line-width': 4,
+        'line-opacity': 0.78,
+      },
+    });
+
+    this.map.addLayer({
+      id: 'lodes-workplace-flow-points',
+      type: 'circle',
+      source: 'lodes-workplace-flow',
+      filter: ['==', ['geometry-type'], 'Point'],
+      paint: {
+        'circle-color': '#6d5dfc',
+        'circle-radius': 7,
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 2,
+      },
+    });
+  }
+
   private createEarthquakeGeoJson(
     overlay: UsgsEarthquakeOverlay,
   ): EarthquakeFeatureCollection {
@@ -425,6 +514,55 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
                 [boundary.west, boundary.south],
               ],
             ],
+          },
+        },
+      ],
+    };
+  }
+
+  private createLodesSampleGeoJson(
+    boundary: CensusAreaBoundary,
+  ): LodesFeatureCollection {
+    const residentialPoint: [number, number] = [
+      boundary.west + (boundary.east - boundary.west) * 0.25,
+      boundary.south + (boundary.north - boundary.south) * 0.42,
+    ];
+    const workplacePoint: [number, number] = [
+      boundary.west + (boundary.east - boundary.west) * 0.72,
+      boundary.south + (boundary.north - boundary.south) * 0.62,
+    ];
+
+    return {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            label: `${boundary.geography} LODES workplace flow sample`,
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [residentialPoint, workplacePoint],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {
+            label: `${boundary.geography} residential workforce sample`,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: residentialPoint,
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {
+            label: `${boundary.geography} workplace destination sample`,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: workplacePoint,
           },
         },
       ],

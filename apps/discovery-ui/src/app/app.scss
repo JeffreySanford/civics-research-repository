@@ -496,6 +496,10 @@ input:focus-visible {
   background: #2f6f8f;
 }
 
+:host ::ng-deep .swatch.lodes {
+  background: #6d5dfc;
+}
+
 :host ::ng-deep .swatch.usgs {
   background: #b45309;
 }

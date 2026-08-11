@@ -28,6 +28,15 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
           visibleByDefault: true,
         },
         {
+          id: 'lodes-workplace-flow-sample',
+          label: '2023 LODES workplace flow sample',
+          layerType: 'CENSUS_DATA',
+          sourceUrl: 'https://lehd.ces.census.gov/data/',
+          attribution:
+            'U.S. Census Bureau LEHD Origin-Destination Employment Statistics',
+          visibleByDefault: true,
+        },
+        {
           id: 'usgs-earthquakes-preview',
           label: 'USGS earthquake overlay',
           layerType: 'USGS_EARTHQUAKE',

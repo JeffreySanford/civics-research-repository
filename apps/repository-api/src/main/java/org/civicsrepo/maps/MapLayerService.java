@@ -15,6 +15,13 @@ public class MapLayerService {
                         "U.S. Census Bureau TIGER/Line",
                         true),
                 new MapLayer(
+                        "lodes-workplace-flow-sample",
+                        "2023 LODES workplace flow sample",
+                        MapLayerType.CENSUS_DATA,
+                        "https://lehd.ces.census.gov/data/",
+                        "U.S. Census Bureau LEHD Origin-Destination Employment Statistics",
+                        true),
+                new MapLayer(
                         "usgs-earthquakes-nd",
                         "USGS earthquake overlay",
                         MapLayerType.USGS_EARTHQUAKE,

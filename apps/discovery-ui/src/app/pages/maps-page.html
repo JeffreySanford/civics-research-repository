@@ -65,7 +65,13 @@
           @if (selectedBoundary$ | async; as boundary) { {{ boundary.geography
           }} TIGER/Line preview } @else { TIGER/Line preview }
         </li>
-        } @if (earthquakeVisible$ | async) {
+        } @if (lodesLayers$ | async; as lodesLayers) { @if (lodesLayers.length >
+        0) {
+        <li>
+          <span class="swatch lodes"></span>
+          LODES workplace flow sample
+        </li>
+        } } @if (earthquakeVisible$ | async) {
         <li>
           <span class="swatch usgs"></span>
           USGS event overlay @if (earthquakeOverlay$ | async; as overlay) {
@@ -84,7 +90,7 @@
   <h2 id="features-heading">Accessible feature list</h2>
   <ul class="feature-list">
     @if (layers$ | async; as layers) { @for (layer of layers; track layer.id) {
-    @if (tigerVisible$ | async) {
+    @if (layer.layerType === 'CENSUS_DATA' || (tigerVisible$ | async)) {
     <li>
       <strong>{{ layer.label }}</strong>
       <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
