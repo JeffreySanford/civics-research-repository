@@ -2,7 +2,9 @@ import { firstValueFrom, of } from 'rxjs';
 import {
   RepositoryAdminApi,
   RepositoryMapsApi,
+  RepositorySearchApi,
   type MapLayer,
+  type SearchResponse,
   type SyncJob,
   type UsgsEarthquakeOverlay,
 } from './repository-api-client';
@@ -36,6 +38,55 @@ describe('RepositoryAdminApi', () => {
 
     await expect(firstValueFrom(api.listSyncJobs())).resolves.toEqual([job]);
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/admin/sync');
+  });
+});
+
+describe('RepositorySearchApi', () => {
+  it('loads typed search results with query parameters', async () => {
+    const response: SearchResponse = {
+      query: 'North Dakota',
+      page: 0,
+      pageSize: 25,
+      totalResults: 1,
+      results: [
+        {
+          id: 'tiger-line-nd-2025',
+          title: '2025 TIGER/Line - Census Tracts - North Dakota',
+          contentType: 'DATASET',
+          program: 'TIGER_LINE',
+          publisher: 'U.S. Census Bureau',
+          summary: 'Boundary metadata.',
+          geography: 'North Dakota',
+          vintageYear: 2025,
+          sourceUrl: 'https://example.test/tiger',
+        },
+      ],
+      facets: [],
+    };
+    const http = {
+      get: vi.fn(() => of(response)),
+    };
+    const api = new RepositorySearchApi(http as never, 'http://api.test/api');
+
+    await expect(
+      firstValueFrom(
+        api.searchResearchObjects({
+          q: 'North Dakota',
+          program: 'TIGER_LINE',
+          page: 0,
+          pageSize: 25,
+        }),
+      ),
+    ).resolves.toEqual(response);
+
+    expect(http.get).toHaveBeenCalledWith('http://api.test/api/search', {
+      params: {
+        q: 'North Dakota',
+        program: 'TIGER_LINE',
+        page: 0,
+        pageSize: 25,
+      },
+    });
   });
 });
 

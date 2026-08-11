@@ -20,6 +20,20 @@ export type UsgsEarthquakeOverlay =
   components['schemas']['UsgsEarthquakeOverlay'];
 export type UsgsEarthquakeFeature =
   components['schemas']['UsgsEarthquakeFeature'];
+export type SearchResponse = components['schemas']['SearchResponse'];
+export type SearchResult = components['schemas']['SearchResult'];
+export type FacetGroup = components['schemas']['FacetGroup'];
+export type FacetValue = components['schemas']['FacetValue'];
+export type ResearchProgram = components['schemas']['ResearchProgram'];
+
+export interface SearchQuery {
+  readonly q?: string;
+  readonly program?: ResearchProgram;
+  readonly geography?: string;
+  readonly vintageYear?: number;
+  readonly page?: number;
+  readonly pageSize?: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryAdminApi {
@@ -67,5 +81,45 @@ export class RepositoryMapsApi {
         },
       },
     );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class RepositorySearchApi {
+  constructor(
+    private readonly http: HttpClient,
+    @Inject(REPOSITORY_API_BASE_URL) private readonly baseUrl: string,
+  ) {}
+
+  searchResearchObjects(query: SearchQuery): Observable<SearchResponse> {
+    const params: Record<string, string | number> = {};
+
+    if (query.q) {
+      params['q'] = query.q;
+    }
+
+    if (query.program) {
+      params['program'] = query.program;
+    }
+
+    if (query.geography) {
+      params['geography'] = query.geography;
+    }
+
+    if (query.vintageYear !== undefined) {
+      params['vintageYear'] = query.vintageYear;
+    }
+
+    if (query.page !== undefined) {
+      params['page'] = query.page;
+    }
+
+    if (query.pageSize !== undefined) {
+      params['pageSize'] = query.pageSize;
+    }
+
+    return this.http.get<SearchResponse>(`${this.baseUrl}/search`, {
+      params,
+    });
   }
 }

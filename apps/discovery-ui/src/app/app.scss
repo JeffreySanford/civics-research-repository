@@ -270,6 +270,95 @@ input:focus-visible {
   padding: 0.75rem 1rem;
 }
 
+:host ::ng-deep .discovery-layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1.5rem;
+}
+
+:host ::ng-deep .facet-list,
+:host ::ng-deep .facet-values,
+:host ::ng-deep .result-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+:host ::ng-deep .facet-list h4 {
+  margin: 0 0 0.5rem;
+}
+
+:host ::ng-deep .facet-values button {
+  justify-content: start;
+  width: 100%;
+}
+
+:host ::ng-deep .facet-values button.selected {
+  border-color: #0b57d0;
+  background: #dbeafe;
+  color: #0b3b75;
+}
+
+:host ::ng-deep .results-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: start;
+  justify-content: space-between;
+}
+
+:host ::ng-deep .result-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:host ::ng-deep .result-list article {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid #d7dee8;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+:host ::ng-deep .result-list h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+:host ::ng-deep .result-list p {
+  margin-bottom: 0;
+}
+
+:host ::ng-deep .result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .result-meta span {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  background: #ffffff;
+  color: #253041;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+:host ::ng-deep .source-link {
+  color: #0b57d0;
+  font-weight: 800;
+}
+
+:host ::ng-deep .empty-state {
+  border: 1px dashed #8a97a8;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
 :host ::ng-deep .map-workspace {
   display: grid;
   gap: 1rem;
@@ -381,6 +470,7 @@ input:focus-visible {
   :host ::ng-deep .hero-panel,
   :host ::ng-deep .search-panel,
   :host ::ng-deep .admin-layout,
+  :host ::ng-deep .discovery-layout,
   :host ::ng-deep .workflow-grid,
   :host ::ng-deep .details-list {
     grid-template-columns: 1fr;

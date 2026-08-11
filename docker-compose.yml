@@ -30,7 +30,7 @@ services:
   discovery-ui:
     image: node:24-bookworm-slim
     working_dir: /workspace
-    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm nx run discovery-ui:serve --host=0.0.0.0"
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec nx run discovery-ui:serve --host=0.0.0.0"
     environment:
       NG_CLI_ANALYTICS: 'false'
     ports:

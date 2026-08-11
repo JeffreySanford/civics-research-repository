@@ -12,6 +12,8 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { appRoutes } from './app.routes';
 import { MapsEffects } from './state/maps/maps.effects';
 import { mapsFeatureKey, mapsReducer } from './state/maps/maps.reducer';
+import { SearchEffects } from './state/search/search.effects';
+import { searchFeatureKey, searchReducer } from './state/search/search.reducer';
 import { SyncEffects } from './state/sync/sync.effects';
 import { syncFeatureKey, syncReducer } from './state/sync/sync.reducer';
 
@@ -34,8 +36,9 @@ export const appConfig: ApplicationConfig = {
       },
     ),
     provideState(mapsFeatureKey, mapsReducer),
+    provideState(searchFeatureKey, searchReducer),
     provideState(syncFeatureKey, syncReducer),
-    provideEffects([MapsEffects, SyncEffects]),
+    provideEffects([MapsEffects, SearchEffects, SyncEffects]),
     provideRouterStore(),
     provideStoreDevtools({
       maxAge: 25,

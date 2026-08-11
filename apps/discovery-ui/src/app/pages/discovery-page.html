@@ -8,7 +8,12 @@
     </p>
   </div>
 
-  <form class="search-form" role="search" aria-label="Repository search">
+  <form
+    class="search-form"
+    role="search"
+    aria-label="Repository search"
+    (ngSubmit)="submitSearch()"
+  >
     <label for="repository-search">Search terms</label>
     <div class="search-row">
       <input
@@ -16,9 +21,100 @@
         name="repository-search"
         type="search"
         autocomplete="off"
+        [formControl]="searchControl"
         placeholder="North Dakota Census tracts"
       />
-      <button type="submit">Search</button>
+      <button mat-flat-button type="submit" [disabled]="loading$ | async">
+        Search
+      </button>
     </div>
   </form>
+</section>
+
+<section aria-labelledby="discovery-results-heading" class="discovery-layout">
+  <aside class="content-panel" aria-labelledby="filter-heading">
+    <p class="eyebrow">Filters</p>
+    <h3 id="filter-heading">Facets</h3>
+
+    @if (facets$ | async; as facets) { @if (facets.length > 0) {
+    <div class="facet-list">
+      @for (facet of facets; track facet.field) {
+      <section [attr.aria-labelledby]="'facet-' + facet.field">
+        <h4 [id]="'facet-' + facet.field">{{ facet.label }}</h4>
+        <div class="facet-values">
+          @for (value of facet.values; track value.value) {
+          <button
+            mat-stroked-button
+            type="button"
+            [class.selected]="value.selected"
+            [attr.aria-pressed]="value.selected"
+            [disabled]="facet.field !== 'program'"
+            (click)="selectProgram(value.value)"
+          >
+            {{ value.label }} ({{ value.count }})
+          </button>
+          }
+        </div>
+      </section>
+      }
+    </div>
+    <button mat-button type="button" (click)="clearFilters()">
+      Clear filters
+    </button>
+    } @else {
+    <p>No facets available yet.</p>
+    } }
+  </aside>
+
+  <div class="content-panel">
+    <div class="results-heading">
+      <div>
+        <p class="eyebrow">Results</p>
+        <h3 id="discovery-results-heading">
+          {{ totalResults$ | async }} research objects
+        </h3>
+      </div>
+
+      @if (loading$ | async) {
+      <div class="inline-status" role="status">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>Searching</span>
+      </div>
+      }
+    </div>
+
+    @if (error$ | async; as error) {
+    <p class="error-message" role="alert">{{ error }}</p>
+    } @if (results$ | async; as results) { @if (results.length > 0) {
+    <ol class="result-list">
+      @for (result of results; track result.id) {
+      <li>
+        <article>
+          <div class="result-meta">
+            <span>{{ result.program }}</span>
+            <span>{{ result.contentType }}</span>
+            @if (result.geography) {
+            <span>{{ result.geography }}</span>
+            } @if (result.vintageYear) {
+            <span>{{ result.vintageYear }}</span>
+            }
+          </div>
+          <h4>{{ result.title }}</h4>
+          <p>{{ result.summary }}</p>
+          <a
+            class="source-link"
+            [href]="result.sourceUrl"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Source data
+          </a>
+        </article>
+      </li>
+      }
+    </ol>
+    } @else if ((loading$ | async) === false) {
+    <p class="empty-state">No research objects matched this search.</p>
+    } }
+  </div>
 </section>
