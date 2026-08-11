@@ -75,11 +75,11 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Wire root NgRx Store, Effects, Router Store, and DevTools providers.
 - [x] Generate Angular TypeScript API types from OpenAPI.
 - [x] Choose Java runtime target: 21.
-- [ ] Choose Maven or Gradle.
-- [ ] Install/enable Maven wrapper or choose Gradle wrapper strategy.
+- [x] Choose Maven or Gradle: Gradle inside Docker.
+- [x] Install/enable Maven wrapper or choose Gradle wrapper strategy: use Gradle container image for now.
 - [ ] Select Nx Java integration plugin.
 - [ ] Select OpenAPI-to-Java DTO generation tool.
-- [ ] Generate `apps/repository-api`.
+- [x] Generate `apps/repository-api`.
 - [ ] Generate Java DTOs from OpenAPI.
 - [x] Generate Angular TypeScript API client methods from OpenAPI.
 - [ ] Add typed NgRx feature state for search.
@@ -120,14 +120,14 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 ### Sprint 2.1 - Census Metadata Harvester
 
 - [x] Decide harvester placement: Java API owns sync orchestration and sync state.
-- [ ] Define sync state model for source ID, source URL, DSpace item ID, last sync status, and source freshness.
+- [x] Define initial sync state model for sync job, source, status, timestamps, and actions.
 - [ ] Implement TIGER/Line or LODES metadata source adapter for first visual slice.
-- [ ] Add startup sync path.
-- [ ] Add admin UI-triggered sync endpoint.
+- [x] Add startup sync path.
+- [x] Add admin UI-triggered sync endpoint.
 - [ ] Add script/CLI sync entry point.
 - [ ] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
 - [ ] Generate DSpace-ready item payload.
-- [ ] Add dry-run mode.
+- [x] Add dry-run mode.
 - [ ] Add diff mode to compare source metadata with DSpace item state.
 - [ ] Add logging and error handling.
 - [ ] Add unit tests for metadata normalization.
@@ -198,16 +198,16 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 ### Sprint 4.1 - Map Foundation
 
 - [x] Select MapLibre GL first.
-- [ ] Build MapLibre GL map shell component.
+- [x] Build MapLibre GL map shell component.
 - [ ] Add dataset-driven layer loading.
-- [ ] Add layer toggle controls.
-- [ ] Add source attribution display.
-- [ ] Add accessible feature list.
-- [ ] Add non-color-only legend.
+- [x] Add layer toggle controls.
+- [x] Add source attribution display.
+- [x] Add accessible feature list.
+- [x] Add non-color-only legend.
 
 ### Sprint 4.2 - Census Geospatial Layers
 
-- [ ] Add TIGER/Line boundary preview.
+- [x] Add TIGER/Line boundary preview.
 - [ ] Add LODES sample layer or fixture.
 - [ ] Add geography filter integration.
 - [ ] Add dataset detail map tab.
@@ -215,7 +215,7 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 
 ### Sprint 4.3 - USGS Overlay Integration
 
-- [ ] Add USGS earthquake overlay.
+- [x] Add USGS earthquake overlay.
 - [ ] Add overlay filter by time range or magnitude.
 - [ ] Add visible source and update timestamp.
 - [ ] Add accessible event list synchronized with map selection.

@@ -1,8 +1,8 @@
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { RepositoryAdminApi, type SyncJob } from './repository-api-client';
 
 describe('RepositoryAdminApi', () => {
-  it('starts a typed sync job', () => {
+  it('starts a typed sync job and lists history', async () => {
     const job: SyncJob = {
       id: '92e0cc30-1f7f-49dd-babf-c3d13ce66b46',
       mode: 'DRY_RUN',
@@ -13,7 +13,7 @@ describe('RepositoryAdminApi', () => {
     };
     const http = {
       post: vi.fn(() => of(job)),
-      get: vi.fn(),
+      get: vi.fn(() => of([job])),
     };
     const api = new RepositoryAdminApi(http as never, 'http://api.test/api');
 
@@ -27,5 +27,8 @@ describe('RepositoryAdminApi', () => {
       mode: 'DRY_RUN',
       source: 'TIGER_LINE',
     });
+
+    await expect(firstValueFrom(api.listSyncJobs())).resolves.toEqual([job]);
+    expect(http.get).toHaveBeenCalledWith('http://api.test/api/admin/sync');
   });
 });

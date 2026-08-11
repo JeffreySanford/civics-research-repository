@@ -19,6 +19,9 @@ services:
       CIVICS_DSPACE_BASE_URL: http://dspace-rest:8080/server
       CIVICS_SOLR_BASE_URL: http://solr:8983/solr
       CIVICS_STORAGE_ARTIFACTS_PATH: /var/lib/civics/artifacts
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dspace
+      SPRING_DATASOURCE_USERNAME: dspace
+      SPRING_DATASOURCE_PASSWORD: dspace
     ports:
       - '8080:8080'
     volumes:

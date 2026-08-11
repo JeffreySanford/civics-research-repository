@@ -6,6 +6,8 @@ export const SyncActions = createActionGroup({
   events: {
     'Dry Run Requested': emptyProps(),
     'Apply Requested': emptyProps(),
+    'History Requested': emptyProps(),
+    'History Loaded': props<{ jobs: SyncJob[] }>(),
     'Sync Requested': props<{ mode: SyncMode; source: SyncSource }>(),
     'Sync Succeeded': props<{ job: SyncJob }>(),
     'Sync Failed': props<{ error: string }>(),

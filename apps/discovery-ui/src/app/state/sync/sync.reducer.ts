@@ -25,6 +25,18 @@ export const syncReducer = createReducer(
     loading: true,
     error: null,
   })),
+  on(SyncActions.historyRequested, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+  on(SyncActions.historyLoaded, (state, { jobs }) => ({
+    ...state,
+    jobs,
+    selectedJobId: state.selectedJobId ?? jobs[0]?.id ?? null,
+    loading: false,
+    error: null,
+  })),
   on(SyncActions.syncRequested, (state) => ({
     ...state,
     loading: true,

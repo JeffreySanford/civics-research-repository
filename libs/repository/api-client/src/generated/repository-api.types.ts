@@ -113,7 +113,8 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** List recent repository metadata sync jobs. */
+    get: operations['listRepositorySyncJobs'];
     put?: never;
     /** Start a repository metadata sync. */
     post: operations['startRepositorySync'];
@@ -508,6 +509,27 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['AccessibilityEvidence'][];
+        };
+      };
+      400: components['responses']['BadRequest'];
+    };
+  };
+  listRepositorySyncJobs: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recent sync jobs. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SyncJob'][];
         };
       };
       400: components['responses']['BadRequest'];

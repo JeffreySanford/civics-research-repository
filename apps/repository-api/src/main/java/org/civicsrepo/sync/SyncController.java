@@ -1,6 +1,7 @@
 package org.civicsrepo.sync;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,11 @@ public class SyncController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public SyncJob startSync(@Valid @RequestBody SyncRequest request) {
         return syncService.runSync(request);
+    }
+
+    @GetMapping
+    public List<SyncJob> listSyncJobs() {
+        return syncService.findRecentJobs();
     }
 
     @GetMapping("/{syncJobId}")

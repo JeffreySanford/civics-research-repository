@@ -27,6 +27,10 @@ export class RepositoryAdminApi {
     return this.http.post<SyncJob>(`${this.baseUrl}/admin/sync`, request);
   }
 
+  listSyncJobs(): Observable<SyncJob[]> {
+    return this.http.get<SyncJob[]>(`${this.baseUrl}/admin/sync`);
+  }
+
   getSyncJob(syncJobId: string): Observable<SyncJob> {
     return this.http.get<SyncJob>(`${this.baseUrl}/admin/sync/${syncJobId}`);
   }

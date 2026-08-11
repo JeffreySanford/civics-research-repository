@@ -82,6 +82,7 @@ input:focus-visible {
   padding: 2rem clamp(1rem, 4vw, 3rem) 3rem;
 }
 
+:host ::ng-deep h1,
 :host ::ng-deep h2,
 :host ::ng-deep h3,
 :host ::ng-deep h4,
@@ -89,6 +90,7 @@ input:focus-visible {
   margin-top: 0;
 }
 
+:host ::ng-deep h1,
 :host ::ng-deep h2 {
   margin-bottom: 0.75rem;
   font-size: 2rem;
@@ -133,7 +135,8 @@ input:focus-visible {
 :host ::ng-deep .status-grid,
 :host ::ng-deep .workflow-grid,
 :host ::ng-deep .evidence-list,
-:host ::ng-deep .history-list {
+:host ::ng-deep .history-list,
+:host ::ng-deep .feature-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -148,6 +151,7 @@ input:focus-visible {
 :host ::ng-deep .status-grid span,
 :host ::ng-deep .workflow-grid a,
 :host ::ng-deep .evidence-list li,
+:host ::ng-deep .feature-list li,
 :host ::ng-deep .action-list li {
   display: grid;
   gap: 0.35rem;
@@ -264,6 +268,107 @@ input:focus-visible {
   background: #fff1f0;
   color: #7a271a;
   padding: 0.75rem 1rem;
+}
+
+:host ::ng-deep .map-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+:host ::ng-deep .map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+:host ::ng-deep .layer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+:host ::ng-deep .layer-controls label {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  background: #ffffff;
+  color: #253041;
+  padding: 0.65rem 0.8rem;
+  font-weight: 800;
+}
+
+:host ::ng-deep .layer-controls input {
+  flex: 0 0 auto;
+  min-height: 1.125rem;
+  width: 1.125rem;
+}
+
+:host ::ng-deep .map-stage {
+  position: relative;
+  min-height: 32rem;
+  overflow: hidden;
+  border: 1px solid #9aa8ba;
+  border-radius: 0.5rem;
+  background: #dce8ef;
+}
+
+:host ::ng-deep .map-canvas {
+  height: 32rem;
+  width: 100%;
+}
+
+:host ::ng-deep .map-legend {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  max-width: min(22rem, calc(100% - 2rem));
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 0.75rem 1.5rem rgb(15 23 42 / 16%);
+}
+
+:host ::ng-deep .map-legend h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+:host ::ng-deep .map-legend ul,
+:host ::ng-deep .feature-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .map-legend li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+:host ::ng-deep .swatch {
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 0.85rem;
+  width: 0.85rem;
+  border-radius: 999px;
+}
+
+:host ::ng-deep .swatch.census {
+  background: #2f6f8f;
+}
+
+:host ::ng-deep .swatch.usgs {
+  background: #b45309;
 }
 
 @media (max-width: 58rem) {

@@ -141,6 +141,21 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
   /admin/sync:
+    get:
+      tags: [Admin]
+      operationId: listRepositorySyncJobs
+      summary: List recent repository metadata sync jobs.
+      responses:
+        '200':
+          description: Recent sync jobs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
     post:
       tags: [Admin]
       operationId: startRepositorySync

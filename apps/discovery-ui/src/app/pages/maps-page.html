@@ -1,8 +1,54 @@
-<section aria-labelledby="maps-heading" class="content-panel">
-  <p class="eyebrow">Map preview</p>
-  <h2 id="maps-heading">MapLibre geospatial workspace</h2>
-  <p>
-    The next map slice will render a North Dakota TIGER/Line or LODES layer with
-    USGS overlay controls, attribution, legend, and an accessible feature list.
-  </p>
+<section aria-labelledby="maps-heading" class="map-workspace">
+  <div class="map-toolbar">
+    <div>
+      <p class="eyebrow">Map preview</p>
+      <h2 id="maps-heading">MapLibre geospatial workspace</h2>
+    </div>
+
+    <fieldset class="layer-controls" aria-label="Map layer controls">
+      <label>
+        <input
+          type="checkbox"
+          [checked]="tigerVisible"
+          (change)="toggleTigerLayer($any($event.target).checked)"
+        />
+        TIGER/Line boundary
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          [checked]="earthquakeVisible"
+          (change)="toggleEarthquakeLayer($any($event.target).checked)"
+        />
+        USGS earthquake overlay
+      </label>
+    </fieldset>
+  </div>
+
+  <div class="map-stage">
+    <div #mapCanvas class="map-canvas" aria-label="Interactive map"></div>
+    <aside class="map-legend" aria-label="Visible map layer legend">
+      <h3>Visible layers</h3>
+      <ul>
+        <li><span class="swatch census"></span>2025 TIGER/Line preview</li>
+        <li><span class="swatch usgs"></span>USGS event overlay</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<section aria-labelledby="features-heading" class="content-panel">
+  <h3 id="features-heading">Accessible feature list</h3>
+  <ul class="feature-list">
+    <li>
+      <strong>2025 TIGER/Line - Census Tracts - North Dakota</strong>
+      <span>Boundary preview prepared for repository layer metadata.</span>
+    </li>
+    <li>
+      <strong>USGS earthquake overlay</strong>
+      <span
+        >Sample point layer that will be replaced by synced USGS feeds.</span
+      >
+    </li>
+  </ul>
 </section>

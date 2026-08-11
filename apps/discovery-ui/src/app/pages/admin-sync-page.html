@@ -5,7 +5,7 @@
     <p>
       Trigger the typed Java sync endpoint for the first visual geospatial
       repository object. Dry run shows planned DSpace/Solr actions; apply will
-      use the same workflow when persistence is connected.
+      use the same workflow and persist the job history in Postgres.
     </p>
 
     <div class="button-row">
@@ -89,6 +89,6 @@
     }
   </ul>
   } @else {
-  <p>No sync jobs have been triggered from this UI session.</p>
+  <p>No sync jobs have been stored yet.</p>
   } }
 </section>

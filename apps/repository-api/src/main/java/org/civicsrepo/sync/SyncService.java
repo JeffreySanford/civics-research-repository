@@ -2,15 +2,17 @@ package org.civicsrepo.sync;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SyncService {
-    private final Map<String, SyncJob> jobs = new ConcurrentHashMap<>();
+    private final SyncJobStore syncJobStore;
+
+    public SyncService(SyncJobStore syncJobStore) {
+        this.syncJobStore = syncJobStore;
+    }
 
     public SyncJob runSync(SyncRequest request) {
         OffsetDateTime startedAt = OffsetDateTime.now();
@@ -30,12 +32,15 @@ public class SyncService {
                 startedAt,
                 OffsetDateTime.now(),
                 plannedActions);
-        jobs.put(job.id(), job);
-        return job;
+        return syncJobStore.save(job);
     }
 
     public Optional<SyncJob> findJob(String id) {
-        return Optional.ofNullable(jobs.get(id));
+        return syncJobStore.findById(id);
+    }
+
+    public List<SyncJob> findRecentJobs() {
+        return syncJobStore.findRecent(25);
     }
 
     private String firstSliceItemTitle(SyncSource source) {

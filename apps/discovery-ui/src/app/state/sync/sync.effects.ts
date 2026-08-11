@@ -47,4 +47,25 @@ export class SyncEffects {
       ),
     ),
   );
+
+  readonly loadHistory$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(SyncActions.historyRequested),
+      mergeMap(() =>
+        this.adminApi.listSyncJobs().pipe(
+          map((jobs) => SyncActions.historyLoaded({ jobs })),
+          catchError((error: unknown) =>
+            of(
+              SyncActions.syncFailed({
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : 'Repository sync history failed to load.',
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
