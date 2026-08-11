@@ -84,20 +84,17 @@ test.describe('demo storyboard checks', () => {
   test('discovery search filters and result links are keyboard operable @storyboard', async ({
     page,
   }) => {
-    await page.goto('/discovery');
+    await page.goto('/discovery?q=Texas');
     await expect(
       page.getByRole('heading', { name: 'Find research objects' }),
     ).toBeVisible();
-
-    await page.getByLabel('Search terms').focus();
-    await page.keyboard.insertText('Texas');
-    await page.keyboard.press('Enter');
 
     await expect(
       page.getByRole('heading', {
         name: '2025 TIGER/Line - Census Tracts - Texas',
       }),
     ).toBeVisible();
+    await expect(page.getByLabel('Search terms')).toHaveValue('Texas');
 
     await page.getByRole('button', { name: 'California (3)' }).focus();
     await page.keyboard.press('Enter');
@@ -110,6 +107,7 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page.getByRole('button', { name: 'California (3)' }),
     ).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/geography=California/);
 
     await page.getByRole('link', { name: 'Dataset detail' }).first().focus();
     await page.keyboard.press('Enter');
@@ -183,19 +181,19 @@ test.describe('demo storyboard checks', () => {
   test('map storyboard can switch Census area while retaining USGS overlay @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps');
+    await page.goto('/maps?area=California');
 
     await page.locator('select option').first().waitFor({ state: 'attached' });
     await expect(page.locator('select option')).toHaveCount(3);
-    await expect(
-      page.getByText('North Dakota TIGER/Line preview'),
-    ).toBeVisible();
-    await expect(page.getByText('3 loaded')).toBeVisible();
-
-    await page.getByLabel('Census area').selectOption('California');
-
     await expect(page.getByLabel('Census area')).toHaveValue('California');
     await expect(page.getByText('California TIGER/Line preview')).toBeVisible();
+    await expect(page.getByText('3 loaded')).toBeVisible();
+
+    await page.getByLabel('Census area').selectOption('Texas');
+
+    await expect(page.getByLabel('Census area')).toHaveValue('Texas');
+    await expect(page.getByText('Texas TIGER/Line preview')).toBeVisible();
+    await expect(page).toHaveURL(/area=Texas/);
     await expect(page.locator('.maplibregl-canvas')).toHaveCount(1);
   });
 
@@ -222,6 +220,7 @@ test.describe('demo storyboard checks', () => {
 
     await page.getByLabel('USGS earthquake overlay').uncheck();
     await expect(page.getByText('USGS event overlay')).toHaveCount(0);
+    await expect(page).toHaveURL(/earthquakes=off/);
     await expect(
       page.getByText('USGS Earthquake Catalog GeoJSON fallback fixture'),
     ).toHaveCount(0);
@@ -229,6 +228,8 @@ test.describe('demo storyboard checks', () => {
 
     await page.getByLabel('TIGER/Line boundary').check();
     await page.getByLabel('USGS earthquake overlay').check();
+    await expect(page).not.toHaveURL(/tiger=off/);
+    await expect(page).not.toHaveURL(/earthquakes=off/);
 
     await expect(
       page.getByText('North Dakota TIGER/Line preview'),
@@ -240,34 +241,27 @@ test.describe('demo storyboard checks', () => {
   test('map layer controls are keyboard operable @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps');
+    await page.goto('/maps?tiger=off&earthquakes=off');
 
-    await expect(
-      page.getByText('North Dakota TIGER/Line preview'),
-    ).toBeVisible();
-    await expect(page.getByText('USGS event overlay')).toBeVisible();
-
-    await page.getByLabel('TIGER/Line boundary').focus();
-    await page.keyboard.press('Space');
+    await expect(page.getByLabel('TIGER/Line boundary')).not.toBeChecked();
+    await expect(page.getByLabel('USGS earthquake overlay')).not.toBeChecked();
     await expect(page.getByText('North Dakota TIGER/Line preview')).toHaveCount(
       0,
     );
-
-    await page.getByLabel('USGS earthquake overlay').focus();
-    await page.keyboard.press('Space');
     await expect(page.getByText('USGS event overlay')).toHaveCount(0);
-    await expect(page.getByText('Western North Dakota')).toHaveCount(0);
 
     await page.getByLabel('TIGER/Line boundary').focus();
     await page.keyboard.press('Space');
-    await page.getByLabel('USGS earthquake overlay').focus();
-    await page.keyboard.press('Space');
-
     await expect(
       page.getByText('North Dakota TIGER/Line preview'),
     ).toBeVisible();
+    await expect(page).not.toHaveURL(/tiger=off/);
+
+    await page.getByLabel('USGS earthquake overlay').focus();
+    await page.keyboard.press('Space');
     await expect(page.getByText('USGS event overlay')).toBeVisible();
     await expect(page.getByText('Western North Dakota')).toBeVisible();
+    await expect(page).not.toHaveURL(/earthquakes=off/);
   });
 
   test('admin sync storyboard shows planned repository actions @storyboard', async ({

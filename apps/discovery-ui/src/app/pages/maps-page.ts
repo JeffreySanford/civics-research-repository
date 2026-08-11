@@ -12,8 +12,9 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { combineLatest } from 'rxjs';
+import { combineLatest, distinctUntilChanged, map } from 'rxjs';
 import type {
   GeoJSONSource,
   Map as MapLibreMap,
@@ -32,6 +33,7 @@ import {
   selectMapsError,
   selectMapsLoading,
   selectSelectedCensusAreaBoundary,
+  selectSelectedGeography,
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
 
@@ -79,6 +81,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(Store);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private map: MapLibreMap | null = null;
   private pendingBoundary: CensusAreaBoundary | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
@@ -93,6 +97,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly selectedBoundary$ = this.store.select(
     selectSelectedCensusAreaBoundary,
   );
+  protected readonly selectedGeography$ = this.store.select(
+    selectSelectedGeography,
+  );
   protected readonly earthquakeOverlay$ = this.store.select(
     selectEarthquakeOverlay,
   );
@@ -104,6 +111,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly error$ = this.store.select(selectMapsError);
 
   ngOnInit(): void {
+    this.bindUrlState();
     this.store.dispatch(MapsActions.mapOpened());
 
     this.earthquakeOverlay$
@@ -150,14 +158,93 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   protected toggleTigerLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.tigerLayerToggled({ visible }));
+    this.updateMapUrl({ tigerVisible: visible });
   }
 
   protected toggleEarthquakeLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
+    this.updateMapUrl({ earthquakeVisible: visible });
   }
 
   protected selectCensusArea(geography: string): void {
     this.store.dispatch(MapsActions.censusAreaSelected({ geography }));
+    this.updateMapUrl({ geography });
+  }
+
+  private bindUrlState(): void {
+    this.route.queryParamMap
+      .pipe(
+        map((params) => ({
+          area: params.get('area'),
+          tigerVisible: this.toVisibleState(params.get('tiger')),
+          earthquakeVisible: this.toVisibleState(params.get('earthquakes')),
+        })),
+        distinctUntilChanged(
+          (previous, current) =>
+            previous.area === current.area &&
+            previous.tigerVisible === current.tigerVisible &&
+            previous.earthquakeVisible === current.earthquakeVisible,
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ area, tigerVisible, earthquakeVisible }) => {
+        if (area) {
+          this.store.dispatch(
+            MapsActions.censusAreaSelected({ geography: area }),
+          );
+        }
+
+        if (tigerVisible !== null) {
+          this.store.dispatch(
+            MapsActions.tigerLayerToggled({ visible: tigerVisible }),
+          );
+        }
+
+        if (earthquakeVisible !== null) {
+          this.store.dispatch(
+            MapsActions.earthquakeLayerToggled({ visible: earthquakeVisible }),
+          );
+        }
+      });
+  }
+
+  private updateMapUrl(options: {
+    geography?: string;
+    tigerVisible?: boolean;
+    earthquakeVisible?: boolean;
+  }): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        area: options.geography === undefined ? undefined : options.geography,
+        tiger:
+          options.tigerVisible === undefined
+            ? undefined
+            : this.toLayerParam(options.tigerVisible),
+        earthquakes:
+          options.earthquakeVisible === undefined
+            ? undefined
+            : this.toLayerParam(options.earthquakeVisible),
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private toVisibleState(value: string | null): boolean | null {
+    if (value === 'off') {
+      return false;
+    }
+
+    if (value === 'on') {
+      return true;
+    }
+
+    return null;
+  }
+
+  private toLayerParam(visible: boolean): string | null {
+    return visible ? null : 'off';
   }
 
   private async initializeMap(): Promise<void> {

@@ -8,7 +8,7 @@ import {
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import type { ResearchProgram, SearchQuery } from 'repository-api-client';
 import { SearchActions } from '../state/search/search.actions';
@@ -36,6 +36,8 @@ const PAGE_SIZE = 25;
 })
 export class DiscoveryPage implements OnInit {
   private readonly store = inject(Store);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly searchControl = new FormControl('', {
     nonNullable: true,
@@ -57,10 +59,20 @@ export class DiscoveryPage implements OnInit {
   protected readonly error$ = this.store.select(selectSearchError);
 
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    this.searchControl.setValue(params.get('q') ?? '');
+    this.programControl.setValue(this.toResearchProgram(params.get('program')));
+    this.geographyControl.setValue(params.get('geography') ?? '');
+
     this.submitSearch();
   }
 
   protected submitSearch(): void {
+    this.updateSearchUrl();
+    this.dispatchSearch();
+  }
+
+  private dispatchSearch(): void {
     const baseQuery: SearchQuery = {
       q: this.searchControl.value,
       page: 0,
@@ -104,5 +116,33 @@ export class DiscoveryPage implements OnInit {
     this.programControl.setValue('');
     this.geographyControl.setValue('');
     this.submitSearch();
+  }
+
+  private updateSearchUrl(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: this.searchControl.value || null,
+        program: this.programControl.value || null,
+        geography: this.geographyControl.value || null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private toResearchProgram(value: string | null): ResearchProgram | '' {
+    if (
+      value === 'ACS' ||
+      value === 'CPS' ||
+      value === 'LODES' ||
+      value === 'SIPP' ||
+      value === 'TIGER_LINE' ||
+      value === 'USGS'
+    ) {
+      return value;
+    }
+
+    return '';
   }
 }

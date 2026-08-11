@@ -9,11 +9,16 @@
       Census area
       <select
         #censusAreaSelect
-        [value]="(selectedBoundary$ | async)?.geography ?? 'North Dakota'"
+        [value]="(selectedGeography$ | async) ?? 'North Dakota'"
         (change)="selectCensusArea(censusAreaSelect.value)"
       >
         @for (boundary of censusAreaBoundaries$ | async; track boundary.id) {
-        <option [value]="boundary.geography">{{ boundary.geography }}</option>
+        <option
+          [value]="boundary.geography"
+          [selected]="boundary.geography === (selectedGeography$ | async)"
+        >
+          {{ boundary.geography }}
+        </option>
         }
       </select>
     </label>

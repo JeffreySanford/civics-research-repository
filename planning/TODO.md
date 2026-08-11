@@ -169,7 +169,7 @@ Goal: build an accessible Angular UI for search, facets, dataset details, versio
 - [x] Build search page.
 - [x] Build result card/list component.
 - [x] Build facet panel.
-- [ ] Add URL-driven search state.
+- [x] Add URL-driven search state.
 - [x] Add loading, empty, and error states.
 - [x] Add keyboard interaction tests.
 - [x] Add Playwright storyboard checks for primary demo workflows.
@@ -213,7 +213,7 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 - [ ] Add LODES sample layer or fixture.
 - [x] Add geography filter integration.
 - [ ] Add dataset detail map tab.
-- [ ] Add map state to URL where practical.
+- [x] Add map state to URL where practical.
 
 ### Sprint 4.3 - USGS Overlay Integration
 
