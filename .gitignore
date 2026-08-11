@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.sample
+
+# Build and test output
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local data and generated artifacts
+data/raw/
+data/downloads/
+data/generated/
+tmp/
+
+# Docker and service persistence
+.docker/
+docker/volumes/
+postgres-data/
+solr-data/
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
