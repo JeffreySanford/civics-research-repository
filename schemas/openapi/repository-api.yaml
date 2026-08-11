@@ -19,6 +19,8 @@ tags:
     description: Dataset map layers and USGS overlays.
   - name: Evidence
     description: WCAG and Section 508 evidence summaries.
+  - name: Admin
+    description: Administrative sync and repository maintenance workflows.
 paths:
   /search:
     get:
@@ -138,6 +140,42 @@ paths:
                   $ref: '#/components/schemas/AccessibilityEvidence'
         '400':
           $ref: '#/components/responses/BadRequest'
+  /admin/sync:
+    post:
+      tags: [Admin]
+      operationId: startRepositorySync
+      summary: Start a repository metadata sync.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+      responses:
+        '202':
+          description: Sync job accepted and completed or queued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /admin/sync/{syncJobId}:
+    get:
+      tags: [Admin]
+      operationId: getRepositorySyncJob
+      summary: Get repository sync job status.
+      parameters:
+        - $ref: '#/components/parameters/SyncJobId'
+      responses:
+        '200':
+          description: Sync job status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJob'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   parameters:
     SearchQuery:
@@ -188,6 +226,13 @@ components:
       schema:
         type: string
         pattern: '^[A-Za-z0-9._:-]+$'
+    SyncJobId:
+      name: syncJobId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     BadRequest:
       description: Invalid request.
@@ -420,6 +465,55 @@ components:
           type: array
           items:
             type: string
+    SyncRequest:
+      type: object
+      required: [mode, source]
+      properties:
+        mode:
+          $ref: '#/components/schemas/SyncMode'
+        source:
+          $ref: '#/components/schemas/SyncSource'
+    SyncJob:
+      type: object
+      required: [id, mode, source, status, startedAt, actions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        mode:
+          $ref: '#/components/schemas/SyncMode'
+        source:
+          $ref: '#/components/schemas/SyncSource'
+        status:
+          $ref: '#/components/schemas/SyncStatus'
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAction'
+    SyncAction:
+      type: object
+      required: [actionType, target, detail]
+      properties:
+        actionType:
+          type: string
+          enum:
+            [
+              UPSERT_COMMUNITY,
+              UPSERT_COLLECTION,
+              UPSERT_ITEM,
+              UPSERT_MAP_LAYER,
+              VERIFY_INDEX,
+            ]
+        target:
+          type: string
+        detail:
+          type: string
     ResearchObjectType:
       type: string
       enum: [DATASET, PUBLICATION, CODE, METHODOLOGY, SUPPORTING_MATERIAL]
@@ -442,3 +536,12 @@ components:
           MANUAL_REVIEW_REQUIRED,
           VERIFIED,
         ]
+    SyncMode:
+      type: string
+      enum: [DRY_RUN, APPLY]
+    SyncSource:
+      type: string
+      enum: [TIGER_LINE, LODES, ACS_PUMS, SIPP, CPS, USGS_EARTHQUAKES]
+    SyncStatus:
+      type: string
+      enum: [QUEUED, RUNNING, DRY_RUN_COMPLETE, APPLIED, FAILED]

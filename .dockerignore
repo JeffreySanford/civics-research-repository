@@ -1,0 +1,17 @@
+.git
+.nx
+.angular
+node_modules
+dist
+coverage
+playwright-report
+test-results
+tmp
+data/raw
+data/downloads
+data/generated
+docker/volumes
+postgres-data
+solr-data
+*.log
+vitest.config.*.timestamp*

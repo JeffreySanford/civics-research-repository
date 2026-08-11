@@ -89,18 +89,18 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 
 ### Sprint 1.1 - Docker Platform
 
-- [ ] Add Docker Compose file.
-- [ ] Add persistent Docker volumes for DSpace assets, PostgreSQL, Solr, and mirrored demo artifacts.
-- [ ] Add PostgreSQL service for DSpace.
-- [ ] Add Solr service for DSpace discovery.
+- [x] Add Docker Compose file.
+- [x] Add persistent Docker volumes for API artifacts, PostgreSQL, Solr, pnpm store, and container `node_modules`.
+- [x] Add PostgreSQL service for DSpace.
+- [x] Add Solr service for discovery.
 - [ ] Add DSpace REST service.
-- [ ] Add Java API service.
-- [ ] Add Angular UI service.
-- [ ] Add local environment sample.
+- [x] Add Java API service.
+- [x] Add Angular UI service.
+- [x] Add local environment sample.
 - [ ] Document startup and reset commands.
 - [ ] Verify DSpace API is reachable locally.
-- [ ] Verify Solr is reachable locally.
-- [ ] Verify startup sync creates or updates the seed repository objects.
+- [x] Verify Solr is reachable locally.
+- [x] Verify startup sync creates or updates the seed repository objects.
 
 ### Sprint 1.2 - DSpace Seed Repository
 

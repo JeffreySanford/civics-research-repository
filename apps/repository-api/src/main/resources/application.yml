@@ -1,0 +1,16 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+civics:
+  sync:
+    startup-enabled: true
+    mode: DRY_RUN
+    source: TIGER_LINE
+  dspace:
+    base-url: http://dspace-rest:8080/server
+  solr:
+    base-url: http://solr:8983/solr
+  storage:
+    artifacts-path: /var/lib/civics/artifacts

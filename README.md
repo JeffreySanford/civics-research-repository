@@ -81,7 +81,7 @@ civics-research-repository/
 
 ## Current Status
 
-Planning and documentation scaffold only. Implementation will start with one vertical slice:
+Initial Nx, Angular, OpenAPI, accessibility, Docker, and Java API scaffolding are in place. Implementation is now moving through one vertical slice:
 
 ```text
 Public dataset metadata
@@ -97,6 +97,9 @@ Public dataset metadata
 
 ```bash
 pnpm run start:all
+pnpm run docker:down
+pnpm run sync:dry-run
+pnpm run sync:apply
 pnpm run test:all
 pnpm run quality:all
 pnpm run openapi:generate
@@ -104,6 +107,8 @@ pnpm run openapi:check
 pnpm run wcag:report
 pnpm run section508:report
 ```
+
+`start:all` runs the Docker Compose stack. The Java API is exposed at `http://localhost:8080/api`, the Angular UI at `http://localhost:4200`, PostgreSQL at `localhost:5432`, and Solr at `http://localhost:8983`.
 
 `wcag:report` and `section508:report` run the Playwright/axe checks with a console reporter so pass/fail results are visible in terminal output.
 

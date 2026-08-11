@@ -106,6 +106,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start a repository metadata sync. */
+    post: operations['startRepositorySync'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/sync/{syncJobId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get repository sync job status. */
+    get: operations['getRepositorySyncJob'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -215,6 +249,33 @@ export interface components {
       message: string;
       details?: string[];
     };
+    SyncRequest: {
+      mode: components['schemas']['SyncMode'];
+      source: components['schemas']['SyncSource'];
+    };
+    SyncJob: {
+      /** Format: uuid */
+      id: string;
+      mode: components['schemas']['SyncMode'];
+      source: components['schemas']['SyncSource'];
+      status: components['schemas']['SyncStatus'];
+      /** Format: date-time */
+      startedAt: string;
+      /** Format: date-time */
+      completedAt?: string;
+      actions: components['schemas']['SyncAction'][];
+    };
+    SyncAction: {
+      /** @enum {string} */
+      actionType:
+        | 'UPSERT_COMMUNITY'
+        | 'UPSERT_COLLECTION'
+        | 'UPSERT_ITEM'
+        | 'UPSERT_MAP_LAYER'
+        | 'VERIFY_INDEX';
+      target: string;
+      detail: string;
+    };
     /** @enum {string} */
     ResearchObjectType:
       | 'DATASET'
@@ -254,6 +315,23 @@ export interface components {
       | 'AUTOMATED_FAIL'
       | 'MANUAL_REVIEW_REQUIRED'
       | 'VERIFIED';
+    /** @enum {string} */
+    SyncMode: 'DRY_RUN' | 'APPLY';
+    /** @enum {string} */
+    SyncSource:
+      | 'TIGER_LINE'
+      | 'LODES'
+      | 'ACS_PUMS'
+      | 'SIPP'
+      | 'CPS'
+      | 'USGS_EARTHQUAKES';
+    /** @enum {string} */
+    SyncStatus:
+      | 'QUEUED'
+      | 'RUNNING'
+      | 'DRY_RUN_COMPLETE'
+      | 'APPLIED'
+      | 'FAILED';
   };
   responses: {
     /** @description Invalid request. */
@@ -284,6 +362,7 @@ export interface components {
     Page: number;
     PageSize: number;
     DatasetId: string;
+    SyncJobId: string;
   };
   requestBodies: never;
   headers: never;
@@ -432,6 +511,54 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+    };
+  };
+  startRepositorySync: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SyncRequest'];
+      };
+    };
+    responses: {
+      /** @description Sync job accepted and completed or queued. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SyncJob'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+    };
+  };
+  getRepositorySyncJob: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        syncJobId: components['parameters']['SyncJobId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sync job status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SyncJob'];
+        };
+      };
+      404: components['responses']['NotFound'];
     };
   };
 }

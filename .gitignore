@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Environment
 .env
@@ -9,6 +10,7 @@ node_modules/
 # Build and test output
 dist/
 build/
+.gradle/
 coverage/
 playwright-report/
 test-results/

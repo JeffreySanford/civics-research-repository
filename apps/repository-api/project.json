@@ -1,0 +1,34 @@
+{
+  "name": "repository-api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/repository-api/src/main/java",
+  "tags": ["type:api", "runtime:java"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -f apps/repository-api/Dockerfile --target runtime -t civics-repository-api:local ."
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -f apps/repository-api/Dockerfile --target test ."
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose up repository-api"
+      }
+    },
+    "sync": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose exec repository-api java -jar /app/repository-api.jar --civics.sync.mode=DRY_RUN"
+      }
+    }
+  }
+}
