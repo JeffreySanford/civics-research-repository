@@ -25,7 +25,7 @@
     "nx": "nx",
     "dev": "pnpm run start:all",
     "start": "pnpm nx run discovery-ui:serve",
-    "start:all": "docker compose up",
+    "start:all": "docker compose down --remove-orphans && docker compose up",
     "start:ui": "pnpm nx run discovery-ui:serve",
     "start:api": "pnpm nx run repository-api:serve",
     "docker:up": "docker compose up",
