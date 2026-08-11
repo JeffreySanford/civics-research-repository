@@ -81,11 +81,12 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [ ] Select OpenAPI-to-Java DTO generation tool.
 - [ ] Generate `apps/repository-api`.
 - [ ] Generate Java DTOs from OpenAPI.
-- [ ] Generate Angular TypeScript API client methods from OpenAPI.
+- [x] Generate Angular TypeScript API client methods from OpenAPI.
 - [ ] Add typed NgRx feature state for search.
 - [ ] Add typed NgRx feature state for dataset detail.
 - [ ] Add typed NgRx feature state for map overlays.
 - [ ] Add typed NgRx feature state for accessibility evidence.
+- [x] Add typed NgRx feature state for admin sync.
 
 ### Sprint 1.1 - Docker Platform
 
@@ -162,8 +163,8 @@ Goal: build an accessible Angular UI for search, facets, dataset details, versio
 ### Sprint 3.1 - Search and Facets
 
 - [x] Scaffold Angular discovery application.
-- [ ] Replace starter shell with search route and app navigation.
-- [ ] Define repository API client methods from generated OpenAPI types.
+- [x] Replace starter shell with routed app navigation.
+- [x] Define repository API client methods from generated OpenAPI types.
 - [ ] Build search page.
 - [ ] Build result card/list component.
 - [ ] Build facet panel.
@@ -183,12 +184,12 @@ Goal: build an accessible Angular UI for search, facets, dataset details, versio
 
 ### Sprint 3.3 - Admin Sync Workflow
 
-- [ ] Build admin route.
-- [ ] Add sync status summary.
-- [ ] Add manual dry-run sync button.
-- [ ] Add manual apply sync button.
-- [ ] Show create, update, skip, and failure results.
-- [ ] Add typed NgRx state for sync jobs.
+- [x] Build admin route.
+- [x] Add sync status summary.
+- [x] Add manual dry-run sync button.
+- [x] Add manual apply sync button.
+- [x] Show create, update, skip, and failure results.
+- [x] Add typed NgRx state for sync jobs.
 
 ## PI 4 - Mapping and USGS Overlays
 

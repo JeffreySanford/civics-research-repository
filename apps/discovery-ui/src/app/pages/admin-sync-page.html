@@ -1,0 +1,94 @@
+<section aria-labelledby="admin-sync-heading" class="admin-layout">
+  <div class="content-panel">
+    <p class="eyebrow">Admin workflow</p>
+    <h2 id="admin-sync-heading">Repository sync</h2>
+    <p>
+      Trigger the typed Java sync endpoint for the first visual geospatial
+      repository object. Dry run shows planned DSpace/Solr actions; apply will
+      use the same workflow when persistence is connected.
+    </p>
+
+    <div class="button-row">
+      <button
+        mat-flat-button
+        type="button"
+        (click)="requestDryRun()"
+        [disabled]="loading$ | async"
+      >
+        Dry run sync
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="requestApply()"
+        [disabled]="loading$ | async"
+      >
+        Apply sync
+      </button>
+    </div>
+
+    @if (loading$ | async) {
+    <div class="inline-status" role="status">
+      <mat-spinner diameter="24"></mat-spinner>
+      <span>Sync request running</span>
+    </div>
+    } @if (error$ | async; as error) {
+    <p class="error-message" role="alert">{{ error }}</p>
+    }
+  </div>
+
+  @if (selectedJob$ | async; as job) {
+  <article class="content-panel" aria-labelledby="selected-job-heading">
+    <p class="eyebrow">{{ job.source }}</p>
+    <h3 id="selected-job-heading">Selected sync job</h3>
+    <dl class="details-list">
+      <div>
+        <dt>Status</dt>
+        <dd>{{ job.status }}</dd>
+      </div>
+      <div>
+        <dt>Mode</dt>
+        <dd>{{ job.mode }}</dd>
+      </div>
+      <div>
+        <dt>Started</dt>
+        <dd>{{ job.startedAt | date: 'medium' }}</dd>
+      </div>
+    </dl>
+
+    <h4>Planned actions</h4>
+    <ol class="action-list">
+      @for (action of job.actions; track action.actionType + action.target) {
+      <li>
+        <strong>{{ action.actionType }}</strong>
+        <span>{{ action.target }}</span>
+        <p>{{ action.detail }}</p>
+      </li>
+      }
+    </ol>
+  </article>
+  } @else {
+  <article class="content-panel" aria-labelledby="empty-job-heading">
+    <h3 id="empty-job-heading">No sync job selected</h3>
+    <p>Run a dry sync to preview repository actions.</p>
+  </article>
+  }
+</section>
+
+<section aria-labelledby="history-heading" class="content-panel">
+  <h3 id="history-heading">Sync history</h3>
+  @if (jobs$ | async; as jobs) { @if (jobs.length > 0) {
+  <ul class="history-list">
+    @for (job of jobs; track job.id) {
+    <li>
+      <button type="button" (click)="selectJob(job.id)">
+        <strong>{{ job.status }}</strong>
+        <span>{{ job.source }} - {{ job.startedAt | date: 'short' }}</span>
+      </button>
+    </li>
+    }
+  </ul>
+  } @else {
+  <p>No sync jobs have been triggered from this UI session.</p>
+  } }
+</section>

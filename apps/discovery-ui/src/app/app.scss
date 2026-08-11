@@ -1,8 +1,8 @@
 :host {
   display: block;
   min-height: 100vh;
-  color: #1b1f24;
-  background: #f6f8fb;
+  color: #172033;
+  background: #f4f7fb;
   font-family: Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -27,144 +27,257 @@
 }
 
 .app-header {
-  border-bottom: 1px solid #ccd4df;
+  border-bottom: 1px solid #cbd5e1;
   background: #ffffff;
-  padding: 2rem clamp(1rem, 4vw, 4rem);
 }
 
-.app-header > div,
-.app-main {
-  margin: 0 auto;
-  max-width: 72rem;
-}
-
-.eyebrow {
-  margin: 0 0 0.5rem;
-  color: #405064;
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-h1,
-h2,
-p {
-  margin-top: 0;
-}
-
-h1 {
-  margin-bottom: 0.75rem;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 1.05;
-}
-
-h2 {
-  margin-bottom: 0.5rem;
-  font-size: 1.35rem;
-  line-height: 1.2;
-}
-
-.lede {
-  max-width: 48rem;
-  color: #334155;
-  font-size: 1.125rem;
-  line-height: 1.6;
-}
-
-.app-main {
-  padding: 2rem clamp(1rem, 4vw, 4rem) 3rem;
-}
-
-.search-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 32rem);
-  gap: 1.5rem;
-  align-items: end;
-  border: 1px solid #ccd4df;
-  border-radius: 0.5rem;
-  background: #ffffff;
-  padding: 1.5rem;
-}
-
-.search-panel p,
-.workstreams span {
-  color: #405064;
-  line-height: 1.5;
-}
-
-.search-form {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.search-form label {
-  color: #253041;
-  font-weight: 700;
-}
-
-.search-row {
+.app-header__inner {
   display: flex;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 76rem;
+  padding: 1rem clamp(1rem, 4vw, 3rem);
 }
 
-input,
-button {
-  min-height: 2.75rem;
+.brand {
+  color: #172033;
+  font-size: 1.125rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+nav a {
   border-radius: 0.25rem;
-  font: inherit;
-}
-
-input {
-  min-width: 0;
-  flex: 1;
-  border: 1px solid #8a97a8;
-  padding: 0 0.875rem;
-}
-
-button {
-  border: 1px solid #0b57d0;
-  background: #0b57d0;
-  color: #ffffff;
-  cursor: pointer;
+  color: #334155;
   font-weight: 700;
-  padding: 0 1rem;
+  padding: 0.625rem 0.75rem;
+  text-decoration: none;
 }
 
+nav a:hover,
+nav a.active {
+  background: #dbeafe;
+  color: #0b3b75;
+}
+
+a:focus-visible,
 button:focus-visible,
 input:focus-visible {
   outline: 3px solid #0b57d0;
   outline-offset: 3px;
 }
 
-.workstreams {
-  margin-top: 2rem;
+.app-main {
+  margin: 0 auto;
+  max-width: 76rem;
+  padding: 2rem clamp(1rem, 4vw, 3rem) 3rem;
 }
 
-.workstreams ul {
+:host ::ng-deep h2,
+:host ::ng-deep h3,
+:host ::ng-deep h4,
+:host ::ng-deep p {
+  margin-top: 0;
+}
+
+:host ::ng-deep h2 {
+  margin-bottom: 0.75rem;
+  font-size: 2rem;
+  line-height: 1.15;
+}
+
+:host ::ng-deep h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+:host ::ng-deep p {
+  color: #405064;
+  line-height: 1.55;
+}
+
+:host ::ng-deep .eyebrow {
+  margin: 0 0 0.5rem;
+  color: #45566f;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+:host ::ng-deep .hero-panel,
+:host ::ng-deep .content-panel,
+:host ::ng-deep .search-panel {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  padding: 1.5rem;
+}
+
+:host ::ng-deep .hero-panel {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
+  gap: 1.5rem;
+  align-items: center;
+}
+
+:host ::ng-deep .status-grid,
+:host ::ng-deep .workflow-grid,
+:host ::ng-deep .evidence-list,
+:host ::ng-deep .history-list {
   list-style: none;
-  margin: 1rem 0 0;
+  margin: 0;
   padding: 0;
 }
 
-.workstreams li {
+:host ::ng-deep .status-grid {
   display: grid;
-  gap: 0.5rem;
-  border: 1px solid #ccd4df;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+:host ::ng-deep .status-grid span,
+:host ::ng-deep .workflow-grid a,
+:host ::ng-deep .evidence-list li,
+:host ::ng-deep .action-list li {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid #d7dee8;
   border-radius: 0.5rem;
-  background: #ffffff;
+  background: #f8fafc;
   padding: 1rem;
 }
 
-@media (max-width: 54rem) {
-  .search-panel,
-  .workstreams ul {
-    grid-template-columns: 1fr;
+:host ::ng-deep .workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+:host ::ng-deep .workflow-grid h2 {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+:host ::ng-deep .workflow-grid a {
+  color: #172033;
+  text-decoration: none;
+}
+
+:host ::ng-deep .workflow-grid a:hover {
+  border-color: #0b57d0;
+}
+
+:host ::ng-deep .search-panel,
+:host ::ng-deep .admin-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+:host ::ng-deep .search-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .search-form label,
+:host ::ng-deep dt {
+  color: #253041;
+  font-weight: 800;
+}
+
+:host ::ng-deep .search-row,
+:host ::ng-deep .button-row,
+:host ::ng-deep .inline-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+:host ::ng-deep input,
+:host ::ng-deep button {
+  min-height: 2.75rem;
+  border-radius: 0.25rem;
+  font: inherit;
+}
+
+:host ::ng-deep input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #8a97a8;
+  padding: 0 0.875rem;
+}
+
+:host ::ng-deep .details-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+:host ::ng-deep .details-list div {
+  border: 1px solid #d7dee8;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+:host ::ng-deep .details-list dd {
+  margin: 0.25rem 0 0;
+}
+
+:host ::ng-deep .action-list {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.25rem;
+}
+
+:host ::ng-deep .history-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+:host ::ng-deep .history-list button {
+  display: grid;
+  width: 100%;
+  border: 1px solid #d7dee8;
+  background: #ffffff;
+  color: #172033;
+  cursor: pointer;
+  padding: 0.875rem;
+  text-align: left;
+}
+
+:host ::ng-deep .error-message {
+  border-left: 4px solid #b42318;
+  background: #fff1f0;
+  color: #7a271a;
+  padding: 0.75rem 1rem;
+}
+
+@media (max-width: 58rem) {
+  .app-header__inner,
+  nav {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  .search-row {
-    flex-direction: column;
+  :host ::ng-deep .hero-panel,
+  :host ::ng-deep .search-panel,
+  :host ::ng-deep .admin-layout,
+  :host ::ng-deep .workflow-grid,
+  :host ::ng-deep .details-list {
+    grid-template-columns: 1fr;
   }
 }

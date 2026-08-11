@@ -1,0 +1,39 @@
+<section aria-labelledby="overview-heading" class="hero-panel">
+  <div>
+    <p class="eyebrow">Docker-first open science demo</p>
+    <h1 id="overview-heading">
+      Census geospatial discovery with repository sync
+    </h1>
+    <p>
+      Run the local stack, sync a North Dakota TIGER/Line repository object,
+      expose it through a typed Java API, and prepare it for search, maps, and
+      accessibility evidence.
+    </p>
+  </div>
+  <div class="status-grid" aria-label="Current platform status">
+    <span><strong>API</strong> Java 21</span>
+    <span><strong>Sync</strong> Startup + admin</span>
+    <span><strong>Search</strong> Solr ready</span>
+    <span><strong>Storage</strong> Docker volumes</span>
+  </div>
+</section>
+
+<section aria-labelledby="workflow-heading" class="workflow-grid">
+  <h2 id="workflow-heading">Demo workflows</h2>
+  <a routerLink="/discovery">
+    <strong>Discovery</strong>
+    <span>Search, facets, and dataset result scaffolding.</span>
+  </a>
+  <a routerLink="/admin/sync">
+    <strong>Admin sync</strong>
+    <span>Trigger dry-run or apply sync against the Java API.</span>
+  </a>
+  <a routerLink="/evidence">
+    <strong>Accessibility evidence</strong>
+    <span>Review WCAG and Section 508 automation status.</span>
+  </a>
+  <a routerLink="/maps">
+    <strong>Map preview</strong>
+    <span>MapLibre shell target for TIGER/Line and USGS overlays.</span>
+  </a>
+</section>

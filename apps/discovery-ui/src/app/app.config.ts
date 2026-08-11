@@ -3,16 +3,20 @@ import {
   isDevMode,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
-import { provideStore } from '@ngrx/store';
+import { provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { appRoutes } from './app.routes';
+import { SyncEffects } from './state/sync/sync.effects';
+import { syncFeatureKey, syncReducer } from './state/sync/sync.reducer';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    provideHttpClient(),
     provideRouter(appRoutes),
     provideStore(
       {},
@@ -22,12 +26,13 @@ export const appConfig: ApplicationConfig = {
           strictActionImmutability: true,
           strictStateSerializability: true,
           strictActionSerializability: true,
-          strictActionWithinNgZone: true,
+          strictActionWithinNgZone: false,
           strictActionTypeUniqueness: true,
         },
       },
     ),
-    provideEffects([]),
+    provideState(syncFeatureKey, syncReducer),
+    provideEffects([SyncEffects]),
     provideRouterStore(),
     provideStoreDevtools({
       maxAge: 25,
