@@ -8,13 +8,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ConfigurableApplicationContext;
 
 class SyncServiceTest {
     @Test
     void dryRunReturnsPlannedActions() {
-        SyncService syncService = new SyncService(new TestSyncJobStore());
+        SyncService syncService = newSyncService(new TestSyncJobStore());
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DRY_RUN, SyncSource.TIGER_LINE));
 
@@ -25,7 +25,7 @@ class SyncServiceTest {
     @Test
     void completedJobsCanBeListedFromStore() {
         TestSyncJobStore store = new TestSyncJobStore();
-        SyncService syncService = new SyncService(store);
+        SyncService syncService = newSyncService(store);
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DRY_RUN, SyncSource.TIGER_LINE));
 
@@ -33,9 +33,28 @@ class SyncServiceTest {
     }
 
     @Test
+    void failedSyncIsPersistedWithFailureAction() {
+        TestSyncJobStore store = new TestSyncJobStore();
+        SyncService syncService = new SyncService(store, (request, actions) -> {
+            throw new IllegalStateException("DSpace is unavailable.");
+        });
+
+        SyncJob job = syncService.runSync(new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE));
+
+        assertThat(job.status()).isEqualTo(SyncStatus.FAILED);
+        assertThat(job.completedAt()).isNotNull();
+        assertThat(job.actions())
+                .anySatisfy(action -> {
+                    assertThat(action.actionType()).isEqualTo("SYNC_FAILED");
+                    assertThat(action.detail()).isEqualTo("DSpace is unavailable.");
+                });
+        assertThat(syncService.findRecentJobs()).containsExactly(job);
+    }
+
+    @Test
     void cliRunnerRunsSyncAndClosesApplicationContext() {
         TestSyncJobStore store = new TestSyncJobStore();
-        SyncService syncService = new SyncService(store);
+        SyncService syncService = newSyncService(store);
         ConfigurableApplicationContext applicationContext = mock(ConfigurableApplicationContext.class);
         CliSyncRunner runner = new CliSyncRunner(
                 applicationContext,
@@ -57,7 +76,7 @@ class SyncServiceTest {
     @Test
     void cliRunnerDoesNothingWhenCliModeIsDisabled() {
         TestSyncJobStore store = new TestSyncJobStore();
-        SyncService syncService = new SyncService(store);
+        SyncService syncService = newSyncService(store);
         ConfigurableApplicationContext applicationContext = mock(ConfigurableApplicationContext.class);
         CliSyncRunner runner = new CliSyncRunner(
                 applicationContext,
@@ -73,7 +92,7 @@ class SyncServiceTest {
     @Test
     void startupRunnerSkipsWhenCliModeIsEnabled() {
         TestSyncJobStore store = new TestSyncJobStore();
-        SyncService syncService = new SyncService(store);
+        SyncService syncService = newSyncService(store);
         StartupSyncRunner runner =
                 new StartupSyncRunner(new SyncProperties(true, true, SyncMode.DRY_RUN, SyncSource.TIGER_LINE), syncService);
 
@@ -82,11 +101,16 @@ class SyncServiceTest {
         assertThat(syncService.findRecentJobs()).isEmpty();
     }
 
+    private SyncService newSyncService(TestSyncJobStore syncJobStore) {
+        return new SyncService(syncJobStore, (request, actions) -> {});
+    }
+
     private static final class TestSyncJobStore implements SyncJobStore {
         private final List<SyncJob> jobs = new ArrayList<>();
 
         @Override
         public SyncJob save(SyncJob job) {
+            jobs.removeIf((existingJob) -> existingJob.id().equals(job.id()));
             jobs.add(0, job);
             return job;
         }

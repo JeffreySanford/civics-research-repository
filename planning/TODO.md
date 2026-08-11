@@ -130,7 +130,7 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 - [ ] Generate DSpace-ready item payload.
 - [x] Add dry-run mode.
 - [ ] Add diff mode to compare source metadata with DSpace item state.
-- [ ] Add logging and error handling.
+- [x] Add logging and error handling.
 - [x] Add unit tests for metadata normalization.
 
 ### Sprint 2.2 - Additional Census Sources

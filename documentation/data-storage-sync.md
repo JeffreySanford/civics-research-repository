@@ -169,6 +169,8 @@ Track sync state in the Java API persistence layer and expose it through typed A
 - DSpace item ID.
 - Solr indexed timestamp where available.
 
+The current Java API persists each sync job as `RUNNING` before action execution, then updates that same job to `DRY_RUN_COMPLETE`, `APPLIED`, or `FAILED`. Failed runs are returned through the same typed API response with a `SYNC_FAILED` action so the admin UI and CLI/script paths can display the failure without losing job history.
+
 ## Initial Sync Scope
 
 The first vertical slice should favor a visual geospatial dataset while still preserving repository metadata depth:
