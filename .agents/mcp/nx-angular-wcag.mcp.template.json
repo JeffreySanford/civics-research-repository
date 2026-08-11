@@ -1,0 +1,24 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/draft/mcp.json",
+  "mcpServers": {
+    "nx-workspace": {
+      "description": "Template placeholder for an Nx workspace MCP server. Install a concrete server before enabling.",
+      "command": "node",
+      "args": ["tools/mcp/nx-workspace-server/index.js"],
+      "env": {
+        "WORKSPACE_ROOT": "."
+      },
+      "disabled": true
+    },
+    "accessibility-evidence": {
+      "description": "Template placeholder for a project accessibility evidence MCP server.",
+      "command": "node",
+      "args": ["tools/mcp/accessibility-evidence-server/index.js"],
+      "env": {
+        "WORKSPACE_ROOT": ".",
+        "EVIDENCE_ROOT": "documentation/accessibility-evidence"
+      },
+      "disabled": true
+    }
+  }
+}

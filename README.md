@@ -21,12 +21,15 @@ The target experience is a Census-style Open Science portal that supports:
 ## Planned Stack
 
 - Angular for the public discovery and visualization UI.
+- Nx for workspace orchestration, generators, project graph, and affected-task execution.
 - DSpace for repository content, metadata, item/version/file management, and REST APIs.
 - Apache Solr for discovery search, facets, and relevance.
 - PostgreSQL for DSpace persistence.
 - Docker Compose for local development.
 - Optional NestJS or Node-based harvester for public dataset metadata ingestion.
 - MapLibre GL or Leaflet for accessible geospatial visualization.
+- Angular Material using Material Design patterns.
+- Playwright, axe-core, and manual assistive-technology review for WCAG and Section 508 evidence.
 
 ## Public Data Sources
 
@@ -54,7 +57,12 @@ civics-research-repository/
 │   ├── data-sources.md
 │   ├── mapping-visualization.md
 │   ├── accessibility-508-wcag.md
+│   ├── nx-angular-wcag.md
 │   └── docker-dspace-solr-postgres.md
+├── .agents/
+│   ├── AGENTS.md
+│   ├── nx-angular-wcag.md
+│   └── mcp/
 ├── planning/
 │   └── TODO.md
 └── README.md

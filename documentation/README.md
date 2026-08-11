@@ -9,6 +9,7 @@ This directory captures the product, architecture, data, accessibility, and plat
 - [Mapping Visualization](mapping-visualization.md): geospatial UX, map layers, USGS overlays, and accessibility requirements.
 - [508/WCAG Accessibility](accessibility-508-wcag.md): accessibility standards, automated checks, and manual validation evidence.
 - [Docker, DSpace, Solr, PostgreSQL](docker-dspace-solr-postgres.md): local platform plan and service responsibilities.
+- [Nx, Angular 22, Material Design, WCAG, and Section 508](nx-angular-wcag.md): frontend workspace baseline and automated accessibility direction.
 
 ## Positioning
 

@@ -1,0 +1,16 @@
+{
+  "name": "repository-models",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/repository/models/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project repository-models --web",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config=libs/repository/models/vitest.config.mts"
+      }
+    }
+  }
+}

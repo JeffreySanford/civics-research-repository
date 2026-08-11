@@ -12,6 +12,7 @@ build/
 coverage/
 playwright-report/
 test-results/
+.nx/
 
 # Logs
 *.log
@@ -37,3 +38,9 @@ solr-data/
 Thumbs.db
 .idea/
 .vscode/
+
+.angular
+
+__screenshots__/
+
+vitest.config.*.timestamp*

@@ -1,0 +1,31 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2024",
+    "module": "ES2022",
+    "lib": ["ES2024", "DOM"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "shared-ui": ["./libs/shared/ui/src/index.ts"],
+      "shared-material": ["./libs/shared/material/src/index.ts"],
+      "shared-accessibility": ["./libs/shared/accessibility/src/index.ts"],
+      "maps-visualization": ["./libs/maps/visualization/src/index.ts"],
+      "repository-models": ["./libs/repository/models/src/index.ts"],
+      "repository-api-client": ["./libs/repository/api-client/src/index.ts"],
+      "maps-usgs-overlays": ["./libs/maps/usgs-overlays/src/index.ts"],
+      "data-sources-census": ["./libs/data-sources/census/src/index.ts"],
+      "data-sources-usgs": ["./libs/data-sources/usgs/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

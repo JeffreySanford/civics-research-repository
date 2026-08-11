@@ -1,0 +1,16 @@
+{
+  "name": "maps-usgs-overlays",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/maps/usgs-overlays/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project maps-usgs-overlays --web",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config=libs/maps/usgs-overlays/vitest.config.mts"
+      }
+    }
+  }
+}

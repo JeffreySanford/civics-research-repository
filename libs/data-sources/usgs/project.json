@@ -1,0 +1,16 @@
+{
+  "name": "data-sources-usgs",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data-sources/usgs/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project data-sources-usgs --web",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config=libs/data-sources/usgs/vitest.config.mts"
+      }
+    }
+  }
+}

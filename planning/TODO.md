@@ -19,6 +19,9 @@ Goal: establish the project direction, documentation base, and working backlog.
 
 ### Sprint 0.2 - Architecture and Prototype Scope
 
+- [x] Add Nx, Angular 22, Material Design, WCAG, and Section 508 workspace baseline.
+- [x] Add project-specific `.agents` guidance.
+- [x] Add MCP template notes for Nx and accessibility evidence.
 - [ ] Create C4 context diagram.
 - [ ] Create container diagram for Angular, DSpace, Solr, PostgreSQL, and harvester.
 - [ ] Create sequence diagram for public dataset ingestion.
@@ -27,6 +30,28 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [ ] Define first vertical slice acceptance criteria.
 - [ ] Decide Angular map library: MapLibre GL or Leaflet.
 - [ ] Confirm DSpace Docker baseline.
+
+### Sprint 0.3 - Nx Workspace Generation
+
+- [x] Install pnpm dependencies.
+- [x] Verify Nx 23.1.1 local CLI.
+- [x] Confirm Nx 23 Angular generator does not support `--dry-run`.
+- [x] Generate Angular 22 `discovery-ui` app.
+- [x] Generate Playwright e2e project.
+- [x] Generate shared UI library.
+- [x] Generate shared Material library.
+- [x] Generate shared accessibility library.
+- [x] Generate repository models and API client libraries.
+- [x] Generate map visualization and USGS overlay libraries.
+- [x] Generate Census and USGS data-source libraries.
+- [x] Add first accessibility target using Playwright and axe-core.
+- [x] Verify `pnpm nx show projects`.
+- [x] Verify `pnpm nx run discovery-ui:build`.
+- [x] Verify `pnpm nx run-many -t test --all`.
+- [x] Verify `pnpm nx run-many -t lint --all`.
+- [x] Verify `pnpm nx run discovery-ui-e2e:accessibility`.
+- [ ] Review Nx 24 migration warnings for inferred ESLint and Vitest targets.
+- [ ] Resolve Analog/Vitest Angular `tsconfig.app.json` warning for non-buildable Angular libraries.
 
 ## PI 1 - Local Repository Platform
 
