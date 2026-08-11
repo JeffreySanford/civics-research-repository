@@ -256,9 +256,30 @@ export interface components {
     };
     UsgsEarthquakeOverlay: {
       source: string;
+      /** Format: uri */
+      sourceUrl: string;
+      attribution: string;
       /** Format: date-time */
       updatedAt: string;
+      /** Format: date-time */
+      staleAfter: string;
+      fallback: boolean;
+      query: components['schemas']['UsgsEarthquakeQuery'];
       features: components['schemas']['UsgsEarthquakeFeature'][];
+    };
+    UsgsEarthquakeQuery: {
+      /** Format: double */
+      minMagnitude: number;
+      /** Format: int32 */
+      days: number;
+      /** Format: double */
+      minLatitude: number;
+      /** Format: double */
+      maxLatitude: number;
+      /** Format: double */
+      minLongitude: number;
+      /** Format: double */
+      maxLongitude: number;
     };
     UsgsEarthquakeFeature: {
       id: string;

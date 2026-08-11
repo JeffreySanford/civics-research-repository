@@ -138,7 +138,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   );
   protected readonly earthquakeStale$ = this.earthquakeOverlay$.pipe(
     map((overlay) =>
-      overlay ? this.isOverlayStale(overlay.updatedAt) : false,
+      overlay ? this.isOverlayStale(overlay.staleAfter) : false,
     ),
   );
   protected readonly tigerVisible$ = this.store.select(selectTigerVisible);
@@ -293,14 +293,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     return visible ? null : 'off';
   }
 
-  private isOverlayStale(updatedAt: string): boolean {
-    const updatedTime = new Date(updatedAt).getTime();
+  private isOverlayStale(staleAfter: string): boolean {
+    const staleAfterTime = new Date(staleAfter).getTime();
 
-    if (Number.isNaN(updatedTime)) {
+    if (Number.isNaN(staleAfterTime)) {
       return true;
     }
 
-    return Date.now() - updatedTime > 1000 * 60 * 60 * 24;
+    return Date.now() > staleAfterTime;
   }
 
   private async initializeMap(): Promise<void> {

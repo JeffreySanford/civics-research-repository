@@ -27,6 +27,31 @@ The first map should support:
 - Hydrography or water reference layers.
 - Elevation/topographic reference layers.
 
+## USGS Attribution And Freshness
+
+USGS-authored data is generally public domain, but the platform should still acknowledge USGS as the source. The current earthquake overlay uses:
+
+- Attribution: `U.S. Geological Survey Earthquake Hazards Program`.
+- Source URL: `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson`.
+- Source label: `USGS Earthquake Catalog GeoJSON`.
+
+Overlay responses must carry normalized metadata alongside map features:
+
+- `source`: human-readable feed or fixture name.
+- `sourceUrl`: stable public URL for the source or query family.
+- `attribution`: visible credit line for UI and exports.
+- `updatedAt`: time the source response or fallback fixture was generated.
+- `staleAfter`: time after which the UI should warn that the overlay may be stale.
+- `fallback`: whether local fallback data is being shown.
+- `query`: filter and bounding-box values used to request the overlay.
+
+The map must show attribution and update/freshness status outside the canvas so the same information is available to keyboard and screen-reader users. If the live USGS request fails, the UI can keep Census and LODES layers visible while showing an overlay-unavailable or fallback state.
+
+References:
+
+- [USGS Copyrights and Credits](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits)
+- [Acknowledging or Crediting USGS](https://www.usgs.gov/information-policies-and-instructions/acknowledging-or-crediting-usgs)
+
 ## Visualization Scenarios
 
 ### LODES Employment With USGS Context

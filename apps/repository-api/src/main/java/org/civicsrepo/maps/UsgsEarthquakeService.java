@@ -21,7 +21,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class UsgsEarthquakeService {
     private static final String USGS_ENDPOINT = "https://earthquake.usgs.gov/fdsnws/event/1/query";
+    private static final String USGS_ATTRIBUTION = "U.S. Geological Survey Earthquake Hazards Program";
     private static final int MAX_FEATURES = 25;
+    private static final double MIN_LATITUDE = 45.8;
+    private static final double MAX_LATITUDE = 49.1;
+    private static final double MIN_LONGITUDE = -104.2;
+    private static final double MAX_LONGITUDE = -96.4;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(4))
@@ -31,16 +36,17 @@ public class UsgsEarthquakeService {
     public UsgsEarthquakeOverlay findEarthquakes(double minMagnitude, int days) {
         try {
             UsgsEarthquakeOverlay overlay = fetchEarthquakes(minMagnitude, days);
-            return overlay.features().isEmpty() ? fallbackOverlay() : overlay;
+            return overlay.features().isEmpty() ? fallbackOverlay(minMagnitude, days) : overlay;
         } catch (IOException exception) {
-            return fallbackOverlay();
+            return fallbackOverlay(minMagnitude, days);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            return fallbackOverlay();
+            return fallbackOverlay(minMagnitude, days);
         }
     }
 
-    private UsgsEarthquakeOverlay fetchEarthquakes(double minMagnitude, int days) throws IOException, InterruptedException {
+    private UsgsEarthquakeOverlay fetchEarthquakes(double minMagnitude, int days)
+            throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(queryUri(minMagnitude, days))
                 .timeout(Duration.ofSeconds(8))
                 .GET()
@@ -48,7 +54,7 @@ public class UsgsEarthquakeService {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            return fallbackOverlay();
+            return fallbackOverlay(minMagnitude, days);
         }
 
         JsonNode root = objectMapper.readTree(response.body());
@@ -75,7 +81,7 @@ public class UsgsEarthquakeService {
                     coordinates.get(0).asDouble()));
         }
 
-        return new UsgsEarthquakeOverlay("USGS Earthquake Catalog GeoJSON", updatedAt, features);
+        return overlay("USGS Earthquake Catalog GeoJSON", updatedAt, false, minMagnitude, days, features);
     }
 
     private URI queryUri(double minMagnitude, int days) {
@@ -87,10 +93,10 @@ public class UsgsEarthquakeService {
                 "limit=" + MAX_FEATURES,
                 "minmagnitude=" + minMagnitude,
                 "starttime=" + encode(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(startTime)),
-                "minlatitude=45.8",
-                "maxlatitude=49.1",
-                "minlongitude=-104.2",
-                "maxlongitude=-96.4");
+                "minlatitude=" + MIN_LATITUDE,
+                "maxlatitude=" + MAX_LATITUDE,
+                "minlongitude=" + MIN_LONGITUDE,
+                "maxlongitude=" + MAX_LONGITUDE);
         return URI.create(USGS_ENDPOINT + "?" + query);
     }
 
@@ -103,14 +109,22 @@ public class UsgsEarthquakeService {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private UsgsEarthquakeOverlay fallbackOverlay() {
+    private UsgsEarthquakeOverlay fallbackOverlay(double minMagnitude, int days) {
         OffsetDateTime updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
-        return new UsgsEarthquakeOverlay(
+        return overlay(
                 "USGS Earthquake Catalog GeoJSON fallback fixture",
                 updatedAt,
+                true,
+                minMagnitude,
+                days,
                 List.of(
                         new UsgsEarthquakeFeature(
-                                "demo-western-nd", "Western North Dakota", 2.4, updatedAt.minusHours(4), 47.35, -103.21),
+                                "demo-western-nd",
+                                "Western North Dakota",
+                                2.4,
+                                updatedAt.minusHours(4),
+                                47.35,
+                                -103.21),
                         new UsgsEarthquakeFeature(
                                 "demo-central-nd",
                                 "Central North Dakota",
@@ -119,6 +133,30 @@ public class UsgsEarthquakeService {
                                 47.02,
                                 -100.78),
                         new UsgsEarthquakeFeature(
-                                "demo-eastern-nd", "Eastern North Dakota", 2.1, updatedAt.minusDays(1), 48.1, -97.73)));
+                                "demo-eastern-nd",
+                                "Eastern North Dakota",
+                                2.1,
+                                updatedAt.minusDays(1),
+                                48.1,
+                                -97.73)));
+    }
+
+    private UsgsEarthquakeOverlay overlay(
+            String source,
+            OffsetDateTime updatedAt,
+            boolean fallback,
+            double minMagnitude,
+            int days,
+            List<UsgsEarthquakeFeature> features) {
+        return new UsgsEarthquakeOverlay(
+                source,
+                USGS_ENDPOINT + "?format=geojson",
+                USGS_ATTRIBUTION,
+                updatedAt,
+                updatedAt.plusDays(1),
+                fallback,
+                new UsgsEarthquakeQuery(
+                        minMagnitude, days, MIN_LATITUDE, MAX_LATITUDE, MIN_LONGITUDE, MAX_LONGITUDE),
+                features);
     }
 }

@@ -483,17 +483,65 @@ components:
           format: double
     UsgsEarthquakeOverlay:
       type: object
-      required: [source, updatedAt, features]
+      required:
+        - source
+        - sourceUrl
+        - attribution
+        - updatedAt
+        - staleAfter
+        - fallback
+        - query
+        - features
       properties:
         source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        attribution:
           type: string
         updatedAt:
           type: string
           format: date-time
+        staleAfter:
+          type: string
+          format: date-time
+        fallback:
+          type: boolean
+        query:
+          $ref: '#/components/schemas/UsgsEarthquakeQuery'
         features:
           type: array
           items:
             $ref: '#/components/schemas/UsgsEarthquakeFeature'
+    UsgsEarthquakeQuery:
+      type: object
+      required:
+        - minMagnitude
+        - days
+        - minLatitude
+        - maxLatitude
+        - minLongitude
+        - maxLongitude
+      properties:
+        minMagnitude:
+          type: number
+          format: double
+        days:
+          type: integer
+          format: int32
+        minLatitude:
+          type: number
+          format: double
+        maxLatitude:
+          type: number
+          format: double
+        minLongitude:
+          type: number
+          format: double
+        maxLongitude:
+          type: number
+          format: double
     UsgsEarthquakeFeature:
       type: object
       required: [id, place, magnitude, occurredAt, latitude, longitude]

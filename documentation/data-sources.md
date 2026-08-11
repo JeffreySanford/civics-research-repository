@@ -76,6 +76,19 @@ Potential use:
 - Time-filtered overlays.
 - Magnitude-based styling.
 
+Initial normalized overlay fields:
+
+- Source label.
+- Source URL.
+- Attribution.
+- Update timestamp.
+- Stale-after timestamp.
+- Fallback fixture flag.
+- Query filters: minimum magnitude, day window, and bounding box.
+- Event fields: ID, place, magnitude, occurrence time, latitude, and longitude.
+
+Attribution requirement: display `U.S. Geological Survey Earthquake Hazards Program` with the overlay and keep the public source URL available from the accessible feature list.
+
 ### National Map
 
 USGS National Map resources can provide basemap or reference overlays where licensing and service compatibility allow.

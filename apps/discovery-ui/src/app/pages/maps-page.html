@@ -111,8 +111,19 @@
     overlay) {
     <li>
       <strong>{{ overlay.source }}</strong>
-      <span>Updated {{ overlay.updatedAt | date: 'medium' }}</span>
-      @if (earthquakeStale$ | async) {
+      <span>{{ overlay.attribution }}</span>
+      <a class="source-link" [href]="overlay.sourceUrl">Open USGS source</a>
+      <span>
+        Updated {{ overlay.updatedAt | date: 'medium' }}; stale after {{
+        overlay.staleAfter | date: 'medium' }}
+      </span>
+      <span>
+        Query: magnitude {{ overlay.query.minMagnitude }}+ over the last {{
+        overlay.query.days }} days
+      </span>
+      @if (overlay.fallback) {
+      <span>Using local fallback fixture for demo continuity.</span>
+      } @if (earthquakeStale$ | async) {
       <span>USGS overlay data may be stale.</span>
       }
     </li>

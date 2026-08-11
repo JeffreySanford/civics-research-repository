@@ -146,8 +146,8 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 
 - [ ] Add USGS earthquake feed adapter.
 - [ ] Evaluate USGS National Map layer options.
-- [ ] Document overlay attribution requirements.
-- [ ] Normalize USGS overlay metadata.
+- [x] Document overlay attribution requirements.
+- [x] Normalize USGS overlay metadata.
 - [x] Add sample overlay fixture for local map development.
 
 ### Sprint 2.4 - Optional Cross-Agency Federation

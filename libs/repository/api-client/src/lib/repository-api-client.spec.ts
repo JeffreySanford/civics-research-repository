@@ -153,7 +153,20 @@ describe('RepositoryMapsApi', () => {
     };
     const overlay: UsgsEarthquakeOverlay = {
       source: 'USGS Earthquake Catalog GeoJSON',
+      sourceUrl:
+        'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson',
+      attribution: 'U.S. Geological Survey Earthquake Hazards Program',
       updatedAt: '2026-08-11T19:00:00Z',
+      staleAfter: '2026-08-12T19:00:00Z',
+      fallback: false,
+      query: {
+        minMagnitude: 1,
+        days: 14,
+        minLatitude: 45.8,
+        maxLatitude: 49.1,
+        minLongitude: -104.2,
+        maxLongitude: -96.4,
+      },
       features: [],
     };
     const http = {

@@ -130,10 +130,26 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
       contentType: 'application/json',
       json: {
         source: 'USGS Earthquake Catalog GeoJSON fallback fixture',
+        sourceUrl:
+          'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson',
+        attribution: 'U.S. Geological Survey Earthquake Hazards Program',
         updatedAt:
           overlayState === 'stale'
             ? '2020-01-01T00:00:00Z'
             : '2026-08-11T19:00:00Z',
+        staleAfter:
+          overlayState === 'stale'
+            ? '2020-01-02T00:00:00Z'
+            : '2026-08-12T19:00:00Z',
+        fallback: true,
+        query: {
+          minMagnitude: 0,
+          days: 7,
+          minLatitude: 45.8,
+          maxLatitude: 49.1,
+          minLongitude: -104.2,
+          maxLongitude: -96.4,
+        },
         features: [
           earthquake(
             'demo-western-nd',
