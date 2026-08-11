@@ -102,6 +102,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [ ] Verify DSpace API is reachable locally.
 - [x] Verify Solr is reachable locally.
 - [x] Verify startup sync creates or updates the seed repository objects.
+- [x] Index seed discovery objects into Solr on Java API startup.
 
 ### Sprint 1.2 - DSpace Seed Repository
 
@@ -111,7 +112,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [ ] Attach source URLs and documentation URLs.
 - [ ] Store small-to-medium mirrored demo artifacts where useful.
 - [ ] Confirm item appears through DSpace REST.
-- [ ] Confirm item is indexed into Solr discovery.
+- [x] Confirm item is indexed into Solr discovery.
 
 ## PI 2 - Public Data Harvester
 

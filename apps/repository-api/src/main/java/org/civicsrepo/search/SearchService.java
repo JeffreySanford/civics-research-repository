@@ -6,10 +6,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SearchService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
     private static final List<SearchResult> SEED_RESULTS = List.of(
             new SearchResult(
                     "tiger-line-nd-2025",
@@ -72,7 +76,40 @@ public class SearchService {
                     2026,
                     "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"));
 
+    private final SolrSearchClient solrSearchClient;
+
+    public SearchService() {
+        this(null);
+    }
+
+    @Autowired
+    public SearchService(SolrSearchClient solrSearchClient) {
+        this.solrSearchClient = solrSearchClient;
+    }
+
+    List<SearchResult> seedResults() {
+        return SEED_RESULTS;
+    }
+
     public SearchResponse search(
+            String query,
+            ResearchProgram program,
+            String geography,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
+        if (solrSearchClient != null && solrSearchClient.isEnabled()) {
+            try {
+                return solrSearchClient.search(query, program, geography, vintageYear, page, pageSize);
+            } catch (RuntimeException exception) {
+                LOGGER.warn("Solr search failed; falling back to in-memory seed search.", exception);
+            }
+        }
+
+        return searchSeedResults(query, program, geography, vintageYear, page, pageSize);
+    }
+
+    private SearchResponse searchSeedResults(
             String query,
             ResearchProgram program,
             String geography,

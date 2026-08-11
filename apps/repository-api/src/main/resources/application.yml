@@ -12,5 +12,6 @@ civics:
     base-url: http://dspace-rest:8080/server
   solr:
     base-url: http://solr:8983/solr
+    core: discovery
   storage:
     artifacts-path: /var/lib/civics/artifacts
