@@ -272,11 +272,18 @@ input:focus-visible {
   text-align: left;
 }
 
-:host ::ng-deep .error-message {
+:host ::ng-deep .error-message,
+:host ::ng-deep .warning-message {
   border-left: 4px solid #b42318;
   background: #fff1f0;
   color: #7a271a;
   padding: 0.75rem 1rem;
+}
+
+:host ::ng-deep .warning-message {
+  border-left-color: #b54708;
+  background: #fff8e6;
+  color: #713b12;
 }
 
 :host ::ng-deep .discovery-layout {
@@ -482,6 +489,16 @@ input:focus-visible {
   color: #475569;
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+:host ::ng-deep .status-pill {
+  border: 1px solid #d7a63b;
+  border-radius: 0.25rem;
+  background: #fff8e6;
+  color: #713b12;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 800;
 }
 
 :host ::ng-deep .swatch {

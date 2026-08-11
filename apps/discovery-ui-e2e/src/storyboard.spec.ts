@@ -294,6 +294,36 @@ test.describe('demo storyboard checks', () => {
     await expect(page).not.toHaveURL(/earthquakes=off/);
   });
 
+  test('map overlay stale and error states keep Census layers visible @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps?overlay=stale');
+
+    await expect(
+      page.getByText('USGS overlay data may be stale').first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText('North Dakota TIGER/Line preview'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('LODES workplace flow sample', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('Stale', { exact: true })).toBeVisible();
+
+    await page.goto('/maps?overlay=error');
+
+    await expect(
+      page.getByText('USGS earthquake overlay unavailable').first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText('North Dakota TIGER/Line preview'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('LODES workplace flow sample', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('unavailable', { exact: true })).toBeVisible();
+  });
+
   test('admin sync storyboard shows planned repository actions @storyboard', async ({
     page,
   }) => {

@@ -12,9 +12,12 @@ export const MapsActions = createActionGroup({
     'Map Data Loaded': props<{
       layers: MapLayer[];
       censusAreaBoundaries: CensusAreaBoundary[];
-      earthquakeOverlay: UsgsEarthquakeOverlay;
     }>(),
     'Map Data Failed': props<{ error: string }>(),
+    'Earthquake Overlay Loaded': props<{
+      earthquakeOverlay: UsgsEarthquakeOverlay;
+    }>(),
+    'Earthquake Overlay Failed': props<{ error: string }>(),
     'Census Area Selected': props<{ geography: string }>(),
     'Tiger Layer Toggled': props<{ visible: boolean }>(),
     'Earthquake Layer Toggled': props<{ visible: boolean }>(),

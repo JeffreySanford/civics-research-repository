@@ -31,6 +31,11 @@ export const selectEarthquakeOverlay = createSelector(
   (state) => state.earthquakeOverlay,
 );
 
+export const selectEarthquakeError = createSelector(
+  selectMapsState,
+  (state) => state.earthquakeError,
+);
+
 export const selectTigerVisible = createSelector(
   selectMapsState,
   (state) => state.tigerVisible,

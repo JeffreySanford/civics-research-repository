@@ -221,7 +221,7 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 - [x] Add overlay filter by time range or magnitude.
 - [x] Add visible source and update timestamp.
 - [x] Add accessible event list synchronized with map data.
-- [ ] Add overlay error and stale-data states.
+- [x] Add overlay error and stale-data states.
 
 ## PI 5 - Section 508 and WCAG Evidence
 

@@ -18,22 +18,17 @@ export class MapsEffects {
             'tiger-line-north-dakota-2025',
           ),
           censusAreaBoundaries: this.mapsApi.listCensusAreaBoundaries(),
-          earthquakeOverlay: this.mapsApi.getUsgsEarthquakeOverlay(0, 7),
         }).pipe(
-          map(({ layers, censusAreaBoundaries, earthquakeOverlay }) =>
+          map(({ layers, censusAreaBoundaries }) =>
             MapsActions.mapDataLoaded({
               layers,
               censusAreaBoundaries,
-              earthquakeOverlay,
             }),
           ),
           catchError((error: unknown) =>
             of(
               MapsActions.mapDataFailed({
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Map data failed to load.',
+                error: this.errorMessage(error, 'Map data failed to load.'),
               }),
             ),
           ),
@@ -41,4 +36,44 @@ export class MapsEffects {
       ),
     ),
   );
+
+  readonly loadEarthquakeOverlay$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.mapOpened),
+      mergeMap(() =>
+        this.mapsApi.getUsgsEarthquakeOverlay(0, 7).pipe(
+          map((earthquakeOverlay) =>
+            MapsActions.earthquakeOverlayLoaded({ earthquakeOverlay }),
+          ),
+          catchError((error: unknown) =>
+            of(
+              MapsActions.earthquakeOverlayFailed({
+                error: this.errorMessage(
+                  error,
+                  'USGS earthquake overlay failed to load.',
+                ),
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  private errorMessage(error: unknown, fallback: string): string {
+    if (this.isHttpError(error)) {
+      return fallback;
+    }
+
+    return error instanceof Error ? error.message : fallback;
+  }
+
+  private isHttpError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'status' in error &&
+      'url' in error
+    );
+  }
 }

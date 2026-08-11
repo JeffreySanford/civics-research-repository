@@ -3,7 +3,6 @@ import { AdminSyncPage } from './pages/admin-sync-page';
 import { DiscoveryPage } from './pages/discovery-page';
 import { EvidencePage } from './pages/evidence-page';
 import { HomePage } from './pages/home-page';
-import { MapsPage } from './pages/maps-page';
 
 export const appRoutes: Route[] = [
   { path: '', component: HomePage, title: 'Civics Research Repository' },
@@ -20,6 +19,10 @@ export const appRoutes: Route[] = [
     component: EvidencePage,
     title: 'Accessibility Evidence',
   },
-  { path: 'maps', component: MapsPage, title: 'Map Preview' },
+  {
+    path: 'maps',
+    loadComponent: () => import('./pages/maps-page').then((m) => m.MapsPage),
+    title: 'Map Preview',
+  },
   { path: '**', redirectTo: '' },
 ];

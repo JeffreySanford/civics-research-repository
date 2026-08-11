@@ -28,6 +28,7 @@ import type {
 import { MapsActions } from '../state/maps/maps.actions';
 import {
   selectCensusAreaBoundaries,
+  selectEarthquakeError,
   selectEarthquakeOverlay,
   selectEarthquakeVisible,
   selectMapLayers,
@@ -131,6 +132,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   );
   protected readonly earthquakeOverlay$ = this.store.select(
     selectEarthquakeOverlay,
+  );
+  protected readonly earthquakeError$ = this.store.select(
+    selectEarthquakeError,
+  );
+  protected readonly earthquakeStale$ = this.earthquakeOverlay$.pipe(
+    map((overlay) =>
+      overlay ? this.isOverlayStale(overlay.updatedAt) : false,
+    ),
   );
   protected readonly tigerVisible$ = this.store.select(selectTigerVisible);
   protected readonly earthquakeVisible$ = this.store.select(
@@ -282,6 +291,16 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   private toLayerParam(visible: boolean): string | null {
     return visible ? null : 'off';
+  }
+
+  private isOverlayStale(updatedAt: string): boolean {
+    const updatedTime = new Date(updatedAt).getTime();
+
+    if (Number.isNaN(updatedTime)) {
+      return true;
+    }
+
+    return Date.now() - updatedTime > 1000 * 60 * 60 * 24;
   }
 
   private async initializeMap(): Promise<void> {

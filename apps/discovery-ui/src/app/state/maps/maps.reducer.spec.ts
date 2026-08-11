@@ -1,6 +1,9 @@
 import { MapsActions } from './maps.actions';
 import { initialMapsState, mapsReducer } from './maps.reducer';
-import { selectEarthquakeOverlay } from './maps.selectors';
+import {
+  selectEarthquakeError,
+  selectEarthquakeOverlay,
+} from './maps.selectors';
 
 describe('mapsReducer', () => {
   const censusAreaBoundary = {
@@ -16,12 +19,7 @@ describe('mapsReducer', () => {
     defaultZoom: 6,
   };
 
-  it('stores map layers and overlay data', () => {
-    const earthquakeOverlay = {
-      source: 'USGS Earthquake Catalog GeoJSON',
-      updatedAt: '2026-08-11T19:00:00Z',
-      features: [],
-    };
+  it('stores map layers and Census area boundaries', () => {
     const layer = {
       id: 'tiger-line-nd-boundary',
       label: '2025 TIGER/Line - Census Tracts - North Dakota',
@@ -36,14 +34,55 @@ describe('mapsReducer', () => {
       MapsActions.mapDataLoaded({
         layers: [layer],
         censusAreaBoundaries: [censusAreaBoundary],
-        earthquakeOverlay,
       }),
     );
 
     expect(state.layers).toEqual([layer]);
     expect(state.censusAreaBoundaries).toEqual([censusAreaBoundary]);
-    expect(state.earthquakeOverlay).toEqual(earthquakeOverlay);
     expect(state.loading).toBe(false);
+  });
+
+  it('stores earthquake overlay data independently', () => {
+    const earthquakeOverlay = {
+      source: 'USGS Earthquake Catalog GeoJSON',
+      updatedAt: '2026-08-11T19:00:00Z',
+      features: [],
+    };
+
+    const state = mapsReducer(
+      initialMapsState,
+      MapsActions.earthquakeOverlayLoaded({ earthquakeOverlay }),
+    );
+
+    expect(state.earthquakeOverlay).toEqual(earthquakeOverlay);
+    expect(state.earthquakeError).toBeNull();
+  });
+
+  it('tracks earthquake overlay failures without clearing map layers', () => {
+    const state = mapsReducer(
+      {
+        ...initialMapsState,
+        layers: [
+          {
+            id: 'tiger-line-nd-boundary',
+            label: '2025 TIGER/Line - Census Tracts - North Dakota',
+            layerType: 'CENSUS_BOUNDARY',
+            sourceUrl: 'https://example.test/tiger',
+            attribution: 'U.S. Census Bureau TIGER/Line',
+            visibleByDefault: true,
+          },
+        ],
+        censusAreaBoundaries: [censusAreaBoundary],
+      },
+      MapsActions.earthquakeOverlayFailed({
+        error: 'USGS overlay service unavailable.',
+      }),
+    );
+
+    expect(state.layers).toHaveLength(1);
+    expect(state.censusAreaBoundaries).toEqual([censusAreaBoundary]);
+    expect(state.earthquakeOverlay).toBeNull();
+    expect(state.earthquakeError).toBe('USGS overlay service unavailable.');
   });
 
   it('tracks layer visibility', () => {
@@ -77,5 +116,14 @@ describe('mapsReducer', () => {
     });
 
     expect(selected).toBe(earthquakeOverlay);
+  });
+
+  it('selects the earthquake overlay error', () => {
+    const selected = selectEarthquakeError.projector({
+      ...initialMapsState,
+      earthquakeError: 'USGS overlay service unavailable.',
+    });
+
+    expect(selected).toBe('USGS overlay service unavailable.');
   });
 });

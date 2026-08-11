@@ -113,11 +113,27 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
   });
 
   await page.route(`**/api/overlays/usgs/earthquakes**`, async (route) => {
+    const overlayState = new URL(page.url()).searchParams.get('overlay');
+
+    if (overlayState === 'error') {
+      await route.fulfill({
+        contentType: 'application/json',
+        status: 503,
+        json: {
+          message: 'USGS overlay unavailable in storyboard fixture.',
+        },
+      });
+      return;
+    }
+
     await route.fulfill({
       contentType: 'application/json',
       json: {
         source: 'USGS Earthquake Catalog GeoJSON fallback fixture',
-        updatedAt: '2026-08-11T19:00:00Z',
+        updatedAt:
+          overlayState === 'stale'
+            ? '2020-01-01T00:00:00Z'
+            : '2026-08-11T19:00:00Z',
         features: [
           earthquake(
             'demo-western-nd',

@@ -47,6 +47,14 @@
   <p class="inline-status" role="status">Loading map data from the API</p>
   } @if (error$ | async; as error) {
   <p class="error-message" role="alert">{{ error }}</p>
+  } @if (earthquakeError$ | async; as earthquakeError) {
+  <p class="warning-message" role="status">
+    USGS earthquake overlay unavailable: {{ earthquakeError }}
+  </p>
+  } @if (earthquakeStale$ | async) {
+  <p class="warning-message" role="status">
+    USGS overlay data may be stale. Verify against USGS before operational use.
+  </p>
   }
 
   <div class="map-stage">
@@ -78,7 +86,11 @@
           <span class="overlay-count"
             >{{ overlay.features.length }} loaded</span
           >
-          }
+          @if (earthquakeStale$ | async) {
+          <span class="status-pill stale">Stale</span>
+          } } @else { @if (earthquakeError$ | async) {
+          <span class="overlay-count">unavailable</span>
+          } }
         </li>
         }
       </ul>
@@ -100,6 +112,9 @@
     <li>
       <strong>{{ overlay.source }}</strong>
       <span>Updated {{ overlay.updatedAt | date: 'medium' }}</span>
+      @if (earthquakeStale$ | async) {
+      <span>USGS overlay data may be stale.</span>
+      }
     </li>
     @for (feature of overlay.features; track feature.id) {
     <li>
@@ -108,6 +123,11 @@
         Magnitude {{ feature.magnitude }} on {{ feature.occurredAt | date:
         'medium' }}
       </span>
+    </li>
+    } } @else { @if (earthquakeError$ | async) {
+    <li>
+      <strong>USGS earthquake overlay unavailable</strong>
+      <span>The Census boundary and LODES map layers remain available.</span>
     </li>
     } } }
   </ul>

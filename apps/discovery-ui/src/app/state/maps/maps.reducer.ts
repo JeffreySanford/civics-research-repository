@@ -13,6 +13,7 @@ export interface MapsState {
   readonly censusAreaBoundaries: readonly CensusAreaBoundary[];
   readonly selectedGeography: string;
   readonly earthquakeOverlay: UsgsEarthquakeOverlay | null;
+  readonly earthquakeError: string | null;
   readonly tigerVisible: boolean;
   readonly earthquakeVisible: boolean;
   readonly loading: boolean;
@@ -24,6 +25,7 @@ export const initialMapsState: MapsState = {
   censusAreaBoundaries: [],
   selectedGeography: 'North Dakota',
   earthquakeOverlay: null,
+  earthquakeError: null,
   tigerVisible: true,
   earthquakeVisible: true,
   loading: false,
@@ -36,18 +38,25 @@ export const mapsReducer = createReducer(
     ...state,
     loading: true,
     error: null,
+    earthquakeError: null,
   })),
-  on(
-    MapsActions.mapDataLoaded,
-    (state, { layers, censusAreaBoundaries, earthquakeOverlay }) => ({
-      ...state,
-      layers,
-      censusAreaBoundaries,
-      earthquakeOverlay,
-      loading: false,
-      error: null,
-    }),
-  ),
+  on(MapsActions.mapDataLoaded, (state, { layers, censusAreaBoundaries }) => ({
+    ...state,
+    layers,
+    censusAreaBoundaries,
+    loading: false,
+    error: null,
+  })),
+  on(MapsActions.earthquakeOverlayLoaded, (state, { earthquakeOverlay }) => ({
+    ...state,
+    earthquakeOverlay,
+    earthquakeError: null,
+  })),
+  on(MapsActions.earthquakeOverlayFailed, (state, { error }) => ({
+    ...state,
+    earthquakeOverlay: null,
+    earthquakeError: error,
+  })),
   on(MapsActions.censusAreaSelected, (state, { geography }) => ({
     ...state,
     selectedGeography: geography,
