@@ -67,6 +67,8 @@ Implementation order:
 5. Verify DSpace REST access.
 6. Verify Solr discovery indexing.
 
+Storage rule: store metadata, manifests, source links, checksums where available, and small fixtures first. Do not mirror large public datasets until a later sprint explicitly needs that behavior.
+
 ## Phase 3 - Angular Discovery UI
 
 Primary goal: replace starter UI with a typed, accessible discovery workflow.
@@ -102,3 +104,7 @@ Implementation order:
 3. Add demo script.
 4. Add architecture walkthrough.
 5. Add known tradeoffs and next-step recommendations.
+
+## Later Federation
+
+After the Census and USGS path is working, optional federation can add NOAA Climate Data Online and NASA POWER as proof that the repository model can describe public science datasets from agencies beyond Census.

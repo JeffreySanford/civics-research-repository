@@ -12,6 +12,7 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [x] Create initial TODO backlog.
 - [x] Capture high-level architecture direction.
 - [x] Capture public data source candidates.
+- [x] Capture public data storage and sync policy.
 - [x] Capture mapping visualization and USGS overlay direction.
 - [x] Capture Docker, DSpace, Solr, and PostgreSQL direction.
 - [x] Create GitHub repository.
@@ -113,10 +114,12 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 ### Sprint 2.1 - Census Metadata Harvester
 
 - [ ] Decide harvester placement: Java API orchestration, standalone tool, or hybrid fixture-first approach.
+- [ ] Define sync state model for source ID, source URL, DSpace item ID, last sync status, and source freshness.
 - [ ] Implement ACS PUMS metadata source adapter.
 - [ ] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
 - [ ] Generate DSpace-ready item payload.
 - [ ] Add dry-run mode.
+- [ ] Add diff mode to compare source metadata with DSpace item state.
 - [ ] Add logging and error handling.
 - [ ] Add unit tests for metadata normalization.
 
@@ -136,6 +139,13 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 - [ ] Document overlay attribution requirements.
 - [ ] Normalize USGS overlay metadata.
 - [ ] Add sample overlay fixture for local map development.
+
+### Sprint 2.4 - Optional Cross-Agency Federation
+
+- [ ] Evaluate NOAA Climate Data Online as a later federation source.
+- [ ] Evaluate NASA POWER as a later federation source.
+- [ ] Confirm metadata model extensions needed for non-Census science datasets.
+- [ ] Keep optional sources out of the first vertical slice unless the Census/USGS path is already working.
 
 ## PI 3 - Angular Discovery UI
 

@@ -8,6 +8,8 @@ The first implementation milestone is complete when the demo can show one public
 
 - [ ] One ACS PUMS North Dakota dataset is represented as a repository item.
 - [ ] Item metadata includes title, abstract, publisher, program, geography, vintage year, source URL, documentation URL, file list, and citation.
+- [ ] Large source files are represented by file manifests and source URLs unless intentionally mirrored.
+- [ ] Sync state records source identifier, source URL, DSpace item ID, last sync status, and source freshness.
 - [ ] DSpace community and collection exist for Census public research data.
 - [ ] The item is available through DSpace REST.
 - [ ] The item is discoverable through Solr-backed search.

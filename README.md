@@ -57,6 +57,7 @@ civics-research-repository/
 │   ├── README.md
 │   ├── architecture.md
 │   ├── data-sources.md
+│   ├── data-storage-sync.md
 │   ├── mapping-visualization.md
 │   ├── accessibility-508-wcag.md
 │   ├── nx-angular-wcag.md

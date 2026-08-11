@@ -6,6 +6,7 @@ This directory captures the product, architecture, data, accessibility, and plat
 
 - [Architecture](architecture.md): system model, bounded contexts, major workflows, and deployment direction.
 - [Data Sources](data-sources.md): public Census and USGS source candidates, ingestion assumptions, and metadata model.
+- [Data Storage and Sync](data-storage-sync.md): storage boundaries, source sync model, cache policy, and expansion order.
 - [Mapping Visualization](mapping-visualization.md): geospatial UX, map layers, USGS overlays, and accessibility requirements.
 - [508/WCAG Accessibility](accessibility-508-wcag.md): accessibility standards, automated checks, and manual validation evidence.
 - [Docker, DSpace, Solr, PostgreSQL](docker-dspace-solr-postgres.md): local platform plan and service responsibilities.
