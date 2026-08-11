@@ -1,7 +1,7 @@
 <section aria-labelledby="search-heading" class="search-panel">
   <div>
     <p class="eyebrow">Discovery</p>
-    <h2 id="search-heading">Find research objects</h2>
+    <h1 id="search-heading">Find research objects</h1>
     <p>
       Initial search will focus on TIGER/Line, LODES, ACS PUMS, SIPP, CPS, and
       USGS overlay metadata.
@@ -34,13 +34,13 @@
 <section aria-labelledby="discovery-results-heading" class="discovery-layout">
   <aside class="content-panel" aria-labelledby="filter-heading">
     <p class="eyebrow">Filters</p>
-    <h3 id="filter-heading">Facets</h3>
+    <h2 id="filter-heading">Facets</h2>
 
     @if (facets$ | async; as facets) { @if (facets.length > 0) {
     <div class="facet-list">
       @for (facet of facets; track facet.field) {
       <section [attr.aria-labelledby]="'facet-' + facet.field">
-        <h4 [id]="'facet-' + facet.field">{{ facet.label }}</h4>
+        <h3 [id]="'facet-' + facet.field">{{ facet.label }}</h3>
         <div class="facet-values">
           @for (value of facet.values; track value.value) {
           <button
@@ -70,9 +70,9 @@
     <div class="results-heading">
       <div>
         <p class="eyebrow">Results</p>
-        <h3 id="discovery-results-heading">
+        <h2 id="discovery-results-heading">
           {{ totalResults$ | async }} research objects
-        </h3>
+        </h2>
       </div>
 
       @if (loading$ | async) {
@@ -99,7 +99,7 @@
             <span>{{ result.vintageYear }}</span>
             }
           </div>
-          <h4>{{ result.title }}</h4>
+          <h3>{{ result.title }}</h3>
           <p>{{ result.summary }}</p>
           <a
             class="source-link"

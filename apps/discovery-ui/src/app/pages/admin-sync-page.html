@@ -1,7 +1,7 @@
 <section aria-labelledby="admin-sync-heading" class="admin-layout">
   <div class="content-panel">
     <p class="eyebrow">Admin workflow</p>
-    <h2 id="admin-sync-heading">Repository sync</h2>
+    <h1 id="admin-sync-heading">Repository sync</h1>
     <p>
       Trigger the typed Java sync endpoint for the first visual geospatial
       repository object. Dry run shows planned DSpace/Solr actions; apply will
@@ -40,7 +40,7 @@
   @if (selectedJob$ | async; as job) {
   <article class="content-panel" aria-labelledby="selected-job-heading">
     <p class="eyebrow">{{ job.source }}</p>
-    <h3 id="selected-job-heading">Selected sync job</h3>
+    <h2 id="selected-job-heading">Selected sync job</h2>
     <dl class="details-list">
       <div>
         <dt>Status</dt>
@@ -56,7 +56,7 @@
       </div>
     </dl>
 
-    <h4>Planned actions</h4>
+    <h3>Planned actions</h3>
     <ol class="action-list">
       @for (action of job.actions; track action.actionType + action.target) {
       <li>
@@ -69,14 +69,14 @@
   </article>
   } @else {
   <article class="content-panel" aria-labelledby="empty-job-heading">
-    <h3 id="empty-job-heading">No sync job selected</h3>
+    <h2 id="empty-job-heading">No sync job selected</h2>
     <p>Run a dry sync to preview repository actions.</p>
   </article>
   }
 </section>
 
 <section aria-labelledby="history-heading" class="content-panel">
-  <h3 id="history-heading">Sync history</h3>
+  <h2 id="history-heading">Sync history</h2>
   @if (jobs$ | async; as jobs) { @if (jobs.length > 0) {
   <ul class="history-list">
     @for (job of jobs; track job.id) {

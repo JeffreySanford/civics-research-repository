@@ -2,7 +2,7 @@
   <div class="map-toolbar">
     <div>
       <p class="eyebrow">Map preview</p>
-      <h2 id="maps-heading">MapLibre geospatial workspace</h2>
+      <h1 id="maps-heading">MapLibre geospatial workspace</h1>
     </div>
 
     <label class="area-select">
@@ -45,9 +45,14 @@
   }
 
   <div class="map-stage">
-    <div #mapCanvas class="map-canvas" aria-label="Interactive map"></div>
+    <div
+      #mapCanvas
+      class="map-canvas"
+      role="region"
+      aria-label="Interactive map"
+    ></div>
     <aside class="map-legend" aria-label="Visible map layer legend">
-      <h3>Visible layers</h3>
+      <h2>Visible layers</h2>
       <ul>
         <li>
           <span class="swatch census"></span>
@@ -68,7 +73,7 @@
 </section>
 
 <section aria-labelledby="features-heading" class="content-panel">
-  <h3 id="features-heading">Accessible feature list</h3>
+  <h2 id="features-heading">Accessible feature list</h2>
   <ul class="feature-list">
     @if (layers$ | async; as layers) { @for (layer of layers; track layer.id) {
     <li>

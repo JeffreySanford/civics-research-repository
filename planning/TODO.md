@@ -233,9 +233,9 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 - [x] Add Playwright accessibility smoke tests.
 - [x] Add WCAG console report script.
 - [x] Add Section 508 console report script.
-- [ ] Expand automated scans to search route.
+- [x] Expand automated scans to search route.
 - [ ] Expand automated scans to dataset detail route.
-- [ ] Expand automated scans to map route or map tab.
+- [x] Expand automated scans to map route or map tab.
 - [ ] Add keyboard navigation tests for search.
 - [ ] Add keyboard navigation tests for dataset detail tabs.
 - [ ] Add keyboard navigation tests for map layer controls.

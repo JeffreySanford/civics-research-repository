@@ -171,6 +171,15 @@ input:focus-visible {
 :host ::ng-deep .workflow-grid h2 {
   grid-column: 1 / -1;
   margin-bottom: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+:host ::ng-deep .content-panel h2,
+:host ::ng-deep .discovery-layout h2,
+:host ::ng-deep .map-legend h2 {
+  font-size: 1.35rem;
+  line-height: 1.2;
 }
 
 :host ::ng-deep .workflow-grid a {
@@ -431,6 +440,13 @@ input:focus-visible {
   width: 100%;
 }
 
+:host ::ng-deep .maplibregl-ctrl-attrib a {
+  color: #0b3b75;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
 :host ::ng-deep .map-legend {
   position: absolute;
   right: 1rem;
@@ -445,7 +461,7 @@ input:focus-visible {
   box-shadow: 0 0.75rem 1.5rem rgb(15 23 42 / 16%);
 }
 
-:host ::ng-deep .map-legend h3 {
+:host ::ng-deep .map-legend h2 {
   margin: 0;
   font-size: 1rem;
 }
