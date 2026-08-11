@@ -86,3 +86,15 @@ Public dataset metadata
   -> dataset detail page
   -> map visualization with USGS overlay
 ```
+
+## Development Scripts
+
+```bash
+pnpm run start:all
+pnpm run test:all
+pnpm run quality:all
+pnpm run wcag:report
+pnpm run section508:report
+```
+
+`wcag:report` and `section508:report` run the Playwright/axe checks with a console reporter so pass/fail results are visible in terminal output.

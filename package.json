@@ -7,13 +7,25 @@
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "nx": "nx",
+    "dev": "pnpm run start:all",
+    "start": "pnpm nx run discovery-ui:serve",
+    "start:all": "pnpm nx run-many -t serve --projects discovery-ui --parallel=5",
     "graph": "nx graph",
     "format": "nx format:write",
     "format:check": "nx format:check",
     "affected": "nx affected",
-    "accessibility": "nx run-many -t accessibility",
-    "wcag": "nx run-many -t accessibility,wcag",
-    "section508": "nx run-many -t accessibility,section508"
+    "build": "pnpm nx run discovery-ui:build",
+    "build:all": "pnpm nx run-many -t build --all",
+    "lint": "pnpm nx run-many -t lint --all",
+    "test": "pnpm nx run discovery-ui:test",
+    "test:all": "pnpm nx run-many -t test --all",
+    "e2e": "pnpm nx run discovery-ui-e2e:e2e",
+    "accessibility": "pnpm nx run-many -t accessibility",
+    "wcag": "pnpm nx run-many -t wcag",
+    "wcag:report": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @wcag --reporter=list",
+    "section508": "pnpm nx run-many -t section508",
+    "section508:report": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @section508 --reporter=list",
+    "quality:all": "pnpm run format:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run wcag:report && pnpm run section508:report"
   },
   "dependencies": {
     "@angular/animations": "22.1.1",
