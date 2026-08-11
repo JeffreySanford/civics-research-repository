@@ -22,7 +22,7 @@
         type="search"
         autocomplete="off"
         [formControl]="searchControl"
-        placeholder="North Dakota Census tracts"
+        placeholder="Search by state, program, publisher, or topic"
       />
       <button mat-flat-button type="submit" [disabled]="loading$ | async">
         Search
@@ -48,8 +48,8 @@
             type="button"
             [class.selected]="value.selected"
             [attr.aria-pressed]="value.selected"
-            [disabled]="facet.field !== 'program'"
-            (click)="selectProgram(value.value)"
+            [disabled]="facet.field !== 'program' && facet.field !== 'geography'"
+            (click)="selectFacet(facet.field, value.value)"
           >
             {{ value.label }} ({{ value.count }})
           </button>

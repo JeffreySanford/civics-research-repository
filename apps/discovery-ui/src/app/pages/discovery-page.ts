@@ -35,13 +35,16 @@ const PAGE_SIZE = 25;
 export class DiscoveryPage implements OnInit {
   private readonly store = inject(Store);
 
-  protected readonly searchControl = new FormControl('North Dakota', {
+  protected readonly searchControl = new FormControl('', {
     nonNullable: true,
   });
   protected readonly programControl = new FormControl<ResearchProgram | ''>(
     '',
     { nonNullable: true },
   );
+  protected readonly geographyControl = new FormControl('', {
+    nonNullable: true,
+  });
 
   protected readonly results$ = this.store.select(selectSearchResults);
   protected readonly facets$ = this.store.select(selectSearchFacets);
@@ -61,9 +64,15 @@ export class DiscoveryPage implements OnInit {
       page: 0,
       pageSize: PAGE_SIZE,
     };
-    const query = this.programControl.value
-      ? { ...baseQuery, program: this.programControl.value }
-      : baseQuery;
+    const query = {
+      ...baseQuery,
+      ...(this.programControl.value
+        ? { program: this.programControl.value }
+        : {}),
+      ...(this.geographyControl.value
+        ? { geography: this.geographyControl.value }
+        : {}),
+    };
 
     this.store.dispatch(SearchActions.searchSubmitted({ query }));
   }
@@ -73,8 +82,25 @@ export class DiscoveryPage implements OnInit {
     this.submitSearch();
   }
 
+  protected selectGeography(geography: string): void {
+    this.geographyControl.setValue(geography);
+    this.submitSearch();
+  }
+
+  protected selectFacet(field: string, value: string): void {
+    if (field === 'program') {
+      this.selectProgram(value);
+      return;
+    }
+
+    if (field === 'geography') {
+      this.selectGeography(value);
+    }
+  }
+
   protected clearFilters(): void {
     this.programControl.setValue('');
+    this.geographyControl.setValue('');
     this.submitSearch();
   }
 }

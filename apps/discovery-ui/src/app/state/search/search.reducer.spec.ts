@@ -7,6 +7,7 @@ describe('searchReducer', () => {
     const query = {
       q: 'USGS',
       program: 'USGS' as const,
+      geography: 'United States',
       page: 0,
       pageSize: 25,
     };

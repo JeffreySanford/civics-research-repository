@@ -62,6 +62,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private map: MapLibreMap | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
   private mapLoaded = false;
+  private tigerVisible = true;
+  private earthquakeVisible = true;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
   protected readonly earthquakeOverlay$ = this.store.select(
@@ -87,11 +89,16 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     combineLatest([this.tigerVisible$, this.earthquakeVisible$])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(([tigerVisible, earthquakeVisible]) => {
+        this.tigerVisible = tigerVisible;
+        this.earthquakeVisible = earthquakeVisible;
         this.setLayerVisibility(
           ['north-dakota-fill', 'north-dakota-outline'],
           tigerVisible,
         );
-        this.setLayerVisibility(['usgs-earthquake-points'], earthquakeVisible);
+        this.setLayerVisibility(
+          ['usgs-earthquake-points', 'usgs-earthquake-labels'],
+          earthquakeVisible,
+        );
       });
   }
 
@@ -136,6 +143,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.mapLoaded = true;
       this.addCensusBoundaryLayer();
       this.renderEarthquakeOverlay();
+      this.applyLayerVisibility();
     });
   }
 
@@ -204,6 +212,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
     if (existingSource) {
       existingSource.setData(data);
+      this.applyLayerVisibility();
       return;
     }
 
@@ -222,15 +231,37 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           'interpolate',
           ['linear'],
           ['get', 'magnitude'],
+          0,
+          8,
           1,
-          5,
+          10,
           3,
-          12,
+          18,
         ],
+        'circle-opacity': 0.86,
         'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 2,
+        'circle-stroke-width': 3,
       },
     });
+
+    this.map.addLayer({
+      id: 'usgs-earthquake-labels',
+      type: 'symbol',
+      source: 'usgs-earthquakes',
+      layout: {
+        'text-field': ['concat', 'M ', ['to-string', ['get', 'magnitude']]],
+        'text-size': 12,
+        'text-offset': [0, 1.4],
+        'text-anchor': 'top',
+      },
+      paint: {
+        'text-color': '#7c2d12',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 2,
+      },
+    });
+
+    this.applyLayerVisibility();
   }
 
   private createEarthquakeGeoJson(
@@ -263,6 +294,17 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         );
       }
     }
+  }
+
+  private applyLayerVisibility(): void {
+    this.setLayerVisibility(
+      ['north-dakota-fill', 'north-dakota-outline'],
+      this.tigerVisible,
+    );
+    this.setLayerVisibility(
+      ['usgs-earthquake-points', 'usgs-earthquake-labels'],
+      this.earthquakeVisible,
+    );
   }
 
   private createBaseStyle(): StyleSpecification {

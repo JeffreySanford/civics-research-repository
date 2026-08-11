@@ -444,6 +444,12 @@ input:focus-visible {
   align-items: center;
 }
 
+:host ::ng-deep .overlay-count {
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 :host ::ng-deep .swatch {
   display: inline-block;
   flex: 0 0 auto;

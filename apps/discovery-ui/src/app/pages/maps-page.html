@@ -37,7 +37,14 @@
       <h3>Visible layers</h3>
       <ul>
         <li><span class="swatch census"></span>2025 TIGER/Line preview</li>
-        <li><span class="swatch usgs"></span>USGS event overlay</li>
+        <li>
+          <span class="swatch usgs"></span>
+          USGS event overlay @if (earthquakeOverlay$ | async; as overlay) {
+          <span class="overlay-count"
+            >{{ overlay.features.length }} loaded</span
+          >
+          }
+        </li>
       </ul>
     </aside>
   </div>

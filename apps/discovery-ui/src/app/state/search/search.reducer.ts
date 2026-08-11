@@ -13,7 +13,7 @@ export interface SearchState {
 
 export const initialSearchState: SearchState = {
   query: {
-    q: 'North Dakota',
+    q: '',
     page: 0,
     pageSize: 25,
   },

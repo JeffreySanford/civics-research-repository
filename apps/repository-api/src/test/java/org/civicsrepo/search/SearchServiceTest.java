@@ -15,7 +15,30 @@ class SearchServiceTest {
         assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
         assertThat(response.results())
                 .extracting(SearchResult::id)
-                .contains("tiger-line-nd-2025", "lodes-nd-wac-2023", "acs-pums-nd-2024");
+                .contains(
+                        "tiger-line-north-dakota-2025",
+                        "lodes-wac-north-dakota-2023",
+                        "acs-pums-north-dakota-2024");
+    }
+
+    @Test
+    void keywordSearchFindsOtherCensusAreas() {
+        SearchResponse response = searchService.search("California", null, null, null, 0, 25);
+
+        assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
+        assertThat(response.results())
+                .extracting(SearchResult::geography)
+                .containsOnly("California");
+    }
+
+    @Test
+    void geographyFilterSupportsAnySeededCensusArea() {
+        SearchResponse response = searchService.search("", null, "Texas", null, 0, 25);
+
+        assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
+        assertThat(response.results())
+                .extracting(SearchResult::id)
+                .contains("tiger-line-texas-2025", "lodes-wac-texas-2023", "acs-pums-texas-2024");
     }
 
     @Test

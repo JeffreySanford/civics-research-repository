@@ -33,6 +33,8 @@ services:
     command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec nx run discovery-ui:serve --host=0.0.0.0"
     environment:
       NG_CLI_ANALYTICS: 'false'
+      NX_DAEMON: 'false'
+      NX_WORKSPACE_DATA_DIRECTORY: /tmp/nx-workspace-data
     ports:
       - '4200:4200'
     volumes:

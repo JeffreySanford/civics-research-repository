@@ -55,7 +55,7 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [x] Verify `pnpm nx run-many -t lint --all`.
 - [x] Verify `pnpm nx run discovery-ui-e2e:accessibility`.
 - [ ] Review Nx 24 migration warnings for inferred ESLint and Vitest targets.
-- [ ] Resolve Analog/Vitest Angular `tsconfig.app.json` warning for non-buildable Angular libraries.
+- [x] Resolve Analog/Vitest Angular `tsconfig.app.json` warning for non-buildable Angular libraries.
 
 ## PI 1 - Local Repository Platform
 

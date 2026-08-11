@@ -47,21 +47,26 @@ public class SolrSearchClient {
 
         try {
             List<Map<String, Object>> documents = results.stream().map(this::toSolrDocument).toList();
-            HttpRequest request = HttpRequest.newBuilder(updateUri())
-                    .timeout(REQUEST_TIMEOUT)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(documents)))
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 300) {
-                throw new IllegalStateException("Solr update failed with HTTP " + response.statusCode());
-            }
+            sendUpdate(Map.of("delete", Map.of("query", "repositorySeed_b:true")));
+            sendUpdate(documents);
         } catch (IOException exception) {
             throw new IllegalStateException("Solr update request failed.", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Solr update request was interrupted.", exception);
+        }
+    }
+
+    private void sendUpdate(Object payload) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(updateUri())
+                .timeout(REQUEST_TIMEOUT)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 300) {
+            throw new IllegalStateException("Solr update failed with HTTP " + response.statusCode());
         }
     }
 
