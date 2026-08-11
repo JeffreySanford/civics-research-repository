@@ -46,12 +46,13 @@
     "test": "pnpm nx run discovery-ui:test",
     "test:all": "pnpm nx run-many -t test --all",
     "e2e": "pnpm nx run discovery-ui-e2e:e2e",
+    "storyboard": "pnpm nx run discovery-ui-e2e:storyboard",
     "accessibility": "pnpm nx run-many -t accessibility",
     "wcag": "pnpm nx run-many -t wcag",
     "wcag:report": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @wcag --reporter=list",
     "section508": "pnpm nx run-many -t section508",
     "section508:report": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @section508 --reporter=list",
-    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run wcag:report && pnpm run section508:report"
+    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run storyboard && pnpm run wcag:report && pnpm run section508:report"
   },
   "dependencies": {
     "@angular/animations": "22.1.1",

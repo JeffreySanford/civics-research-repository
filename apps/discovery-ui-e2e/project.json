@@ -23,6 +23,12 @@
       "options": {
         "command": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @section508"
       }
+    },
+    "storyboard": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @storyboard"
+      }
     }
   }
 }
