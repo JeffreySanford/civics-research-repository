@@ -16,11 +16,12 @@
   padding: 1.5rem;
 }
 
-.dataset-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
+.dataset-tabs {
   margin-top: 1.5rem;
+}
+
+.tab-panel {
+  padding: 1.25rem 0 0.25rem;
 }
 
 .version-list {
@@ -47,8 +48,7 @@
 }
 
 @media (max-width: 58rem) {
-  .dataset-hero,
-  .dataset-grid {
+  .dataset-hero {
     grid-template-columns: 1fr;
   }
 }

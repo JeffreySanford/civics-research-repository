@@ -222,6 +222,32 @@ function datasetDetail(datasetId: string): unknown {
     sourceUrl:
       'https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html',
     accessibilityEvidenceStatus: 'AUTOMATED_PASS',
+    relatedResearch: [
+      {
+        id: `lodes-wac-${geography.toLowerCase().replaceAll(' ', '-')}-2023`,
+        title: `2023 LODES Workplace Area Characteristics - ${geography}`,
+        contentType: 'DATASET',
+        program: 'LODES',
+        publisher: 'U.S. Census Bureau',
+        summary: `LEHD Origin-Destination Employment Statistics metadata for ${geography} workforce geography.`,
+        geography,
+        vintageYear: 2023,
+        sourceUrl: 'https://lehd.ces.census.gov/data/',
+      },
+      {
+        id: 'usgs-earthquakes-overlay',
+        title: 'USGS Earthquake Overlay',
+        contentType: 'DATASET',
+        program: 'USGS',
+        publisher: 'U.S. Geological Survey',
+        summary:
+          'Earthquake Hazards Program GeoJSON overlay metadata for map context and event lists.',
+        geography: 'United States',
+        vintageYear: 2026,
+        sourceUrl:
+          'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson',
+      },
+    ],
   };
 }
 

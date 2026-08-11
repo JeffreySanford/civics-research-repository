@@ -18,6 +18,7 @@ class DatasetServiceTest {
         assertThat(detail.program()).isEqualTo(ResearchProgram.TIGER_LINE);
         assertThat(detail.geography()).isEqualTo("California");
         assertThat(detail.files()).extracting(DatasetFile::format).contains(FileFormat.ZIP);
+        assertThat(detail.relatedResearch()).extracting((related) -> related.id()).contains("lodes-wac-california-2023");
     }
 
     @Test

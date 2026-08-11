@@ -181,8 +181,8 @@ Goal: build an accessible Angular UI for search, facets, dataset details, versio
 - [x] Build file/download section.
 - [x] Build citation section.
 - [x] Build versions tab.
-- [ ] Build related research section.
-- [ ] Add accessible tab behavior.
+- [x] Build related research section.
+- [x] Add accessible tab behavior.
 
 ### Sprint 3.3 - Admin Sync Workflow
 
@@ -237,7 +237,7 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 - [x] Expand automated scans to dataset detail route.
 - [x] Expand automated scans to map route or map tab.
 - [ ] Add keyboard navigation tests for search.
-- [ ] Add keyboard navigation tests for dataset detail tabs.
+- [x] Add keyboard navigation tests for dataset detail tabs.
 - [ ] Add keyboard navigation tests for map layer controls.
 - [x] Add storyboard checks across discovery, map, admin sync, and evidence routes.
 - [ ] Add dialog focus tests if dialogs are introduced.

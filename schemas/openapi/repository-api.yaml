@@ -357,6 +357,7 @@ components:
           files,
           citation,
           sourceUrl,
+          relatedResearch,
         ]
       properties:
         id:
@@ -387,6 +388,10 @@ components:
           format: uri
         accessibilityEvidenceStatus:
           $ref: '#/components/schemas/EvidenceStatus'
+        relatedResearch:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
     DatasetFile:
       type: object
       required: [id, label, format, url]

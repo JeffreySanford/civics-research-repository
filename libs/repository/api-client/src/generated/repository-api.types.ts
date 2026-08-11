@@ -208,6 +208,7 @@ export interface components {
       /** Format: uri */
       sourceUrl: string;
       accessibilityEvidenceStatus?: components['schemas']['EvidenceStatus'];
+      relatedResearch: components['schemas']['SearchResult'][];
     };
     DatasetFile: {
       id: string;

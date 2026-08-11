@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
 import { filter, map } from 'rxjs';
 import { DatasetsActions } from '../state/datasets/datasets.actions';
@@ -22,7 +23,7 @@ import {
 @Component({
   selector: 'app-dataset-detail-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, DatePipe, RouterLink],
+  imports: [AsyncPipe, DatePipe, MatTabsModule, RouterLink],
   templateUrl: './dataset-detail-page.html',
   styleUrl: './dataset-detail-page.scss',
 })

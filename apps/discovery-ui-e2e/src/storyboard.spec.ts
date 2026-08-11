@@ -96,11 +96,47 @@ test.describe('demo storyboard checks', () => {
       page.locator('dd').filter({ hasText: 'U.S. Census Bureau' }),
     ).toBeVisible();
     await expect(page.getByText('TIGER/Line source archive')).toBeVisible();
+    await page.getByRole('tab', { name: 'Citation' }).click();
     await expect(page.getByRole('heading', { name: 'Citation' })).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Versions' }).click();
     await expect(page.getByText('Current')).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Map Layers' }).click();
     await expect(page.getByText('USGS earthquake overlay')).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Open map workspace' }),
+    ).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Related Research' }).click();
+    await expect(
+      page.getByText('2023 LODES Workplace Area Characteristics - California'),
+    ).toBeVisible();
+  });
+
+  test('dataset detail tabs are keyboard operable @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/datasets/tiger-line-north-dakota-2025');
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - North Dakota',
+      }),
+    ).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Files' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'Citation' })).toBeVisible();
+
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'Versions' })).toBeVisible();
+
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await expect(
+      page.getByRole('heading', { name: 'Related Research' }),
     ).toBeVisible();
   });
 

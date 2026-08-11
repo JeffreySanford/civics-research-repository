@@ -40,70 +40,100 @@
   </dl>
 </section>
 
-<section class="dataset-grid" aria-label="Dataset supporting information">
-  <article class="content-panel" aria-labelledby="files-heading">
-    <h2 id="files-heading">Files and Source Links</h2>
-    <ul class="feature-list">
-      @for (file of detail.files; track file.id) {
-      <li>
-        <strong>{{ file.label }}</strong>
-        <span>{{ file.format }}</span>
-        <a
-          class="source-link"
-          [href]="file.url"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open source
-        </a>
-      </li>
-      }
-    </ul>
-  </article>
-
-  <article class="content-panel" aria-labelledby="citation-heading">
-    <h2 id="citation-heading">Citation</h2>
-    <p>{{ detail.citation }}</p>
-    <a
-      class="source-link"
-      [href]="detail.sourceUrl"
-      target="_blank"
-      rel="noreferrer"
-    >
-      Source data page
-    </a>
-  </article>
-
-  <article class="content-panel" aria-labelledby="versions-heading">
-    <h2 id="versions-heading">Versions</h2>
-    @if (versions$ | async; as versions) {
-    <ol class="version-list">
-      @for (version of versions; track version.id) {
-      <li>
-        <strong>{{ version.label }}</strong>
-        <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
-        @if (version.current) {
-        <span class="status-pill">Current</span>
+<mat-tab-group
+  class="dataset-tabs content-panel"
+  aria-label="Dataset supporting information"
+>
+  <mat-tab label="Files">
+    <section class="tab-panel" aria-labelledby="files-heading">
+      <h2 id="files-heading">Files and Source Links</h2>
+      <ul class="feature-list">
+        @for (file of detail.files; track file.id) {
+        <li>
+          <strong>{{ file.label }}</strong>
+          <span>{{ file.format }}</span>
+          <a
+            class="source-link"
+            [href]="file.url"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open source
+          </a>
+        </li>
         }
-      </li>
-      }
-    </ol>
-    }
-  </article>
+      </ul>
+    </section>
+  </mat-tab>
 
-  <article class="content-panel" aria-labelledby="map-layers-heading">
-    <h2 id="map-layers-heading">Map Layers</h2>
-    @if (mapLayers$ | async; as mapLayers) {
-    <ul class="feature-list">
-      @for (layer of mapLayers; track layer.id) {
-      <li>
-        <strong>{{ layer.label }}</strong>
-        <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
-      </li>
+  <mat-tab label="Citation">
+    <section class="tab-panel" aria-labelledby="citation-heading">
+      <h2 id="citation-heading">Citation</h2>
+      <p>{{ detail.citation }}</p>
+      <a
+        class="source-link"
+        [href]="detail.sourceUrl"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Source data page
+      </a>
+    </section>
+  </mat-tab>
+
+  <mat-tab label="Versions">
+    <section class="tab-panel" aria-labelledby="versions-heading">
+      <h2 id="versions-heading">Versions</h2>
+      @if (versions$ | async; as versions) {
+      <ol class="version-list">
+        @for (version of versions; track version.id) {
+        <li>
+          <strong>{{ version.label }}</strong>
+          <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
+          @if (version.current) {
+          <span class="status-pill">Current</span>
+          }
+        </li>
+        }
+      </ol>
       }
-    </ul>
-    }
-    <a class="source-link" routerLink="/maps">Open map workspace</a>
-  </article>
-</section>
+    </section>
+  </mat-tab>
+
+  <mat-tab label="Map Layers">
+    <section class="tab-panel" aria-labelledby="map-layers-heading">
+      <h2 id="map-layers-heading">Map Layers</h2>
+      @if (mapLayers$ | async; as mapLayers) {
+      <ul class="feature-list">
+        @for (layer of mapLayers; track layer.id) {
+        <li>
+          <strong>{{ layer.label }}</strong>
+          <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
+        </li>
+        }
+      </ul>
+      }
+      <a class="source-link" routerLink="/maps">Open map workspace</a>
+    </section>
+  </mat-tab>
+
+  <mat-tab label="Related Research">
+    <section class="tab-panel" aria-labelledby="related-heading">
+      <h2 id="related-heading">Related Research</h2>
+      <ul class="feature-list">
+        @for (related of detail.relatedResearch; track related.id) {
+        <li>
+          <strong>{{ related.title }}</strong>
+          <span>
+            {{ related.program }} - {{ related.geography ?? 'Not specified' }}
+          </span>
+          <a class="source-link" [routerLink]="['/datasets', related.id]">
+            Open related dataset
+          </a>
+        </li>
+        }
+      </ul>
+    </section>
+  </mat-tab>
+</mat-tab-group>
 }

@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import org.civicsrepo.search.ResearchProgram;
+import org.civicsrepo.search.ResearchObjectType;
+import org.civicsrepo.search.SearchResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -58,7 +60,8 @@ public class DatasetService {
                         new DatasetFile("metadata-html", "TIGER/Line technical documentation", FileFormat.OTHER, "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html", null)),
                 "U.S. Census Bureau. " + vintageYear + " TIGER/Line Shapefiles: Census Tracts, " + geography + ".",
                 "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
-                EvidenceStatus.AUTOMATED_PASS);
+                EvidenceStatus.AUTOMATED_PASS,
+                relatedCensusResearch(ResearchProgram.TIGER_LINE, geography));
     }
 
     private DatasetDetail lodesDetail(String datasetId, String geography, int vintageYear) {
@@ -76,7 +79,8 @@ public class DatasetService {
                         new DatasetFile("lodes-docs", "LODES documentation", FileFormat.PDF, "https://lehd.ces.census.gov/data/lodes/LODES7/LODESTechDoc7.5.pdf", null)),
                 "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, " + geography + ", " + vintageYear + ".",
                 "https://lehd.ces.census.gov/data/",
-                EvidenceStatus.MANUAL_REVIEW_REQUIRED);
+                EvidenceStatus.MANUAL_REVIEW_REQUIRED,
+                relatedCensusResearch(ResearchProgram.LODES, geography));
     }
 
     private DatasetDetail acsDetail(String datasetId, String geography, int vintageYear) {
@@ -94,7 +98,8 @@ public class DatasetService {
                         new DatasetFile("pums-docs", "ACS PUMS documentation", FileFormat.PDF, "https://www.census.gov/programs-surveys/acs/technical-documentation/pums/documentation.html", null)),
                 "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, " + geography + ", " + vintageYear + ".",
                 "https://www.census.gov/programs-surveys/acs/microdata.html",
-                EvidenceStatus.MANUAL_REVIEW_REQUIRED);
+                EvidenceStatus.MANUAL_REVIEW_REQUIRED,
+                relatedCensusResearch(ResearchProgram.ACS, geography));
     }
 
     private DatasetDetail nationalDetail(
@@ -115,7 +120,8 @@ public class DatasetService {
                 List.of(new DatasetFile("source-page", title + " source page", FileFormat.OTHER, sourceUrl, null)),
                 "U.S. Census Bureau. " + title + ".",
                 sourceUrl,
-                EvidenceStatus.MANUAL_REVIEW_REQUIRED);
+                EvidenceStatus.MANUAL_REVIEW_REQUIRED,
+                relatedNationalResearch(program));
     }
 
     private DatasetDetail usgsDetail(String datasetId) {
@@ -131,7 +137,24 @@ public class DatasetService {
                 List.of(new DatasetFile("earthquake-geojson", "USGS earthquake GeoJSON feed", FileFormat.GEOJSON, "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson", null)),
                 "U.S. Geological Survey. Earthquake Catalog GeoJSON Feed.",
                 "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson",
-                EvidenceStatus.AUTOMATED_PASS);
+                EvidenceStatus.AUTOMATED_PASS,
+                List.of(
+                        searchResult(
+                                "tiger-line-north-dakota-2025",
+                                "2025 TIGER/Line - Census Tracts - North Dakota",
+                                ResearchProgram.TIGER_LINE,
+                                "Cartographic boundary and tract geometry metadata for North Dakota census geography.",
+                                "North Dakota",
+                                2025,
+                                "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"),
+                        searchResult(
+                                "lodes-wac-north-dakota-2023",
+                                "2023 LODES Workplace Area Characteristics - North Dakota",
+                                ResearchProgram.LODES,
+                                "LEHD Origin-Destination Employment Statistics metadata for North Dakota workforce geography.",
+                                "North Dakota",
+                                2023,
+                                "https://lehd.ces.census.gov/data/")));
     }
 
     private DatasetKey parseDatasetId(String datasetId) {
@@ -181,6 +204,98 @@ public class DatasetService {
 
     private ResponseStatusException notFound(String datasetId) {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, "Dataset not found: " + datasetId);
+    }
+
+    private List<SearchResult> relatedCensusResearch(ResearchProgram currentProgram, String geography) {
+        String idSuffix = geography.toLowerCase(Locale.ROOT).replace(" ", "-");
+
+        return List.of(
+                        searchResult(
+                                "tiger-line-" + idSuffix + "-2025",
+                                "2025 TIGER/Line - Census Tracts - " + geography,
+                                ResearchProgram.TIGER_LINE,
+                                "Cartographic boundary and tract geometry metadata for " + geography + " census geography.",
+                                geography,
+                                2025,
+                                "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"),
+                        searchResult(
+                                "lodes-wac-" + idSuffix + "-2023",
+                                "2023 LODES Workplace Area Characteristics - " + geography,
+                                ResearchProgram.LODES,
+                                "LEHD Origin-Destination Employment Statistics metadata for " + geography + " workforce geography.",
+                                geography,
+                                2023,
+                                "https://lehd.ces.census.gov/data/"),
+                        searchResult(
+                                "acs-pums-" + idSuffix + "-2024",
+                                "2024 ACS 1-Year PUMS - " + geography,
+                                ResearchProgram.ACS,
+                                "American Community Survey public use microdata metadata for " + geography + " demographic research.",
+                                geography,
+                                2024,
+                                "https://www.census.gov/programs-surveys/acs/microdata.html"),
+                        searchResult(
+                                "usgs-earthquakes-overlay",
+                                "USGS Earthquake Overlay",
+                                ResearchProgram.USGS,
+                                "Earthquake Hazards Program GeoJSON overlay metadata for map context and event lists.",
+                                "United States",
+                                2026,
+                                "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"))
+                .stream()
+                .filter((result) -> result.program() != currentProgram)
+                .toList();
+    }
+
+    private List<SearchResult> relatedNationalResearch(ResearchProgram currentProgram) {
+        return List.of(
+                        searchResult(
+                                "sipp-public-use",
+                                "SIPP Public Use Data",
+                                ResearchProgram.SIPP,
+                                "Survey of Income and Program Participation public-use metadata for longitudinal research.",
+                                "United States",
+                                2024,
+                                "https://www.census.gov/programs-surveys/sipp/data/datasets.html"),
+                        searchResult(
+                                "cps-public-use",
+                                "Current Population Survey Public Use Data",
+                                ResearchProgram.CPS,
+                                "Current Population Survey public-use metadata for labor force and demographic analysis.",
+                                "United States",
+                                2024,
+                                "https://www.census.gov/programs-surveys/cps/data/datasets.html"),
+                        searchResult(
+                                "acs-pums-north-dakota-2024",
+                                "2024 ACS 1-Year PUMS - North Dakota",
+                                ResearchProgram.ACS,
+                                "American Community Survey public use microdata metadata for North Dakota demographic research.",
+                                "North Dakota",
+                                2024,
+                                "https://www.census.gov/programs-surveys/acs/microdata.html"))
+                .stream()
+                .filter((result) -> result.program() != currentProgram)
+                .toList();
+    }
+
+    private SearchResult searchResult(
+            String id,
+            String title,
+            ResearchProgram program,
+            String summary,
+            String geography,
+            Integer vintageYear,
+            String sourceUrl) {
+        return new SearchResult(
+                id,
+                title,
+                ResearchObjectType.DATASET,
+                program,
+                program == ResearchProgram.USGS ? "U.S. Geological Survey" : "U.S. Census Bureau",
+                summary,
+                geography,
+                vintageYear,
+                sourceUrl);
     }
 
     private record DatasetKey(ResearchProgram program, String geography, int vintageYear) {}

@@ -16,6 +16,7 @@ describe('datasetsReducer', () => {
     citation: 'U.S. Census Bureau. TIGER/Line.',
     sourceUrl: 'https://example.test/tiger',
     accessibilityEvidenceStatus: 'AUTOMATED_PASS' as const,
+    relatedResearch: [],
   };
 
   it('tracks opened dataset loading state', () => {

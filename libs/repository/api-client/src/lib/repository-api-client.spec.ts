@@ -59,6 +59,7 @@ describe('RepositoryDatasetsApi', () => {
       citation: 'U.S. Census Bureau. TIGER/Line.',
       sourceUrl: 'https://example.test/tiger',
       accessibilityEvidenceStatus: 'AUTOMATED_PASS',
+      relatedResearch: [],
     };
     const versions: DatasetVersion[] = [
       {

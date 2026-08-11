@@ -3,6 +3,7 @@ package org.civicsrepo.datasets;
 import java.time.LocalDate;
 import java.util.List;
 import org.civicsrepo.search.ResearchProgram;
+import org.civicsrepo.search.SearchResult;
 
 public record DatasetDetail(
         String id,
@@ -16,4 +17,5 @@ public record DatasetDetail(
         List<DatasetFile> files,
         String citation,
         String sourceUrl,
-        EvidenceStatus accessibilityEvidenceStatus) {}
+        EvidenceStatus accessibilityEvidenceStatus,
+        List<SearchResult> relatedResearch) {}

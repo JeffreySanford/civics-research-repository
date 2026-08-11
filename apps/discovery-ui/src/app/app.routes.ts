@@ -1,6 +1,5 @@
 import { Route } from '@angular/router';
 import { AdminSyncPage } from './pages/admin-sync-page';
-import { DatasetDetailPage } from './pages/dataset-detail-page';
 import { DiscoveryPage } from './pages/discovery-page';
 import { EvidencePage } from './pages/evidence-page';
 import { HomePage } from './pages/home-page';
@@ -11,7 +10,8 @@ export const appRoutes: Route[] = [
   { path: 'discovery', component: DiscoveryPage, title: 'Discovery' },
   {
     path: 'datasets/:datasetId',
-    component: DatasetDetailPage,
+    loadComponent: () =>
+      import('./pages/dataset-detail-page').then((m) => m.DatasetDetailPage),
     title: 'Dataset Detail',
   },
   { path: 'admin/sync', component: AdminSyncPage, title: 'Repository Sync' },
