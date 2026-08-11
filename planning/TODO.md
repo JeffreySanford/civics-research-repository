@@ -22,12 +22,15 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [x] Add Nx, Angular 22, Material Design, WCAG, and Section 508 workspace baseline.
 - [x] Add project-specific `.agents` guidance.
 - [x] Add MCP template notes for Nx and accessibility evidence.
+- [x] Define first vertical slice acceptance criteria.
+- [x] Add planning roadmap.
+- [x] Add decision log.
+- [x] Add risk register.
 - [ ] Create C4 context diagram.
-- [ ] Create container diagram for Angular, DSpace, Solr, PostgreSQL, and harvester.
+- [ ] Create container diagram for Angular, Java API, DSpace, Solr, PostgreSQL, and harvester.
 - [ ] Create sequence diagram for public dataset ingestion.
 - [ ] Create sequence diagram for search and faceted discovery.
 - [ ] Create sequence diagram for dataset map rendering.
-- [ ] Define first vertical slice acceptance criteria.
 - [ ] Decide Angular map library: MapLibre GL or Leaflet.
 - [ ] Confirm DSpace Docker baseline.
 
@@ -55,7 +58,7 @@ Goal: establish the project direction, documentation base, and working backlog.
 
 ## PI 1 - Local Repository Platform
 
-Goal: run the repository stack locally with DSpace, PostgreSQL, Solr, and seed metadata.
+Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL, Solr, and seed metadata.
 
 ### Sprint 1.0 - Java API Contract Foundation
 
@@ -69,13 +72,14 @@ Goal: run the repository stack locally with DSpace, PostgreSQL, Solr, and seed m
 - [x] Add Java API MCP template notes.
 - [x] Add NgRx packages compatible with Angular 22.
 - [x] Wire root NgRx Store, Effects, Router Store, and DevTools providers.
+- [x] Generate Angular TypeScript API types from OpenAPI.
 - [ ] Choose Maven or Gradle.
 - [ ] Choose Java runtime target: 17, 21, or 25.
-- [ ] Install/enable Maven or choose Gradle wrapper strategy.
+- [ ] Install/enable Maven wrapper or choose Gradle wrapper strategy.
 - [ ] Select Nx Java integration plugin.
+- [ ] Select OpenAPI-to-Java DTO generation tool.
 - [ ] Generate `apps/repository-api`.
 - [ ] Generate Java DTOs from OpenAPI.
-- [x] Generate Angular TypeScript API types from OpenAPI.
 - [ ] Generate Angular TypeScript API client methods from OpenAPI.
 - [ ] Add typed NgRx feature state for search.
 - [ ] Add typed NgRx feature state for dataset detail.
@@ -108,7 +112,7 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 
 ### Sprint 2.1 - Census Metadata Harvester
 
-- [ ] Choose harvester runtime: NestJS, Node script, or Python.
+- [ ] Decide harvester placement: Java API orchestration, standalone tool, or hybrid fixture-first approach.
 - [ ] Implement ACS PUMS metadata source adapter.
 - [ ] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
 - [ ] Generate DSpace-ready item payload.
@@ -135,12 +139,13 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 
 ## PI 3 - Angular Discovery UI
 
-Goal: build an accessible Angular UI for search, facets, dataset details, versions, and citations.
+Goal: build an accessible Angular UI for search, facets, dataset details, versions, citations, and typed async data flows.
 
 ### Sprint 3.1 - Search and Facets
 
-- [ ] Scaffold Angular discovery application.
-- [ ] Define repository API client.
+- [x] Scaffold Angular discovery application.
+- [ ] Replace starter shell with search route and app navigation.
+- [ ] Define repository API client methods from generated OpenAPI types.
 - [ ] Build search page.
 - [ ] Build result card/list component.
 - [ ] Build facet panel.
@@ -194,10 +199,16 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 
 ### Sprint 5.1 - Automated Checks
 
-- [ ] Add axe-core integration.
-- [ ] Add Playwright accessibility smoke tests.
+- [x] Add axe-core integration.
+- [x] Add Playwright accessibility smoke tests.
+- [x] Add WCAG console report script.
+- [x] Add Section 508 console report script.
+- [ ] Expand automated scans to search route.
+- [ ] Expand automated scans to dataset detail route.
+- [ ] Expand automated scans to map route or map tab.
 - [ ] Add keyboard navigation tests for search.
 - [ ] Add keyboard navigation tests for dataset detail tabs.
+- [ ] Add keyboard navigation tests for map layer controls.
 - [ ] Add dialog focus tests if dialogs are introduced.
 - [ ] Add responsive reflow checks.
 - [ ] Add color contrast verification.

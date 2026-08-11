@@ -69,7 +69,12 @@ civics-research-repository/
 │   ├── nx-angular-wcag.md
 │   └── mcp/
 ├── planning/
-│   └── TODO.md
+│   ├── README.md
+│   ├── TODO.md
+│   ├── ROADMAP.md
+│   ├── DECISIONS.md
+│   ├── ACCEPTANCE_CRITERIA.md
+│   └── RISKS.md
 └── README.md
 ```
 
@@ -102,3 +107,5 @@ pnpm run section508:report
 `wcag:report` and `section508:report` run the Playwright/axe checks with a console reporter so pass/fail results are visible in terminal output.
 
 Frontend API types are generated from [schemas/openapi/repository-api.yaml](schemas/openapi/repository-api.yaml). Run `pnpm run openapi:generate` after contract changes and `pnpm run openapi:check` before committing to prevent OpenAPI/frontend type drift.
+
+Implementation planning is tracked in [planning/README.md](planning/README.md), with the active backlog in [planning/TODO.md](planning/TODO.md).

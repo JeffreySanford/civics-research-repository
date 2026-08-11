@@ -11,6 +11,7 @@ This directory captures the product, architecture, data, accessibility, and plat
 - [Docker, DSpace, Solr, PostgreSQL](docker-dspace-solr-postgres.md): local platform plan and service responsibilities.
 - [Nx, Angular 22, Material Design, WCAG, and Section 508](nx-angular-wcag.md): frontend workspace baseline and automated accessibility direction.
 - [Backend Java API](backend-java-api.md): Spring Boot, OpenAPI, DTO, validation, and Nx integration direction.
+- [Planning](../planning/README.md): roadmap, decisions, acceptance criteria, risks, and PI/sprint backlog.
 
 ## Positioning
 
@@ -22,3 +23,15 @@ The demo should show a realistic federal open-science repository workflow:
 4. Angular consumes repository APIs and presents the discovery experience.
 5. Geospatial datasets include map previews and USGS contextual overlays.
 6. Accessibility evidence is treated as a release artifact.
+
+## Planning Alignment
+
+The project direction is defined enough to proceed, but the next implementation step should close a few decision gates before generating the Java backend and Docker platform:
+
+- Java runtime and build tool.
+- Nx Java integration plugin.
+- OpenAPI-to-Java DTO generation.
+- DSpace Docker baseline.
+- Map library selection.
+
+The active backlog and first vertical-slice criteria live in [planning](../planning/README.md).
