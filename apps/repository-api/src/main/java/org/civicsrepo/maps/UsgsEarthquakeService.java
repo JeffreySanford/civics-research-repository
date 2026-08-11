@@ -28,10 +28,22 @@ public class UsgsEarthquakeService {
     private static final double MIN_LONGITUDE = -104.2;
     private static final double MAX_LONGITUDE = -96.4;
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(4))
-            .build();
+    private final HttpClient httpClient;
+    private final URI usgsEndpoint;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public UsgsEarthquakeService() {
+        this(
+                HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofSeconds(4))
+                        .build(),
+                URI.create(USGS_ENDPOINT));
+    }
+
+    UsgsEarthquakeService(HttpClient httpClient, URI usgsEndpoint) {
+        this.httpClient = httpClient;
+        this.usgsEndpoint = usgsEndpoint;
+    }
 
     public UsgsEarthquakeOverlay findEarthquakes(double minMagnitude, int days) {
         try {
@@ -97,7 +109,7 @@ public class UsgsEarthquakeService {
                 "maxlatitude=" + MAX_LATITUDE,
                 "minlongitude=" + MIN_LONGITUDE,
                 "maxlongitude=" + MAX_LONGITUDE);
-        return URI.create(USGS_ENDPOINT + "?" + query);
+        return URI.create(usgsEndpoint + "?" + query);
     }
 
     private OffsetDateTime readGeneratedAt(JsonNode root) {
@@ -150,7 +162,7 @@ public class UsgsEarthquakeService {
             List<UsgsEarthquakeFeature> features) {
         return new UsgsEarthquakeOverlay(
                 source,
-                USGS_ENDPOINT + "?format=geojson",
+                usgsEndpoint + "?format=geojson",
                 USGS_ATTRIBUTION,
                 updatedAt,
                 updatedAt.plusDays(1),
