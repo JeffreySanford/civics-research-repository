@@ -32,6 +32,12 @@ Decision: prefer Java/Spring Boot for the backend API.
 
 Reason: Java is a stronger fit for likely federal delivery environments and DSpace/Solr/PostgreSQL integration. NestJS remains a fallback for rapid prototypes only.
 
+### Java Runtime Target
+
+Decision: target Java 21 for this reference implementation.
+
+Reason: Java 21 is a strong current baseline for a new service. The likely target environment may run older Java, but this project should use the cleaner current baseline unless a deployment constraint appears.
+
 ### API Contract
 
 Decision: OpenAPI is the source of truth for application API contracts.
@@ -44,13 +50,61 @@ Decision: use NgRx and RxJS for API-backed search, dataset, map, evidence, and i
 
 Reason: repository discovery workflows need typed async streams, cancellation, shared selectors, and predictable failure handling.
 
+### Data Sync Ownership
+
+Decision: the Java API should own sync orchestration and sync state, with script entry points available for repeatable local and CI/demo execution.
+
+Reason: sync status, admin-triggered sync, startup sync, and repository write behavior belong close to the typed backend and DSpace integration.
+
+### Sync Triggers
+
+Decision: support automatic sync at Docker app startup, manual sync from an admin UI button, and a script/CLI command.
+
+Reason: startup sync makes the local demo self-healing, while admin and script triggers make the workflow visible and repeatable.
+
+### Docker Storage
+
+Decision: use Docker persistent volumes for DSpace, PostgreSQL, Solr, and small-to-medium mirrored demo artifacts.
+
+Reason: the local demo should survive restarts and show realistic repository persistence without committing generated data or large public datasets to git.
+
+### First Dataset Emphasis
+
+Decision: prioritize a visual geospatial first slice using TIGER/Line or LODES with USGS overlays, while keeping ACS PUMS as a metadata-rich repository example.
+
+Reason: the mapping visualization is a major demo feature and should be visible early.
+
+### Map Library
+
+Decision: use MapLibre GL first.
+
+Reason: MapLibre is stronger for modern geospatial visualization, vector tiles, and layered map experiences. Leaflet can be evaluated later behind a map adapter if there is a concrete demo value, but shipping both engines initially would add test and accessibility surface area without improving the first vertical slice.
+
+### Admin Workflow
+
+Decision: include an admin workflow prototype with manual sync controls, sync status, and submission/review concepts.
+
+Reason: it demonstrates enterprise workflow thinking and supports manual data synchronization from the UI.
+
+### Accessibility Evidence UI
+
+Decision: provide both console accessibility reports and an Angular evidence view.
+
+Reason: scripts are useful for engineering gates; a UI evidence view makes WCAG/Section 508 status understandable in the demo.
+
+### Container Priority
+
+Decision: prioritize a local Docker demo over cloud deployment.
+
+Reason: the most useful demo artifact is a repeatable local container stack. AWS documentation should bias toward containerized modernization, with EKS as the likely future direction and ECS mentioned only as context.
+
+### Demo Priority
+
+Decision: optimize for a working local Docker demo first, then polished Angular screens, then supporting documentation.
+
+Reason: the strongest demo is something that runs locally, looks credible, and has documentation explaining the architecture.
+
 ## Pending
-
-### Java Runtime Target
-
-Options: Java 17, Java 21, or Java 25.
-
-Recommendation: Java 21 unless the target environment requires Java 17. Java 17 is installed locally today; Java 21 is a better current long-term baseline for new Spring services.
 
 ### Java Build Tool
 
@@ -77,12 +131,6 @@ Options:
 - Springdoc/OpenAPI controller annotation flow with generated DTOs.
 
 Recommendation: generate DTOs from OpenAPI rather than generating OpenAPI from controllers.
-
-### Map Library
-
-Options: MapLibre GL or Leaflet.
-
-Recommendation: choose after confirming first Census and USGS layer formats. MapLibre is stronger for vector tiles and modern rendering; Leaflet is simpler for accessible control composition and basic overlays.
 
 ### DSpace Docker Baseline
 

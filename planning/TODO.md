@@ -32,7 +32,7 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [ ] Create sequence diagram for public dataset ingestion.
 - [ ] Create sequence diagram for search and faceted discovery.
 - [ ] Create sequence diagram for dataset map rendering.
-- [ ] Decide Angular map library: MapLibre GL or Leaflet.
+- [x] Decide Angular map library: MapLibre GL first.
 - [ ] Confirm DSpace Docker baseline.
 
 ### Sprint 0.3 - Nx Workspace Generation
@@ -74,8 +74,8 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Add NgRx packages compatible with Angular 22.
 - [x] Wire root NgRx Store, Effects, Router Store, and DevTools providers.
 - [x] Generate Angular TypeScript API types from OpenAPI.
+- [x] Choose Java runtime target: 21.
 - [ ] Choose Maven or Gradle.
-- [ ] Choose Java runtime target: 17, 21, or 25.
 - [ ] Install/enable Maven wrapper or choose Gradle wrapper strategy.
 - [ ] Select Nx Java integration plugin.
 - [ ] Select OpenAPI-to-Java DTO generation tool.
@@ -90,20 +90,25 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 ### Sprint 1.1 - Docker Platform
 
 - [ ] Add Docker Compose file.
+- [ ] Add persistent Docker volumes for DSpace assets, PostgreSQL, Solr, and mirrored demo artifacts.
 - [ ] Add PostgreSQL service for DSpace.
 - [ ] Add Solr service for DSpace discovery.
 - [ ] Add DSpace REST service.
+- [ ] Add Java API service.
+- [ ] Add Angular UI service.
 - [ ] Add local environment sample.
 - [ ] Document startup and reset commands.
 - [ ] Verify DSpace API is reachable locally.
 - [ ] Verify Solr is reachable locally.
+- [ ] Verify startup sync creates or updates the seed repository objects.
 
 ### Sprint 1.2 - DSpace Seed Repository
 
 - [ ] Define DSpace community for Census public research data.
-- [ ] Define DSpace collection for ACS PUMS.
-- [ ] Create seed metadata for one ACS PUMS North Dakota item.
+- [ ] Define DSpace collection for the first visual geospatial source.
+- [ ] Create seed metadata for one TIGER/Line or LODES North Dakota item.
 - [ ] Attach source URLs and documentation URLs.
+- [ ] Store small-to-medium mirrored demo artifacts where useful.
 - [ ] Confirm item appears through DSpace REST.
 - [ ] Confirm item is indexed into Solr discovery.
 
@@ -113,9 +118,12 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 
 ### Sprint 2.1 - Census Metadata Harvester
 
-- [ ] Decide harvester placement: Java API orchestration, standalone tool, or hybrid fixture-first approach.
+- [x] Decide harvester placement: Java API owns sync orchestration and sync state.
 - [ ] Define sync state model for source ID, source URL, DSpace item ID, last sync status, and source freshness.
-- [ ] Implement ACS PUMS metadata source adapter.
+- [ ] Implement TIGER/Line or LODES metadata source adapter for first visual slice.
+- [ ] Add startup sync path.
+- [ ] Add admin UI-triggered sync endpoint.
+- [ ] Add script/CLI sync entry point.
 - [ ] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
 - [ ] Generate DSpace-ready item payload.
 - [ ] Add dry-run mode.
@@ -173,14 +181,23 @@ Goal: build an accessible Angular UI for search, facets, dataset details, versio
 - [ ] Build related research section.
 - [ ] Add accessible tab behavior.
 
+### Sprint 3.3 - Admin Sync Workflow
+
+- [ ] Build admin route.
+- [ ] Add sync status summary.
+- [ ] Add manual dry-run sync button.
+- [ ] Add manual apply sync button.
+- [ ] Show create, update, skip, and failure results.
+- [ ] Add typed NgRx state for sync jobs.
+
 ## PI 4 - Mapping and USGS Overlays
 
 Goal: deliver the visual map demo mentioned in the role context, with USGS overlays and accessible fallback data.
 
 ### Sprint 4.1 - Map Foundation
 
-- [ ] Select MapLibre GL or Leaflet.
-- [ ] Build map shell component.
+- [x] Select MapLibre GL first.
+- [ ] Build MapLibre GL map shell component.
 - [ ] Add dataset-driven layer loading.
 - [ ] Add layer toggle controls.
 - [ ] Add source attribution display.
@@ -225,6 +242,7 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 
 ### Sprint 5.2 - Manual Evidence
 
+- [ ] Build accessibility evidence UI route.
 - [ ] Create manual keyboard test checklist.
 - [ ] Create NVDA smoke-test checklist.
 - [ ] Create JAWS smoke-test checklist.
@@ -234,12 +252,13 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 
 ## PI 6 - AWS Modernization Documentation
 
-Goal: describe a credible federal modernization path without requiring paid cloud deployment for the demo.
+Goal: describe a credible container-first modernization path without requiring paid cloud deployment for the demo.
 
 ### Sprint 6.1 - AWS Architecture
 
-- [ ] Document ECS/Fargate option.
-- [ ] Document EKS/Kubernetes option.
+- [ ] Document Docker-first local architecture.
+- [ ] Document EKS/Kubernetes modernization option.
+- [ ] Document ECS/Fargate only as an alternate container deployment option.
 - [ ] Document RDS PostgreSQL option.
 - [ ] Document Solr persistence and operational tradeoffs.
 - [ ] Document CloudFront/static frontend option.

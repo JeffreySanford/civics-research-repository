@@ -62,7 +62,6 @@ Maps are visual and interactive, so the UI must provide equivalent access to the
 
 ## Candidate Libraries
 
-- MapLibre GL for vector-tile-oriented maps and modern rendering.
-- Leaflet for simpler layer composition and broad plugin support.
+Use MapLibre GL first for vector-tile-oriented maps and modern rendering.
 
-The implementation decision should be made after confirming required layer formats from Census and USGS sources.
+Leaflet remains a possible later comparison implementation behind a small map-engine adapter if there is a concrete reason to show both. Do not build both engines in the first slice; it would double rendering, testing, and accessibility work before the core repository workflow is proven.
