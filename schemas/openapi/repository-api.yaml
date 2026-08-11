@@ -1,0 +1,428 @@
+openapi: 3.1.0
+info:
+  title: Civics Research Repository API
+  version: 0.1.0
+  description: Typed backend API contract for public research discovery, datasets, map overlays, and accessibility evidence.
+servers:
+  - url: http://localhost:8080/api
+    description: Local Java API
+tags:
+  - name: Search
+  - name: Datasets
+  - name: Maps
+  - name: Evidence
+paths:
+  /search:
+    get:
+      tags: [Search]
+      operationId: searchResearchObjects
+      summary: Search public research objects.
+      parameters:
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/Program'
+        - $ref: '#/components/parameters/Geography'
+        - $ref: '#/components/parameters/VintageYear'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Search results and facets.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /datasets/{datasetId}:
+    get:
+      tags: [Datasets]
+      operationId: getDataset
+      summary: Get a dataset research object.
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+      responses:
+        '200':
+          description: Dataset detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /datasets/{datasetId}/versions:
+    get:
+      tags: [Datasets]
+      operationId: getDatasetVersions
+      summary: Get dataset version history.
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+      responses:
+        '200':
+          description: Dataset versions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DatasetVersion'
+  /datasets/{datasetId}/map-layers:
+    get:
+      tags: [Maps]
+      operationId: getDatasetMapLayers
+      summary: Get map layers available for a dataset.
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+      responses:
+        '200':
+          description: Map layer configuration.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MapLayer'
+  /overlays/usgs/earthquakes:
+    get:
+      tags: [Maps]
+      operationId: getUsgsEarthquakeOverlay
+      summary: Get USGS earthquake overlay features.
+      parameters:
+        - name: minMagnitude
+          in: query
+          schema:
+            type: number
+            format: double
+            minimum: 0
+            maximum: 10
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 7
+      responses:
+        '200':
+          description: Earthquake overlay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsgsEarthquakeOverlay'
+  /accessibility/evidence:
+    get:
+      tags: [Evidence]
+      operationId: getAccessibilityEvidence
+      summary: Get accessibility evidence summaries.
+      responses:
+        '200':
+          description: Accessibility evidence entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccessibilityEvidence'
+components:
+  parameters:
+    SearchQuery:
+      name: q
+      in: query
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 200
+      description: Keyword search terms.
+    Program:
+      name: program
+      in: query
+      schema:
+        $ref: '#/components/schemas/ResearchProgram'
+    Geography:
+      name: geography
+      in: query
+      schema:
+        type: string
+        maxLength: 80
+    VintageYear:
+      name: vintageYear
+      in: query
+      schema:
+        type: integer
+        minimum: 1900
+        maximum: 2100
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    DatasetId:
+      name: datasetId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9._:-]+$'
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    SearchResponse:
+      type: object
+      required: [query, page, pageSize, totalResults, results, facets]
+      properties:
+        query:
+          type: string
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalResults:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        facets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetGroup'
+    SearchResult:
+      type: object
+      required: [id, title, contentType, program, publisher, summary, sourceUrl]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        contentType:
+          $ref: '#/components/schemas/ResearchObjectType'
+        program:
+          $ref: '#/components/schemas/ResearchProgram'
+        publisher:
+          type: string
+        summary:
+          type: string
+        geography:
+          type: string
+        vintageYear:
+          type: integer
+        sourceUrl:
+          type: string
+          format: uri
+    FacetGroup:
+      type: object
+      required: [field, label, values]
+      properties:
+        field:
+          type: string
+        label:
+          type: string
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetValue'
+    FacetValue:
+      type: object
+      required: [value, label, count, selected]
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+        selected:
+          type: boolean
+    DatasetDetail:
+      type: object
+      required:
+        [
+          id,
+          title,
+          program,
+          publisher,
+          abstractText,
+          files,
+          citation,
+          sourceUrl,
+        ]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        program:
+          $ref: '#/components/schemas/ResearchProgram'
+        publisher:
+          type: string
+        abstractText:
+          type: string
+        geography:
+          type: string
+        vintageYear:
+          type: integer
+        releasedOn:
+          type: string
+          format: date
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetFile'
+        citation:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        accessibilityEvidenceStatus:
+          $ref: '#/components/schemas/EvidenceStatus'
+    DatasetFile:
+      type: object
+      required: [id, label, format, url]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        format:
+          $ref: '#/components/schemas/FileFormat'
+        url:
+          type: string
+          format: uri
+        sizeBytes:
+          type: integer
+    DatasetVersion:
+      type: object
+      required: [id, label, current]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        releasedOn:
+          type: string
+          format: date
+        current:
+          type: boolean
+    MapLayer:
+      type: object
+      required: [id, label, layerType, sourceUrl, attribution]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        layerType:
+          $ref: '#/components/schemas/MapLayerType'
+        sourceUrl:
+          type: string
+          format: uri
+        attribution:
+          type: string
+        visibleByDefault:
+          type: boolean
+          default: false
+    UsgsEarthquakeOverlay:
+      type: object
+      required: [source, updatedAt, features]
+      properties:
+        source:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsgsEarthquakeFeature'
+    UsgsEarthquakeFeature:
+      type: object
+      required: [id, place, magnitude, occurredAt, latitude, longitude]
+      properties:
+        id:
+          type: string
+        place:
+          type: string
+        magnitude:
+          type: number
+          format: double
+        occurredAt:
+          type: string
+          format: date-time
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+    AccessibilityEvidence:
+      type: object
+      required: [id, workflow, status, standard, capturedAt]
+      properties:
+        id:
+          type: string
+        workflow:
+          type: string
+        status:
+          $ref: '#/components/schemas/EvidenceStatus'
+        standard:
+          type: string
+          enum: [WCAG_2_1_AA, WCAG_2_2_AA, SECTION_508]
+        capturedAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+    ResearchObjectType:
+      type: string
+      enum: [DATASET, PUBLICATION, CODE, METHODOLOGY, SUPPORTING_MATERIAL]
+    ResearchProgram:
+      type: string
+      enum: [ACS, SIPP, CPS, LEHD, LODES, TIGER_LINE, USGS]
+    FileFormat:
+      type: string
+      enum: [CSV, ZIP, PDF, JSON, GEOJSON, SHAPEFILE, GEOPACKAGE, OTHER]
+    MapLayerType:
+      type: string
+      enum: [CENSUS_BOUNDARY, CENSUS_DATA, USGS_EARTHQUAKE, USGS_REFERENCE]
+    EvidenceStatus:
+      type: string
+      enum:
+        [
+          NOT_STARTED,
+          AUTOMATED_PASS,
+          AUTOMATED_FAIL,
+          MANUAL_REVIEW_REQUIRED,
+          VERIFIED,
+        ]

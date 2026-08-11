@@ -11,6 +11,7 @@ Verified package versions on August 11, 2026:
 - axe-core: 4.13.0
 - @axe-core/playwright: 4.13.0
 - TypeScript: 6.0.3, matching Angular 22 peer requirements
+- NgRx: 22.0.0-rc.0, selected because the stable 21.1.1 line peers Angular 21 while the RC peers Angular 22
 
 ## Workspace Direction
 
@@ -29,6 +30,8 @@ libs/maps/usgs-overlays
 libs/data-sources/census
 libs/data-sources/usgs
 tools/harvester
+schemas/openapi
+apps/repository-api
 ```
 
 ## Application Responsibilities
@@ -141,3 +144,15 @@ MCP integration should expose read-oriented workspace and evidence operations fi
 - Dataset source status lookup.
 
 Write-oriented MCP operations should call existing Nx targets or repo scripts rather than modifying workspace state directly.
+
+## NgRx and RxJS Data Flow
+
+The frontend should treat backend communication as typed asynchronous streams:
+
+- API clients return typed `Observable<T>` values from Angular `HttpClient`.
+- Components dispatch typed actions instead of calling APIs directly.
+- Effects own HTTP calls, retries, cancellation, and failure mapping.
+- Reducers own durable feature state.
+- Selectors expose read models to components.
+- Entity adapters should be used for keyed collections such as datasets, files, map features, and evidence entries.
+- Signals are acceptable for local derived UI state, but not as a replacement for shared repository/search/map state.

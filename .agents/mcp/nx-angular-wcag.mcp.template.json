@@ -19,6 +19,17 @@
         "EVIDENCE_ROOT": "documentation/accessibility-evidence"
       },
       "disabled": true
+    },
+    "java-api-contracts": {
+      "description": "Template placeholder for Java API/OpenAPI contract context. Backend build and test should still run through Nx targets.",
+      "command": "node",
+      "args": ["tools/mcp/java-api-contracts-server/index.js"],
+      "env": {
+        "WORKSPACE_ROOT": ".",
+        "OPENAPI_CONTRACT": "schemas/openapi/repository-api.yaml",
+        "BACKEND_PROJECT": "repository-api"
+      },
+      "disabled": true
     }
   }
 }

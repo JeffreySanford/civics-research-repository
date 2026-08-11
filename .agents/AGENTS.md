@@ -9,6 +9,7 @@ Civics Research Repository is an independent federal open-science reference impl
 - Nx workspace orchestration.
 - Angular 22 public discovery UI.
 - Angular Material 22 using Material Design 3 patterns.
+- Java/Spring Boot backend API with schema-first OpenAPI contracts.
 - DSpace repository APIs.
 - Apache Solr discovery, facets, and relevance.
 - PostgreSQL persistence.
@@ -23,8 +24,13 @@ Civics Research Repository is an independent federal open-science reference impl
 - Use standalone Angular APIs by default.
 - Keep route-level code SSR-safe even if the first app is client-rendered.
 - Use Angular Material components when they provide correct semantics and keyboard behavior.
+- Treat OpenAPI as the API contract source of truth.
+- Keep DTOs, schemas, and generated clients strongly typed from the start.
 - Put shared design tokens and Material overrides in a shared styles library once generated.
 - Keep repository/search models typed and isolated from UI components.
+- Use NgRx Store, Effects, Entity, Router Store, and typed selectors for async data workflows.
+- Use RxJS streams for API-backed state and cancellation.
+- Use Signals only for local derived UI state where they reduce template friction.
 - Treat map interactions as progressive enhancement over accessible tabular data.
 
 ## Accessibility Defaults
@@ -53,6 +59,8 @@ libs/maps/usgs-overlays
 libs/data-sources/census
 libs/data-sources/usgs
 tools/harvester
+apps/repository-api
+schemas/openapi
 ```
 
 ## Verification Expectations

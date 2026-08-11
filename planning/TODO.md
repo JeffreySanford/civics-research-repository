@@ -57,6 +57,27 @@ Goal: establish the project direction, documentation base, and working backlog.
 
 Goal: run the repository stack locally with DSpace, PostgreSQL, Solr, and seed metadata.
 
+### Sprint 1.0 - Java API Contract Foundation
+
+- [x] Decide backend direction: Java/Spring Boot preferred over NestJS for federal alignment.
+- [x] Add backend Java API documentation.
+- [x] Add OpenAPI-first repository API contract.
+- [x] Add Java API contract agent guidance.
+- [x] Add Java API MCP template notes.
+- [x] Add NgRx packages compatible with Angular 22.
+- [x] Wire root NgRx Store, Effects, Router Store, and DevTools providers.
+- [ ] Choose Maven or Gradle.
+- [ ] Choose Java runtime target: 17, 21, or 25.
+- [ ] Install/enable Maven or choose Gradle wrapper strategy.
+- [ ] Select Nx Java integration plugin.
+- [ ] Generate `apps/repository-api`.
+- [ ] Generate Java DTOs from OpenAPI.
+- [ ] Generate Angular TypeScript API client from OpenAPI.
+- [ ] Add typed NgRx feature state for search.
+- [ ] Add typed NgRx feature state for dataset detail.
+- [ ] Add typed NgRx feature state for map overlays.
+- [ ] Add typed NgRx feature state for accessibility evidence.
+
 ### Sprint 1.1 - Docker Platform
 
 - [ ] Add Docker Compose file.

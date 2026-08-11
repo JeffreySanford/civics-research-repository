@@ -48,6 +48,25 @@ Useful operations:
 - Snapshot metadata freshness.
 - Produce ingestion dry-run reports.
 
+### Java API Contracts
+
+Useful operations:
+
+- Read OpenAPI schemas.
+- Inspect Java DTO generation inputs.
+- Inspect endpoint ownership.
+- Run backend build/test targets once the Java project is generated.
+
+Fallback command equivalents:
+
+```bash
+pnpm nx show project repository-api --json
+pnpm nx run repository-api:test
+pnpm nx run repository-api:build
+```
+
+No Java/Spring MCP server is currently exposed in this session. Keep Java build/test/run behavior in Nx targets so agents and CI use the same backend path.
+
 ## Agent Policy
 
 MCP tools should not bypass repo scripts. When a task has a matching Nx target, the MCP operation should call or emulate the same target so CI and local development stay aligned.
