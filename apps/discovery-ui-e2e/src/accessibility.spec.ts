@@ -12,6 +12,10 @@ test.describe('accessibility evidence', () => {
   for (const route of [
     { path: '/', heading: 'Census geospatial discovery with repository sync' },
     { path: '/discovery', heading: 'Find research objects' },
+    {
+      path: '/datasets/tiger-line-north-dakota-2025',
+      heading: '2025 TIGER/Line - Census Tracts - North Dakota',
+    },
     { path: '/maps', heading: 'MapLibre geospatial workspace' },
     { path: '/admin/sync', heading: 'Repository sync' },
     { path: '/evidence', heading: 'WCAG and Section 508 status' },

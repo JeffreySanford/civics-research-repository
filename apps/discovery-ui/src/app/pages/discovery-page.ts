@@ -8,6 +8,7 @@ import {
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import type { ResearchProgram, SearchQuery } from 'repository-api-client';
 import { SearchActions } from '../state/search/search.actions';
@@ -29,6 +30,7 @@ const PAGE_SIZE = 25;
     ReactiveFormsModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    RouterLink,
   ],
   templateUrl: './discovery-page.html',
 })

@@ -1,8 +1,11 @@
 import { firstValueFrom, of } from 'rxjs';
 import {
   RepositoryAdminApi,
+  RepositoryDatasetsApi,
   RepositoryMapsApi,
   RepositorySearchApi,
+  type DatasetDetail,
+  type DatasetVersion,
   type MapLayer,
   type SearchResponse,
   type SyncJob,
@@ -38,6 +41,53 @@ describe('RepositoryAdminApi', () => {
 
     await expect(firstValueFrom(api.listSyncJobs())).resolves.toEqual([job]);
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/admin/sync');
+  });
+});
+
+describe('RepositoryDatasetsApi', () => {
+  it('loads typed dataset details and versions', async () => {
+    const detail: DatasetDetail = {
+      id: 'tiger-line-north-dakota-2025',
+      title: '2025 TIGER/Line - Census Tracts - North Dakota',
+      program: 'TIGER_LINE',
+      publisher: 'U.S. Census Bureau',
+      abstractText: 'Boundary metadata.',
+      geography: 'North Dakota',
+      vintageYear: 2025,
+      releasedOn: '2025-08-01',
+      files: [],
+      citation: 'U.S. Census Bureau. TIGER/Line.',
+      sourceUrl: 'https://example.test/tiger',
+      accessibilityEvidenceStatus: 'AUTOMATED_PASS',
+    };
+    const versions: DatasetVersion[] = [
+      {
+        id: 'tiger-line-north-dakota-2025-current',
+        label: '2025 TIGER/Line - Census Tracts - North Dakota',
+        releasedOn: '2025-08-01',
+        current: true,
+      },
+    ];
+    const http = {
+      get: vi.fn((url: string) =>
+        of(url.endsWith('/versions') ? versions : detail),
+      ),
+    };
+    const api = new RepositoryDatasetsApi(http as never, 'http://api.test/api');
+
+    await expect(
+      firstValueFrom(api.getDataset('tiger-line-north-dakota-2025')),
+    ).resolves.toEqual(detail);
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/datasets/tiger-line-north-dakota-2025',
+    );
+
+    await expect(
+      firstValueFrom(api.getDatasetVersions('tiger-line-north-dakota-2025')),
+    ).resolves.toEqual(versions);
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/datasets/tiger-line-north-dakota-2025/versions',
+    );
   });
 });
 

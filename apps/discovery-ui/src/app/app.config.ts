@@ -10,6 +10,11 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { appRoutes } from './app.routes';
+import { DatasetsEffects } from './state/datasets/datasets.effects';
+import {
+  datasetsFeatureKey,
+  datasetsReducer,
+} from './state/datasets/datasets.reducer';
 import { MapsEffects } from './state/maps/maps.effects';
 import { mapsFeatureKey, mapsReducer } from './state/maps/maps.reducer';
 import { SearchEffects } from './state/search/search.effects';
@@ -35,10 +40,11 @@ export const appConfig: ApplicationConfig = {
         },
       },
     ),
+    provideState(datasetsFeatureKey, datasetsReducer),
     provideState(mapsFeatureKey, mapsReducer),
     provideState(searchFeatureKey, searchReducer),
     provideState(syncFeatureKey, syncReducer),
-    provideEffects([MapsEffects, SearchEffects, SyncEffects]),
+    provideEffects([DatasetsEffects, MapsEffects, SearchEffects, SyncEffects]),
     provideRouterStore(),
     provideStoreDevtools({
       maxAge: 25,

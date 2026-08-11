@@ -101,6 +101,9 @@
           </div>
           <h3>{{ result.title }}</h3>
           <p>{{ result.summary }}</p>
+          <a class="source-link" [routerLink]="['/datasets', result.id]">
+            Dataset detail
+          </a>
           <a
             class="source-link"
             [href]="result.sourceUrl"

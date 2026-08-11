@@ -27,7 +27,54 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
           attribution: 'U.S. Census Bureau TIGER/Line',
           visibleByDefault: true,
         },
+        {
+          id: 'usgs-earthquakes-preview',
+          label: 'USGS earthquake overlay',
+          layerType: 'USGS_EARTHQUAKE',
+          sourceUrl:
+            'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson',
+          attribution: 'U.S. Geological Survey Earthquake Hazards Program',
+          visibleByDefault: true,
+        },
       ],
+    });
+  });
+
+  await page.route(`**/api/datasets/*/versions`, async (route) => {
+    const datasetId = datasetIdFromUrl(route.request().url(), '/versions');
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: [
+        {
+          id: `${datasetId}-current`,
+          label: datasetTitle(datasetId),
+          releasedOn: '2025-08-01',
+          current: true,
+        },
+        {
+          id: `${datasetId}-previous`,
+          label: 'TIGER_LINE 2024',
+          releasedOn: '2024-08-01',
+          current: false,
+        },
+      ],
+    });
+  });
+
+  await page.route(`**/api/datasets/*`, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+
+    if (pathname.endsWith('/map-layers') || pathname.endsWith('/versions')) {
+      await route.fallback();
+      return;
+    }
+
+    const datasetId = datasetIdFromUrl(route.request().url());
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: datasetDetail(datasetId),
     });
   });
 
@@ -120,6 +167,62 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
       },
     });
   });
+}
+
+function datasetIdFromUrl(url: string, suffix = ''): string {
+  const pathname = new URL(url).pathname;
+  const datasetId = pathname.split('/datasets/')[1]?.replace(suffix, '');
+
+  return datasetId || 'tiger-line-north-dakota-2025';
+}
+
+function datasetTitle(datasetId: string): string {
+  if (datasetId.includes('california')) {
+    return '2025 TIGER/Line - Census Tracts - California';
+  }
+
+  if (datasetId.includes('texas')) {
+    return '2025 TIGER/Line - Census Tracts - Texas';
+  }
+
+  return '2025 TIGER/Line - Census Tracts - North Dakota';
+}
+
+function datasetDetail(datasetId: string): unknown {
+  const geography = datasetId.includes('california')
+    ? 'California'
+    : datasetId.includes('texas')
+      ? 'Texas'
+      : 'North Dakota';
+
+  return {
+    id: datasetId,
+    title: datasetTitle(datasetId),
+    program: 'TIGER_LINE',
+    publisher: 'U.S. Census Bureau',
+    abstractText: `${geography} Census tract boundary metadata represented as a repository research object with source links, file manifests, and map-layer evidence.`,
+    geography,
+    vintageYear: 2025,
+    releasedOn: '2025-08-01',
+    files: [
+      {
+        id: 'source-zip',
+        label: 'TIGER/Line source archive',
+        format: 'ZIP',
+        url: 'https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html',
+      },
+      {
+        id: 'metadata-html',
+        label: 'TIGER/Line technical documentation',
+        format: 'OTHER',
+        url: 'https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html',
+      },
+    ],
+    citation: `U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, ${geography}.`,
+    sourceUrl:
+      'https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html',
+    accessibilityEvidenceStatus: 'AUTOMATED_PASS',
+  };
 }
 
 function searchResponse(geography: string): unknown {

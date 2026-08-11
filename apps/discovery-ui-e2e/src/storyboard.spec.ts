@@ -81,6 +81,29 @@ test.describe('demo storyboard checks', () => {
     ).toHaveCount(0);
   });
 
+  test('dataset detail shows repository metadata, files, citation, and map layers @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery');
+    await page.getByRole('link', { name: 'Dataset detail' }).first().click();
+
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - California',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.locator('dd').filter({ hasText: 'U.S. Census Bureau' }),
+    ).toBeVisible();
+    await expect(page.getByText('TIGER/Line source archive')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Citation' })).toBeVisible();
+    await expect(page.getByText('Current')).toBeVisible();
+    await expect(page.getByText('USGS earthquake overlay')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Open map workspace' }),
+    ).toBeVisible();
+  });
+
   test('map storyboard can switch Census area while retaining USGS overlay @storyboard', async ({
     page,
   }) => {

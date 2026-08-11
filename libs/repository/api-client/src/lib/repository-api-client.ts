@@ -26,6 +26,9 @@ export type SearchResult = components['schemas']['SearchResult'];
 export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
 export type ResearchProgram = components['schemas']['ResearchProgram'];
+export type DatasetDetail = components['schemas']['DatasetDetail'];
+export type DatasetFile = components['schemas']['DatasetFile'];
+export type DatasetVersion = components['schemas']['DatasetVersion'];
 
 export interface SearchQuery {
   readonly q?: string;
@@ -87,6 +90,26 @@ export class RepositoryMapsApi {
           days,
         },
       },
+    );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class RepositoryDatasetsApi {
+  constructor(
+    private readonly http: HttpClient,
+    @Inject(REPOSITORY_API_BASE_URL) private readonly baseUrl: string,
+  ) {}
+
+  getDataset(datasetId: string): Observable<DatasetDetail> {
+    return this.http.get<DatasetDetail>(
+      `${this.baseUrl}/datasets/${datasetId}`,
+    );
+  }
+
+  getDatasetVersions(datasetId: string): Observable<DatasetVersion[]> {
+    return this.http.get<DatasetVersion[]>(
+      `${this.baseUrl}/datasets/${datasetId}/versions`,
     );
   }
 }

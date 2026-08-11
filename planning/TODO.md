@@ -83,7 +83,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [ ] Generate Java DTOs from OpenAPI.
 - [x] Generate Angular TypeScript API client methods from OpenAPI.
 - [x] Add typed NgRx feature state for search.
-- [ ] Add typed NgRx feature state for dataset detail.
+- [x] Add typed NgRx feature state for dataset detail.
 - [x] Add typed NgRx feature state for map overlays.
 - [ ] Add typed NgRx feature state for accessibility evidence.
 - [x] Add typed NgRx feature state for admin sync.
@@ -176,11 +176,11 @@ Goal: build an accessible Angular UI for search, facets, dataset details, versio
 
 ### Sprint 3.2 - Dataset Details
 
-- [ ] Build dataset detail route.
-- [ ] Build metadata summary.
-- [ ] Build file/download section.
-- [ ] Build citation section.
-- [ ] Build versions tab.
+- [x] Build dataset detail route.
+- [x] Build metadata summary.
+- [x] Build file/download section.
+- [x] Build citation section.
+- [x] Build versions tab.
 - [ ] Build related research section.
 - [ ] Add accessible tab behavior.
 
@@ -234,7 +234,7 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 - [x] Add WCAG console report script.
 - [x] Add Section 508 console report script.
 - [x] Expand automated scans to search route.
-- [ ] Expand automated scans to dataset detail route.
+- [x] Expand automated scans to dataset detail route.
 - [x] Expand automated scans to map route or map tab.
 - [ ] Add keyboard navigation tests for search.
 - [ ] Add keyboard navigation tests for dataset detail tabs.

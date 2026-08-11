@@ -1,0 +1,109 @@
+<a class="back-link" routerLink="/discovery">Back to discovery</a>
+
+@if (loading$ | async) {
+<p class="inline-status" role="status">Loading dataset detail</p>
+} @if (error$ | async; as error) {
+<p class="error-message" role="alert">{{ error }}</p>
+} @if (detail$ | async; as detail) {
+<section aria-labelledby="dataset-title" class="dataset-hero">
+  <div>
+    <p class="eyebrow">Dataset detail</p>
+    <h1 id="dataset-title">{{ detail.title }}</h1>
+    <p>{{ detail.abstractText }}</p>
+  </div>
+
+  <dl class="details-list">
+    <div>
+      <dt>Program</dt>
+      <dd>{{ detail.program }}</dd>
+    </div>
+    <div>
+      <dt>Publisher</dt>
+      <dd>{{ detail.publisher }}</dd>
+    </div>
+    <div>
+      <dt>Geography</dt>
+      <dd>{{ detail.geography ?? 'Not specified' }}</dd>
+    </div>
+    <div>
+      <dt>Vintage</dt>
+      <dd>{{ detail.vintageYear ?? 'Not specified' }}</dd>
+    </div>
+    <div>
+      <dt>Released</dt>
+      <dd>{{ detail.releasedOn | date: 'mediumDate' }}</dd>
+    </div>
+    <div>
+      <dt>Evidence</dt>
+      <dd>{{ detail.accessibilityEvidenceStatus ?? 'NOT_STARTED' }}</dd>
+    </div>
+  </dl>
+</section>
+
+<section class="dataset-grid" aria-label="Dataset supporting information">
+  <article class="content-panel" aria-labelledby="files-heading">
+    <h2 id="files-heading">Files and Source Links</h2>
+    <ul class="feature-list">
+      @for (file of detail.files; track file.id) {
+      <li>
+        <strong>{{ file.label }}</strong>
+        <span>{{ file.format }}</span>
+        <a
+          class="source-link"
+          [href]="file.url"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open source
+        </a>
+      </li>
+      }
+    </ul>
+  </article>
+
+  <article class="content-panel" aria-labelledby="citation-heading">
+    <h2 id="citation-heading">Citation</h2>
+    <p>{{ detail.citation }}</p>
+    <a
+      class="source-link"
+      [href]="detail.sourceUrl"
+      target="_blank"
+      rel="noreferrer"
+    >
+      Source data page
+    </a>
+  </article>
+
+  <article class="content-panel" aria-labelledby="versions-heading">
+    <h2 id="versions-heading">Versions</h2>
+    @if (versions$ | async; as versions) {
+    <ol class="version-list">
+      @for (version of versions; track version.id) {
+      <li>
+        <strong>{{ version.label }}</strong>
+        <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
+        @if (version.current) {
+        <span class="status-pill">Current</span>
+        }
+      </li>
+      }
+    </ol>
+    }
+  </article>
+
+  <article class="content-panel" aria-labelledby="map-layers-heading">
+    <h2 id="map-layers-heading">Map Layers</h2>
+    @if (mapLayers$ | async; as mapLayers) {
+    <ul class="feature-list">
+      @for (layer of mapLayers; track layer.id) {
+      <li>
+        <strong>{{ layer.label }}</strong>
+        <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
+      </li>
+      }
+    </ul>
+    }
+    <a class="source-link" routerLink="/maps">Open map workspace</a>
+  </article>
+</section>
+}
