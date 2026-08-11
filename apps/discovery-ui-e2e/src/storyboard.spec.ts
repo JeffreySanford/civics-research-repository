@@ -146,6 +146,24 @@ test.describe('demo storyboard checks', () => {
       page.getByRole('link', { name: 'Open map workspace' }),
     ).toBeVisible();
 
+    await page.getByRole('tab', { name: 'Map Preview' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Map Preview' }),
+    ).toBeVisible();
+    await expect(page.getByText('California opens in the')).toBeVisible();
+    await page.getByRole('link', { name: 'Open interactive map' }).click();
+
+    await expect(
+      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Census area')).toHaveValue('California');
+    await page.goBack();
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - California',
+      }),
+    ).toBeVisible();
+
     await page.getByRole('tab', { name: 'Related Research' }).click();
     await expect(
       page.getByText('2023 LODES Workplace Area Characteristics - California'),

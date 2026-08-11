@@ -24,6 +24,58 @@
   padding: 1.25rem 0 0.25rem;
 }
 
+.detail-map-preview {
+  display: grid;
+  grid-template-columns: minmax(14rem, 22rem) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.preview-canvas {
+  position: relative;
+  min-height: 14rem;
+  overflow: hidden;
+  border: 1px solid #9ab7c8;
+  border-radius: 0.5rem;
+  background:
+    linear-gradient(90deg, rgba(47, 111, 143, 0.12) 1px, transparent 1px),
+    linear-gradient(rgba(47, 111, 143, 0.12) 1px, transparent 1px), #f8fafc;
+  background-size: 2.5rem 2.5rem;
+}
+
+.preview-boundary {
+  position: absolute;
+  inset: 2rem 2.5rem 2.25rem 2.25rem;
+  border: 3px solid #164e63;
+  background: rgba(47, 111, 143, 0.18);
+  clip-path: polygon(12% 8%, 96% 18%, 84% 91%, 8% 78%);
+}
+
+.preview-event {
+  position: absolute;
+  width: 1.15rem;
+  aspect-ratio: 1;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #b45309;
+  box-shadow: 0 0 0 1px #7c2d12;
+}
+
+.event-primary {
+  top: 36%;
+  left: 58%;
+}
+
+.event-secondary {
+  top: 58%;
+  left: 40%;
+}
+
+.event-tertiary {
+  top: 47%;
+  left: 72%;
+}
+
 .version-list {
   display: grid;
   gap: 0.75rem;
@@ -49,6 +101,10 @@
 
 @media (max-width: 58rem) {
   .dataset-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-map-preview {
     grid-template-columns: 1fr;
   }
 }

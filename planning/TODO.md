@@ -212,7 +212,7 @@ Goal: deliver the visual map demo mentioned in the role context, with USGS overl
 - [x] Add TIGER/Line boundary preview.
 - [ ] Add LODES sample layer or fixture.
 - [x] Add geography filter integration.
-- [ ] Add dataset detail map tab.
+- [x] Add dataset detail map tab.
 - [x] Add map state to URL where practical.
 
 ### Sprint 4.3 - USGS Overlay Integration

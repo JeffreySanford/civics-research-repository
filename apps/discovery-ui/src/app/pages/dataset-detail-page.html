@@ -117,6 +117,35 @@
     </section>
   </mat-tab>
 
+  <mat-tab label="Map Preview">
+    <section class="tab-panel" aria-labelledby="map-preview-heading">
+      <h2 id="map-preview-heading">Map Preview</h2>
+      <div class="detail-map-preview" aria-label="Dataset map preview">
+        <div class="preview-canvas" aria-hidden="true">
+          <span class="preview-boundary"></span>
+          <span class="preview-event event-primary"></span>
+          <span class="preview-event event-secondary"></span>
+          <span class="preview-event event-tertiary"></span>
+        </div>
+        <div>
+          <p class="eyebrow">Geospatial context</p>
+          <p>
+            {{ detail.geography ?? 'Selected geography' }} opens in the MapLibre
+            workspace with TIGER/Line boundary context and the USGS earthquake
+            overlay enabled by default.
+          </p>
+          <a
+            class="source-link"
+            routerLink="/maps"
+            [queryParams]="{ area: detail.geography }"
+          >
+            Open interactive map
+          </a>
+        </div>
+      </div>
+    </section>
+  </mat-tab>
+
   <mat-tab label="Related Research">
     <section class="tab-panel" aria-labelledby="related-heading">
       <h2 id="related-heading">Related Research</h2>
