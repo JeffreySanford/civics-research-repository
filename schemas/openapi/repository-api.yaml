@@ -220,8 +220,15 @@ components:
     Program:
       name: program
       in: query
+      description: >-
+        Repeatable. Repeat the parameter to select several programs; results match any of them.
+        Omitting it searches every program.
+      explode: true
+      style: form
       schema:
-        $ref: '#/components/schemas/ResearchProgram'
+        type: array
+        items:
+          $ref: '#/components/schemas/ResearchProgram'
     Geography:
       name: geography
       in: query
@@ -668,8 +675,27 @@ components:
     ResearchProgram:
       type: string
       # OTHER covers repository items that carry no crr.program value. Guessing a Census
-      # program for an unlabeled item would misreport it.
-      enum: [ACS, SIPP, CPS, LEHD, LODES, TIGER_LINE, USGS, OTHER]
+      # program for an unlabeled item would misreport it, so an unmapped program is reported
+      # as OTHER rather than assigned.
+      enum:
+        [
+          ACS,
+          SIPP,
+          CPS,
+          LEHD,
+          LODES,
+          TIGER_LINE,
+          USGS,
+          ECONOMIC_CENSUS,
+          COUNTY_BUSINESS_PATTERNS,
+          BUILDING_PERMITS,
+          POPULATION_ESTIMATES,
+          SAIPE,
+          BUSINESS_DYNAMICS,
+          USGS_3DEP,
+          USGS_3HP,
+          OTHER,
+        ]
     FileFormat:
       type: string
       enum: [CSV, ZIP, PDF, JSON, GEOJSON, SHAPEFILE, GEOPACKAGE, OTHER]

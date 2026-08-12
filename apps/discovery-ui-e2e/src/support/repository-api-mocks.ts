@@ -61,7 +61,11 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
 
     await route.fulfill({
       contentType: 'application/json',
-      json: searchResponse(selectedGeography),
+      json: searchResponse(
+        selectedGeography,
+        'REPOSITORY',
+        url.searchParams.getAll('program'),
+      ),
     });
   });
 
@@ -388,6 +392,7 @@ function datasetDetail(datasetId: string): unknown {
 function searchResponse(
   geography: string,
   resultSource: 'REPOSITORY' | 'FIXTURE' = 'REPOSITORY',
+  selectedPrograms: readonly string[] = [],
 ): unknown {
   return {
     resultSource,
@@ -413,15 +418,33 @@ function searchResponse(
       {
         field: 'program',
         label: 'Program',
+        // Unselected options stay visible with their unfiltered counts, mirroring the excluded
+        // facet the Solr client asks for.
         values: [
           {
             value: 'TIGER_LINE',
             label: 'TIGER LINE',
             count: 1,
-            selected: false,
+            selected: selectedPrograms.includes('TIGER_LINE'),
           },
-          { value: 'LODES', label: 'LODES', count: 1, selected: false },
-          { value: 'ACS', label: 'ACS', count: 1, selected: false },
+          {
+            value: 'LODES',
+            label: 'LODES',
+            count: 1,
+            selected: selectedPrograms.includes('LODES'),
+          },
+          {
+            value: 'ACS',
+            label: 'ACS',
+            count: 1,
+            selected: selectedPrograms.includes('ACS'),
+          },
+          {
+            value: 'SAIPE',
+            label: 'SAIPE',
+            count: 1,
+            selected: selectedPrograms.includes('SAIPE'),
+          },
         ],
       },
       {

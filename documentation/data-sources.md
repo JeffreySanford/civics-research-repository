@@ -105,6 +105,29 @@ Legacy NHD is not a fallback and must not be implemented. USGS retired it on 1 O
 
 See [USGS National Map Evaluation](usgs-national-map-evaluation.md).
 
+## Programs Currently Seeded
+
+Fourteen programs, 167 repository objects. Three are seeded per state and territory; the rest are national objects.
+
+| Program                                                                                                     | Scope    | Items |
+| ----------------------------------------------------------------------------------------------------------- | -------- | ----- |
+| TIGER/Line                                                                                                  | Per area | 52    |
+| LODES                                                                                                       | Per area | 52    |
+| ACS PUMS                                                                                                    | Per area | 52    |
+| SIPP, CPS, USGS earthquakes                                                                                 | National | 3     |
+| Economic Census, County Business Patterns, Building Permits, Population Estimates, SAIPE, Business Dynamics | National | 6     |
+| USGS 3DEP, USGS 3HP                                                                                         | National | 2     |
+
+TIGER/Line, LODES, and ACS PUMS are selected by default in discovery, because they carry the geospatial demo story. The other eleven are one click away and their facet counts stay visible whatever is selected.
+
+Programs are defined in [tools/dspace/catalog.json](../tools/dspace/catalog.json). Adding one means a row there plus a `ResearchProgram` enum value in the OpenAPI contract — without the enum value an item is reported as `OTHER`, which is honest but useless for faceting.
+
+### Source URL accuracy
+
+TIGER/Line, LODES, and ACS PUMS use file-level URLs, because their naming patterns are documented and stable (`tl_{year}_{fips}_tract.zip`, `{st}_wac_S000_JT00_{year}.csv.gz`, `csv_p{st}.zip`).
+
+The eight programs added later link their authoritative data or program page instead. A fabricated deep link looks authoritative and fails silently, which is worse than a correct link one level up. Replacing them with verified file-level URLs is tracked in the backlog.
+
 ## Metadata Model
 
 Initial metadata fields:

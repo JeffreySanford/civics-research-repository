@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.civicsrepo.repository.RepositorySource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -74,13 +76,13 @@ public class SolrSearchClient {
 
     public SearchResponse search(
             String query,
-            ResearchProgram program,
+            List<ResearchProgram> programs,
             String geography,
             Integer vintageYear,
             int page,
             int pageSize) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(selectUri(query, program, geography, vintageYear, page, pageSize))
+            HttpRequest request = HttpRequest.newBuilder(selectUri(query, programs, geography, vintageYear, page, pageSize))
                     .timeout(REQUEST_TIMEOUT)
                     .GET()
                     .build();
@@ -90,7 +92,7 @@ public class SolrSearchClient {
                 throw new IllegalStateException("Solr search failed with HTTP " + response.statusCode());
             }
 
-            return toSearchResponse(query, page, pageSize, program, geography, response.body());
+            return toSearchResponse(query, page, pageSize, programs, geography, response.body());
         } catch (IOException exception) {
             throw new IllegalStateException("Solr search request failed.", exception);
         } catch (InterruptedException exception) {
@@ -121,7 +123,7 @@ public class SolrSearchClient {
             String query,
             int page,
             int pageSize,
-            ResearchProgram selectedProgram,
+            List<ResearchProgram> selectedPrograms,
             String selectedGeography,
             String responseBody) {
         try {
@@ -156,20 +158,23 @@ public class SolrSearchClient {
                                     "program",
                                     "Program",
                                     root.path("facet_counts").path("facet_fields").path("program_s"),
-                                    selectedProgram == null ? "" : selectedProgram.name()),
+                                    selectedPrograms.stream()
+                                            .map((program) -> normalize(program.name()))
+                                            .collect(Collectors.toSet())),
                             facetGroup(
                                     "geography",
                                     "Geography",
                                     root.path("facet_counts").path("facet_fields").path("geography_s"),
-                                    selectedGeography == null ? "" : selectedGeography)));
+                                    normalize(selectedGeography).isBlank()
+                                            ? Set.of()
+                                            : Set.of(normalize(selectedGeography)))));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Solr search response could not be parsed.", exception);
         }
     }
 
-    private FacetGroup facetGroup(String field, String label, JsonNode values, String selectedValue) {
+    private FacetGroup facetGroup(String field, String label, JsonNode values, Set<String> normalizedSelected) {
         List<FacetValue> facets = new ArrayList<>();
-        String normalizedSelected = normalize(selectedValue);
 
         for (int index = 0; index + 1 < values.size(); index += 2) {
             String value = values.get(index).asText();
@@ -177,7 +182,7 @@ public class SolrSearchClient {
                     value,
                     value.replace('_', ' '),
                     values.get(index + 1).asLong(),
-                    normalize(value).equals(normalizedSelected)));
+                    normalizedSelected.contains(normalize(value))));
         }
 
         return new FacetGroup(field, label, facets);
@@ -189,7 +194,7 @@ public class SolrSearchClient {
 
     private URI selectUri(
             String query,
-            ResearchProgram program,
+            List<ResearchProgram> programs,
             String geography,
             Integer vintageYear,
             int page,
@@ -205,15 +210,25 @@ public class SolrSearchClient {
         params.add("rows=" + encode(Integer.toString(safePageSize)));
         params.add("facet=true");
         params.add("facet.mincount=1");
-        params.add("facet.field=program_s");
-        params.add("facet.field=geography_s");
+        // Facets exclude their own filter. Solr computes facet counts after filter queries, so a
+        // plain facet.field would collapse the program list to whatever is already selected and
+        // leave no way to add a fourth program. Tagging each filter and excluding it from the
+        // matching facet keeps every option visible with its unfiltered count.
+        params.add("facet.field=" + encode("{!ex=programFilter}program_s"));
+        params.add("facet.field=" + encode("{!ex=geographyFilter}geography_s"));
 
-        if (program != null) {
-            params.add("fq=" + encode("program_s:" + program.name()));
+        if (!programs.isEmpty()) {
+            // One fq with an OR clause, not one fq per program: separate filter queries are ANDed,
+            // which would return nothing whenever more than one program is selected.
+            params.add("fq="
+                    + encode(programs.stream()
+                            .map((program) -> "program_s:" + program.name())
+                            .collect(Collectors.joining(" OR ", "{!tag=programFilter}(", ")"))));
         }
 
         if (!normalize(geography).isBlank()) {
-            params.add("fq=" + encode("geography_s:\"" + escapeQueryValue(geography) + "\""));
+            params.add("fq="
+                    + encode("{!tag=geographyFilter}geography_s:\"" + escapeQueryValue(geography) + "\""));
         }
 
         if (vintageYear != null) {

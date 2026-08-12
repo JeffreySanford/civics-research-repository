@@ -484,13 +484,264 @@
           "url": "{sourceUrl}"
         }
       ]
+    },
+    {
+      "id": "ECONOMIC_CENSUS",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2022,
+      "geography": "United States",
+      "geographyLevel": "National",
+      "idTemplate": "economic-census-{vintage}",
+      "titleTemplate": "{vintage} Economic Census",
+      "abstractTemplate": "Economic Census metadata covering business establishments, employment, and payroll across industry sectors.",
+      "issuedTemplate": "{vintage}-12-01",
+      "sourceUrlTemplate": "https://www.census.gov/programs-surveys/economic-census/data.html",
+      "documentationUrl": "https://www.census.gov/programs-surveys/economic-census/technical-documentation.html",
+      "citationTemplate": "U.S. Census Bureau. {vintage} Economic Census.",
+      "subjects": ["Economic Census", "Business statistics"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "data-landing-page",
+          "label": "Economic Census data access page",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "Economic Census technical documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "COUNTY_BUSINESS_PATTERNS",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2023,
+      "geography": "United States",
+      "geographyLevel": "County",
+      "idTemplate": "county-business-patterns-{vintage}",
+      "titleTemplate": "{vintage} County Business Patterns",
+      "abstractTemplate": "County Business Patterns metadata describing establishment counts, employment, and payroll by county and industry.",
+      "issuedTemplate": "{vintage}-11-01",
+      "sourceUrlTemplate": "https://www.census.gov/programs-surveys/cbp/data/datasets.html",
+      "documentationUrl": "https://www.census.gov/programs-surveys/cbp/technical-documentation.html",
+      "citationTemplate": "U.S. Census Bureau. {vintage} County Business Patterns.",
+      "subjects": ["County Business Patterns", "Business statistics"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "datasets-page",
+          "label": "County Business Patterns datasets page",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "County Business Patterns documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "BUILDING_PERMITS",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2025,
+      "geography": "United States",
+      "geographyLevel": "Place",
+      "idTemplate": "building-permits-{vintage}",
+      "titleTemplate": "{vintage} Building Permits Survey",
+      "abstractTemplate": "Building Permits Survey metadata describing residential construction authorized by building permits.",
+      "issuedTemplate": "{vintage}-03-01",
+      "sourceUrlTemplate": "https://www.census.gov/construction/bps/",
+      "documentationUrl": "https://www.census.gov/construction/bps/how_the_data_are_collected.html",
+      "citationTemplate": "U.S. Census Bureau. {vintage} Building Permits Survey.",
+      "subjects": ["Building permits", "Construction"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "survey-landing-page",
+          "label": "Building Permits Survey data page",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "methodology",
+          "label": "Building Permits Survey methodology",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "POPULATION_ESTIMATES",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2025,
+      "geography": "United States",
+      "geographyLevel": "County",
+      "idTemplate": "population-estimates-{vintage}",
+      "titleTemplate": "{vintage} Population Estimates Program",
+      "abstractTemplate": "Population Estimates Program metadata covering annual population estimates for states, counties, and places.",
+      "issuedTemplate": "{vintage}-06-01",
+      "sourceUrlTemplate": "https://www.census.gov/programs-surveys/popest/data/data-sets.html",
+      "documentationUrl": "https://www.census.gov/programs-surveys/popest/technical-documentation.html",
+      "citationTemplate": "U.S. Census Bureau. {vintage} Population Estimates Program.",
+      "subjects": ["Population estimates", "Demography"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "datasets-page",
+          "label": "Population Estimates data sets",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "Population Estimates documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "SAIPE",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2023,
+      "geography": "United States",
+      "geographyLevel": "County",
+      "idTemplate": "saipe-{vintage}",
+      "titleTemplate": "{vintage} Small Area Income and Poverty Estimates",
+      "abstractTemplate": "Small Area Income and Poverty Estimates metadata for county and school district income and poverty measures.",
+      "issuedTemplate": "{vintage}-12-01",
+      "sourceUrlTemplate": "https://www.census.gov/programs-surveys/saipe/data/datasets.html",
+      "documentationUrl": "https://www.census.gov/programs-surveys/saipe/technical-documentation.html",
+      "citationTemplate": "U.S. Census Bureau. {vintage} Small Area Income and Poverty Estimates.",
+      "subjects": ["SAIPE", "Income and poverty"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "datasets-page",
+          "label": "SAIPE datasets page",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "SAIPE technical documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "BUSINESS_DYNAMICS",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2022,
+      "geography": "United States",
+      "geographyLevel": "National",
+      "idTemplate": "business-dynamics-statistics-{vintage}",
+      "titleTemplate": "{vintage} Business Dynamics Statistics",
+      "abstractTemplate": "Business Dynamics Statistics metadata describing establishment openings, closings, job creation, and job destruction.",
+      "issuedTemplate": "{vintage}-09-01",
+      "sourceUrlTemplate": "https://www.census.gov/programs-surveys/bds/data.html",
+      "documentationUrl": "https://www.census.gov/programs-surveys/bds/documentation.html",
+      "citationTemplate": "U.S. Census Bureau. {vintage} Business Dynamics Statistics.",
+      "subjects": ["Business Dynamics Statistics", "Firm dynamics"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "data-page",
+          "label": "Business Dynamics Statistics data page",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "documentation",
+          "label": "Business Dynamics Statistics documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "USGS_3DEP",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2026,
+      "geography": "United States",
+      "geographyLevel": "Raster tile",
+      "idTemplate": "usgs-3dep-elevation",
+      "titleTemplate": "USGS 3D Elevation Program",
+      "abstractTemplate": "3D Elevation Program metadata for lidar-derived elevation products used as map reference layers.",
+      "issuedTemplate": "{vintage}-01-01",
+      "sourceUrlTemplate": "https://www.usgs.gov/3d-elevation-program",
+      "documentationUrl": "https://www.usgs.gov/3d-elevation-program/about-3dep-products-services",
+      "citationTemplate": "U.S. Geological Survey. 3D Elevation Program.",
+      "subjects": ["Elevation", "Lidar"],
+      "publisher": "usgs",
+      "files": [
+        {
+          "id": "program-page",
+          "label": "3DEP program page",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "products-and-services",
+          "label": "3DEP products and services",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "USGS_3HP",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2026,
+      "geography": "United States",
+      "geographyLevel": "Hydrographic feature",
+      "idTemplate": "usgs-3hp-hydrography",
+      "titleTemplate": "USGS 3D Hydrography Program",
+      "abstractTemplate": "3D Hydrography Program metadata for current surface water reference data. Supersedes the National Hydrography Dataset, retired 1 October 2023.",
+      "issuedTemplate": "{vintage}-01-01",
+      "sourceUrlTemplate": "https://www.usgs.gov/3d-hydrography-program",
+      "documentationUrl": "https://www.usgs.gov/national-hydrography/access-national-hydrography-products",
+      "citationTemplate": "U.S. Geological Survey. 3D Hydrography Program.",
+      "subjects": ["Hydrography", "Surface water"],
+      "publisher": "usgs",
+      "files": [
+        {
+          "id": "program-page",
+          "label": "3HP program page",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "product-access",
+          "label": "Hydrography product access",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
     }
   ],
   "$futurePrograms": [
-    "Programs below need a ResearchProgram enum value and an OpenAPI contract change before",
-    "they can be seeded, because an unmapped program is reported as OTHER rather than guessed:",
-    "Economic Census, County Business Patterns, Building Permits Survey, Population Estimates,",
-    "Small Area Income and Poverty Estimates, Business Dynamics Statistics, USGS 3DEP elevation,",
-    "USGS 3D Hydrography Program, NOAA Climate Data Online, NASA POWER."
+    "Cross-agency federation candidates, still out of scope: NOAA Climate Data Online and NASA",
+    "POWER. Both need a ResearchProgram enum value and an OpenAPI contract change before they can",
+    "be seeded, because an unmapped program is reported as OTHER rather than guessed.",
+    "",
+    "Source URLs: the three original area-scoped programs use file-level URLs whose naming patterns",
+    "are documented and stable. The programs added later link their authoritative data or program",
+    "page instead, because a fabricated deep link looks authoritative and fails silently. Replace",
+    "them with file-level URLs once verified against the publisher."
   ]
 }

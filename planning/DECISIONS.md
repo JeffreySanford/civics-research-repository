@@ -142,6 +142,14 @@ Reason: the read path previously collapsed every failure into an empty result, s
 
 Consequence: `DIFF` and `APPLY` both return a `FAILED` job carrying the reason, surfaced through the normal typed response so the admin UI shows it rather than an HTTP 500.
 
+### Multi-Select Program Facet With Defaults
+
+Decision: `program` is a repeatable query parameter. Discovery selects TIGER/Line, LODES, and ACS PUMS by default and sends them explicitly rather than relying on an omitted parameter.
+
+Reason: the repository now holds fourteen programs, and a single-select facet forced a choice between showing everything (burying the geospatial demo story) and showing one program at a time (hiding the breadth). Defaults sent explicitly keep the facet honest: an absent parameter means every program, so the UI must state what it is actually applying rather than let omission imply it.
+
+Consequence: each filter is excluded from its own facet, in Solr through tagged filter queries (`{!tag=...}` / `{!ex=...}`) and in the in-memory path by computing program counts before applying the program filter. Without that, selecting programs collapses the facet to the selection and there is no way to add a fourth — the selection becomes a one-way door. `ResearchProgram` is also the single list the frontend parses against, derived from the contract rather than hand-maintained, because an allowlist that silently drops unknown values makes a newly added program unselectable while quietly restoring the defaults.
+
 ### Admin API Authentication
 
 Decision: leave `POST /api/admin/sync` unauthenticated for the local Docker demo, and treat authentication as a prerequisite for any shared or deployed environment.

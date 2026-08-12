@@ -366,6 +366,14 @@ export interface components {
       | 'LODES'
       | 'TIGER_LINE'
       | 'USGS'
+      | 'ECONOMIC_CENSUS'
+      | 'COUNTY_BUSINESS_PATTERNS'
+      | 'BUILDING_PERMITS'
+      | 'POPULATION_ESTIMATES'
+      | 'SAIPE'
+      | 'BUSINESS_DYNAMICS'
+      | 'USGS_3DEP'
+      | 'USGS_3HP'
       | 'OTHER';
     /** @enum {string} */
     FileFormat:
@@ -432,7 +440,8 @@ export interface components {
   parameters: {
     /** @description Keyword search terms. */
     SearchQuery: string;
-    Program: components['schemas']['ResearchProgram'];
+    /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
+    Program: components['schemas']['ResearchProgram'][];
     Geography: string;
     VintageYear: number;
     Page: number;
@@ -451,6 +460,7 @@ export interface operations {
       query?: {
         /** @description Keyword search terms. */
         q?: components['parameters']['SearchQuery'];
+        /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
         program?: components['parameters']['Program'];
         geography?: components['parameters']['Geography'];
         vintageYear?: components['parameters']['VintageYear'];

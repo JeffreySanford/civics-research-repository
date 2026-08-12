@@ -123,17 +123,18 @@ describe('RepositorySearchApi', () => {
       firstValueFrom(
         api.searchResearchObjects({
           q: 'North Dakota',
-          program: 'TIGER_LINE',
+          programs: ['TIGER_LINE', 'LODES'],
           page: 0,
           pageSize: 25,
         }),
       ),
     ).resolves.toEqual(response);
 
+    // Repeated keys are how the contract expresses "any of these programs".
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/search', {
       params: {
         q: 'North Dakota',
-        program: 'TIGER_LINE',
+        program: ['TIGER_LINE', 'LODES'],
         page: 0,
         pageSize: 25,
       },

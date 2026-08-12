@@ -99,8 +99,11 @@ Discovery reads from DSpace, which holds six seeded items, so search shows six d
 - [x] Confirm paging and `civics.repository.max-items` hold at 159 items.
 - [x] Cache repository reads briefly, invalidated on reindex: dataset detail went from 1.1s to 5ms.
 - [x] Fix related research to require shared geography, since program alone produced alphabetical filler at 52 areas per program.
-- [ ] Add a multi-select program facet with TIGER/Line, LODES, and ACS selected by default. Needs an OpenAPI change: `program` is currently single-valued.
-- [ ] Add the remaining catalog programs (Economic Census, County Business Patterns, Building Permits, Population Estimates, SAIPE, BDS, USGS 3DEP and 3HP, NOAA Climate Data Online, NASA POWER). Each needs a `ResearchProgram` enum value and a contract change first, or it reports as OTHER.
+- [x] Add a multi-select program facet with TIGER/Line, LODES, and ACS selected by default. `program` is now a repeatable query parameter in the contract.
+- [x] Exclude each filter from its own facet, so selecting programs does not hide the unselected ones and make the selection a one-way door.
+- [x] Add eight programs: Economic Census, County Business Patterns, Building Permits, Population Estimates, SAIPE, Business Dynamics, USGS 3DEP, USGS 3HP. 167 repository objects across 14 programs.
+- [ ] Replace the landing-page source URLs on the eight new programs with verified file-level URLs. They currently link the authoritative program page rather than a fabricated deep path.
+- [ ] Add NOAA Climate Data Online and NASA POWER as cross-agency federation candidates.
 
 ### P9 - Security patch pass
 

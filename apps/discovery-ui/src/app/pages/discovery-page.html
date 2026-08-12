@@ -41,6 +41,12 @@
       @for (facet of facets; track facet.field) {
       <section [attr.aria-labelledby]="'facet-' + facet.field">
         <h3 [id]="'facet-' + facet.field">{{ facet.label }}</h3>
+        @if (facet.field === 'program') {
+        <p class="facet-hint">
+          Select any number of programs. TIGER/Line, LODES, and ACS are selected
+          by default.
+        </p>
+        }
         <div class="facet-values">
           @for (value of facet.values; track value.value) {
           <button
@@ -55,6 +61,11 @@
           </button>
           }
         </div>
+        @if (facet.field === 'program') {
+        <button type="button" class="facet-reset" (click)="resetPrograms()">
+          Reset to default programs
+        </button>
+        }
       </section>
       }
     </div>

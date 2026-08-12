@@ -452,3 +452,78 @@ test.describe('map and feature list selection', () => {
     await expect(page.getByText('No map feature selected.')).toBeVisible();
   });
 });
+
+/**
+ * The program facet is multi-select with defaults. Selecting one program must not hide the others,
+ * or the selection becomes a one-way door.
+ */
+test.describe('program facet selection', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+  });
+
+  test('the three demo programs are selected by default @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery');
+
+    for (const program of ['TIGER LINE (1)', 'LODES (1)', 'ACS (1)']) {
+      await expect(page.getByRole('button', { name: program })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    }
+
+    await expect(
+      page.getByRole('button', { name: 'SAIPE (1)' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('a program can be removed from and added back to the selection @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery');
+    const lodes = page.getByRole('button', { name: 'LODES (1)' });
+
+    await lodes.click();
+    await expect(lodes).toHaveAttribute('aria-pressed', 'false');
+
+    await lodes.click();
+    await expect(lodes).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  /** Unselected programs stay visible, so a fourth can always be added. */
+  test('an unselected program can be added to the defaults @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery');
+
+    await page.getByRole('button', { name: 'SAIPE (1)' }).click();
+
+    await expect(
+      page.getByRole('button', { name: 'SAIPE (1)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/program=SAIPE/);
+  });
+
+  test('reset restores the default program selection @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery?program=SAIPE');
+
+    await expect(
+      page.getByRole('button', { name: 'SAIPE (1)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    await page
+      .getByRole('button', { name: 'Reset to default programs' })
+      .click();
+
+    await expect(
+      page.getByRole('button', { name: 'TIGER LINE (1)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.getByRole('button', { name: 'SAIPE (1)' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
+});

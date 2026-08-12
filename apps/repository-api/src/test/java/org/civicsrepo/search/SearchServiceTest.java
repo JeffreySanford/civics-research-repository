@@ -2,6 +2,7 @@ package org.civicsrepo.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class SearchServiceTest {
@@ -9,7 +10,7 @@ class SearchServiceTest {
 
     @Test
     void keywordSearchFindsNorthDakotaResearchObjects() {
-        SearchResponse response = searchService.search("North Dakota", null, null, null, 0, 25);
+        SearchResponse response = searchService.search("North Dakota", List.of(), null, null, 0, 25);
 
         assertThat(response.query()).isEqualTo("North Dakota");
         assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
@@ -23,7 +24,7 @@ class SearchServiceTest {
 
     @Test
     void keywordSearchFindsOtherCensusAreas() {
-        SearchResponse response = searchService.search("California", null, null, null, 0, 25);
+        SearchResponse response = searchService.search("California", List.of(), null, null, 0, 25);
 
         assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
         assertThat(response.results())
@@ -33,7 +34,7 @@ class SearchServiceTest {
 
     @Test
     void geographyFilterSupportsAnySeededCensusArea() {
-        SearchResponse response = searchService.search("", null, "Texas", null, 0, 25);
+        SearchResponse response = searchService.search("", List.of(), "Texas", null, 0, 25);
 
         assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
         assertThat(response.results())
@@ -43,7 +44,7 @@ class SearchServiceTest {
 
     @Test
     void programFilterReturnsSelectedFacet() {
-        SearchResponse response = searchService.search("", ResearchProgram.USGS, null, null, 0, 25);
+        SearchResponse response = searchService.search("", List.of(ResearchProgram.USGS), null, null, 0, 25);
 
         assertThat(response.results()).singleElement().extracting(SearchResult::program).isEqualTo(ResearchProgram.USGS);
         assertThat(response.facets())
@@ -55,5 +56,28 @@ class SearchServiceTest {
                                 .singleElement()
                                 .extracting(FacetValue::value)
                                 .isEqualTo("USGS"));
+    }
+
+    /** Several selected programs are a union, not an intersection. */
+    @Test
+    void severalProgramsReturnTheUnionOfTheirResults() {
+        SearchResponse response = searchService.search(
+                "", List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES), "Texas", null, 0, 25);
+
+        assertThat(response.results())
+                .extracting(SearchResult::program)
+                .containsOnly(ResearchProgram.TIGER_LINE, ResearchProgram.LODES);
+    }
+
+    /** Facet counts must not collapse to the selected program, or the others become unselectable. */
+    @Test
+    void programFacetCountsIgnoreTheProgramFilter() {
+        SearchResponse response =
+                searchService.search("", List.of(ResearchProgram.USGS), null, null, 0, 25);
+
+        assertThat(response.facets())
+                .filteredOn((facet) -> facet.field().equals("program"))
+                .singleElement()
+                .satisfies((facet) -> assertThat(facet.values().size()).isGreaterThan(1));
     }
 }

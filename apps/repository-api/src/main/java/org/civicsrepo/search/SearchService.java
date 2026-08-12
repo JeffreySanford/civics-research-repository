@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -97,7 +98,7 @@ public class SearchService {
 
     public SearchResponse search(
             String query,
-            ResearchProgram program,
+            List<ResearchProgram> programs,
             String geography,
             Integer vintageYear,
             int page,
@@ -108,7 +109,7 @@ public class SearchService {
         if (solrSearchClient != null && solrSearchClient.isEnabled()) {
             try {
                 return solrSearchClient
-                        .search(query, program, geography, vintageYear, page, pageSize)
+                        .search(query, programs, geography, vintageYear, page, pageSize)
                         .withResultSource(indexedSource());
             } catch (RuntimeException exception) {
                 LOGGER.warn("Solr search failed; answering from in-memory results.", exception);
@@ -119,11 +120,18 @@ public class SearchService {
                 repositoryCatalog == null ? List.of() : repositoryCatalog.findAllResearchObjects();
         if (!repositoryObjects.isEmpty()) {
             return searchInMemory(
-                    repositoryObjects, RepositorySource.REPOSITORY, query, program, geography, vintageYear, page, pageSize);
+                    repositoryObjects,
+                    RepositorySource.REPOSITORY,
+                    query,
+                    programs,
+                    geography,
+                    vintageYear,
+                    page,
+                    pageSize);
         }
 
         return searchInMemory(
-                SEED_RESULTS, RepositorySource.FIXTURE, query, program, geography, vintageYear, page, pageSize);
+                SEED_RESULTS, RepositorySource.FIXTURE, query, programs, geography, vintageYear, page, pageSize);
     }
 
     /**
@@ -141,7 +149,7 @@ public class SearchService {
             List<SearchResult> catalog,
             RepositorySource resultSource,
             String query,
-            ResearchProgram program,
+            List<ResearchProgram> programs,
             String geography,
             Integer vintageYear,
             int page,
@@ -151,7 +159,7 @@ public class SearchService {
 
         List<SearchResult> filtered = catalog.stream()
                 .filter((result) -> matchesQuery(result, normalizedQuery))
-                .filter((result) -> program == null || result.program() == program)
+                .filter((result) -> programs.isEmpty() || programs.contains(result.program()))
                 .filter((result) ->
                         normalizedGeography.isBlank() || normalize(result.geography()).contains(normalizedGeography))
                 .filter((result) -> vintageYear == null || vintageYear.equals(result.vintageYear()))
@@ -174,9 +182,17 @@ public class SearchService {
                         facetGroup(
                                 "program",
                                 "Program",
-                                filtered,
+                                // Facet counts ignore the program filter itself, so selecting one
+                                // program does not hide the others and make them unselectable.
+                                catalog.stream()
+                                        .filter((result) -> matchesQuery(result, normalizedQuery))
+                                        .filter((result) -> normalizedGeography.isBlank()
+                                                || normalize(result.geography()).contains(normalizedGeography))
+                                        .filter((result) ->
+                                                vintageYear == null || vintageYear.equals(result.vintageYear()))
+                                        .toList(),
                                 (result) -> result.program().name(),
-                                program == null ? "" : program.name()),
+                                programs),
                         facetGroup("geography", "Geography", filtered, SearchResult::geography, geography == null ? "" : geography)));
     }
 
@@ -197,7 +213,34 @@ public class SearchService {
             List<SearchResult> results,
             Function<SearchResult, String> valueSelector,
             String selectedValue) {
-        String normalizedSelected = normalize(selectedValue);
+        return facetGroup(
+                field,
+                label,
+                results,
+                valueSelector,
+                normalize(selectedValue).isBlank() ? Set.of() : Set.of(normalize(selectedValue)));
+    }
+
+    private FacetGroup facetGroup(
+            String field,
+            String label,
+            List<SearchResult> results,
+            Function<SearchResult, String> valueSelector,
+            List<ResearchProgram> selectedPrograms) {
+        return facetGroup(
+                field,
+                label,
+                results,
+                valueSelector,
+                selectedPrograms.stream().map((program) -> normalize(program.name())).collect(Collectors.toSet()));
+    }
+
+    private FacetGroup facetGroup(
+            String field,
+            String label,
+            List<SearchResult> results,
+            Function<SearchResult, String> valueSelector,
+            Set<String> normalizedSelected) {
         Map<String, Long> counts = results.stream()
                 .collect(Collectors.groupingBy(valueSelector, Collectors.counting()));
 
@@ -207,7 +250,7 @@ public class SearchService {
                         entry.getKey(),
                         entry.getKey().replace('_', ' '),
                         entry.getValue(),
-                        normalize(entry.getKey()).equals(normalizedSelected)))
+                        normalizedSelected.contains(normalize(entry.getKey()))))
                 .toList();
 
         return new FacetGroup(field, label, values);

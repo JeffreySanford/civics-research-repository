@@ -32,7 +32,8 @@ export type DatasetVersion = components['schemas']['DatasetVersion'];
 
 export interface SearchQuery {
   readonly q?: string;
-  readonly program?: ResearchProgram;
+  /** Repeatable. Results match any selected program; empty means every program. */
+  readonly programs?: readonly ResearchProgram[];
   readonly geography?: string;
   readonly vintageYear?: number;
   readonly page?: number;
@@ -122,14 +123,15 @@ export class RepositorySearchApi {
   ) {}
 
   searchResearchObjects(query: SearchQuery): Observable<SearchResponse> {
-    const params: Record<string, string | number> = {};
+    const params: Record<string, string | number | readonly string[]> = {};
 
     if (query.q) {
       params['q'] = query.q;
     }
 
-    if (query.program) {
-      params['program'] = query.program;
+    if (query.programs?.length) {
+      // HttpParams keeps repeated keys, which is how the contract expresses "any of these".
+      params['program'] = [...query.programs];
     }
 
     if (query.geography) {
