@@ -127,7 +127,7 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 - [x] Add admin UI-triggered sync endpoint.
 - [x] Add script/CLI sync entry point.
 - [x] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
-- [ ] Generate DSpace-ready item payload.
+- [x] Generate DSpace-ready item payload.
 - [x] Add dry-run mode.
 - [ ] Add diff mode to compare source metadata with DSpace item state.
 - [x] Add logging and error handling.

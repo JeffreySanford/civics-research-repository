@@ -183,6 +183,8 @@ or
 
 Current implementation starts with the 2025 TIGER/Line Census Tracts dataset for North Dakota. The Java API includes a typed metadata adapter that normalizes the repository ID, title, program, publisher, geography, geographic level, vintage, release date, source ZIP URL, Census documentation URL, citation, and file manifest entries.
 
+The normalized metadata is mapped into an internal DSpace item payload before sync actions are planned. The payload currently includes the DSpace object name/type, Dublin Core metadata fields, project-specific `crr.*` metadata fields for source tracking, and `ORIGINAL` bundle bitstream manifest entries that point back to source files instead of mirroring large archives.
+
 The first sync should create:
 
 - DSpace community: Census Public Research Data.

@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.civicsrepo.dspace.DspaceItemPayload;
+import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.sources.PublicDatasetFile;
 import org.civicsrepo.sources.PublicDatasetMetadata;
 import org.civicsrepo.sources.PublicMetadataAdapter;
@@ -21,12 +23,17 @@ public class SyncService {
 
     private final SyncJobStore syncJobStore;
     private final SyncActionRunner syncActionRunner;
+    private final DspaceItemPayloadMapper dspaceItemPayloadMapper;
     private final Map<SyncSource, PublicMetadataAdapter> metadataAdapters;
 
     public SyncService(
-            SyncJobStore syncJobStore, SyncActionRunner syncActionRunner, List<PublicMetadataAdapter> metadataAdapters) {
+            SyncJobStore syncJobStore,
+            SyncActionRunner syncActionRunner,
+            DspaceItemPayloadMapper dspaceItemPayloadMapper,
+            List<PublicMetadataAdapter> metadataAdapters) {
         this.syncJobStore = syncJobStore;
         this.syncActionRunner = syncActionRunner;
+        this.dspaceItemPayloadMapper = dspaceItemPayloadMapper;
         this.metadataAdapters =
                 metadataAdapters.stream().collect(Collectors.toUnmodifiableMap(PublicMetadataAdapter::source, Function.identity()));
     }
@@ -85,6 +92,7 @@ public class SyncService {
         }
 
         PublicDatasetMetadata metadata = metadataAdapter.firstVisualSlice();
+        DspaceItemPayload itemPayload = dspaceItemPayloadMapper.toItemPayload(metadata);
         return List.of(
                 new SyncAction("UPSERT_COMMUNITY", "Census Public Research Data", "Ensure root DSpace community exists."),
                 new SyncAction(
@@ -93,9 +101,9 @@ public class SyncService {
                         "Ensure collection exists for " + metadata.program().name() + " " + metadata.geographicLevel() + " metadata."),
                 new SyncAction(
                         "UPSERT_ITEM",
-                        metadata.title(),
-                        "Normalize " + metadata.publisher() + " metadata for " + metadata.geography() + " "
-                                + metadata.vintageYear() + " from " + metadata.sourceUrl() + "."),
+                        itemPayload.name(),
+                        "Prepare DSpace item payload with " + itemPayload.metadata().size() + " metadata fields and "
+                                + itemPayload.bitstreams().size() + " bitstream manifest entries."),
                 new SyncAction(
                         "UPSERT_FILE_MANIFEST",
                         metadata.id(),

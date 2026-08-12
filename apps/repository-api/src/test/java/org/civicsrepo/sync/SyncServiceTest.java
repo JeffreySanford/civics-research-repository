@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -26,7 +27,9 @@ class SyncServiceTest {
         assertThat(job.actions())
                 .anySatisfy(action -> {
                     assertThat(action.actionType()).isEqualTo("UPSERT_ITEM");
-                    assertThat(action.detail()).contains("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/");
+                    assertThat(action.detail()).contains("DSpace item payload");
+                    assertThat(action.detail()).contains("16 metadata fields");
+                    assertThat(action.detail()).contains("3 bitstream manifest entries");
                 });
     }
 
@@ -48,6 +51,7 @@ class SyncServiceTest {
                 (request, actions) -> {
                     throw new IllegalStateException("DSpace is unavailable.");
                 },
+                new DspaceItemPayloadMapper(),
                 List.of(new TigerLineMetadataAdapter()));
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE));
@@ -113,7 +117,8 @@ class SyncServiceTest {
     }
 
     private SyncService newSyncService(TestSyncJobStore syncJobStore) {
-        return new SyncService(syncJobStore, (request, actions) -> {}, List.of(new TigerLineMetadataAdapter()));
+        return new SyncService(
+                syncJobStore, (request, actions) -> {}, new DspaceItemPayloadMapper(), List.of(new TigerLineMetadataAdapter()));
     }
 
     private static final class TestSyncJobStore implements SyncJobStore {

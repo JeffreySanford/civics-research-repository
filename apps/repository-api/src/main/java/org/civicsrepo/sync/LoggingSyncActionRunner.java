@@ -13,11 +13,12 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
     public void run(SyncRequest request, List<SyncAction> actions) {
         for (SyncAction action : actions) {
             LOGGER.info(
-                    "Sync {} action planned for source {}: {} -> {}.",
+                    "Sync {} action planned for source {}: {} -> {}. {}",
                     request.mode(),
                     request.source(),
                     action.actionType(),
-                    action.target());
+                    action.target(),
+                    action.detail());
         }
     }
 }
