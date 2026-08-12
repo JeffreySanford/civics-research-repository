@@ -330,8 +330,11 @@ export interface components {
         | 'UPSERT_COMMUNITY'
         | 'UPSERT_COLLECTION'
         | 'UPSERT_ITEM'
+        | 'UPSERT_FILE_MANIFEST'
+        | 'UPSERT_CITATION'
         | 'UPSERT_MAP_LAYER'
-        | 'VERIFY_INDEX';
+        | 'VERIFY_INDEX'
+        | 'SYNC_FAILED';
       target: string;
       detail: string;
     };

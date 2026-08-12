@@ -181,6 +181,8 @@ or
 2023 LODES - North Dakota Workplace Area Characteristics
 ```
 
+Current implementation starts with the 2025 TIGER/Line Census Tracts dataset for North Dakota. The Java API includes a typed metadata adapter that normalizes the repository ID, title, program, publisher, geography, geographic level, vintage, release date, source ZIP URL, Census documentation URL, citation, and file manifest entries.
+
 The first sync should create:
 
 - DSpace community: Census Public Research Data.

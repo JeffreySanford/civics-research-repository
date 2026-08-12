@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -19,7 +20,14 @@ class SyncServiceTest {
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DRY_RUN, SyncSource.TIGER_LINE));
 
         assertThat(job.status()).isEqualTo(SyncStatus.DRY_RUN_COMPLETE);
-        assertThat(job.actions()).extracting(SyncAction::actionType).contains("UPSERT_ITEM", "VERIFY_INDEX");
+        assertThat(job.actions())
+                .extracting(SyncAction::actionType)
+                .contains("UPSERT_ITEM", "UPSERT_FILE_MANIFEST", "UPSERT_CITATION", "VERIFY_INDEX");
+        assertThat(job.actions())
+                .anySatisfy(action -> {
+                    assertThat(action.actionType()).isEqualTo("UPSERT_ITEM");
+                    assertThat(action.detail()).contains("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/");
+                });
     }
 
     @Test
@@ -35,9 +43,12 @@ class SyncServiceTest {
     @Test
     void failedSyncIsPersistedWithFailureAction() {
         TestSyncJobStore store = new TestSyncJobStore();
-        SyncService syncService = new SyncService(store, (request, actions) -> {
-            throw new IllegalStateException("DSpace is unavailable.");
-        });
+        SyncService syncService = new SyncService(
+                store,
+                (request, actions) -> {
+                    throw new IllegalStateException("DSpace is unavailable.");
+                },
+                List.of(new TigerLineMetadataAdapter()));
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE));
 
@@ -102,7 +113,7 @@ class SyncServiceTest {
     }
 
     private SyncService newSyncService(TestSyncJobStore syncJobStore) {
-        return new SyncService(syncJobStore, (request, actions) -> {});
+        return new SyncService(syncJobStore, (request, actions) -> {}, List.of(new TigerLineMetadataAdapter()));
     }
 
     private static final class TestSyncJobStore implements SyncJobStore {

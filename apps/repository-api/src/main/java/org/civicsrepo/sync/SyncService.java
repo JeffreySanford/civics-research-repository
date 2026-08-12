@@ -3,8 +3,14 @@ package org.civicsrepo.sync;
 import java.util.ArrayList;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.civicsrepo.sources.PublicDatasetFile;
+import org.civicsrepo.sources.PublicDatasetMetadata;
+import org.civicsrepo.sources.PublicMetadataAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,10 +21,14 @@ public class SyncService {
 
     private final SyncJobStore syncJobStore;
     private final SyncActionRunner syncActionRunner;
+    private final Map<SyncSource, PublicMetadataAdapter> metadataAdapters;
 
-    public SyncService(SyncJobStore syncJobStore, SyncActionRunner syncActionRunner) {
+    public SyncService(
+            SyncJobStore syncJobStore, SyncActionRunner syncActionRunner, List<PublicMetadataAdapter> metadataAdapters) {
         this.syncJobStore = syncJobStore;
         this.syncActionRunner = syncActionRunner;
+        this.metadataAdapters =
+                metadataAdapters.stream().collect(Collectors.toUnmodifiableMap(PublicMetadataAdapter::source, Function.identity()));
     }
 
     public SyncJob runSync(SyncRequest request) {
@@ -69,12 +79,52 @@ public class SyncService {
     }
 
     private List<SyncAction> planActions(SyncRequest request) {
+        PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.source());
+        if (metadataAdapter == null) {
+            return fallbackPlanActions(request);
+        }
+
+        PublicDatasetMetadata metadata = metadataAdapter.firstVisualSlice();
+        return List.of(
+                new SyncAction("UPSERT_COMMUNITY", "Census Public Research Data", "Ensure root DSpace community exists."),
+                new SyncAction(
+                        "UPSERT_COLLECTION",
+                        metadata.program().name(),
+                        "Ensure collection exists for " + metadata.program().name() + " " + metadata.geographicLevel() + " metadata."),
+                new SyncAction(
+                        "UPSERT_ITEM",
+                        metadata.title(),
+                        "Normalize " + metadata.publisher() + " metadata for " + metadata.geography() + " "
+                                + metadata.vintageYear() + " from " + metadata.sourceUrl() + "."),
+                new SyncAction(
+                        "UPSERT_FILE_MANIFEST",
+                        metadata.id(),
+                        "Track " + metadata.files().size() + " source files: " + fileManifestSummary(metadata.files()) + "."),
+                new SyncAction(
+                        "UPSERT_CITATION",
+                        metadata.id(),
+                        "Store citation and documentation URL: " + metadata.documentationUrl() + "."),
+                new SyncAction(
+                        "UPSERT_MAP_LAYER",
+                        metadata.geography() + " " + metadata.geographicLevel() + " map preview",
+                        "Ensure map layer metadata exists for " + metadata.sourceUrl() + "."),
+                new SyncAction("VERIFY_INDEX", "Solr discovery", "Confirm item is available for discovery indexing."));
+    }
+
+    private List<SyncAction> fallbackPlanActions(SyncRequest request) {
+        LOGGER.info("No metadata adapter exists yet for {}; using placeholder sync actions.", request.source());
         return List.of(
                 new SyncAction("UPSERT_COMMUNITY", "Census Public Research Data", "Ensure root DSpace community exists."),
                 new SyncAction("UPSERT_COLLECTION", request.source().name(), "Ensure collection exists for selected source."),
                 new SyncAction("UPSERT_ITEM", firstSliceItemTitle(request.source()), "Ensure visual North Dakota demo item exists."),
                 new SyncAction("UPSERT_MAP_LAYER", "North Dakota map preview", "Ensure map layer metadata exists."),
                 new SyncAction("VERIFY_INDEX", "Solr discovery", "Confirm item is available for discovery indexing."));
+    }
+
+    private String fileManifestSummary(List<PublicDatasetFile> files) {
+        return files.stream()
+                .map((file) -> file.id() + "=" + file.format().name())
+                .collect(Collectors.joining(", "));
     }
 
     private String firstSliceItemTitle(SyncSource source) {

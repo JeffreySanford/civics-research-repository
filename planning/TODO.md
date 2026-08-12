@@ -122,11 +122,11 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 
 - [x] Decide harvester placement: Java API owns sync orchestration and sync state.
 - [x] Define initial sync state model for sync job, source, status, timestamps, and actions.
-- [ ] Implement TIGER/Line or LODES metadata source adapter for first visual slice.
+- [x] Implement TIGER/Line or LODES metadata source adapter for first visual slice.
 - [x] Add startup sync path.
 - [x] Add admin UI-triggered sync endpoint.
 - [x] Add script/CLI sync entry point.
-- [ ] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
+- [x] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
 - [ ] Generate DSpace-ready item payload.
 - [x] Add dry-run mode.
 - [ ] Add diff mode to compare source metadata with DSpace item state.
