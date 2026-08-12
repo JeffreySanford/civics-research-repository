@@ -220,7 +220,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Select Nx Java integration plugin: none for now; Gradle-oriented only if adopted later.
 - [x] Select OpenAPI-to-Java DTO generation tool: OpenAPI Generator Gradle plugin.
 - [x] Generate `apps/repository-api`.
-- [ ] Generate Java DTOs from OpenAPI.
+- [x] Generate Java DTOs from OpenAPI. Done in P6; the remaining per-type migrations are tracked in that section.
 - [x] Generate Angular TypeScript API client methods from OpenAPI.
 - [x] Add typed NgRx feature state for search.
 - [x] Add typed NgRx feature state for dataset detail.
