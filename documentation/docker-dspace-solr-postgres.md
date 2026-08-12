@@ -17,8 +17,9 @@ Current default stack:
 - PostgreSQL on `localhost:5432`.
 - Solr on `http://localhost:8983`.
 - Persistent Docker volumes for repository API artifacts, PostgreSQL, Solr, pnpm store, and container `node_modules`.
+- Optional DSpace REST profile on `http://localhost:8081/server/api`.
 
-DSpace REST integration remains the next platform step. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo has a reliable Docker baseline before DSpace initialization and repository seeding are added.
+DSpace REST is available as an optional Compose profile. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo remains reliable while DSpace initialization and repository seeding are added.
 
 `pnpm run start:all` is the preferred development command. It runs `docker compose down --remove-orphans` first so stale containers from earlier iterations are removed without changing the configured ports or deleting persistent volumes.
 
@@ -32,7 +33,7 @@ Public-facing search, dataset detail, mapping, and accessibility evidence UI.
 
 Repository API and content-management layer for communities, collections, items, metadata, bitstreams, and relationships.
 
-Status: planned next. DSpace official Docker images and compose patterns should be used for this service instead of a hand-rolled runtime.
+Status: optional Compose profile added. Runtime initialization and REST reachability verification remain the next DSpace-specific step.
 
 Baseline confirmed from the DSpace project:
 
@@ -133,6 +134,32 @@ pnpm run start:all
 ```
 
 That command removes stale containers first, then starts the stack on the default ports with persistent storage intact.
+
+## Optional DSpace Profile
+
+The DSpace profile is separated from the default demo stack because DSpace uses its own DSpace-flavored Postgres and Solr images. This avoids destabilizing the working Java API, Angular UI, Postgres, and Solr demo path.
+
+```bash
+pnpm run dspace:up
+pnpm run dspace:ps
+pnpm run dspace:logs
+pnpm run dspace:verify
+pnpm run dspace:down
+```
+
+Profile service ports:
+
+- DSpace REST: `http://localhost:8081/server/api`.
+- DSpace PostgreSQL: `localhost:5433`.
+- DSpace Solr: `http://localhost:8984/solr`.
+
+The profile uses these images:
+
+- `dspace/dspace:dspace-9.0`
+- `dspace/dspace-postgres-pgcrypto:dspace-9.0`
+- `dspace/dspace-solr:dspace-9.0`
+
+Use this only when working on DSpace REST integration. The default demo remains `pnpm run start:all`.
 
 ## Future AWS Direction
 

@@ -68,8 +68,50 @@ services:
     volumes:
       - solr-data:/var/solr
 
+  dspace-rest:
+    profiles: ['dspace']
+    image: dspace/dspace:dspace-9.0
+    depends_on:
+      - dspace-postgres
+      - dspace-solr
+    environment:
+      dspace__P__name: Civics Research Repository DSpace
+      dspace__P__server__P__url: http://localhost:8081/server
+      dspace__P__ui__P__url: http://localhost:4000
+      db__P__url: jdbc:postgresql://dspace-postgres:5432/dspace
+      db__P__username: dspace
+      db__P__password: dspace
+      solr__P__server: http://dspace-solr:8983/solr
+    ports:
+      - '8081:8080'
+    volumes:
+      - dspace-assetstore:/dspace/assetstore
+
+  dspace-postgres:
+    profiles: ['dspace']
+    image: dspace/dspace-postgres-pgcrypto:dspace-9.0
+    environment:
+      POSTGRES_DB: dspace
+      POSTGRES_USER: dspace
+      POSTGRES_PASSWORD: dspace
+    ports:
+      - '5433:5432'
+    volumes:
+      - dspace-postgres-data:/pgdata
+
+  dspace-solr:
+    profiles: ['dspace']
+    image: dspace/dspace-solr:dspace-9.0
+    ports:
+      - '8984:8983'
+    volumes:
+      - dspace-solr-data:/var/solr
+
 volumes:
   civics-artifacts:
+  dspace-assetstore:
+  dspace-postgres-data:
+  dspace-solr-data:
   node-modules:
   pnpm-store:
   postgres-data:

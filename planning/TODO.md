@@ -94,7 +94,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Add persistent Docker volumes for API artifacts, PostgreSQL, Solr, pnpm store, and container `node_modules`.
 - [x] Add PostgreSQL service for DSpace.
 - [x] Add Solr service for discovery.
-- [ ] Add DSpace REST service.
+- [x] Add DSpace REST service.
 - [x] Add Java API service.
 - [x] Add Angular UI service.
 - [x] Add local environment sample.
