@@ -160,6 +160,10 @@ if (stopOnly || resetOnly) {
   process.exit(result.status ?? 0);
 }
 
+if (!checkLockfile()) {
+  process.exit(1);
+}
+
 const plans = services.map((service) => ({
   service,
   ...planFor(containers.get(service)),
@@ -196,15 +200,133 @@ if (rebuildImages) {
   }
 }
 
+/**
+ * A lockfile that disagrees with package.json is the most likely reason the UI container dies,
+ * and the least obvious from the logs: the container installs with `--frozen-lockfile`, so it
+ * exits immediately with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH while every other service keeps running
+ * and printing healthy output. Checking it here turns a confusing hang into a sentence.
+ */
+function checkLockfile() {
+  const check = spawnSync(
+    'pnpm',
+    ['install', '--lockfile-only', '--frozen-lockfile', '--ignore-scripts'],
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], shell: true },
+  );
+
+  // If pnpm cannot be run at all, let Compose proceed rather than blocking on a check.
+  if (check.error || check.status === 0) {
+    return true;
+  }
+
+  const output = `${check.stdout ?? ''}${check.stderr ?? ''}`;
+  console.error(
+    '\n  Stack startup aborted: the pnpm lockfile does not match package.json.\n\n' +
+      '  The discovery-ui container installs with --frozen-lockfile and would exit\n' +
+      '  immediately with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.\n\n' +
+      '  Fix:\n' +
+      '    pnpm install --no-frozen-lockfile\n\n' +
+      '  Then commit the regenerated pnpm-lock.yaml alongside the package.json change,\n' +
+      '  and retry:\n' +
+      '    pnpm start:all\n',
+  );
+  if (output.trim()) {
+    console.error('  pnpm reported:\n');
+    process.stderr.write(
+      output
+        .trim()
+        .split('\n')
+        .map((line) => `    ${line}`)
+        .join('\n') + '\n',
+    );
+  }
+  return false;
+}
+
 const upArgs = ['compose', 'up'];
 if (forceRecreate) {
   upArgs.push('--force-recreate');
 }
 if (detach) {
   upArgs.push('--detach');
+} else {
+  // Attached runs stop when any stack service exits. Without this, a dead UI leaves Postgres,
+  // Solr, and the API happily logging, so a failed startup looks like a slow one.
+  upArgs.push('--abort-on-container-exit');
 }
 upArgs.push(...services);
 
 console.log(`\n> docker ${upArgs.join(' ')}\n`);
 const up = docker(upArgs);
+
+if ((up.status ?? 0) !== 0) {
+  reportFailure(up.status ?? 1);
+}
+
 process.exit(up.status ?? 0);
+
+/** Container exit time, used to tell the cause apart from services the abort stopped afterwards. */
+function finishedAt(containerName) {
+  if (!containerName) {
+    return '';
+  }
+
+  const result = docker(
+    ['inspect', '--format', '{{.State.FinishedAt}}', containerName],
+    { capture: true },
+  );
+  return result.status === 0 ? result.stdout.trim() : '';
+}
+
+/**
+ * Names the service that actually failed and shows its last output.
+ *
+ * `--abort-on-container-exit` stops every other service once one dies, so they all end up exited
+ * with 143 (SIGTERM). Reporting whichever appears first would blame collateral damage — a killed
+ * UI would be reported as a Solr failure. The cause is the container that finished *earliest*, so
+ * exit times are read from Docker and the earliest exiter is the one whose logs are shown.
+ */
+function reportFailure(exitStatus) {
+  const containers = containersByService();
+  const failed = services
+    .map((service) => ({ service, container: containers.get(service) }))
+    .filter(({ container }) => {
+      const state = (container?.State ?? '').toLowerCase();
+      return state === 'exited' && Number(container?.ExitCode ?? 0) !== 0;
+    })
+    .map((entry) => ({
+      ...entry,
+      finishedAt: finishedAt(entry.container?.Name),
+    }))
+    .sort((left, right) => left.finishedAt.localeCompare(right.finishedAt));
+
+  console.error(`\n  Stack startup failed (exit code ${exitStatus}).\n`);
+
+  if (failed.length === 0) {
+    console.error(
+      '  No stack service reported a non-zero exit. Inspect the current state with:\n' +
+        '    pnpm run docker:ps\n',
+    );
+    return;
+  }
+
+  const [cause, ...stoppedByAbort] = failed;
+  console.error(
+    `  ${cause.service} exited first, with code ${cause.container.ExitCode}. Last log lines:\n`,
+  );
+  docker(['compose', 'logs', '--tail=40', cause.service]);
+
+  if (stoppedByAbort.length > 0) {
+    console.error(
+      `\n  Stopped by the abort, not the cause: ${stoppedByAbort
+        .map((entry) => `${entry.service} (${entry.container.ExitCode})`)
+        .join(', ')}`,
+    );
+  }
+
+  console.error(
+    '\n  Full logs:\n' +
+      '    pnpm run docker:logs\n\n' +
+      '  If discovery-ui reported ERR_PNPM_LOCKFILE_CONFIG_MISMATCH:\n' +
+      '    pnpm install --no-frozen-lockfile\n',
+  );
+}

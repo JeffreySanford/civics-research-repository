@@ -21,7 +21,7 @@ Current default stack:
 
 DSpace REST is available as an optional Compose profile. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo remains reliable while DSpace repository seeding is added.
 
-`pnpm run start:all` is the preferred development command. It runs `docker compose down --remove-orphans` first so stale containers from earlier iterations are removed without changing the configured ports or deleting persistent volumes.
+`pnpm run start:all` is the preferred development command. It reconciles the containers in the active Compose profile — recreating only the broken ones — without changing the configured ports or deleting persistent volumes. See [Why the scoped commands exist](#why-the-scoped-commands-exist) below.
 
 ## Planned Services
 
@@ -170,6 +170,22 @@ For normal development, prefer:
 ```bash
 pnpm run start:all
 ```
+
+### How a failed start reports itself
+
+An attached `start:all` used to be able to reach a state that read as a hang: the UI container died, and Postgres, Solr, and the Java API kept running and printing healthy output, so the terminal filled with Solr pings while nothing was actually starting. Two changes close that.
+
+**Before any container is touched**, the launcher runs `pnpm install --lockfile-only --frozen-lockfile --ignore-scripts`. The `discovery-ui` container installs with `--frozen-lockfile`, so a lockfile that disagrees with `package.json` makes it exit immediately with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` — the single most likely startup failure, and the least legible from the logs. The check turns it into one sentence and the fix:
+
+```bash
+pnpm install --no-frozen-lockfile
+```
+
+Commit the regenerated `pnpm-lock.yaml` alongside the `package.json` change.
+
+**Attached runs pass `--abort-on-container-exit`**, so one dead service stops the whole stack and returns control to the shell. The launcher then names the service that failed and prints its last 40 log lines. Because the abort sends SIGTERM to everything else, the other services also exit non-zero (143); the launcher reads each container's `State.FinishedAt` and blames the service that exited **first**, listing the rest as `Stopped by the abort, not the cause`. Without that ordering, killing the UI was reported as a Solr failure.
+
+Detached runs (`--detach`) keep the previous behavior, since there is no attached session to abort.
 
 ## Optional DSpace Profile
 
