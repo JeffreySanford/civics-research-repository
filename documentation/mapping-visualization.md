@@ -27,7 +27,7 @@ The first map should support:
 - Hydrography or water reference layers from The National Map after the earthquake overlay is stable.
 - Elevation/topographic reference layers from The National Map in a later advanced map slice.
 
-The National Map evaluation is captured in [USGS National Map Evaluation](usgs-national-map-evaluation.md). The recommended follow-on path is a single hydrography reference overlay, preferably from the 3D Hydrography Program source family, rendered as a raster reference layer first and only expanded to WFS feature summaries if needed.
+The National Map evaluation is captured in [USGS National Map Evaluation](usgs-national-map-evaluation.md). The recommended follow-on path is a single hydrography reference overlay from the 3D Hydrography Program, rendered as a raster reference layer first and only expanded to WFS feature summaries if needed. Legacy NHD is retired and out of scope; the geospatial metadata schema targets 3HP specifications so layer toggles and legends are not built twice.
 
 ## USGS Attribution And Freshness
 
@@ -92,3 +92,30 @@ Maps are visual and interactive, so the UI must provide equivalent access to the
 Use MapLibre GL first for vector-tile-oriented maps and modern rendering.
 
 Leaflet remains a possible later comparison implementation behind a small map-engine adapter if there is a concrete reason to show both. Do not build both engines in the first slice; it would double rendering, testing, and accessibility work before the core repository workflow is proven.
+
+## Map and Feature List Synchronization
+
+**Status: specified, not implemented.** The accessible feature list currently renders the same data as the map but shares no state with it. That satisfies "an equivalent exists" and fails "the equivalent is usable", which is the distinction that matters for a canvas-based map.
+
+axe cannot detect this gap. A MapLibre canvas with a parallel `<ul>` passes every automated rule while a screen-reader user still has no way to tell which earthquake the map is showing, or to move the map to the event they are reading about. The risk register has warned about exactly this since the beginning; this section turns the warning into a requirement.
+
+### Required behavior
+
+The map and the feature list are two views of one selection, and selection must be settable from either side.
+
+- Every feature in the list is a focusable control with an accessible name that identifies it without relying on the map — place, magnitude, and time for an earthquake; name and geography for a Census layer.
+- Moving focus to a list item selects that feature: the map pans to its coordinate and renders it as visually selected. Panning must not steal focus.
+- Selecting a feature on the map — click, or keyboard activation of a map control — moves programmatic focus to the corresponding list item and marks it `aria-selected`.
+- The selected feature is announced through a polite live region, so a screen-reader user learns what changed without inspecting the map.
+- Selection survives layer toggles where the feature is still visible, and clears when its layer is hidden.
+- Selection is reflected in the URL alongside the existing area and layer parameters, so a selected feature can be linked to and restored.
+
+### Verification
+
+Automated checks can prove the wiring, not the experience:
+
+- A storyboard check that keyboard-tabbing to a feature updates the map's selected state.
+- A storyboard check that activating a map feature moves focus to the matching list item.
+- A storyboard check that the announcement region receives the selected feature's name.
+
+The experience itself is verified by Checklist 4 in [accessibility-manual-evidence.md](accessibility-manual-evidence.md), whose determining question — can someone who never perceives the canvas obtain the same information and perform the same tasks — is only honestly answerable "yes" once this synchronization exists.

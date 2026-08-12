@@ -30,7 +30,9 @@ Reason: Section 508 is the federal baseline; newer WCAG practices reduce future 
 
 Decision: prefer Java/Spring Boot for the backend API.
 
-Reason: Java is a stronger fit for likely federal delivery environments and DSpace/Solr/PostgreSQL integration. NestJS remains a fallback for rapid prototypes only.
+Reason: Java is a stronger fit for likely federal delivery environments and DSpace/Solr/PostgreSQL integration.
+
+NestJS was considered early and is now explicitly rejected, not held as a fallback. A standby second backend costs dual maintenance, splits attention, duplicates setup scripts, and invites divergence in exactly the layer the OpenAPI contract exists to keep singular. Nothing was ever scaffolded, so this is a decision to keep it that way. If a mock backend is wanted for frontend work, generate one from `schemas/openapi/repository-api.yaml` with standard OpenAPI tooling such as Prism — that stays contract-driven by construction and disappears when it is no longer needed.
 
 ### Java Runtime Target
 
@@ -176,20 +178,23 @@ Reason: staying on DSpace-supported images keeps migration, seeding, and Solr co
 
 ### Nx Java Integration
 
-Options:
+Options, Gradle-oriented only, since the build tool is settled:
 
-- `@nxrocks/nx-spring-boot`
-- `@jnxplus/nx-maven`
-- `@jnxplus/nx-gradle`
 - `@nx/gradle`
+- `@jnxplus/nx-gradle`
+- `@nxrocks/nx-spring-boot`
 
-Recommendation: choose after confirming the backend build tool. The key requirement is that build, test, serve, OpenAPI generation, and quality tasks run through Nx targets.
+Recommendation: no plugin for now. Java tasks run through `nx:run-commands` targets that shell out to Docker, which already gives agents, local CLI, and CI one path. Adopt a plugin only if project-graph awareness of Java sources becomes worth the dependency, and only if it works against a containerized build rather than a host toolchain.
 
 ### OpenAPI to Java DTO Tooling
 
 Options:
 
-- OpenAPI Generator Maven/Gradle plugin.
-- Springdoc/OpenAPI controller annotation flow with generated DTOs.
+- OpenAPI Generator Gradle plugin (`org.openapi.generator`), generating DTOs and API interfaces from the contract.
+- Springdoc annotation flow, generating the contract from controllers.
 
-Recommendation: generate DTOs from OpenAPI rather than generating OpenAPI from controllers. This is the last open contract gate — Java records are currently hand-written against the schema, and only the frontend side of the contract has a drift check.
+Recommendation: the OpenAPI Generator **Gradle** plugin, wired into the `compile` task graph so that editing `schemas/openapi/repository-api.yaml` regenerates Java types before compilation and a contract violation fails the build rather than surfacing at runtime. Generating the contract from controllers is rejected: it inverts the contract-first rule and makes the frontend a downstream consumer of Java annotations.
+
+This is the last open contract gate. Today only the frontend half is generated and drift-checked; Java records are hand-written against the schema, so the backend can silently diverge from the contract the frontend is built on.
+
+Not yet implemented, and not a mechanical change — see planning/TODO.md under "Java DTO generation" for the migration path and the specific collisions to resolve first.

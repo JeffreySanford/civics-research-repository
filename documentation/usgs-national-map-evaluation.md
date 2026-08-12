@@ -33,7 +33,7 @@ Assessment: useful later, but not needed now because the current OpenStreetMap b
 
 Use case: streams, rivers, lakes, and watershed context around Census geographies.
 
-Assessment: strong follow-on overlay. USGS notes that NHD was retired on October 1, 2023 and the most current direction is 3D Hydrography Program data. Treat legacy NHD as available but not the preferred long-term source.
+Assessment: strong follow-on overlay, targeting 3D Hydrography Program data only. USGS retired NHD on 1 October 2023. Legacy NHD is explicitly out of scope rather than a fallback: an adapter, layer toggle, legend, and metadata mapping built against a retired format would all have to be rebuilt, and the geospatial metadata schema should be aligned to 3HP from the start.
 
 ### Watershed Boundary Dataset
 
@@ -51,7 +51,7 @@ Assessment: useful for a later advanced demo, but less directly tied to reposito
 
 Defer National Map implementation until after the core Census, LODES, and USGS earthquake story is stable. When added, implement one hydrography reference overlay first:
 
-- Preferred source family: 3D Hydrography Program, with legacy NHD only as fallback or comparison.
+- Source family: 3D Hydrography Program. Legacy NHD is out of scope, not a fallback.
 - Preferred rendering path: raster/WMTS or WMS visual layer first, then WFS feature summaries if needed.
 - Required metadata: source, source URL, attribution, update/freshness note, service type, layer identifier, and fallback status.
 - Required accessibility: visible legend, non-color-only label, feature-list or textual summary outside the canvas, and source attribution in the accessible content.

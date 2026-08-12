@@ -2,7 +2,7 @@
 
 ## Backend Decision
 
-Prefer Java/Spring Boot for the backend API. NestJS is acceptable for prototypes, but this repo should bias toward the stack likely to appear in a federal Census/DSpace/Solr environment.
+Use Java 21 with Spring Boot for the backend API, built with Gradle inside the container image. This is the only backend: do not introduce NestJS, a Node backend, or a Maven build path. If a mock API is needed for frontend work, generate it from `schemas/openapi/repository-api.yaml` with OpenAPI tooling such as Prism rather than standing up a second application.
 
 ## Contract Rules
 

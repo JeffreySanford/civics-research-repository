@@ -50,6 +50,56 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 - [x] Keyboard, NVDA, JAWS, map-equivalence, and cognitive checklists.
 - [ ] Execute and record the first full evidence run.
 
+### P6 - Java DTO generation from OpenAPI
+
+Closes the last contract gate. Decision recorded in DECISIONS.md ("OpenAPI to Java DTO Tooling"): the OpenAPI Generator **Gradle** plugin, wired into the compile task graph.
+
+Not mechanical. The hand-written records carry behavior and fields the contract does not describe, and those collisions must be resolved first:
+
+- [ ] Add `org.openapi.generator` to `apps/repository-api/build.gradle.kts`, generating into `org.civicsrepo.generated.dto` with `useRecords` so output matches the existing style.
+- [ ] Make `compileJava` depend on the generate task, so editing the contract regenerates before compilation and a violation fails the build.
+- [ ] Resolve the collisions before switching controllers over:
+      `SearchResponse.withResultSource` is behavior a generated record cannot carry;
+      `RepositorySource` lives in `org.civicsrepo.repository` but the contract would generate it into the DTO package;
+      `DatasetDetail`, `SearchResult`, `SyncJob`, and `MapLayer` all exist by hand today.
+- [ ] Decide per type: adopt the generated record directly, or keep a domain type and map at the controller boundary. Prefer adopting; add a mapping layer only where domain behavior justifies it.
+- [ ] Migrate one endpoint end to end first (`/health` or `/maps/census-areas`) to prove the wiring before touching search or datasets.
+- [ ] Add a Java-side drift check to `quality:all`, mirroring `openapi:check`, so the backend half of the contract is enforced rather than trusted.
+- [ ] Delete the hand-written records once every consumer is migrated.
+
+### P7 - Map and feature list selection synchronization
+
+The remaining substantive accessibility gap, specified in documentation/mapping-visualization.md. axe cannot detect it, and manual Checklist 4 cannot honestly pass without it.
+
+- [ ] Add selected-feature state to the maps NgRx feature, with actions for selection from the list and from the map.
+- [ ] Make each feature-list entry a focusable control with a self-sufficient accessible name.
+- [ ] Focusing or activating a list entry pans the map to its coordinate and renders it selected, without stealing focus.
+- [ ] Activating a map feature moves programmatic focus to the matching list entry and sets `aria-selected`.
+- [ ] Announce the selected feature through a polite live region.
+- [ ] Clear selection when its layer is hidden; preserve it across unrelated layer toggles.
+- [ ] Reflect the selected feature in the URL alongside area and layer parameters.
+- [ ] Storyboard checks for both directions and for the announcement.
+- [ ] Re-run manual Checklist 4 afterwards and record the result.
+
+### P8 - Repository breadth
+
+Discovery reads from DSpace, which holds six seeded items, so search shows six datasets across three geographies. The previous fifty-two states came from the generated fixture catalog, which is now only a labelled fallback. This is correct behavior, and it makes the demo look thinner than it did.
+
+- [ ] Decide the target breadth: a curated set (roughly 12-20 items across 5-8 geographies) or full coverage.
+- [ ] Generate SAF packages from a data table at seed time rather than committing one directory per item, so breadth is a one-line change and the repository does not carry hundreds of near-identical XML files.
+- [ ] Keep `--resume` incremental import working, so adding items never requires a repository reset.
+- [ ] Confirm `civics.repository.max-items` (default 500) and discovery paging still hold at the chosen size.
+
+### P9 - Security patch pass
+
+Required before leaving PI 1, per the Dependency Upgrade Policy in RISKS.md.
+
+- [ ] Triage outstanding Dependabot findings.
+- [ ] Upgrade everything that upgrades cleanly, one concern per commit.
+- [ ] Record an explicit accepted risk, with reason and revisit date, for anything that cannot move.
+- [ ] Move NgRx from `22.0.0-rc.0` to stable as soon as it exists, as a dedicated change.
+- [ ] Add a reason and removal condition comment to each `pnpm.overrides` entry.
+
 ## PI 0 - Repository Foundation
 
 Goal: establish the project direction, documentation base, and working backlog.
@@ -113,7 +163,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 
 ### Sprint 1.0 - Java API Contract Foundation
 
-- [x] Decide backend direction: Java/Spring Boot preferred over NestJS for federal alignment.
+- [x] Decide backend direction: Java 21 / Spring Boot, single backend. NestJS explicitly rejected, never scaffolded.
 - [x] Add backend Java API documentation.
 - [x] Add OpenAPI-first repository API contract.
 - [x] Add OpenAPI-to-frontend type generation.
@@ -127,8 +177,8 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Choose Java runtime target: 21.
 - [x] Choose Maven or Gradle: Gradle inside Docker.
 - [x] Install/enable Maven wrapper or choose Gradle wrapper strategy: use Gradle container image for now.
-- [ ] Select Nx Java integration plugin.
-- [ ] Select OpenAPI-to-Java DTO generation tool.
+- [x] Select Nx Java integration plugin: none for now; Gradle-oriented only if adopted later.
+- [x] Select OpenAPI-to-Java DTO generation tool: OpenAPI Generator Gradle plugin.
 - [x] Generate `apps/repository-api`.
 - [ ] Generate Java DTOs from OpenAPI.
 - [x] Generate Angular TypeScript API client methods from OpenAPI.

@@ -59,6 +59,7 @@ No run has been recorded yet. Until one is, this project has automated-scan resu
 - Download and citation actions have clear accessible names.
 - Map controls have accessible labels.
 - Map data has a non-map representation.
+- Map and feature list share one selection, settable from either side, with the selected feature announced. Specified in [mapping-visualization.md](mapping-visualization.md#map-and-feature-list-synchronization); not yet implemented, and the main reason the map cannot yet be claimed as accessible.
 - Errors identify affected fields and suggest correction.
 - Status messages are announced without stealing focus.
 

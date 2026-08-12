@@ -115,6 +115,12 @@ Public dataset metadata
 
 Discovery, facets, dataset detail, and related research all read from DSpace. The generated fixture catalog survives only as a fallback for when the repository is unavailable, and every API response carries `resultSource` / `source` (`REPOSITORY` or `FIXTURE`) so the UI shows a placeholder-data notice rather than passing fixtures off as repository content. `pnpm run reindex` rebuilds the projection on demand.
 
+### Why discovery shows six datasets, not one hundred and fifty-nine
+
+Search used to list 52 states and territories across three programs. Those were generated fixtures. Discovery now reads from DSpace, which holds the six seeded research objects, so search shows six datasets across three geographies with real facet counts.
+
+Nothing is capping the results: the repository genuinely holds six items. Breadth comes from seeding more of them (see `tools/dspace/saf/`), not from lifting a limit. The map's Census area picker still offers all 52 areas, because those are boundary definitions rather than repository content.
+
 Remaining gaps are listed in [Known Seams](documentation/architecture-diagrams.md#known-seams); the ordered plan is in [planning/ROADMAP.md](planning/ROADMAP.md#near-term-order).
 
 Architecture is documented as C4 context and container views plus ingestion, search, and map sequences in [architecture-diagrams.md](documentation/architecture-diagrams.md). The cloud target is in [aws-modernization.md](documentation/aws-modernization.md). Accessibility has automated coverage in `quality:all` and manual checklists in [accessibility-manual-evidence.md](documentation/accessibility-manual-evidence.md); no manual run has been recorded yet, so the project currently has automated-scan results rather than complete Section 508 evidence.

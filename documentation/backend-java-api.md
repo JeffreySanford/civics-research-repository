@@ -1,10 +1,20 @@
 # Backend Java API Direction
 
-## Recommendation
+## Decision
 
-Use Java with Spring Boot for the repository API. NestJS would be faster for initial prototyping, but Java is a better signal for the likely federal delivery environment and pairs naturally with DSpace, Solr, PostgreSQL, OpenAPI, validation, and long-lived service contracts.
+Java 21 with Spring Boot for the repository API, built with **Gradle inside the `gradle:9.6-jdk21` container image**. This is the single backend. There is no secondary Node backend and no Maven path.
 
-Spring Boot 4.1.0 is current on the official Spring project page as of August 11, 2026. The local machine currently has OpenJDK 17 available, but Maven is not installed. Before generating the backend, decide whether to target Java 17, Java 21, or Java 25.
+Spring Boot 4.1.0 is current as of August 2026 and is what `apps/repository-api` runs.
+
+### Why Gradle in a container, not Maven and not a wrapper
+
+The original recommendation in this document was Maven, on the reasoning that it is more common in federal Java projects. That was superseded: the build runs entirely inside Docker, so the argument that decided it was reproducibility, not familiarity.
+
+- No local Java, Maven, or Gradle install is required. The toolchain is pinned by image tag, so every developer and every CI runner compiles with the identical JDK and build tool.
+- A wrapper (`mvnw` or `gradlew`) solves a different problem — bootstrapping a build tool onto a host that lacks one. That problem does not exist here, because the host never builds. Adding a wrapper would introduce a second, unpinned path to the same artifacts.
+- Dependency resolution runs in its own image layer, so editing Java source does not re-download the dependency graph.
+
+Familiarity is a real consideration for a federal delivery team, and Maven would win on that alone. It loses here because the container already provides the reproducibility that argument is usually reaching for. If a target environment ever mandates Maven, the migration is mechanical: the dependency set is small and the Dockerfile is the only place the build tool is named.
 
 ## Backend Scope
 
@@ -137,14 +147,15 @@ DSpace administrator credentials come from the environment, never from compiled-
 
 ## Nx Integration Options
 
-Candidate plugins:
+Java tasks currently run through `nx:run-commands` targets that shell out to `docker build` and `docker compose`, which keeps agents, local CLI, and CI on one path without a plugin.
 
-- `@nxrocks/nx-spring-boot`: Spring Boot-oriented generator and targets.
-- `@jnxplus/nx-maven`: Maven-oriented Java project integration.
+If a plugin is adopted later, only the Gradle-oriented ones are candidates:
+
+- `@nx/gradle`: project-graph integration when Gradle is used.
 - `@jnxplus/nx-gradle`: Gradle-oriented Java project integration.
-- `@nx/gradle`: project graph integration when Gradle is used.
+- `@nxrocks/nx-spring-boot`: Spring Boot generators and targets.
 
-Recommendation: use Maven unless there is a strong reason to use Gradle. Maven is still common in federal Java projects, simpler to explain, and aligns well with generated OpenAPI/DTO workflows.
+Maven-oriented plugins such as `@jnxplus/nx-maven` are out of scope. Any plugin must keep working with a containerized build; a plugin that assumes a host-installed toolchain would reintroduce exactly the drift the container removes.
 
 ## MCP Direction
 

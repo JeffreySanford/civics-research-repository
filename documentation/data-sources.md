@@ -99,7 +99,9 @@ Potential use:
 - Elevation.
 - Topographic context.
 
-Evaluation result: defer National Map implementation until the current Census, LODES, and USGS earthquake story is stable. The strongest follow-on option is a single hydrography reference overlay from the 3D Hydrography Program source family. Legacy NHD can remain available as a comparison or fallback, but USGS notes NHD was retired on October 1, 2023 and is no longer the preferred current source.
+Evaluation result: defer National Map implementation until the current Census, LODES, and USGS earthquake story is stable. The strongest follow-on option is a single hydrography reference overlay from the **3D Hydrography Program (3HP)**.
+
+Legacy NHD is not a fallback and must not be implemented. USGS retired it on 1 October 2023. Keeping it as a "comparison or fallback" invites an adapter, a layer toggle, a legend, and a metadata mapping built against a dead format, all of which would then need rebuilding. Any hydrography work targets 3HP raster and vector specifications from the first line of code.
 
 See [USGS National Map Evaluation](usgs-national-map-evaluation.md).
 
