@@ -47,7 +47,9 @@ Executable checklists are in [accessibility-manual-evidence.md](accessibility-ma
 - Map equivalence, 15 checks — the determining test for the map component.
 - Cognitive and workflow review, 9 checks.
 
-No run has been recorded yet. Until one is, this project has automated-scan results rather than Section 508 evidence, and should be described that way.
+An automated baseline is recorded in [accessibility-evidence/release-checklists/](accessibility-evidence/release-checklists/), covering every precondition a machine can settle: titles, heading outline, landmarks, tab order, accessible-name resolution, control state, live regions, and feature-list completeness. It also records three findings for the manual run.
+
+No assistive technology has been operated. Until an NVDA run exists, this project has automated results plus a structural baseline, not Section 508 evidence, and should be described that way.
 
 ## Key UI Requirements
 

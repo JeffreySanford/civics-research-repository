@@ -48,7 +48,14 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 ### P5 - Manual accessibility evidence
 
 - [x] Keyboard, NVDA, JAWS, map-equivalence, and cognitive checklists.
-- [ ] Execute and record the first full evidence run.
+- [x] Automate every machine-checkable precondition: titles, heading outline, landmarks, tab order, accessible names, facet/tab/checkbox state, live regions, alerts, feature-list completeness (39 checks).
+- [x] Record the automated baseline as dated evidence, stating plainly that no assistive technology was used.
+- [ ] Run Checklist 4 manually, starting with M12 (map-to-list focus) — the highest-value open item.
+- [ ] Run Checklist 1 end to end mouse-free.
+- [ ] Run Checklist 2 with NVDA and record it.
+- [ ] Run Checklist 3 with JAWS, or record N/A with the licensing reason.
+- [ ] Decide the MapLibre canvas tab-stop question (finding 1 in the baseline).
+- [ ] Decide whether a `contentinfo` landmark should exist (finding 2).
 
 ### P6 - Java DTO generation from OpenAPI
 
