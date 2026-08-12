@@ -134,7 +134,7 @@ Revisit when `image-size` publishes a patched release, or when Analog or `@angul
 
 ### Deferred, tracked separately
 
-Major upgrades are not security work and are not bundled here: ESLint 9 to 10, jsdom 27 to 30, `@types/node` 22 to 26, and `eslint-plugin-playwright` 1 to 2. Prettier 3.6 to 3.9 is also deferred, because a formatter bump reformats the tree and would bury any real change.
+Major upgrades are not security work and were not bundled here: jsdom 27 to 30, `@types/node` 22 to 26, and `eslint-plugin-playwright` 1 to 2. Prettier 3.6 to 3.9 is also deferred, because a formatter bump reformats the tree and would bury any real change.
 
 ### TypeScript 7 is blocked, not deferred
 
@@ -149,9 +149,9 @@ Two independent ceilings, and both stop below 6.1 — so TypeScript 7 is not a d
 
 Do not attempt this upgrade before `@angular/compiler-cli` declares support. Re-check its peer range at each Angular major.
 
-### ESLint 10 is available
+### ESLint 10 is applied
 
-Every consumer already declares support, checked the same way:
+Applied on 2026-08-12. Every consumer already declared support, checked the same way:
 
 | Package                          | Declared ESLint range              |
 | -------------------------------- | ---------------------------------- |
@@ -161,7 +161,10 @@ Every consumer already declares support, checked the same way:
 | `eslint-plugin-playwright` 1.8.3 | `>=8.40.0`                         |
 | `eslint-config-prettier` 10.1.8  | `>=7.0.0`                          |
 
-ESLint 9 to 10 can proceed independently of TypeScript, moving `@eslint/js` with it.
+ESLint 9 to 10 proceeded independently of TypeScript, moving `@eslint/js` 9.39.5 to 10.0.1 with
+it. `eslint` is now 10.8.1 and `quality:all` passes with no new findings — the five remaining
+`playwright/no-conditional-in-test` warnings predate the upgrade. `eslint-plugin-playwright`
+stays on 1.x: its own 1-to-2 major is a separate change and ESLint 10 does not require it.
 
 NgRx remains on `22.0.0-rc.0`: checked on 2026-08-12, and no stable 22 release exists yet. The latest published versions are 21.1.1 and the 22 pre-releases.
 
