@@ -142,9 +142,11 @@ The DSpace profile is separated from the default demo stack because DSpace uses 
 ```bash
 pnpm run dspace:up
 pnpm run dspace:migrate
+pnpm run dspace:seed
 pnpm run dspace:ps
 pnpm run dspace:logs
 pnpm run dspace:verify
+pnpm run dspace:verify:seed
 pnpm run dspace:down
 ```
 
@@ -174,6 +176,14 @@ pnpm run dspace:verify
 ```
 
 Expected result: JSON containing `dspaceName`, `dspaceServer`, `dspaceVersion`, and REST API links from `http://localhost:8081/server/api`.
+
+Seeded repository objects:
+
+- Community: `Census Public Research Data`.
+- Collection: `TIGER/Line Geospatial Files`.
+- Item: `2025 TIGER/Line - Census Tracts - North Dakota`.
+
+`pnpm run dspace:seed` is idempotent on normal persistent volumes. It creates a local admin account only when missing, imports the community/collection when missing, imports the metadata-only SAF item once, and then uses the DSpace import mapfile in the asset store to skip future duplicate item imports. `pnpm run dspace:verify:seed` confirms the TIGER/Line item appears through DSpace discovery.
 
 Use this only when working on DSpace REST integration. The default demo remains `pnpm run start:all`.
 

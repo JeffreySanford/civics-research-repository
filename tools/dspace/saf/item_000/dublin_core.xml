@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dublin_core>
+  <dcvalue element="title" qualifier="none">2025 TIGER/Line - Census Tracts - North Dakota</dcvalue>
+  <dcvalue element="contributor" qualifier="author">U.S. Census Bureau</dcvalue>
+  <dcvalue element="publisher" qualifier="none">U.S. Census Bureau</dcvalue>
+  <dcvalue element="description" qualifier="abstract">Census TIGER/Line tract boundary metadata for North Dakota, seeded for the Civics Research Repository geospatial discovery demo.</dcvalue>
+  <dcvalue element="date" qualifier="issued">2025-01-01</dcvalue>
+  <dcvalue element="identifier" qualifier="uri">https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip</dcvalue>
+  <dcvalue element="relation" qualifier="uri">https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html</dcvalue>
+  <dcvalue element="identifier" qualifier="citation">U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, North Dakota.</dcvalue>
+  <dcvalue element="subject" qualifier="none">TIGER/Line</dcvalue>
+  <dcvalue element="subject" qualifier="none">Census tracts</dcvalue>
+  <dcvalue element="coverage" qualifier="spatial">North Dakota</dcvalue>
+</dublin_core>

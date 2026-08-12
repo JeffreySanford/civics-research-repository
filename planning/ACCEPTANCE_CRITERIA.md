@@ -13,9 +13,9 @@ The first implementation milestone is complete when the demo can show one public
 - [ ] Small-to-medium mirrored demo artifacts persist in Docker storage when useful for local demo reliability.
 - [ ] Sync state records source identifier, source URL, DSpace item ID, last sync status, and source freshness.
 - [ ] Startup sync creates or updates required seed repository objects after Docker startup.
-- [ ] DSpace community and collection exist for Census public research data.
-- [ ] The item is available through DSpace REST.
-- [ ] The item is discoverable through Solr-backed search.
+- [x] DSpace community and collection exist for Census public research data.
+- [x] The item is available through DSpace REST.
+- [x] The item is discoverable through Solr-backed search.
 - [ ] No large public-use dataset files are checked into git.
 
 ## API Contract

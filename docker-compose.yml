@@ -169,6 +169,30 @@ services:
     volumes:
       - dspace-assetstore:/dspace/assetstore
 
+  dspace-seed:
+    profiles: ['dspace']
+    image: dspace/dspace:dspace-9.0
+    depends_on:
+      dspace-db-init:
+        condition: service_completed_successfully
+      dspace-solr:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - sh /seed/seed-structure.sh
+    environment:
+      dspace__P__name: Civics Research Repository DSpace
+      dspace__P__server__P__url: http://localhost:8081/server
+      dspace__P__ui__P__url: http://localhost:4000
+      db__P__url: jdbc:postgresql://dspace-postgres:5432/dspace
+      db__P__username: dspace
+      db__P__password: dspace
+      solr__P__server: http://dspace-solr:8983/solr
+    volumes:
+      - dspace-assetstore:/dspace/assetstore
+      - ./tools/dspace:/seed:ro
+
 volumes:
   civics-artifacts:
   dspace-assetstore:

@@ -106,12 +106,12 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 
 ### Sprint 1.2 - DSpace Seed Repository
 
-- [ ] Define DSpace community for Census public research data.
-- [ ] Define DSpace collection for the first visual geospatial source.
-- [ ] Create seed metadata for one TIGER/Line or LODES North Dakota item.
-- [ ] Attach source URLs and documentation URLs.
+- [x] Define DSpace community for Census public research data.
+- [x] Define DSpace collection for the first visual geospatial source.
+- [x] Create seed metadata for one TIGER/Line or LODES North Dakota item.
+- [x] Attach source URLs and documentation URLs.
 - [ ] Store small-to-medium mirrored demo artifacts where useful.
-- [ ] Confirm item appears through DSpace REST.
+- [x] Confirm item appears through DSpace REST.
 - [x] Confirm item is indexed into Solr discovery.
 
 ## PI 2 - Public Data Harvester

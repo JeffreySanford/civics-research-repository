@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<import_structure>
+  <community>
+    <name>Census Public Research Data</name>
+    <description>Public Census research datasets, documentation, and geospatial repository objects used by the Civics Research Repository demo.</description>
+    <intro>Repository community for public Census-oriented research data synchronized by the local Docker demo.</intro>
+    <collection>
+      <name>TIGER/Line Geospatial Files</name>
+      <description>Geospatial boundary and feature metadata for Census TIGER/Line visual discovery workflows.</description>
+      <intro>Seed collection for TIGER/Line map visualization metadata and source-file manifests.</intro>
+      <license>Public data source links remain authoritative; mirrored demo artifacts are stored only when useful for local reliability.</license>
+    </collection>
+  </community>
+</import_structure>

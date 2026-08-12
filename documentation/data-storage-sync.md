@@ -192,8 +192,8 @@ The normalized metadata is mapped into an internal DSpace item payload before sy
 The first sync should create:
 
 - DSpace community: Census Public Research Data.
-- DSpace collection for the selected geospatial source.
-- DSpace item for the selected North Dakota geospatial dataset.
+- DSpace collection: TIGER/Line Geospatial Files.
+- DSpace item: 2025 TIGER/Line - Census Tracts - North Dakota.
 - File manifest entries for source files, documentation, and methodology.
 - Solr discovery fields for search and facets.
 - Map layer metadata for the Angular map tab.
