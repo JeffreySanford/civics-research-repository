@@ -134,7 +134,34 @@ Revisit when `image-size` publishes a patched release, or when Analog or `@angul
 
 ### Deferred, tracked separately
 
-Major upgrades are not security work and are not bundled here: ESLint 9 to 10, TypeScript 6 to 7, jsdom 27 to 30, `@types/node` 22 to 26, and `eslint-plugin-playwright` 1 to 2. Prettier 3.6 to 3.9 is also deferred, because a formatter bump reformats the tree and would bury any real change.
+Major upgrades are not security work and are not bundled here: ESLint 9 to 10, jsdom 27 to 30, `@types/node` 22 to 26, and `eslint-plugin-playwright` 1 to 2. Prettier 3.6 to 3.9 is also deferred, because a formatter bump reformats the tree and would bury any real change.
+
+### TypeScript 7 is blocked, not deferred
+
+Checked 2026-08-12 against the installed peer ranges, which are the authoritative answer:
+
+| Package                        | Declared TypeScript range |
+| ------------------------------ | ------------------------- |
+| `@angular/compiler-cli` 22.1.1 | `>=6.0 <6.1`              |
+| `typescript-eslint` 8.67.0     | `>=4.8.4 <6.1.0`          |
+
+Two independent ceilings, and both stop below 6.1 — so TypeScript 7 is not a deferred upgrade, it is unavailable until Angular widens its range. TypeScript 6.0.3 is already the newest release in the 6.0 line, so there is no movement available on TypeScript at all right now.
+
+Do not attempt this upgrade before `@angular/compiler-cli` declares support. Re-check its peer range at each Angular major.
+
+### ESLint 10 is available
+
+Every consumer already declares support, checked the same way:
+
+| Package                          | Declared ESLint range              |
+| -------------------------------- | ---------------------------------- |
+| `typescript-eslint` 8.67.0       | `^8.57.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| `angular-eslint` 22.1.0          | `^9.0.0 \|\| ^10.0.0`              |
+| `@nx/eslint` 23.1.1              | `^9.0.0 \|\| ^10.0.0`              |
+| `eslint-plugin-playwright` 1.8.3 | `>=8.40.0`                         |
+| `eslint-config-prettier` 10.1.8  | `>=7.0.0`                          |
+
+ESLint 9 to 10 can proceed independently of TypeScript, moving `@eslint/js` with it.
 
 NgRx remains on `22.0.0-rc.0`: checked on 2026-08-12, and no stable 22 release exists yet. The latest published versions are 21.1.1 and the 22 pre-releases.
 

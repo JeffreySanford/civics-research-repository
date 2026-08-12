@@ -118,7 +118,8 @@ Required before leaving PI 1, per the Dependency Upgrade Policy in RISKS.md.
 - [ ] Move NgRx to stable 22 when it is published.
 - [ ] Re-check the `image-size` advisory at the next dependency pass.
 - [ ] Fix the flaky Playwright web-server start between suites in `quality:all`; seen twice, clears on rerun, would make an unattended gate unreliable.
-- [ ] Separate upgrade task for the deferred majors: ESLint 10, TypeScript 7, jsdom 30, `@types/node` 26, `eslint-plugin-playwright` 2, Prettier 3.9.
+- [ ] Separate upgrade task for the available majors: ESLint 10 (with `@eslint/js`), jsdom 30, `@types/node` 26, `eslint-plugin-playwright` 2, Prettier 3.9.
+- [ ] TypeScript stays at 6.0.3. `@angular/compiler-cli` declares `typescript >=6.0 <6.1` and `typescript-eslint` declares `<6.1.0`, so TypeScript 7 is blocked rather than deferred, and 6.0.3 is already the newest 6.0.x. Re-check the compiler-cli peer range at each Angular major.
 
 ## PI 0 - Repository Foundation
 
