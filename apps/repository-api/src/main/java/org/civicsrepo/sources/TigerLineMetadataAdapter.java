@@ -1,10 +1,10 @@
 package org.civicsrepo.sources;
 
+import org.civicsrepo.generated.dto.SyncSource;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import java.time.LocalDate;
 import java.util.List;
-import org.civicsrepo.sync.SyncSource;
 import org.springframework.stereotype.Component;
 
 @Component

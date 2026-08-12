@@ -1,5 +1,9 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncRequest;
+import org.civicsrepo.generated.dto.SyncSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
@@ -19,8 +23,10 @@ class LoggingSyncActionRunnerTest {
         runner.run(
                 new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE),
                 List.of(
-                        new SyncAction("UPSERT_ITEM", "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
-                        new SyncAction("UPSERT_FILE_MANIFEST", "tiger-line-north-dakota-2025", "Track files.")),
+                        new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_ITEM, "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
+                        new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST, "tiger-line-north-dakota-2025", "Track files.")),
                 Optional.of(sourcePayload()));
 
         assertThat(writeGateway.sourceIdentifier).isEqualTo("tiger-line-north-dakota-2025");
@@ -35,8 +41,10 @@ class LoggingSyncActionRunnerTest {
         runner.run(
                 new SyncRequest(SyncMode.DRY_RUN, SyncSource.TIGER_LINE),
                 List.of(
-                        new SyncAction("UPSERT_ITEM", "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
-                        new SyncAction("UPSERT_FILE_MANIFEST", "tiger-line-north-dakota-2025", "Track files.")),
+                        new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_ITEM, "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
+                        new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST, "tiger-line-north-dakota-2025", "Track files.")),
                 Optional.of(sourcePayload()));
 
         assertThat(writeGateway.sourceIdentifier).isNull();

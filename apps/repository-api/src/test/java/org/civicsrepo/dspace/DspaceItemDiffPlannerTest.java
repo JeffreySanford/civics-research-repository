@@ -1,5 +1,6 @@
 package org.civicsrepo.dspace;
 
+import org.civicsrepo.generated.dto.SyncAction;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.LinkedHashMap;
@@ -7,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
-import org.civicsrepo.sync.SyncAction;
 import org.junit.jupiter.api.Test;
 
 class DspaceItemDiffPlannerTest {
@@ -18,8 +18,8 @@ class DspaceItemDiffPlannerTest {
     void createsItemWhenNoExistingRepositoryPayloadIsFound() {
         SyncAction action = plannerFor(Optional.empty()).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
 
-        assertThat(action.actionType()).isEqualTo("CREATE_ITEM");
-        assertThat(action.detail()).contains("does not exist");
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.CREATE_ITEM);
+        assertThat(action.getDetail()).contains("does not exist");
     }
 
     @Test
@@ -27,8 +27,8 @@ class DspaceItemDiffPlannerTest {
         SyncAction action =
                 plannerFor(Optional.of(sourcePayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
 
-        assertThat(action.actionType()).isEqualTo("SKIP_ITEM");
-        assertThat(action.detail()).contains("is current");
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
+        assertThat(action.getDetail()).contains("is current");
     }
 
     /**
@@ -49,7 +49,7 @@ class DspaceItemDiffPlannerTest {
         SyncAction action =
                 plannerFor(Optional.of(repositoryPayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
 
-        assertThat(action.actionType()).isEqualTo("SKIP_ITEM");
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
     }
 
     @Test
@@ -60,8 +60,8 @@ class DspaceItemDiffPlannerTest {
         SyncAction action =
                 plannerFor(Optional.of(repositoryPayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
 
-        assertThat(action.actionType()).isEqualTo("UPDATE_ITEM");
-        assertThat(action.detail()).contains("dc.title").contains("1 managed field");
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.UPDATE_ITEM);
+        assertThat(action.getDetail()).contains("dc.title").contains("1 managed field");
     }
 
     /** The file manifest is the reason diff previously could never settle; it is now comparable. */
@@ -75,8 +75,8 @@ class DspaceItemDiffPlannerTest {
         SyncAction action =
                 plannerFor(Optional.of(repositoryPayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
 
-        assertThat(action.actionType()).isEqualTo("UPDATE_ITEM");
-        assertThat(action.detail()).contains(DspaceFileManifest.FIELD);
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.UPDATE_ITEM);
+        assertThat(action.getDetail()).contains(DspaceFileManifest.FIELD);
     }
 
     @Test
@@ -88,8 +88,8 @@ class DspaceItemDiffPlannerTest {
         SyncAction action = plannerFor(Optional.of(withMetadata(sourcePayload, Map.of(DspaceFileManifest.FIELD, changed))))
                 .planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
 
-        assertThat(action.actionType()).isEqualTo("UPDATE_ITEM");
-        assertThat(action.detail()).contains(DspaceFileManifest.FIELD);
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.UPDATE_ITEM);
+        assertThat(action.getDetail()).contains(DspaceFileManifest.FIELD);
     }
 
     /** The repository holding extra values for an unmanaged field is not a difference. */
@@ -103,7 +103,7 @@ class DspaceItemDiffPlannerTest {
         SyncAction action =
                 plannerFor(Optional.of(sourcePayload)).planItemDiff("tiger-line-north-dakota-2025", sparseSource);
 
-        assertThat(action.actionType()).isEqualTo("SKIP_ITEM");
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
     }
 
     private DspaceItemDiffPlanner plannerFor(Optional<DspaceItemPayload> existing) {

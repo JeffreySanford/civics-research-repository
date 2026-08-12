@@ -1,11 +1,11 @@
 package org.civicsrepo.sources;
 
+import org.civicsrepo.generated.dto.SyncSource;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
-import org.civicsrepo.sync.SyncSource;
 import org.junit.jupiter.api.Test;
 
 class TigerLineMetadataAdapterTest {

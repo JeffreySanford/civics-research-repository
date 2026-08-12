@@ -1,10 +1,10 @@
 package org.civicsrepo.dspace;
 
+import org.civicsrepo.generated.dto.SyncAction;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.civicsrepo.sync.SyncAction;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,7 +35,7 @@ public class DspaceItemDiffPlanner {
                 .findMatchingItem(sourceIdentifier, sourcePayload)
                 .map((existingPayload) -> planExistingItemDiff(sourceIdentifier, sourcePayload, existingPayload))
                 .orElseGet(() -> new SyncAction(
-                        "CREATE_ITEM",
+                        SyncAction.ActionTypeEnum.CREATE_ITEM,
                         sourcePayload.name(),
                         "DSpace item does not exist for source identifier " + sourceIdentifier + "; create item with "
                                 + sourcePayload.metadata().size() + " metadata fields and "
@@ -48,7 +48,7 @@ public class DspaceItemDiffPlanner {
 
         if (differingFields.isEmpty()) {
             return new SyncAction(
-                    "SKIP_ITEM",
+                        SyncAction.ActionTypeEnum.SKIP_ITEM,
                     sourcePayload.name(),
                     "DSpace item is current for source identifier " + sourceIdentifier + "; all "
                             + DspaceManagedFields.ALL.size() + " managed metadata fields match, including "
@@ -56,7 +56,7 @@ public class DspaceItemDiffPlanner {
         }
 
         return new SyncAction(
-                "UPDATE_ITEM",
+                        SyncAction.ActionTypeEnum.UPDATE_ITEM,
                 sourcePayload.name(),
                 "DSpace item exists for source identifier " + sourceIdentifier + " but "
                         + differingFields.size() + " managed field(s) differ: " + summarize(differingFields) + ".");

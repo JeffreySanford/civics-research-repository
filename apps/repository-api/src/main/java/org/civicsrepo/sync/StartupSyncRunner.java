@@ -1,5 +1,7 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncJob;
+import org.civicsrepo.generated.dto.SyncRequest;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,9 +64,9 @@ public class StartupSyncRunner implements CommandLineRunner {
         SyncJob job = syncService.runSync(new SyncRequest(syncProperties.mode(), syncProperties.source()));
         LOGGER.info(
                 "Startup sync {} completed with status {} in mode {} against {}.",
-                job.id(),
-                job.status(),
-                job.mode(),
+                job.getId(),
+                job.getStatus(),
+                job.getMode(),
                 dspaceRestClient.baseUrl());
     }
 }

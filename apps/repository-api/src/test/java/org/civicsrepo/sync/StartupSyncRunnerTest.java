@@ -1,8 +1,15 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncJob;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncRequest;
+import org.civicsrepo.generated.dto.SyncSource;
+import org.civicsrepo.generated.dto.SyncStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
 import org.civicsrepo.dspace.DspaceDiscoveryItemStateReader;
@@ -73,11 +80,11 @@ class StartupSyncRunnerTest {
 
         SyncJob job = liveService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
 
-        assertThat(job.status()).isEqualTo(SyncStatus.FAILED);
-        assertThat(job.actions())
+        assertThat(job.getStatus()).isEqualTo(SyncStatus.FAILED);
+        assertThat(job.getActions())
                 .anySatisfy((action) -> {
-                    assertThat(action.actionType()).isEqualTo("SYNC_FAILED");
-                    assertThat(action.detail()).contains(UNREACHABLE).contains("pnpm run dspace:up");
+                    assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SYNC_FAILED);
+                    assertThat(action.getDetail()).contains(UNREACHABLE).contains("pnpm run dspace:up");
                 });
     }
 
@@ -93,14 +100,14 @@ class StartupSyncRunnerTest {
 
         @Override
         public SyncJob save(SyncJob job) {
-            jobs.removeIf((existingJob) -> existingJob.id().equals(job.id()));
+            jobs.removeIf((existingJob) -> existingJob.getId().equals(job.getId()));
             jobs.add(0, job);
             return job;
         }
 
         @Override
-        public Optional<SyncJob> findById(String id) {
-            return jobs.stream().filter((job) -> job.id().equals(id)).findFirst();
+        public Optional<SyncJob> findById(UUID id) {
+            return jobs.stream().filter((job) -> job.getId().equals(id)).findFirst();
         }
 
         @Override

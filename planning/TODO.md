@@ -67,11 +67,11 @@ Not mechanical. The hand-written records carry behavior and fields the contract 
 - [x] Make `compileJava` depend on the generate task, so a contract change regenerates before compilation and a breaking change fails the build. Verified by renaming a field and watching it fail.
 - [x] Migrate one endpoint end to end (`/maps/census-areas`) and confirm byte-identical JSON.
 - [x] Drift is enforced by compilation rather than by a separate check: generation runs inside the build, so there is no window in which the Java side is stale. It therefore needs no `quality:all` entry of its own.
-- [ ] Migrate `MapLayer` and `UsgsEarthquake*`, the remaining pure wire types.
-- [ ] Decide the `SearchResponse` question: move `withResultSource` to the caller, or keep a domain type and map at the controller boundary.
-- [ ] Decide whether `RepositorySource` stays a domain enum in `org.civicsrepo.repository` or becomes the generated one.
-- [ ] Migrate `DatasetDetail`, `SearchResult`, and `SyncJob`, each of which is used as a domain type and not only as a wire type.
-- [ ] Delete the hand-written records once every consumer is migrated.
+- [x] Migrate `MapLayer` and `UsgsEarthquake*`, the remaining pure wire types.
+- [x] Decide the `SearchResponse` question: neither. The generated model is mutable and carries a fluent `resultSource` setter, and the response being relabelled was just built for that call, so `withResultSource` is gone with nothing to replace it.
+- [x] Decide whether `RepositorySource` stays a domain enum in `org.civicsrepo.repository` or becomes the generated one: the generated one. It carried no behavior, only two constants the contract already defines.
+- [x] Migrate `DatasetDetail`, `SearchResult`, and `SyncJob`, each of which is used as a domain type and not only as a wire type.
+- [x] Delete the hand-written records once every consumer is migrated. No name in `org.civicsrepo.generated.dto` is still hand-written anywhere under `src/main/java`.
 - [ ] Revisit generated controller interfaces once the generator supports Spring 7 conventions.
 
 ### P7 - Map and feature list selection synchronization

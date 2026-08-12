@@ -1,5 +1,11 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncJob;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncRequest;
+import org.civicsrepo.generated.dto.SyncSource;
+import org.civicsrepo.generated.dto.SyncStatus;
 import java.util.ArrayList;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -55,7 +61,7 @@ public class SyncService {
 
     public SyncJob runSync(SyncRequest request) {
         OffsetDateTime startedAt = OffsetDateTime.now();
-        String jobId = UUID.randomUUID().toString();
+        UUID jobId = UUID.randomUUID();
         // Planning belongs inside the failure handling. DIFF planning reads live DSpace state, so an
         // unreachable repository used to escape as an unhandled exception and surface to the admin
         // UI as a bare HTTP 500 instead of a failed job carrying the reason.
@@ -64,41 +70,54 @@ public class SyncService {
         try {
             plannedActions = planActions(request);
             syncJobStore.save(new SyncJob(
-                    jobId, request.mode(), request.source(), SyncStatus.RUNNING, startedAt, null, plannedActions));
+                    jobId, request.getMode(), request.getSource(), SyncStatus.RUNNING, startedAt, plannedActions));
 
             LOGGER.info(
                     "Sync job {} started with mode {} for source {} and {} planned actions.",
                     jobId,
-                    request.mode(),
-                    request.source(),
+                    request.getMode(),
+                    request.getSource(),
                     plannedActions.size());
 
             syncActionRunner.run(request, plannedActions, sourcePayload(request));
-            SyncStatus status = completedStatus(request.mode());
+            SyncStatus status = completedStatus(request.getMode());
             SyncJob completedJob =
-                    new SyncJob(jobId, request.mode(), request.source(), status, startedAt, OffsetDateTime.now(), plannedActions);
+                    new SyncJob(jobId, request.getMode(), request.getSource(), status, startedAt, plannedActions)
+                        .completedAt(OffsetDateTime.now());
             SyncJob savedJob = syncJobStore.save(completedJob);
-            LOGGER.info("Sync job {} completed with status {}.", jobId, savedJob.status());
+            LOGGER.info("Sync job {} completed with status {}.", jobId, savedJob.getStatus());
             return savedJob;
         } catch (RuntimeException exception) {
             List<SyncAction> failedActions = new ArrayList<>(plannedActions);
-            failedActions.add(new SyncAction("SYNC_FAILED", request.source().name(), failureDetail(exception)));
+            failedActions.add(new SyncAction(
+                        SyncAction.ActionTypeEnum.SYNC_FAILED, request.getSource().name(), failureDetail(exception)));
             SyncJob failedJob = new SyncJob(
                     jobId,
-                    request.mode(),
-                    request.source(),
+                    request.getMode(),
+                    request.getSource(),
                     SyncStatus.FAILED,
                     startedAt,
-                    OffsetDateTime.now(),
-                    failedActions);
+                    failedActions)
+                        .completedAt(OffsetDateTime.now());
             SyncJob savedJob = syncJobStore.save(failedJob);
-            LOGGER.warn("Sync job {} failed with status {}.", jobId, savedJob.status(), exception);
+            LOGGER.warn("Sync job {} failed with status {}.", jobId, savedJob.getStatus(), exception);
             return savedJob;
         }
     }
 
+    /**
+     * Looks a job up by its identifier as written in the URL.
+     *
+     * <p>Job identifiers are UUIDs, so a string that is not one names no job. That is reported the
+     * same way an unknown job is -- empty, which the controller turns into 404 -- rather than as a
+     * malformed-request error, because the caller's situation is identical either way.
+     */
     public Optional<SyncJob> findJob(String id) {
-        return syncJobStore.findById(id);
+        try {
+            return syncJobStore.findById(UUID.fromString(id));
+        } catch (IllegalArgumentException exception) {
+            return Optional.empty();
+        }
     }
 
     public List<SyncJob> findRecentJobs() {
@@ -106,46 +125,48 @@ public class SyncService {
     }
 
     private List<SyncAction> planActions(SyncRequest request) {
-        PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.source());
+        PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.getSource());
         if (metadataAdapter == null) {
             return fallbackPlanActions(request);
         }
 
         PublicDatasetMetadata metadata = metadataAdapter.firstVisualSlice();
         DspaceItemPayload itemPayload = dspaceItemPayloadMapper.toItemPayload(metadata);
-        if (request.mode() == SyncMode.DIFF) {
+        if (request.getMode() == SyncMode.DIFF) {
             return diffPlanActions(metadata, itemPayload);
         }
 
         return List.of(
-                new SyncAction("UPSERT_COMMUNITY", COMMUNITY_NAME, "Ensure root DSpace community exists."),
                 new SyncAction(
-                        "UPSERT_COLLECTION",
+                        SyncAction.ActionTypeEnum.UPSERT_COMMUNITY, COMMUNITY_NAME, "Ensure root DSpace community exists."),
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_COLLECTION,
                         COLLECTION_NAME,
                         "Ensure collection exists for " + metadata.program().getValue() + " "
                                 + metadata.geographicLevel() + " metadata."),
                 new SyncAction(
-                        "UPSERT_ITEM",
+                        SyncAction.ActionTypeEnum.UPSERT_ITEM,
                         itemPayload.name(),
                         "Prepare DSpace item payload with " + itemPayload.metadata().size() + " metadata fields and "
                                 + itemPayload.bitstreams().size() + " file manifest entries."),
                 new SyncAction(
-                        "UPSERT_FILE_MANIFEST",
+                        SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST,
                         metadata.id(),
                         "Track " + metadata.files().size() + " source files: " + fileManifestSummary(metadata.files()) + "."),
                 new SyncAction(
-                        "UPSERT_CITATION",
+                        SyncAction.ActionTypeEnum.UPSERT_CITATION,
                         metadata.id(),
                         "Store citation and documentation URL: " + metadata.documentationUrl() + "."),
                 new SyncAction(
-                        "UPSERT_MAP_LAYER",
+                        SyncAction.ActionTypeEnum.UPSERT_MAP_LAYER,
                         metadata.geography() + " " + metadata.geographicLevel() + " map preview",
                         "Ensure map layer metadata exists for " + metadata.sourceUrl() + "."),
-                new SyncAction("VERIFY_INDEX", "Solr discovery", "Confirm item is available for discovery indexing."));
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.VERIFY_INDEX, "Solr discovery", "Confirm item is available for discovery indexing."));
     }
 
     private Optional<DspaceItemPayload> sourcePayload(SyncRequest request) {
-        PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.source());
+        PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.getSource());
         if (metadataAdapter == null) {
             return Optional.empty();
         }
@@ -163,25 +184,31 @@ public class SyncService {
     private List<SyncAction> diffPlanActions(PublicDatasetMetadata metadata, DspaceItemPayload itemPayload) {
         return List.of(
                 new SyncAction(
-                        "VERIFY_COMMUNITY",
+                        SyncAction.ActionTypeEnum.VERIFY_COMMUNITY,
                         COMMUNITY_NAME,
                         "Check whether the root DSpace community exists before comparing item state."),
                 new SyncAction(
-                        "VERIFY_COLLECTION",
+                        SyncAction.ActionTypeEnum.VERIFY_COLLECTION,
                         COLLECTION_NAME,
                         "Check whether the " + COLLECTION_NAME + " collection exists before comparing item state."),
                 dspaceItemDiffPlanner.planItemDiff(metadata.id(), itemPayload),
-                new SyncAction("VERIFY_INDEX", "Solr discovery", "Check whether repository metadata is indexed after item state comparison."));
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.VERIFY_INDEX, "Solr discovery", "Check whether repository metadata is indexed after item state comparison."));
     }
 
     private List<SyncAction> fallbackPlanActions(SyncRequest request) {
-        LOGGER.info("No metadata adapter exists yet for {}; using placeholder sync actions.", request.source());
+        LOGGER.info("No metadata adapter exists yet for {}; using placeholder sync actions.", request.getSource());
         return List.of(
-                new SyncAction("UPSERT_COMMUNITY", COMMUNITY_NAME, "Ensure root DSpace community exists."),
-                new SyncAction("UPSERT_COLLECTION", COLLECTION_NAME, "Ensure collection exists for selected source."),
-                new SyncAction("UPSERT_ITEM", firstSliceItemTitle(request.source()), "Ensure visual North Dakota demo item exists."),
-                new SyncAction("UPSERT_MAP_LAYER", "North Dakota map preview", "Ensure map layer metadata exists."),
-                new SyncAction("VERIFY_INDEX", "Solr discovery", "Confirm item is available for discovery indexing."));
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_COMMUNITY, COMMUNITY_NAME, "Ensure root DSpace community exists."),
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_COLLECTION, COLLECTION_NAME, "Ensure collection exists for selected source."),
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_ITEM, firstSliceItemTitle(request.getSource()), "Ensure visual North Dakota demo item exists."),
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.UPSERT_MAP_LAYER, "North Dakota map preview", "Ensure map layer metadata exists."),
+                new SyncAction(
+                        SyncAction.ActionTypeEnum.VERIFY_INDEX, "Solr discovery", "Confirm item is available for discovery indexing."));
     }
 
     private String fileManifestSummary(List<PublicDatasetFile> files) {

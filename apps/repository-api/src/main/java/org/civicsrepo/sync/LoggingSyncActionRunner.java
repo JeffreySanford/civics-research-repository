@@ -1,5 +1,8 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncRequest;
 import java.util.List;
 import java.util.Optional;
 import org.civicsrepo.dspace.DspaceItemPayload;
@@ -20,23 +23,23 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
 
     @Override
     public void run(SyncRequest request, List<SyncAction> actions, Optional<DspaceItemPayload> sourcePayload) {
-        if (request.mode() == SyncMode.APPLY) {
+        if (request.getMode() == SyncMode.APPLY) {
             applyDspaceMetadata(actions, sourcePayload);
         }
 
         for (SyncAction action : actions) {
             LOGGER.info(
                     "Sync {} action planned for source {}: {} -> {}. {}",
-                    request.mode(),
-                    request.source(),
-                    action.actionType(),
-                    action.target(),
-                    action.detail());
+                    request.getMode(),
+                    request.getSource(),
+                    action.getActionType(),
+                    action.getTarget(),
+                    action.getDetail());
         }
     }
 
     private void applyDspaceMetadata(List<SyncAction> actions, Optional<DspaceItemPayload> sourcePayload) {
-        String sourceIdentifier = actionTarget(actions, "UPSERT_FILE_MANIFEST");
+        String sourceIdentifier = actionTarget(actions, SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST);
         if (sourceIdentifier.isBlank() || sourcePayload.isEmpty()) {
             return;
         }
@@ -48,10 +51,15 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
                 sourceIdentifier);
     }
 
-    private String actionTarget(List<SyncAction> actions, String actionType) {
+    /**
+     * Typed as the enum, not as a String. The action type used to be a free-form String, and an
+     * enum compared against a String literal compiles and is silently always false -- this lookup
+     * would quietly stop matching and the metadata write would be skipped rather than fail.
+     */
+    private String actionTarget(List<SyncAction> actions, SyncAction.ActionTypeEnum actionType) {
         return actions.stream()
-                .filter((action) -> action.actionType().equals(actionType))
-                .map(SyncAction::target)
+                .filter((action) -> action.getActionType() == actionType)
+                .map(SyncAction::getTarget)
                 .findFirst()
                 .orElse("");
     }

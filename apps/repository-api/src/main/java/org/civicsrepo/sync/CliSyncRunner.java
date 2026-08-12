@@ -1,5 +1,7 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncJob;
+import org.civicsrepo.generated.dto.SyncRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -34,10 +36,10 @@ public class CliSyncRunner implements CommandLineRunner {
         SyncJob job = syncService.runSync(new SyncRequest(syncProperties.mode(), syncProperties.source()));
         LOGGER.info(
                 "CLI sync {} completed with status {} for source {} in mode {}.",
-                job.id(),
-                job.status(),
-                job.source(),
-                job.mode());
+                job.getId(),
+                job.getStatus(),
+                job.getSource(),
+                job.getMode());
 
         applicationContext.close();
     }

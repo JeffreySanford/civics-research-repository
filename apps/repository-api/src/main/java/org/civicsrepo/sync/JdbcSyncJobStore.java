@@ -1,5 +1,10 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncJob;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncSource;
+import org.civicsrepo.generated.dto.SyncStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.Optional;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -56,20 +62,20 @@ public class JdbcSyncJobStore implements SyncJobStore {
                             completed_at = excluded.completed_at,
                             actions_json = excluded.actions_json
                         """)
-                .param("id", job.id())
-                .param("mode", job.mode().name())
-                .param("source", job.source().name())
-                .param("status", job.status().name())
-                .param("startedAt", job.startedAt())
-                .param("completedAt", job.completedAt())
-                .param("actionsJson", writeActions(job.actions()))
+                .param("id", job.getId().toString())
+                .param("mode", job.getMode().name())
+                .param("source", job.getSource().name())
+                .param("status", job.getStatus().name())
+                .param("startedAt", job.getStartedAt())
+                .param("completedAt", job.getCompletedAt())
+                .param("actionsJson", writeActions(job.getActions()))
                 .update();
 
         return job;
     }
 
     @Override
-    public Optional<SyncJob> findById(String id) {
+    public Optional<SyncJob> findById(UUID id) {
         return jdbcClient
                 .sql(
                         """
@@ -77,7 +83,7 @@ public class JdbcSyncJobStore implements SyncJobStore {
                         from sync_jobs
                         where id = :id
                         """)
-                .param("id", id)
+                .param("id", id.toString())
                 .query(this::mapJob)
                 .optional();
     }
@@ -99,13 +105,13 @@ public class JdbcSyncJobStore implements SyncJobStore {
 
     private SyncJob mapJob(ResultSet resultSet, int rowNumber) throws SQLException {
         return new SyncJob(
-                resultSet.getString("id"),
+                UUID.fromString(resultSet.getString("id")),
                 SyncMode.valueOf(resultSet.getString("mode")),
                 SyncSource.valueOf(resultSet.getString("source")),
                 SyncStatus.valueOf(resultSet.getString("status")),
                 readOffsetDateTime(resultSet, "started_at"),
-                readOffsetDateTime(resultSet, "completed_at"),
-                readActions(resultSet.getString("actions_json")));
+                readActions(resultSet.getString("actions_json")))
+                        .completedAt(readOffsetDateTime(resultSet, "completed_at"));
     }
 
     private OffsetDateTime readOffsetDateTime(ResultSet resultSet, String column) throws SQLException {

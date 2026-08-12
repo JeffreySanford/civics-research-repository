@@ -1,11 +1,18 @@
 package org.civicsrepo.sync;
 
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncJob;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncRequest;
+import org.civicsrepo.generated.dto.SyncSource;
+import org.civicsrepo.generated.dto.SyncStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
 import org.civicsrepo.dspace.DspaceItemDiffPlanner;
@@ -24,16 +31,16 @@ class SyncServiceTest {
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DRY_RUN, SyncSource.TIGER_LINE));
 
-        assertThat(job.status()).isEqualTo(SyncStatus.DRY_RUN_COMPLETE);
-        assertThat(job.actions())
-                .extracting(SyncAction::actionType)
-                .contains("UPSERT_ITEM", "UPSERT_FILE_MANIFEST", "UPSERT_CITATION", "VERIFY_INDEX");
-        assertThat(job.actions())
+        assertThat(job.getStatus()).isEqualTo(SyncStatus.DRY_RUN_COMPLETE);
+        assertThat(job.getActions())
+                .extracting(SyncAction::getActionType)
+                .contains(SyncAction.ActionTypeEnum.UPSERT_ITEM, SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST, SyncAction.ActionTypeEnum.UPSERT_CITATION, SyncAction.ActionTypeEnum.VERIFY_INDEX);
+        assertThat(job.getActions())
                 .anySatisfy(action -> {
-                    assertThat(action.actionType()).isEqualTo("UPSERT_ITEM");
-                    assertThat(action.detail()).contains("DSpace item payload");
-                    assertThat(action.detail()).contains("17 metadata fields");
-                    assertThat(action.detail()).contains("3 file manifest entries");
+                    assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.UPSERT_ITEM);
+                    assertThat(action.getDetail()).contains("DSpace item payload");
+                    assertThat(action.getDetail()).contains("17 metadata fields");
+                    assertThat(action.getDetail()).contains("3 file manifest entries");
                 });
     }
 
@@ -61,12 +68,12 @@ class SyncServiceTest {
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE));
 
-        assertThat(job.status()).isEqualTo(SyncStatus.FAILED);
-        assertThat(job.completedAt()).isNotNull();
-        assertThat(job.actions())
+        assertThat(job.getStatus()).isEqualTo(SyncStatus.FAILED);
+        assertThat(job.getCompletedAt()).isNotNull();
+        assertThat(job.getActions())
                 .anySatisfy(action -> {
-                    assertThat(action.actionType()).isEqualTo("SYNC_FAILED");
-                    assertThat(action.detail()).isEqualTo("DSpace is unavailable.");
+                    assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SYNC_FAILED);
+                    assertThat(action.getDetail()).isEqualTo("DSpace is unavailable.");
                 });
         assertThat(syncService.findRecentJobs()).containsExactly(job);
     }
@@ -86,9 +93,9 @@ class SyncServiceTest {
         assertThat(syncService.findRecentJobs())
                 .singleElement()
                 .satisfies(job -> {
-                    assertThat(job.mode()).isEqualTo(SyncMode.DRY_RUN);
-                    assertThat(job.source()).isEqualTo(SyncSource.TIGER_LINE);
-                    assertThat(job.status()).isEqualTo(SyncStatus.DRY_RUN_COMPLETE);
+                    assertThat(job.getMode()).isEqualTo(SyncMode.DRY_RUN);
+                    assertThat(job.getSource()).isEqualTo(SyncSource.TIGER_LINE);
+                    assertThat(job.getStatus()).isEqualTo(SyncStatus.DRY_RUN_COMPLETE);
                 });
         verify(applicationContext).close();
     }
@@ -99,10 +106,10 @@ class SyncServiceTest {
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
 
-        assertThat(job.status()).isEqualTo(SyncStatus.DIFF_COMPLETE);
-        assertThat(job.actions())
-                .extracting(SyncAction::actionType)
-                .contains("VERIFY_COMMUNITY", "VERIFY_COLLECTION", "CREATE_ITEM", "VERIFY_INDEX");
+        assertThat(job.getStatus()).isEqualTo(SyncStatus.DIFF_COMPLETE);
+        assertThat(job.getActions())
+                .extracting(SyncAction::getActionType)
+                .contains(SyncAction.ActionTypeEnum.VERIFY_COMMUNITY, SyncAction.ActionTypeEnum.VERIFY_COLLECTION, SyncAction.ActionTypeEnum.CREATE_ITEM, SyncAction.ActionTypeEnum.VERIFY_INDEX);
     }
 
     @Test
@@ -113,8 +120,8 @@ class SyncServiceTest {
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
 
-        assertThat(job.status()).isEqualTo(SyncStatus.DIFF_COMPLETE);
-        assertThat(job.actions()).extracting(SyncAction::actionType).contains("SKIP_ITEM");
+        assertThat(job.getStatus()).isEqualTo(SyncStatus.DIFF_COMPLETE);
+        assertThat(job.getActions()).extracting(SyncAction::getActionType).contains(SyncAction.ActionTypeEnum.SKIP_ITEM);
     }
 
     @Test
@@ -132,8 +139,8 @@ class SyncServiceTest {
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
 
-        assertThat(job.status()).isEqualTo(SyncStatus.DIFF_COMPLETE);
-        assertThat(job.actions()).extracting(SyncAction::actionType).contains("UPDATE_ITEM");
+        assertThat(job.getStatus()).isEqualTo(SyncStatus.DIFF_COMPLETE);
+        assertThat(job.getActions()).extracting(SyncAction::getActionType).contains(SyncAction.ActionTypeEnum.UPDATE_ITEM);
     }
 
     @Test
@@ -184,14 +191,14 @@ class SyncServiceTest {
 
         @Override
         public SyncJob save(SyncJob job) {
-            jobs.removeIf((existingJob) -> existingJob.id().equals(job.id()));
+            jobs.removeIf((existingJob) -> existingJob.getId().equals(job.getId()));
             jobs.add(0, job);
             return job;
         }
 
         @Override
-        public Optional<SyncJob> findById(String id) {
-            return jobs.stream().filter((job) -> job.id().equals(id)).findFirst();
+        public Optional<SyncJob> findById(UUID id) {
+            return jobs.stream().filter((job) -> job.getId().equals(id)).findFirst();
         }
 
         @Override

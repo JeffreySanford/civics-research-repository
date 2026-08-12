@@ -1,6 +1,6 @@
 package org.civicsrepo.sources;
 
-import org.civicsrepo.sync.SyncSource;
+import org.civicsrepo.generated.dto.SyncSource;
 
 public interface PublicMetadataAdapter {
     SyncSource source();
