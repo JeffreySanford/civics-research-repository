@@ -1,0 +1,24 @@
+# Context-test profile: an in-memory datasource, and every outbound integration switched off so a
+# context load never reaches DSpace, Solr, or PostgreSQL.
+spring:
+  datasource:
+    url: jdbc:h2:mem:civics;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ''
+    driver-class-name: org.h2.Driver
+
+civics:
+  sync:
+    startup-enabled: false
+    cli-enabled: false
+    mode: DRY_RUN
+    source: TIGER_LINE
+  dspace:
+    base-url: ''
+    admin-email: ''
+    admin-password: ''
+  solr:
+    base-url: ''
+    core: discovery
+  storage:
+    artifacts-path: /tmp/civics-artifacts

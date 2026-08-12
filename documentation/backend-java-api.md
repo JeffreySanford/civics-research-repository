@@ -104,6 +104,37 @@ Required backend validation:
 - Source URL validation.
 - Explicit error response DTO.
 
+## Security Posture
+
+The API currently has no authentication. This is a deliberate local-demo tradeoff, not an oversight, and it is worth stating plainly during a walkthrough:
+
+- `POST /api/admin/sync` triggers real DSpace writes in `APPLY` mode and accepts any caller.
+- `WebConfig` restricts CORS to `http://localhost:4200`. CORS is a browser policy, not an access control: `curl` and any other non-browser client ignore it. The `sync:api:apply` script in `package.json` is itself an example of bypassing it.
+- This is acceptable because the stack binds to localhost and holds only public federal data.
+
+Before this runs in any shared or deployed environment:
+
+- Put Spring Security in front of `/admin/**` with an authenticated, authorized caller — the DSpace administrator identity or an agency SSO/OIDC provider.
+- Record the requesting principal on `SyncJob` alongside the existing mode, source, and timing fields, so sync history is an audit trail.
+- Keep read endpoints (`/search`, `/datasets/**`, `/maps/**`, `/overlays/**`) public; they serve public data and are the demo's main surface.
+
+See planning/DECISIONS.md ("Admin API Authentication") for the decision record.
+
+## Credentials and Configuration
+
+DSpace administrator credentials come from the environment, never from compiled-in defaults:
+
+- `CIVICS_DSPACE_ADMIN_EMAIL` and `CIVICS_DSPACE_ADMIN_PASSWORD` are read by `DspaceRestClient`.
+- Copy `.env.sample` to `.env` for local development. `.env` is git-ignored; `.env.sample` holds fictitious local-demo values and produces a working stack when copied as-is, because the DSpace seed job creates the administrator from the same variables.
+- Blank credentials disable DSpace writes rather than failing the sync job, so a misconfigured environment degrades to diff-only.
+
+## Testing Layers
+
+- Unit tests cover metadata normalization, item resolution, diff planning, and Solr query construction.
+- `@WebMvcTest` slices cover request mapping, parameter binding, validation, and status codes for each controller.
+- `RepositoryApiApplicationContextTest` loads the real Spring context so bean wiring, `@Value` binding, and `@ConfigurationProperties` binding fail at `nx run repository-api:test` rather than at Compose startup. It runs against an H2 datasource with every outbound integration disabled.
+- `JdbcSyncJobStore` is not covered: its `on conflict do update` upsert is PostgreSQL-specific and H2 cannot parse it. Covering it needs Testcontainers, which needs the test target to move off `docker build`. Tracked in planning/RISKS.md.
+
 ## Nx Integration Options
 
 Candidate plugins:

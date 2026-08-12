@@ -1,5 +1,25 @@
 import type { Page } from '@playwright/test';
 
+/**
+ * Forces one repository API route to fail.
+ *
+ * <p>Playwright gives precedence to the most recently registered handler, so call this after
+ * {@link mockRepositoryApi} to override a single happy-path route while the rest stay healthy.
+ */
+export async function failRepositoryApi(
+  page: Page,
+  urlPattern: string,
+  status = 503,
+): Promise<void> {
+  await page.route(urlPattern, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      status,
+      json: { message: 'Repository API unavailable in storyboard fixture.' },
+    });
+  });
+}
+
 export async function mockRepositoryApi(page: Page): Promise<void> {
   await page.route(`**/api/search**`, async (route) => {
     const url = new URL(route.request().url());
@@ -186,7 +206,8 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     const body = route.request().postDataJSON() as
       | { mode?: string; source?: string }
       | undefined;
-    const mode = body?.mode === 'DIFF' ? 'DIFF' : 'DRY_RUN';
+    const mode =
+      body?.mode === 'DIFF' || body?.mode === 'APPLY' ? body.mode : 'DRY_RUN';
 
     await route.fulfill({
       contentType: 'application/json',
@@ -195,40 +216,60 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         id: '11111111-1111-4111-8111-111111111111',
         mode,
         source: 'TIGER_LINE',
-        status: mode === 'DIFF' ? 'DIFF_COMPLETE' : 'DRY_RUN_COMPLETE',
+        status: SYNC_STATUS_BY_MODE[mode],
         startedAt: '2026-08-11T19:00:00Z',
         completedAt: '2026-08-11T19:00:01Z',
-        actions:
-          mode === 'DIFF'
-            ? [
-                {
-                  actionType: 'VERIFY_COMMUNITY',
-                  target: 'Census Public Research Data',
-                  detail: 'Check whether the DSpace community exists.',
-                },
-                {
-                  actionType: 'CREATE_ITEM',
-                  target: '2025 TIGER/Line - Census Tracts - North Dakota',
-                  detail:
-                    'DSpace item does not exist; create item with normalized metadata.',
-                },
-              ]
-            : [
-                {
-                  actionType: 'UPSERT_COMMUNITY',
-                  target: 'Census Public Research Data',
-                  detail: 'Ensure the DSpace community exists.',
-                },
-                {
-                  actionType: 'VERIFY_INDEX',
-                  target: 'Solr discovery',
-                  detail: 'Confirm repository metadata is searchable.',
-                },
-              ],
+        actions: SYNC_ACTIONS_BY_MODE[mode],
       },
     });
   });
 }
+
+const SYNC_STATUS_BY_MODE = {
+  DRY_RUN: 'DRY_RUN_COMPLETE',
+  DIFF: 'DIFF_COMPLETE',
+  APPLY: 'APPLIED',
+} as const;
+
+const SYNC_ACTIONS_BY_MODE = {
+  DRY_RUN: [
+    {
+      actionType: 'UPSERT_COMMUNITY',
+      target: 'Census Public Research Data',
+      detail: 'Ensure the DSpace community exists.',
+    },
+    {
+      actionType: 'VERIFY_INDEX',
+      target: 'Solr discovery',
+      detail: 'Confirm repository metadata is searchable.',
+    },
+  ],
+  DIFF: [
+    {
+      actionType: 'VERIFY_COMMUNITY',
+      target: 'Census Public Research Data',
+      detail: 'Check whether the DSpace community exists.',
+    },
+    {
+      actionType: 'CREATE_ITEM',
+      target: '2025 TIGER/Line - Census Tracts - North Dakota',
+      detail:
+        'DSpace item does not exist; create item with normalized metadata.',
+    },
+  ],
+  APPLY: [
+    {
+      actionType: 'UPSERT_ITEM',
+      target: '2025 TIGER/Line - Census Tracts - North Dakota',
+      detail: 'Reconciled Dublin Core and crr metadata for the seeded item.',
+    },
+    {
+      actionType: 'SKIP_ITEM',
+      target: '2023 LODES - North Dakota Workplace Area Characteristics',
+      detail: 'DSpace item is current; no metadata changes.',
+    },
+  ],
+} as const;
 
 function datasetIdFromUrl(url: string, suffix = ''): string {
   const pathname = new URL(url).pathname;

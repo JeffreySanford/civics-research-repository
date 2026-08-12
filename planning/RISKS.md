@@ -54,6 +54,18 @@ Risk: existing Nx warnings about inferred targets and Analog/Vitest configuratio
 
 Mitigation: address these warnings before broad feature work and keep commands routed through `pnpm nx`.
 
+## Unauthenticated Admin Sync Endpoint
+
+Risk: `POST /api/admin/sync` performs real DSpace writes in `APPLY` mode and has no authentication. CORS restricts browser origins but does not stop direct clients.
+
+Mitigation: accepted for the localhost-only demo and recorded in DECISIONS.md ("Admin API Authentication"). Add Spring Security and a recorded requesting principal before the stack runs anywhere shared, and raise it explicitly during the demo walkthrough rather than waiting to be asked.
+
+## Sync Job Store Coverage Gap
+
+Risk: `JdbcSyncJobStore` uses PostgreSQL-native `insert ... on conflict do update`, which H2 cannot parse, so the store's SQL has no automated coverage. A typo in that statement surfaces only when the Compose stack runs.
+
+Mitigation: cover it with Testcontainers against real PostgreSQL. That requires the `repository-api:test` target to move off `docker build`, which cannot host a Docker daemon. Until then, treat changes to that SQL as requiring a manual `pnpm run sync:apply` check.
+
 ## Dependency Vulnerabilities
 
 Risk: GitHub reported moderate Dependabot findings after initial dependency push.

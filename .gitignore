@@ -28,6 +28,7 @@ data/raw/
 data/downloads/
 data/generated/
 tmp/
+.tmp-*/
 
 # Docker and service persistence
 .docker/

@@ -351,4 +351,22 @@ test.describe('demo storyboard checks', () => {
       page.locator('strong').filter({ hasText: 'CREATE_ITEM' }),
     ).toBeVisible();
   });
+
+  test('admin sync apply reports reconciled repository actions @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/admin/sync');
+
+    await page.getByRole('button', { name: 'Apply sync' }).click();
+
+    await expect(
+      page.locator('dd').filter({ hasText: 'APPLIED' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('strong').filter({ hasText: 'UPSERT_ITEM' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('strong').filter({ hasText: 'SKIP_ITEM' }),
+    ).toBeVisible();
+  });
 });

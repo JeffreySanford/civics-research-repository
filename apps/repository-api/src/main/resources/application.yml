@@ -10,7 +10,12 @@ civics:
     mode: DRY_RUN
     source: TIGER_LINE
   dspace:
-    base-url: http://dspace-rest:8080/server
+    base-url: ${CIVICS_DSPACE_BASE_URL:http://dspace-rest:8080/server}
+    # No default credentials. Blank credentials disable DSpace writes instead of failing the sync
+    # job, so a misconfigured environment degrades to diff-only rather than authenticating as some
+    # value baked into the image. Supply these through .env / Docker Compose.
+    admin-email: ${CIVICS_DSPACE_ADMIN_EMAIL:}
+    admin-password: ${CIVICS_DSPACE_ADMIN_PASSWORD:}
   solr:
     base-url: http://solr:8983/solr
     core: discovery

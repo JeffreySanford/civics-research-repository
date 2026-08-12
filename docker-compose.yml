@@ -13,10 +13,13 @@ services:
       solr:
         condition: service_started
     environment:
-      CIVICS_SYNC_STARTUP_ENABLED: 'true'
-      CIVICS_SYNC_MODE: DRY_RUN
-      CIVICS_SYNC_SOURCE: TIGER_LINE
-      CIVICS_DSPACE_BASE_URL: http://dspace-rest:8080/server
+      CIVICS_SYNC_STARTUP_ENABLED: '${CIVICS_SYNC_STARTUP_ENABLED:-true}'
+      CIVICS_SYNC_MODE: '${CIVICS_SYNC_MODE:-DRY_RUN}'
+      CIVICS_SYNC_SOURCE: '${CIVICS_SYNC_SOURCE:-TIGER_LINE}'
+      CIVICS_DSPACE_BASE_URL: '${CIVICS_DSPACE_BASE_URL:-http://dspace-rest:8080/server}'
+      # Blank by default: without .env the API runs diff-only and never authenticates to DSpace.
+      CIVICS_DSPACE_ADMIN_EMAIL: '${CIVICS_DSPACE_ADMIN_EMAIL:-}'
+      CIVICS_DSPACE_ADMIN_PASSWORD: '${CIVICS_DSPACE_ADMIN_PASSWORD:-}'
       CIVICS_SOLR_BASE_URL: http://solr:8983/solr
       CIVICS_STORAGE_ARTIFACTS_PATH: /var/lib/civics/artifacts
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dspace
@@ -182,6 +185,8 @@ services:
       - -c
       - sh /seed/seed-structure.sh
     environment:
+      DSPACE_SEED_ADMIN_EMAIL: '${DSPACE_SEED_ADMIN_EMAIL:-admin@civics.local}'
+      DSPACE_SEED_ADMIN_PASSWORD: '${DSPACE_SEED_ADMIN_PASSWORD:-civics-admin}'
       dspace__P__name: Civics Research Repository DSpace
       dspace__P__server__P__url: http://localhost:8081/server
       dspace__P__ui__P__url: http://localhost:4000

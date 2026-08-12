@@ -98,6 +98,20 @@ Decision: prioritize a local Docker demo over cloud deployment.
 
 Reason: the most useful demo artifact is a repeatable local container stack. AWS documentation should bias toward containerized modernization, with EKS as the likely future direction and ECS mentioned only as context.
 
+### Admin API Authentication
+
+Decision: leave `POST /api/admin/sync` unauthenticated for the local Docker demo, and treat authentication as a prerequisite for any shared or deployed environment.
+
+Reason: the endpoint triggers real DSpace writes in `APPLY` mode, so this is a deliberate tradeoff rather than an oversight. It is acceptable locally because the stack binds to localhost, holds only public federal data, and is reset with `docker compose down --volumes`. The CORS policy in `WebConfig` restricts browser origins only — it is not an access control, and direct clients such as `curl` bypass it entirely, as the `sync:api:apply` script demonstrates.
+
+Consequence: before this runs anywhere other than a developer machine, the admin routes need an authenticated and authorized caller. The likely federal-aligned direction is Spring Security with the repository's existing DSpace administrator identity, or an agency SSO/OIDC provider, plus an audit record of who triggered each sync job. `SyncJob` already records mode, source, and timing; it would gain the requesting principal.
+
+### DSpace Credential Handling
+
+Decision: supply DSpace administrator credentials through environment variables (`.env`, based on the committed `.env.sample`), never as defaults compiled into the application.
+
+Reason: credentials baked into `@Value` defaults ship inside the container image and are easy to promote accidentally beyond local use. Blank credentials now disable DSpace writes rather than failing the sync job, so a misconfigured environment degrades to diff-only instead of authenticating as a built-in identity.
+
 ### Demo Priority
 
 Decision: optimize for a working local Docker demo first, then polished Angular screens, then supporting documentation.

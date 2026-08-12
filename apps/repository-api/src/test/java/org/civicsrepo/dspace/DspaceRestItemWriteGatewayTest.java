@@ -1,6 +1,7 @@
 package org.civicsrepo.dspace;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.civicsrepo.dspace.DspaceDiscoveryFixtures.discoveryResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
@@ -9,132 +10,37 @@ import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 
 class DspaceRestItemWriteGatewayTest {
-    @Test
-    void mapsFirstDiscoverableItemForWriteReconciliation() {
-        DspaceRestItemWriteGateway gateway =
-                new DspaceRestItemWriteGateway("http://localhost:8081/server", "admin@civics.local", "civics-admin");
+    private static final String SOURCE_IDENTIFIER = "tiger-line-north-dakota-2025";
 
-        JsonNode item = gateway.toFirstDiscoverableItem(
-                        """
-                        {
-                          "_embedded": {
-                            "searchResult": {
-                              "_embedded": {
-                                "objects": [
-                                  {
-                                    "_embedded": {
-                                      "indexableObject": {
-                                        "type": "item",
-                                        "uuid": "0cb9466d-0c21-4563-b17b-6c1485185d46",
-                                        "name": "2025 TIGER/Line - Census Tracts - North Dakota",
-                                        "withdrawn": false,
-                                        "metadata": {}
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                        """)
-                .orElseThrow();
-
-        assertThat(item.path("uuid").asText()).isEqualTo("0cb9466d-0c21-4563-b17b-6c1485185d46");
-        assertThat(item.path("name").asText()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
-    }
-
-    @Test
-    void detectsExistingSourceIdentifierMetadata() {
-        DspaceRestItemWriteGateway gateway =
-                new DspaceRestItemWriteGateway("http://localhost:8081/server", "admin@civics.local", "civics-admin");
-        JsonNode item = gateway.toFirstDiscoverableItem(
-                        """
-                        {
-                          "_embedded": {
-                            "searchResult": {
-                              "_embedded": {
-                                "objects": [
-                                  {
-                                    "_embedded": {
-                                      "indexableObject": {
-                                        "type": "item",
-                                        "withdrawn": false,
-                                        "metadata": {
-                                          "dc.identifier.other": [
-                                            {
-                                              "value": "tiger-line-north-dakota-2025",
-                                              "language": "en_US",
-                                              "authority": null,
-                                              "confidence": -1
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                        """)
-                .orElseThrow();
-
-        assertThat(gateway.hasMetadataValue(item, "dc.identifier.other", "tiger-line-north-dakota-2025"))
-                .isTrue();
-        assertThat(gateway.hasMetadataValue(item, "dc.identifier.other", "other-source"))
-                .isFalse();
-    }
+    private final DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
+    private final DspaceRestItemWriteGateway gateway = new DspaceRestItemWriteGateway(client);
+    private final DspaceItemPayload sourcePayload =
+            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
 
     @Test
     void plansDublinCoreMetadataPatchOperationsForChangedFields() {
-        DspaceRestItemWriteGateway gateway =
-                new DspaceRestItemWriteGateway("http://localhost:8081/server", "admin@civics.local", "civics-admin");
-        DspaceItemPayload sourcePayload = new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
-        JsonNode item = gateway.toFirstDiscoverableItem(
-                        """
-                        {
-                          "_embedded": {
-                            "searchResult": {
-                              "_embedded": {
-                                "objects": [
-                                  {
-                                    "_embedded": {
-                                      "indexableObject": {
-                                        "type": "item",
-                                        "withdrawn": false,
-                                        "metadata": {
-                                          "dc.title": [
-                                            {
-                                              "value": "2025 TIGER/Line - Census Tracts - North Dakota",
-                                              "language": "en_US",
-                                              "authority": null,
-                                              "confidence": -1
-                                            }
-                                          ],
-                                          "dc.date.issued": [
-                                            {
-                                              "value": "2025-01-01",
-                                              "language": null,
-                                              "authority": null,
-                                              "confidence": -1
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                        """)
-                .orElseThrow();
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "dc.title": [
+                      {
+                        "value": "2025 TIGER/Line - Census Tracts - North Dakota",
+                        "language": "en_US",
+                        "authority": null,
+                        "confidence": -1
+                      }
+                    ],
+                    "dc.date.issued": [
+                      {"value": "2025-01-01", "language": null, "authority": null, "confidence": -1}
+                    ]
+                  }
+                }
+                """);
 
-        List<Map<String, Object>> operations =
-                gateway.metadataPatchOperations(item, "tiger-line-north-dakota-2025", sourcePayload);
+        List<Map<String, Object>> operations = gateway.metadataPatchOperations(item, SOURCE_IDENTIFIER, sourcePayload);
 
         assertThat(operations).anySatisfy((operation) -> {
             assertThat(operation.get("op")).isEqualTo("replace");
@@ -148,5 +54,107 @@ class DspaceRestItemWriteGatewayTest {
             assertThat(operation.get("op")).isEqualTo("add");
             assertThat(operation.get("path")).isEqualTo("/metadata/crr.identifier.source");
         });
+    }
+
+    @Test
+    void leavesUnchangedFieldsAlone() {
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "dc.title": [
+                      {
+                        "value": "2025 TIGER/Line - Census Tracts - North Dakota",
+                        "language": "en_US",
+                        "authority": null,
+                        "confidence": -1
+                      }
+                    ]
+                  }
+                }
+                """);
+
+        List<Map<String, Object>> operations = gateway.metadataPatchOperations(item, SOURCE_IDENTIFIER, sourcePayload);
+
+        assertThat(operations).noneSatisfy((operation) -> assertThat(operation.get("path")).isEqualTo("/metadata/dc.title"));
+    }
+
+    /**
+     * DSpace returns repeated values ordered by {@code place}, which need not match adapter order.
+     * An order-sensitive comparison would re-PATCH identical metadata on every apply.
+     */
+    @Test
+    void treatsReorderedRepeatedValuesAsEquivalent() {
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "dc.subject": [
+                      {"value": "Second", "language": "en_US", "authority": null, "confidence": -1},
+                      {"value": "First", "language": "en_US", "authority": null, "confidence": -1}
+                    ]
+                  }
+                }
+                """);
+
+        List<DspaceMetadataValue> sourceValues = List.of(
+                new DspaceMetadataValue("First", "en_US", null, -1),
+                new DspaceMetadataValue("Second", "en_US", null, -1));
+
+        assertThat(gateway.hasEquivalentMetadataValues(item, "dc.subject", sourceValues)).isTrue();
+    }
+
+    @Test
+    void detectsChangedRepeatedValuesRegardlessOfOrder() {
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "dc.subject": [
+                      {"value": "Second", "language": "en_US", "authority": null, "confidence": -1},
+                      {"value": "Renamed", "language": "en_US", "authority": null, "confidence": -1}
+                    ]
+                  }
+                }
+                """);
+
+        List<DspaceMetadataValue> sourceValues = List.of(
+                new DspaceMetadataValue("First", "en_US", null, -1),
+                new DspaceMetadataValue("Second", "en_US", null, -1));
+
+        assertThat(gateway.hasEquivalentMetadataValues(item, "dc.subject", sourceValues)).isFalse();
+    }
+
+    @Test
+    void treatsDifferingLanguageAsAChange() {
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "dc.subject": [{"value": "First", "language": "fr", "authority": null, "confidence": -1}]
+                  }
+                }
+                """);
+
+        assertThat(gateway.hasEquivalentMetadataValues(
+                        item, "dc.subject", List.of(new DspaceMetadataValue("First", "en_US", null, -1))))
+                .isFalse();
+    }
+
+    @Test
+    void skipsReconciliationWhenCredentialsAreNotConfigured() {
+        assertThat(gateway.ensureItemMetadata(SOURCE_IDENTIFIER, sourcePayload)).isFalse();
+    }
+
+    private JsonNode firstItem(String indexableObject) {
+        return client.toDiscoverableItems(discoveryResponse(indexableObject)).getFirst();
     }
 }

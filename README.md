@@ -53,6 +53,20 @@ USGS overlay candidates:
 
 ```text
 civics-research-repository/
+├── apps/
+│   ├── discovery-ui/            Angular 22 discovery, map, admin, and evidence UI
+│   ├── discovery-ui-e2e/        Playwright storyboard, WCAG, and Section 508 specs
+│   └── repository-api/          Java 21 / Spring Boot API, sync orchestration, DSpace and Solr gateways
+├── libs/
+│   ├── data-sources/            census, usgs
+│   ├── maps/                    usgs-overlays, visualization
+│   ├── repository/              api-client (OpenAPI-generated types), models
+│   └── shared/                  accessibility, material, ui
+├── tools/
+│   ├── dspace/                  DSpace seed structure, SAF package, and crr metadata schema
+│   └── scripts/                 OpenAPI drift check, DSpace readiness/seed verification, web-server launcher
+├── schemas/
+│   └── openapi/                 repository-api.yaml contract (source of truth)
 ├── documentation/
 │   ├── README.md
 │   ├── architecture.md
@@ -62,13 +76,8 @@ civics-research-repository/
 │   ├── accessibility-508-wcag.md
 │   ├── nx-angular-wcag.md
 │   ├── backend-java-api.md
-│   └── docker-dspace-solr-postgres.md
-├── schemas/
-│   └── openapi/
-├── .agents/
-│   ├── AGENTS.md
-│   ├── nx-angular-wcag.md
-│   └── mcp/
+│   ├── docker-dspace-solr-postgres.md
+│   └── usgs-national-map-evaluation.md
 ├── planning/
 │   ├── README.md
 │   ├── TODO.md
@@ -76,6 +85,12 @@ civics-research-repository/
 │   ├── DECISIONS.md
 │   ├── ACCEPTANCE_CRITERIA.md
 │   └── RISKS.md
+├── .agents/
+│   ├── AGENTS.md
+│   ├── java-api-contracts.md
+│   ├── nx-angular-wcag.md
+│   └── mcp/
+├── docker-compose.yml
 └── README.md
 ```
 
@@ -92,6 +107,14 @@ Public dataset metadata
   -> dataset detail page
   -> map visualization with USGS overlay
 ```
+
+## Local Setup
+
+```bash
+cp .env.sample .env
+```
+
+`.env` is git-ignored and supplies the DSpace administrator credentials used by both the seed job and the Java API's metadata reconciliation. The committed `.env.sample` holds fictitious local-demo values and works as-is, because the seed job creates the administrator from the same variables. With no `.env`, the API still runs — DSpace writes are simply disabled and sync stays diff-only.
 
 ## Development Scripts
 

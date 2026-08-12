@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SolrSearchClient {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
+    private static final String PHRASE_SYNTAX_CHARACTERS = "\\\"";
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -208,7 +209,7 @@ public class SolrSearchClient {
         }
 
         if (!normalize(geography).isBlank()) {
-            params.add("fq=" + encode("geography_s:\"" + geography + "\""));
+            params.add("fq=" + encode("geography_s:\"" + escapeQueryValue(geography) + "\""));
         }
 
         if (vintageYear != null) {
@@ -216,6 +217,34 @@ public class SolrSearchClient {
         }
 
         return URI.create(baseUrl + "/" + encode(core) + "/select?" + String.join("&", params));
+    }
+
+    /**
+     * Escapes Lucene query syntax in a caller-supplied filter value.
+     *
+     * <p>{@code geography} arrives straight from a request parameter and is interpolated into an
+     * {@code fq} phrase. Without escaping, a quote closes the phrase early and the remainder is
+     * parsed as query syntax, which can widen the filter past what the caller asked for or fail the
+     * request outright. URL encoding does not help here: Solr decodes the parameter before parsing
+     * it.
+     *
+     * <p>Only the backslash and quote are escaped. The value is always wrapped in quotes, so every
+     * other Lucene operator — including the spaces in values such as {@code North Dakota} — is
+     * already inert inside the phrase, and escaping them would change what matches.
+     */
+    static String escapeQueryValue(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        StringBuilder escaped = new StringBuilder(value.length() + 8);
+        for (char character : value.toCharArray()) {
+            if (PHRASE_SYNTAX_CHARACTERS.indexOf(character) >= 0) {
+                escaped.append('\\');
+            }
+            escaped.append(character);
+        }
+        return escaped.toString();
     }
 
     private String text(JsonNode document, String field) {

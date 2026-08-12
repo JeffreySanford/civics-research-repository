@@ -132,6 +132,10 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 - [x] Add diff mode to compare source metadata with DSpace item state.
 - [x] Add logging and error handling.
 - [x] Add unit tests for metadata normalization.
+- [x] Guard DSpace item resolution so apply cannot write to a relevance-ranked sibling item.
+- [x] Make DSpace metadata comparison order-insensitive so apply stays idempotent.
+- [x] Move DSpace admin credentials out of compiled defaults into `.env`.
+- [ ] Cover `JdbcSyncJobStore` SQL with Testcontainers once the Java test target moves off `docker build`.
 
 ### Sprint 2.2 - Additional Census Sources
 
@@ -229,6 +233,10 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 
 ### Sprint 5.1 - Automated Checks
 
+- [x] Add Spring context and MockMvc controller coverage for the Java API.
+- [x] Add NgRx effect coverage for search, datasets, maps, and sync.
+- [x] Add repository API failure-state storyboard checks.
+
 - [x] Add axe-core integration.
 - [x] Add Playwright accessibility smoke tests.
 - [x] Add WCAG console report script.
@@ -241,8 +249,8 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 - [x] Add keyboard navigation tests for map layer controls.
 - [x] Add storyboard checks across discovery, map, admin sync, and evidence routes.
 - [ ] Add dialog focus tests if dialogs are introduced.
-- [ ] Add responsive reflow checks.
-- [ ] Add color contrast verification.
+- [x] Add responsive reflow checks.
+- [x] Add color contrast verification.
 
 ### Sprint 5.2 - Manual Evidence
 
