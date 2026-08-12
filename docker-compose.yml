@@ -11,10 +11,10 @@ services:
       postgres:
         condition: service_healthy
       solr:
-        condition: service_started
+        condition: service_healthy
     environment:
       CIVICS_SYNC_STARTUP_ENABLED: '${CIVICS_SYNC_STARTUP_ENABLED:-true}'
-      CIVICS_SYNC_MODE: '${CIVICS_SYNC_MODE:-DRY_RUN}'
+      CIVICS_SYNC_MODE: '${CIVICS_SYNC_MODE:-APPLY}'
       CIVICS_SYNC_SOURCE: '${CIVICS_SYNC_SOURCE:-TIGER_LINE}'
       CIVICS_DSPACE_BASE_URL: '${CIVICS_DSPACE_BASE_URL:-http://dspace-rest:8080/server}'
       # Blank by default: without .env the API runs diff-only and never authenticates to DSpace.
@@ -33,17 +33,31 @@ services:
   discovery-ui:
     image: node:24-bookworm-slim
     working_dir: /workspace
-    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec nx reset && pnpm exec nx run discovery-ui:serve --host=0.0.0.0 --skip-nx-cache"
+    # `rm -rf` on the workspace-data directory replaces the old `nx reset`. A serve process that dies
+    # without releasing its task lock leaves the next start waiting forever on "another nx process",
+    # and that directory survives `docker restart`. Clearing only the coordination state fixes that
+    # while keeping the build cache in NX_CACHE_DIRECTORY, which `nx reset` used to throw away.
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && rm -rf /tmp/nx-workspace-data && pnpm exec nx run discovery-ui:serve --host=0.0.0.0"
     environment:
       NG_CLI_ANALYTICS: 'false'
       NX_DAEMON: 'false'
       NX_WORKSPACE_DATA_DIRECTORY: /tmp/nx-workspace-data
+      # The workspace is bind-mounted, so Nx's default `.nx/cache` is the *host* cache with Windows
+      # paths in it. Sharing it with the Linux container is what made `nx reset` and
+      # `--skip-nx-cache` necessary on every start. A container-owned cache volume keeps the two
+      # separate and lets caching actually work.
+      NX_CACHE_DIRECTORY: /nx-cache
+      # Corepack re-downloaded the pnpm tarball on every start because its cache lived in the
+      # container layer. The cache below persists it; this just silences the download prompt.
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
     ports:
       - '4200:4200'
     volumes:
       - .:/workspace
       - pnpm-store:/root/.local/share/pnpm/store
       - node-modules:/workspace/node_modules
+      - corepack-cache:/root/.cache/node/corepack
+      - nx-cache:/nx-cache
     depends_on:
       - repository-api
 
@@ -70,6 +84,19 @@ services:
       - '8983:8983'
     volumes:
       - solr-data:/var/solr
+    # Without this, repository-api could only wait for the container to start, not for Solr to
+    # answer queries. Losing that race is silent: startup indexing logs a warning and the API
+    # serves the fixture fallback instead.
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl -fsS "http://localhost:8983/solr/discovery/admin/ping?wt=json" | grep -q ''"status":"OK"''',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
 
   dspace-rest:
     profiles: ['dspace']
@@ -106,7 +133,11 @@ services:
     ports:
       - '5433:5432'
     volumes:
-      - dspace-postgres-data:/pgdata
+      # Must match PGDATA in the dspace-postgres image (/var/lib/postgresql/data). This was
+      # previously mounted at /pgdata, which left the volume empty and kept the entire DSpace
+      # database in the container's writable layer — so removing the container destroyed the
+      # repository, seed and all.
+      - dspace-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U dspace -d dspace']
       interval: 10s
@@ -200,10 +231,12 @@ services:
 
 volumes:
   civics-artifacts:
+  corepack-cache:
   dspace-assetstore:
   dspace-postgres-data:
   dspace-solr-data:
   node-modules:
+  nx-cache:
   pnpm-store:
   postgres-data:
   solr-data:

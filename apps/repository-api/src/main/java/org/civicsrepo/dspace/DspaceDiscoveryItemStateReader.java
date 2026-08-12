@@ -1,7 +1,6 @@
 package org.civicsrepo.dspace;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,26 +31,21 @@ public class DspaceDiscoveryItemStateReader implements DspaceItemStateReader {
     }
 
     /**
-     * Diff is a read-only report, so transport and ambiguity problems degrade to "unknown state"
-     * rather than failing the sync job. The apply path refuses to write in the same situations.
+     * An empty result means "DSpace is reachable and does not hold this item", and nothing else.
+     *
+     * <p>This previously swallowed every failure into {@link Optional#empty()}, so an unreachable
+     * DSpace made {@code sync:diff} confidently report {@code CREATE_ITEM} for an item it had never
+     * actually looked for. Being unable to answer is not the same as answering "absent", so
+     * unavailability and ambiguity both propagate and fail the job with a message that says what to
+     * do about it.
      */
     private Optional<DspaceItemPayload> readItem(String sourceIdentifier, String expectedTitle) {
-        try {
-            return dspaceRestClient.findItem(sourceIdentifier, expectedTitle).map(this::toItemPayload);
-        } catch (AmbiguousDspaceItemException exception) {
-            LOGGER.warn("DSpace item state is ambiguous for {}: {}", sourceIdentifier, exception.getMessage());
-            return Optional.empty();
-        } catch (IllegalStateException exception) {
-            LOGGER.warn("DSpace discovery failed while reading item state: {}", exception.getMessage());
-            return Optional.empty();
-        } catch (IOException exception) {
-            LOGGER.warn("DSpace discovery request failed while reading item state: {}", exception.getMessage());
-            return Optional.empty();
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            LOGGER.warn("DSpace discovery request was interrupted while reading item state.");
+        if (!dspaceRestClient.isReadEnabled()) {
+            LOGGER.info("DSpace is not configured; reporting no repository item state.");
             return Optional.empty();
         }
+
+        return dspaceRestClient.findItem(sourceIdentifier, expectedTitle).map(this::toItemPayload);
     }
 
     DspaceItemPayload toItemPayload(JsonNode item) {

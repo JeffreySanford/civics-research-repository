@@ -129,10 +129,13 @@ cp .env.sample .env
 
 ```bash
 pnpm run start:all
+pnpm run start:all:rebuild
 pnpm run docker:down
 pnpm run dspace:up
-pnpm run dspace:verify
+pnpm run dspace:seed
+pnpm run dspace:verify:seed
 pnpm run sync:dry-run
+pnpm run sync:diff
 pnpm run sync:apply
 pnpm run test:all
 pnpm run quality:all
@@ -142,7 +145,9 @@ pnpm run wcag:report
 pnpm run section508:report
 ```
 
-`start:all` runs the Docker Compose stack. The Java API is exposed at `http://localhost:8080/api`, the Angular UI at `http://localhost:4200`, PostgreSQL at `localhost:5432`, and Solr at `http://localhost:8983`.
+`start:all` runs the application stack. The Java API is exposed at `http://localhost:8080/api`, the Angular UI at `http://localhost:4200`, PostgreSQL at `localhost:5432`, and Solr at `http://localhost:8983`.
+
+It is scoped to the services in the active Compose profile and never touches a running DSpace stack. It inspects each container and recreates only the ones that are actually broken, so a healthy database is not thrown away on every start. `start:all:rebuild` rebuilds images first; `docker:reset:everything` is the only command that destroys volumes, DSpace included.
 
 The optional DSpace profile is available with `pnpm run dspace:up` and verifies at `http://localhost:8081/server/api`. It uses persistent Docker volumes for the DSpace asset store, DSpace PostgreSQL database, and DSpace Solr cores.
 

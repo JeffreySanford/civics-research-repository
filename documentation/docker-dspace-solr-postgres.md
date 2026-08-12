@@ -113,27 +113,43 @@ The API host port is `8080` for the local default. The Angular UI host port is `
 
 ## Reset Commands
 
-Use the smallest reset that solves the problem:
+Use the smallest reset that solves the problem. Every command below except the last is **scoped to the application stack** and never touches a running DSpace profile.
 
 ```bash
 pnpm run docker:reset:containers
 ```
 
-Stops and removes current Compose containers and orphans. This preserves named volumes, including PostgreSQL, Solr, pnpm store, container `node_modules`, and API artifact storage.
+Stops and removes the four application-stack containers. Named volumes survive, including PostgreSQL, Solr, pnpm store, container `node_modules`, Nx cache, and API artifact storage.
 
 ```bash
-pnpm run docker:reset:volumes
+pnpm run start:all:recreate
 ```
 
-Stops containers and deletes named volumes. This removes persistent database/index/cache state and should be used only when you intentionally want a clean local demo storage reset.
+Force-recreates the application-stack containers, then starts and attaches. Use when a container is wedged but you do not want to lose volume state.
+
+```bash
+pnpm run start:all:rebuild
+```
+
+Rebuilds the images first, then force-recreates. Use after changing the Java API `Dockerfile` or its dependencies.
+
+```bash
+pnpm run docker:reset:everything
+```
+
+The only destructive command: takes down **every** container in the project, DSpace profile included, and deletes all named volumes. That erases the DSpace assetstore, both databases, and both Solr indexes, so the seed and sync must be run again from scratch. It is named `everything` rather than `volumes` precisely so it cannot be reached for casually.
+
+### Why the scoped commands exist
+
+`docker compose down` is not profile-scoped. It removes every container in the project, including the DSpace profile, and `down --volumes` additionally destroys the DSpace assetstore and databases. `start:all` used to begin with `docker compose down --remove-orphans`, which meant starting the UI silently dismantled a running DSpace stack.
+
+`start:all` now runs [tools/scripts/stack.mjs](../tools/scripts/stack.mjs), which reads the services in the active Compose profile, inspects each container, and removes only the ones that are actually broken — unhealthy, dead, stuck restarting, or exited non-zero. Healthy containers are left running, and any container outside the active profile is reported and left alone.
 
 For normal development, prefer:
 
 ```bash
 pnpm run start:all
 ```
-
-That command removes stale containers first, then starts the stack on the default ports with persistent storage intact.
 
 ## Optional DSpace Profile
 

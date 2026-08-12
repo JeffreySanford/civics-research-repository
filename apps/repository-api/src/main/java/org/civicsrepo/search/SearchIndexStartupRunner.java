@@ -37,9 +37,13 @@ public class SearchIndexStartupRunner implements CommandLineRunner {
 
         try {
             solrSearchClient.indexResearchObjects(searchService.seedResults());
-            LOGGER.info("Indexed {} seed research objects into Solr.", searchService.seedResults().size());
+            LOGGER.info(
+                    "Indexed {} FIXTURE research objects into the Solr discovery core. These are generated"
+                            + " placeholders, not DSpace repository metadata: discovery is not yet backed by the"
+                            + " repository. See documentation/architecture-diagrams.md (Known Seams).",
+                    searchService.seedResults().size());
         } catch (RuntimeException exception) {
-            LOGGER.warn("Solr seed indexing failed; in-memory search fallback remains available.", exception);
+            LOGGER.warn("Solr fixture indexing failed; in-memory search fallback remains available.", exception);
         }
     }
 }

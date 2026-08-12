@@ -22,11 +22,16 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 
 ### P3 - Add a true one-command demo environment
 
+- [x] Stop `start:all` from destroying a running DSpace stack; scope every stack command to the active Compose profile.
+- [x] Add a Solr healthcheck and make the API wait for `service_healthy` instead of `service_started`.
+- [x] Fix the `dspace-postgres` volume mount so the DSpace database actually persists.
+- [x] Make the DSpace seed self-healing when its mapfile outlives the database.
+- [x] Persist the corepack and Nx caches instead of re-downloading and resetting on every start.
 - [ ] Add `pnpm run demo:up`: DSpace profile, both PostgreSQL instances, both Solr instances, Java API, Angular, seed, sync, health checks.
-- [ ] Keep `start:all` as the fast development path that excludes DSpace.
+- [x] Keep `start:all` as the fast development path that excludes DSpace.
 - [ ] Report the URLs to open when `demo:up` completes.
 - [ ] Add `pnpm run demo:down` and a documented reset path.
-- [ ] Verify `demo:up` from a cold `docker compose down --volumes`.
+- [ ] Verify `demo:up` from a cold `pnpm run docker:reset:everything`.
 
 ### P4 - Diagrams and AWS modernization
 

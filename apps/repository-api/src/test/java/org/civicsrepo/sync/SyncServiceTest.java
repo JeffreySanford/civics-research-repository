@@ -12,6 +12,7 @@ import org.civicsrepo.dspace.DspaceItemDiffPlanner;
 import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.dspace.DspaceItemStateReader;
+import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -150,8 +151,10 @@ class SyncServiceTest {
     void startupRunnerSkipsWhenCliModeIsEnabled() {
         TestSyncJobStore store = new TestSyncJobStore();
         SyncService syncService = newSyncService(store);
-        StartupSyncRunner runner =
-                new StartupSyncRunner(new SyncProperties(true, true, SyncMode.DRY_RUN, SyncSource.TIGER_LINE), syncService);
+        StartupSyncRunner runner = new StartupSyncRunner(
+                new SyncProperties(true, true, SyncMode.DRY_RUN, SyncSource.TIGER_LINE),
+                syncService,
+                new DspaceRestClient("", "", ""));
 
         runner.run();
 

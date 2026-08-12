@@ -124,6 +124,22 @@ Reason: `start:all` deliberately excludes the DSpace profile so routine developm
 
 Consequence: `start:all` keeps its current fast-path behavior. `demo:up` composes DSpace startup, `wait-dspace-ready`, `dspace-seed`, sync, and the application services, and reports the URLs to open. Not yet implemented.
 
+### Startup Sync Applies Live Data
+
+Decision: startup sync defaults to `APPLY` against a live DSpace, and is skipped entirely when DSpace is unreachable. `DRY_RUN` is retained as an explicit CLI and admin-UI mode, not as the automatic default.
+
+Reason: the project is far enough along that the automatic path should do real, persisted repository work. A dry run that executes when nobody asked for it produced a log full of `UPSERT_*` actions planned against a DSpace that was not running in the default Compose profile, which reads as success. Apply is idempotent, so applying at every boot is cheap and the second run writes nothing.
+
+Consequence: the demo's default behavior is now live repository reconciliation whose effects persist in the DSpace volumes. Planning-only behavior is still one environment variable away (`CIVICS_SYNC_MODE=DRY_RUN`).
+
+### Unavailability Is Not Absence
+
+Decision: an unreachable DSpace produces an explicit failure naming the endpoint and the command that starts it. It is never reported as "the item does not exist".
+
+Reason: the read path previously collapsed every failure into an empty result, so `sync:diff` reported `CREATE_ITEM` for an item it had never successfully looked for. A confident wrong answer is worse than an error, particularly on a path whose whole purpose is to describe repository state.
+
+Consequence: `DIFF` and `APPLY` both return a `FAILED` job carrying the reason, surfaced through the normal typed response so the admin UI shows it rather than an HTTP 500.
+
 ### Admin API Authentication
 
 Decision: leave `POST /api/admin/sync` unauthenticated for the local Docker demo, and treat authentication as a prerequisite for any shared or deployed environment.

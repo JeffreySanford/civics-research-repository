@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<dublin_core>
+<!--
+  Dublin Core only. DSpace ignores a schema= attribute on individual dcvalue elements in this file
+  and assumes every value belongs to the file's schema, so project-specific crr.* fields live in
+  metadata_crr.xml instead. Putting them here produced "bad_dublin_core schema=dc.identifier.source"
+  and aborted the whole import.
+-->
+<dublin_core schema="dc">
   <dcvalue element="title" qualifier="none">2025 TIGER/Line - Census Tracts - North Dakota</dcvalue>
   <dcvalue element="contributor" qualifier="author">U.S. Census Bureau</dcvalue>
   <dcvalue element="publisher" qualifier="none">U.S. Census Bureau</dcvalue>
@@ -12,10 +18,4 @@
   <dcvalue element="subject" qualifier="none">TIGER/Line</dcvalue>
   <dcvalue element="subject" qualifier="none">Census tracts</dcvalue>
   <dcvalue element="coverage" qualifier="spatial">North Dakota</dcvalue>
-  <dcvalue schema="crr" element="identifier" qualifier="source">tiger-line-north-dakota-2025</dcvalue>
-  <dcvalue schema="crr" element="program" qualifier="none">TIGER_LINE</dcvalue>
-  <dcvalue schema="crr" element="geography" qualifier="level">Census tract</dcvalue>
-  <dcvalue schema="crr" element="vintage" qualifier="none">2025</dcvalue>
-  <dcvalue schema="crr" element="source" qualifier="url">https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip</dcvalue>
-  <dcvalue schema="crr" element="documentation" qualifier="url">https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html</dcvalue>
 </dublin_core>

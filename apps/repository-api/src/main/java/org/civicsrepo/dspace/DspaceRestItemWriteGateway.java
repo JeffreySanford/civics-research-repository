@@ -1,7 +1,6 @@
 package org.civicsrepo.dspace;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,26 +41,20 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
             return false;
         }
 
-        try {
-            JsonNode item = dspaceRestClient
-                    .findItem(sourceIdentifier, sourcePayload.name())
-                    .orElseThrow(() -> new IllegalStateException(
-                            "DSpace item was not found for " + sourceIdentifier + "."));
+        // Transport failures surface as DspaceUnavailableException, which names the endpoint and
+        // the command that starts it. Nothing is swallowed here: a failed apply must fail the job.
+        JsonNode item = dspaceRestClient
+                .findItem(sourceIdentifier, sourcePayload.name())
+                .orElseThrow(() -> new IllegalStateException("DSpace item was not found for " + sourceIdentifier
+                        + ". Run pnpm run dspace:seed to create the seed repository objects."));
 
-            List<Map<String, Object>> patchOperations =
-                    metadataPatchOperations(item, sourceIdentifier, sourcePayload);
-            if (patchOperations.isEmpty()) {
-                return false;
-            }
-
-            dspaceRestClient.patchItemMetadata(item.path("uuid").asText(), patchOperations);
-            return true;
-        } catch (IOException exception) {
-            throw new IllegalStateException("DSpace item write request failed.", exception);
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("DSpace item write request was interrupted.", exception);
+        List<Map<String, Object>> patchOperations = metadataPatchOperations(item, sourceIdentifier, sourcePayload);
+        if (patchOperations.isEmpty()) {
+            return false;
         }
+
+        dspaceRestClient.patchItemMetadata(item.path("uuid").asText(), patchOperations);
+        return true;
     }
 
     List<Map<String, Object>> metadataPatchOperations(

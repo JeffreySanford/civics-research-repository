@@ -55,12 +55,32 @@ public class DspaceRestClient {
         return isReadEnabled() && !adminEmail.isBlank() && !adminPassword.isBlank();
     }
 
+    /** Cheap liveness probe used to decide whether repository work can run at all. */
+    public boolean isReachable() {
+        if (!isReadEnabled()) {
+            return false;
+        }
+
+        try {
+            HttpResponse<String> response = send(HttpRequest.newBuilder(URI.create(baseUrl + "/api"))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET());
+            return response.statusCode() < 300;
+        } catch (DspaceUnavailableException exception) {
+            return false;
+        }
+    }
+
+    /** The configured DSpace endpoint, for log and error messages. */
+    public String baseUrl() {
+        return baseUrl;
+    }
+
     /**
      * Resolves the one item a source identifier refers to, searching by identifier first and
      * falling back to the normalized title for items that have not been stamped yet.
      */
-    public Optional<JsonNode> findItem(String sourceIdentifier, String expectedTitle)
-            throws IOException, InterruptedException {
+    public Optional<JsonNode> findItem(String sourceIdentifier, String expectedTitle) {
         Optional<JsonNode> byIdentifier =
                 DspaceItemMatcher.selectTargetItem(searchItems(sourceIdentifier), sourceIdentifier, expectedTitle);
         if (byIdentifier.isPresent()) {
@@ -70,18 +90,15 @@ public class DspaceRestClient {
     }
 
     /** Returns every non-withdrawn item in a discovery response, newest DSpace ranking order preserved. */
-    public List<JsonNode> searchItems(String query) throws IOException, InterruptedException {
+    public List<JsonNode> searchItems(String query) {
         if (!isReadEnabled() || normalize(query).isBlank()) {
             return List.of();
         }
 
-        HttpRequest request = HttpRequest.newBuilder(discoveryUri(query))
-                .timeout(REQUEST_TIMEOUT)
-                .GET()
-                .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response =
+                send(HttpRequest.newBuilder(discoveryUri(query)).timeout(REQUEST_TIMEOUT).GET());
         if (response.statusCode() >= 300) {
-            throw new IllegalStateException("DSpace discovery failed with HTTP " + response.statusCode() + ".");
+            throw new DspaceUnavailableException(baseUrl, response.statusCode());
         }
         return toDiscoverableItems(response.body());
     }
@@ -108,32 +125,46 @@ public class DspaceRestClient {
         }
     }
 
-    public void patchItemMetadata(String itemUuid, List<Map<String, Object>> patchOperations)
-            throws IOException, InterruptedException {
+    public void patchItemMetadata(String itemUuid, List<Map<String, Object>> patchOperations) {
         AuthSession authSession = authenticate();
-        HttpRequest request = HttpRequest.newBuilder(itemUri(itemUuid))
+        HttpResponse<String> response = send(HttpRequest.newBuilder(itemUri(itemUuid))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Authorization", authSession.authorization())
                 .header("X-XSRF-TOKEN", authSession.xsrfToken())
                 .header("Cookie", authSession.cookie())
                 .header("Content-Type", "application/json-patch+json")
-                .method("PATCH", HttpRequest.BodyPublishers.ofString(writeJson(patchOperations)))
-                .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(writeJson(patchOperations))));
         if (response.statusCode() >= 300) {
             throw new IllegalStateException(
                     "DSpace item metadata patch failed with HTTP " + response.statusCode() + ": " + response.body());
         }
     }
 
-    private AuthSession authenticate() throws IOException, InterruptedException {
+    /**
+     * Single exit point for HTTP. Transport failures become {@link DspaceUnavailableException} so
+     * that callers never have to decide whether an {@link IOException} meant "absent" or "down".
+     */
+    private HttpResponse<String> send(HttpRequest.Builder request) {
+        try {
+            return httpClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (IOException exception) {
+            throw new DspaceUnavailableException(baseUrl, exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new DspaceUnavailableException(baseUrl, exception);
+        }
+    }
+
+    private AuthSession authenticate() {
         HttpResponse<String> csrfResponse = login(Optional.empty(), Optional.empty());
         Optional<String> csrfToken = header(csrfResponse, "DSPACE-XSRF-TOKEN");
         Optional<String> cookie = cookie(csrfResponse);
         HttpResponse<String> loginResponse = login(csrfToken, cookie);
 
         if (loginResponse.statusCode() >= 300) {
-            throw new IllegalStateException("DSpace login failed with HTTP " + loginResponse.statusCode() + ".");
+            throw new IllegalStateException("DSpace login failed with HTTP " + loginResponse.statusCode()
+                    + " for " + adminEmail + ". Check CIVICS_DSPACE_ADMIN_EMAIL and"
+                    + " CIVICS_DSPACE_ADMIN_PASSWORD in .env, and that the DSpace seed has run.");
         }
 
         String authorization = header(loginResponse, "Authorization")
@@ -145,19 +176,15 @@ public class DspaceRestClient {
         return new AuthSession(authorization, xsrfToken, sessionCookie);
     }
 
-    private HttpResponse<String> login(Optional<String> csrfToken, Optional<String> cookie)
-            throws IOException, InterruptedException {
+    private HttpResponse<String> login(Optional<String> csrfToken, Optional<String> cookie) {
         HttpRequest.Builder request = HttpRequest.newBuilder(loginUri())
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded");
         csrfToken.ifPresent((token) -> request.header("X-XSRF-TOKEN", token));
         cookie.ifPresent((value) -> request.header("Cookie", value));
 
-        return httpClient.send(
-                request.POST(HttpRequest.BodyPublishers.ofString(
-                                "user=" + encode(adminEmail) + "&password=" + encode(adminPassword)))
-                        .build(),
-                HttpResponse.BodyHandlers.ofString());
+        return send(request.POST(HttpRequest.BodyPublishers.ofString(
+                "user=" + encode(adminEmail) + "&password=" + encode(adminPassword))));
     }
 
     private String writeJson(Object payload) {

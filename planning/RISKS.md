@@ -58,7 +58,19 @@ Mitigation: rename the application database to `civics_ops` and document the fou
 
 Risk: no single command brings up a demonstrable system. `start:all` excludes the DSpace profile, so a live demo depends on running several commands in the right order — the exact conditions under which demos fail.
 
-Mitigation: add `demo:up` as near-term priority 3, and rehearse it from a cold `docker compose down --volumes` rather than from a warm machine.
+Mitigation: `start:all` is now scoped to the active Compose profile and no longer destroys a running DSpace stack, which removed the sharpest edge. A single `demo:up` remains near-term priority 3. Rehearse it from a cold `docker:reset:everything` rather than from a warm machine.
+
+## Compose Volume Mounts Silently Not Persisting
+
+Risk: a named volume mounted at a path the image does not use looks correct in `docker-compose.yml` and in `docker volume ls`, while the real data sits in the container's writable layer and dies with the container. The DSpace database was in exactly this state — mounted at `/pgdata` while the image's `PGDATA` is `/var/lib/postgresql/data` — so the entire seeded repository was lost the first time the container was removed.
+
+Mitigation: fixed for `dspace-postgres`, and the application `postgres`, both Solr services, and the DSpace assetstore were checked against their images. When adding a stateful service, verify persistence by removing the container and confirming the data survives, not by observing that a volume exists.
+
+## Seed Idempotence Keyed On The Wrong Signal
+
+Risk: the DSpace seed treated a mapfile in the assetstore volume as proof the item had been imported. That volume outlives the database volume, so after a database reset the seed skipped the import forever and left an empty repository that no amount of reseeding would fix. It also masked a broken SAF package for several commits, because the import that would have failed was never re-run.
+
+Mitigation: the seed now verifies that the item referenced by the mapfile still exists in DSpace, and re-imports when it does not. Idempotence checks should assert the desired end state, not the fact that an earlier attempt was made.
 
 ## Unauthenticated Admin Sync Endpoint
 

@@ -22,6 +22,17 @@ import org.springframework.stereotype.Service;
 public class SyncService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncService.class);
 
+    /**
+     * The repository structure the DSpace seed actually creates.
+     *
+     * <p>These must match tools/dspace/seed-structure.xml. Sync previously reported the collection
+     * as the program enum name ("TIGER_LINE"), which names a collection that does not exist and
+     * would have been acted on once collection upsert is implemented.
+     */
+    private static final String COMMUNITY_NAME = "Census Public Research Data";
+
+    private static final String COLLECTION_NAME = "TIGER/Line Geospatial Files";
+
     private final SyncJobStore syncJobStore;
     private final SyncActionRunner syncActionRunner;
     private final DspaceItemPayloadMapper dspaceItemPayloadMapper;
@@ -45,18 +56,23 @@ public class SyncService {
     public SyncJob runSync(SyncRequest request) {
         OffsetDateTime startedAt = OffsetDateTime.now();
         String jobId = UUID.randomUUID().toString();
-        List<SyncAction> plannedActions = planActions(request);
-        syncJobStore.save(new SyncJob(
-                jobId, request.mode(), request.source(), SyncStatus.RUNNING, startedAt, null, plannedActions));
-
-        LOGGER.info(
-                "Sync job {} started with mode {} for source {} and {} planned actions.",
-                jobId,
-                request.mode(),
-                request.source(),
-                plannedActions.size());
+        // Planning belongs inside the failure handling. DIFF planning reads live DSpace state, so an
+        // unreachable repository used to escape as an unhandled exception and surface to the admin
+        // UI as a bare HTTP 500 instead of a failed job carrying the reason.
+        List<SyncAction> plannedActions = List.of();
 
         try {
+            plannedActions = planActions(request);
+            syncJobStore.save(new SyncJob(
+                    jobId, request.mode(), request.source(), SyncStatus.RUNNING, startedAt, null, plannedActions));
+
+            LOGGER.info(
+                    "Sync job {} started with mode {} for source {} and {} planned actions.",
+                    jobId,
+                    request.mode(),
+                    request.source(),
+                    plannedActions.size());
+
             syncActionRunner.run(request, plannedActions, sourcePayload(request));
             SyncStatus status = completedStatus(request.mode());
             SyncJob completedJob =
@@ -102,11 +118,12 @@ public class SyncService {
         }
 
         return List.of(
-                new SyncAction("UPSERT_COMMUNITY", "Census Public Research Data", "Ensure root DSpace community exists."),
+                new SyncAction("UPSERT_COMMUNITY", COMMUNITY_NAME, "Ensure root DSpace community exists."),
                 new SyncAction(
                         "UPSERT_COLLECTION",
-                        metadata.program().name(),
-                        "Ensure collection exists for " + metadata.program().name() + " " + metadata.geographicLevel() + " metadata."),
+                        COLLECTION_NAME,
+                        "Ensure collection exists for " + metadata.program().name() + " "
+                                + metadata.geographicLevel() + " metadata."),
                 new SyncAction(
                         "UPSERT_ITEM",
                         itemPayload.name(),
@@ -147,12 +164,12 @@ public class SyncService {
         return List.of(
                 new SyncAction(
                         "VERIFY_COMMUNITY",
-                        "Census Public Research Data",
+                        COMMUNITY_NAME,
                         "Check whether the root DSpace community exists before comparing item state."),
                 new SyncAction(
                         "VERIFY_COLLECTION",
-                        metadata.program().name(),
-                        "Check whether the " + metadata.program().name() + " collection exists before comparing item state."),
+                        COLLECTION_NAME,
+                        "Check whether the " + COLLECTION_NAME + " collection exists before comparing item state."),
                 dspaceItemDiffPlanner.planItemDiff(metadata.id(), itemPayload),
                 new SyncAction("VERIFY_INDEX", "Solr discovery", "Check whether repository metadata is indexed after item state comparison."));
     }
@@ -160,8 +177,8 @@ public class SyncService {
     private List<SyncAction> fallbackPlanActions(SyncRequest request) {
         LOGGER.info("No metadata adapter exists yet for {}; using placeholder sync actions.", request.source());
         return List.of(
-                new SyncAction("UPSERT_COMMUNITY", "Census Public Research Data", "Ensure root DSpace community exists."),
-                new SyncAction("UPSERT_COLLECTION", request.source().name(), "Ensure collection exists for selected source."),
+                new SyncAction("UPSERT_COMMUNITY", COMMUNITY_NAME, "Ensure root DSpace community exists."),
+                new SyncAction("UPSERT_COLLECTION", COLLECTION_NAME, "Ensure collection exists for selected source."),
                 new SyncAction("UPSERT_ITEM", firstSliceItemTitle(request.source()), "Ensure visual North Dakota demo item exists."),
                 new SyncAction("UPSERT_MAP_LAYER", "North Dakota map preview", "Ensure map layer metadata exists."),
                 new SyncAction("VERIFY_INDEX", "Solr discovery", "Confirm item is available for discovery indexing."));

@@ -137,9 +137,30 @@ Each source adapter should support:
 
 The platform should support three sync paths:
 
-- Startup sync: runs when the Docker app starts and ensures seed/demo repository objects exist.
-- Admin UI sync: a button in the Angular admin workflow triggers sync, shows status, and displays dry-run/apply results.
+- Startup sync: runs when the Docker app starts and reconciles the seed repository objects.
+- Admin UI sync: a button in the Angular admin workflow triggers sync, shows status, and displays dry-run/diff/apply results.
 - Script sync: a command-line entry point runs the same sync flow for repeatable local and CI/demo use.
+
+### Startup Sync Behavior
+
+Startup sync defaults to `APPLY`, not `DRY_RUN`, and it runs only when DSpace is actually reachable.
+
+The earlier default ran a dry run unconditionally, which meant that in the default Compose profile — where DSpace is not started — the log filled with `UPSERT_*` actions planned against a repository that was not running. In a demo that reads as repository work succeeding. Two changes make the log match reality:
+
+- If no DSpace endpoint is configured, or the configured endpoint does not answer, startup sync is skipped and says so, naming the endpoint and the command that starts it. The repository is left untouched.
+- If DSpace does answer, startup applies real, persisted changes. Apply is idempotent, so a second boot reports `found current metadata` and writes nothing.
+
+`DRY_RUN` remains available as an explicit mode for the CLI and the admin UI, which is where planning without writing is genuinely useful. It is no longer the thing that happens automatically when nobody asked.
+
+Set `CIVICS_SYNC_MODE=DRY_RUN` in `.env` to restore planning-only startup behavior, or `CIVICS_SYNC_STARTUP_ENABLED=false` to disable startup sync entirely.
+
+### When DSpace Is Unreachable
+
+Being unable to reach DSpace is reported as unavailability, never as "the item does not exist":
+
+- `DIFF` returns a `FAILED` job whose `SYNC_FAILED` action names the endpoint and the fix. It previously reported `CREATE_ITEM`, confidently describing an item it had never actually looked for.
+- `APPLY` fails the same way rather than surfacing a bare transport error.
+- Both are returned as normal job responses, so the admin UI shows the reason instead of an HTTP 500.
 
 CLI sync commands:
 

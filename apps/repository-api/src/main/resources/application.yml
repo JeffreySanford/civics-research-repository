@@ -5,10 +5,13 @@ server:
 
 civics:
   sync:
-    startup-enabled: true
+    startup-enabled: ${CIVICS_SYNC_STARTUP_ENABLED:true}
     cli-enabled: false
-    mode: DRY_RUN
-    source: TIGER_LINE
+    # APPLY, not DRY_RUN. Startup sync only runs when DSpace is actually reachable, so when it runs
+    # it should do real, persisted work rather than narrate a plan. Apply is idempotent: a second
+    # run finds the metadata current and writes nothing.
+    mode: ${CIVICS_SYNC_MODE:APPLY}
+    source: ${CIVICS_SYNC_SOURCE:TIGER_LINE}
   dspace:
     base-url: ${CIVICS_DSPACE_BASE_URL:http://dspace-rest:8080/server}
     # No default credentials. Blank credentials disable DSpace writes instead of failing the sync
