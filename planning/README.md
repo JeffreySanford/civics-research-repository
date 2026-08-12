@@ -4,14 +4,15 @@ This directory tracks the implementation plan for Civics Research Repository.
 
 ## Current Planning Answer
 
-Yes, the project needs a little more planning before deeper implementation, but not broad discovery planning. The product direction and technical baseline are set. The remaining planning should focus on decisions that would otherwise create rework:
+Planning is no longer the constraint. The product direction, technical baseline, and every early decision gate are closed except Java DTO generation. What remains is execution against a known order, plus the demo artifacts that make the system explainable.
 
-- Java build/runtime path.
-- DSpace Docker baseline.
-- Map library selection.
-- First vertical-slice acceptance criteria.
-- Accessibility evidence scope for the first demo.
-- API contract generation path into both Java DTOs and Angular API clients.
+The near-term order, with rationale, is in [ROADMAP.md](ROADMAP.md#near-term-order) and tracked in [TODO.md](TODO.md#current-priorities):
+
+1. Make DSpace drive one complete vertical slice, replacing the fixture path.
+2. Disambiguate the two PostgreSQL and two Solr systems.
+3. Add a true one-command demo environment.
+4. Diagrams and AWS modernization documentation. **Delivered.**
+5. Manual accessibility evidence checklists **delivered**; a recorded run is outstanding.
 
 ## Planning Documents
 
@@ -24,18 +25,19 @@ Yes, the project needs a little more planning before deeper implementation, but 
 ## Current Baseline
 
 - Repository exists on GitHub as `civics-research-repository`.
-- Nx workspace exists with Angular 22, Angular Material 22, Playwright, axe-core, NgRx, and generated libraries.
-- OpenAPI is the API source of truth.
-- Frontend TypeScript DTOs are generated from `schemas/openapi/repository-api.yaml`.
-- `quality:all` includes formatting, OpenAPI lint, OpenAPI drift check, lint, tests, build, WCAG report, and Section 508 report.
-- Backend direction is Java/Spring Boot, with NestJS kept only as a prototyping fallback.
+- Nx workspace with Angular 22, Angular Material 22, Playwright, axe-core, NgRx, and generated libraries.
+- OpenAPI is the API source of truth; frontend TypeScript DTOs are generated from `schemas/openapi/repository-api.yaml` with a drift check.
+- `apps/repository-api` runs on Java 21 and Spring Boot, built with Gradle inside a container image.
+- DSpace 9.0, two PostgreSQL instances, and two Solr instances run under Docker Compose, with DSpace behind an optional profile.
+- Sync supports dry-run, diff, and idempotent apply against DSpace for Dublin Core and `crr.*` metadata.
+- Discovery, dataset detail, maps with USGS overlays, admin sync, and an evidence route are implemented in Angular.
+- `quality:all` covers formatting, OpenAPI lint and drift, lint, unit tests, build, storyboard, WCAG, and Section 508.
 
-## Next Planning Gate
+## Remaining Decision Gates
 
-Before building `apps/repository-api`, close these decisions:
+Only two are open:
 
-- Maven vs Gradle.
-- Java runtime target: 17, 21, or 25.
 - Nx Java integration plugin.
-- Java OpenAPI DTO generation tool.
-- DSpace Docker source baseline.
+- Java OpenAPI DTO generation tool — the last unclosed contract gate, since Java records are currently hand-written against the schema.
+
+Everything else is recorded in [DECISIONS.md](DECISIONS.md).

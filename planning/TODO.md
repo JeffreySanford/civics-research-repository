@@ -1,5 +1,45 @@
 # TODO
 
+## Current Priorities
+
+The ordered near-term plan. Everything here outranks new source adapters and new UI breadth. Rationale is in [ROADMAP.md](ROADMAP.md#near-term-order).
+
+### P1 - Make DSpace drive one complete vertical slice
+
+- [ ] Project DSpace items into the Solr `discovery` core instead of `SearchService.seedResults()`.
+- [ ] Read dataset detail from DSpace instead of the hard-coded `DatasetService` fixtures.
+- [ ] Demote the in-memory seed list to an explicit fallback for tests and demo recovery.
+- [ ] Make a fallback response identifiable as fallback, so fixture data is never presented as repository data.
+- [ ] Add a reindex path that rebuilds the discovery core from DSpace on demand.
+- [ ] Update the search and dataset detail tests to cover the repository-backed path and the fallback separately.
+
+### P2 - Disambiguate the two PostgreSQL and two Solr systems
+
+- [ ] Rename the application database from `dspace` to `civics_ops` across `docker-compose.yml`, `.env`, and `.env.sample`.
+- [ ] Document the reset required for the rename, since the existing volume holds the old name.
+- [ ] Name the custom Solr core explicitly as the public discovery projection in configuration and documentation.
+- [x] Document the four datastore roles in architecture documentation.
+
+### P3 - Add a true one-command demo environment
+
+- [ ] Add `pnpm run demo:up`: DSpace profile, both PostgreSQL instances, both Solr instances, Java API, Angular, seed, sync, health checks.
+- [ ] Keep `start:all` as the fast development path that excludes DSpace.
+- [ ] Report the URLs to open when `demo:up` completes.
+- [ ] Add `pnpm run demo:down` and a documented reset path.
+- [ ] Verify `demo:up` from a cold `docker compose down --volumes`.
+
+### P4 - Diagrams and AWS modernization
+
+- [x] C4 context and container diagrams.
+- [x] Ingestion, search, and map rendering sequence diagrams.
+- [x] AWS modernization target, alternates, tradeoffs, and migration sequence.
+- [ ] Terraform or CDK for the documented target.
+
+### P5 - Manual accessibility evidence
+
+- [x] Keyboard, NVDA, JAWS, map-equivalence, and cognitive checklists.
+- [ ] Execute and record the first full evidence run.
+
 ## PI 0 - Repository Foundation
 
 Goal: establish the project direction, documentation base, and working backlog.
@@ -27,11 +67,11 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [x] Add planning roadmap.
 - [x] Add decision log.
 - [x] Add risk register.
-- [ ] Create C4 context diagram.
-- [ ] Create container diagram for Angular, Java API, DSpace, Solr, PostgreSQL, and harvester.
-- [ ] Create sequence diagram for public dataset ingestion.
-- [ ] Create sequence diagram for search and faceted discovery.
-- [ ] Create sequence diagram for dataset map rendering.
+- [x] Create C4 context diagram.
+- [x] Create container diagram for Angular, Java API, DSpace, Solr, and PostgreSQL.
+- [x] Create sequence diagram for public dataset ingestion.
+- [x] Create sequence diagram for search and faceted discovery.
+- [x] Create sequence diagram for dataset map rendering.
 - [x] Decide Angular map library: MapLibre GL first.
 - [x] Confirm DSpace Docker baseline.
 
@@ -254,13 +294,19 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 
 ### Sprint 5.2 - Manual Evidence
 
-- [ ] Build accessibility evidence UI route.
-- [ ] Create manual keyboard test checklist.
-- [ ] Create NVDA smoke-test checklist.
-- [ ] Create JAWS smoke-test checklist.
-- [ ] Create map accessibility checklist.
-- [ ] Store release evidence under documentation.
-- [ ] Document known limitations.
+- [x] Build accessibility evidence UI route.
+- [x] Create manual keyboard test checklist.
+- [x] Create NVDA smoke-test checklist.
+- [x] Create JAWS smoke-test checklist.
+- [x] Create map accessibility checklist.
+- [x] Create cognitive and workflow review checklist.
+- [x] Create the evidence recording template and folder structure.
+- [x] Document known limitations.
+- [ ] Execute and record the first keyboard-only run.
+- [ ] Execute and record the first NVDA run.
+- [ ] Execute and record a JAWS run, or record N/A with the licensing reason.
+- [ ] Execute and record the first map-equivalence run.
+- [ ] Add forced-colors and high-contrast mode smoke tests.
 
 ## PI 6 - AWS Modernization Documentation
 
@@ -268,13 +314,15 @@ Goal: describe a credible container-first modernization path without requiring p
 
 ### Sprint 6.1 - AWS Architecture
 
-- [ ] Document Docker-first local architecture.
-- [ ] Document EKS/Kubernetes modernization option.
-- [ ] Document ECS/Fargate only as an alternate container deployment option.
-- [ ] Document RDS PostgreSQL option.
-- [ ] Document Solr persistence and operational tradeoffs.
-- [ ] Document CloudFront/static frontend option.
-- [ ] Document logging, monitoring, and backup considerations.
+- [x] Document Docker-first local architecture.
+- [x] Document EKS/Kubernetes modernization option.
+- [x] Document ECS/Fargate only as an alternate container deployment option.
+- [x] Document RDS PostgreSQL option.
+- [x] Document Solr persistence and operational tradeoffs.
+- [x] Document CloudFront/static frontend option.
+- [x] Document logging, monitoring, and backup considerations.
+- [x] Document the migration sequence and what the demo deliberately omits.
+- [ ] Add Terraform or CDK for the documented target.
 
 ### Sprint 6.2 - Interview Demo Package
 

@@ -10,27 +10,44 @@ Federal Section 508 currently incorporates WCAG 2.0 Level A and AA. The project 
 
 ## Automated Evidence
 
-Planned automated checks:
+Implemented, and run as part of `quality:all`:
 
-- axe-core accessibility scans.
-- Keyboard interaction tests.
-- Focus-visible verification.
-- Dialog focus trapping and restoration tests.
-- Form label and error association checks.
-- Color contrast checks.
-- Responsive reflow checks at high zoom.
-- Forced-colors or high-contrast mode smoke tests.
+- axe-core scans across all six routes (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `best-practice`).
+- Keyboard interaction tests for search filters, result navigation, dataset tabs, and map layer controls.
+- Isolated AA color contrast checks per route.
+- Responsive reflow checks at 320px, plus a 200% zoom check on discovery.
+- Storyboard checks covering the primary demo workflows and repository API failure states.
+
+Still planned:
+
+- Focus-visible verification as an explicit assertion rather than a manual observation.
+- Dialog focus trapping and restoration tests, once any dialog exists.
+- Form label and error association checks as a dedicated assertion.
+- Forced-colors and high-contrast mode smoke tests.
+
+Run them directly:
+
+```bash
+pnpm run wcag:report
+```
+
+```bash
+pnpm run section508:report
+```
 
 ## Manual Evidence
 
-Planned manual checks:
+Automated scans establish the absence of detectable violations. They do not establish that the workflow is usable, and for the map component the difference is decisive: a canvas can pass every rule and remain unusable with a screen reader.
 
-- Keyboard-only navigation.
-- NVDA smoke test.
-- JAWS smoke test where available.
-- Screen-reader announcement review for status changes.
-- Map feature-list equivalence review.
-- Cognitive workflow review for search, filtering, and download.
+Executable checklists are in [accessibility-manual-evidence.md](accessibility-manual-evidence.md):
+
+- Keyboard-only navigation, 31 checks across all routes.
+- NVDA smoke test, 20 checks.
+- JAWS smoke test, the NVDA set plus 8 JAWS-specific checks, where a license is available.
+- Map equivalence, 15 checks — the determining test for the map component.
+- Cognitive and workflow review, 9 checks.
+
+No run has been recorded yet. Until one is, this project has automated-scan results rather than Section 508 evidence, and should be described that way.
 
 ## Key UI Requirements
 
@@ -47,12 +64,14 @@ Planned manual checks:
 
 ## Evidence Folder Direction
 
-When implementation begins, create:
+Completed runs are recorded in [accessibility-evidence/](accessibility-evidence/README.md):
 
 ```text
 documentation/accessibility-evidence/
-├── automated-scans/
-├── keyboard-tests/
-├── screen-reader-notes/
-└── release-checklists/
+├── automated-scans/      Saved wcag:report and section508:report output
+├── keyboard-tests/       Completed keyboard checklist runs
+├── screen-reader-notes/  Completed NVDA and JAWS runs, with AT versions
+└── release-checklists/   One dated summary per release
 ```
+
+The recording template is in [accessibility-manual-evidence.md](accessibility-manual-evidence.md#recording-results).

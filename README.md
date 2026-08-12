@@ -18,20 +18,21 @@ The target experience is a Census-style Open Science portal that supports:
 - Section 508 and WCAG evidence through automated and manual accessibility checks.
 - Docker-based local development with PostgreSQL, DSpace, Solr, and application services.
 
-## Planned Stack
+## Stack
 
-- Angular for the public discovery and visualization UI.
-- Nx for workspace orchestration, generators, project graph, and affected-task execution.
-- Java/Spring Boot for the planned typed backend API.
-- DSpace for repository content, metadata, item/version/file management, and REST APIs.
-- Apache Solr for discovery search, facets, and relevance.
-- PostgreSQL for DSpace persistence.
-- Docker Compose for local development.
-- Optional NestJS or Node-based harvester for public dataset metadata ingestion.
-- MapLibre GL or Leaflet for accessible geospatial visualization.
-- Angular Material using Material Design patterns.
+- Angular 22 with Angular Material for the public discovery and visualization UI.
+- Nx 23 for workspace orchestration, generators, project graph, and affected-task execution.
 - NgRx and RxJS for typed async frontend state and API workflows.
-- Playwright, axe-core, and manual assistive-technology review for WCAG and Section 508 evidence.
+- MapLibre GL for accessible geospatial visualization.
+- Java 21 and Spring Boot for the typed backend API, built with Gradle inside a container image.
+- OpenAPI as the contract source of truth, with generated frontend types and a drift check.
+- DSpace 9.0 for repository content, metadata, item/version/file management, and REST APIs.
+- Apache Solr for discovery search, facets, and relevance.
+- PostgreSQL for DSpace persistence and for application sync state, as two separate databases.
+- Docker Compose for local development, with DSpace behind an optional profile.
+- Playwright and axe-core for automated WCAG and Section 508 evidence, plus manual assistive-technology checklists.
+
+Sync orchestration lives in the Java API rather than in a separate harvester service; a Node harvester was considered and rejected to keep repository writes next to the typed backend.
 
 ## Public Data Sources
 
@@ -70,6 +71,10 @@ civics-research-repository/
 ├── documentation/
 │   ├── README.md
 │   ├── architecture.md
+│   ├── architecture-diagrams.md
+│   ├── accessibility-manual-evidence.md
+│   ├── accessibility-evidence/
+│   ├── aws-modernization.md
 │   ├── data-sources.md
 │   ├── data-storage-sync.md
 │   ├── mapping-visualization.md
@@ -96,17 +101,21 @@ civics-research-repository/
 
 ## Current Status
 
-Initial Nx, Angular, OpenAPI, accessibility, Docker, and Java API scaffolding are in place. Implementation is now moving through one vertical slice:
+The Nx workspace, Angular UI, OpenAPI contract, accessibility evidence, Docker platform, and Java API are all in place, and sync writes normalized metadata into DSpace idempotently. The vertical slice is connected everywhere except one link:
 
 ```text
 Public dataset metadata
-  -> harvester
-  -> DSpace item
-  -> Solr discovery index
-  -> Angular search result
-  -> dataset detail page
-  -> map visualization with USGS overlay
+  -> harvester                     static adapter constants
+  -> DSpace item                   working, idempotent
+  -> Solr discovery index          indexed from fixtures, not DSpace   <-- open
+  -> Angular search result         served from fixtures                <-- open
+  -> dataset detail page           served from fixtures                <-- open
+  -> map visualization             working, live USGS with fallback
 ```
+
+Closing that gap — making DSpace metadata drive discovery and dataset detail — is the current top priority. The full list of gaps between the architecture and the implementation is in [Known Seams](documentation/architecture-diagrams.md#known-seams); the ordered plan is in [planning/ROADMAP.md](planning/ROADMAP.md#near-term-order).
+
+Architecture is documented as C4 context and container views plus ingestion, search, and map sequences in [architecture-diagrams.md](documentation/architecture-diagrams.md). The cloud target is in [aws-modernization.md](documentation/aws-modernization.md). Accessibility has automated coverage in `quality:all` and manual checklists in [accessibility-manual-evidence.md](documentation/accessibility-manual-evidence.md); no manual run has been recorded yet, so the project currently has automated-scan results rather than complete Section 508 evidence.
 
 ## Local Setup
 

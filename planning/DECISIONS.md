@@ -98,6 +98,32 @@ Decision: prioritize a local Docker demo over cloud deployment.
 
 Reason: the most useful demo artifact is a repeatable local container stack. AWS documentation should bias toward containerized modernization, with EKS as the likely future direction and ECS mentioned only as context.
 
+### Repository-Backed Discovery
+
+Decision: DSpace metadata becomes the primary runtime source for discovery and dataset detail. The in-memory seed list and the hard-coded `DatasetService` fixtures are demoted to a fallback used for tests and demo recovery only, and any fallback response must be identifiable as such.
+
+Reason: the project's stated principle is that DSpace is the system of record and Solr is a projection of it. Today the `discovery` Solr core is indexed from `SearchService.seedResults()` and dataset detail is served from compile-time constants, so the sync path writes to DSpace while nothing reads from it. The demo therefore shows repository synchronization and repository discovery as two disconnected halves. Until this is closed, the architecture is aspirational rather than demonstrated, and that is the single largest gap between what the documentation claims and what runs.
+
+Consequence: `SearchIndexStartupRunner` projects DSpace items into the `discovery` core instead of the seed list; `DatasetService` reads from DSpace; the seed list survives only as an explicit fallback. This is the current top priority, ahead of additional source adapters and additional UI breadth.
+
+### Datastore Roles and Naming
+
+Decision: the application database is renamed from `dspace` to `civics_ops`, and the custom Solr core is documented explicitly as the public discovery projection — rebuildable from DSpace at any time, never a source of truth.
+
+Reason: the stack runs two PostgreSQL databases and two Solr instances. Both databases are currently named `dspace`, which makes an already subtle split unreadable and invites the assumption that the application is writing into DSpace's own schema. Either architecture — a separate projection core, or querying DSpace discovery directly — is defendable. The ambiguity is not.
+
+Consequence: `POSTGRES_DB`, `SPRING_DATASOURCE_URL`, and the `.env` files change together, and the change requires `docker compose down --volumes` or a manual database rename because the existing volume holds the old name. Not yet applied.
+
+Alternative considered: drop the custom Solr core and query DSpace discovery directly. Rejected for now — the projection lets the public search surface be shaped and tuned independently of DSpace's internal index, which is the more realistic federal pattern. It stays a reasonable simplification if the projection becomes a maintenance burden.
+
+### One-Command Demo Environment
+
+Decision: add `pnpm run demo:up`, which starts the full stack including the DSpace profile, waits for health, seeds, and synchronizes — a single command that ends with a demonstrable system.
+
+Reason: `start:all` deliberately excludes the DSpace profile so routine development does not pay DSpace startup cost, which is the right default for development and the wrong one for a demonstration. Assembling the demo currently takes several commands in the correct order, which is exactly the situation where a live demo fails.
+
+Consequence: `start:all` keeps its current fast-path behavior. `demo:up` composes DSpace startup, `wait-dspace-ready`, `dspace-seed`, sync, and the application services, and reports the URLs to open. Not yet implemented.
+
 ### Admin API Authentication
 
 Decision: leave `POST /api/admin/sync` unauthenticated for the local Docker demo, and treat authentication as a prerequisite for any shared or deployed environment.
@@ -118,13 +144,19 @@ Decision: optimize for a working local Docker demo first, then polished Angular 
 
 Reason: the strongest demo is something that runs locally, looks credible, and has documentation explaining the architecture.
 
-## Pending
-
 ### Java Build Tool
 
-Options: Maven or Gradle.
+Decision: Gradle, run inside the `gradle:9.6-jdk21` container image rather than through a local wrapper.
 
-Recommendation: Maven unless a chosen Nx plugin or generated backend baseline strongly favors Gradle.
+Reason: no local Maven or Gradle install is required, the toolchain is pinned by image tag, and the Docker build already owns compilation. Dependency resolution runs in its own image layer so source changes do not re-download the graph.
+
+### DSpace Docker Baseline
+
+Decision: use the official `dspace/dspace:dspace-9.0` images — REST, `dspace-postgres-pgcrypto`, and `dspace-solr` — behind an optional `dspace` Compose profile, with project-local overrides kept minimal.
+
+Reason: staying on DSpace-supported images keeps migration, seeding, and Solr core layout working the way DSpace documents them. The profile keeps DSpace startup cost off the routine development path.
+
+## Pending
 
 ### Nx Java Integration
 
@@ -144,10 +176,4 @@ Options:
 - OpenAPI Generator Maven/Gradle plugin.
 - Springdoc/OpenAPI controller annotation flow with generated DTOs.
 
-Recommendation: generate DTOs from OpenAPI rather than generating OpenAPI from controllers.
-
-### DSpace Docker Baseline
-
-Options: official DSpace Docker Compose examples or a project-local Compose file derived from them.
-
-Recommendation: start from DSpace-supported Docker patterns and keep local overrides minimal.
+Recommendation: generate DTOs from OpenAPI rather than generating OpenAPI from controllers. This is the last open contract gate — Java records are currently hand-written against the schema, and only the frontend side of the contract has a drift check.

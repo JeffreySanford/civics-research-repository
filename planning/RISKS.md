@@ -6,18 +6,6 @@ Risk: DSpace, Solr, PostgreSQL, initialization, and indexing can take more time 
 
 Mitigation: start from DSpace-supported Docker examples, keep local overrides small, and seed one dataset first.
 
-## Java Tooling Gap
-
-Risk: OpenJDK 17 is installed locally, but Maven is not installed.
-
-Mitigation: choose a wrapper-based strategy. Prefer Maven wrapper or Gradle wrapper so agents and CI do not depend on a global install.
-
-## Java Version Choice
-
-Risk: Spring Boot direction and federal runtime availability may not align on the same Java version.
-
-Mitigation: decide Java 17 vs 21 before generating the backend. Use Java 21 unless deployment constraints require Java 17.
-
 ## OpenAPI Drift
 
 Risk: frontend types, backend DTOs, and controllers can diverge as implementation speeds up.
@@ -54,6 +42,24 @@ Risk: existing Nx warnings about inferred targets and Analog/Vitest configuratio
 
 Mitigation: address these warnings before broad feature work and keep commands routed through `pnpm nx`.
 
+## Fixture Data Masking an Unfinished Integration
+
+Risk: discovery and dataset detail are served from an in-memory seed list and hard-coded fixtures, while DSpace holds the synchronized item. The UI looks complete, so the missing read path is invisible in a demo — and a reviewer who discovers it independently will reasonably question what else is fixture-backed.
+
+Mitigation: close it as near-term priority 1. Until then, state it plainly rather than letting it be found: the Known Seams section of the architecture diagrams lists it first, and any fallback response should be identifiable as fallback in the API surface itself, not only in documentation.
+
+## Datastore Role Ambiguity
+
+Risk: two PostgreSQL databases both named `dspace`, plus two Solr instances, invite the reader to assume the application writes into DSpace's own schema. That misreading undermines the "DSpace is the system of record" claim the architecture rests on.
+
+Mitigation: rename the application database to `civics_ops` and document the four datastore roles in one table. The documentation half is done; the rename is pending and requires a volume reset.
+
+## Demo Startup Fragility
+
+Risk: no single command brings up a demonstrable system. `start:all` excludes the DSpace profile, so a live demo depends on running several commands in the right order — the exact conditions under which demos fail.
+
+Mitigation: add `demo:up` as near-term priority 3, and rehearse it from a cold `docker compose down --volumes` rather than from a warm machine.
+
 ## Unauthenticated Admin Sync Endpoint
 
 Risk: `POST /api/admin/sync` performs real DSpace writes in `APPLY` mode and has no authentication. CORS restricts browser origins but does not stop direct clients.
@@ -71,3 +77,23 @@ Mitigation: cover it with Testcontainers against real PostgreSQL. That requires 
 Risk: GitHub reported moderate Dependabot findings after initial dependency push.
 
 Mitigation: review Dependabot alerts before production-style demo delivery, update safe packages, and document accepted temporary risk if any package cannot be upgraded immediately.
+
+## Closed
+
+### Java Tooling Gap
+
+Was: no local Maven install, and a wrapper strategy undecided.
+
+Closed by running Gradle inside the `gradle:9.6-jdk21` image. No local Java or build-tool install is required, and the toolchain is pinned by image tag.
+
+### Java Version Choice
+
+Was: Java 17 versus 21 undecided against unknown federal runtime availability.
+
+Closed on Java 21. Revisit only if a concrete deployment constraint appears.
+
+### Analog/Vitest Angular Library Warning
+
+Was: `tsconfig.app.json` warnings for non-buildable Angular libraries.
+
+Closed during workspace setup.
