@@ -177,6 +177,8 @@ Diff jobs complete with `DIFF_COMPLETE`. The production DSpace state reader now 
 
 Because DSpace discovery does not expose the full bitstream manifest in the same response, the first seeded TIGER/Line item can legitimately plan `UPDATE_ITEM` when the DSpace metadata or file manifest differs from the normalized source payload. Unit tests cover missing, matching, changed, and discovery-mapped repository payload states.
 
+Apply mode now performs the first conservative DSpace write. For the TIGER/Line seed item, the Java API authenticates to DSpace REST with the local demo administrator, finds the item by source identifier or normalized title, and ensures `dc.identifier.other` contains the stable source identifier. This makes source-based diff lookup idempotent while leaving broader metadata replacement, custom metadata schemas, and bitstream manifest writes for the next DSpace apply slice.
+
 ## Initial Sync Scope
 
 The first vertical slice should favor a visual geospatial dataset while still preserving repository metadata depth:
