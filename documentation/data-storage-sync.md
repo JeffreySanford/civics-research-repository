@@ -173,7 +173,9 @@ Track sync state in the Java API persistence layer and expose it through typed A
 
 The current Java API persists each sync job as `RUNNING` before action execution, then updates that same job to `DRY_RUN_COMPLETE`, `APPLIED`, or `FAILED`. Failed runs are returned through the same typed API response with a `SYNC_FAILED` action so the admin UI and CLI/script paths can display the failure without losing job history.
 
-Diff jobs complete with `DIFF_COMPLETE`. Until the DSpace REST client is connected, the production DSpace state reader reports no existing item, so the first TIGER/Line diff correctly plans `CREATE_ITEM`. Unit tests cover missing, matching, and changed repository payload states.
+Diff jobs complete with `DIFF_COMPLETE`. The production DSpace state reader now uses public DSpace discovery in read-only mode. It searches by source identifier first, falls back to the normalized item title, and maps discoverable item metadata into the same typed payload used by the sync planner. When DSpace is unavailable, diff mode safely reports no discovered item instead of failing local development startup.
+
+Because DSpace discovery does not expose the full bitstream manifest in the same response, the first seeded TIGER/Line item can legitimately plan `UPDATE_ITEM` when the DSpace metadata or file manifest differs from the normalized source payload. Unit tests cover missing, matching, changed, and discovery-mapped repository payload states.
 
 ## Initial Sync Scope
 

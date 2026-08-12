@@ -13,7 +13,7 @@ public class DspaceItemDiffPlanner {
 
     public SyncAction planItemDiff(String sourceIdentifier, DspaceItemPayload sourcePayload) {
         return dspaceItemStateReader
-                .findBySourceIdentifier(sourceIdentifier)
+                .findMatchingItem(sourceIdentifier, sourcePayload)
                 .map((existingPayload) -> planExistingItemDiff(sourceIdentifier, sourcePayload, existingPayload))
                 .orElseGet(() -> new SyncAction(
                         "CREATE_ITEM",
