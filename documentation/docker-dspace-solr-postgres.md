@@ -97,6 +97,24 @@ services:
 - Avoid checking large downloaded datasets into git.
 - Use environment files for local service URLs and credentials.
 
+## Demo Command
+
+```bash
+pnpm run demo:up
+```
+
+One command for a demonstration. It starts DSpace, waits for REST, seeds the repository, starts the application stack, rebuilds the discovery projection from DSpace, waits for the Angular UI, and prints the URLs worth showing in order. Re-running is safe: the seed and the sync are both idempotent.
+
+Order matters and is the reason this is a script rather than a Compose profile: DSpace must be migrated and seeded **before** the API starts, otherwise startup sync runs against an empty repository and reports a failure that looks like a defect.
+
+A cold run after `docker:reset:everything` takes several minutes, almost all of it DSpace's database migration. A warm restart takes roughly ninety seconds.
+
+```bash
+pnpm run demo:down
+```
+
+Stops everything and keeps all data.
+
 ## Current Commands
 
 ```bash
@@ -109,7 +127,9 @@ pnpm run sync:apply
 pnpm run docker:down
 ```
 
-The API host port is `8080` for the local default. The Angular UI host port is `4200`, Solr is `8983`, and PostgreSQL is `5432`. Do not change these defaults for normal demo work.
+The API host port is `8080` for the local default. The Angular UI host port is `4200`, the discovery Solr is `8983`, and the application PostgreSQL is `5432`. Do not change these defaults for normal demo work.
+
+The application PostgreSQL holds the database `civics_ops` (role `civics`) and contains only application state — currently the `sync_jobs` table. It is not the repository. DSpace owns its own PostgreSQL on `5433` with the database `dspace`, and its own Solr on `8984`. The `discovery` core on `8983` is a projection of DSpace that can be rebuilt at any time with `pnpm run reindex`.
 
 ## Reset Commands
 

@@ -22,9 +22,9 @@ services:
       CIVICS_DSPACE_ADMIN_PASSWORD: '${CIVICS_DSPACE_ADMIN_PASSWORD:-}'
       CIVICS_SOLR_BASE_URL: http://solr:8983/solr
       CIVICS_STORAGE_ARTIFACTS_PATH: /var/lib/civics/artifacts
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dspace
-      SPRING_DATASOURCE_USERNAME: dspace
-      SPRING_DATASOURCE_PASSWORD: dspace
+      SPRING_DATASOURCE_URL: 'jdbc:postgresql://postgres:5432/${CIVICS_DB_NAME:-civics_ops}'
+      SPRING_DATASOURCE_USERNAME: '${CIVICS_DB_USER:-civics}'
+      SPRING_DATASOURCE_PASSWORD: '${CIVICS_DB_PASSWORD:-civics}'
     ports:
       - '8080:8080'
     volumes:
@@ -61,22 +61,32 @@ services:
     depends_on:
       - repository-api
 
+  # Application operational state only — currently just sync_jobs. This is NOT the repository
+  # database; DSpace owns its own PostgreSQL (dspace-postgres, :5433). Both were previously named
+  # `dspace`, which invited the reading that the application writes into DSpace's schema.
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: dspace
-      POSTGRES_USER: dspace
-      POSTGRES_PASSWORD: dspace
+      POSTGRES_DB: '${CIVICS_DB_NAME:-civics_ops}'
+      POSTGRES_USER: '${CIVICS_DB_USER:-civics}'
+      POSTGRES_PASSWORD: '${CIVICS_DB_PASSWORD:-civics}'
     ports:
       - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U dspace -d dspace']
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U "${CIVICS_DB_USER:-civics}" -d "${CIVICS_DB_NAME:-civics_ops}"',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # The public discovery projection: a rebuildable index of DSpace items, owned by repository-api
+  # and never a source of truth. Distinct from dspace-solr (:8984), which holds DSpace's own
+  # internal cores. Rebuild at any time with `pnpm run reindex`.
   solr:
     image: solr:9
     command: ['solr-precreate', 'discovery']
@@ -123,6 +133,7 @@ services:
     volumes:
       - dspace-assetstore:/dspace/assetstore
 
+  # The repository system of record. Owned and migrated by DSpace itself.
   dspace-postgres:
     profiles: ['dspace']
     image: dspace/dspace-postgres-pgcrypto:dspace-9.0

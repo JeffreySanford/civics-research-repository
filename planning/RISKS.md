@@ -42,18 +42,6 @@ Risk: existing Nx warnings about inferred targets and Analog/Vitest configuratio
 
 Mitigation: address these warnings before broad feature work and keep commands routed through `pnpm nx`.
 
-## Datastore Role Ambiguity
-
-Risk: two PostgreSQL databases both named `dspace`, plus two Solr instances, invite the reader to assume the application writes into DSpace's own schema. That misreading undermines the "DSpace is the system of record" claim the architecture rests on.
-
-Mitigation: rename the application database to `civics_ops` and document the four datastore roles in one table. The documentation half is done; the rename is pending and requires a volume reset.
-
-## Demo Startup Fragility
-
-Risk: no single command brings up a demonstrable system. `start:all` excludes the DSpace profile, so a live demo depends on running several commands in the right order — the exact conditions under which demos fail.
-
-Mitigation: `start:all` is now scoped to the active Compose profile and no longer destroys a running DSpace stack, which removed the sharpest edge. A single `demo:up` remains near-term priority 3. Rehearse it from a cold `docker:reset:everything` rather than from a warm machine.
-
 ## Compose Volume Mounts Silently Not Persisting
 
 Risk: a named volume mounted at a path the image does not use looks correct in `docker-compose.yml` and in `docker volume ls`, while the real data sits in the container's writable layer and dies with the container. The DSpace database was in exactly this state — mounted at `/pgdata` while the image's `PGDATA` is `/var/lib/postgresql/data` — so the entire seeded repository was lost the first time the container was removed.
@@ -97,6 +85,18 @@ Closed by running Gradle inside the `gradle:9.6-jdk21` image. No local Java or b
 Was: Java 17 versus 21 undecided against unknown federal runtime availability.
 
 Closed on Java 21. Revisit only if a concrete deployment constraint appears.
+
+### Datastore Role Ambiguity
+
+Was: two PostgreSQL databases both named `dspace`, inviting the reading that the application writes into DSpace's own schema.
+
+Closed by renaming the application database to `civics_ops` with the role `civics`, and by documenting the four datastore roles in both architecture documents and in `docker-compose.yml` comments.
+
+### Demo Startup Fragility
+
+Was: no single command produced a demonstrable system, so a live demo depended on running several commands in the right order.
+
+Closed by `pnpm run demo:up`, verified from a cold `docker:reset:everything` and on a warm restart. `start:all` remains the DSpace-free development path and no longer destroys a running DSpace stack.
 
 ### Fixture Data Masking an Unfinished Integration
 

@@ -34,7 +34,7 @@ flowchart TB
     subgraph crr["Civics Research Repository"]
         ui["discovery-ui<br/><i>Angular 22, NgRx, MapLibre GL</i><br/>Search, dataset detail, maps,<br/>admin sync, evidence<br/>:4200"]
         api["repository-api<br/><i>Java 21, Spring Boot</i><br/>Search, datasets, maps, overlays,<br/>sync orchestration<br/>:8080/api"]
-        opsdb[("PostgreSQL<br/><i>application database</i><br/>sync_jobs<br/>:5432")]
+        opsdb[("PostgreSQL<br/><i>civics_ops</i><br/>sync_jobs<br/>:5432")]
         discovery[("Solr<br/><i>discovery core</i><br/>Public discovery projection<br/>:8983")]
     end
 
@@ -67,14 +67,14 @@ flowchart TB
 
 This is the most common question the diagram raises, and the current naming does not answer it well. The four datastores serve two different jobs:
 
-| Container                                        | Role                                                                | Owner            |
-| ------------------------------------------------ | ------------------------------------------------------------------- | ---------------- |
-| Application PostgreSQL (`postgres`, :5432)       | Application operational state — currently only `sync_jobs`          | `repository-api` |
-| DSpace PostgreSQL (`dspace-postgres`, :5433)     | Repository system of record — items, metadata, bitstreams, workflow | DSpace           |
-| Discovery Solr (`solr`, core `discovery`, :8983) | Public discovery projection queried by the API                      | `repository-api` |
-| DSpace Solr (`dspace-solr`, :8984)               | DSpace's own internal search and OAI cores                          | DSpace           |
+| Container                                                         | Role                                                                | Owner            |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------- |
+| Application PostgreSQL (`postgres`, :5432), database `civics_ops` | Application operational state — currently only `sync_jobs`          | `repository-api` |
+| DSpace PostgreSQL (`dspace-postgres`, :5433)                      | Repository system of record — items, metadata, bitstreams, workflow | DSpace           |
+| Discovery Solr (`solr`, core `discovery`, :8983)                  | Public discovery projection queried by the API                      | `repository-api` |
+| DSpace Solr (`dspace-solr`, :8984)                                | DSpace's own internal search and OAI cores                          | DSpace           |
 
-Both PostgreSQL databases are currently named `dspace`, which makes the split harder to read than it needs to be. Renaming the application database to `civics_ops` is an accepted decision that has not yet been applied — see [planning/DECISIONS.md](../planning/DECISIONS.md) under "Datastore Roles and Naming".
+The application database is named `civics_ops` and the repository database is named `dspace`, so the split is legible from the connection string alone. Both were previously named `dspace`, which invited the reading that the application writes into DSpace's own schema.
 
 ## Sequence - Public Dataset Ingestion
 
@@ -215,8 +215,6 @@ Places where the implementation is narrower than the architecture. Each is track
 
 1. **Source metadata is static.** `TigerLineMetadataAdapter` returns compile-time constants rather than harvesting Census.
 2. **Bitstream reconciliation is absent.** Sync reconciles Dublin Core and `crr.*` metadata only, so `sync:diff` reports `UPDATE_ITEM` rather than `SKIP_ITEM`.
-3. **Application database naming is ambiguous.** Both PostgreSQL databases are named `dspace`.
-4. **`start:all` does not include DSpace.** The DSpace profile must be started separately, so there is no single command that brings up the whole demo.
-5. **Only the TIGER/Line North Dakota item is synchronized.** The other five seeded items are imported by the DSpace seed and read back through discovery, but no adapter reconciles them.
+3. **Only the TIGER/Line North Dakota item is synchronized.** The other five seeded items are imported by the DSpace seed and read back through discovery, but no adapter reconciles them.
 
 Closed: discovery and dataset detail are now served from DSpace. The fixture catalog remains only as a labelled fallback.

@@ -54,14 +54,14 @@ The implementation satisfies this rule. `DiscoveryProjectionService` is the only
 
 Four datastores across two systems, which is easy to misread. Each has one job:
 
-| Datastore                                | Role                                             | Owner            |
-| ---------------------------------------- | ------------------------------------------------ | ---------------- |
-| Application PostgreSQL (:5432)           | Application operational state — sync job history | `repository-api` |
-| DSpace PostgreSQL (:5433)                | Repository system of record                      | DSpace           |
-| Discovery Solr, `discovery` core (:8983) | Public discovery projection, rebuildable         | `repository-api` |
-| DSpace Solr (:8984)                      | DSpace internal search and OAI cores             | DSpace           |
+| Datastore                                   | Role                                             | Owner            |
+| ------------------------------------------- | ------------------------------------------------ | ---------------- |
+| Application PostgreSQL `civics_ops` (:5432) | Application operational state — sync job history | `repository-api` |
+| DSpace PostgreSQL (:5433)                   | Repository system of record                      | DSpace           |
+| Discovery Solr, `discovery` core (:8983)    | Public discovery projection, rebuildable         | `repository-api` |
+| DSpace Solr (:8984)                         | DSpace internal search and OAI cores             | DSpace           |
 
-The application database is currently also named `dspace`, which obscures the split. Renaming it to `civics_ops` is accepted and pending — see [planning/DECISIONS.md](../planning/DECISIONS.md) under "Datastore Roles and Naming".
+The application database is named `civics_ops` and owned by the `civics` role, so the split is legible at a glance: `civics_ops` is application state, `dspace` is the repository. See [planning/DECISIONS.md](../planning/DECISIONS.md) under "Datastore Roles and Naming".
 
 ## Major Bounded Contexts
 

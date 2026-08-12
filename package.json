@@ -25,6 +25,8 @@
     "nx": "nx",
     "dev": "pnpm run start:all",
     "start": "pnpm nx run discovery-ui:serve",
+    "demo:up": "node tools/scripts/demo.mjs",
+    "demo:down": "node tools/scripts/demo.mjs --down",
     "start:all": "node tools/scripts/stack.mjs",
     "start:all:detached": "node tools/scripts/stack.mjs --detach",
     "start:all:recreate": "node tools/scripts/stack.mjs --recreate",

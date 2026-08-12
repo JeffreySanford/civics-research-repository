@@ -19,9 +19,9 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 
 ### P2 - Disambiguate the two PostgreSQL and two Solr systems
 
-- [ ] Rename the application database from `dspace` to `civics_ops` across `docker-compose.yml`, `.env`, and `.env.sample`.
-- [ ] Document the reset required for the rename, since the existing volume holds the old name.
-- [ ] Name the custom Solr core explicitly as the public discovery projection in configuration and documentation.
+- [x] Rename the application database from `dspace` to `civics_ops` (role `civics`) across `docker-compose.yml`, `.env`, and `.env.sample`.
+- [x] Document the reset required for the rename, since the existing volume holds the old name.
+- [x] Name the custom Solr core explicitly as the public discovery projection in configuration and documentation.
 - [x] Document the four datastore roles in architecture documentation.
 
 ### P3 - Add a true one-command demo environment
@@ -31,11 +31,11 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 - [x] Fix the `dspace-postgres` volume mount so the DSpace database actually persists.
 - [x] Make the DSpace seed self-healing when its mapfile outlives the database.
 - [x] Persist the corepack and Nx caches instead of re-downloading and resetting on every start.
-- [ ] Add `pnpm run demo:up`: DSpace profile, both PostgreSQL instances, both Solr instances, Java API, Angular, seed, sync, health checks.
+- [x] Add `pnpm run demo:up`: DSpace profile, both PostgreSQL instances, both Solr instances, Java API, Angular, seed, sync, health checks.
 - [x] Keep `start:all` as the fast development path that excludes DSpace.
-- [ ] Report the URLs to open when `demo:up` completes.
-- [ ] Add `pnpm run demo:down` and a documented reset path.
-- [ ] Verify `demo:up` from a cold `pnpm run docker:reset:everything`.
+- [x] Report the URLs to open when `demo:up` completes.
+- [x] Add `pnpm run demo:down` and a documented reset path.
+- [x] Verify `demo:up` from a cold `pnpm run docker:reset:everything`.
 
 ### P4 - Diagrams and AWS modernization
 

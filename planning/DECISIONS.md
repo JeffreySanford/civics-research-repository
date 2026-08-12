@@ -102,9 +102,9 @@ Reason: the most useful demo artifact is a repeatable local container stack. AWS
 
 Decision: DSpace metadata becomes the primary runtime source for discovery and dataset detail. The in-memory seed list and the hard-coded `DatasetService` fixtures are demoted to a fallback used for tests and demo recovery only, and any fallback response must be identifiable as such.
 
-Reason: the project's stated principle is that DSpace is the system of record and Solr is a projection of it. Today the `discovery` Solr core is indexed from `SearchService.seedResults()` and dataset detail is served from compile-time constants, so the sync path writes to DSpace while nothing reads from it. The demo therefore shows repository synchronization and repository discovery as two disconnected halves. Until this is closed, the architecture is aspirational rather than demonstrated, and that is the single largest gap between what the documentation claims and what runs.
+Reason: the project's stated principle is that DSpace is the system of record and Solr is a projection of it. Before this change the `discovery` Solr core was indexed from `SearchService.seedResults()` and dataset detail came from compile-time constants, so the sync path wrote to DSpace while nothing read from it. The demo showed repository synchronization and repository discovery as two disconnected halves, which made the architecture aspirational rather than demonstrated.
 
-Consequence: `SearchIndexStartupRunner` projects DSpace items into the `discovery` core instead of the seed list; `DatasetService` reads from DSpace; the seed list survives only as an explicit fallback. This is the current top priority, ahead of additional source adapters and additional UI breadth.
+Consequence: applied. `DiscoveryProjectionService` is the sole writer of the `discovery` core and builds it from DSpace items; `RepositoryCatalog` and `RepositoryObjectMapper` serve search, dataset detail, and related research from the repository; the fixture catalog survives only as an explicit fallback. Every response carries `resultSource` / `source`, and the UI renders a placeholder-data notice when the value is `FIXTURE`. `pnpm run reindex` rebuilds the projection on demand.
 
 ### Datastore Roles and Naming
 
@@ -112,7 +112,7 @@ Decision: the application database is renamed from `dspace` to `civics_ops`, and
 
 Reason: the stack runs two PostgreSQL databases and two Solr instances. Both databases are currently named `dspace`, which makes an already subtle split unreadable and invites the assumption that the application is writing into DSpace's own schema. Either architecture — a separate projection core, or querying DSpace discovery directly — is defendable. The ambiguity is not.
 
-Consequence: `POSTGRES_DB`, `SPRING_DATASOURCE_URL`, and the `.env` files change together, and the change requires `docker compose down --volumes` or a manual database rename because the existing volume holds the old name. Not yet applied.
+Consequence: applied. The application database is `civics_ops` and its role is `civics`, both configurable through `CIVICS_DB_NAME`, `CIVICS_DB_USER`, and `CIVICS_DB_PASSWORD`. The change required recreating the `postgres-data` volume, which was safe because it holds only `sync_jobs` and that table is recreated at startup. The Solr core is documented in `docker-compose.yml` as the rebuildable public discovery projection.
 
 Alternative considered: drop the custom Solr core and query DSpace discovery directly. Rejected for now — the projection lets the public search surface be shaped and tuned independently of DSpace's internal index, which is the more realistic federal pattern. It stays a reasonable simplification if the projection becomes a maintenance burden.
 
@@ -122,7 +122,7 @@ Decision: add `pnpm run demo:up`, which starts the full stack including the DSpa
 
 Reason: `start:all` deliberately excludes the DSpace profile so routine development does not pay DSpace startup cost, which is the right default for development and the wrong one for a demonstration. Assembling the demo currently takes several commands in the correct order, which is exactly the situation where a live demo fails.
 
-Consequence: `start:all` keeps its current fast-path behavior. `demo:up` composes DSpace startup, `wait-dspace-ready`, `dspace-seed`, sync, and the application services, and reports the URLs to open. Not yet implemented.
+Consequence: applied. `pnpm run demo:up` starts DSpace, waits for REST, seeds, starts the application stack, rebuilds the discovery projection, waits for the UI, and prints the URLs worth showing. Order matters: seeding must precede the API so startup sync does not run against an empty repository. `demo:down` stops everything and keeps data. `start:all` keeps its fast-path behavior and still excludes DSpace. Verified from a cold `docker:reset:everything` and on a warm restart.
 
 ### Startup Sync Applies Live Data
 

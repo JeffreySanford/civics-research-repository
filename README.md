@@ -130,6 +130,8 @@ cp .env.sample .env
 ## Development Scripts
 
 ```bash
+pnpm run demo:up
+pnpm run demo:down
 pnpm run start:all
 pnpm run start:all:rebuild
 pnpm run docker:down
@@ -148,7 +150,9 @@ pnpm run wcag:report
 pnpm run section508:report
 ```
 
-`start:all` runs the application stack. The Java API is exposed at `http://localhost:8080/api`, the Angular UI at `http://localhost:4200`, PostgreSQL at `localhost:5432`, and Solr at `http://localhost:8983`.
+`demo:up` is the one command for a demonstration: it starts DSpace, waits for it, seeds the repository, starts the application stack, rebuilds the discovery projection, waits for the UI, and prints the URLs worth showing. It is safe to re-run — the seed and the sync are both idempotent. A cold run from `docker:reset:everything` takes several minutes because DSpace migrates its database; a warm restart takes about ninety seconds. `demo:down` stops everything and keeps all data.
+
+`start:all` is the faster development path and excludes DSpace. It runs the application stack. The Java API is exposed at `http://localhost:8080/api`, the Angular UI at `http://localhost:4200`, PostgreSQL at `localhost:5432`, and Solr at `http://localhost:8983`.
 
 It is scoped to the services in the active Compose profile and never touches a running DSpace stack. It inspects each container and recreates only the ones that are actually broken, so a healthy database is not thrown away on every start. `start:all:rebuild` rebuilds images first; `docker:reset:everything` is the only command that destroys volumes, DSpace included.
 
