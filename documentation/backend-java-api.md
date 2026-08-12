@@ -60,7 +60,36 @@ pnpm run openapi:check
 
 `openapi:check` regenerates the frontend types and fails if git detects drift in the generated file. `quality:all` includes this check so schema/frontend drift blocks the quality gate.
 
-The same OpenAPI contract should later feed Java DTO generation once `apps/repository-api` is generated. Until then, the OpenAPI file is the source of truth.
+## OpenAPI to Java DTO Flow
+
+Java DTOs are generated from the same contract, by the OpenAPI Generator Gradle plugin:
+
+```text
+schemas/openapi/repository-api.yaml
+  -> openApiGenerate (Gradle)
+  -> build/generated/openapi/src/main/java/org/civicsrepo/generated/dto
+  -> compiled as part of the main source set
+```
+
+`compileJava` depends on `openApiGenerate`, so the contract is read on every build and the Java side cannot be stale. A breaking schema change fails compilation rather than surfacing at runtime — verified by renaming a field in the contract and watching the build fail on the code that used it.
+
+Generated output lives under `build/` and is git-ignored. The contract is the committed source of truth; the DTOs are build output, exactly as on the frontend.
+
+### Models only, deliberately
+
+The `spring` generator can also emit controller interfaces. It writes them against Spring 6 conventions while this service runs Spring 7 on Boot 4, so adopting them is a separate change with its own failure modes. DTOs are where drift actually hurts, so that is what is generated. Swagger annotations are disabled: they would decorate types the contract already describes and would add a dependency purely for decoration.
+
+### Migration status
+
+`/maps/census-areas` is migrated end to end and serves byte-identical JSON. It was chosen first because its record carried no behavior, which made it a clean proof of the wiring rather than a redesign.
+
+The remaining hand-written records are not yet migrated, and the reasons are worth stating because they are the actual work:
+
+- `SearchResponse.withResultSource` is behavior a generated record cannot carry. Either the behavior moves to the caller or the domain type stays and maps at the controller boundary.
+- `RepositorySource` lives in `org.civicsrepo.repository` and is used as a domain concept; the generator emits its own copy into the DTO package.
+- `DatasetDetail`, `SearchResult`, `SyncJob`, and `MapLayer` are used by services as domain types, not only as wire types. Adopting the generated versions means deciding, per type, whether the domain type and the wire type should be the same thing.
+
+Until each is migrated, drift is caught only for the parts already on generated DTOs. That is a real limit, not a technicality: the generator protects what uses it.
 
 ## Suggested Java Package Boundaries
 

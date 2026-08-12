@@ -1,6 +1,7 @@
 package org.civicsrepo.maps;
 
 import java.util.List;
+import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -82,16 +83,18 @@ public class CensusAreaBoundaryService {
             double centerLatitude,
             double centerLongitude,
             double defaultZoom) {
-        return new CensusAreaBoundary(
-                id,
-                geography + " Census area boundary preview",
-                geography,
-                west,
-                south,
-                east,
-                north,
-                centerLatitude,
-                centerLongitude,
-                defaultZoom);
+        // Built with the generated DTO's fluent setters. The generator emits POJOs rather than
+        // records, which is why this reads as a builder chain instead of a constructor call.
+        return new CensusAreaBoundary()
+                .id(id)
+                .label(geography + " Census area boundary preview")
+                .geography(geography)
+                .west(west)
+                .south(south)
+                .east(east)
+                .north(north)
+                .centerLatitude(centerLatitude)
+                .centerLongitude(centerLongitude)
+                .defaultZoom(defaultZoom);
     }
 }

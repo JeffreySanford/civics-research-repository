@@ -63,16 +63,16 @@ Closes the last contract gate. Decision recorded in DECISIONS.md ("OpenAPI to Ja
 
 Not mechanical. The hand-written records carry behavior and fields the contract does not describe, and those collisions must be resolved first:
 
-- [ ] Add `org.openapi.generator` to `apps/repository-api/build.gradle.kts`, generating into `org.civicsrepo.generated.dto` with `useRecords` so output matches the existing style.
-- [ ] Make `compileJava` depend on the generate task, so editing the contract regenerates before compilation and a violation fails the build.
-- [ ] Resolve the collisions before switching controllers over:
-      `SearchResponse.withResultSource` is behavior a generated record cannot carry;
-      `RepositorySource` lives in `org.civicsrepo.repository` but the contract would generate it into the DTO package;
-      `DatasetDetail`, `SearchResult`, `SyncJob`, and `MapLayer` all exist by hand today.
-- [ ] Decide per type: adopt the generated record directly, or keep a domain type and map at the controller boundary. Prefer adopting; add a mapping layer only where domain behavior justifies it.
-- [ ] Migrate one endpoint end to end first (`/health` or `/maps/census-areas`) to prove the wiring before touching search or datasets.
-- [ ] Add a Java-side drift check to `quality:all`, mirroring `openapi:check`, so the backend half of the contract is enforced rather than trusted.
+- [x] Add `org.openapi.generator` to `apps/repository-api/build.gradle.kts`, generating into `org.civicsrepo.generated.dto`. Output is POJOs, not records: the generator does not emit records for this generator/library combination.
+- [x] Make `compileJava` depend on the generate task, so a contract change regenerates before compilation and a breaking change fails the build. Verified by renaming a field and watching it fail.
+- [x] Migrate one endpoint end to end (`/maps/census-areas`) and confirm byte-identical JSON.
+- [x] Drift is enforced by compilation rather than by a separate check: generation runs inside the build, so there is no window in which the Java side is stale. It therefore needs no `quality:all` entry of its own.
+- [ ] Migrate `MapLayer` and `UsgsEarthquake*`, the remaining pure wire types.
+- [ ] Decide the `SearchResponse` question: move `withResultSource` to the caller, or keep a domain type and map at the controller boundary.
+- [ ] Decide whether `RepositorySource` stays a domain enum in `org.civicsrepo.repository` or becomes the generated one.
+- [ ] Migrate `DatasetDetail`, `SearchResult`, and `SyncJob`, each of which is used as a domain type and not only as a wire type.
 - [ ] Delete the hand-written records once every consumer is migrated.
+- [ ] Revisit generated controller interfaces once the generator supports Spring 7 conventions.
 
 ### P7 - Map and feature list selection synchronization
 
@@ -117,6 +117,7 @@ Required before leaving PI 1, per the Dependency Upgrade Policy in RISKS.md.
 - [x] Check for stable NgRx 22: none exists yet, still `22.0.0-rc.0`.
 - [ ] Move NgRx to stable 22 when it is published.
 - [ ] Re-check the `image-size` advisory at the next dependency pass.
+- [ ] Fix the flaky Playwright web-server start between suites in `quality:all`; seen twice, clears on rerun, would make an unattended gate unreliable.
 - [ ] Separate upgrade task for the deferred majors: ESLint 10, TypeScript 7, jsdom 30, `@types/node` 26, `eslint-plugin-playwright` 2, Prettier 3.9.
 
 ## PI 0 - Repository Foundation

@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -49,8 +50,17 @@ class MapsControllerTest {
     @Test
     void serializesCensusAreaBoundaries() throws Exception {
         given(censusAreaBoundaryService.listBoundaries())
-                .willReturn(List.of(new CensusAreaBoundary(
-                        "north-dakota", "North Dakota", "North Dakota", -104.05, 45.93, -96.55, 49.0, 47.45, -100.3, 6)));
+                .willReturn(List.of(new CensusAreaBoundary()
+                        .id("north-dakota")
+                        .label("North Dakota")
+                        .geography("North Dakota")
+                        .west(-104.05)
+                        .south(45.93)
+                        .east(-96.55)
+                        .north(49.0)
+                        .centerLatitude(47.45)
+                        .centerLongitude(-100.3)
+                        .defaultZoom(6.0)));
 
         mockMvc.perform(get("/maps/census-areas"))
                 .andExpect(status().isOk())

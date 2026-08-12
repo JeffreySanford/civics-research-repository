@@ -205,4 +205,6 @@ Recommendation: the OpenAPI Generator **Gradle** plugin, wired into the `compile
 
 This is the last open contract gate. Today only the frontend half is generated and drift-checked; Java records are hand-written against the schema, so the backend can silently diverge from the contract the frontend is built on.
 
-Not yet implemented, and not a mechanical change — see planning/TODO.md under "Java DTO generation" for the migration path and the specific collisions to resolve first.
+Applied for models. The plugin generates DTOs into `org.civicsrepo.generated.dto` on every build, `compileJava` depends on it, and `/maps/census-areas` is migrated end to end as proof of the wiring. Verified by renaming a contract field and confirming the build fails.
+
+Scoped to models rather than controller interfaces: the generator writes those against Spring 6 while this service runs Spring 7, which is a separate change. The remaining hand-written records are tracked in TODO.md, along with the reason each one is a decision rather than a rename — chiefly that several are used as domain types with behavior, not only as wire types.

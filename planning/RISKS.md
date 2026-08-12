@@ -10,7 +10,9 @@ Mitigation: start from DSpace-supported Docker examples, keep local overrides sm
 
 Risk: frontend types, backend DTOs, and controllers can diverge as implementation speeds up.
 
-Mitigation: keep OpenAPI as the source of truth, keep `openapi:check` in `quality:all`, and add Java DTO generation to the same quality gate once backend exists.
+Mitigation: both sides are now generated from the contract. The frontend regenerates and is diffed by `openapi:check` inside `quality:all`; the Java side generates inside the Gradle build, with `compileJava` depending on it, so a breaking contract change fails compilation.
+
+Remaining exposure: only the Java types actually migrated to generated DTOs are protected. `/maps/census-areas` is migrated; the rest still use hand-written records, and drift in those is invisible until they move. The migration order and the per-type decisions are tracked as P6 in TODO.md.
 
 ## Angular 22 and NgRx RC
 
@@ -76,6 +78,14 @@ Mitigation: the seed now verifies that the item referenced by the mapfile still 
 Risk: `POST /api/admin/sync` performs real DSpace writes in `APPLY` mode and has no authentication. CORS restricts browser origins but does not stop direct clients.
 
 Mitigation: accepted for the localhost-only demo and recorded in DECISIONS.md ("Admin API Authentication"). Add Spring Security and a recorded requesting principal before the stack runs anywhere shared, and raise it explicitly during the demo walkthrough rather than waiting to be asked.
+
+## Flaky Playwright Web Server Between Suites
+
+Risk: `quality:all` runs three Playwright suites in sequence, each starting its own web server. Twice on 2026-08-12 the second suite failed immediately with `Process from config.webServer was not able to start. Exit code: 1`, and passed on an unchanged rerun. The previous suite's server has not released its port when the next one binds.
+
+Impact today is a spurious gate failure that a rerun clears. Impact once this runs unattended is worse: a green build becomes a coin flip, and the natural response to a flaky gate is to stop trusting it.
+
+Mitigation: not yet fixed. Options are to reuse one web server across the tagged suites rather than starting three, to add a readiness wait or retry in `tools/scripts/start-discovery-ui-web-server.mjs`, or to run the accessibility suites as tag filters within a single Playwright invocation. Worth fixing before the gate runs anywhere unattended.
 
 ## Sync Job Store Coverage Gap
 

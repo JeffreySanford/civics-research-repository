@@ -2,6 +2,7 @@ package org.civicsrepo.maps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.junit.jupiter.api.Test;
 
 class CensusAreaBoundaryServiceTest {
@@ -11,21 +12,21 @@ class CensusAreaBoundaryServiceTest {
     void listsSelectableCensusAreasBeyondNorthDakota() {
         assertThat(service.listBoundaries())
                 .hasSize(52)
-                .extracting(CensusAreaBoundary::geography)
+                .extracting(CensusAreaBoundary::getGeography)
                 .contains("North Dakota", "California", "Texas", "Puerto Rico", "District of Columbia");
     }
 
     @Test
     void boundariesIncludeUsableMapExtents() {
         CensusAreaBoundary california = service.listBoundaries().stream()
-                .filter(boundary -> boundary.geography().equals("California"))
+                .filter(boundary -> boundary.getGeography().equals("California"))
                 .findFirst()
                 .orElseThrow();
 
-        assertThat(california.west()).isLessThan(california.east());
-        assertThat(california.south()).isLessThan(california.north());
-        assertThat(california.centerLatitude()).isBetween(california.south(), california.north());
-        assertThat(california.centerLongitude()).isBetween(california.west(), california.east());
-        assertThat(california.defaultZoom()).isGreaterThan(0);
+        assertThat(california.getWest()).isLessThan(california.getEast());
+        assertThat(california.getSouth()).isLessThan(california.getNorth());
+        assertThat(california.getCenterLatitude()).isBetween(california.getSouth(), california.getNorth());
+        assertThat(california.getCenterLongitude()).isBetween(california.getWest(), california.getEast());
+        assertThat(california.getDefaultZoom()).isGreaterThan(0);
     }
 }

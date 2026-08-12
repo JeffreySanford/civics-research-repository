@@ -5,6 +5,9 @@ WORKDIR /workspace/apps/repository-api
 # Resolve the dependency graph in its own layer so source changes do not force a
 # re-download. Only settings.gradle.kts/build.gradle.kts invalidate this layer.
 COPY apps/repository-api/settings.gradle.kts apps/repository-api/build.gradle.kts ./
+# The OpenAPI contract is read at build time to generate Java DTOs, so it belongs in the layer that
+# resolves and warms the build, not only in the source layer.
+COPY schemas/openapi/repository-api.yaml /workspace/schemas/openapi/repository-api.yaml
 RUN gradle --no-daemon resolveDependencies
 
 FROM dependencies AS build

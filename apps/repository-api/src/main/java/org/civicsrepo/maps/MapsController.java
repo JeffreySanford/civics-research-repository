@@ -1,6 +1,7 @@
 package org.civicsrepo.maps;
 
 import java.util.List;
+import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
