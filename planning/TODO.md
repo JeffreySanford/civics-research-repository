@@ -71,14 +71,15 @@ Not mechanical. The hand-written records carry behavior and fields the contract 
 
 The remaining substantive accessibility gap, specified in documentation/mapping-visualization.md. axe cannot detect it, and manual Checklist 4 cannot honestly pass without it.
 
-- [ ] Add selected-feature state to the maps NgRx feature, with actions for selection from the list and from the map.
-- [ ] Make each feature-list entry a focusable control with a self-sufficient accessible name.
-- [ ] Focusing or activating a list entry pans the map to its coordinate and renders it selected, without stealing focus.
-- [ ] Activating a map feature moves programmatic focus to the matching list entry and sets `aria-selected`.
-- [ ] Announce the selected feature through a polite live region.
-- [ ] Clear selection when its layer is hidden; preserve it across unrelated layer toggles.
-- [ ] Reflect the selected feature in the URL alongside area and layer parameters.
-- [ ] Storyboard checks for both directions and for the announcement.
+- [x] Add selected-feature state to the maps NgRx feature, with actions for selection from the list and from the map.
+- [x] Make each feature-list entry a focusable control with a self-sufficient accessible name.
+- [x] Focusing or activating a list entry pans the map to its coordinate and renders it selected, without stealing focus.
+- [x] Activating a map feature moves programmatic focus to the matching list entry and sets its pressed state.
+- [x] Announce the selected feature through a polite live region.
+- [x] Clear selection when its layer is hidden; preserve it across unrelated layer toggles.
+- [x] Reflect the selected feature in the URL alongside area and layer parameters.
+- [x] Storyboard checks for the list-to-map direction, selection exclusivity, URL restore, clearing, and layer-hide clearing.
+- [ ] Confirm the map-to-list direction manually. A WebGL hit test needs trusted pointer events, so it cannot be asserted automatically; Checklist 4 item M12 covers it.
 - [ ] Re-run manual Checklist 4 afterwards and record the result.
 
 ### P8 - Repository breadth

@@ -1,8 +1,10 @@
+import type { UsgsEarthquakeOverlay } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { initialMapsState, mapsReducer } from './maps.reducer';
 import {
   selectEarthquakeError,
   selectEarthquakeOverlay,
+  selectSelectedEarthquakeFeature,
 } from './maps.selectors';
 
 describe('mapsReducer', () => {
@@ -151,5 +153,132 @@ describe('mapsReducer', () => {
     });
 
     expect(selected).toBe('USGS overlay service unavailable.');
+  });
+});
+
+describe('mapsReducer feature selection', () => {
+  const overlay = {
+    source: 'USGS',
+    sourceUrl: 'https://earthquake.usgs.gov/',
+    attribution: 'USGS',
+    updatedAt: '2026-08-11T19:00:00Z',
+    staleAfter: '2026-08-12T19:00:00Z',
+    fallback: true,
+    query: {
+      minMagnitude: 0,
+      days: 7,
+      minLatitude: 45,
+      maxLatitude: 49,
+      minLongitude: -104,
+      maxLongitude: -96,
+    },
+    features: [
+      {
+        id: 'nd-1',
+        place: 'Western North Dakota',
+        magnitude: 2.4,
+        occurredAt: '2026-08-11T18:00:00Z',
+        latitude: 47.35,
+        longitude: -103.21,
+      },
+    ],
+  } as unknown as UsgsEarthquakeOverlay;
+
+  it('records the selected feature', () => {
+    const state = mapsReducer(
+      initialMapsState,
+      MapsActions.mapFeatureSelected({ featureId: 'nd-1' }),
+    );
+
+    expect(state.selectedFeatureId).toBe('nd-1');
+  });
+
+  it('clears the selection on request', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.mapFeatureSelected({ featureId: 'nd-1' }),
+    );
+
+    const cleared = mapsReducer(
+      selected,
+      MapsActions.mapFeatureSelectionCleared(),
+    );
+
+    expect(cleared.selectedFeatureId).toBeNull();
+  });
+
+  /** A selected feature that is no longer drawn would leave map and list disagreeing. */
+  it('clears the selection when the earthquake layer is hidden', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.mapFeatureSelected({ featureId: 'nd-1' }),
+    );
+
+    const hidden = mapsReducer(
+      selected,
+      MapsActions.earthquakeLayerToggled({ visible: false }),
+    );
+
+    expect(hidden.selectedFeatureId).toBeNull();
+  });
+
+  it('keeps the selection when the layer is shown again', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.mapFeatureSelected({ featureId: 'nd-1' }),
+    );
+
+    const shown = mapsReducer(
+      selected,
+      MapsActions.earthquakeLayerToggled({ visible: true }),
+    );
+
+    expect(shown.selectedFeatureId).toBe('nd-1');
+  });
+
+  it('keeps a selection the new overlay still contains', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.mapFeatureSelected({ featureId: 'nd-1' }),
+    );
+
+    const loaded = mapsReducer(
+      selected,
+      MapsActions.earthquakeOverlayLoaded({ earthquakeOverlay: overlay }),
+    );
+
+    expect(loaded.selectedFeatureId).toBe('nd-1');
+  });
+
+  it('drops a selection the new overlay no longer contains', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.mapFeatureSelected({ featureId: 'gone' }),
+    );
+
+    const loaded = mapsReducer(
+      selected,
+      MapsActions.earthquakeOverlayLoaded({ earthquakeOverlay: overlay }),
+    );
+
+    expect(loaded.selectedFeatureId).toBeNull();
+  });
+
+  it('resolves the selected feature record', () => {
+    const state = {
+      ...initialMapsState,
+      earthquakeOverlay: overlay,
+      selectedFeatureId: 'nd-1',
+    };
+
+    expect(selectSelectedEarthquakeFeature.projector(state)?.place).toBe(
+      'Western North Dakota',
+    );
+    expect(
+      selectSelectedEarthquakeFeature.projector({
+        ...state,
+        selectedFeatureId: 'nope',
+      }),
+    ).toBeNull();
   });
 });

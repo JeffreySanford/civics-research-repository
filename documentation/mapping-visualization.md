@@ -95,7 +95,7 @@ Leaflet remains a possible later comparison implementation behind a small map-en
 
 ## Map and Feature List Synchronization
 
-**Status: specified, not implemented.** The accessible feature list currently renders the same data as the map but shares no state with it. That satisfies "an equivalent exists" and fails "the equivalent is usable", which is the distinction that matters for a canvas-based map.
+**Status: implemented, with one direction pending manual confirmation.** The accessible feature list currently renders the same data as the map but shares no state with it. That satisfies "an equivalent exists" and fails "the equivalent is usable", which is the distinction that matters for a canvas-based map.
 
 axe cannot detect this gap. A MapLibre canvas with a parallel `<ul>` passes every automated rule while a screen-reader user still has no way to tell which earthquake the map is showing, or to move the map to the event they are reading about. The risk register has warned about exactly this since the beginning; this section turns the warning into a requirement.
 
@@ -119,3 +119,8 @@ Automated checks can prove the wiring, not the experience:
 - A storyboard check that the announcement region receives the selected feature's name.
 
 The experience itself is verified by Checklist 4 in [accessibility-manual-evidence.md](accessibility-manual-evidence.md), whose determining question — can someone who never perceives the canvas obtain the same information and perform the same tasks — is only honestly answerable "yes" once this synchronization exists.
+
+### Verification status
+
+- List to map is automated and passing: focusing or activating an entry selects the feature, sets `aria-pressed`, updates the announcement, moves the map, and records the selection in the URL.
+- Map to list is **implemented but not automatically verified**. Driving a WebGL hit test requires trusted pointer events against a rendered marker; synthetic events dispatched into the canvas do not reach MapLibre's handler, so an automated check would assert nothing. It needs a human click, which Checklist 4 item M12 covers. Do not report this direction as verified until that run is recorded.

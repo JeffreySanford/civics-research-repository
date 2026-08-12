@@ -35,6 +35,8 @@ import {
   selectMapsError,
   selectMapsLoading,
   selectSelectedCensusAreaBoundary,
+  selectSelectedEarthquakeFeature,
+  selectSelectedFeatureId,
   selectSelectedGeography,
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
@@ -114,6 +116,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private mapLoaded = false;
   private tigerVisible = true;
   private earthquakeVisible = true;
+  private selectedFeatureId: string | null = null;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
   protected readonly lodesLayers$ = this.layers$.pipe(
@@ -147,6 +150,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   );
   protected readonly loading$ = this.store.select(selectMapsLoading);
   protected readonly error$ = this.store.select(selectMapsError);
+  protected readonly selectedFeatureId$ = this.store.select(
+    selectSelectedFeatureId,
+  );
+  protected readonly selectedFeature$ = this.store.select(
+    selectSelectedEarthquakeFeature,
+  );
 
   ngOnInit(): void {
     this.bindUrlState();
@@ -172,6 +181,25 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       .subscribe((layers) => {
         this.pendingLodesLayers = layers;
         this.renderLodesSampleLayer();
+      });
+
+    // Selection drives the map. The list is the other half of this and sets selection through
+    // selectFeature, so either view can originate a change and both reflect it.
+    this.selectedFeature$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((feature) => {
+        this.selectedFeatureId = feature?.id ?? null;
+        this.applySelectionHighlight();
+
+        if (feature) {
+          // easeTo, not a focus change: moving the viewport must never move focus away from the
+          // control the user is operating.
+          this.map?.easeTo({
+            center: [feature.longitude, feature.latitude],
+            zoom: Math.max(this.map.getZoom(), 6),
+            duration: 400,
+          });
+        }
       });
 
     combineLatest([this.tigerVisible$, this.earthquakeVisible$])
@@ -212,6 +240,25 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.updateMapUrl({ earthquakeVisible: visible });
   }
 
+  /** Called when a feature-list entry is activated or focused. */
+  protected selectFeature(featureId: string): void {
+    if (this.selectedFeatureId === featureId) {
+      return;
+    }
+
+    this.store.dispatch(MapsActions.mapFeatureSelected({ featureId }));
+    this.updateMapUrl({ featureId });
+  }
+
+  protected clearFeatureSelection(): void {
+    this.store.dispatch(MapsActions.mapFeatureSelectionCleared());
+    this.updateMapUrl({ featureId: null });
+  }
+
+  protected featureButtonId(featureId: string): string {
+    return `feature-${featureId}`;
+  }
+
   protected selectCensusArea(geography: string): void {
     this.store.dispatch(MapsActions.censusAreaSelected({ geography }));
     this.updateMapUrl({ geography });
@@ -224,16 +271,18 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           area: params.get('area'),
           tigerVisible: this.toVisibleState(params.get('tiger')),
           earthquakeVisible: this.toVisibleState(params.get('earthquakes')),
+          featureId: params.get('feature'),
         })),
         distinctUntilChanged(
           (previous, current) =>
             previous.area === current.area &&
             previous.tigerVisible === current.tigerVisible &&
-            previous.earthquakeVisible === current.earthquakeVisible,
+            previous.earthquakeVisible === current.earthquakeVisible &&
+            previous.featureId === current.featureId,
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ area, tigerVisible, earthquakeVisible }) => {
+      .subscribe(({ area, tigerVisible, earthquakeVisible, featureId }) => {
         if (area) {
           this.store.dispatch(
             MapsActions.censusAreaSelected({ geography: area }),
@@ -251,6 +300,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             MapsActions.earthquakeLayerToggled({ visible: earthquakeVisible }),
           );
         }
+
+        if (featureId) {
+          this.store.dispatch(MapsActions.mapFeatureSelected({ featureId }));
+        }
       });
   }
 
@@ -258,6 +311,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     geography?: string;
     tigerVisible?: boolean;
     earthquakeVisible?: boolean;
+    featureId?: string | null;
   }): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -267,6 +321,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           options.tigerVisible === undefined
             ? undefined
             : this.toLayerParam(options.tigerVisible),
+        feature:
+          options.featureId === undefined
+            ? undefined
+            : (options.featureId ?? null),
         earthquakes:
           options.earthquakeVisible === undefined
             ? undefined
@@ -319,6 +377,31 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       new maplibregl.NavigationControl({ showCompass: false }),
       'top-right',
     );
+
+    // The map half of the two-way binding: activating a feature on the canvas selects it and
+    // moves programmatic focus to the matching list entry, so a keyboard or screen-reader user
+    // lands on the thing they just selected rather than being left on the canvas.
+    this.map.on('click', 'usgs-earthquake-points', (event) => {
+      const featureId = event.features?.[0]?.properties?.['id'];
+      if (typeof featureId !== 'string') {
+        return;
+      }
+
+      this.selectFeature(featureId);
+      this.focusFeatureButton(featureId);
+    });
+
+    this.map.on('mouseenter', 'usgs-earthquake-points', () => {
+      if (this.map) {
+        this.map.getCanvas().style.cursor = 'pointer';
+      }
+    });
+
+    this.map.on('mouseleave', 'usgs-earthquake-points', () => {
+      if (this.map) {
+        this.map.getCanvas().style.cursor = '';
+      }
+    });
 
     this.map.on('load', () => {
       this.mapLoaded = true;
@@ -436,7 +519,55 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       },
     });
 
+    this.map.addLayer({
+      id: 'usgs-earthquake-selected',
+      type: 'circle',
+      source: 'usgs-earthquakes',
+      // Selection is conveyed by an outline ring and a wider stroke, not by color alone.
+      filter: ['==', ['get', 'id'], ''],
+      paint: {
+        'circle-color': 'rgba(0, 0, 0, 0)',
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['get', 'magnitude'],
+          0,
+          14,
+          1,
+          16,
+          3,
+          24,
+        ],
+        'circle-stroke-color': '#1d4ed8',
+        'circle-stroke-width': 4,
+      },
+    });
+
     this.applyLayerVisibility();
+    this.applySelectionHighlight();
+  }
+
+  private applySelectionHighlight(): void {
+    if (!this.map || !this.map.getLayer('usgs-earthquake-selected')) {
+      return;
+    }
+
+    this.map.setFilter('usgs-earthquake-selected', [
+      '==',
+      ['get', 'id'],
+      this.selectedFeatureId ?? '',
+    ]);
+  }
+
+  private focusFeatureButton(featureId: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    // Deferred so the button exists after change detection renders the new selected state.
+    setTimeout(() => {
+      document.getElementById(this.featureButtonId(featureId))?.focus();
+    });
   }
 
   private renderLodesSampleLayer(): void {
@@ -498,6 +629,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       features: overlay.features.map((feature) => ({
         type: 'Feature',
         properties: {
+          id: feature.id,
           place: feature.place,
           magnitude: feature.magnitude,
           occurredAt: feature.occurredAt,

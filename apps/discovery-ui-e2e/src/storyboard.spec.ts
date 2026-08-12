@@ -370,3 +370,85 @@ test.describe('demo storyboard checks', () => {
     ).toBeVisible();
   });
 });
+
+/**
+ * The map and the accessible feature list are two views of one selection. axe cannot detect
+ * whether they agree, so these checks are the automated half of the map-equivalence evidence.
+ */
+test.describe('map and feature list selection', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+  });
+
+  test('keyboard focus on a feature selects it and announces it @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps');
+    await expect(page.getByText('No map feature selected.')).toBeVisible();
+
+    await page
+      .getByRole('button', { name: /Western North Dakota/ })
+      .first()
+      .focus();
+
+    await expect(
+      page.getByRole('button', { name: /Western North Dakota/ }).first(),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.getByText(/Selected Western North Dakota, magnitude/),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/feature=/);
+  });
+
+  test('only one feature is selected at a time @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps');
+
+    await page.getByRole('button', { name: /Western North Dakota/ }).click();
+    await page.getByRole('button', { name: /Central North Dakota/ }).click();
+
+    await expect(
+      page.getByRole('button', { name: /Central North Dakota/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.getByRole('button', { name: /Western North Dakota/ }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('a selected feature can be restored from the URL @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps?feature=demo-eastern-nd');
+
+    await expect(
+      page.getByRole('button', { name: /Eastern North Dakota/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText(/Selected Eastern North Dakota/)).toBeVisible();
+  });
+
+  test('clearing selection restores the empty announcement @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps?feature=demo-eastern-nd');
+
+    await page.getByRole('button', { name: 'Clear selected feature' }).click();
+
+    await expect(page.getByText('No map feature selected.')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /Eastern North Dakota/ }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  /** A selected feature that is no longer drawn would leave the two views disagreeing. */
+  test('hiding the overlay clears the selection @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps?feature=demo-eastern-nd');
+    await expect(page.getByText(/Selected Eastern North Dakota/)).toBeVisible();
+
+    await page.getByLabel('USGS earthquake overlay').uncheck();
+
+    await expect(page.getByText('No map feature selected.')).toBeVisible();
+  });
+});

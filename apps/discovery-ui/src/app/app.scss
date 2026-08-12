@@ -548,3 +548,39 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+// Feature-list selection controls. The whole entry is the control so the click target matches the
+// readable content, and selection is conveyed by a border and a text flag rather than color alone.
+:host ::ng-deep .feature-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  text-align: left;
+  background: #ffffff;
+  border: 2px solid #d0d5dd;
+  border-radius: 6px;
+  padding: 0.625rem 0.75rem;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+:host ::ng-deep .feature-select[aria-pressed='true'] {
+  border-color: #1d4ed8;
+  background: #eff4ff;
+}
+
+:host ::ng-deep .feature-selected-flag {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+:host ::ng-deep .feature-announcement {
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+:host ::ng-deep .feature-hint {
+  margin: 0.25rem 0 0.5rem;
+}

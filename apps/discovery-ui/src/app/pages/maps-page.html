@@ -100,6 +100,24 @@
 
 <section aria-labelledby="features-heading" class="content-panel">
   <h2 id="features-heading">Accessible feature list</h2>
+
+  <p class="feature-hint">
+    Selecting an event here moves the map to it; selecting an event on the map
+    moves focus here.
+  </p>
+
+  <!-- Polite so the selection is announced without interrupting; the map viewport change alone
+       conveys nothing to a screen-reader user. -->
+  <p class="feature-announcement" role="status">
+    @if (selectedFeature$ | async; as selected) { Selected {{ selected.place }},
+    magnitude {{ selected.magnitude }}. } @else { No map feature selected. }
+  </p>
+
+  @if (selectedFeature$ | async) {
+  <button type="button" class="feature-clear" (click)="clearFeatureSelection()">
+    Clear selected feature
+  </button>
+  }
   <ul class="feature-list">
     @if (layers$ | async; as layers) { @for (layer of layers; track layer.id) {
     @if (layer.layerType === 'CENSUS_DATA' || (tigerVisible$ | async)) {
@@ -129,11 +147,23 @@
     </li>
     @for (feature of overlay.features; track feature.id) {
     <li>
-      <strong>{{ feature.place }}</strong>
-      <span>
-        Magnitude {{ feature.magnitude }} on {{ feature.occurredAt | date:
-        'medium' }}
-      </span>
+      <button
+        type="button"
+        class="feature-select"
+        [id]="featureButtonId(feature.id)"
+        [attr.aria-pressed]="(selectedFeatureId$ | async) === feature.id"
+        (click)="selectFeature(feature.id)"
+        (focus)="selectFeature(feature.id)"
+      >
+        <strong>{{ feature.place }}</strong>
+        <span>
+          Magnitude {{ feature.magnitude }} on {{ feature.occurredAt | date:
+          'medium' }}
+        </span>
+        @if ((selectedFeatureId$ | async) === feature.id) {
+        <span class="feature-selected-flag">Selected on the map</span>
+        }
+      </button>
     </li>
     } } @else { @if (earthquakeError$ | async) {
     <li>

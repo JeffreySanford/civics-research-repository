@@ -21,5 +21,7 @@ export const MapsActions = createActionGroup({
     'Census Area Selected': props<{ geography: string }>(),
     'Tiger Layer Toggled': props<{ visible: boolean }>(),
     'Earthquake Layer Toggled': props<{ visible: boolean }>(),
+    'Map Feature Selected': props<{ featureId: string }>(),
+    'Map Feature Selection Cleared': emptyProps(),
   },
 });

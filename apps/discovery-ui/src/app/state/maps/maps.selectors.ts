@@ -55,3 +55,17 @@ export const selectMapsError = createSelector(
   selectMapsState,
   (state) => state.error,
 );
+
+/** The feature currently shared by the map and the accessible list. */
+export const selectSelectedFeatureId = createSelector(
+  selectMapsState,
+  (state) => state.selectedFeatureId,
+);
+
+export const selectSelectedEarthquakeFeature = createSelector(
+  selectMapsState,
+  (state) =>
+    state.earthquakeOverlay?.features.find(
+      (feature) => feature.id === state.selectedFeatureId,
+    ) ?? null,
+);
