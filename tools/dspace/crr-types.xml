@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<dspace-dc-types>
+  <dspace-header>
+    <title>Civics Research Repository Metadata Registry</title>
+    <contributor.author>Civics Research Repository</contributor.author>
+    <description>Project-specific metadata fields used to track public source identity, geography, vintage, and documentation links.</description>
+  </dspace-header>
+
+  <dc-schema>
+    <name>crr</name>
+    <namespace>https://civics-research-repository.local/schema/metadata/</namespace>
+  </dc-schema>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>identifier</element>
+    <qualifier>source</qualifier>
+    <scope_note>Stable source identifier assigned by Civics Research Repository sync adapters.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>program</element>
+    <scope_note>Normalized public data program identifier.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>geography</element>
+    <qualifier>level</qualifier>
+    <scope_note>Normalized geographic level represented by the source dataset.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>vintage</element>
+    <scope_note>Source dataset vintage or release year.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>source</element>
+    <qualifier>url</qualifier>
+    <scope_note>Authoritative source URL for the public dataset or file manifest.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>documentation</element>
+    <qualifier>url</qualifier>
+    <scope_note>Authoritative source documentation URL.</scope_note>
+  </dc-type>
+</dspace-dc-types>

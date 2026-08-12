@@ -144,5 +144,9 @@ class DspaceRestItemWriteGatewayTest {
             assertThat(operation.get("op")).isEqualTo("add");
             assertThat(operation.get("path")).isEqualTo("/metadata/dc.identifier.other");
         });
+        assertThat(operations).anySatisfy((operation) -> {
+            assertThat(operation.get("op")).isEqualTo("add");
+            assertThat(operation.get("path")).isEqualTo("/metadata/crr.identifier.source");
+        });
     }
 }

@@ -34,6 +34,12 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
             "dc.identifier.citation",
             "dc.subject",
             "dc.coverage.spatial",
+            "crr.identifier.source",
+            "crr.program",
+            "crr.geography.level",
+            "crr.vintage",
+            "crr.source.url",
+            "crr.documentation.url",
             SOURCE_IDENTIFIER_FIELD);
 
     private final ObjectMapper objectMapper;

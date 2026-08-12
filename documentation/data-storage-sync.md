@@ -177,9 +177,9 @@ Diff jobs complete with `DIFF_COMPLETE`. The production DSpace state reader now 
 
 Because DSpace discovery does not expose the full bitstream manifest in the same response, the first seeded TIGER/Line item can legitimately plan `UPDATE_ITEM` when the DSpace metadata or file manifest differs from the normalized source payload. Unit tests cover missing, matching, changed, and discovery-mapped repository payload states.
 
-Apply mode now performs conservative DSpace writes for supported Dublin Core metadata. For the TIGER/Line seed item, the Java API authenticates to DSpace REST with the local demo administrator, finds the item by source identifier or normalized title, and reconciles normalized `dc.*` metadata fields plus `dc.identifier.other` for the stable source identifier. This makes source-based diff lookup idempotent while leaving custom metadata schemas and bitstream manifest writes for the next DSpace apply slice.
+Apply mode now performs conservative DSpace writes for supported Dublin Core metadata and project-specific `crr.*` metadata. The DSpace seed process loads the Civics Research Repository metadata registry with fields for source identifier, program, geography level, vintage, source URL, and documentation URL. For the TIGER/Line seed item, the Java API authenticates to DSpace REST with the local demo administrator, finds the item by source identifier or normalized title, and reconciles normalized `dc.*` and `crr.*` metadata fields. This makes source-based diff lookup idempotent while leaving bitstream manifest writes for the next DSpace apply slice.
 
-The diff and apply CLI targets start the DSpace profile non-destructively and wait for `http://localhost:8081/server/api` before running the Java CLI. This avoids cold-start races without changing the default service ports.
+The diff and apply CLI targets start the DSpace profile non-destructively, run the idempotent DSpace seed job so required repository structure and metadata registries exist, and wait for `http://localhost:8081/server/api` before running the Java CLI. This avoids cold-start races without changing the default service ports.
 
 ## Initial Sync Scope
 

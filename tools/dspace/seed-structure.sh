@@ -20,6 +20,8 @@ if ! /dspace/bin/dspace user -L | grep -qi "$admin_email"; then
     -c en
 fi
 
+/dspace/bin/dspace registry-loader --metadata /seed/crr-types.xml
+
 /dspace/bin/dspace structure-builder -e "$admin_email" -x -o "$export_file"
 
 community_count="$(grep -c "<name>$community_name</name>" "$export_file" || true)"
