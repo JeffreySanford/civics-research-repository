@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.civicsrepo.repository.RepositorySource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -141,7 +142,10 @@ public class SolrSearchClient {
                         text(document, "sourceUrl_s")));
             }
 
+            // Conservative default. The client cannot know what was projected into the core, so
+            // SearchService relabels via withResultSource; FIXTURE is the safe assumption if it does not.
             return new SearchResponse(
+                    RepositorySource.FIXTURE,
                     query == null ? "" : query,
                     Math.max(0, page),
                     Math.max(1, Math.min(pageSize, 100)),

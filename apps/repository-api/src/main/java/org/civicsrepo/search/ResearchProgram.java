@@ -7,5 +7,7 @@ public enum ResearchProgram {
     LEHD,
     LODES,
     TIGER_LINE,
-    USGS
+    USGS,
+    /** Repository item with no crr.program value. Not guessed at. */
+    OTHER
 }

@@ -16,6 +16,7 @@ import {
   selectSearchError,
   selectSearchFacets,
   selectSearchLoading,
+  selectSearchResultSource,
   selectSearchResults,
   selectSearchTotalResults,
 } from '../state/search/search.selectors';
@@ -51,6 +52,9 @@ export class DiscoveryPage implements OnInit {
   });
 
   protected readonly results$ = this.store.select(selectSearchResults);
+  protected readonly resultSource$ = this.store.select(
+    selectSearchResultSource,
+  );
   protected readonly facets$ = this.store.select(selectSearchFacets);
   protected readonly totalResults$ = this.store.select(
     selectSearchTotalResults,

@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.civicsrepo.repository.RepositoryCatalog;
+import org.civicsrepo.repository.RepositorySource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,17 +73,25 @@ public class SearchService {
     private static final List<SearchResult> SEED_RESULTS = seedResultsForAllCensusAreas();
 
     private final SolrSearchClient solrSearchClient;
+    private final RepositoryCatalog repositoryCatalog;
 
     public SearchService() {
-        this(null);
+        this(null, null);
     }
 
     @Autowired
-    public SearchService(SolrSearchClient solrSearchClient) {
+    public SearchService(SolrSearchClient solrSearchClient, RepositoryCatalog repositoryCatalog) {
         this.solrSearchClient = solrSearchClient;
+        this.repositoryCatalog = repositoryCatalog;
     }
 
-    List<SearchResult> seedResults() {
+    /**
+     * The generated placeholder catalog.
+     *
+     * <p>Retained only as a fallback for tests and for demo recovery when the repository is not
+     * available. Every response built from it is labelled {@link RepositorySource#FIXTURE}.
+     */
+    public List<SearchResult> fixtureResults() {
         return SEED_RESULTS;
     }
 
@@ -92,18 +102,44 @@ public class SearchService {
             Integer vintageYear,
             int page,
             int pageSize) {
+        // Solr holds the projection built by DiscoveryProjectionService, so it is the fast path for
+        // both repository-backed and fixture-backed content. Its source label comes from what was
+        // last projected, not from the query.
         if (solrSearchClient != null && solrSearchClient.isEnabled()) {
             try {
-                return solrSearchClient.search(query, program, geography, vintageYear, page, pageSize);
+                return solrSearchClient
+                        .search(query, program, geography, vintageYear, page, pageSize)
+                        .withResultSource(indexedSource());
             } catch (RuntimeException exception) {
-                LOGGER.warn("Solr search failed; falling back to in-memory seed search.", exception);
+                LOGGER.warn("Solr search failed; answering from in-memory results.", exception);
             }
         }
 
-        return searchSeedResults(query, program, geography, vintageYear, page, pageSize);
+        List<SearchResult> repositoryObjects =
+                repositoryCatalog == null ? List.of() : repositoryCatalog.findAllResearchObjects();
+        if (!repositoryObjects.isEmpty()) {
+            return searchInMemory(
+                    repositoryObjects, RepositorySource.REPOSITORY, query, program, geography, vintageYear, page, pageSize);
+        }
+
+        return searchInMemory(
+                SEED_RESULTS, RepositorySource.FIXTURE, query, program, geography, vintageYear, page, pageSize);
     }
 
-    private SearchResponse searchSeedResults(
+    /**
+     * Whether the Solr projection currently holds repository content.
+     *
+     * <p>Derived by asking the repository rather than by trusting the index, so a stale index
+     * cannot cause fixture content to be labelled as repository content.
+     */
+    private RepositorySource indexedSource() {
+        boolean repositoryBacked = repositoryCatalog != null && !repositoryCatalog.findAllResearchObjects().isEmpty();
+        return repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
+    }
+
+    private SearchResponse searchInMemory(
+            List<SearchResult> catalog,
+            RepositorySource resultSource,
             String query,
             ResearchProgram program,
             String geography,
@@ -113,12 +149,12 @@ public class SearchService {
         String normalizedQuery = normalize(query);
         String normalizedGeography = normalize(geography);
 
-        List<SearchResult> filtered = SEED_RESULTS.stream()
+        List<SearchResult> filtered = catalog.stream()
                 .filter((result) -> matchesQuery(result, normalizedQuery))
                 .filter((result) -> program == null || result.program() == program)
                 .filter((result) ->
                         normalizedGeography.isBlank() || normalize(result.geography()).contains(normalizedGeography))
-                .filter((result) -> vintageYear == null || result.vintageYear().equals(vintageYear))
+                .filter((result) -> vintageYear == null || vintageYear.equals(result.vintageYear()))
                 .sorted(Comparator.comparing(SearchResult::title))
                 .toList();
 
@@ -128,6 +164,7 @@ public class SearchService {
         int toIndex = Math.min(fromIndex + safePageSize, filtered.size());
 
         return new SearchResponse(
+                resultSource,
                 query == null ? "" : query,
                 safePage,
                 safePageSize,

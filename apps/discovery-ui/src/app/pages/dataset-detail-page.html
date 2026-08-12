@@ -4,6 +4,12 @@
 <p class="inline-status" role="status">Loading dataset detail</p>
 } @if (error$ | async; as error) {
 <p class="error-message" role="alert">{{ error }}</p>
+} @if ((datasetSource$ | async) === 'FIXTURE') {
+<p class="fixture-notice" role="status">
+  <strong>Placeholder data.</strong> The repository is unavailable or holds no
+  items, so these records are generated examples rather than DSpace repository
+  content. Start DSpace and reseed to see repository-backed results.
+</p>
 } @if (detail$ | async; as detail) {
 <section aria-labelledby="dataset-title" class="dataset-hero">
   <div>

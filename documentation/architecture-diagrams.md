@@ -59,8 +59,8 @@ flowchart TB
     dsrest --> dsdb
     dsrest --> dssolr
 
+    api -->|"Projects repository items<br/>into the discovery core"| discovery
     api -.->|"planned: harvest live<br/>source metadata"| census
-    dsrest -.->|"planned: DSpace metadata<br/>projected into discovery core"| discovery
 ```
 
 ### Why two PostgreSQL instances and two Solr instances
@@ -167,7 +167,7 @@ sequenceDiagram
     ui->>researcher: Results, facet counts, and loading/empty/error states
 ```
 
-The Solr `discovery` core is currently populated by `SearchIndexStartupRunner` from the same in-memory seed list the fallback uses, not from DSpace. Both branches therefore serve fixture data today. Closing that is the first item in [Known Seams](#known-seams).
+The `discovery` core is populated by `DiscoveryProjectionService` from DSpace items, so both the Solr path and the in-memory path serve repository content. When the repository returns nothing — DSpace down, unseeded, or genuinely empty — the fixture catalog is indexed instead and every response carries `resultSource: FIXTURE`, which the UI displays as a placeholder-data notice. Rebuild the projection at any time with `pnpm run reindex`.
 
 ## Sequence - Dataset Map Rendering with USGS Overlay
 
@@ -213,8 +213,10 @@ The two effects are deliberately independent: a USGS outage degrades the overlay
 
 Places where the implementation is narrower than the architecture. Each is tracked in [planning/TODO.md](../planning/TODO.md).
 
-1. **Discovery is fixture-backed, not repository-backed.** The Solr `discovery` core is indexed from a hard-coded seed list, and dataset detail is served from hard-coded `DatasetService` fixtures. DSpace is the system of record for the sync path only. Making DSpace metadata drive discovery and detail is the next vertical-slice milestone.
-2. **Source metadata is static.** `TigerLineMetadataAdapter` returns compile-time constants rather than harvesting Census.
-3. **Bitstream reconciliation is absent.** Sync reconciles Dublin Core and `crr.*` metadata only.
-4. **Application database naming is ambiguous.** Both PostgreSQL databases are named `dspace`.
-5. **`start:all` does not include DSpace.** The DSpace profile must be started separately, so there is no single command that brings up the whole demo.
+1. **Source metadata is static.** `TigerLineMetadataAdapter` returns compile-time constants rather than harvesting Census.
+2. **Bitstream reconciliation is absent.** Sync reconciles Dublin Core and `crr.*` metadata only, so `sync:diff` reports `UPDATE_ITEM` rather than `SKIP_ITEM`.
+3. **Application database naming is ambiguous.** Both PostgreSQL databases are named `dspace`.
+4. **`start:all` does not include DSpace.** The DSpace profile must be started separately, so there is no single command that brings up the whole demo.
+5. **Only the TIGER/Line North Dakota item is synchronized.** The other five seeded items are imported by the DSpace seed and read back through discovery, but no adapter reconciles them.
+
+Closed: discovery and dataset detail are now served from DSpace. The fixture catalog remains only as a labelled fallback.

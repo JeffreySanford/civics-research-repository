@@ -14,6 +14,7 @@ import { filter, map } from 'rxjs';
 import { DatasetsActions } from '../state/datasets/datasets.actions';
 import {
   selectDatasetDetail,
+  selectDatasetSource,
   selectDatasetError,
   selectDatasetLoading,
   selectDatasetMapLayers,
@@ -33,6 +34,7 @@ export class DatasetDetailPage implements OnInit {
   private readonly store = inject(Store);
 
   protected readonly detail$ = this.store.select(selectDatasetDetail);
+  protected readonly datasetSource$ = this.store.select(selectDatasetSource);
   protected readonly versions$ = this.store.select(selectDatasetVersions);
   protected readonly mapLayers$ = this.store.select(selectDatasetMapLayers);
   protected readonly loading$ = this.store.select(selectDatasetLoading);

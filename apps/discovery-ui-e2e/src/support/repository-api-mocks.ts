@@ -20,6 +20,37 @@ export async function failRepositoryApi(
   });
 }
 
+/**
+ * Serves the same search payload labelled as fixture content, so the placeholder disclosure can be
+ * exercised without taking DSpace down.
+ */
+export async function mockFixtureBackedRepositoryApi(
+  page: Page,
+): Promise<void> {
+  await page.route(`**/api/search**`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: searchResponse('California', 'FIXTURE'),
+    });
+  });
+
+  await page.route(`**/api/datasets/*`, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname.endsWith('/map-layers') || pathname.endsWith('/versions')) {
+      await route.fallback();
+      return;
+    }
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        ...(datasetDetail(datasetIdFromUrl(route.request().url())) as object),
+        source: 'FIXTURE',
+      },
+    });
+  });
+}
+
 export async function mockRepositoryApi(page: Page): Promise<void> {
   await page.route(`**/api/search**`, async (route) => {
     const url = new URL(route.request().url());
@@ -298,6 +329,7 @@ function datasetDetail(datasetId: string): unknown {
       : 'North Dakota';
 
   return {
+    source: 'REPOSITORY',
     id: datasetId,
     title: datasetTitle(datasetId),
     program: 'TIGER_LINE',
@@ -353,8 +385,12 @@ function datasetDetail(datasetId: string): unknown {
   };
 }
 
-function searchResponse(geography: string): unknown {
+function searchResponse(
+  geography: string,
+  resultSource: 'REPOSITORY' | 'FIXTURE' = 'REPOSITORY',
+): unknown {
   return {
+    resultSource,
     query: geography,
     page: 0,
     pageSize: 25,

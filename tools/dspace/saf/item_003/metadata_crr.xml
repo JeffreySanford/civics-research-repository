@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Project-specific crr.* metadata, registered by tools/dspace/crr-types.xml.
+-->
+<dublin_core schema="crr">
+  <dcvalue element="identifier" qualifier="source">tiger-line-texas-2025</dcvalue>
+  <dcvalue element="program" qualifier="none">TIGER_LINE</dcvalue>
+  <dcvalue element="geography" qualifier="level">Census tract</dcvalue>
+  <dcvalue element="vintage" qualifier="none">2025</dcvalue>
+  <dcvalue element="source" qualifier="url">https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_48_tract.zip</dcvalue>
+  <dcvalue element="documentation" qualifier="url">https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html</dcvalue>
+</dublin_core>

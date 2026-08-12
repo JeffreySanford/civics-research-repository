@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.util.List;
+import org.civicsrepo.repository.RepositorySource;
 import org.civicsrepo.search.ResearchProgram;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ class DatasetControllerTest {
 
         mockMvc.perform(get("/datasets/tiger-line-north-dakota-2025"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("REPOSITORY"))
                 .andExpect(jsonPath("$.id").value("tiger-line-north-dakota-2025"))
                 .andExpect(jsonPath("$.program").value("TIGER_LINE"))
                 .andExpect(jsonPath("$.releasedOn").value("2025-08-01"))
@@ -63,6 +65,7 @@ class DatasetControllerTest {
 
     private DatasetDetail detail() {
         return new DatasetDetail(
+                RepositorySource.REPOSITORY,
                 "tiger-line-north-dakota-2025",
                 "2025 TIGER/Line - Census Tracts - North Dakota",
                 ResearchProgram.TIGER_LINE,

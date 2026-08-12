@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Project-specific crr.* metadata, registered by tools/dspace/crr-types.xml.
+-->
+<dublin_core schema="crr">
+  <dcvalue element="identifier" qualifier="source">lodes-wac-texas-2023</dcvalue>
+  <dcvalue element="program" qualifier="none">LODES</dcvalue>
+  <dcvalue element="geography" qualifier="level">Census block</dcvalue>
+  <dcvalue element="vintage" qualifier="none">2023</dcvalue>
+  <dcvalue element="source" qualifier="url">https://lehd.ces.census.gov/data/lodes/LODES8/tx/wac/tx_wac_S000_JT00_2023.csv.gz</dcvalue>
+  <dcvalue element="documentation" qualifier="url">https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf</dcvalue>
+</dublin_core>

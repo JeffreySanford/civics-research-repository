@@ -64,27 +64,42 @@ if [ -z "$collection_handle" ]; then
   exit 1
 fi
 
+saf_item_count="$(find /seed/saf -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+resume_flag=""
+
 # The mapfile lives in the assetstore volume, which outlives the database volume. Trusting it
 # blindly means that if the database is ever reset, the seed skips the import forever and leaves an
-# empty repository. Verify the referenced item still exists before believing the mapfile.
+# empty repository. Verify the referenced items still exist before believing the mapfile.
 # -f rather than -s: a failed import leaves an empty mapfile behind, and `dspace import` refuses to
 # run when the file exists at all, so an empty one wedges every later attempt.
 if [ -f "$item_mapfile" ]; then
+  mapped_count="$(awk 'NF' "$item_mapfile" 2>/dev/null | wc -l | tr -d ' ')"
   mapped_handle="$(awk 'NF {print $2; exit}' "$item_mapfile" 2>/dev/null || true)"
 
   if [ -n "$mapped_handle" ] &&
     /dspace/bin/dspace metadata-export -i "$mapped_handle" -f /tmp/civics-seed-item-check.csv >/dev/null 2>&1; then
-    echo "DSpace seed item already imported: $mapped_handle"
-    exit 0
-  fi
 
-  echo "Seed mapfile references ${mapped_handle:-an unknown handle}, which no longer exists in DSpace."
-  echo "Removing the stale mapfile and re-importing the seed item."
-  rm -f "$item_mapfile"
+    if [ "$mapped_count" -ge "$saf_item_count" ]; then
+      echo "DSpace seed items already imported: $mapped_count of $saf_item_count"
+      cat "$item_mapfile"
+      exit 0
+    fi
+
+    # Some SAF packages are new since the last run. --resume skips the ones already in the mapfile
+    # and imports only the remainder, so adding a seed item does not require a repository reset.
+    echo "Seed mapfile holds $mapped_count of $saf_item_count items; importing the remainder."
+    resume_flag="--resume"
+  else
+    echo "Seed mapfile references ${mapped_handle:-an unknown handle}, which no longer exists in DSpace."
+    echo "Removing the stale mapfile and re-importing every seed item."
+    rm -f "$item_mapfile"
+  fi
 fi
 
+# shellcheck disable=SC2086
 /dspace/bin/dspace import \
   --add \
+  $resume_flag \
   --eperson "$admin_email" \
   --collection "$collection_handle" \
   --source /seed/saf \

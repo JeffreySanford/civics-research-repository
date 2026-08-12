@@ -4,6 +4,7 @@ import { selectDatasetDetail } from './datasets.selectors';
 
 describe('datasetsReducer', () => {
   const detail = {
+    source: 'REPOSITORY' as const,
     id: 'tiger-line-north-dakota-2025',
     title: '2025 TIGER/Line - Census Tracts - North Dakota',
     program: 'TIGER_LINE' as const,

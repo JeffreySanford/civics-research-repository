@@ -48,7 +48,7 @@ DSpace remains the system of record. Solr is not the source of truth and should 
 
 Stated as a rule: **the `discovery` Solr core is a projection of DSpace and must always be rebuildable from it.** Anything that exists only in Solr is a bug, because it cannot survive a reindex.
 
-Current state does not yet satisfy this rule. The `discovery` core is populated from an in-memory seed list rather than from DSpace, so discovery and dataset detail serve fixture data while DSpace holds the synchronized item. Closing that gap is the current top priority; see [Known Seams](architecture-diagrams.md#known-seams).
+The implementation satisfies this rule. `DiscoveryProjectionService` is the only writer of the `discovery` core and builds it entirely from DSpace items, and `pnpm run reindex` rebuilds it on demand. When the repository yields nothing the fixture catalog is indexed instead, and that substitution is reported through the API as `resultSource: FIXTURE` rather than passed off as repository content.
 
 ## Datastore Roles
 
@@ -92,12 +92,12 @@ The first visual slice targets TIGER/Line Census Tracts for North Dakota, with A
 1. ~~Create a DSpace community and collection.~~ Done.
 2. ~~Create one DSpace item with metadata, source links, and documentation references.~~ Done, via the SAF seed package and `crr.*` schema.
 3. ~~Synchronize normalized source metadata into that item.~~ Done, idempotently, for Dublin Core and `crr.*` fields.
-4. **Make DSpace metadata drive discovery and dataset detail.** Not done — this is the open step, and the one that turns the demo from fixture-backed into repository-backed.
-5. ~~Build Angular search results and dataset detail pages.~~ Done against fixtures.
+4. ~~Make DSpace metadata drive discovery and dataset detail.~~ Done. Search, facets, dataset detail, and related research are read from DSpace; fixtures remain only as a labelled fallback.
+5. ~~Build Angular search results and dataset detail pages.~~ Done.
 6. ~~Add a map preview and one USGS overlay.~~ Done.
 7. ~~Capture automated accessibility evidence.~~ Done. Manual evidence checklists exist; no run has been recorded.
 
-Remaining after step 4: bitstream and file-manifest reconciliation, then live source harvesting in place of static adapter constants.
+Remaining: bitstream and file-manifest reconciliation, then live source harvesting in place of static adapter constants.
 
 ## Deployment Direction
 

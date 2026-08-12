@@ -162,7 +162,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /**
+     * @description Where the response data came from. REPOSITORY means DSpace is the source of record for these records. FIXTURE means DSpace was unavailable or empty and the response is generated placeholder content, which must never be presented to a user as repository data.
+     * @enum {string}
+     */
+    RepositorySource: 'REPOSITORY' | 'FIXTURE';
     SearchResponse: {
+      resultSource: components['schemas']['RepositorySource'];
       query: string;
       page: number;
       pageSize: number;
@@ -194,6 +200,7 @@ export interface components {
       selected: boolean;
     };
     DatasetDetail: {
+      source: components['schemas']['RepositorySource'];
       id: string;
       title: string;
       program: components['schemas']['ResearchProgram'];
@@ -358,7 +365,8 @@ export interface components {
       | 'LEHD'
       | 'LODES'
       | 'TIGER_LINE'
-      | 'USGS';
+      | 'USGS'
+      | 'OTHER';
     /** @enum {string} */
     FileFormat:
       | 'CSV'

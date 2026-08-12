@@ -28,3 +28,9 @@ export const selectDatasetError = createSelector(
   selectDatasetsState,
   (state) => state.error,
 );
+
+/** Whether the open dataset came from DSpace or from the fixture catalog. */
+export const selectDatasetSource = createSelector(
+  selectDatasetDetail,
+  (detail) => detail?.source ?? null,
+);

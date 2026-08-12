@@ -38,3 +38,13 @@ export const selectSearchError = createSelector(
   selectSearchState,
   (state) => state.error,
 );
+
+/**
+ * Whether the current results came from DSpace or from the fixture catalog.
+ *
+ * <p>Surfaced in the UI so generated placeholder content is never presented as repository content.
+ */
+export const selectSearchResultSource = createSelector(
+  selectSearchResponse,
+  (response) => response?.resultSource ?? null,
+);

@@ -42,12 +42,6 @@ Risk: existing Nx warnings about inferred targets and Analog/Vitest configuratio
 
 Mitigation: address these warnings before broad feature work and keep commands routed through `pnpm nx`.
 
-## Fixture Data Masking an Unfinished Integration
-
-Risk: discovery and dataset detail are served from an in-memory seed list and hard-coded fixtures, while DSpace holds the synchronized item. The UI looks complete, so the missing read path is invisible in a demo — and a reviewer who discovers it independently will reasonably question what else is fixture-backed.
-
-Mitigation: close it as near-term priority 1. Until then, state it plainly rather than letting it be found: the Known Seams section of the architecture diagrams lists it first, and any fallback response should be identifiable as fallback in the API surface itself, not only in documentation.
-
 ## Datastore Role Ambiguity
 
 Risk: two PostgreSQL databases both named `dspace`, plus two Solr instances, invite the reader to assume the application writes into DSpace's own schema. That misreading undermines the "DSpace is the system of record" claim the architecture rests on.
@@ -103,6 +97,12 @@ Closed by running Gradle inside the `gradle:9.6-jdk21` image. No local Java or b
 Was: Java 17 versus 21 undecided against unknown federal runtime availability.
 
 Closed on Java 21. Revisit only if a concrete deployment constraint appears.
+
+### Fixture Data Masking an Unfinished Integration
+
+Was: discovery and dataset detail were served from generated fixtures while DSpace held the synchronized item, so the missing read path was invisible in a demo.
+
+Closed by making DSpace the read source for search, facets, dataset detail, and related research. The fixture catalog remains only as a fallback, and every response carries `resultSource` / `source` so a fallback is disclosed in the UI rather than mistaken for repository content.
 
 ### Analog/Vitest Angular Library Warning
 

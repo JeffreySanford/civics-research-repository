@@ -6,12 +6,16 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 
 ### P1 - Make DSpace drive one complete vertical slice
 
-- [ ] Project DSpace items into the Solr `discovery` core instead of `SearchService.seedResults()`.
-- [ ] Read dataset detail from DSpace instead of the hard-coded `DatasetService` fixtures.
-- [ ] Demote the in-memory seed list to an explicit fallback for tests and demo recovery.
-- [ ] Make a fallback response identifiable as fallback, so fixture data is never presented as repository data.
-- [ ] Add a reindex path that rebuilds the discovery core from DSpace on demand.
-- [ ] Update the search and dataset detail tests to cover the repository-backed path and the fallback separately.
+- [x] Project DSpace items into the Solr `discovery` core instead of `SearchService.seedResults()`.
+- [x] Read dataset detail from DSpace instead of the hard-coded `DatasetService` fixtures.
+- [x] Demote the in-memory seed list to an explicit fallback for tests and demo recovery.
+- [x] Make a fallback response identifiable as fallback: `resultSource` / `source` in the contract, disclosed in the UI.
+- [x] Add a reindex path that rebuilds the discovery core from DSpace on demand (`pnpm run reindex`).
+- [x] Update the search and dataset detail tests to cover the repository-backed path and the fallback separately.
+- [x] Seed LODES, ACS PUMS, and a second geography so facets exercise real repository data.
+- [x] Compute related research from the repository instead of hard-coding it.
+- [ ] Harvest live source metadata instead of static adapter constants.
+- [ ] Reconcile bitstreams and the file manifest so `sync:diff` can reach `SKIP_ITEM`.
 
 ### P2 - Disambiguate the two PostgreSQL and two Solr systems
 

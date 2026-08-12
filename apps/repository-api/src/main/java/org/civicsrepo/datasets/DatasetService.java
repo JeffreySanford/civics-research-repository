@@ -3,16 +3,50 @@ package org.civicsrepo.datasets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import org.civicsrepo.repository.RepositoryCatalog;
+import org.civicsrepo.repository.RepositorySource;
 import org.civicsrepo.search.ResearchProgram;
 import org.civicsrepo.search.ResearchObjectType;
 import org.civicsrepo.search.SearchResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class DatasetService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatasetService.class);
+
+    private final RepositoryCatalog repositoryCatalog;
+
+    public DatasetService() {
+        this(null);
+    }
+
+    @Autowired
+    public DatasetService(RepositoryCatalog repositoryCatalog) {
+        this.repositoryCatalog = repositoryCatalog;
+    }
+
+    /**
+     * DSpace first, fixtures second.
+     *
+     * <p>A dataset page served from the repository carries {@link RepositorySource#REPOSITORY}; the
+     * generated fallback carries {@link RepositorySource#FIXTURE} so the UI can disclose it. The
+     * fallback exists so the demo survives a DSpace outage, not so it can stand in silently.
+     */
     public DatasetDetail getDataset(String datasetId) {
+        if (repositoryCatalog != null) {
+            Optional<DatasetDetail> repositoryDataset = repositoryCatalog.findDataset(datasetId);
+            if (repositoryDataset.isPresent()) {
+                return repositoryDataset.orElseThrow();
+            }
+            LOGGER.debug("Dataset {} is not in the repository; using the fixture catalog.", datasetId);
+        }
+
         DatasetKey key = parseDatasetId(datasetId);
 
         return switch (key.program()) {
@@ -47,6 +81,7 @@ public class DatasetService {
 
     private DatasetDetail tigerLineDetail(String datasetId, String geography, int vintageYear) {
         return new DatasetDetail(
+                RepositorySource.FIXTURE,
                 datasetId,
                 vintageYear + " TIGER/Line - Census Tracts - " + geography,
                 ResearchProgram.TIGER_LINE,
@@ -66,6 +101,7 @@ public class DatasetService {
 
     private DatasetDetail lodesDetail(String datasetId, String geography, int vintageYear) {
         return new DatasetDetail(
+                RepositorySource.FIXTURE,
                 datasetId,
                 vintageYear + " LODES Workplace Area Characteristics - " + geography,
                 ResearchProgram.LODES,
@@ -85,6 +121,7 @@ public class DatasetService {
 
     private DatasetDetail acsDetail(String datasetId, String geography, int vintageYear) {
         return new DatasetDetail(
+                RepositorySource.FIXTURE,
                 datasetId,
                 vintageYear + " ACS 1-Year PUMS - " + geography,
                 ResearchProgram.ACS,
@@ -109,6 +146,7 @@ public class DatasetService {
             String abstractText,
             String sourceUrl) {
         return new DatasetDetail(
+                RepositorySource.FIXTURE,
                 datasetId,
                 title,
                 program,
@@ -126,6 +164,7 @@ public class DatasetService {
 
     private DatasetDetail usgsDetail(String datasetId) {
         return new DatasetDetail(
+                RepositorySource.FIXTURE,
                 datasetId,
                 "USGS Earthquake Overlay",
                 ResearchProgram.USGS,

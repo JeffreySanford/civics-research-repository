@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import org.civicsrepo.repository.RepositorySource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -31,6 +32,7 @@ class SearchControllerTest {
 
         mockMvc.perform(get("/search"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultSource").value("REPOSITORY"))
                 .andExpect(jsonPath("$.totalResults").value(1))
                 .andExpect(jsonPath("$.results[0].id").value("tiger-line-north-dakota-2025"));
 
@@ -86,6 +88,7 @@ class SearchControllerTest {
 
     private SearchResponse response() {
         return new SearchResponse(
+                RepositorySource.REPOSITORY,
                 "",
                 0,
                 25,

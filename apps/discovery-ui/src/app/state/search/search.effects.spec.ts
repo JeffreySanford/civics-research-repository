@@ -10,6 +10,7 @@ import { SearchActions } from './search.actions';
 import { SearchEffects } from './search.effects';
 
 const response: SearchResponse = {
+  resultSource: 'REPOSITORY',
   query: 'tracts',
   page: 0,
   pageSize: 25,

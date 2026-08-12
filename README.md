@@ -101,19 +101,21 @@ civics-research-repository/
 
 ## Current Status
 
-The Nx workspace, Angular UI, OpenAPI contract, accessibility evidence, Docker platform, and Java API are all in place, and sync writes normalized metadata into DSpace idempotently. The vertical slice is connected everywhere except one link:
+The vertical slice is connected end to end. DSpace is the system of record for both writes and reads:
 
 ```text
 Public dataset metadata
-  -> harvester                     static adapter constants
+  -> harvester                     static adapter constants          <-- open
   -> DSpace item                   working, idempotent
-  -> Solr discovery index          indexed from fixtures, not DSpace   <-- open
-  -> Angular search result         served from fixtures                <-- open
-  -> dataset detail page           served from fixtures                <-- open
+  -> Solr discovery index          projected from DSpace
+  -> Angular search result         served from the repository
+  -> dataset detail page           served from the repository
   -> map visualization             working, live USGS with fallback
 ```
 
-Closing that gap — making DSpace metadata drive discovery and dataset detail — is the current top priority. The full list of gaps between the architecture and the implementation is in [Known Seams](documentation/architecture-diagrams.md#known-seams); the ordered plan is in [planning/ROADMAP.md](planning/ROADMAP.md#near-term-order).
+Discovery, facets, dataset detail, and related research all read from DSpace. The generated fixture catalog survives only as a fallback for when the repository is unavailable, and every API response carries `resultSource` / `source` (`REPOSITORY` or `FIXTURE`) so the UI shows a placeholder-data notice rather than passing fixtures off as repository content. `pnpm run reindex` rebuilds the projection on demand.
+
+Remaining gaps are listed in [Known Seams](documentation/architecture-diagrams.md#known-seams); the ordered plan is in [planning/ROADMAP.md](planning/ROADMAP.md#near-term-order).
 
 Architecture is documented as C4 context and container views plus ingestion, search, and map sequences in [architecture-diagrams.md](documentation/architecture-diagrams.md). The cloud target is in [aws-modernization.md](documentation/aws-modernization.md). Accessibility has automated coverage in `quality:all` and manual checklists in [accessibility-manual-evidence.md](documentation/accessibility-manual-evidence.md); no manual run has been recorded yet, so the project currently has automated-scan results rather than complete Section 508 evidence.
 
@@ -137,6 +139,7 @@ pnpm run dspace:verify:seed
 pnpm run sync:dry-run
 pnpm run sync:diff
 pnpm run sync:apply
+pnpm run reindex
 pnpm run test:all
 pnpm run quality:all
 pnpm run openapi:generate

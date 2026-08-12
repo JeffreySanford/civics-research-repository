@@ -278,10 +278,20 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    RepositorySource:
+      type: string
+      description: >-
+        Where the response data came from. REPOSITORY means DSpace is the source of record for
+        these records. FIXTURE means DSpace was unavailable or empty and the response is generated
+        placeholder content, which must never be presented to a user as repository data.
+      enum: [REPOSITORY, FIXTURE]
     SearchResponse:
       type: object
-      required: [query, page, pageSize, totalResults, results, facets]
+      required:
+        [query, page, pageSize, totalResults, results, facets, resultSource]
       properties:
+        resultSource:
+          $ref: '#/components/schemas/RepositorySource'
         query:
           type: string
         page:
@@ -358,8 +368,11 @@ components:
           citation,
           sourceUrl,
           relatedResearch,
+          source,
         ]
       properties:
+        source:
+          $ref: '#/components/schemas/RepositorySource'
         id:
           type: string
         title:
@@ -654,7 +667,9 @@ components:
       enum: [DATASET, PUBLICATION, CODE, METHODOLOGY, SUPPORTING_MATERIAL]
     ResearchProgram:
       type: string
-      enum: [ACS, SIPP, CPS, LEHD, LODES, TIGER_LINE, USGS]
+      # OTHER covers repository items that carry no crr.program value. Guessing a Census
+      # program for an unlabeled item would misreport it.
+      enum: [ACS, SIPP, CPS, LEHD, LODES, TIGER_LINE, USGS, OTHER]
     FileFormat:
       type: string
       enum: [CSV, ZIP, PDF, JSON, GEOJSON, SHAPEFILE, GEOPACKAGE, OTHER]

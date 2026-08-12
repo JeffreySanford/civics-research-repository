@@ -286,6 +286,17 @@ input:focus-visible {
   color: #713b12;
 }
 
+// Shown when the API reports resultSource/source = FIXTURE. Deliberately prominent: presenting
+// generated placeholders as repository content is the failure mode this disclosure exists to
+// prevent. Colors match the AA-contrast pairing used by .warning-message.
+:host ::ng-deep .fixture-notice {
+  border-left: 4px solid #b54708;
+  background: #fff8e6;
+  color: #713b12;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
 :host ::ng-deep .discovery-layout {
   display: grid;
   grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);

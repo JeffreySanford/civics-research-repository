@@ -89,6 +89,42 @@ public class DspaceRestClient {
         return DspaceItemMatcher.selectTargetItem(searchItems(expectedTitle), sourceIdentifier, expectedTitle);
     }
 
+    /**
+     * Every non-withdrawn item in the repository, paged through discovery.
+     *
+     * <p>This is the read side of "DSpace is the system of record": the discovery projection and
+     * dataset detail are both built from it, rather than from generated fixtures.
+     */
+    public List<JsonNode> listAllItems(int maxItems) {
+        if (!isReadEnabled()) {
+            return List.of();
+        }
+
+        List<JsonNode> items = new ArrayList<>();
+        int pageSize = Math.min(Math.max(maxItems, 1), 100);
+
+        for (int page = 0; items.size() < maxItems; page++) {
+            HttpResponse<String> response = send(HttpRequest.newBuilder(allItemsUri(page, pageSize))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET());
+            if (response.statusCode() >= 300) {
+                throw new DspaceUnavailableException(baseUrl, response.statusCode());
+            }
+
+            List<JsonNode> pageItems = toDiscoverableItems(response.body());
+            if (pageItems.isEmpty()) {
+                break;
+            }
+
+            items.addAll(pageItems);
+            if (pageItems.size() < pageSize) {
+                break;
+            }
+        }
+
+        return items.size() > maxItems ? List.copyOf(items.subList(0, maxItems)) : List.copyOf(items);
+    }
+
     /** Returns every non-withdrawn item in a discovery response, newest DSpace ranking order preserved. */
     public List<JsonNode> searchItems(String query) {
         if (!isReadEnabled() || normalize(query).isBlank()) {
@@ -197,6 +233,11 @@ public class DspaceRestClient {
 
     private URI discoveryUri(String query) {
         return URI.create(baseUrl + "/api/discover/search/objects?query=" + encode(query));
+    }
+
+    private URI allItemsUri(int page, int pageSize) {
+        return URI.create(
+                baseUrl + "/api/discover/search/objects?dsoType=item&page=" + page + "&size=" + pageSize);
     }
 
     private URI itemUri(String itemUuid) {

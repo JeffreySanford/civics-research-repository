@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Dublin Core only. DSpace ignores a schema= attribute on individual dcvalue elements in this file
+  and assumes every value belongs to the file's schema, so project-specific crr.* fields live in
+  metadata_crr.xml instead.
+-->
+<dublin_core schema="dc">
+  <dcvalue element="title" qualifier="none">2023 LODES Workplace Area Characteristics - North Dakota</dcvalue>
+  <dcvalue element="contributor" qualifier="author">U.S. Census Bureau</dcvalue>
+  <dcvalue element="publisher" qualifier="none">U.S. Census Bureau</dcvalue>
+  <dcvalue element="description" qualifier="abstract">LEHD Origin-Destination Employment Statistics workplace area characteristics metadata for North Dakota, seeded for the Civics Research Repository discovery demo.</dcvalue>
+  <dcvalue element="date" qualifier="issued">2023-06-01</dcvalue>
+  <dcvalue element="identifier" qualifier="other">lodes-wac-north-dakota-2023</dcvalue>
+  <dcvalue element="identifier" qualifier="uri">https://lehd.ces.census.gov/data/lodes/LODES8/nd/wac/nd_wac_S000_JT00_2023.csv.gz</dcvalue>
+  <dcvalue element="relation" qualifier="uri">https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf</dcvalue>
+  <dcvalue element="identifier" qualifier="citation">U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, North Dakota, 2023.</dcvalue>
+  <dcvalue element="subject" qualifier="none">LODES</dcvalue>
+  <dcvalue element="subject" qualifier="none">Workplace area characteristics</dcvalue>
+  <dcvalue element="coverage" qualifier="spatial">North Dakota</dcvalue>
+</dublin_core>
