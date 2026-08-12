@@ -11,8 +11,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
 import java.util.List;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResponse;
+import org.civicsrepo.generated.dto.SearchResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -26,6 +31,27 @@ class SearchControllerTest {
 
     @MockitoBean
     private SearchService searchService;
+
+    /**
+     * The generator renames USGS_3DEP to the Java constant USGS_3_DEP. Spring binds query
+     * parameters with Enum.valueOf, which knows only the constant name, so without a converter
+     * this request answered 400 while every other program bound fine.
+     */
+    @Test
+    void bindsAProgramTheGeneratorRenamedByItsContractValue() throws Exception {
+        given(searchService.search(
+                        any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), anyInt(), anyInt()))
+                .willReturn(response());
+
+        mockMvc.perform(get("/search").param("program", "USGS_3HP")).andExpect(status().isOk());
+
+        verify(searchService).search(any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void rejectsAProgramValueTheContractDoesNotDefine() throws Exception {
+        mockMvc.perform(get("/search").param("program", "NOT_A_PROGRAM")).andExpect(status().isBadRequest());
+    }
 
     @Test
     void appliesPagingDefaultsWhenNoParametersAreSupplied() throws Exception {
@@ -129,15 +155,15 @@ class SearchControllerTest {
                 25,
                 1,
                 List.of(new SearchResult(
-                        "tiger-line-north-dakota-2025",
-                        "2025 TIGER/Line - Census Tracts - North Dakota",
-                        ResearchObjectType.DATASET,
-                        ResearchProgram.TIGER_LINE,
-                        "U.S. Census Bureau",
-                        "Tract geometry metadata.",
-                        "North Dakota",
-                        2025,
-                        "https://www2.census.gov/geo/tiger/TIGER2025/")),
+                                "tiger-line-north-dakota-2025",
+                                "2025 TIGER/Line - Census Tracts - North Dakota",
+                                ResearchObjectType.DATASET,
+                                ResearchProgram.TIGER_LINE,
+                                "U.S. Census Bureau",
+                                "Tract geometry metadata.",
+                                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"))
+                        .geography("North Dakota")
+                        .vintageYear(2025)),
                 List.of());
     }
 }

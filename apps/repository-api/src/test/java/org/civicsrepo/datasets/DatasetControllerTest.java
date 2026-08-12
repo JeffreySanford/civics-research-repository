@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.util.List;
+import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.RepositorySource;
-import org.civicsrepo.search.ResearchProgram;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;

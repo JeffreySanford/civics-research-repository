@@ -1,5 +1,6 @@
 package org.civicsrepo.search;
 
+import java.net.URI;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -9,6 +10,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.civicsrepo.repository.RepositoryCatalog;
+import org.civicsrepo.generated.dto.FacetGroup;
+import org.civicsrepo.generated.dto.FacetValue;
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResponse;
+import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +117,9 @@ public class SearchService {
             try {
                 return solrSearchClient
                         .search(query, programs, geography, vintageYear, page, pageSize)
-                        .withResultSource(indexedSource());
+                        // The generated model is mutable, and this response was just built by the
+                        // client for this call, so relabelling it in place is safe.
+                        .resultSource(indexedSource());
             } catch (RuntimeException exception) {
                 LOGGER.warn("Solr search failed; answering from in-memory results.", exception);
             }
@@ -159,11 +168,11 @@ public class SearchService {
 
         List<SearchResult> filtered = catalog.stream()
                 .filter((result) -> matchesQuery(result, normalizedQuery))
-                .filter((result) -> programs.isEmpty() || programs.contains(result.program()))
+                .filter((result) -> programs.isEmpty() || programs.contains(result.getProgram()))
                 .filter((result) ->
-                        normalizedGeography.isBlank() || normalize(result.geography()).contains(normalizedGeography))
-                .filter((result) -> vintageYear == null || vintageYear.equals(result.vintageYear()))
-                .sorted(Comparator.comparing(SearchResult::title))
+                        normalizedGeography.isBlank() || normalize(result.getGeography()).contains(normalizedGeography))
+                .filter((result) -> vintageYear == null || vintageYear.equals(result.getVintageYear()))
+                .sorted(Comparator.comparing(SearchResult::getTitle))
                 .toList();
 
         int safePage = Math.max(0, page);
@@ -187,13 +196,13 @@ public class SearchService {
                                 catalog.stream()
                                         .filter((result) -> matchesQuery(result, normalizedQuery))
                                         .filter((result) -> normalizedGeography.isBlank()
-                                                || normalize(result.geography()).contains(normalizedGeography))
+                                                || normalize(result.getGeography()).contains(normalizedGeography))
                                         .filter((result) ->
-                                                vintageYear == null || vintageYear.equals(result.vintageYear()))
+                                                vintageYear == null || vintageYear.equals(result.getVintageYear()))
                                         .toList(),
-                                (result) -> result.program().name(),
+                                (result) -> result.getProgram().getValue(),
                                 programs),
-                        facetGroup("geography", "Geography", filtered, SearchResult::geography, geography == null ? "" : geography)));
+                        facetGroup("geography", "Geography", filtered, SearchResult::getGeography, geography == null ? "" : geography)));
     }
 
     private boolean matchesQuery(SearchResult result, String normalizedQuery) {
@@ -201,10 +210,10 @@ public class SearchService {
             return true;
         }
 
-        return normalize(result.title()).contains(normalizedQuery)
-                || normalize(result.summary()).contains(normalizedQuery)
-                || normalize(result.publisher()).contains(normalizedQuery)
-                || normalize(result.program().name()).contains(normalizedQuery);
+        return normalize(result.getTitle()).contains(normalizedQuery)
+                || normalize(result.getSummary()).contains(normalizedQuery)
+                || normalize(result.getPublisher()).contains(normalizedQuery)
+                || normalize(result.getProgram().getValue()).contains(normalizedQuery);
     }
 
     private FacetGroup facetGroup(
@@ -232,7 +241,9 @@ public class SearchService {
                 label,
                 results,
                 valueSelector,
-                selectedPrograms.stream().map((program) -> normalize(program.name())).collect(Collectors.toSet()));
+                selectedPrograms.stream()
+                        .map((program) -> normalize(program.getValue()))
+                        .collect(Collectors.toSet()));
     }
 
     private FacetGroup facetGroup(
@@ -249,7 +260,9 @@ public class SearchService {
                 .map((entry) -> new FacetValue(
                         entry.getKey(),
                         entry.getKey().replace('_', ' '),
-                        entry.getValue(),
+                        // The contract types counts as int32, so a long was never carried on the
+                        // wire. toIntExact fails loudly rather than truncating silently.
+                        Math.toIntExact(entry.getValue()),
                         normalizedSelected.contains(normalize(entry.getKey()))))
                 .toList();
 
@@ -271,9 +284,9 @@ public class SearchService {
                                         ResearchProgram.SIPP,
                                         "U.S. Census Bureau",
                                         "Survey of Income and Program Participation public-use metadata for longitudinal research.",
-                                        "United States",
-                                        2024,
-                                        "https://www.census.gov/programs-surveys/sipp/data/datasets.html"),
+                        URI.create("https://www.census.gov/programs-surveys/sipp/data/datasets.html"))
+                        .geography("United States")
+                        .vintageYear(2024),
                                 new SearchResult(
                                         "cps-public-use",
                                         "Current Population Survey Public Use Data",
@@ -281,9 +294,9 @@ public class SearchService {
                                         ResearchProgram.CPS,
                                         "U.S. Census Bureau",
                                         "Current Population Survey public-use metadata for labor force and demographic analysis.",
-                                        "United States",
-                                        2024,
-                                        "https://www.census.gov/programs-surveys/cps/data/datasets.html"),
+                        URI.create("https://www.census.gov/programs-surveys/cps/data/datasets.html"))
+                        .geography("United States")
+                        .vintageYear(2024),
                                 new SearchResult(
                                         "usgs-earthquakes-overlay",
                                         "USGS Earthquake Overlay",
@@ -291,9 +304,9 @@ public class SearchService {
                                         ResearchProgram.USGS,
                                         "U.S. Geological Survey",
                                         "Earthquake Hazards Program GeoJSON overlay metadata for map context and event lists.",
-                                        "United States",
-                                        2026,
-                                        "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson")))
+                        URI.create("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"))
+                        .geography("United States")
+                        .vintageYear(2026)))
                 .toList();
     }
 
@@ -307,9 +320,9 @@ public class SearchService {
                         ResearchProgram.TIGER_LINE,
                         "U.S. Census Bureau",
                         "Cartographic boundary and tract geometry metadata for " + censusArea + " census geography.",
-                        censusArea,
-                        2025,
-                        "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"),
+                        URI.create("https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"))
+                        .geography(censusArea)
+                        .vintageYear(2025),
                 new SearchResult(
                         "lodes-wac-" + idSuffix + "-2023",
                         "2023 LODES Workplace Area Characteristics - " + censusArea,
@@ -317,9 +330,9 @@ public class SearchService {
                         ResearchProgram.LODES,
                         "U.S. Census Bureau",
                         "LEHD Origin-Destination Employment Statistics metadata for " + censusArea + " workforce geography.",
-                        censusArea,
-                        2023,
-                        "https://lehd.ces.census.gov/data/"),
+                        URI.create("https://lehd.ces.census.gov/data/"))
+                        .geography(censusArea)
+                        .vintageYear(2023),
                 new SearchResult(
                         "acs-pums-" + idSuffix + "-2024",
                         "2024 ACS 1-Year PUMS - " + censusArea,
@@ -327,8 +340,8 @@ public class SearchService {
                         ResearchProgram.ACS,
                         "U.S. Census Bureau",
                         "American Community Survey public use microdata metadata for " + censusArea + " demographic research.",
-                        censusArea,
-                        2024,
-                        "https://www.census.gov/programs-surveys/acs/microdata.html"));
+                        URI.create("https://www.census.gov/programs-surveys/acs/microdata.html"))
+                        .geography(censusArea)
+                        .vintageYear(2024));
     }
 }

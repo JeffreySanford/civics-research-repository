@@ -1,5 +1,9 @@
 package org.civicsrepo.search;
 
+import org.civicsrepo.generated.dto.FacetValue;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResponse;
+import org.civicsrepo.generated.dto.SearchResult;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
@@ -12,10 +16,10 @@ class SearchServiceTest {
     void keywordSearchFindsNorthDakotaResearchObjects() {
         SearchResponse response = searchService.search("North Dakota", List.of(), null, null, 0, 25);
 
-        assertThat(response.query()).isEqualTo("North Dakota");
-        assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
-        assertThat(response.results())
-                .extracting(SearchResult::id)
+        assertThat(response.getQuery()).isEqualTo("North Dakota");
+        assertThat(response.getTotalResults()).isGreaterThanOrEqualTo(3);
+        assertThat(response.getResults())
+                .extracting(SearchResult::getId)
                 .contains(
                         "tiger-line-north-dakota-2025",
                         "lodes-wac-north-dakota-2023",
@@ -26,9 +30,9 @@ class SearchServiceTest {
     void keywordSearchFindsOtherCensusAreas() {
         SearchResponse response = searchService.search("California", List.of(), null, null, 0, 25);
 
-        assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
-        assertThat(response.results())
-                .extracting(SearchResult::geography)
+        assertThat(response.getTotalResults()).isGreaterThanOrEqualTo(3);
+        assertThat(response.getResults())
+                .extracting(SearchResult::getGeography)
                 .containsOnly("California");
     }
 
@@ -36,9 +40,9 @@ class SearchServiceTest {
     void geographyFilterSupportsAnySeededCensusArea() {
         SearchResponse response = searchService.search("", List.of(), "Texas", null, 0, 25);
 
-        assertThat(response.totalResults()).isGreaterThanOrEqualTo(3);
-        assertThat(response.results())
-                .extracting(SearchResult::id)
+        assertThat(response.getTotalResults()).isGreaterThanOrEqualTo(3);
+        assertThat(response.getResults())
+                .extracting(SearchResult::getId)
                 .contains("tiger-line-texas-2025", "lodes-wac-texas-2023", "acs-pums-texas-2024");
     }
 
@@ -46,15 +50,15 @@ class SearchServiceTest {
     void programFilterReturnsSelectedFacet() {
         SearchResponse response = searchService.search("", List.of(ResearchProgram.USGS), null, null, 0, 25);
 
-        assertThat(response.results()).singleElement().extracting(SearchResult::program).isEqualTo(ResearchProgram.USGS);
-        assertThat(response.facets())
-                .filteredOn((facet) -> facet.field().equals("program"))
+        assertThat(response.getResults()).singleElement().extracting(SearchResult::getProgram).isEqualTo(ResearchProgram.USGS);
+        assertThat(response.getFacets())
+                .filteredOn((facet) -> facet.getField().equals("program"))
                 .singleElement()
                 .satisfies((facet) ->
-                        assertThat(facet.values())
-                                .filteredOn(FacetValue::selected)
+                        assertThat(facet.getValues())
+                                .filteredOn(FacetValue::getSelected)
                                 .singleElement()
-                                .extracting(FacetValue::value)
+                                .extracting(FacetValue::getValue)
                                 .isEqualTo("USGS"));
     }
 
@@ -64,8 +68,8 @@ class SearchServiceTest {
         SearchResponse response = searchService.search(
                 "", List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES), "Texas", null, 0, 25);
 
-        assertThat(response.results())
-                .extracting(SearchResult::program)
+        assertThat(response.getResults())
+                .extracting(SearchResult::getProgram)
                 .containsOnly(ResearchProgram.TIGER_LINE, ResearchProgram.LODES);
     }
 
@@ -75,9 +79,9 @@ class SearchServiceTest {
         SearchResponse response =
                 searchService.search("", List.of(ResearchProgram.USGS), null, null, 0, 25);
 
-        assertThat(response.facets())
-                .filteredOn((facet) -> facet.field().equals("program"))
+        assertThat(response.getFacets())
+                .filteredOn((facet) -> facet.getField().equals("program"))
                 .singleElement()
-                .satisfies((facet) -> assertThat(facet.values().size()).isGreaterThan(1));
+                .satisfies((facet) -> assertThat(facet.getValues().size()).isGreaterThan(1));
     }
 }

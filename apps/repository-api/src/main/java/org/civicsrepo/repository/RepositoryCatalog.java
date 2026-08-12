@@ -1,5 +1,6 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.SearchResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
 import java.time.Instant;
@@ -10,7 +11,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.datasets.DatasetDetail;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.dspace.DspaceUnavailableException;
-import org.civicsrepo.search.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,7 +63,7 @@ public class RepositoryCatalog {
     public List<SearchResult> findAllResearchObjects() {
         return readItems().stream()
                 .map(repositoryObjectMapper::toSearchResult)
-                .sorted(Comparator.comparing(SearchResult::title))
+                .sorted(Comparator.comparing(SearchResult::getTitle))
                 .toList();
     }
 
@@ -93,12 +93,12 @@ public class RepositoryCatalog {
     private List<SearchResult> relatedResearch(List<JsonNode> items, SearchResult self) {
         List<SearchResult> others = items.stream()
                 .map(repositoryObjectMapper::toSearchResult)
-                .filter((result) -> !result.id().equals(self.id()))
+                .filter((result) -> !result.getId().equals(self.getId()))
                 .toList();
 
         List<SearchResult> sameGeography = others.stream()
                 .filter((result) -> sharesGeography(result, self))
-                .sorted(Comparator.comparing(SearchResult::title))
+                .sorted(Comparator.comparing(SearchResult::getTitle))
                 .limit(MAX_RELATED_RESEARCH)
                 .toList();
 
@@ -107,16 +107,16 @@ public class RepositoryCatalog {
         }
 
         return others.stream()
-                .filter((result) -> result.program() == self.program())
-                .sorted(Comparator.comparing(SearchResult::title))
+                .filter((result) -> result.getProgram() == self.getProgram())
+                .sorted(Comparator.comparing(SearchResult::getTitle))
                 .limit(MAX_RELATED_RESEARCH)
                 .toList();
     }
 
     private boolean sharesGeography(SearchResult candidate, SearchResult self) {
-        return candidate.geography() != null
-                && self.geography() != null
-                && candidate.geography().equalsIgnoreCase(self.geography());
+        return candidate.getGeography() != null
+                && self.getGeography() != null
+                && candidate.getGeography().equalsIgnoreCase(self.getGeography());
     }
 
     /**

@@ -1,5 +1,7 @@
 package org.civicsrepo.search;
 
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResponse;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

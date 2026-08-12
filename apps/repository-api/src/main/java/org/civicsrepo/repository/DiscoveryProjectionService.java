@@ -1,10 +1,10 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import org.civicsrepo.search.SearchResult;
 import org.civicsrepo.search.SolrSearchClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,5 +1,9 @@
 package org.civicsrepo.repository;
 
+import java.net.URI;
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
@@ -13,9 +17,6 @@ import org.civicsrepo.datasets.DatasetFile;
 import org.civicsrepo.datasets.EvidenceStatus;
 import org.civicsrepo.datasets.FileFormat;
 import org.civicsrepo.dspace.DspaceFileManifest;
-import org.civicsrepo.search.ResearchObjectType;
-import org.civicsrepo.search.ResearchProgram;
-import org.civicsrepo.search.SearchResult;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,9 +44,9 @@ public class RepositoryObjectMapper {
                 program(item),
                 firstValue(item, "dc.publisher").orElse(PUBLISHER_FALLBACK),
                 firstValue(item, "dc.description.abstract").orElse(""),
-                geography,
-                vintageYear(item).orElse(null),
-                sourceUrl(item));
+                        URI.create(sourceUrl(item)))
+                        .geography(geography)
+                        .vintageYear(vintageYear(item).orElse(null));
     }
 
     public DatasetDetail toDatasetDetail(JsonNode item, List<SearchResult> relatedResearch) {
@@ -94,7 +95,7 @@ public class RepositoryObjectMapper {
 
     private static Optional<ResearchProgram> parseProgram(String value) {
         for (ResearchProgram program : ResearchProgram.values()) {
-            if (program.name().equals(value)) {
+            if (program.getValue().equals(value)) {
                 return Optional.of(program);
             }
         }

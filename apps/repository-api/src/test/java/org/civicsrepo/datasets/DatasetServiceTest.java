@@ -1,9 +1,9 @@
 package org.civicsrepo.datasets;
 
+import org.civicsrepo.generated.dto.ResearchProgram;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.civicsrepo.search.ResearchProgram;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -18,7 +18,7 @@ class DatasetServiceTest {
         assertThat(detail.program()).isEqualTo(ResearchProgram.TIGER_LINE);
         assertThat(detail.geography()).isEqualTo("California");
         assertThat(detail.files()).extracting(DatasetFile::format).contains(FileFormat.ZIP);
-        assertThat(detail.relatedResearch()).extracting((related) -> related.id()).contains("lodes-wac-california-2023");
+        assertThat(detail.relatedResearch()).extracting((related) -> related.getId()).contains("lodes-wac-california-2023");
     }
 
     @Test

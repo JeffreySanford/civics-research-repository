@@ -1,8 +1,8 @@
 package org.civicsrepo.sources;
 
+import org.civicsrepo.generated.dto.ResearchProgram;
 import java.time.LocalDate;
 import java.util.List;
-import org.civicsrepo.search.ResearchProgram;
 
 public record PublicDatasetMetadata(
         String id,

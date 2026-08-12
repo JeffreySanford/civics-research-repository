@@ -1,5 +1,6 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,7 +9,6 @@ import java.util.List;
 import org.civicsrepo.datasets.DatasetDetail;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.dspace.DspaceUnavailableException;
-import org.civicsrepo.search.SearchResult;
 import org.junit.jupiter.api.Test;
 
 class RepositoryCatalogTest {
@@ -36,7 +36,7 @@ class RepositoryCatalogTest {
     void listsEveryRepositoryItemSortedByTitle() {
         List<SearchResult> results = catalog(ITEMS).findAllResearchObjects();
 
-        assertThat(results).extracting(SearchResult::id).containsExactly(
+        assertThat(results).extracting(SearchResult::getId).containsExactly(
                 "lodes-wac-north-dakota-2023", "tiger-line-north-dakota-2025", "tiger-line-texas-2025");
     }
 
@@ -68,7 +68,7 @@ class RepositoryCatalogTest {
         DatasetDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
         assertThat(detail.relatedResearch())
-                .extracting(SearchResult::id)
+                .extracting(SearchResult::getId)
                 .containsExactly("lodes-wac-north-dakota-2023")
                 .doesNotContain("tiger-line-texas-2025");
     }
@@ -83,7 +83,7 @@ class RepositoryCatalogTest {
 
         DatasetDetail detail = catalog(items).findDataset("cps-a").orElseThrow();
 
-        assertThat(detail.relatedResearch()).extracting(SearchResult::id).containsExactly("cps-b");
+        assertThat(detail.relatedResearch()).extracting(SearchResult::getId).containsExactly("cps-b");
     }
 
     @Test

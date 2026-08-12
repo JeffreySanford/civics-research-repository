@@ -1,5 +1,8 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -9,9 +12,6 @@ import java.util.List;
 import java.util.Map;
 import org.civicsrepo.datasets.DatasetDetail;
 import org.civicsrepo.datasets.FileFormat;
-import org.civicsrepo.search.ResearchObjectType;
-import org.civicsrepo.search.ResearchProgram;
-import org.civicsrepo.search.SearchResult;
 import org.junit.jupiter.api.Test;
 
 class RepositoryObjectMapperTest {
@@ -26,14 +26,14 @@ class RepositoryObjectMapperTest {
                 "North Dakota",
                 "2025"));
 
-        assertThat(result.id()).isEqualTo("tiger-line-north-dakota-2025");
-        assertThat(result.title()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
-        assertThat(result.contentType()).isEqualTo(ResearchObjectType.DATASET);
-        assertThat(result.program()).isEqualTo(ResearchProgram.TIGER_LINE);
-        assertThat(result.publisher()).isEqualTo("U.S. Census Bureau");
-        assertThat(result.geography()).isEqualTo("North Dakota");
-        assertThat(result.vintageYear()).isEqualTo(2025);
-        assertThat(result.sourceUrl()).contains("www2.census.gov");
+        assertThat(result.getId()).isEqualTo("tiger-line-north-dakota-2025");
+        assertThat(result.getTitle()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
+        assertThat(result.getContentType()).isEqualTo(ResearchObjectType.DATASET);
+        assertThat(result.getProgram()).isEqualTo(ResearchProgram.TIGER_LINE);
+        assertThat(result.getPublisher()).isEqualTo("U.S. Census Bureau");
+        assertThat(result.getGeography()).isEqualTo("North Dakota");
+        assertThat(result.getVintageYear()).isEqualTo(2025);
+        assertThat(result.getSourceUrl().toString()).contains("www2.census.gov");
     }
 
     @Test
@@ -75,7 +75,7 @@ class RepositoryObjectMapperTest {
     void reportsAnUnknownProgramAsOtherRatherThanGuessing() {
         JsonNode item = RepositoryFixtures.item("uuid", "Mystery item", Map.of("dc.title", "Mystery item"));
 
-        assertThat(mapper.toSearchResult(item).program()).isEqualTo(ResearchProgram.OTHER);
+        assertThat(mapper.toSearchResult(item).getProgram()).isEqualTo(ResearchProgram.OTHER);
     }
 
     @Test
@@ -83,7 +83,7 @@ class RepositoryObjectMapperTest {
         JsonNode item = RepositoryFixtures.item(
                 "uuid", "Item", Map.of("dc.title", "Item", "crr.program", "NOT_A_PROGRAM"));
 
-        assertThat(mapper.toSearchResult(item).program()).isEqualTo(ResearchProgram.OTHER);
+        assertThat(mapper.toSearchResult(item).getProgram()).isEqualTo(ResearchProgram.OTHER);
     }
 
     @Test
@@ -91,7 +91,7 @@ class RepositoryObjectMapperTest {
         JsonNode item =
                 RepositoryFixtures.item("uuid", "Item", Map.of("dc.title", "Item", "crr.program", "tiger-line"));
 
-        assertThat(mapper.toSearchResult(item).program()).isEqualTo(ResearchProgram.TIGER_LINE);
+        assertThat(mapper.toSearchResult(item).getProgram()).isEqualTo(ResearchProgram.TIGER_LINE);
     }
 
     @Test
@@ -99,7 +99,7 @@ class RepositoryObjectMapperTest {
         JsonNode item = RepositoryFixtures.item(
                 "uuid", "Item", Map.of("dc.title", "Item", "dc.date.issued", "2019-06-01"));
 
-        assertThat(mapper.toSearchResult(item).vintageYear()).isEqualTo(2019);
+        assertThat(mapper.toSearchResult(item).getVintageYear()).isEqualTo(2019);
     }
 
     @Test
@@ -128,6 +128,6 @@ class RepositoryObjectMapperTest {
     void fallsBackToTheItemNameWhenDcTitleIsMissing() {
         JsonNode item = RepositoryFixtures.item("uuid", "Name only", Map.of("dc.publisher", "USGS"));
 
-        assertThat(mapper.toSearchResult(item).title()).isEqualTo("Name only");
+        assertThat(mapper.toSearchResult(item).getTitle()).isEqualTo("Name only");
     }
 }

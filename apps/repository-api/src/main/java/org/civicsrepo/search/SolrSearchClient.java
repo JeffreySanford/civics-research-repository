@@ -17,6 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.civicsrepo.generated.dto.FacetGroup;
+import org.civicsrepo.generated.dto.FacetValue;
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResponse;
+import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -103,18 +109,21 @@ public class SolrSearchClient {
 
     private Map<String, Object> toSolrDocument(SearchResult result) {
         Map<String, Object> document = new LinkedHashMap<>();
-        document.put("id", result.id());
-        document.put("title_txt", result.title());
-        document.put("title_s", result.title());
-        document.put("contentType_s", result.contentType().name());
-        document.put("program_s", result.program().name());
-        document.put("publisher_txt", result.publisher());
-        document.put("publisher_s", result.publisher());
-        document.put("summary_txt", result.summary());
-        document.put("geography_txt", result.geography());
-        document.put("geography_s", result.geography());
-        document.put("vintageYear_i", result.vintageYear());
-        document.put("sourceUrl_s", result.sourceUrl());
+        document.put("id", result.getId());
+        document.put("title_txt", result.getTitle());
+        document.put("title_s", result.getTitle());
+        document.put("contentType_s", result.getContentType().getValue());
+        // getValue(), not name(). The generator renames constants whose contract value starts a
+        // digit run -- USGS_3DEP becomes USGS_3_DEP -- while getValue() returns the contract
+        // value. Indexing name() would write a term no query could match.
+        document.put("program_s", result.getProgram().getValue());
+        document.put("publisher_txt", result.getPublisher());
+        document.put("publisher_s", result.getPublisher());
+        document.put("summary_txt", result.getSummary());
+        document.put("geography_txt", result.getGeography());
+        document.put("geography_s", result.getGeography());
+        document.put("vintageYear_i", result.getVintageYear());
+        document.put("sourceUrl_s", result.getSourceUrl());
         document.put("repositorySeed_b", true);
         return document;
     }
@@ -139,9 +148,9 @@ public class SolrSearchClient {
                         ResearchProgram.valueOf(text(document, "program_s")),
                         text(document, "publisher_s"),
                         text(document, "summary_txt"),
-                        text(document, "geography_s"),
-                        integer(document, "vintageYear_i"),
-                        text(document, "sourceUrl_s")));
+                        URI.create(text(document, "sourceUrl_s")))
+                        .geography(text(document, "geography_s"))
+                        .vintageYear(integer(document, "vintageYear_i")));
             }
 
             // Conservative default. The client cannot know what was projected into the core, so
@@ -151,7 +160,8 @@ public class SolrSearchClient {
                     query == null ? "" : query,
                     Math.max(0, page),
                     Math.max(1, Math.min(pageSize, 100)),
-                    response.path("numFound").asLong(),
+                    // int32 in the contract; toIntExact fails loudly rather than truncating.
+                    Math.toIntExact(response.path("numFound").asLong()),
                     results,
                     List.of(
                             facetGroup(
@@ -159,7 +169,7 @@ public class SolrSearchClient {
                                     "Program",
                                     root.path("facet_counts").path("facet_fields").path("program_s"),
                                     selectedPrograms.stream()
-                                            .map((program) -> normalize(program.name()))
+                                            .map((program) -> normalize(program.getValue()))
                                             .collect(Collectors.toSet())),
                             facetGroup(
                                     "geography",
@@ -181,7 +191,7 @@ public class SolrSearchClient {
             facets.add(new FacetValue(
                     value,
                     value.replace('_', ' '),
-                    values.get(index + 1).asLong(),
+                    values.get(index + 1).asInt(),
                     normalizedSelected.contains(normalize(value))));
         }
 
@@ -222,7 +232,7 @@ public class SolrSearchClient {
             // which would return nothing whenever more than one program is selected.
             params.add("fq="
                     + encode(programs.stream()
-                            .map((program) -> "program_s:" + program.name())
+                            .map((program) -> "program_s:" + program.getValue())
                             .collect(Collectors.joining(" OR ", "{!tag=programFilter}(", ")"))));
         }
 

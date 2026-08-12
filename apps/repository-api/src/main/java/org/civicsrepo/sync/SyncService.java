@@ -122,7 +122,7 @@ public class SyncService {
                 new SyncAction(
                         "UPSERT_COLLECTION",
                         COLLECTION_NAME,
-                        "Ensure collection exists for " + metadata.program().name() + " "
+                        "Ensure collection exists for " + metadata.program().getValue() + " "
                                 + metadata.geographicLevel() + " metadata."),
                 new SyncAction(
                         "UPSERT_ITEM",

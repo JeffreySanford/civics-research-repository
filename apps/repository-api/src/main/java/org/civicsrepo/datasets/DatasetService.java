@@ -1,14 +1,15 @@
 package org.civicsrepo.datasets;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.civicsrepo.repository.RepositoryCatalog;
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
-import org.civicsrepo.search.ResearchProgram;
-import org.civicsrepo.search.ResearchObjectType;
-import org.civicsrepo.search.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -282,7 +283,7 @@ public class DatasetService {
                                 2026,
                                 "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"))
                 .stream()
-                .filter((result) -> result.program() != currentProgram)
+                .filter((result) -> result.getProgram() != currentProgram)
                 .toList();
     }
 
@@ -313,7 +314,7 @@ public class DatasetService {
                                 2024,
                                 "https://www.census.gov/programs-surveys/acs/microdata.html"))
                 .stream()
-                .filter((result) -> result.program() != currentProgram)
+                .filter((result) -> result.getProgram() != currentProgram)
                 .toList();
     }
 
@@ -332,9 +333,9 @@ public class DatasetService {
                 program,
                 program == ResearchProgram.USGS ? "U.S. Geological Survey" : "U.S. Census Bureau",
                 summary,
-                geography,
-                vintageYear,
-                sourceUrl);
+                        URI.create(sourceUrl))
+                        .geography(geography)
+                        .vintageYear(vintageYear);
     }
 
     private record DatasetKey(ResearchProgram program, String geography, int vintageYear) {}
