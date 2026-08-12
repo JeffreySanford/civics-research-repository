@@ -1,6 +1,8 @@
 package org.civicsrepo.sync;
 
 import java.util.List;
+import java.util.Optional;
+import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemWriteGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +19,9 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
     }
 
     @Override
-    public void run(SyncRequest request, List<SyncAction> actions) {
+    public void run(SyncRequest request, List<SyncAction> actions, Optional<DspaceItemPayload> sourcePayload) {
         if (request.mode() == SyncMode.APPLY) {
-            applyDspaceIdentifier(actions);
+            applyDspaceMetadata(actions, sourcePayload);
         }
 
         for (SyncAction action : actions) {
@@ -33,16 +35,15 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
         }
     }
 
-    private void applyDspaceIdentifier(List<SyncAction> actions) {
-        String itemTitle = actionTarget(actions, "UPSERT_ITEM");
+    private void applyDspaceMetadata(List<SyncAction> actions, Optional<DspaceItemPayload> sourcePayload) {
         String sourceIdentifier = actionTarget(actions, "UPSERT_FILE_MANIFEST");
-        if (itemTitle.isBlank() || sourceIdentifier.isBlank()) {
+        if (sourceIdentifier.isBlank() || sourcePayload.isEmpty()) {
             return;
         }
 
-        boolean changed = dspaceItemWriteGateway.ensureSourceIdentifier(sourceIdentifier, itemTitle);
+        boolean changed = dspaceItemWriteGateway.ensureItemMetadata(sourceIdentifier, sourcePayload.orElseThrow());
         LOGGER.info(
-                "DSpace source identifier reconciliation {} for {}.",
+                "DSpace Dublin Core metadata reconciliation {} for {}.",
                 changed ? "updated metadata" : "found current metadata",
                 sourceIdentifier);
     }

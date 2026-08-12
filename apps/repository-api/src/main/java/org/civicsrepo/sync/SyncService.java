@@ -57,7 +57,7 @@ public class SyncService {
                 plannedActions.size());
 
         try {
-            syncActionRunner.run(request, plannedActions);
+            syncActionRunner.run(request, plannedActions, sourcePayload(request));
             SyncStatus status = completedStatus(request.mode());
             SyncJob completedJob =
                     new SyncJob(jobId, request.mode(), request.source(), status, startedAt, OffsetDateTime.now(), plannedActions);
@@ -125,6 +125,14 @@ public class SyncService {
                         metadata.geography() + " " + metadata.geographicLevel() + " map preview",
                         "Ensure map layer metadata exists for " + metadata.sourceUrl() + "."),
                 new SyncAction("VERIFY_INDEX", "Solr discovery", "Confirm item is available for discovery indexing."));
+    }
+
+    private Optional<DspaceItemPayload> sourcePayload(SyncRequest request) {
+        PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.source());
+        if (metadataAdapter == null) {
+            return Optional.empty();
+        }
+        return Optional.of(dspaceItemPayloadMapper.toItemPayload(metadataAdapter.firstVisualSlice()));
     }
 
     private SyncStatus completedStatus(SyncMode mode) {

@@ -32,10 +32,10 @@
       },
       "configurations": {
         "diff": {
-          "command": "docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=DIFF --civics.sync.source=TIGER_LINE"
+          "command": "docker compose --profile dspace up -d dspace-rest && node tools/scripts/wait-dspace-ready.mjs && docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=DIFF --civics.sync.source=TIGER_LINE"
         },
         "apply": {
-          "command": "docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=APPLY --civics.sync.source=TIGER_LINE"
+          "command": "docker compose --profile dspace up -d dspace-rest && node tools/scripts/wait-dspace-ready.mjs && docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=APPLY --civics.sync.source=TIGER_LINE"
         }
       }
     }

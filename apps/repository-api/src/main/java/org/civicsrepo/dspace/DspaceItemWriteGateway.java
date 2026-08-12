@@ -1,5 +1,5 @@
 package org.civicsrepo.dspace;
 
 public interface DspaceItemWriteGateway {
-    boolean ensureSourceIdentifier(String sourceIdentifier, String itemTitle);
+    boolean ensureItemMetadata(String sourceIdentifier, DspaceItemPayload sourcePayload);
 }

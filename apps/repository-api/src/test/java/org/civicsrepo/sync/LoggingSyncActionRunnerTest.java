@@ -3,7 +3,11 @@ package org.civicsrepo.sync;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Optional;
+import org.civicsrepo.dspace.DspaceItemPayload;
+import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.dspace.DspaceItemWriteGateway;
+import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 
 class LoggingSyncActionRunnerTest {
@@ -16,10 +20,11 @@ class LoggingSyncActionRunnerTest {
                 new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE),
                 List.of(
                         new SyncAction("UPSERT_ITEM", "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
-                        new SyncAction("UPSERT_FILE_MANIFEST", "tiger-line-north-dakota-2025", "Track files.")));
+                        new SyncAction("UPSERT_FILE_MANIFEST", "tiger-line-north-dakota-2025", "Track files.")),
+                Optional.of(sourcePayload()));
 
         assertThat(writeGateway.sourceIdentifier).isEqualTo("tiger-line-north-dakota-2025");
-        assertThat(writeGateway.itemTitle).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
+        assertThat(writeGateway.sourcePayload.name()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
     }
 
     @Test
@@ -31,20 +36,25 @@ class LoggingSyncActionRunnerTest {
                 new SyncRequest(SyncMode.DRY_RUN, SyncSource.TIGER_LINE),
                 List.of(
                         new SyncAction("UPSERT_ITEM", "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
-                        new SyncAction("UPSERT_FILE_MANIFEST", "tiger-line-north-dakota-2025", "Track files.")));
+                        new SyncAction("UPSERT_FILE_MANIFEST", "tiger-line-north-dakota-2025", "Track files.")),
+                Optional.of(sourcePayload()));
 
         assertThat(writeGateway.sourceIdentifier).isNull();
-        assertThat(writeGateway.itemTitle).isNull();
+        assertThat(writeGateway.sourcePayload).isNull();
+    }
+
+    private DspaceItemPayload sourcePayload() {
+        return new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
     }
 
     private static final class TestDspaceItemWriteGateway implements DspaceItemWriteGateway {
         private String sourceIdentifier;
-        private String itemTitle;
+        private DspaceItemPayload sourcePayload;
 
         @Override
-        public boolean ensureSourceIdentifier(String sourceIdentifier, String itemTitle) {
+        public boolean ensureItemMetadata(String sourceIdentifier, DspaceItemPayload sourcePayload) {
             this.sourceIdentifier = sourceIdentifier;
-            this.itemTitle = itemTitle;
+            this.sourcePayload = sourcePayload;
             return true;
         }
     }

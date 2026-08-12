@@ -51,7 +51,7 @@ class SyncServiceTest {
         TestSyncJobStore store = new TestSyncJobStore();
         SyncService syncService = new SyncService(
                 store,
-                (request, actions) -> {
+                (request, actions, sourcePayload) -> {
                     throw new IllegalStateException("DSpace is unavailable.");
                 },
                 new DspaceItemPayloadMapper(),
@@ -165,7 +165,7 @@ class SyncServiceTest {
     private SyncService newSyncService(TestSyncJobStore syncJobStore, DspaceItemStateReader itemStateReader) {
         return new SyncService(
                 syncJobStore,
-                (request, actions) -> {},
+                (request, actions, sourcePayload) -> {},
                 new DspaceItemPayloadMapper(),
                 new DspaceItemDiffPlanner(itemStateReader),
                 List.of(new TigerLineMetadataAdapter()));

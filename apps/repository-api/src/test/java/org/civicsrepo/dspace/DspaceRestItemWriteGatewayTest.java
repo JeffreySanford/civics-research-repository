@@ -3,6 +3,9 @@ package org.civicsrepo.dspace;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
+import java.util.Map;
+import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 
 class DspaceRestItemWriteGatewayTest {
@@ -82,5 +85,64 @@ class DspaceRestItemWriteGatewayTest {
                 .isTrue();
         assertThat(gateway.hasMetadataValue(item, "dc.identifier.other", "other-source"))
                 .isFalse();
+    }
+
+    @Test
+    void plansDublinCoreMetadataPatchOperationsForChangedFields() {
+        DspaceRestItemWriteGateway gateway =
+                new DspaceRestItemWriteGateway("http://localhost:8081/server", "admin@civics.local", "civics-admin");
+        DspaceItemPayload sourcePayload = new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+        JsonNode item = gateway.toFirstDiscoverableItem(
+                        """
+                        {
+                          "_embedded": {
+                            "searchResult": {
+                              "_embedded": {
+                                "objects": [
+                                  {
+                                    "_embedded": {
+                                      "indexableObject": {
+                                        "type": "item",
+                                        "withdrawn": false,
+                                        "metadata": {
+                                          "dc.title": [
+                                            {
+                                              "value": "2025 TIGER/Line - Census Tracts - North Dakota",
+                                              "language": "en_US",
+                                              "authority": null,
+                                              "confidence": -1
+                                            }
+                                          ],
+                                          "dc.date.issued": [
+                                            {
+                                              "value": "2025-01-01",
+                                              "language": null,
+                                              "authority": null,
+                                              "confidence": -1
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                        """)
+                .orElseThrow();
+
+        List<Map<String, Object>> operations =
+                gateway.metadataPatchOperations(item, "tiger-line-north-dakota-2025", sourcePayload);
+
+        assertThat(operations).anySatisfy((operation) -> {
+            assertThat(operation.get("op")).isEqualTo("replace");
+            assertThat(operation.get("path")).isEqualTo("/metadata/dc.date.issued");
+        });
+        assertThat(operations).anySatisfy((operation) -> {
+            assertThat(operation.get("op")).isEqualTo("add");
+            assertThat(operation.get("path")).isEqualTo("/metadata/dc.identifier.other");
+        });
     }
 }

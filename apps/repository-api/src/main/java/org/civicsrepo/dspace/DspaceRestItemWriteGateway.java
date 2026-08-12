@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,18 @@ import org.springframework.stereotype.Component;
 public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final String SOURCE_IDENTIFIER_FIELD = "dc.identifier.other";
+    private static final List<String> WRITABLE_METADATA_FIELDS = List.of(
+            "dc.title",
+            "dc.contributor.author",
+            "dc.publisher",
+            "dc.description.abstract",
+            "dc.date.issued",
+            "dc.identifier.uri",
+            "dc.relation.uri",
+            "dc.identifier.citation",
+            "dc.subject",
+            "dc.coverage.spatial",
+            SOURCE_IDENTIFIER_FIELD);
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -41,7 +54,7 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
     }
 
     @Override
-    public boolean ensureSourceIdentifier(String sourceIdentifier, String itemTitle) {
+    public boolean ensureItemMetadata(String sourceIdentifier, DspaceItemPayload sourcePayload) {
         if (!isEnabled()) {
             return false;
         }
@@ -49,19 +62,20 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
         try {
             Optional<JsonNode> item = findItem(sourceIdentifier);
             if (item.isEmpty()) {
-                item = findItem(itemTitle);
+                item = findItem(sourcePayload.name());
             }
             if (item.isEmpty()) {
                 throw new IllegalStateException("DSpace item was not found for " + sourceIdentifier + ".");
             }
 
             JsonNode itemNode = item.orElseThrow();
-            if (hasMetadataValue(itemNode, SOURCE_IDENTIFIER_FIELD, sourceIdentifier)) {
+            List<Map<String, Object>> patchOperations = metadataPatchOperations(itemNode, sourceIdentifier, sourcePayload);
+            if (patchOperations.isEmpty()) {
                 return false;
             }
 
             AuthSession authSession = authenticate();
-            patchItemMetadata(itemNode.path("uuid").asText(), authSession, sourceIdentifier);
+            patchItemMetadata(itemNode.path("uuid").asText(), authSession, patchOperations);
             return true;
         } catch (IOException exception) {
             throw new IllegalStateException("DSpace item write request failed.", exception);
@@ -100,6 +114,46 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
             }
         }
         return false;
+    }
+
+    List<Map<String, Object>> metadataPatchOperations(
+            JsonNode item, String sourceIdentifier, DspaceItemPayload sourcePayload) {
+        Map<String, List<DspaceMetadataValue>> sourceMetadata = new LinkedHashMap<>(sourcePayload.metadata());
+        sourceMetadata.put(
+                SOURCE_IDENTIFIER_FIELD,
+                List.of(new DspaceMetadataValue(sourceIdentifier, "en_US", null, -1)));
+
+        List<Map<String, Object>> operations = new ArrayList<>();
+        for (String field : WRITABLE_METADATA_FIELDS) {
+            List<DspaceMetadataValue> sourceValues = sourceMetadata.getOrDefault(field, List.of());
+            if (sourceValues.isEmpty() || hasExactMetadataValues(item, field, sourceValues)) {
+                continue;
+            }
+
+            Map<String, Object> operation = new LinkedHashMap<>();
+            operation.put("op", item.path("metadata").has(field) ? "replace" : "add");
+            operation.put("path", "/metadata/" + field);
+            operation.put("value", metadataValues(sourceValues));
+            operations.add(operation);
+        }
+        return List.copyOf(operations);
+    }
+
+    private boolean hasExactMetadataValues(JsonNode item, String field, List<DspaceMetadataValue> sourceValues) {
+        JsonNode existingValues = item.path("metadata").path(field);
+        if (!existingValues.isArray() || existingValues.size() != sourceValues.size()) {
+            return false;
+        }
+
+        for (int index = 0; index < sourceValues.size(); index++) {
+            DspaceMetadataValue sourceValue = sourceValues.get(index);
+            JsonNode existingValue = existingValues.get(index);
+            if (!sourceValue.value().equals(existingValue.path("value").asText())
+                    || !normalize(sourceValue.language()).equals(normalize(existingValue.path("language").asText(null)))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Optional<JsonNode> findItem(String query) throws IOException, InterruptedException {
@@ -152,31 +206,34 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
                 HttpResponse.BodyHandlers.ofString());
     }
 
-    private void patchItemMetadata(String itemUuid, AuthSession authSession, String sourceIdentifier)
+    private void patchItemMetadata(String itemUuid, AuthSession authSession, List<Map<String, Object>> patchOperations)
             throws IOException, InterruptedException {
-        Map<String, Object> metadataValue = new LinkedHashMap<>();
-        metadataValue.put("value", sourceIdentifier);
-        metadataValue.put("language", "en_US");
-        metadataValue.put("authority", null);
-        metadataValue.put("confidence", -1);
-
-        Map<String, Object> patchOperation = new LinkedHashMap<>();
-        patchOperation.put("op", "add");
-        patchOperation.put("path", "/metadata/" + SOURCE_IDENTIFIER_FIELD + "/-");
-        patchOperation.put("value", metadataValue);
-
         HttpRequest request = HttpRequest.newBuilder(itemUri(itemUuid))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Authorization", authSession.authorization())
                 .header("X-XSRF-TOKEN", authSession.xsrfToken())
                 .header("Cookie", authSession.cookie())
                 .header("Content-Type", "application/json-patch+json")
-                .method("PATCH", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(List.of(patchOperation))))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(patchOperations)))
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 300) {
-            throw new IllegalStateException("DSpace item metadata patch failed with HTTP " + response.statusCode() + ".");
+            throw new IllegalStateException(
+                    "DSpace item metadata patch failed with HTTP " + response.statusCode() + ": " + response.body());
         }
+    }
+
+    private List<Map<String, Object>> metadataValues(List<DspaceMetadataValue> values) {
+        return values.stream().map(this::metadataValue).toList();
+    }
+
+    private Map<String, Object> metadataValue(DspaceMetadataValue value) {
+        Map<String, Object> metadataValue = new LinkedHashMap<>();
+        metadataValue.put("value", value.value());
+        metadataValue.put("language", value.language());
+        metadataValue.put("authority", value.authority());
+        metadataValue.put("confidence", value.confidence());
+        return metadataValue;
     }
 
     private boolean isEnabled() {
@@ -200,7 +257,11 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
     }
 
     private Optional<String> cookie(HttpResponse<?> response) {
-        return response.headers().firstValue("Set-Cookie").map((value) -> value.split(";", 2)[0]);
+        return response.headers().allValues("Set-Cookie").stream()
+                .map((value) -> value.split(";", 2)[0])
+                .filter((value) -> value.startsWith("DSPACE-XSRF-COOKIE="))
+                .filter((value) -> value.length() > "DSPACE-XSRF-COOKIE=".length())
+                .reduce((first, second) -> second);
     }
 
     private String normalize(String value) {
