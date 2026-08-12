@@ -33,7 +33,7 @@ Goal: establish the project direction, documentation base, and working backlog.
 - [ ] Create sequence diagram for search and faceted discovery.
 - [ ] Create sequence diagram for dataset map rendering.
 - [x] Decide Angular map library: MapLibre GL first.
-- [ ] Confirm DSpace Docker baseline.
+- [x] Confirm DSpace Docker baseline.
 
 ### Sprint 0.3 - Nx Workspace Generation
 
@@ -98,7 +98,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Add Java API service.
 - [x] Add Angular UI service.
 - [x] Add local environment sample.
-- [ ] Document startup and reset commands.
+- [x] Document startup and reset commands.
 - [ ] Verify DSpace API is reachable locally.
 - [x] Verify Solr is reachable locally.
 - [x] Verify startup sync creates or updates the seed repository objects.

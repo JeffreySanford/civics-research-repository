@@ -20,6 +20,8 @@ Current default stack:
 
 DSpace REST integration remains the next platform step. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo has a reliable Docker baseline before DSpace initialization and repository seeding are added.
 
+`pnpm run start:all` is the preferred development command. It runs `docker compose down --remove-orphans` first so stale containers from earlier iterations are removed without changing the configured ports or deleting persistent volumes.
+
 ## Planned Services
 
 ### Angular Discovery UI
@@ -31,6 +33,19 @@ Public-facing search, dataset detail, mapping, and accessibility evidence UI.
 Repository API and content-management layer for communities, collections, items, metadata, bitstreams, and relationships.
 
 Status: planned next. DSpace official Docker images and compose patterns should be used for this service instead of a hand-rolled runtime.
+
+Baseline confirmed from the DSpace project:
+
+- Backend image: `dspace/dspace`, described as the DSpace REST API backend built on Spring Boot.
+- Frontend image: `dspace/dspace-angular`, the Angular UI built on the REST API.
+- Compose references: the DSpace source tree includes Docker Compose files under `dspace/src/main/docker-compose`.
+- Production caution: the DSpace Docker Compose README states the provided images/patterns are useful references, but should not be used as-is for production.
+
+References:
+
+- https://hub.docker.com/r/dspace/dspace
+- https://hub.docker.com/r/dspace/dspace-angular
+- https://github.com/DSpace-Labs/DSpace-9x/blob/dspace-9_x/dspace/src/main/docker-compose/README.md
 
 ### PostgreSQL
 
@@ -86,12 +101,38 @@ services:
 ```bash
 pnpm run start:all
 pnpm run docker:ps
+pnpm run docker:logs
 pnpm run sync:dry-run
+pnpm run sync:diff
 pnpm run sync:apply
 pnpm run docker:down
 ```
 
-The API host port is `8080` for the local default. If another project is using that port, temporarily remap `repository-api` in `docker-compose.yml`.
+The API host port is `8080` for the local default. The Angular UI host port is `4200`, Solr is `8983`, and PostgreSQL is `5432`. Do not change these defaults for normal demo work.
+
+## Reset Commands
+
+Use the smallest reset that solves the problem:
+
+```bash
+pnpm run docker:reset:containers
+```
+
+Stops and removes current Compose containers and orphans. This preserves named volumes, including PostgreSQL, Solr, pnpm store, container `node_modules`, and API artifact storage.
+
+```bash
+pnpm run docker:reset:volumes
+```
+
+Stops containers and deletes named volumes. This removes persistent database/index/cache state and should be used only when you intentionally want a clean local demo storage reset.
+
+For normal development, prefer:
+
+```bash
+pnpm run start:all
+```
+
+That command removes stale containers first, then starts the stack on the default ports with persistent storage intact.
 
 ## Future AWS Direction
 
