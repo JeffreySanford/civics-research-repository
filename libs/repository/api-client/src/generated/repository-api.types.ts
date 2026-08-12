@@ -333,6 +333,11 @@ export interface components {
         | 'UPSERT_FILE_MANIFEST'
         | 'UPSERT_CITATION'
         | 'UPSERT_MAP_LAYER'
+        | 'VERIFY_COMMUNITY'
+        | 'VERIFY_COLLECTION'
+        | 'CREATE_ITEM'
+        | 'UPDATE_ITEM'
+        | 'SKIP_ITEM'
         | 'VERIFY_INDEX'
         | 'SYNC_FAILED';
       target: string;
@@ -378,7 +383,7 @@ export interface components {
       | 'MANUAL_REVIEW_REQUIRED'
       | 'VERIFIED';
     /** @enum {string} */
-    SyncMode: 'DRY_RUN' | 'APPLY';
+    SyncMode: 'DRY_RUN' | 'DIFF' | 'APPLY';
     /** @enum {string} */
     SyncSource:
       | 'TIGER_LINE'
@@ -391,6 +396,7 @@ export interface components {
     SyncStatus:
       | 'QUEUED'
       | 'RUNNING'
+      | 'DIFF_COMPLETE'
       | 'DRY_RUN_COMPLETE'
       | 'APPLIED'
       | 'FAILED';

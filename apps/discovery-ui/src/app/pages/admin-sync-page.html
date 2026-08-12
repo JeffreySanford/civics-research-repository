@@ -20,6 +20,14 @@
       <button
         mat-stroked-button
         type="button"
+        (click)="requestDiff()"
+        [disabled]="loading$ | async"
+      >
+        Diff sync
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
         (click)="requestApply()"
         [disabled]="loading$ | async"
       >

@@ -183,28 +183,48 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
       return;
     }
 
+    const body = route.request().postDataJSON() as
+      | { mode?: string; source?: string }
+      | undefined;
+    const mode = body?.mode === 'DIFF' ? 'DIFF' : 'DRY_RUN';
+
     await route.fulfill({
       contentType: 'application/json',
       status: 202,
       json: {
         id: '11111111-1111-4111-8111-111111111111',
-        mode: 'DRY_RUN',
+        mode,
         source: 'TIGER_LINE',
-        status: 'DRY_RUN_COMPLETE',
+        status: mode === 'DIFF' ? 'DIFF_COMPLETE' : 'DRY_RUN_COMPLETE',
         startedAt: '2026-08-11T19:00:00Z',
         completedAt: '2026-08-11T19:00:01Z',
-        actions: [
-          {
-            actionType: 'UPSERT_COMMUNITY',
-            target: 'Census Public Research Data',
-            detail: 'Ensure the DSpace community exists.',
-          },
-          {
-            actionType: 'VERIFY_INDEX',
-            target: 'Solr discovery',
-            detail: 'Confirm repository metadata is searchable.',
-          },
-        ],
+        actions:
+          mode === 'DIFF'
+            ? [
+                {
+                  actionType: 'VERIFY_COMMUNITY',
+                  target: 'Census Public Research Data',
+                  detail: 'Check whether the DSpace community exists.',
+                },
+                {
+                  actionType: 'CREATE_ITEM',
+                  target: '2025 TIGER/Line - Census Tracts - North Dakota',
+                  detail:
+                    'DSpace item does not exist; create item with normalized metadata.',
+                },
+              ]
+            : [
+                {
+                  actionType: 'UPSERT_COMMUNITY',
+                  target: 'Census Public Research Data',
+                  detail: 'Ensure the DSpace community exists.',
+                },
+                {
+                  actionType: 'VERIFY_INDEX',
+                  target: 'Solr discovery',
+                  detail: 'Confirm repository metadata is searchable.',
+                },
+              ],
       },
     });
   });

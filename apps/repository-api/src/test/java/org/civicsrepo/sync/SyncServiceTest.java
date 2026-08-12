@@ -8,7 +8,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.civicsrepo.dspace.DspaceItemDiffPlanner;
+import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemPayloadMapper;
+import org.civicsrepo.dspace.DspaceItemStateReader;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -52,6 +55,7 @@ class SyncServiceTest {
                     throw new IllegalStateException("DSpace is unavailable.");
                 },
                 new DspaceItemPayloadMapper(),
+                new DspaceItemDiffPlanner((sourceIdentifier) -> Optional.empty()),
                 List.of(new TigerLineMetadataAdapter()));
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE));
@@ -89,6 +93,44 @@ class SyncServiceTest {
     }
 
     @Test
+    void diffModePlansCreateWhenRepositoryItemDoesNotExist() {
+        SyncService syncService = newSyncService(new TestSyncJobStore());
+
+        SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
+
+        assertThat(job.status()).isEqualTo(SyncStatus.DIFF_COMPLETE);
+        assertThat(job.actions())
+                .extracting(SyncAction::actionType)
+                .contains("VERIFY_COMMUNITY", "VERIFY_COLLECTION", "CREATE_ITEM", "VERIFY_INDEX");
+    }
+
+    @Test
+    void diffModePlansSkipWhenRepositoryItemMatchesSourcePayload() {
+        DspaceItemPayload sourcePayload =
+                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+        SyncService syncService = newSyncService(new TestSyncJobStore(), (sourceIdentifier) -> Optional.of(sourcePayload));
+
+        SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
+
+        assertThat(job.status()).isEqualTo(SyncStatus.DIFF_COMPLETE);
+        assertThat(job.actions()).extracting(SyncAction::actionType).contains("SKIP_ITEM");
+    }
+
+    @Test
+    void diffModePlansUpdateWhenRepositoryItemDiffersFromSourcePayload() {
+        DspaceItemPayload sourcePayload =
+                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+        DspaceItemPayload changedPayload = new DspaceItemPayload(
+                sourcePayload.name(), sourcePayload.type(), sourcePayload.metadata(), List.of());
+        SyncService syncService = newSyncService(new TestSyncJobStore(), (sourceIdentifier) -> Optional.of(changedPayload));
+
+        SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
+
+        assertThat(job.status()).isEqualTo(SyncStatus.DIFF_COMPLETE);
+        assertThat(job.actions()).extracting(SyncAction::actionType).contains("UPDATE_ITEM");
+    }
+
+    @Test
     void cliRunnerDoesNothingWhenCliModeIsDisabled() {
         TestSyncJobStore store = new TestSyncJobStore();
         SyncService syncService = newSyncService(store);
@@ -117,8 +159,16 @@ class SyncServiceTest {
     }
 
     private SyncService newSyncService(TestSyncJobStore syncJobStore) {
+        return newSyncService(syncJobStore, (sourceIdentifier) -> Optional.empty());
+    }
+
+    private SyncService newSyncService(TestSyncJobStore syncJobStore, DspaceItemStateReader itemStateReader) {
         return new SyncService(
-                syncJobStore, (request, actions) -> {}, new DspaceItemPayloadMapper(), List.of(new TigerLineMetadataAdapter()));
+                syncJobStore,
+                (request, actions) -> {},
+                new DspaceItemPayloadMapper(),
+                new DspaceItemDiffPlanner(itemStateReader),
+                List.of(new TigerLineMetadataAdapter()));
     }
 
     private static final class TestSyncJobStore implements SyncJobStore {

@@ -5,6 +5,7 @@ export const SyncActions = createActionGroup({
   source: 'Repository Sync',
   events: {
     'Dry Run Requested': emptyProps(),
+    'Diff Requested': emptyProps(),
     'Apply Requested': emptyProps(),
     'History Requested': emptyProps(),
     'History Loaded': props<{ jobs: SyncJob[] }>(),

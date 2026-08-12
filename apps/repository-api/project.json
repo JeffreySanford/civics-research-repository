@@ -31,6 +31,9 @@
         "command": "docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=DRY_RUN --civics.sync.source=TIGER_LINE"
       },
       "configurations": {
+        "diff": {
+          "command": "docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=DIFF --civics.sync.source=TIGER_LINE"
+        },
         "apply": {
           "command": "docker compose run --rm repository-api --spring.main.web-application-type=none --civics.sync.cli-enabled=true --civics.sync.mode=APPLY --civics.sync.source=TIGER_LINE"
         }

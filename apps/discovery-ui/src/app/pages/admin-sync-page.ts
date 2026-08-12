@@ -38,6 +38,10 @@ export class AdminSyncPage implements OnInit {
     this.store.dispatch(SyncActions.dryRunRequested());
   }
 
+  protected requestDiff(): void {
+    this.store.dispatch(SyncActions.diffRequested());
+  }
+
   protected requestApply(): void {
     this.store.dispatch(SyncActions.applyRequested());
   }

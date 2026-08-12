@@ -27,6 +27,15 @@ export class SyncEffects {
     ),
   );
 
+  readonly requestDiff$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(SyncActions.diffRequested),
+      map(() =>
+        SyncActions.syncRequested({ mode: 'DIFF', source: 'TIGER_LINE' }),
+      ),
+    ),
+  );
+
   readonly runSync$ = createEffect(() =>
     this.actions$.pipe(
       ofType(SyncActions.syncRequested),

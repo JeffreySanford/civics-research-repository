@@ -129,7 +129,7 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 - [x] Normalize title, program, vintage, geography, file format, source URL, and citation fields.
 - [x] Generate DSpace-ready item payload.
 - [x] Add dry-run mode.
-- [ ] Add diff mode to compare source metadata with DSpace item state.
+- [x] Add diff mode to compare source metadata with DSpace item state.
 - [x] Add logging and error handling.
 - [x] Add unit tests for metadata normalization.
 

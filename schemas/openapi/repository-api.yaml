@@ -637,6 +637,11 @@ components:
               UPSERT_FILE_MANIFEST,
               UPSERT_CITATION,
               UPSERT_MAP_LAYER,
+              VERIFY_COMMUNITY,
+              VERIFY_COLLECTION,
+              CREATE_ITEM,
+              UPDATE_ITEM,
+              SKIP_ITEM,
               VERIFY_INDEX,
               SYNC_FAILED,
             ]
@@ -668,10 +673,10 @@ components:
         ]
     SyncMode:
       type: string
-      enum: [DRY_RUN, APPLY]
+      enum: [DRY_RUN, DIFF, APPLY]
     SyncSource:
       type: string
       enum: [TIGER_LINE, LODES, ACS_PUMS, SIPP, CPS, USGS_EARTHQUAKES]
     SyncStatus:
       type: string
-      enum: [QUEUED, RUNNING, DRY_RUN_COMPLETE, APPLIED, FAILED]
+      enum: [QUEUED, RUNNING, DIFF_COMPLETE, DRY_RUN_COMPLETE, APPLIED, FAILED]

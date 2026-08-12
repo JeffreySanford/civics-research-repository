@@ -341,5 +341,14 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page.locator('strong').filter({ hasText: 'VERIFY_INDEX' }),
     ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Diff sync' }).click();
+
+    await expect(
+      page.locator('dd').filter({ hasText: 'DIFF_COMPLETE' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('strong').filter({ hasText: 'CREATE_ITEM' }),
+    ).toBeVisible();
   });
 });

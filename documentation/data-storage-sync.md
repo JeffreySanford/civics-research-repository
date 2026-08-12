@@ -145,13 +145,15 @@ CLI sync commands:
 
 ```bash
 pnpm run sync:dry-run
+pnpm run sync:diff
 pnpm run sync:apply
 ```
 
-These commands build the local Java API image, start required Docker Compose dependencies, run Spring Boot without the web server, execute the configured sync job, and exit. The admin HTTP sync path remains available when the API is already running:
+These commands build the local Java API image, start required Docker Compose dependencies, run Spring Boot without the web server, execute the configured sync job, and exit. Diff mode compares the normalized DSpace item payload with repository item state and emits `CREATE_ITEM`, `UPDATE_ITEM`, or `SKIP_ITEM` actions before any apply behavior exists. The admin HTTP sync path remains available when the API is already running:
 
 ```bash
 pnpm run sync:api:dry-run
+pnpm run sync:api:diff
 pnpm run sync:api:apply
 ```
 
@@ -170,6 +172,8 @@ Track sync state in the Java API persistence layer and expose it through typed A
 - Solr indexed timestamp where available.
 
 The current Java API persists each sync job as `RUNNING` before action execution, then updates that same job to `DRY_RUN_COMPLETE`, `APPLIED`, or `FAILED`. Failed runs are returned through the same typed API response with a `SYNC_FAILED` action so the admin UI and CLI/script paths can display the failure without losing job history.
+
+Diff jobs complete with `DIFF_COMPLETE`. Until the DSpace REST client is connected, the production DSpace state reader reports no existing item, so the first TIGER/Line diff correctly plans `CREATE_ITEM`. Unit tests cover missing, matching, and changed repository payload states.
 
 ## Initial Sync Scope
 

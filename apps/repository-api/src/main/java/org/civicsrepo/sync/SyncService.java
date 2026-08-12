@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.civicsrepo.dspace.DspaceItemDiffPlanner;
 import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.sources.PublicDatasetFile;
@@ -24,16 +25,19 @@ public class SyncService {
     private final SyncJobStore syncJobStore;
     private final SyncActionRunner syncActionRunner;
     private final DspaceItemPayloadMapper dspaceItemPayloadMapper;
+    private final DspaceItemDiffPlanner dspaceItemDiffPlanner;
     private final Map<SyncSource, PublicMetadataAdapter> metadataAdapters;
 
     public SyncService(
             SyncJobStore syncJobStore,
             SyncActionRunner syncActionRunner,
             DspaceItemPayloadMapper dspaceItemPayloadMapper,
+            DspaceItemDiffPlanner dspaceItemDiffPlanner,
             List<PublicMetadataAdapter> metadataAdapters) {
         this.syncJobStore = syncJobStore;
         this.syncActionRunner = syncActionRunner;
         this.dspaceItemPayloadMapper = dspaceItemPayloadMapper;
+        this.dspaceItemDiffPlanner = dspaceItemDiffPlanner;
         this.metadataAdapters =
                 metadataAdapters.stream().collect(Collectors.toUnmodifiableMap(PublicMetadataAdapter::source, Function.identity()));
     }
@@ -54,7 +58,7 @@ public class SyncService {
 
         try {
             syncActionRunner.run(request, plannedActions);
-            SyncStatus status = request.mode() == SyncMode.APPLY ? SyncStatus.APPLIED : SyncStatus.DRY_RUN_COMPLETE;
+            SyncStatus status = completedStatus(request.mode());
             SyncJob completedJob =
                     new SyncJob(jobId, request.mode(), request.source(), status, startedAt, OffsetDateTime.now(), plannedActions);
             SyncJob savedJob = syncJobStore.save(completedJob);
@@ -93,6 +97,10 @@ public class SyncService {
 
         PublicDatasetMetadata metadata = metadataAdapter.firstVisualSlice();
         DspaceItemPayload itemPayload = dspaceItemPayloadMapper.toItemPayload(metadata);
+        if (request.mode() == SyncMode.DIFF) {
+            return diffPlanActions(metadata, itemPayload);
+        }
+
         return List.of(
                 new SyncAction("UPSERT_COMMUNITY", "Census Public Research Data", "Ensure root DSpace community exists."),
                 new SyncAction(
@@ -117,6 +125,28 @@ public class SyncService {
                         metadata.geography() + " " + metadata.geographicLevel() + " map preview",
                         "Ensure map layer metadata exists for " + metadata.sourceUrl() + "."),
                 new SyncAction("VERIFY_INDEX", "Solr discovery", "Confirm item is available for discovery indexing."));
+    }
+
+    private SyncStatus completedStatus(SyncMode mode) {
+        return switch (mode) {
+            case APPLY -> SyncStatus.APPLIED;
+            case DIFF -> SyncStatus.DIFF_COMPLETE;
+            case DRY_RUN -> SyncStatus.DRY_RUN_COMPLETE;
+        };
+    }
+
+    private List<SyncAction> diffPlanActions(PublicDatasetMetadata metadata, DspaceItemPayload itemPayload) {
+        return List.of(
+                new SyncAction(
+                        "VERIFY_COMMUNITY",
+                        "Census Public Research Data",
+                        "Check whether the root DSpace community exists before comparing item state."),
+                new SyncAction(
+                        "VERIFY_COLLECTION",
+                        metadata.program().name(),
+                        "Check whether the " + metadata.program().name() + " collection exists before comparing item state."),
+                dspaceItemDiffPlanner.planItemDiff(metadata.id(), itemPayload),
+                new SyncAction("VERIFY_INDEX", "Solr discovery", "Check whether repository metadata is indexed after item state comparison."));
     }
 
     private List<SyncAction> fallbackPlanActions(SyncRequest request) {
