@@ -28,6 +28,8 @@ const areaLimit =
 
 const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
 const areas = catalog.areas.slice(0, areaLimit);
+/** Program/area combinations the publisher does not offer, reported at the end of a run. */
+const skipped = [];
 const programs = catalog.programs.filter((program) => program.enabled);
 
 /** XML text escaping. Source URLs carry query strings, so ampersands are not hypothetical. */
@@ -56,6 +58,8 @@ function dcvalue(element, qualifier, value) {
 function buildItem(program, area) {
   const tokens = {
     vintage: program.vintage,
+    // Several Census file names carry a two-digit year (cbp23co.zip, est23all.txt, jan24pub.zip).
+    vintageShort: String(program.vintage).slice(-2),
     area: area ? area.name : (program.geography ?? 'United States'),
     areaSlug: area ? slug(area.name) : 'united-states',
     fips: area ? area.fips : '',
@@ -163,6 +167,14 @@ for (const program of programs) {
   }
 
   for (const area of areas) {
+    // A program can be genuinely unpublished for an area. Seeding it anyway would give the
+    // repository a research object whose source URL 404s, which reads as provenance and is not.
+    const unavailableReason = program.unavailableAreas?.[area.name];
+    if (unavailableReason) {
+      skipped.push(`${program.id} / ${area.name}: ${unavailableReason}`);
+      continue;
+    }
+
     items.push(buildItem(program, area));
   }
 }
@@ -192,4 +204,12 @@ for (const [programId, count] of [...byProgram].sort()) {
 }
 if (Number.isFinite(areaLimit)) {
   console.log(`  (limited to the first ${areas.length} areas)`);
+}
+
+if (skipped.length > 0) {
+  console.log(`
+Skipped ${skipped.length} program/area combination(s) the publisher does not offer:`);
+  for (const reason of skipped) {
+    console.log(`  ${reason}`);
+  }
 }

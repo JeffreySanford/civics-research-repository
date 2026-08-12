@@ -107,7 +107,7 @@ See [USGS National Map Evaluation](usgs-national-map-evaluation.md).
 
 ## Programs Currently Seeded
 
-Fourteen programs, 167 repository objects. Three are seeded per state and territory; the rest are national objects.
+Fourteen programs, 164 repository objects. Three are seeded per state and territory, less the three LODES areas the publisher does not cover; the rest are national objects.
 
 | Program                                                                                                     | Scope    | Items |
 | ----------------------------------------------------------------------------------------------------------- | -------- | ----- |
@@ -124,9 +124,31 @@ Programs are defined in [tools/dspace/catalog.json](../tools/dspace/catalog.json
 
 ### Source URL accuracy
 
-TIGER/Line, LODES, and ACS PUMS use file-level URLs, because their naming patterns are documented and stable (`tl_{year}_{fips}_tract.zip`, `{st}_wac_S000_JT00_{year}.csv.gz`, `csv_p{st}.zip`).
+Every program now uses a file-level source URL, and every one of them has been requested and answered. The eight programs added later previously linked their program page, on the reasoning that a fabricated deep link looks authoritative and fails silently. That reasoning still holds; the links are file-level now because they were checked, not guessed.
 
-The eight programs added later link their authoritative data or program page instead. A fabricated deep link looks authoritative and fails silently, which is worse than a correct link one level up. Replacing them with verified file-level URLs is tracked in the backlog.
+Checked with:
+
+```bash
+pnpm run verify:sources:all
+```
+
+[tools/scripts/verify-source-urls.mjs](../tools/scripts/verify-source-urls.mjs) walks the generated SAF packages and requests every source and documentation URL. The default `verify:sources` checks one item per program, which is enough to catch a template that has gone stale; `--all` checks all of them. It exits non-zero on any failure, so it can gate a catalog change.
+
+It is deliberately not part of `quality:all`. It depends on federal hosts being reachable, and a Census outage must not read as a broken build.
+
+Last full run on 2026-08-12: 328 URLs across 164 items, all resolving. It found five broken links that had been in the catalog unnoticed — three dead Census documentation pages, and a SIPP source template pointing at `pu{vintage}.csv.gz` when the published file is `pu{vintage}_csv.zip`. The two USGS documentation pages answer 403 to a default user agent while serving a browser normally, so the checker sends a browser user agent; without that it reports live pages as broken.
+
+### Areas a program does not cover
+
+LODES is published for 49 of the 52 areas, not all of them:
+
+| Area        | Reason                                                                |
+| ----------- | --------------------------------------------------------------------- |
+| Alaska      | Does not participate in LEHD; no WAC file exists for any vintage.     |
+| Michigan    | Withdrew from LEHD after the 2021 vintage; the last WAC file is 2021. |
+| Puerto Rico | Not covered by LODES8 WAC.                                            |
+
+These are recorded as `unavailableAreas` on the program in the catalog, with the reason, and the generator skips them and reports what it skipped. Seeding them anyway would give the repository three research objects whose source URL 404s — which reads as provenance and is not. That is why the seeded total is 164 rather than 167.
 
 ## Metadata Model
 

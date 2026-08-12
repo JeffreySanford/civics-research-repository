@@ -79,6 +79,8 @@
     "section508": "pnpm nx run-many -t section508",
     "section508:report": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @section508 --reporter=list",
     "e2e:reports": "node tools/scripts/e2e-reports.mjs",
+    "verify:sources": "node tools/scripts/verify-source-urls.mjs",
+    "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",
     "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
   },
   "dependencies": {
