@@ -154,6 +154,19 @@ The earlier default ran a dry run unconditionally, which meant that in the defau
 
 Set `CIVICS_SYNC_MODE=DRY_RUN` in `.env` to restore planning-only startup behavior, or `CIVICS_SYNC_STARTUP_ENABLED=false` to disable startup sync entirely.
 
+### File Manifest Reconciliation
+
+Public datasets are represented by links and manifests, never by mirrored copies, so the repository item carries no bitstreams for them. That left the file manifest with nowhere to live in DSpace, and it is the reason `sync:diff` could never report `SKIP_ITEM`: the source payload always described files the repository had no way to hold.
+
+The manifest is now reconciled as repeatable `crr.file.manifest` metadata, one compact JSON entry per source file recording id, label, bundle, format, URL, and size where known. JSON rather than a delimited string because a source URL may contain any delimiter worth choosing. The field is registered in `tools/dspace/crr-types.xml` and written by the same idempotent apply path as every other managed field.
+
+Two consequences worth knowing:
+
+- `sync:diff` compares only the fields synchronization owns, listed in `DspaceManagedFields`. DSpace's own bookkeeping metadata is left alone. Comparing whole items against fields DSpace maintains is why the diff previously always reported `UPDATE_ITEM`.
+- Dataset detail builds its file list from the manifest, falling back to the item's source and documentation URLs for items seeded without one.
+
+If mirroring small artifacts ever becomes worthwhile, real bitstreams should be appended alongside the manifest rather than replacing it: the manifest describes the authoritative source, which remains true whether or not a copy exists locally.
+
 ### When DSpace Is Unreachable
 
 Being unable to reach DSpace is reported as unavailability, never as "the item does not exist":

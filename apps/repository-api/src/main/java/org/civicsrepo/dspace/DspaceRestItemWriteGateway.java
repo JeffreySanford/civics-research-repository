@@ -9,25 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
-    private static final String SOURCE_IDENTIFIER_FIELD = DspaceItemMatcher.SOURCE_IDENTIFIER_FIELD;
-    private static final List<String> WRITABLE_METADATA_FIELDS = List.of(
-            "dc.title",
-            "dc.contributor.author",
-            "dc.publisher",
-            "dc.description.abstract",
-            "dc.date.issued",
-            "dc.identifier.uri",
-            "dc.relation.uri",
-            "dc.identifier.citation",
-            "dc.subject",
-            "dc.coverage.spatial",
-            "crr.identifier.source",
-            "crr.program",
-            "crr.geography.level",
-            "crr.vintage",
-            "crr.source.url",
-            "crr.documentation.url",
-            SOURCE_IDENTIFIER_FIELD);
+    private static final String SOURCE_IDENTIFIER_FIELD = DspaceManagedFields.SOURCE_IDENTIFIER_FIELD;
+    private static final List<String> WRITABLE_METADATA_FIELDS = DspaceManagedFields.ALL;
 
     private final DspaceRestClient dspaceRestClient;
 
@@ -71,13 +54,39 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
                 continue;
             }
 
-            Map<String, Object> operation = new LinkedHashMap<>();
-            operation.put("op", item.path("metadata").has(field) ? "replace" : "add");
-            operation.put("path", "/metadata/" + field);
-            operation.put("value", metadataValues(sourceValues));
-            operations.add(operation);
+            operations.addAll(replaceFieldOperations(item, field, sourceValues));
         }
         return List.copyOf(operations);
+    }
+
+    /**
+     * Clears a field, then appends each value individually.
+     *
+     * <p>DSpace accepts an array as the value of a single {@code add} on {@code /metadata/<field>}
+     * and silently keeps only the first element, so a three-entry file manifest arrived as one
+     * entry and the next diff correctly reported the field as still differing. Appending through
+     * {@code /-} is the form that actually stores every value.
+     */
+    private List<Map<String, Object>> replaceFieldOperations(
+            JsonNode item, String field, List<DspaceMetadataValue> sourceValues) {
+        List<Map<String, Object>> operations = new ArrayList<>();
+
+        if (item.path("metadata").has(field)) {
+            Map<String, Object> remove = new LinkedHashMap<>();
+            remove.put("op", "remove");
+            remove.put("path", "/metadata/" + field);
+            operations.add(remove);
+        }
+
+        for (DspaceMetadataValue value : sourceValues) {
+            Map<String, Object> add = new LinkedHashMap<>();
+            add.put("op", "add");
+            add.put("path", "/metadata/" + field + "/-");
+            add.put("value", metadataValue(value));
+            operations.add(add);
+        }
+
+        return operations;
     }
 
     /**

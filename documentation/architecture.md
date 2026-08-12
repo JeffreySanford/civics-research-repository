@@ -97,7 +97,7 @@ The first visual slice targets TIGER/Line Census Tracts for North Dakota, with A
 6. ~~Add a map preview and one USGS overlay.~~ Done.
 7. ~~Capture automated accessibility evidence.~~ Done. Manual evidence checklists exist; no run has been recorded.
 
-Remaining: bitstream and file-manifest reconciliation, then live source harvesting in place of static adapter constants.
+Remaining: live source harvesting in place of static adapter constants. The file manifest is reconciled as `crr.file.manifest` metadata, so `sync:diff` now reaches `SKIP_ITEM`.
 
 ## Deployment Direction
 

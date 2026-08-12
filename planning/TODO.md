@@ -15,7 +15,8 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 - [x] Seed LODES, ACS PUMS, and a second geography so facets exercise real repository data.
 - [x] Compute related research from the repository instead of hard-coding it.
 - [ ] Harvest live source metadata instead of static adapter constants.
-- [ ] Reconcile bitstreams and the file manifest so `sync:diff` can reach `SKIP_ITEM`.
+- [x] Reconcile the file manifest as `crr.file.manifest` metadata so `sync:diff` reaches `SKIP_ITEM`.
+- [x] Scope the diff to the fields synchronization owns, so DSpace bookkeeping metadata is not reported as drift.
 
 ### P2 - Disambiguate the two PostgreSQL and two Solr systems
 

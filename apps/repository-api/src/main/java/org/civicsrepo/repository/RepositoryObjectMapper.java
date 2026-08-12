@@ -11,6 +11,7 @@ import org.civicsrepo.datasets.DatasetDetail;
 import org.civicsrepo.datasets.DatasetFile;
 import org.civicsrepo.datasets.EvidenceStatus;
 import org.civicsrepo.datasets.FileFormat;
+import org.civicsrepo.dspace.DspaceFileManifest;
 import org.civicsrepo.search.ResearchObjectType;
 import org.civicsrepo.search.ResearchProgram;
 import org.civicsrepo.search.SearchResult;
@@ -140,13 +141,19 @@ public class RepositoryObjectMapper {
     }
 
     /**
-     * The file manifest is derived from the source and documentation URLs the sync adapters record.
+     * The file manifest, preferring the structured {@code crr.file.manifest} entries synchronization
+     * writes and falling back to the item's source and documentation URLs.
      *
      * <p>Bitstreams are deliberately not mirrored for public datasets, so the repository object
-     * carries links rather than copies. Once bitstream reconciliation lands, real bitstreams should
-     * be appended here.
+     * carries links rather than copies. The fallback keeps items that predate the manifest field —
+     * or that were seeded without one — from showing an empty file list.
      */
     private List<DatasetFile> files(JsonNode item) {
+        List<DatasetFile> manifestFiles = manifestFiles(item);
+        if (!manifestFiles.isEmpty()) {
+            return manifestFiles;
+        }
+
         List<DatasetFile> files = new ArrayList<>();
 
         firstValue(item, "crr.source.url")
@@ -158,6 +165,22 @@ public class RepositoryObjectMapper {
                 .or(() -> firstValue(item, "dc.relation.uri"))
                 .ifPresent((url) ->
                         files.add(new DatasetFile("documentation", "Technical documentation", formatFor(url), url, null)));
+
+        return List.copyOf(files);
+    }
+
+    private List<DatasetFile> manifestFiles(JsonNode item) {
+        List<DatasetFile> files = new ArrayList<>();
+
+        for (JsonNode value : item.path("metadata").path(DspaceFileManifest.FIELD)) {
+            DspaceFileManifest.decode(value.path("value").asText(""))
+                    .ifPresent((entry) -> files.add(new DatasetFile(
+                            entry.id(),
+                            entry.name(),
+                            entry.format(),
+                            entry.sourceUrl(),
+                            entry.sizeBytes())));
+        }
 
         return List.copyOf(files);
     }

@@ -1,6 +1,7 @@
 package org.civicsrepo.dspace;
 
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.civicsrepo.sources.PublicDatasetFile;
@@ -12,10 +13,10 @@ public class DspaceItemPayloadMapper {
     private static final String LANGUAGE = "en_US";
 
     public DspaceItemPayload toItemPayload(PublicDatasetMetadata metadata) {
-        return new DspaceItemPayload(
-                metadata.title(),
-                "item",
-                Map.ofEntries(
+        List<DspaceBitstreamPayload> bitstreams =
+                metadata.files().stream().map(this::toBitstreamPayload).toList();
+
+        Map<String, List<DspaceMetadataValue>> fields = new LinkedHashMap<>(Map.ofEntries(
                         entry("dc.title", metadata.title()),
                         entry("dc.contributor.author", metadata.publisher()),
                         entry("dc.publisher", metadata.publisher()),
@@ -31,8 +32,15 @@ public class DspaceItemPayloadMapper {
                         entry("crr.geography.level", metadata.geographicLevel()),
                         entry("crr.vintage", metadata.vintageYear().toString()),
                         entry("crr.source.url", metadata.sourceUrl()),
-                        entry("crr.documentation.url", metadata.documentationUrl())),
-                metadata.files().stream().map(this::toBitstreamPayload).toList());
+                entry("crr.documentation.url", metadata.documentationUrl())));
+
+        // The manifest is metadata, not bitstreams: public source files are linked rather than
+        // mirrored, so this is where the file list can actually live in the repository.
+        if (!bitstreams.isEmpty()) {
+            fields.put(DspaceFileManifest.FIELD, DspaceFileManifest.toMetadataValues(bitstreams, LANGUAGE));
+        }
+
+        return new DspaceItemPayload(metadata.title(), "item", Map.copyOf(fields), bitstreams);
     }
 
     private Map.Entry<String, List<DspaceMetadataValue>> entry(String field, String value) {
@@ -40,6 +48,7 @@ public class DspaceItemPayloadMapper {
     }
 
     private DspaceBitstreamPayload toBitstreamPayload(PublicDatasetFile file) {
-        return new DspaceBitstreamPayload(file.label(), "ORIGINAL", file.format(), file.url(), file.sizeBytes());
+        return new DspaceBitstreamPayload(
+                file.id(), file.label(), "ORIGINAL", file.format(), file.url(), file.sizeBytes());
     }
 }

@@ -133,7 +133,9 @@ Two properties this sequence is designed to guarantee:
 - **It never guesses which item to write to.** Discovery is relevance-ranked, so an unqualified first result is not a safe write target. Ambiguity fails the job.
 - **A second identical apply performs no write.** Metadata is compared as unordered value/language pairs, because DSpace orders repeated values by `place` and that order need not match adapter order.
 
-Not yet implemented: bitstream and file-manifest reconciliation. `sync:diff` therefore still reports `UPDATE_ITEM` rather than `SKIP_ITEM` for the seeded item.
+The file manifest is reconciled as `crr.file.manifest` metadata, one JSON entry per source file. Public datasets are represented by links rather than mirrored copies, so the manifest is where the file list lives; the item carries no bitstreams for them. With the manifest comparable, `sync:diff` reports `SKIP_ITEM` once apply has run.
+
+The diff compares only the fields synchronization owns (`DspaceManagedFields`). DSpace's own bookkeeping — `dc.date.accessioned`, `dc.description.provenance`, handles — is deliberately left alone, and comparing whole items against it is why the diff previously could never settle.
 
 ## Sequence - Search and Faceted Discovery
 
@@ -214,7 +216,7 @@ The two effects are deliberately independent: a USGS outage degrades the overlay
 Places where the implementation is narrower than the architecture. Each is tracked in [planning/TODO.md](../planning/TODO.md).
 
 1. **Source metadata is static.** `TigerLineMetadataAdapter` returns compile-time constants rather than harvesting Census.
-2. **Bitstream reconciliation is absent.** Sync reconciles Dublin Core and `crr.*` metadata only, so `sync:diff` reports `UPDATE_ITEM` rather than `SKIP_ITEM`.
+2. **No bitstreams are uploaded.** By policy, public source files are linked and manifested rather than mirrored, so the repository holds no copies of them. If mirroring small artifacts becomes worthwhile, real bitstreams would be appended to the manifest rather than replacing it.
 3. **Only the TIGER/Line North Dakota item is synchronized.** The other five seeded items are imported by the DSpace seed and read back through discovery, but no adapter reconciles them.
 
 Closed: discovery and dataset detail are now served from DSpace. The fixture catalog remains only as a labelled fallback.

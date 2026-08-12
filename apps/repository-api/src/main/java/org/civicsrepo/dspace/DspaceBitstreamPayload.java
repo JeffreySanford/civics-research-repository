@@ -2,4 +2,11 @@ package org.civicsrepo.dspace;
 
 import org.civicsrepo.datasets.FileFormat;
 
-public record DspaceBitstreamPayload(String name, String bundleName, FileFormat format, String sourceUrl, Long sizeBytes) {}
+/**
+ * One entry in a dataset's file manifest.
+ *
+ * @param id stable source-assigned identifier, used as the key on the dataset page
+ * @param name human-readable label
+ */
+public record DspaceBitstreamPayload(
+        String id, String name, String bundleName, FileFormat format, String sourceUrl, Long sizeBytes) {}

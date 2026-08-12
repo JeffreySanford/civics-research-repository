@@ -42,16 +42,27 @@ class DspaceRestItemWriteGatewayTest {
 
         List<Map<String, Object>> operations = gateway.metadataPatchOperations(item, SOURCE_IDENTIFIER, sourcePayload);
 
+        // An existing field is cleared first, then re-appended value by value.
         assertThat(operations).anySatisfy((operation) -> {
-            assertThat(operation.get("op")).isEqualTo("replace");
+            assertThat(operation.get("op")).isEqualTo("remove");
             assertThat(operation.get("path")).isEqualTo("/metadata/dc.date.issued");
         });
         assertThat(operations).anySatisfy((operation) -> {
             assertThat(operation.get("op")).isEqualTo("add");
-            assertThat(operation.get("path")).isEqualTo("/metadata/dc.identifier.other");
+            assertThat(operation.get("path")).isEqualTo("/metadata/dc.date.issued/-");
         });
         assertThat(operations).anySatisfy((operation) -> {
             assertThat(operation.get("op")).isEqualTo("add");
+            assertThat(operation.get("path")).isEqualTo("/metadata/dc.identifier.other/-");
+        });
+        assertThat(operations).anySatisfy((operation) -> {
+            assertThat(operation.get("op")).isEqualTo("add");
+            assertThat(operation.get("path")).isEqualTo("/metadata/crr.identifier.source/-");
+        });
+
+        // An absent field is not removed first; there is nothing to remove.
+        assertThat(operations).noneSatisfy((operation) -> {
+            assertThat(operation.get("op")).isEqualTo("remove");
             assertThat(operation.get("path")).isEqualTo("/metadata/crr.identifier.source");
         });
     }
@@ -78,7 +89,8 @@ class DspaceRestItemWriteGatewayTest {
 
         List<Map<String, Object>> operations = gateway.metadataPatchOperations(item, SOURCE_IDENTIFIER, sourcePayload);
 
-        assertThat(operations).noneSatisfy((operation) -> assertThat(operation.get("path")).isEqualTo("/metadata/dc.title"));
+        assertThat(operations)
+                .noneSatisfy((operation) -> assertThat(operation.get("path").toString()).startsWith("/metadata/dc.title"));
     }
 
     /**
@@ -152,6 +164,27 @@ class DspaceRestItemWriteGatewayTest {
     @Test
     void skipsReconciliationWhenCredentialsAreNotConfigured() {
         assertThat(gateway.ensureItemMetadata(SOURCE_IDENTIFIER, sourcePayload)).isFalse();
+    }
+
+    /**
+     * The manifest is the first genuinely multi-valued field sync writes, and the bug it exposed —
+     * DSpace keeping only the first element of a value array — is invisible with single-valued
+     * fields.
+     */
+    @Test
+    void emitsOneAddOperationPerValueForAMultiValuedField() {
+        JsonNode item = firstItem(
+                """
+                {"type": "item", "withdrawn": false, "metadata": {}}
+                """);
+
+        List<Map<String, Object>> operations = gateway.metadataPatchOperations(item, SOURCE_IDENTIFIER, sourcePayload);
+
+        assertThat(operations)
+                .filteredOn((operation) ->
+                        ("/metadata/" + DspaceFileManifest.FIELD + "/-").equals(operation.get("path")))
+                .hasSize(sourcePayload.bitstreams().size())
+                .allSatisfy((operation) -> assertThat(operation.get("op")).isEqualTo("add"));
     }
 
     private JsonNode firstItem(String indexableObject) {

@@ -128,7 +128,7 @@ public class SyncService {
                         "UPSERT_ITEM",
                         itemPayload.name(),
                         "Prepare DSpace item payload with " + itemPayload.metadata().size() + " metadata fields and "
-                                + itemPayload.bitstreams().size() + " bitstream manifest entries."),
+                                + itemPayload.bitstreams().size() + " file manifest entries."),
                 new SyncAction(
                         "UPSERT_FILE_MANIFEST",
                         metadata.id(),

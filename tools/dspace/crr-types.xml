@@ -50,4 +50,11 @@
     <qualifier>url</qualifier>
     <scope_note>Authoritative source documentation URL.</scope_note>
   </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>file</element>
+    <qualifier>manifest</qualifier>
+    <scope_note>One JSON entry per source file: id, bundle, format, url, and size where known. Public datasets are represented by manifests and links rather than mirrored bitstreams, so this field is where the file list lives.</scope_note>
+  </dc-type>
 </dspace-dc-types>

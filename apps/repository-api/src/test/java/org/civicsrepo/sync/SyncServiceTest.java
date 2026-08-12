@@ -32,8 +32,8 @@ class SyncServiceTest {
                 .anySatisfy(action -> {
                     assertThat(action.actionType()).isEqualTo("UPSERT_ITEM");
                     assertThat(action.detail()).contains("DSpace item payload");
-                    assertThat(action.detail()).contains("16 metadata fields");
-                    assertThat(action.detail()).contains("3 bitstream manifest entries");
+                    assertThat(action.detail()).contains("17 metadata fields");
+                    assertThat(action.detail()).contains("3 file manifest entries");
                 });
     }
 
@@ -121,8 +121,13 @@ class SyncServiceTest {
     void diffModePlansUpdateWhenRepositoryItemDiffersFromSourcePayload() {
         DspaceItemPayload sourcePayload =
                 new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+        java.util.Map<String, List<org.civicsrepo.dspace.DspaceMetadataValue>> changedMetadata =
+                new java.util.LinkedHashMap<>(sourcePayload.metadata());
+        changedMetadata.put(
+                "dc.title",
+                List.of(new org.civicsrepo.dspace.DspaceMetadataValue("An older title", "en_US", null, -1)));
         DspaceItemPayload changedPayload = new DspaceItemPayload(
-                sourcePayload.name(), sourcePayload.type(), sourcePayload.metadata(), List.of());
+                sourcePayload.name(), sourcePayload.type(), java.util.Map.copyOf(changedMetadata), List.of());
         SyncService syncService = newSyncService(new TestSyncJobStore(), (sourceIdentifier) -> Optional.of(changedPayload));
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
