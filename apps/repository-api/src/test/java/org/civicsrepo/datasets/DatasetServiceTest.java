@@ -1,5 +1,9 @@
 package org.civicsrepo.datasets;
 
+import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.DatasetFile;
+import org.civicsrepo.generated.dto.DatasetVersion;
+import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -14,11 +18,11 @@ class DatasetServiceTest {
     void loadsTigerLineDetailForAnySeededCensusArea() {
         DatasetDetail detail = datasetService.getDataset("tiger-line-california-2025");
 
-        assertThat(detail.title()).isEqualTo("2025 TIGER/Line - Census Tracts - California");
-        assertThat(detail.program()).isEqualTo(ResearchProgram.TIGER_LINE);
-        assertThat(detail.geography()).isEqualTo("California");
-        assertThat(detail.files()).extracting(DatasetFile::format).contains(FileFormat.ZIP);
-        assertThat(detail.relatedResearch()).extracting((related) -> related.getId()).contains("lodes-wac-california-2023");
+        assertThat(detail.getTitle()).isEqualTo("2025 TIGER/Line - Census Tracts - California");
+        assertThat(detail.getProgram()).isEqualTo(ResearchProgram.TIGER_LINE);
+        assertThat(detail.getGeography()).isEqualTo("California");
+        assertThat(detail.getFiles()).extracting(DatasetFile::getFormat).contains(FileFormat.ZIP);
+        assertThat(detail.getRelatedResearch()).extracting((related) -> related.getId()).contains("lodes-wac-california-2023");
     }
 
     @Test
@@ -26,7 +30,7 @@ class DatasetServiceTest {
         assertThat(datasetService.getDatasetVersions("lodes-wac-texas-2023"))
                 .hasSize(2)
                 .first()
-                .extracting(DatasetVersion::current)
+                .extracting(DatasetVersion::getCurrent)
                 .isEqualTo(true);
     }
 

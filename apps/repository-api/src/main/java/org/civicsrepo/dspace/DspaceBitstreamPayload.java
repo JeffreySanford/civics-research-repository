@@ -1,6 +1,6 @@
 package org.civicsrepo.dspace;
 
-import org.civicsrepo.datasets.FileFormat;
+import org.civicsrepo.generated.dto.FileFormat;
 
 /**
  * One entry in a dataset's file manifest.

@@ -1,6 +1,10 @@
 package org.civicsrepo.repository;
 
 import java.net.URI;
+import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.DatasetFile;
+import org.civicsrepo.generated.dto.EvidenceStatus;
+import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -12,10 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import org.civicsrepo.datasets.DatasetDetail;
-import org.civicsrepo.datasets.DatasetFile;
-import org.civicsrepo.datasets.EvidenceStatus;
-import org.civicsrepo.datasets.FileFormat;
 import org.civicsrepo.dspace.DspaceFileManifest;
 import org.springframework.stereotype.Component;
 
@@ -57,14 +57,14 @@ public class RepositoryObjectMapper {
                 program(item),
                 firstValue(item, "dc.publisher").orElse(PUBLISHER_FALLBACK),
                 firstValue(item, "dc.description.abstract").orElse(""),
-                firstValue(item, "dc.coverage.spatial").orElse("United States"),
-                vintageYear(item).orElse(null),
-                releasedOn(item).orElse(null),
                 files(item),
                 firstValue(item, "dc.identifier.citation").orElse(title(item)),
-                sourceUrl(item),
-                EvidenceStatus.AUTOMATED_PASS,
-                relatedResearch);
+                URI.create(sourceUrl(item)),
+                relatedResearch)
+                        .geography(firstValue(item, "dc.coverage.spatial").orElse("United States"))
+                        .vintageYear(vintageYear(item).orElse(null))
+                        .releasedOn(releasedOn(item).orElse(null))
+                        .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
     }
 
     /**
@@ -161,12 +161,12 @@ public class RepositoryObjectMapper {
         firstValue(item, "crr.source.url")
                 .or(() -> firstValue(item, "dc.identifier.uri"))
                 .ifPresent((url) -> files.add(new DatasetFile(
-                        "source-manifest", "Source file manifest", formatFor(url), url, null)));
+                        "source-manifest", "Source file manifest", formatFor(url), URI.create(url))));
 
         firstValue(item, "crr.documentation.url")
                 .or(() -> firstValue(item, "dc.relation.uri"))
                 .ifPresent((url) ->
-                        files.add(new DatasetFile("documentation", "Technical documentation", formatFor(url), url, null)));
+                        files.add(new DatasetFile("documentation", "Technical documentation", formatFor(url), URI.create(url))));
 
         return List.copyOf(files);
     }
@@ -180,8 +180,8 @@ public class RepositoryObjectMapper {
                             entry.id(),
                             entry.name(),
                             entry.format(),
-                            entry.sourceUrl(),
-                            entry.sizeBytes())));
+                            URI.create(entry.sourceUrl()))
+                        .sizeBytes(entry.sizeBytes())));
         }
 
         return List.copyOf(files);

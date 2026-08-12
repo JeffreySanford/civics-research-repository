@@ -223,6 +223,7 @@ export interface components {
       format: components['schemas']['FileFormat'];
       /** Format: uri */
       url: string;
+      /** Format: int64 */
       sizeBytes?: number;
     };
     DatasetVersion: {

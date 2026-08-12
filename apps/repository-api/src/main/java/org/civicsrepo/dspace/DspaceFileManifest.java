@@ -1,5 +1,6 @@
 package org.civicsrepo.dspace;
 
+import org.civicsrepo.generated.dto.FileFormat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.civicsrepo.datasets.FileFormat;
 
 /**
  * Encodes a dataset's file manifest as repeatable {@code crr.file.manifest} metadata.

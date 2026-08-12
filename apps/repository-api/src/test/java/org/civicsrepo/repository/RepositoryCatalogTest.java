@@ -1,12 +1,12 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.DatasetDetail;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
-import org.civicsrepo.datasets.DatasetDetail;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.dspace.DspaceUnavailableException;
 import org.junit.jupiter.api.Test;
@@ -44,8 +44,8 @@ class RepositoryCatalogTest {
     void findsADatasetBySourceIdentifier() {
         DatasetDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
-        assertThat(detail.source()).isEqualTo(RepositorySource.REPOSITORY);
-        assertThat(detail.geography()).isEqualTo("North Dakota");
+        assertThat(detail.getSource()).isEqualTo(RepositorySource.REPOSITORY);
+        assertThat(detail.getGeography()).isEqualTo("North Dakota");
     }
 
     @Test
@@ -67,7 +67,7 @@ class RepositoryCatalogTest {
     void relatesItemsSharingGeographyAndExcludesSameProgramFiller() {
         DatasetDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
-        assertThat(detail.relatedResearch())
+        assertThat(detail.getRelatedResearch())
                 .extracting(SearchResult::getId)
                 .containsExactly("lodes-wac-north-dakota-2023")
                 .doesNotContain("tiger-line-texas-2025");
@@ -83,7 +83,7 @@ class RepositoryCatalogTest {
 
         DatasetDetail detail = catalog(items).findDataset("cps-a").orElseThrow();
 
-        assertThat(detail.relatedResearch()).extracting(SearchResult::getId).containsExactly("cps-b");
+        assertThat(detail.getRelatedResearch()).extracting(SearchResult::getId).containsExactly("cps-b");
     }
 
     @Test
@@ -94,7 +94,7 @@ class RepositoryCatalogTest {
 
         DatasetDetail detail = catalog(items).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
-        assertThat(detail.relatedResearch()).isEmpty();
+        assertThat(detail.getRelatedResearch()).isEmpty();
     }
 
     @Test

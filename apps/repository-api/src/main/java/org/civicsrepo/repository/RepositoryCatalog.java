@@ -1,5 +1,6 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.DatasetDetail;
 import org.civicsrepo.generated.dto.SearchResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
@@ -8,7 +9,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import org.civicsrepo.datasets.DatasetDetail;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.dspace.DspaceUnavailableException;
 import org.slf4j.Logger;

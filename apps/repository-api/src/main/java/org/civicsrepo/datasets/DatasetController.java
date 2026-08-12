@@ -1,5 +1,7 @@
 package org.civicsrepo.datasets;
 
+import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.DatasetVersion;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.civicsrepo.repository.RepositoryCatalog;
+import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.DatasetFile;
+import org.civicsrepo.generated.dto.DatasetVersion;
+import org.civicsrepo.generated.dto.EvidenceStatus;
+import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -73,11 +78,13 @@ public class DatasetService {
 
     public List<DatasetVersion> getDatasetVersions(String datasetId) {
         DatasetDetail detail = getDataset(datasetId);
-        int currentYear = detail.vintageYear() == null ? 2026 : detail.vintageYear();
+        int currentYear = detail.getVintageYear() == null ? 2026 : detail.getVintageYear();
 
         return List.of(
-                new DatasetVersion(datasetId + "-current", detail.title(), detail.releasedOn(), true),
-                new DatasetVersion(datasetId + "-previous", detail.program() + " " + (currentYear - 1), LocalDate.of(currentYear - 1, 8, 1), false));
+                new DatasetVersion(datasetId + "-current", detail.getTitle(), true)
+                        .releasedOn(detail.getReleasedOn()),
+                new DatasetVersion(datasetId + "-previous", detail.getProgram() + " " + (currentYear - 1), false)
+                        .releasedOn(LocalDate.of(currentYear - 1, 8, 1)));
     }
 
     private DatasetDetail tigerLineDetail(String datasetId, String geography, int vintageYear) {
@@ -88,16 +95,16 @@ public class DatasetService {
                 ResearchProgram.TIGER_LINE,
                 "U.S. Census Bureau",
                 "Cartographic boundary and tract geometry metadata for " + geography + " census geography, represented as a repository research object with source links, file manifests, and map-layer metadata.",
-                geography,
-                vintageYear,
-                LocalDate.of(vintageYear, 8, 1),
                 List.of(
-                        new DatasetFile("source-zip", "TIGER/Line source archive", FileFormat.ZIP, "https://www2.census.gov/geo/tiger/TIGER" + vintageYear + "/", null),
-                        new DatasetFile("metadata-html", "TIGER/Line technical documentation", FileFormat.OTHER, "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html", null)),
+                        new DatasetFile("source-zip", "TIGER/Line source archive", FileFormat.ZIP, URI.create("https://www2.census.gov/geo/tiger/TIGER" + vintageYear + "/")),
+                        new DatasetFile("metadata-html", "TIGER/Line technical documentation", FileFormat.OTHER, URI.create("https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"))),
                 "U.S. Census Bureau. " + vintageYear + " TIGER/Line Shapefiles: Census Tracts, " + geography + ".",
-                "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
-                EvidenceStatus.AUTOMATED_PASS,
-                relatedCensusResearch(ResearchProgram.TIGER_LINE, geography));
+                URI.create("https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"),
+                relatedCensusResearch(ResearchProgram.TIGER_LINE, geography))
+                        .geography(geography)
+                        .vintageYear(vintageYear)
+                        .releasedOn(LocalDate.of(vintageYear, 8, 1))
+                        .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
     }
 
     private DatasetDetail lodesDetail(String datasetId, String geography, int vintageYear) {
@@ -108,16 +115,16 @@ public class DatasetService {
                 ResearchProgram.LODES,
                 "U.S. Census Bureau",
                 "LEHD Origin-Destination Employment Statistics metadata for " + geography + " workforce geography and workplace area characteristics.",
-                geography,
-                vintageYear,
-                LocalDate.of(vintageYear, 6, 1),
                 List.of(
-                        new DatasetFile("lodes-csv", "LODES workplace characteristics CSV manifest", FileFormat.CSV, "https://lehd.ces.census.gov/data/", null),
-                        new DatasetFile("lodes-docs", "LODES documentation", FileFormat.PDF, "https://lehd.ces.census.gov/data/lodes/LODES7/LODESTechDoc7.5.pdf", null)),
+                        new DatasetFile("lodes-csv", "LODES workplace characteristics CSV manifest", FileFormat.CSV, URI.create("https://lehd.ces.census.gov/data/")),
+                        new DatasetFile("lodes-docs", "LODES documentation", FileFormat.PDF, URI.create("https://lehd.ces.census.gov/data/lodes/LODES7/LODESTechDoc7.5.pdf"))),
                 "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, " + geography + ", " + vintageYear + ".",
-                "https://lehd.ces.census.gov/data/",
-                EvidenceStatus.MANUAL_REVIEW_REQUIRED,
-                relatedCensusResearch(ResearchProgram.LODES, geography));
+                URI.create("https://lehd.ces.census.gov/data/"),
+                relatedCensusResearch(ResearchProgram.LODES, geography))
+                        .geography(geography)
+                        .vintageYear(vintageYear)
+                        .releasedOn(LocalDate.of(vintageYear, 6, 1))
+                        .accessibilityEvidenceStatus(EvidenceStatus.MANUAL_REVIEW_REQUIRED);
     }
 
     private DatasetDetail acsDetail(String datasetId, String geography, int vintageYear) {
@@ -128,16 +135,16 @@ public class DatasetService {
                 ResearchProgram.ACS,
                 "U.S. Census Bureau",
                 "American Community Survey public use microdata metadata for " + geography + " demographic research, prepared as a repository object before any large file mirroring.",
-                geography,
-                vintageYear,
-                LocalDate.of(vintageYear, 10, 1),
                 List.of(
-                        new DatasetFile("pums-data", "ACS PUMS data access page", FileFormat.OTHER, "https://www.census.gov/programs-surveys/acs/microdata.html", null),
-                        new DatasetFile("pums-docs", "ACS PUMS documentation", FileFormat.PDF, "https://www.census.gov/programs-surveys/acs/technical-documentation/pums/documentation.html", null)),
+                        new DatasetFile("pums-data", "ACS PUMS data access page", FileFormat.OTHER, URI.create("https://www.census.gov/programs-surveys/acs/microdata.html")),
+                        new DatasetFile("pums-docs", "ACS PUMS documentation", FileFormat.PDF, URI.create("https://www.census.gov/programs-surveys/acs/technical-documentation/pums/documentation.html"))),
                 "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, " + geography + ", " + vintageYear + ".",
-                "https://www.census.gov/programs-surveys/acs/microdata.html",
-                EvidenceStatus.MANUAL_REVIEW_REQUIRED,
-                relatedCensusResearch(ResearchProgram.ACS, geography));
+                URI.create("https://www.census.gov/programs-surveys/acs/microdata.html"),
+                relatedCensusResearch(ResearchProgram.ACS, geography))
+                        .geography(geography)
+                        .vintageYear(vintageYear)
+                        .releasedOn(LocalDate.of(vintageYear, 10, 1))
+                        .accessibilityEvidenceStatus(EvidenceStatus.MANUAL_REVIEW_REQUIRED);
     }
 
     private DatasetDetail nationalDetail(
@@ -153,14 +160,14 @@ public class DatasetService {
                 program,
                 "U.S. Census Bureau",
                 abstractText,
-                "United States",
-                2024,
-                LocalDate.of(2024, 9, 1),
-                List.of(new DatasetFile("source-page", title + " source page", FileFormat.OTHER, sourceUrl, null)),
+                List.of(new DatasetFile("source-page", title + " source page", FileFormat.OTHER, URI.create(sourceUrl))),
                 "U.S. Census Bureau. " + title + ".",
-                sourceUrl,
-                EvidenceStatus.MANUAL_REVIEW_REQUIRED,
-                relatedNationalResearch(program));
+                URI.create(sourceUrl),
+                relatedNationalResearch(program))
+                        .geography("United States")
+                        .vintageYear(2024)
+                        .releasedOn(LocalDate.of(2024, 9, 1))
+                        .accessibilityEvidenceStatus(EvidenceStatus.MANUAL_REVIEW_REQUIRED);
     }
 
     private DatasetDetail usgsDetail(String datasetId) {
@@ -171,13 +178,9 @@ public class DatasetService {
                 ResearchProgram.USGS,
                 "U.S. Geological Survey",
                 "Earthquake Hazards Program GeoJSON overlay metadata for contextual map display, event lists, and repository-linked public data evidence.",
-                "United States",
-                2026,
-                LocalDate.of(2026, 8, 11),
-                List.of(new DatasetFile("earthquake-geojson", "USGS earthquake GeoJSON feed", FileFormat.GEOJSON, "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson", null)),
+                List.of(new DatasetFile("earthquake-geojson", "USGS earthquake GeoJSON feed", FileFormat.GEOJSON, URI.create("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"))),
                 "U.S. Geological Survey. Earthquake Catalog GeoJSON Feed.",
-                "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson",
-                EvidenceStatus.AUTOMATED_PASS,
+                URI.create("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"),
                 List.of(
                         searchResult(
                                 "tiger-line-north-dakota-2025",
@@ -194,7 +197,11 @@ public class DatasetService {
                                 "LEHD Origin-Destination Employment Statistics metadata for North Dakota workforce geography.",
                                 "North Dakota",
                                 2023,
-                                "https://lehd.ces.census.gov/data/")));
+                                "https://lehd.ces.census.gov/data/")))
+                        .geography("United States")
+                        .vintageYear(2026)
+                        .releasedOn(LocalDate.of(2026, 8, 11))
+                        .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
     }
 
     private DatasetKey parseDatasetId(String datasetId) {

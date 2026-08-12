@@ -1,5 +1,7 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -10,8 +12,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import org.civicsrepo.datasets.DatasetDetail;
-import org.civicsrepo.datasets.FileFormat;
 import org.junit.jupiter.api.Test;
 
 class RepositoryObjectMapperTest {
@@ -47,12 +47,12 @@ class RepositoryObjectMapperTest {
                         "2025"),
                 List.of());
 
-        assertThat(detail.source()).isEqualTo(RepositorySource.REPOSITORY);
-        assertThat(detail.releasedOn()).isEqualTo(LocalDate.of(2025, 1, 1));
-        assertThat(detail.citation()).startsWith("U.S. Census Bureau.");
-        assertThat(detail.files()).hasSize(2);
-        assertThat(detail.files().getFirst().format()).isEqualTo(FileFormat.ZIP);
-        assertThat(detail.files().getLast().format()).isEqualTo(FileFormat.PDF);
+        assertThat(detail.getSource()).isEqualTo(RepositorySource.REPOSITORY);
+        assertThat(detail.getReleasedOn()).isEqualTo(LocalDate.of(2025, 1, 1));
+        assertThat(detail.getCitation()).startsWith("U.S. Census Bureau.");
+        assertThat(detail.getFiles()).hasSize(2);
+        assertThat(detail.getFiles().getFirst().getFormat()).isEqualTo(FileFormat.ZIP);
+        assertThat(detail.getFiles().getLast().getFormat()).isEqualTo(FileFormat.PDF);
     }
 
     /** The source identifier is what the rest of the system addresses items by, not the DSpace UUID. */
@@ -106,7 +106,7 @@ class RepositoryObjectMapperTest {
     void toleratesAYearOnlyIssuedDate() {
         JsonNode item = RepositoryFixtures.item("uuid", "Item", Map.of("dc.title", "Item", "dc.date.issued", "2019"));
 
-        assertThat(mapper.toDatasetDetail(item, List.of()).releasedOn()).isEqualTo(LocalDate.of(2019, 1, 1));
+        assertThat(mapper.toDatasetDetail(item, List.of()).getReleasedOn()).isEqualTo(LocalDate.of(2019, 1, 1));
     }
 
     @Test
@@ -114,14 +114,14 @@ class RepositoryObjectMapperTest {
         JsonNode item = RepositoryFixtures.item(
                 "uuid", "Item", Map.of("dc.title", "Item", "dc.date.issued", "sometime in 2019"));
 
-        assertThat(mapper.toDatasetDetail(item, List.of()).releasedOn()).isNull();
+        assertThat(mapper.toDatasetDetail(item, List.of()).getReleasedOn()).isNull();
     }
 
     @Test
     void producesNoFileManifestEntriesWhenTheItemCarriesNoUrls() {
         JsonNode item = RepositoryFixtures.item("uuid", "Item", Map.of("dc.title", "Item"));
 
-        assertThat(mapper.toDatasetDetail(item, List.of()).files()).isEmpty();
+        assertThat(mapper.toDatasetDetail(item, List.of()).getFiles()).isEmpty();
     }
 
     @Test

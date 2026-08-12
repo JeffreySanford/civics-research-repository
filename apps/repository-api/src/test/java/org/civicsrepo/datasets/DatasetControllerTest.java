@@ -1,5 +1,6 @@
 package org.civicsrepo.datasets;
 
+import java.net.URI;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -8,6 +9,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.util.List;
+import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.DatasetFile;
+import org.civicsrepo.generated.dto.DatasetVersion;
+import org.civicsrepo.generated.dto.EvidenceStatus;
+import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.junit.jupiter.api.Test;
@@ -53,8 +59,10 @@ class DatasetControllerTest {
     void serializesDatasetVersions() throws Exception {
         given(datasetService.getDatasetVersions("tiger-line-north-dakota-2025"))
                 .willReturn(List.of(
-                        new DatasetVersion("v-current", "Current", LocalDate.of(2025, 8, 1), true),
-                        new DatasetVersion("v-previous", "Previous", LocalDate.of(2024, 8, 1), false)));
+                        new DatasetVersion("v-current", "Current", true)
+                        .releasedOn(LocalDate.of(2025, 8, 1)),
+                        new DatasetVersion("v-previous", "Previous", false)
+                        .releasedOn(LocalDate.of(2024, 8, 1))));
 
         mockMvc.perform(get("/datasets/tiger-line-north-dakota-2025/versions"))
                 .andExpect(status().isOk())
@@ -71,18 +79,17 @@ class DatasetControllerTest {
                 ResearchProgram.TIGER_LINE,
                 "U.S. Census Bureau",
                 "Tract geometry metadata.",
-                "North Dakota",
-                2025,
-                LocalDate.of(2025, 8, 1),
                 List.of(new DatasetFile(
                         "source-zip",
                         "TIGER/Line source archive",
                         FileFormat.ZIP,
-                        "https://www2.census.gov/geo/tiger/TIGER2025/",
-                        null)),
+                        URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"))),
                 "U.S. Census Bureau. 2025 TIGER/Line Shapefiles.",
-                "https://www2.census.gov/geo/tiger/TIGER2025/",
-                EvidenceStatus.AUTOMATED_PASS,
-                List.of());
+                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"),
+                List.of())
+                        .geography("North Dakota")
+                        .vintageYear(2025)
+                        .releasedOn(LocalDate.of(2025, 8, 1))
+                        .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
     }
 }

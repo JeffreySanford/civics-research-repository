@@ -426,7 +426,9 @@ components:
           type: string
           format: uri
         sizeBytes:
+          # int64: a repository file can exceed 2 GB, and int32 would silently cap it.
           type: integer
+          format: int64
     DatasetVersion:
       type: object
       required: [id, label, current]

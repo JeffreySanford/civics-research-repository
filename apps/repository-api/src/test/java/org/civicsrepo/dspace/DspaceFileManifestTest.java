@@ -1,9 +1,9 @@
 package org.civicsrepo.dspace;
 
+import org.civicsrepo.generated.dto.FileFormat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import org.civicsrepo.datasets.FileFormat;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 
