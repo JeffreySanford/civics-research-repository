@@ -40,6 +40,14 @@
         />
         USGS earthquake overlay
       </label>
+      <label>
+        <input
+          type="checkbox"
+          [checked]="lodesVisible$ | async"
+          (change)="toggleLodesLayer($any($event.target).checked)"
+        />
+        LODES workplace flow sample
+      </label>
     </fieldset>
   </div>
 
@@ -73,13 +81,13 @@
           @if (selectedBoundary$ | async; as boundary) { {{ boundary.geography
           }} TIGER/Line preview } @else { TIGER/Line preview }
         </li>
-        } @if (lodesLayers$ | async; as lodesLayers) { @if (lodesLayers.length >
-        0) {
+        } @if (lodesVisible$ | async) { @if (lodesLayers$ | async; as
+        lodesLayers) { @if (lodesLayers.length > 0) {
         <li>
           <span class="swatch lodes"></span>
           LODES workplace flow sample
         </li>
-        } } @if (earthquakeVisible$ | async) {
+        } } } @if (earthquakeVisible$ | async) {
         <li>
           <span class="swatch usgs"></span>
           USGS event overlay @if (earthquakeOverlay$ | async; as overlay) {
@@ -119,13 +127,14 @@
   </button>
   }
   <ul class="feature-list">
-    @if (layers$ | async; as layers) { @for (layer of layers; track layer.id) {
-    @if (layer.layerType === 'CENSUS_DATA' || (tigerVisible$ | async)) {
+    <!-- Each entry follows the toggle for the layer it describes, so this list and the map agree. -->
+    @if (visibleLayers$ | async; as layers) { @for (layer of layers; track
+    layer.id) {
     <li>
       <strong>{{ layer.label }}</strong>
       <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
     </li>
-    } } } @if (earthquakeVisible$ | async) { @if (earthquakeOverlay$ | async; as
+    } } @if (earthquakeVisible$ | async) { @if (earthquakeOverlay$ | async; as
     overlay) {
     <li>
       <strong>{{ overlay.source }}</strong>

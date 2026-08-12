@@ -31,6 +31,7 @@ import {
   selectEarthquakeError,
   selectEarthquakeOverlay,
   selectEarthquakeVisible,
+  selectLodesVisible,
   selectMapLayers,
   selectMapsError,
   selectMapsLoading,
@@ -116,12 +117,40 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private mapLoaded = false;
   private tigerVisible = true;
   private earthquakeVisible = true;
+  private lodesVisible = true;
   private selectedFeatureId: string | null = null;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
   protected readonly lodesLayers$ = this.layers$.pipe(
     map((layers) =>
       layers.filter((layer) => layer.layerType === 'CENSUS_DATA'),
+    ),
+  );
+  /**
+   * The layers currently drawn, for the accessible layer list.
+   *
+   * Derived from the same toggles the map reads, so the list cannot claim a layer the map is not
+   * drawing — the disagreement the layer toggles originally had.
+   */
+  protected readonly visibleLayers$ = combineLatest([
+    this.layers$,
+    this.store.select(selectTigerVisible),
+    this.store.select(selectEarthquakeVisible),
+    this.store.select(selectLodesVisible),
+  ]).pipe(
+    map(([layers, tigerVisible, earthquakeVisible, lodesVisible]) =>
+      layers.filter((layer) => {
+        switch (layer.layerType) {
+          case 'CENSUS_BOUNDARY':
+            return tigerVisible;
+          case 'CENSUS_DATA':
+            return lodesVisible;
+          case 'USGS_EARTHQUAKE':
+            return earthquakeVisible;
+          default:
+            return true;
+        }
+      }),
     ),
   );
   protected readonly censusAreaBoundaries$ = this.store.select(
@@ -148,6 +177,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly earthquakeVisible$ = this.store.select(
     selectEarthquakeVisible,
   );
+  protected readonly lodesVisible$ = this.store.select(selectLodesVisible);
   protected readonly loading$ = this.store.select(selectMapsLoading);
   protected readonly error$ = this.store.select(selectMapsError);
   protected readonly selectedFeatureId$ = this.store.select(
@@ -202,19 +232,17 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
-    combineLatest([this.tigerVisible$, this.earthquakeVisible$])
+    combineLatest([
+      this.tigerVisible$,
+      this.earthquakeVisible$,
+      this.lodesVisible$,
+    ])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([tigerVisible, earthquakeVisible]) => {
+      .subscribe(([tigerVisible, earthquakeVisible, lodesVisible]) => {
         this.tigerVisible = tigerVisible;
         this.earthquakeVisible = earthquakeVisible;
-        this.setLayerVisibility(
-          ['census-area-fill', 'census-area-outline'],
-          tigerVisible,
-        );
-        this.setLayerVisibility(
-          ['usgs-earthquake-points', 'usgs-earthquake-labels'],
-          earthquakeVisible,
-        );
+        this.lodesVisible = lodesVisible;
+        this.applyLayerVisibility();
       });
   }
 
@@ -238,6 +266,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected toggleEarthquakeLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
     this.updateMapUrl({ earthquakeVisible: visible });
+  }
+
+  protected toggleLodesLayer(visible: boolean): void {
+    this.store.dispatch(MapsActions.lodesLayerToggled({ visible }));
+    this.updateMapUrl({ lodesVisible: visible });
   }
 
   /** Called when a feature-list entry is activated or focused. */
@@ -271,6 +304,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           area: params.get('area'),
           tigerVisible: this.toVisibleState(params.get('tiger')),
           earthquakeVisible: this.toVisibleState(params.get('earthquakes')),
+          lodesVisible: this.toVisibleState(params.get('lodes')),
           featureId: params.get('feature'),
         })),
         distinctUntilChanged(
@@ -278,39 +312,57 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             previous.area === current.area &&
             previous.tigerVisible === current.tigerVisible &&
             previous.earthquakeVisible === current.earthquakeVisible &&
+            previous.lodesVisible === current.lodesVisible &&
             previous.featureId === current.featureId,
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ area, tigerVisible, earthquakeVisible, featureId }) => {
-        if (area) {
-          this.store.dispatch(
-            MapsActions.censusAreaSelected({ geography: area }),
-          );
-        }
+      .subscribe(
+        ({
+          area,
+          tigerVisible,
+          earthquakeVisible,
+          lodesVisible,
+          featureId,
+        }) => {
+          if (area) {
+            this.store.dispatch(
+              MapsActions.censusAreaSelected({ geography: area }),
+            );
+          }
 
-        if (tigerVisible !== null) {
-          this.store.dispatch(
-            MapsActions.tigerLayerToggled({ visible: tigerVisible }),
-          );
-        }
+          if (tigerVisible !== null) {
+            this.store.dispatch(
+              MapsActions.tigerLayerToggled({ visible: tigerVisible }),
+            );
+          }
 
-        if (earthquakeVisible !== null) {
-          this.store.dispatch(
-            MapsActions.earthquakeLayerToggled({ visible: earthquakeVisible }),
-          );
-        }
+          if (earthquakeVisible !== null) {
+            this.store.dispatch(
+              MapsActions.earthquakeLayerToggled({
+                visible: earthquakeVisible,
+              }),
+            );
+          }
 
-        if (featureId) {
-          this.store.dispatch(MapsActions.mapFeatureSelected({ featureId }));
-        }
-      });
+          if (lodesVisible !== null) {
+            this.store.dispatch(
+              MapsActions.lodesLayerToggled({ visible: lodesVisible }),
+            );
+          }
+
+          if (featureId) {
+            this.store.dispatch(MapsActions.mapFeatureSelected({ featureId }));
+          }
+        },
+      );
   }
 
   private updateMapUrl(options: {
     geography?: string;
     tigerVisible?: boolean;
     earthquakeVisible?: boolean;
+    lodesVisible?: boolean;
     featureId?: string | null;
   }): void {
     void this.router.navigate([], {
@@ -329,6 +381,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           options.earthquakeVisible === undefined
             ? undefined
             : this.toLayerParam(options.earthquakeVisible),
+        lodes:
+          options.lodesVisible === undefined
+            ? undefined
+            : this.toLayerParam(options.lodesVisible),
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,
@@ -619,6 +675,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         'circle-stroke-width': 2,
       },
     });
+
+    // Newly added layers default to visible, so they must be reconciled with the current toggles.
+    this.applyLayerVisibility();
   }
 
   private createEarthquakeGeoJson(
@@ -742,14 +801,30 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * The single place layer visibility is applied.
+   *
+   * Every rendered layer belongs to exactly one group here. The earthquake selection ring was
+   * missing, so hiding the overlay left a highlight floating over an empty map, and the LODES
+   * layers had no toggle at all and were drawn permanently. That is why turning a layer off
+   * appeared to change only the legend: the legend read from the store, the map did not.
+   */
   private applyLayerVisibility(): void {
     this.setLayerVisibility(
       ['census-area-fill', 'census-area-outline'],
       this.tigerVisible,
     );
     this.setLayerVisibility(
-      ['usgs-earthquake-points', 'usgs-earthquake-labels'],
+      [
+        'usgs-earthquake-points',
+        'usgs-earthquake-labels',
+        'usgs-earthquake-selected',
+      ],
       this.earthquakeVisible,
+    );
+    this.setLayerVisibility(
+      ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
+      this.lodesVisible,
     );
   }
 

@@ -16,6 +16,7 @@ export interface MapsState {
   readonly earthquakeError: string | null;
   readonly tigerVisible: boolean;
   readonly earthquakeVisible: boolean;
+  readonly lodesVisible: boolean;
   /** Feature shared by the map and the accessible list; either view can set it. */
   readonly selectedFeatureId: string | null;
   readonly loading: boolean;
@@ -30,6 +31,7 @@ export const initialMapsState: MapsState = {
   earthquakeError: null,
   tigerVisible: true,
   earthquakeVisible: true,
+  lodesVisible: true,
   selectedFeatureId: null,
   loading: false,
   error: null,
@@ -43,12 +45,18 @@ export const mapsReducer = createReducer(
     error: null,
     earthquakeError: null,
   })),
-  on(MapsActions.mapDataLoaded, (state, { layers, censusAreaBoundaries }) => ({
+  // Layers arrive separately, from the selected-area load, so they are not touched here. Neither
+  // is `error`: boundaries and layers load independently, and one succeeding is not evidence that
+  // the other did. Errors are cleared when a new attempt starts, not when a neighbour succeeds.
+  on(MapsActions.mapDataLoaded, (state, { censusAreaBoundaries }) => ({
+    ...state,
+    censusAreaBoundaries,
+  })),
+  // Layers are reloaded when the selected area changes, so only the layer list is replaced.
+  on(MapsActions.mapLayersLoaded, (state, { layers }) => ({
     ...state,
     layers,
-    censusAreaBoundaries,
     loading: false,
-    error: null,
   })),
   on(MapsActions.earthquakeOverlayLoaded, (state, { earthquakeOverlay }) => ({
     ...state,
@@ -63,6 +71,8 @@ export const mapsReducer = createReducer(
   on(MapsActions.censusAreaSelected, (state, { geography }) => ({
     ...state,
     selectedGeography: geography,
+    loading: true,
+    error: null,
   })),
   on(MapsActions.mapDataFailed, (state, { error }) => ({
     ...state,
@@ -79,6 +89,10 @@ export const mapsReducer = createReducer(
     ...state,
     earthquakeVisible: visible,
     selectedFeatureId: visible ? state.selectedFeatureId : null,
+  })),
+  on(MapsActions.lodesLayerToggled, (state, { visible }) => ({
+    ...state,
+    lodesVisible: visible,
   })),
   on(MapsActions.mapFeatureSelected, (state, { featureId }) => ({
     ...state,

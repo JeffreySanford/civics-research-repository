@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
+import { provideMockStore } from '@ngrx/store/testing';
 import { firstValueFrom, of, throwError, type Observable } from 'rxjs';
 import {
   RepositoryMapsApi,
@@ -9,6 +10,7 @@ import {
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { MapsEffects } from './maps.effects';
+import { selectSelectedGeography } from './maps.selectors';
 
 const layers = [
   {
@@ -57,11 +59,17 @@ const earthquakeOverlay = {
 function setup(
   mapsApi: Partial<RepositoryMapsApi>,
   actions$: Observable<unknown>,
+  selectedGeography = 'North Dakota',
 ) {
   TestBed.configureTestingModule({
     providers: [
       MapsEffects,
       provideMockActions(() => actions$),
+      provideMockStore({
+        selectors: [
+          { selector: selectSelectedGeography, value: selectedGeography },
+        ],
+      }),
       { provide: RepositoryMapsApi, useValue: mapsApi },
     ],
   });
@@ -70,10 +78,9 @@ function setup(
 }
 
 describe('MapsEffects', () => {
-  it('loads layers and census boundaries when the map opens', async () => {
+  it('loads the census boundaries when the map opens', async () => {
     const effects = setup(
       {
-        getDatasetMapLayers: vi.fn().mockReturnValue(of(layers)),
         listCensusAreaBoundaries: vi
           .fn()
           .mockReturnValue(of(censusAreaBoundaries)),
@@ -84,19 +91,37 @@ describe('MapsEffects', () => {
     const emitted = await firstValueFrom(effects.loadMapData$);
 
     expect(emitted).toEqual(
-      MapsActions.mapDataLoaded({ layers, censusAreaBoundaries }),
+      MapsActions.mapDataLoaded({ censusAreaBoundaries }),
     );
+  });
+
+  /**
+   * Opening the map counts as selecting the current area, so the layers come from the same effect
+   * as a later selection. A separate load here could land after a URL-supplied area and replace
+   * its layers with the default ones.
+   */
+  it('loads the layers for the current area when the map opens', async () => {
+    const getDatasetMapLayers = vi.fn().mockReturnValue(of(layers));
+    const effects = setup(
+      { getDatasetMapLayers } as unknown as RepositoryMapsApi,
+      of(MapsActions.mapOpened()),
+      'Texas',
+    );
+
+    const emitted = await firstValueFrom(effects.loadLayersForSelectedArea$);
+
+    expect(getDatasetMapLayers).toHaveBeenCalledWith('tiger-line-texas-2025');
+    expect(emitted).toEqual(MapsActions.mapLayersLoaded({ layers }));
   });
 
   it('reports a map data failure', async () => {
     const effects = setup(
       {
-        getDatasetMapLayers: vi
-          .fn()
-          .mockReturnValue(throwError(() => new Error('Layers unavailable'))),
         listCensusAreaBoundaries: vi
           .fn()
-          .mockReturnValue(of(censusAreaBoundaries)),
+          .mockReturnValue(
+            throwError(() => new Error('Boundaries unavailable')),
+          ),
       } as unknown as RepositoryMapsApi,
       of(MapsActions.mapOpened()),
     );
@@ -104,7 +129,7 @@ describe('MapsEffects', () => {
     const emitted = await firstValueFrom(effects.loadMapData$);
 
     expect(emitted).toEqual(
-      MapsActions.mapDataFailed({ error: 'Layers unavailable' }),
+      MapsActions.mapDataFailed({ error: 'Boundaries unavailable' }),
     );
   });
 
@@ -115,20 +140,17 @@ describe('MapsEffects', () => {
   it('hides raw HTTP transport errors behind the fallback message', async () => {
     const effects = setup(
       {
-        getDatasetMapLayers: vi.fn().mockReturnValue(
+        listCensusAreaBoundaries: vi.fn().mockReturnValue(
           throwError(() =>
             Object.assign(
-              new Error('Http failure response for /map-layers: 500'),
+              new Error('Http failure response for /maps/census-areas: 500'),
               {
                 status: 500,
-                url: 'http://localhost:8080/api/datasets/x/map-layers',
+                url: 'http://localhost:8080/api/maps/census-areas',
               },
             ),
           ),
         ),
-        listCensusAreaBoundaries: vi
-          .fn()
-          .mockReturnValue(of(censusAreaBoundaries)),
       } as unknown as RepositoryMapsApi,
       of(MapsActions.mapOpened()),
     );
@@ -163,6 +185,49 @@ describe('MapsEffects', () => {
     );
   });
 
+  /**
+   * The layer list used to be fetched once, for North Dakota, so every other state was described
+   * by North Dakota's layers.
+   */
+  it('reloads the layers for the newly selected Census area', async () => {
+    const getDatasetMapLayers = vi.fn().mockReturnValue(of(layers));
+    const effects = setup(
+      { getDatasetMapLayers } as unknown as RepositoryMapsApi,
+      of(MapsActions.censusAreaSelected({ geography: 'District of Columbia' })),
+      'District of Columbia',
+    );
+
+    const emitted = await firstValueFrom(effects.loadLayersForSelectedArea$);
+
+    expect(getDatasetMapLayers).toHaveBeenCalledWith(
+      'tiger-line-district-of-columbia-2025',
+    );
+    expect(emitted).toEqual(MapsActions.mapLayersLoaded({ layers }));
+  });
+
+  it('names the area whose layers failed to load', async () => {
+    const effects = setup(
+      {
+        getDatasetMapLayers: vi.fn().mockReturnValue(
+          throwError(() =>
+            Object.assign(new Error('Http failure response: 503'), {
+              status: 503,
+              url: 'http://localhost:8080/api/datasets/x/map-layers',
+            }),
+          ),
+        ),
+      } as unknown as RepositoryMapsApi,
+      of(MapsActions.censusAreaSelected({ geography: 'California' })),
+      'California',
+    );
+
+    expect(await firstValueFrom(effects.loadLayersForSelectedArea$)).toEqual(
+      MapsActions.mapDataFailed({
+        error: 'Map layers for California failed to load.',
+      }),
+    );
+  });
+
   /** The Census layers must survive an overlay outage; the two effects are independent. */
   it('fails the overlay independently of the census map data', async () => {
     const effects = setup(
@@ -179,7 +244,7 @@ describe('MapsEffects', () => {
     );
 
     expect(await firstValueFrom(effects.loadMapData$)).toEqual(
-      MapsActions.mapDataLoaded({ layers, censusAreaBoundaries }),
+      MapsActions.mapDataLoaded({ censusAreaBoundaries }),
     );
     expect(await firstValueFrom(effects.loadEarthquakeOverlay$)).toEqual(
       MapsActions.earthquakeOverlayFailed({ error: 'USGS feed down' }),

@@ -69,3 +69,8 @@ export const selectSelectedEarthquakeFeature = createSelector(
       (feature) => feature.id === state.selectedFeatureId,
     ) ?? null,
 );
+
+export const selectLodesVisible = createSelector(
+  selectMapsState,
+  (state) => state.lodesVisible,
+);

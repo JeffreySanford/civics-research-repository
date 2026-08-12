@@ -119,7 +119,14 @@
         }
       </ul>
       }
-      <a class="source-link" routerLink="/maps">Open map workspace</a>
+      <!-- Carry the geography across, so the workspace opens positioned on this dataset's area
+           with that area's layers rather than the default one. -->
+      <a
+        class="source-link"
+        routerLink="/maps"
+        [queryParams]="{ area: detail.geography }"
+        >Open map workspace</a
+      >
     </section>
   </mat-tab>
 

@@ -89,6 +89,24 @@ The remaining substantive accessibility gap, specified in documentation/mapping-
 - [ ] Confirm the map-to-list direction manually. A WebGL hit test needs trusted pointer events, so it cannot be asserted automatically; Checklist 4 item M12 covers it.
 - [ ] Re-run manual Checklist 4 afterwards and record the result.
 
+### P10 - Map layer toggles and per-area layers
+
+Reported from the running demo: turning a layer off removed it from the legend but the map kept
+drawing it, and switching Census area moved the viewport while every state kept North Dakota's
+layers.
+
+- [x] Give the LODES layers a toggle; they were drawn permanently and had no control.
+- [x] Include the earthquake selection ring in the earthquake visibility group, so hiding the
+      overlay does not leave a highlight over an empty map.
+- [x] Apply visibility once after LODES layers are added, since new layers default to visible.
+- [x] Drive the layer list and legend from the same toggles the map reads, so the two cannot drift.
+- [x] Resolve the geography from the dataset identifier in `MapLayerService`, which previously
+      ignored its argument and always described North Dakota.
+- [x] Reload the layer list whenever the selected area changes, and treat opening the map as a
+      selection of the current area so a boundary load cannot overwrite a URL-supplied area.
+- [x] Carry the geography on the dataset detail "Open map workspace" link.
+- [x] Storyboard checks for per-toggle isolation, URL round-trip, area switching, and deep links.
+
 ### P8 - Repository breadth
 
 Discovery reads from DSpace, which holds six seeded items, so search shows six datasets across three geographies. The previous fifty-two states came from the generated fixture catalog, which is now only a labelled fallback. This is correct behavior, and it makes the demo look thinner than it did.

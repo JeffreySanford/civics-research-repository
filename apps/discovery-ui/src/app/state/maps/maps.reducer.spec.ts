@@ -1,4 +1,4 @@
-import type { UsgsEarthquakeOverlay } from 'repository-api-client';
+import type { MapLayer, UsgsEarthquakeOverlay } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { initialMapsState, mapsReducer } from './maps.reducer';
 import {
@@ -21,27 +21,34 @@ describe('mapsReducer', () => {
     defaultZoom: 6,
   };
 
-  it('stores map layers and Census area boundaries', () => {
-    const layer = {
-      id: 'tiger-line-nd-boundary',
-      label: '2025 TIGER/Line - Census Tracts - North Dakota',
-      layerType: 'CENSUS_BOUNDARY' as const,
-      sourceUrl: 'https://example.test/tiger',
-      attribution: 'U.S. Census Bureau TIGER/Line',
-      visibleByDefault: true,
-    };
+  const layer = {
+    id: 'tiger-line-nd-boundary',
+    label: '2025 TIGER/Line - Census Tracts - North Dakota',
+    layerType: 'CENSUS_BOUNDARY' as const,
+    sourceUrl: 'https://example.test/tiger',
+    attribution: 'U.S. Census Bureau TIGER/Line',
+    visibleByDefault: true,
+  };
+
+  /**
+   * Boundaries and layers load separately: layers follow the selected area, so a slow boundary
+   * load must not overwrite layers already fetched for an area chosen from the URL.
+   */
+  it('stores Census area boundaries without disturbing the layers', () => {
+    const withLayers = mapsReducer(
+      initialMapsState,
+      MapsActions.mapLayersLoaded({ layers: [layer] }),
+    );
 
     const state = mapsReducer(
-      initialMapsState,
+      withLayers,
       MapsActions.mapDataLoaded({
-        layers: [layer],
         censusAreaBoundaries: [censusAreaBoundary],
       }),
     );
 
     expect(state.layers).toEqual([layer]);
     expect(state.censusAreaBoundaries).toEqual([censusAreaBoundary]);
-    expect(state.loading).toBe(false);
   });
 
   it('stores earthquake overlay data independently', () => {
@@ -109,6 +116,15 @@ describe('mapsReducer', () => {
     expect(state.earthquakeVisible).toBe(false);
   });
 
+  it('tracks the LODES layer toggle', () => {
+    const state = mapsReducer(
+      initialMapsState,
+      MapsActions.lodesLayerToggled({ visible: false }),
+    );
+
+    expect(state.lodesVisible).toBe(false);
+  });
+
   it('tracks selected census geography', () => {
     const state = mapsReducer(
       initialMapsState,
@@ -116,6 +132,40 @@ describe('mapsReducer', () => {
     );
 
     expect(state.selectedGeography).toBe('California');
+  });
+
+  /** Selecting an area triggers a layer reload, so the map must read as loading until it lands. */
+  it('reloads layers when the census area changes', () => {
+    const selecting = mapsReducer(
+      initialMapsState,
+      MapsActions.censusAreaSelected({ geography: 'California' }),
+    );
+
+    expect(selecting.loading).toBe(true);
+
+    const loaded = mapsReducer(
+      selecting,
+      MapsActions.mapLayersLoaded({
+        layers: [
+          {
+            id: 'tiger-line-california-boundary',
+            label: '2025 TIGER/Line - Census Tracts - California',
+            layerType: 'CENSUS_BOUNDARY',
+            sourceUrl: 'https://www2.census.gov/geo/tiger/TIGER2025/',
+            attribution: 'U.S. Census Bureau TIGER/Line',
+            visibleByDefault: true,
+          },
+        ] as unknown as MapLayer[],
+      }),
+    );
+
+    expect(loaded.loading).toBe(false);
+    expect(loaded.layers.map((layer) => layer.id)).toEqual([
+      'tiger-line-california-boundary',
+    ]);
+    expect(loaded.censusAreaBoundaries).toEqual(
+      initialMapsState.censusAreaBoundaries,
+    );
   });
 
   it('selects the earthquake overlay', () => {

@@ -10,10 +10,10 @@ export const MapsActions = createActionGroup({
   events: {
     'Map Opened': emptyProps(),
     'Map Data Loaded': props<{
-      layers: MapLayer[];
       censusAreaBoundaries: CensusAreaBoundary[];
     }>(),
     'Map Data Failed': props<{ error: string }>(),
+    'Map Layers Loaded': props<{ layers: MapLayer[] }>(),
     'Earthquake Overlay Loaded': props<{
       earthquakeOverlay: UsgsEarthquakeOverlay;
     }>(),
@@ -21,6 +21,7 @@ export const MapsActions = createActionGroup({
     'Census Area Selected': props<{ geography: string }>(),
     'Tiger Layer Toggled': props<{ visible: boolean }>(),
     'Earthquake Layer Toggled': props<{ visible: boolean }>(),
+    'Lodes Layer Toggled': props<{ visible: boolean }>(),
     'Map Feature Selected': props<{ featureId: string }>(),
     'Map Feature Selection Cleared': emptyProps(),
   },

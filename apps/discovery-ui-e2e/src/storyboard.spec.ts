@@ -209,7 +209,9 @@ test.describe('demo storyboard checks', () => {
     await expect(page.getByLabel('Census area')).toHaveValue('California');
     await expect(page.getByText('California TIGER/Line preview')).toBeVisible();
     await expect(
-      page.getByText('LODES workplace flow sample', { exact: true }),
+      page
+        .getByLabel('Visible map layer legend')
+        .getByText('LODES workplace flow sample', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('3 loaded')).toBeVisible();
 
@@ -237,7 +239,9 @@ test.describe('demo storyboard checks', () => {
       page.getByText('USGS Earthquake Catalog GeoJSON fallback fixture'),
     ).toBeVisible();
     await expect(
-      page.getByText('LODES workplace flow sample', { exact: true }),
+      page
+        .getByLabel('Visible map layer legend')
+        .getByText('LODES workplace flow sample', { exact: true }),
     ).toBeVisible();
 
     await page.getByLabel('TIGER/Line boundary').uncheck();
@@ -306,7 +310,9 @@ test.describe('demo storyboard checks', () => {
       page.getByText('North Dakota TIGER/Line preview'),
     ).toBeVisible();
     await expect(
-      page.getByText('LODES workplace flow sample', { exact: true }),
+      page
+        .getByLabel('Visible map layer legend')
+        .getByText('LODES workplace flow sample', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('Stale', { exact: true })).toBeVisible();
 
@@ -319,7 +325,9 @@ test.describe('demo storyboard checks', () => {
       page.getByText('North Dakota TIGER/Line preview'),
     ).toBeVisible();
     await expect(
-      page.getByText('LODES workplace flow sample', { exact: true }),
+      page
+        .getByLabel('Visible map layer legend')
+        .getByText('LODES workplace flow sample', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('unavailable', { exact: true })).toBeVisible();
   });

@@ -69,13 +69,19 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     });
   });
 
+  // Layers are geography-specific, the way the API serves them: the maps page requests a new
+  // dataset id whenever the selected Census area changes.
   await page.route(`**/api/datasets/*/map-layers`, async (route) => {
+    const geography = geographyFromDatasetId(
+      datasetIdFromUrl(route.request().url(), '/map-layers'),
+    );
+
     await route.fulfill({
       contentType: 'application/json',
       json: [
         {
           id: 'tiger-line-boundary-preview',
-          label: '2025 TIGER/Line Census area preview',
+          label: `2025 TIGER/Line Census area preview - ${geography}`,
           layerType: 'CENSUS_BOUNDARY',
           sourceUrl:
             'https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html',
@@ -84,7 +90,7 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         },
         {
           id: 'lodes-workplace-flow-sample',
-          label: '2023 LODES workplace flow sample',
+          label: `2023 LODES workplace flow sample - ${geography}`,
           layerType: 'CENSUS_DATA',
           sourceUrl: 'https://lehd.ces.census.gov/data/',
           attribution:
@@ -506,4 +512,23 @@ function earthquake(
     latitude,
     longitude,
   };
+}
+
+/**
+ * The geography a seeded dataset identifier refers to, matching the API's slug convention.
+ * Longest match wins, because an area slug can contain hyphens and can contain another slug.
+ */
+function geographyFromDatasetId(datasetId: string): string {
+  const areas: Record<string, string> = {
+    'north-dakota': 'North Dakota',
+    california: 'California',
+    texas: 'Texas',
+  };
+
+  return (
+    Object.entries(areas)
+      .filter(([slug]) => datasetId.includes(slug))
+      .sort(([left], [right]) => right.length - left.length)
+      .map(([, geography]) => geography)[0] ?? 'United States'
+  );
 }
