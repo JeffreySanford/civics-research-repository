@@ -85,7 +85,9 @@ Risk: `quality:all` runs three Playwright suites in sequence, each starting its 
 
 Impact today is a spurious gate failure that a rerun clears. Impact once this runs unattended is worse: a green build becomes a coin flip, and the natural response to a flaky gate is to stop trusting it.
 
-Mitigation: not yet fixed. Options are to reuse one web server across the tagged suites rather than starting three, to add a readiness wait or retry in `tools/scripts/start-discovery-ui-web-server.mjs`, or to run the accessibility suites as tag filters within a single Playwright invocation. Worth fixing before the gate runs anywhere unattended.
+Mitigation: applied on 2026-08-12. `quality:all` now ends in `pnpm run e2e:reports`, which starts one dev server, waits for it to answer, runs the three tagged suites against it, and stops it afterwards. Each Playwright invocation finds a healthy server and reuses it, so the port is bound once instead of three times and the race has nowhere to happen. Two supporting changes: `tools/scripts/start-discovery-ui-web-server.mjs` now kills the whole process tree on Windows, where `child.kill()` reaches only `cmd.exe` and left pnpm, Nx, and Vite holding the port; and a server that is already running is reused and left running, so the reports do not kill a developer's `pnpm start`.
+
+Honest limit on the evidence: the original failure was never reproduced on demand. Six back-to-back start/stop cycles on 2026-08-12 all passed, which is consistent with a rare race rather than proof it is gone. The fix is argued from the mechanism — one bind instead of three, and no orphaned process holding the port — not from a red-to-green reproduction. If `webServer was not able to start` appears again, that argument is wrong and the next thing to check is whether something outside `e2e:reports` is still starting its own server.
 
 ## Sync Job Store Coverage Gap
 

@@ -9,7 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.civicsrepo.repository.RepositoryCatalog;
-import org.civicsrepo.repository.RepositorySource;
+import org.civicsrepo.generated.dto.RepositorySource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

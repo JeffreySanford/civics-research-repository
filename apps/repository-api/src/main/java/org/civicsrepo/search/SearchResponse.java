@@ -1,7 +1,7 @@
 package org.civicsrepo.search;
 
 import java.util.List;
-import org.civicsrepo.repository.RepositorySource;
+import org.civicsrepo.generated.dto.RepositorySource;
 
 /**
  * @param resultSource whether these results come from DSpace or from the fixture catalog. Carried

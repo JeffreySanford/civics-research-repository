@@ -1,5 +1,6 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.RepositorySource;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;

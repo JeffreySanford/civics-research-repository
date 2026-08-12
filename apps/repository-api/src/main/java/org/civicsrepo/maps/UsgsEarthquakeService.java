@@ -16,6 +16,9 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import org.civicsrepo.generated.dto.UsgsEarthquakeFeature;
+import org.civicsrepo.generated.dto.UsgsEarthquakeOverlay;
+import org.civicsrepo.generated.dto.UsgsEarthquakeQuery;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -48,7 +51,7 @@ public class UsgsEarthquakeService {
     public UsgsEarthquakeOverlay findEarthquakes(double minMagnitude, int days) {
         try {
             UsgsEarthquakeOverlay overlay = fetchEarthquakes(minMagnitude, days);
-            return overlay.features().isEmpty() ? fallbackOverlay(minMagnitude, days) : overlay;
+            return overlay.getFeatures().isEmpty() ? fallbackOverlay(minMagnitude, days) : overlay;
         } catch (IOException exception) {
             return fallbackOverlay(minMagnitude, days);
         } catch (InterruptedException exception) {
@@ -162,7 +165,7 @@ public class UsgsEarthquakeService {
             List<UsgsEarthquakeFeature> features) {
         return new UsgsEarthquakeOverlay(
                 source,
-                usgsEndpoint + "?format=geojson",
+                URI.create(usgsEndpoint + "?format=geojson"),
                 USGS_ATTRIBUTION,
                 updatedAt,
                 updatedAt.plusDays(1),

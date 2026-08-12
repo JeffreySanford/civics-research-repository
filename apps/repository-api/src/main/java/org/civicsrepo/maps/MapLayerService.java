@@ -1,7 +1,11 @@
 package org.civicsrepo.maps;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
+import org.civicsrepo.generated.dto.CensusAreaBoundary;
+import org.civicsrepo.generated.dto.MapLayer;
+import org.civicsrepo.generated.dto.MapLayerType;
 import org.springframework.stereotype.Service;
 
 /**
@@ -28,26 +32,27 @@ public class MapLayerService {
 
         return List.of(
                 new MapLayer(
-                        "tiger-line-" + slug + "-boundary",
-                        "2025 TIGER/Line - Census Tracts - " + geography,
-                        MapLayerType.CENSUS_BOUNDARY,
-                        "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
-                        "U.S. Census Bureau TIGER/Line",
-                        true),
+                                "tiger-line-" + slug + "-boundary",
+                                "2025 TIGER/Line - Census Tracts - " + geography,
+                                MapLayerType.CENSUS_BOUNDARY,
+                                URI.create(
+                                        "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"),
+                                "U.S. Census Bureau TIGER/Line")
+                        .visibleByDefault(true),
                 new MapLayer(
-                        "lodes-workplace-flow-" + slug,
-                        "2023 LODES workplace flow sample - " + geography,
-                        MapLayerType.CENSUS_DATA,
-                        "https://lehd.ces.census.gov/data/",
-                        "U.S. Census Bureau LEHD Origin-Destination Employment Statistics",
-                        true),
+                                "lodes-workplace-flow-" + slug,
+                                "2023 LODES workplace flow sample - " + geography,
+                                MapLayerType.CENSUS_DATA,
+                                URI.create("https://lehd.ces.census.gov/data/"),
+                                "U.S. Census Bureau LEHD Origin-Destination Employment Statistics")
+                        .visibleByDefault(true),
                 new MapLayer(
-                        "usgs-earthquakes-" + slug,
-                        "USGS earthquake overlay",
-                        MapLayerType.USGS_EARTHQUAKE,
-                        "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson",
-                        "U.S. Geological Survey Earthquake Hazards Program",
-                        true));
+                                "usgs-earthquakes-" + slug,
+                                "USGS earthquake overlay",
+                                MapLayerType.USGS_EARTHQUAKE,
+                                URI.create("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"),
+                                "U.S. Geological Survey Earthquake Hazards Program")
+                        .visibleByDefault(true));
     }
 
     /**
@@ -62,7 +67,7 @@ public class MapLayerService {
 
         return censusAreaBoundaryService.listBoundaries().stream()
                 .filter((boundary) -> normalized.contains(boundary.getId()))
-                .map(org.civicsrepo.generated.dto.CensusAreaBoundary::getGeography)
+                .map(CensusAreaBoundary::getGeography)
                 // The longest match wins: "north-dakota" and "dakota" would both match otherwise.
                 .reduce((shorter, longer) -> longer.length() >= shorter.length() ? longer : shorter)
                 .orElse(DEFAULT_GEOGRAPHY);

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.civicsrepo.repository.RepositoryCatalog;
-import org.civicsrepo.repository.RepositorySource;
+import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.search.ResearchProgram;
 import org.civicsrepo.search.ResearchObjectType;
 import org.civicsrepo.search.SearchResult;

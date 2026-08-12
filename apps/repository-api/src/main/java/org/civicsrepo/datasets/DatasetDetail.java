@@ -2,7 +2,7 @@ package org.civicsrepo.datasets;
 
 import java.time.LocalDate;
 import java.util.List;
-import org.civicsrepo.repository.RepositorySource;
+import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.search.ResearchProgram;
 import org.civicsrepo.search.SearchResult;
 

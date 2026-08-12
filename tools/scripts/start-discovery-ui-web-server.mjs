@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 const env = { ...process.env };
 
@@ -27,10 +27,24 @@ const child =
         },
       );
 
+/**
+ * Windows `child.kill()` terminates only the named process. Here that is `cmd.exe`, so pnpm, Nx,
+ * and Vite would survive it and keep holding port 4300 — an orphan that makes the next Playwright
+ * run either attach to a server that is about to die or fail to bind the port. Kill the tree.
+ */
 const stop = (signal) => {
-  if (!child.killed) {
-    child.kill(signal);
+  if (child.killed || child.exitCode !== null) {
+    return;
   }
+
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], {
+      stdio: 'ignore',
+    });
+    return;
+  }
+
+  child.kill(signal);
 };
 
 process.on('SIGINT', () => stop('SIGINT'));

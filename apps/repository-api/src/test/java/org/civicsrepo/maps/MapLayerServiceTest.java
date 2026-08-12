@@ -2,6 +2,8 @@ package org.civicsrepo.maps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.civicsrepo.generated.dto.MapLayer;
+import org.civicsrepo.generated.dto.MapLayerType;
 import org.junit.jupiter.api.Test;
 
 class MapLayerServiceTest {
@@ -11,9 +13,9 @@ class MapLayerServiceTest {
     void includesLodesSampleLayerWithCensusDataType() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
                 .anySatisfy(layer -> {
-                    assertThat(layer.id()).isEqualTo("lodes-workplace-flow-north-dakota");
-                    assertThat(layer.layerType()).isEqualTo(MapLayerType.CENSUS_DATA);
-                    assertThat(layer.attribution()).contains("LEHD Origin-Destination Employment Statistics");
+                    assertThat(layer.getId()).isEqualTo("lodes-workplace-flow-north-dakota");
+                    assertThat(layer.getLayerType()).isEqualTo(MapLayerType.CENSUS_DATA);
+                    assertThat(layer.getAttribution()).contains("LEHD Origin-Destination Employment Statistics");
                 });
     }
 
@@ -24,7 +26,7 @@ class MapLayerServiceTest {
     @Test
     void describesTheGeographyTheDatasetBelongsTo() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-california-2025"))
-                .extracting(MapLayer::label)
+                .extracting(MapLayer::getLabel)
                 .allSatisfy(label -> assertThat(label).doesNotContain("North Dakota"))
                 .anySatisfy(label -> assertThat(label).isEqualTo("2025 TIGER/Line - Census Tracts - California"));
     }
@@ -33,7 +35,7 @@ class MapLayerServiceTest {
     @Test
     void resolvesMultiWordAreaSlugs() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-district-of-columbia-2025"))
-                .extracting(MapLayer::id)
+                .extracting(MapLayer::getId)
                 .contains("tiger-line-district-of-columbia-boundary", "lodes-workplace-flow-district-of-columbia");
     }
 
@@ -41,7 +43,7 @@ class MapLayerServiceTest {
     @Test
     void prefersTheLongestMatchingArea() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-west-virginia-2025"))
-                .extracting(MapLayer::label)
+                .extracting(MapLayer::getLabel)
                 .anySatisfy(label -> assertThat(label).isEqualTo("2025 TIGER/Line - Census Tracts - West Virginia"));
     }
 
@@ -49,7 +51,7 @@ class MapLayerServiceTest {
     @Test
     void fallsBackToTheNationalGeography() {
         assertThat(mapLayerService.findDatasetLayers("some-unmapped-dataset-2025"))
-                .extracting(MapLayer::label)
+                .extracting(MapLayer::getLabel)
                 .anySatisfy(label -> assertThat(label).contains("United States"));
     }
 }

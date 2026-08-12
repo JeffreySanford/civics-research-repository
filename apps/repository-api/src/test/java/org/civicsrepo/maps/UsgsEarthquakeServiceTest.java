@@ -2,6 +2,7 @@ package org.civicsrepo.maps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -18,6 +19,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.civicsrepo.generated.dto.UsgsEarthquakeOverlay;
+import org.civicsrepo.generated.dto.UsgsEarthquakeQuery;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -54,23 +57,23 @@ class UsgsEarthquakeServiceTest {
 
         UsgsEarthquakeOverlay overlay = service.findEarthquakes(1.5, 14);
 
-        assertThat(overlay.source()).isEqualTo("USGS Earthquake Catalog GeoJSON");
-        assertThat(overlay.sourceUrl()).isEqualTo("https://example.test/usgs/query?format=geojson");
-        assertThat(overlay.attribution()).isEqualTo("U.S. Geological Survey Earthquake Hazards Program");
-        assertThat(overlay.updatedAt()).isEqualTo(OffsetDateTime.ofInstant(Instant.ofEpochMilli(1786478400000L), ZoneOffset.UTC));
-        assertThat(overlay.staleAfter()).isEqualTo(overlay.updatedAt().plusDays(1));
-        assertThat(overlay.fallback()).isFalse();
-        assertThat(overlay.query())
+        assertThat(overlay.getSource()).isEqualTo("USGS Earthquake Catalog GeoJSON");
+        assertThat(overlay.getSourceUrl()).hasToString("https://example.test/usgs/query?format=geojson");
+        assertThat(overlay.getAttribution()).isEqualTo("U.S. Geological Survey Earthquake Hazards Program");
+        assertThat(overlay.getUpdatedAt()).isEqualTo(OffsetDateTime.ofInstant(Instant.ofEpochMilli(1786478400000L), ZoneOffset.UTC));
+        assertThat(overlay.getStaleAfter()).isEqualTo(overlay.getUpdatedAt().plusDays(1));
+        assertThat(overlay.getFallback()).isFalse();
+        assertThat(overlay.getQuery())
                 .isEqualTo(new UsgsEarthquakeQuery(1.5, 14, 45.8, 49.1, -104.2, -96.4));
-        assertThat(overlay.features())
+        assertThat(overlay.getFeatures())
                 .singleElement()
                 .satisfies(feature -> {
-                    assertThat(feature.id()).isEqualTo("us1000demo");
-                    assertThat(feature.place()).isEqualTo("10 km W of Test City");
-                    assertThat(feature.magnitude()).isEqualTo(3.4);
-                    assertThat(feature.latitude()).isEqualTo(47.2);
-                    assertThat(feature.longitude()).isEqualTo(-101.5);
-                    assertThat(feature.occurredAt())
+                    assertThat(feature.getId()).isEqualTo("us1000demo");
+                    assertThat(feature.getPlace()).isEqualTo("10 km W of Test City");
+                    assertThat(feature.getMagnitude()).isEqualTo(3.4);
+                    assertThat(feature.getLatitude()).isEqualTo(47.2);
+                    assertThat(feature.getLongitude()).isEqualTo(-101.5);
+                    assertThat(feature.getOccurredAt())
                             .isEqualTo(OffsetDateTime.ofInstant(Instant.ofEpochMilli(1786474800000L), ZoneOffset.UTC));
                 });
         assertThat(httpClient.requestUri().toString())
@@ -87,13 +90,13 @@ class UsgsEarthquakeServiceTest {
 
         UsgsEarthquakeOverlay overlay = service.findEarthquakes(0, 7);
 
-        assertThat(overlay.source()).isEqualTo("USGS Earthquake Catalog GeoJSON fallback fixture");
-        assertThat(overlay.sourceUrl()).isEqualTo("https://example.test/usgs/query?format=geojson");
-        assertThat(overlay.attribution()).isEqualTo("U.S. Geological Survey Earthquake Hazards Program");
-        assertThat(overlay.fallback()).isTrue();
-        assertThat(overlay.query()).isEqualTo(new UsgsEarthquakeQuery(0, 7, 45.8, 49.1, -104.2, -96.4));
-        assertThat(overlay.staleAfter()).isEqualTo(overlay.updatedAt().plusDays(1));
-        assertThat(overlay.features()).hasSize(3);
+        assertThat(overlay.getSource()).isEqualTo("USGS Earthquake Catalog GeoJSON fallback fixture");
+        assertThat(overlay.getSourceUrl()).hasToString("https://example.test/usgs/query?format=geojson");
+        assertThat(overlay.getAttribution()).isEqualTo("U.S. Geological Survey Earthquake Hazards Program");
+        assertThat(overlay.getFallback()).isTrue();
+        assertThat(overlay.getQuery()).isEqualTo(new UsgsEarthquakeQuery(0d, 7, 45.8, 49.1, -104.2, -96.4));
+        assertThat(overlay.getStaleAfter()).isEqualTo(overlay.getUpdatedAt().plusDays(1));
+        assertThat(overlay.getFeatures()).hasSize(3);
     }
 
     private static final class TestHttpClient extends HttpClient {

@@ -6,9 +6,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.civicsrepo.generated.dto.CensusAreaBoundary;
+import org.civicsrepo.generated.dto.MapLayer;
+import org.civicsrepo.generated.dto.MapLayerType;
+import org.civicsrepo.generated.dto.UsgsEarthquakeFeature;
+import org.civicsrepo.generated.dto.UsgsEarthquakeOverlay;
+import org.civicsrepo.generated.dto.UsgsEarthquakeQuery;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -33,12 +39,12 @@ class MapsControllerTest {
     void serializesDatasetMapLayersIncludingAttribution() throws Exception {
         given(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
                 .willReturn(List.of(new MapLayer(
-                        "tiger-boundary",
-                        "North Dakota TIGER/Line preview",
-                        MapLayerType.CENSUS_BOUNDARY,
-                        "https://www2.census.gov/geo/tiger/TIGER2025/",
-                        "U.S. Census Bureau TIGER/Line",
-                        true)));
+                                "tiger-boundary",
+                                "North Dakota TIGER/Line preview",
+                                MapLayerType.CENSUS_BOUNDARY,
+                                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"),
+                                "U.S. Census Bureau TIGER/Line")
+                        .visibleByDefault(true)));
 
         mockMvc.perform(get("/datasets/tiger-line-north-dakota-2025/map-layers"))
                 .andExpect(status().isOk())
@@ -103,7 +109,7 @@ class MapsControllerTest {
     private UsgsEarthquakeOverlay overlay(double minMagnitude, int days) {
         return new UsgsEarthquakeOverlay(
                 "USGS Earthquake Catalog",
-                "https://earthquake.usgs.gov/",
+                URI.create("https://earthquake.usgs.gov/"),
                 "USGS",
                 OffsetDateTime.parse("2026-01-01T00:00:00Z"),
                 OffsetDateTime.parse("2026-01-02T00:00:00Z"),
