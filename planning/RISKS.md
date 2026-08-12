@@ -85,22 +85,48 @@ Mitigation: cover it with Testcontainers against real PostgreSQL. That requires 
 
 ## Dependency Vulnerabilities
 
-Risk: GitHub reported moderate Dependabot findings after the initial dependency push, and they are still outstanding.
+Risk: advisories reaching the workspace through transitive dependencies.
 
-Mitigation: a dedicated security patch pass before leaving PI 1, tracked as P9 in TODO.md. Upgrade what upgrades cleanly, one concern per commit, and record an explicit accepted risk with a reason and revisit date for anything that cannot move.
+Status: reviewed 2026-08-12. Four of the five reported advisories are already mitigated by version overrides; one has no fix at any published version and is accepted with the reasoning below.
 
-### Current transitive pins
+### Reading `pnpm audit` here
 
-`pnpm.overrides` in `package.json` forces transitive versions. An override nobody remembers the reason for is a liability, because it silently blocks a later legitimate upgrade. Each entry and its removal condition:
+`pnpm audit` reports an advisory when **any** package in the graph _requests_ a vulnerable range, even when an override resolves it to a patched version. The raw count is therefore misleading, and the number that matters is the resolved version. Verified on 2026-08-12:
 
-| Override            | Reason                                                                     | Remove when                                        |
-| ------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
-| `@hono/node-server` | Pinned forward past an advisory reachable through a dev-tooling transitive | The dependent ships a version at or above this pin |
-| `brace-expansion`   | Advisory in a transitive of the lint and test toolchain                    | Upstream toolchain resolves it natively            |
-| `postcss`           | Advisory in the Angular build pipeline transitive graph                    | Angular build tooling resolves it natively         |
-| `uuid`              | Version alignment across duplicate transitive copies                       | Only one copy resolves without the pin             |
+| Advisory                           | Vulnerable range | Patched from | Resolved here | Status                  |
+| ---------------------------------- | ---------------- | ------------ | ------------- | ----------------------- |
+| `uuid` bounds check                | `<11.1.1`        | 11.1.1       | **11.1.1**    | Mitigated by override   |
+| `@hono/node-server` path traversal | `<2.0.5`         | 2.0.5        | **2.0.10**    | Mitigated by override   |
+| `postcss` incomplete fix           | `<=8.5.22`       | 8.5.23       | **8.5.26**    | Mitigated by override   |
+| `brace-expansion` DoS              | `>=4.0.0 <5.0.9` | 5.0.9        | **5.0.9**     | Mitigated by override   |
+| `image-size` ICNS/JXL/HEIF DoS     | `<=2.0.2`        | none         | 0.5.5         | **Accepted, see below** |
 
-Verify each of these during the P9 pass rather than carrying them forward untested: an override that is no longer needed should be deleted, and one that is still needed should have a dated note saying so.
+Do not remove the overrides on the strength of the audit output alone. Removing all four was tested on 2026-08-12 and immediately reintroduced every one of those four advisories with vulnerable resolved versions, so each override is currently load-bearing.
+
+### Accepted risk: `image-size` (high, no fix available)
+
+Path: `@analogjs/vite-plugin-angular` -> `@angular-devkit/build-angular` -> `less` -> `image-size`.
+
+No patched version exists. The latest published `image-size` is 2.0.2 and the advisory covers `<=2.0.2`, so there is nothing to upgrade to and an override cannot help. Upgrading Analog to 2.7.0 was tried and does not change the path.
+
+Accepted because the exposure is effectively nil:
+
+- It is build-time only. Nothing from this path is shipped to the browser.
+- `less` never executes. The application is SCSS-only (`inlineStyleLanguage: scss`); `less` arrives as a transitive dependency of the Angular build tooling and is not invoked.
+- The vulnerable code is `less`'s image inlining for ICNS, JXL, and HEIF files. The build reads only repository-controlled assets, so triggering it would require commit access, at which point a denial of service in a local build is not the interesting attack.
+
+Revisit when `image-size` publishes a patched release, or when Analog or `@angular-devkit/build-angular` drops its `less` dependency. Re-check at the next dependency pass regardless.
+
+### Removed rather than patched
+
+- `@angular/animations`: deprecated upstream and unused; nothing imported it.
+- `@angular-devkit/build-angular`: declared directly but no executor referenced it. Still present transitively via Analog, so this removed a redundant direct dependency rather than a code path.
+
+### Deferred, tracked separately
+
+Major upgrades are not security work and are not bundled here: ESLint 9 to 10, TypeScript 6 to 7, jsdom 27 to 30, `@types/node` 22 to 26, and `eslint-plugin-playwright` 1 to 2. Prettier 3.6 to 3.9 is also deferred, because a formatter bump reformats the tree and would bury any real change.
+
+NgRx remains on `22.0.0-rc.0`: checked on 2026-08-12, and no stable 22 release exists yet. The latest published versions are 21.1.1 and the 22 pre-releases.
 
 ### Version pinning already in force
 

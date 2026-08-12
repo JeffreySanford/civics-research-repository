@@ -109,11 +109,15 @@ Discovery reads from DSpace, which holds six seeded items, so search shows six d
 
 Required before leaving PI 1, per the Dependency Upgrade Policy in RISKS.md.
 
-- [ ] Triage outstanding Dependabot findings.
-- [ ] Upgrade everything that upgrades cleanly, one concern per commit.
-- [ ] Record an explicit accepted risk, with reason and revisit date, for anything that cannot move.
-- [ ] Move NgRx from `22.0.0-rc.0` to stable as soon as it exists, as a dedicated change.
-- [ ] Add a reason and removal condition comment to each `pnpm.overrides` entry.
+- [x] Triage the reported advisories against resolved versions rather than raw audit output.
+- [x] Verify every `pnpm.overrides` entry is still load-bearing by removing them and re-auditing.
+- [x] Upgrade Angular tooling 22.1.1 to 22.1.3 and Analog 2.6.4 to 2.7.0.
+- [x] Remove `@angular/animations` (deprecated upstream, unused) and the redundant direct `@angular-devkit/build-angular`.
+- [x] Record the `image-size` accepted risk with its reasoning and revisit condition.
+- [x] Check for stable NgRx 22: none exists yet, still `22.0.0-rc.0`.
+- [ ] Move NgRx to stable 22 when it is published.
+- [ ] Re-check the `image-size` advisory at the next dependency pass.
+- [ ] Separate upgrade task for the deferred majors: ESLint 10, TypeScript 7, jsdom 30, `@types/node` 26, `eslint-plugin-playwright` 2, Prettier 3.9.
 
 ## PI 0 - Repository Foundation
 
