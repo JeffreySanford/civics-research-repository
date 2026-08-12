@@ -80,9 +80,11 @@ services:
           'CMD-SHELL',
           'pg_isready -U "${CIVICS_DB_USER:-civics}" -d "${CIVICS_DB_NAME:-civics_ops}"',
         ]
-      interval: 10s
+      start_interval: 2s
+      start_period: 60s
+      interval: 60s
       timeout: 5s
-      retries: 5
+      retries: 3
 
   # The public discovery projection: a rebuildable index of DSpace items, owned by repository-api
   # and never a source of truth. Distinct from dspace-solr (:8984), which holds DSpace's own
@@ -103,10 +105,15 @@ services:
           'CMD-SHELL',
           'curl -fsS "http://localhost:8983/solr/discovery/admin/ping?wt=json" | grep -q ''"status":"OK"''',
         ]
-      interval: 5s
+      # start_interval applies only while the container is still starting, so Solr is probed every
+      # 2s until it is healthy and then once a minute. A flat 5s interval kept probing forever, and
+      # Solr logs every /admin/ping at INFO, so an attached `start:all` filled with ping lines long
+      # after startup finished and buried anything worth reading.
+      start_interval: 2s
+      start_period: 120s
+      interval: 60s
       timeout: 5s
-      retries: 24
-      start_period: 10s
+      retries: 3
 
   dspace-rest:
     profiles: ['dspace']
