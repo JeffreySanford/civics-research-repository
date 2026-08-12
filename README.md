@@ -115,11 +115,11 @@ Public dataset metadata
 
 Discovery, facets, dataset detail, and related research all read from DSpace. The generated fixture catalog survives only as a fallback for when the repository is unavailable, and every API response carries `resultSource` / `source` (`REPOSITORY` or `FIXTURE`) so the UI shows a placeholder-data notice rather than passing fixtures off as repository content. `pnpm run reindex` rebuilds the projection on demand.
 
-### Why discovery shows six datasets, not one hundred and fifty-nine
+### Repository breadth
 
-Search used to list 52 states and territories across three programs. Those were generated fixtures. Discovery now reads from DSpace, which holds the six seeded research objects, so search shows six datasets across three geographies with real facet counts.
+The repository holds 159 research objects: TIGER/Line, LODES, and ACS PUMS for all 52 states and territories, plus national SIPP, CPS, and USGS objects. Discovery reads all of them from DSpace, so facet counts are real rather than generated.
 
-Nothing is capping the results: the repository genuinely holds six items. Breadth comes from seeding more of them (see `tools/dspace/saf/`), not from lifting a limit. The map's Census area picker still offers all 52 areas, because those are boundary definitions rather than repository content.
+Breadth is a property of [tools/dspace/catalog.json](tools/dspace/catalog.json), which `tools/scripts/generate-saf.mjs` expands into SAF packages at seed time. Adding a geography or a program is a change to that table. The generated packages are git-ignored, because committing 159 near-identical directories would bury the source of truth.
 
 Remaining gaps are listed in [Known Seams](documentation/architecture-diagrams.md#known-seams); the ordered plan is in [planning/ROADMAP.md](planning/ROADMAP.md#near-term-order).
 

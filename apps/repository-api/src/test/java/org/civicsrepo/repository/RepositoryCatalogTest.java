@@ -58,12 +58,31 @@ class RepositoryCatalogTest {
     }
 
     /** Related research is computed from the repository, so it reflects what is actually held. */
+    /**
+     * Program alone is not a relationship worth showing: with 52 areas per program it fills the
+     * list with alphabetically adjacent states.
+     */
     @Test
-    void relatesItemsSharingGeographyAheadOfItemsSharingOnlyProgram() {
+    void relatesItemsSharingGeographyAndExcludesSameProgramFiller() {
         DatasetDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
-        assertThat(detail.relatedResearch()).extracting(SearchResult::id).containsExactly(
-                "lodes-wac-north-dakota-2023", "tiger-line-texas-2025");
+        assertThat(detail.relatedResearch())
+                .extracting(SearchResult::id)
+                .containsExactly("lodes-wac-north-dakota-2023")
+                .doesNotContain("tiger-line-texas-2025");
+    }
+
+    /** National items share no geography, so program is the only relationship available. */
+    @Test
+    void fallsBackToProgramWhenNothingSharesTheGeography() {
+        List<JsonNode> items = List.of(
+                RepositoryFixtures.seededItem("cps-a", "CPS A", "CPS", "United States", "2024"),
+                RepositoryFixtures.seededItem("cps-b", "CPS B", "CPS", "United States", "2023"),
+                ITEMS.getFirst());
+
+        DatasetDetail detail = catalog(items).findDataset("cps-a").orElseThrow();
+
+        assertThat(detail.relatedResearch()).extracting(SearchResult::id).containsExactly("cps-b");
     }
 
     @Test
@@ -80,7 +99,7 @@ class RepositoryCatalogTest {
     @Test
     void reportsAnEmptyCatalogWhenDspaceIsNotConfigured() {
         RepositoryCatalog catalog =
-                new RepositoryCatalog(new DspaceRestClient("", "", ""), mapper, 500);
+                new RepositoryCatalog(new DspaceRestClient("", "", ""), mapper, 500, 0);
 
         assertThat(catalog.isAvailable()).isFalse();
         assertThat(catalog.findAllResearchObjects()).isEmpty();
@@ -98,7 +117,8 @@ class RepositoryCatalogTest {
                     }
                 },
                 mapper,
-                500);
+                500,
+                0);
 
         assertThat(catalog.findAllResearchObjects()).isEmpty();
     }
@@ -112,6 +132,7 @@ class RepositoryCatalogTest {
                     }
                 },
                 mapper,
-                500);
+                500,
+                0);
     }
 }

@@ -1,9 +1,12 @@
 package org.civicsrepo.repository;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.datasets.DatasetDetail;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.dspace.DspaceUnavailableException;
@@ -28,14 +31,28 @@ public class RepositoryCatalog {
     private final DspaceRestClient dspaceRestClient;
     private final RepositoryObjectMapper repositoryObjectMapper;
     private final int maxItems;
+    private final Duration cacheTtl;
+    private final AtomicReference<CachedItems> cache = new AtomicReference<>(null);
 
     public RepositoryCatalog(
             DspaceRestClient dspaceRestClient,
             RepositoryObjectMapper repositoryObjectMapper,
-            @Value("${civics.repository.max-items:500}") int maxItems) {
+            @Value("${civics.repository.max-items:500}") int maxItems,
+            @Value("${civics.repository.cache-ttl-seconds:60}") long cacheTtlSeconds) {
         this.dspaceRestClient = dspaceRestClient;
         this.repositoryObjectMapper = repositoryObjectMapper;
         this.maxItems = maxItems;
+        this.cacheTtl = Duration.ofSeconds(cacheTtlSeconds);
+    }
+
+    /**
+     * Drops the cached item list.
+     *
+     * <p>Called after a projection rebuild so a freshly synchronized item is visible immediately
+     * rather than after the TTL expires.
+     */
+    public void invalidate() {
+        cache.set(null);
     }
 
     public boolean isAvailable() {
@@ -65,8 +82,13 @@ public class RepositoryCatalog {
     }
 
     /**
-     * Related research is computed from the repository itself rather than hard-coded: other items
-     * sharing this item's geography first, then its program.
+     * Related research computed from the repository rather than hard-coded.
+     *
+     * <p>Same geography first, because "other datasets about this place" is the relationship a
+     * researcher is actually looking for. Same-program items are used only when the geography
+     * yields nothing, which is the national case. Program alone is deliberately not enough: with
+     * 52 areas per program it produced alphabetical filler — a Texas dataset "related" to Alabama
+     * and Alaska — which is worse than showing fewer results.
      */
     private List<SearchResult> relatedResearch(List<JsonNode> items, SearchResult self) {
         List<SearchResult> others = items.stream()
@@ -74,36 +96,60 @@ public class RepositoryCatalog {
                 .filter((result) -> !result.id().equals(self.id()))
                 .toList();
 
+        List<SearchResult> sameGeography = others.stream()
+                .filter((result) -> sharesGeography(result, self))
+                .sorted(Comparator.comparing(SearchResult::title))
+                .limit(MAX_RELATED_RESEARCH)
+                .toList();
+
+        if (!sameGeography.isEmpty()) {
+            return sameGeography;
+        }
+
         return others.stream()
-                .sorted(Comparator.comparing((SearchResult result) -> relevance(result, self))
-                        .reversed()
-                        .thenComparing(SearchResult::title))
-                .filter((result) -> relevance(result, self) > 0)
+                .filter((result) -> result.program() == self.program())
+                .sorted(Comparator.comparing(SearchResult::title))
                 .limit(MAX_RELATED_RESEARCH)
                 .toList();
     }
 
-    private int relevance(SearchResult candidate, SearchResult self) {
-        int score = 0;
-        if (candidate.geography() != null && candidate.geography().equalsIgnoreCase(self.geography())) {
-            score += 2;
-        }
-        if (candidate.program() == self.program()) {
-            score += 1;
-        }
-        return score;
+    private boolean sharesGeography(SearchResult candidate, SearchResult self) {
+        return candidate.geography() != null
+                && self.geography() != null
+                && candidate.geography().equalsIgnoreCase(self.geography());
     }
 
+    /**
+     * Reads every repository item, briefly cached.
+     *
+     * <p>Dataset detail needs the whole set to compute related research, so without a cache each
+     * page view paged through all of DSpace discovery — around a second per request at 159 items.
+     * The window is deliberately short and is dropped outright on reindex, so the staleness is
+     * bounded and never survives a synchronization.
+     */
     private List<JsonNode> readItems() {
         if (!isAvailable()) {
             return List.of();
         }
 
+        CachedItems cached = cache.get();
+        if (cached != null && !cached.isExpired(cacheTtl)) {
+            return cached.items();
+        }
+
         try {
-            return dspaceRestClient.listAllItems(maxItems);
+            List<JsonNode> items = dspaceRestClient.listAllItems(maxItems);
+            cache.set(new CachedItems(items, Instant.now()));
+            return items;
         } catch (DspaceUnavailableException exception) {
             LOGGER.warn("Repository read failed; callers fall back to fixtures: {}", exception.getMessage());
             return List.of();
+        }
+    }
+
+    private record CachedItems(List<JsonNode> items, Instant readAt) {
+        boolean isExpired(Duration ttl) {
+            return Instant.now().isAfter(readAt.plus(ttl));
         }
     }
 }

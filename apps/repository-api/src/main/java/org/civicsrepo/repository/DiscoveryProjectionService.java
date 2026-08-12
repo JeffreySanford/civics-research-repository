@@ -50,6 +50,8 @@ public class DiscoveryProjectionService {
      * @param fixtureFallback catalog to index when the repository yields nothing
      */
     public ProjectionState reindex(List<SearchResult> fixtureFallback) {
+        // A rebuild is the point at which a stale repository read must not survive.
+        repositoryCatalog.invalidate();
         List<SearchResult> repositoryObjects = repositoryCatalog.findAllResearchObjects();
         boolean repositoryBacked = !repositoryObjects.isEmpty();
         List<SearchResult> results = repositoryBacked ? repositoryObjects : fixtureFallback;

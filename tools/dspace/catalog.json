@@ -1,0 +1,496 @@
+{
+  "$comment": [
+    "Data table driving tools/scripts/generate-saf.mjs, which writes the DSpace SAF packages",
+    "the seed imports. Breadth and program mix are changed here, not by adding directories:",
+    "set enabled=false on a program to drop it, or trim the areas list to seed fewer items.",
+    "The generated packages are git-ignored; this table is the committed source of truth."
+  ],
+  "publisherDefaults": {
+    "census": "U.S. Census Bureau",
+    "usgs": "U.S. Geological Survey"
+  },
+  "areas": [
+    {
+      "name": "Alabama",
+      "fips": "01",
+      "abbreviation": "AL"
+    },
+    {
+      "name": "Alaska",
+      "fips": "02",
+      "abbreviation": "AK"
+    },
+    {
+      "name": "Arizona",
+      "fips": "04",
+      "abbreviation": "AZ"
+    },
+    {
+      "name": "Arkansas",
+      "fips": "05",
+      "abbreviation": "AR"
+    },
+    {
+      "name": "California",
+      "fips": "06",
+      "abbreviation": "CA"
+    },
+    {
+      "name": "Colorado",
+      "fips": "08",
+      "abbreviation": "CO"
+    },
+    {
+      "name": "Connecticut",
+      "fips": "09",
+      "abbreviation": "CT"
+    },
+    {
+      "name": "Delaware",
+      "fips": "10",
+      "abbreviation": "DE"
+    },
+    {
+      "name": "District of Columbia",
+      "fips": "11",
+      "abbreviation": "DC"
+    },
+    {
+      "name": "Florida",
+      "fips": "12",
+      "abbreviation": "FL"
+    },
+    {
+      "name": "Georgia",
+      "fips": "13",
+      "abbreviation": "GA"
+    },
+    {
+      "name": "Hawaii",
+      "fips": "15",
+      "abbreviation": "HI"
+    },
+    {
+      "name": "Idaho",
+      "fips": "16",
+      "abbreviation": "ID"
+    },
+    {
+      "name": "Illinois",
+      "fips": "17",
+      "abbreviation": "IL"
+    },
+    {
+      "name": "Indiana",
+      "fips": "18",
+      "abbreviation": "IN"
+    },
+    {
+      "name": "Iowa",
+      "fips": "19",
+      "abbreviation": "IA"
+    },
+    {
+      "name": "Kansas",
+      "fips": "20",
+      "abbreviation": "KS"
+    },
+    {
+      "name": "Kentucky",
+      "fips": "21",
+      "abbreviation": "KY"
+    },
+    {
+      "name": "Louisiana",
+      "fips": "22",
+      "abbreviation": "LA"
+    },
+    {
+      "name": "Maine",
+      "fips": "23",
+      "abbreviation": "ME"
+    },
+    {
+      "name": "Maryland",
+      "fips": "24",
+      "abbreviation": "MD"
+    },
+    {
+      "name": "Massachusetts",
+      "fips": "25",
+      "abbreviation": "MA"
+    },
+    {
+      "name": "Michigan",
+      "fips": "26",
+      "abbreviation": "MI"
+    },
+    {
+      "name": "Minnesota",
+      "fips": "27",
+      "abbreviation": "MN"
+    },
+    {
+      "name": "Mississippi",
+      "fips": "28",
+      "abbreviation": "MS"
+    },
+    {
+      "name": "Missouri",
+      "fips": "29",
+      "abbreviation": "MO"
+    },
+    {
+      "name": "Montana",
+      "fips": "30",
+      "abbreviation": "MT"
+    },
+    {
+      "name": "Nebraska",
+      "fips": "31",
+      "abbreviation": "NE"
+    },
+    {
+      "name": "Nevada",
+      "fips": "32",
+      "abbreviation": "NV"
+    },
+    {
+      "name": "New Hampshire",
+      "fips": "33",
+      "abbreviation": "NH"
+    },
+    {
+      "name": "New Jersey",
+      "fips": "34",
+      "abbreviation": "NJ"
+    },
+    {
+      "name": "New Mexico",
+      "fips": "35",
+      "abbreviation": "NM"
+    },
+    {
+      "name": "New York",
+      "fips": "36",
+      "abbreviation": "NY"
+    },
+    {
+      "name": "North Carolina",
+      "fips": "37",
+      "abbreviation": "NC"
+    },
+    {
+      "name": "North Dakota",
+      "fips": "38",
+      "abbreviation": "ND"
+    },
+    {
+      "name": "Ohio",
+      "fips": "39",
+      "abbreviation": "OH"
+    },
+    {
+      "name": "Oklahoma",
+      "fips": "40",
+      "abbreviation": "OK"
+    },
+    {
+      "name": "Oregon",
+      "fips": "41",
+      "abbreviation": "OR"
+    },
+    {
+      "name": "Pennsylvania",
+      "fips": "42",
+      "abbreviation": "PA"
+    },
+    {
+      "name": "Puerto Rico",
+      "fips": "72",
+      "abbreviation": "PR"
+    },
+    {
+      "name": "Rhode Island",
+      "fips": "44",
+      "abbreviation": "RI"
+    },
+    {
+      "name": "South Carolina",
+      "fips": "45",
+      "abbreviation": "SC"
+    },
+    {
+      "name": "South Dakota",
+      "fips": "46",
+      "abbreviation": "SD"
+    },
+    {
+      "name": "Tennessee",
+      "fips": "47",
+      "abbreviation": "TN"
+    },
+    {
+      "name": "Texas",
+      "fips": "48",
+      "abbreviation": "TX"
+    },
+    {
+      "name": "Utah",
+      "fips": "49",
+      "abbreviation": "UT"
+    },
+    {
+      "name": "Vermont",
+      "fips": "50",
+      "abbreviation": "VT"
+    },
+    {
+      "name": "Virginia",
+      "fips": "51",
+      "abbreviation": "VA"
+    },
+    {
+      "name": "Washington",
+      "fips": "53",
+      "abbreviation": "WA"
+    },
+    {
+      "name": "West Virginia",
+      "fips": "54",
+      "abbreviation": "WV"
+    },
+    {
+      "name": "Wisconsin",
+      "fips": "55",
+      "abbreviation": "WI"
+    },
+    {
+      "name": "Wyoming",
+      "fips": "56",
+      "abbreviation": "WY"
+    }
+  ],
+  "programs": [
+    {
+      "id": "TIGER_LINE",
+      "enabled": true,
+      "scope": "area",
+      "vintage": 2025,
+      "geographyLevel": "Census tract",
+      "idTemplate": "tiger-line-{areaSlug}-{vintage}",
+      "titleTemplate": "{vintage} TIGER/Line - Census Tracts - {area}",
+      "abstractTemplate": "Census TIGER/Line tract boundary metadata for {area}, represented as a repository research object with source links and a file manifest rather than mirrored geometry.",
+      "issuedTemplate": "{vintage}-01-01",
+      "sourceUrlTemplate": "https://www2.census.gov/geo/tiger/TIGER{vintage}/TRACT/tl_{vintage}_{fips}_tract.zip",
+      "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "citationTemplate": "U.S. Census Bureau. {vintage} TIGER/Line Shapefiles: Census Tracts, {area}.",
+      "subjects": ["TIGER/Line", "Census tracts"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "TIGER/Line source archive",
+          "format": "ZIP",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "TIGER/Line technical documentation",
+          "format": "PDF",
+          "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp{vintage}/TGRSHP{vintage}_TechDoc.pdf"
+        },
+        {
+          "id": "source-landing-page",
+          "label": "TIGER/Line landing page",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "LODES",
+      "enabled": true,
+      "scope": "area",
+      "vintage": 2023,
+      "geographyLevel": "Census block",
+      "idTemplate": "lodes-wac-{areaSlug}-{vintage}",
+      "titleTemplate": "{vintage} LODES Workplace Area Characteristics - {area}",
+      "abstractTemplate": "LEHD Origin-Destination Employment Statistics workplace area characteristics metadata for {area} workforce geography.",
+      "issuedTemplate": "{vintage}-06-01",
+      "sourceUrlTemplate": "https://lehd.ces.census.gov/data/lodes/LODES8/{abbreviationLower}/wac/{abbreviationLower}_wac_S000_JT00_{vintage}.csv.gz",
+      "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "citationTemplate": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, {area}, {vintage}.",
+      "subjects": ["LODES", "Workplace area characteristics"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "source-csv",
+          "label": "LODES workplace area characteristics CSV",
+          "format": "CSV",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "LODES technical documentation",
+          "format": "PDF",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "ACS",
+      "enabled": true,
+      "scope": "area",
+      "vintage": 2024,
+      "geographyLevel": "Public use microdata area",
+      "idTemplate": "acs-pums-{areaSlug}-{vintage}",
+      "titleTemplate": "{vintage} ACS 1-Year PUMS - {area}",
+      "abstractTemplate": "American Community Survey public use microdata sample metadata for {area}, represented as a repository object with source links rather than mirrored microdata.",
+      "issuedTemplate": "{vintage}-10-01",
+      "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/acs/data/pums/{vintage}/1-Year/csv_p{abbreviationLower}.zip",
+      "documentationUrl": "https://www.census.gov/programs-surveys/acs/technical-documentation/pums/documentation.html",
+      "citationTemplate": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, {area}, {vintage}.",
+      "subjects": ["ACS PUMS", "Public use microdata"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "ACS PUMS person records archive",
+          "format": "ZIP",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "ACS PUMS documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "SIPP",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2024,
+      "geography": "United States",
+      "geographyLevel": "National",
+      "idTemplate": "sipp-public-use-{vintage}",
+      "titleTemplate": "{vintage} SIPP Public Use Data",
+      "abstractTemplate": "Survey of Income and Program Participation public-use metadata for longitudinal income, program participation, and household research.",
+      "issuedTemplate": "{vintage}-09-01",
+      "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/sipp/data/datasets/{vintage}/pu{vintage}.csv.gz",
+      "documentationUrl": "https://www.census.gov/programs-surveys/sipp/tech-documentation/complete-documents.html",
+      "citationTemplate": "U.S. Census Bureau. Survey of Income and Program Participation Public Use Data, {vintage}.",
+      "subjects": ["SIPP", "Income and program participation"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "source-archive",
+          "label": "SIPP public use archive",
+          "format": "CSV",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "SIPP technical documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "CPS",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2024,
+      "geography": "United States",
+      "geographyLevel": "National",
+      "idTemplate": "cps-public-use-{vintage}",
+      "titleTemplate": "{vintage} Current Population Survey Public Use Data",
+      "abstractTemplate": "Current Population Survey public-use metadata for labor force, employment, and demographic research.",
+      "issuedTemplate": "{vintage}-09-01",
+      "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/cps/datasets/{vintage}/basic/",
+      "documentationUrl": "https://www.census.gov/programs-surveys/cps/technical-documentation/complete.html",
+      "citationTemplate": "U.S. Census Bureau. Current Population Survey Public Use Data, {vintage}.",
+      "subjects": ["CPS", "Labor force"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "source-directory",
+          "label": "CPS basic monthly data directory",
+          "format": "OTHER",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "CPS technical documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "USGS",
+      "enabled": true,
+      "scope": "national",
+      "vintage": 2026,
+      "geography": "United States",
+      "geographyLevel": "Point event",
+      "idTemplate": "usgs-earthquakes-overlay",
+      "titleTemplate": "USGS Earthquake Overlay",
+      "abstractTemplate": "Earthquake Hazards Program GeoJSON overlay metadata used for contextual map display and accessible event lists.",
+      "issuedTemplate": "{vintage}-01-01",
+      "sourceUrlTemplate": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson",
+      "documentationUrl": "https://earthquake.usgs.gov/fdsnws/event/1/",
+      "citationTemplate": "U.S. Geological Survey. Earthquake Catalog GeoJSON Feed.",
+      "subjects": ["Earthquakes", "Hazards"],
+      "publisher": "usgs",
+      "files": [
+        {
+          "id": "geojson-feed",
+          "label": "USGS earthquake GeoJSON feed",
+          "format": "GEOJSON",
+          "url": "{sourceUrl}"
+        },
+        {
+          "id": "api-documentation",
+          "label": "USGS FDSN event API documentation",
+          "format": "OTHER",
+          "url": "{documentationUrl}"
+        }
+      ]
+    },
+    {
+      "id": "LEHD",
+      "enabled": false,
+      "scope": "area",
+      "vintage": 2023,
+      "geographyLevel": "Census block",
+      "idTemplate": "lehd-od-{areaSlug}-{vintage}",
+      "titleTemplate": "{vintage} LEHD Origin-Destination - {area}",
+      "abstractTemplate": "LEHD Origin-Destination commuting flow metadata for {area}.",
+      "issuedTemplate": "{vintage}-06-01",
+      "sourceUrlTemplate": "https://lehd.ces.census.gov/data/lodes/LODES8/{abbreviationLower}/od/{abbreviationLower}_od_main_JT00_{vintage}.csv.gz",
+      "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "citationTemplate": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, {area}, {vintage}.",
+      "subjects": ["LEHD", "Commuting flows"],
+      "publisher": "census",
+      "files": [
+        {
+          "id": "source-csv",
+          "label": "LEHD origin-destination CSV",
+          "format": "CSV",
+          "url": "{sourceUrl}"
+        }
+      ]
+    }
+  ],
+  "$futurePrograms": [
+    "Programs below need a ResearchProgram enum value and an OpenAPI contract change before",
+    "they can be seeded, because an unmapped program is reported as OTHER rather than guessed:",
+    "Economic Census, County Business Patterns, Building Permits Survey, Population Estimates,",
+    "Small Area Income and Poverty Estimates, Business Dynamics Statistics, USGS 3DEP elevation,",
+    "USGS 3D Hydrography Program, NOAA Climate Data Online, NASA POWER."
+  ]
+}

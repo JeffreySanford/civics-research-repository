@@ -167,6 +167,26 @@ Two consequences worth knowing:
 
 If mirroring small artifacts ever becomes worthwhile, real bitstreams should be appended alongside the manifest rather than replacing it: the manifest describes the authoritative source, which remains true whether or not a copy exists locally.
 
+### Seeding Breadth
+
+The repository is seeded from [tools/dspace/catalog.json](../tools/dspace/catalog.json), a data table of geographies and programs. `tools/scripts/generate-saf.mjs` expands it into DSpace SAF packages, which `pnpm run dspace:seed` regenerates before importing.
+
+The current table produces 159 research objects: TIGER/Line, LODES, and ACS PUMS for all 52 states and territories, plus national SIPP, CPS, and USGS objects. Changing breadth or program mix is a change to the table, not to the repository tree. Set `enabled: false` on a program to drop it, or pass `--areas N` for a faster local loop.
+
+Three details worth knowing:
+
+- **Generated packages are git-ignored.** Committing 159 directories whose only differences are a state name and a FIPS code would bury the actual source of truth.
+- **Directories are named by source identifier, not position.** The seed mapfile records `<directory> <handle>` and `--resume` skips directories already imported, so positional names would shift whenever the program mix changed and re-import existing items under new handles.
+- **The generator writes `crr.file.manifest` in the same encoding the Java side uses.** A freshly seeded item therefore already matches the normalized source payload, and `sync:diff` reports `SKIP_ITEM` without needing an apply first.
+
+Seeding is a bootstrap, not the ingestion strategy. It exists so a cold `demo:up` has content before anything is harvested. Live harvesting replaces the static adapter constants and writes through the same idempotent sync path; it does not replace the seed.
+
+### Repository Read Caching
+
+Dataset detail needs the whole item set to compute related research, which at 159 items meant paging through all of DSpace discovery on every page view, around a second per request. `RepositoryCatalog` now caches the item list for a short window (`civics.repository.cache-ttl-seconds`, default 60) and drops it outright whenever the discovery projection is rebuilt, so staleness is bounded and never survives a synchronization. Dataset detail serves in roughly 5ms once warm.
+
+This is a cache of repository reads, not a second source of truth: nothing is written to it, and it is discarded rather than reconciled.
+
 ### When DSpace Is Unreachable
 
 Being unable to reach DSpace is reported as unavailability, never as "the item does not exist":

@@ -116,6 +116,18 @@ docker(['compose', '--profile', 'dspace', 'up', '-d', 'dspace-rest']);
 announce('Waiting for the DSpace REST API');
 await waitFor('DSpace REST', `${DSPACE_URL}/api`);
 
+announce('Generating SAF packages from tools/dspace/catalog.json');
+const generated = spawnSync(
+  process.execPath,
+  ['tools/scripts/generate-saf.mjs'],
+  {
+    stdio: 'inherit',
+  },
+);
+if (generated.status !== 0) {
+  throw new Error('SAF generation failed.');
+}
+
 announce(
   'Seeding the repository (community, collection, crr schema, research objects)',
 );

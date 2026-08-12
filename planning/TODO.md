@@ -93,10 +93,14 @@ The remaining substantive accessibility gap, specified in documentation/mapping-
 
 Discovery reads from DSpace, which holds six seeded items, so search shows six datasets across three geographies. The previous fifty-two states came from the generated fixture catalog, which is now only a labelled fallback. This is correct behavior, and it makes the demo look thinner than it did.
 
-- [ ] Decide the target breadth: a curated set (roughly 12-20 items across 5-8 geographies) or full coverage.
-- [ ] Generate SAF packages from a data table at seed time rather than committing one directory per item, so breadth is a one-line change and the repository does not carry hundreds of near-identical XML files.
-- [ ] Keep `--resume` incremental import working, so adding items never requires a repository reset.
-- [ ] Confirm `civics.repository.max-items` (default 500) and discovery paging still hold at the chosen size.
+- [x] Decide the target breadth: full 52-area parity, 159 items.
+- [x] Generate SAF packages from `tools/dspace/catalog.json` rather than committing one directory per item. Generated packages are git-ignored; the table is the source of truth.
+- [x] Name SAF directories by source identifier so `--resume` stays correct when the program mix changes.
+- [x] Confirm paging and `civics.repository.max-items` hold at 159 items.
+- [x] Cache repository reads briefly, invalidated on reindex: dataset detail went from 1.1s to 5ms.
+- [x] Fix related research to require shared geography, since program alone produced alphabetical filler at 52 areas per program.
+- [ ] Add a multi-select program facet with TIGER/Line, LODES, and ACS selected by default. Needs an OpenAPI change: `program` is currently single-valued.
+- [ ] Add the remaining catalog programs (Economic Census, County Business Patterns, Building Permits, Population Estimates, SAIPE, BDS, USGS 3DEP and 3HP, NOAA Climate Data Online, NASA POWER). Each needs a `ResearchProgram` enum value and a contract change first, or it reports as OTHER.
 
 ### P9 - Security patch pass
 

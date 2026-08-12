@@ -23,6 +23,10 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Generated DSpace SAF packages. The committed source of truth is tools/dspace/catalog.json;
+# `pnpm run dspace:seed` regenerates these before importing.
+tools/dspace/saf/
+
 # Local data and generated artifacts
 data/raw/
 data/downloads/
