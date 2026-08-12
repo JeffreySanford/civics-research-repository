@@ -5,8 +5,20 @@ import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 
+/**
+ * TIGER/Line metadata for the first repository synchronization slice.
+ *
+ * <p>Which file this describes is a decision, and stays compiled in. What the file currently is --
+ * how large, and when the Census Bureau last published it -- is a fact about the file, and is read
+ * from the publishing host rather than compiled in, because a compiled size is wrong the moment the
+ * Bureau reissues the archive.
+ *
+ * <p>When the host cannot be reached the compiled release date is used and sizes are left absent.
+ * A sync must not fail, or hang, because census.gov is slow.
+ */
 @Component
 public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
     private static final int VINTAGE_YEAR = 2025;
@@ -15,8 +27,17 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
     private static final String TIGER_BASE_URL = "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/";
     private static final String DOCUMENTATION_URL =
             "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html";
+    /** Used when the publisher is unreachable or sends no Last-Modified. */
+    private static final LocalDate FALLBACK_RELEASED_ON = LocalDate.of(2025, 9, 23);
+
     private static final String TECHNICAL_DOCUMENTATION_URL =
             "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf";
+
+    private final SourceFileProbe sourceFileProbe;
+
+    public TigerLineMetadataAdapter(SourceFileProbe sourceFileProbe) {
+        this.sourceFileProbe = sourceFileProbe;
+    }
 
     @Override
     public SyncSource source() {
@@ -26,6 +47,9 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
     @Override
     public PublicDatasetMetadata firstVisualSlice() {
         String sourceUrl = TIGER_BASE_URL + "tl_" + VINTAGE_YEAR + "_" + STATE_FIPS + "_tract.zip";
+        Optional<SourceFileFacts> sourceFacts = sourceFileProbe.probe(sourceUrl);
+        Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(TECHNICAL_DOCUMENTATION_URL);
+
         return new PublicDatasetMetadata(
                 "tiger-line-north-dakota-2025",
                 "2025 TIGER/Line - Census Tracts - North Dakota",
@@ -35,7 +59,7 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
                 GEOGRAPHY,
                 "Census tract",
                 VINTAGE_YEAR,
-                LocalDate.of(2025, 9, 23),
+                releasedOn(sourceFacts),
                 sourceUrl,
                 DOCUMENTATION_URL,
                 "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, North Dakota.",
@@ -45,18 +69,30 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
                                 "North Dakota census tract TIGER/Line shapefile archive",
                                 FileFormat.ZIP,
                                 sourceUrl,
-                                null),
+                                sizeBytes(sourceFacts)),
                         new PublicDatasetFile(
                                 "technical-documentation",
                                 "2025 TIGER/Line technical documentation",
                                 FileFormat.PDF,
                                 TECHNICAL_DOCUMENTATION_URL,
-                                null),
+                                sizeBytes(documentationFacts)),
                         new PublicDatasetFile(
                                 "source-landing-page",
                                 "TIGER/Line shapefile source landing page",
                                 FileFormat.OTHER,
                                 DOCUMENTATION_URL,
+                                // A landing page, not a file. Its byte count would mean nothing.
                                 null)));
+    }
+
+    /** The publisher's Last-Modified when it offers one, otherwise the compiled release date. */
+    private LocalDate releasedOn(Optional<SourceFileFacts> facts) {
+        return facts.map(SourceFileFacts::lastModified).orElse(null) == null
+                ? FALLBACK_RELEASED_ON
+                : facts.orElseThrow().lastModified();
+    }
+
+    private Long sizeBytes(Optional<SourceFileFacts> facts) {
+        return facts.map(SourceFileFacts::sizeBytes).orElse(null);
     }
 }

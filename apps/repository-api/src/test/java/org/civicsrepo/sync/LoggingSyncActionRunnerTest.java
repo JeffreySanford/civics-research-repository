@@ -1,6 +1,7 @@
 package org.civicsrepo.sync;
 
 import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.sources.OfflineSourceFileProbe;
 import org.civicsrepo.generated.dto.SyncMode;
 import org.civicsrepo.generated.dto.SyncRequest;
 import org.civicsrepo.generated.dto.SyncSource;
@@ -52,7 +53,7 @@ class LoggingSyncActionRunnerTest {
     }
 
     private DspaceItemPayload sourcePayload() {
-        return new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+        return new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
     }
 
     private static final class TestDspaceItemWriteGateway implements DspaceItemWriteGateway {

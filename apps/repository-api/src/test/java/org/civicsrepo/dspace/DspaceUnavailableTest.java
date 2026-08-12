@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 import java.util.Map;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.sources.OfflineSourceFileProbe;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,7 +19,7 @@ class DspaceUnavailableTest {
     private static final String SOURCE_IDENTIFIER = "tiger-line-north-dakota-2025";
 
     private final DspaceItemPayload sourcePayload =
-            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
 
     @Test
     void reportsAnUnreachableEndpointAsUnavailableRatherThanEmpty() {

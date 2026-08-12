@@ -147,8 +147,11 @@ public class SyncService {
                 new SyncAction(
                         SyncAction.ActionTypeEnum.UPSERT_ITEM,
                         itemPayload.name(),
+                        // The release date is harvested from the publisher's Last-Modified, so naming
+                        // it here shows which date a dry run would actually write.
                         "Prepare DSpace item payload with " + itemPayload.metadata().size() + " metadata fields and "
-                                + itemPayload.bitstreams().size() + " file manifest entries."),
+                                + itemPayload.bitstreams().size() + " file manifest entries, published "
+                                + metadata.releasedOn() + "."),
                 new SyncAction(
                         SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST,
                         metadata.id(),
@@ -211,9 +214,17 @@ public class SyncService {
                         SyncAction.ActionTypeEnum.VERIFY_INDEX, "Solr discovery", "Confirm item is available for discovery indexing."));
     }
 
+    /**
+     * Summarizes the manifest, including each file's size when the publisher reported one.
+     *
+     * <p>Sizes are harvested from the publishing host rather than compiled in, so showing them here
+     * is what makes that visible in a dry run: a size means the source was reachable and answered,
+     * and its absence means the entry rests on compiled metadata.
+     */
     private String fileManifestSummary(List<PublicDatasetFile> files) {
         return files.stream()
-                .map((file) -> file.id() + "=" + file.format().name())
+                .map((file) -> file.id() + "=" + file.format().getValue()
+                        + (file.sizeBytes() == null ? "" : " (" + file.sizeBytes() + " bytes)"))
                 .collect(Collectors.joining(", "));
     }
 

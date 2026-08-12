@@ -1,6 +1,7 @@
 package org.civicsrepo.sync;
 
 import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.sources.OfflineSourceFileProbe;
 import org.civicsrepo.generated.dto.SyncJob;
 import org.civicsrepo.generated.dto.SyncMode;
 import org.civicsrepo.generated.dto.SyncRequest;
@@ -34,7 +35,7 @@ class StartupSyncRunnerTest {
             (request, actions, sourcePayload) -> {},
             new DspaceItemPayloadMapper(),
             new DspaceItemDiffPlanner((sourceIdentifier) -> Optional.empty()),
-            List.of(new TigerLineMetadataAdapter()));
+            List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe())));
 
     @Test
     void skipsWhenDspaceIsConfiguredButNotRunning() {
@@ -76,7 +77,7 @@ class StartupSyncRunnerTest {
                 new DspaceItemPayloadMapper(),
                 new DspaceItemDiffPlanner(
                         new DspaceDiscoveryItemStateReader(new DspaceRestClient(UNREACHABLE, "", ""))),
-                List.of(new TigerLineMetadataAdapter()));
+                List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe())));
 
         SyncJob job = liveService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
 

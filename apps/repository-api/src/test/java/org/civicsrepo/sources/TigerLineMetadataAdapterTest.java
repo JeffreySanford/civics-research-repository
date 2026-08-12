@@ -4,14 +4,16 @@ import org.civicsrepo.generated.dto.SyncSource;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class TigerLineMetadataAdapterTest {
     @Test
     void normalizesNorthDakotaTractMetadata() {
-        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter();
+        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe());
 
         PublicDatasetMetadata metadata = adapter.firstVisualSlice();
 
@@ -28,5 +30,51 @@ class TigerLineMetadataAdapterTest {
         assertThat(metadata.files())
                 .extracting(PublicDatasetFile::format)
                 .containsExactly(FileFormat.ZIP, FileFormat.PDF, FileFormat.OTHER);
+    }
+
+    /**
+     * Size and publication date describe the file as the publisher currently offers it, so they are
+     * read from the host rather than compiled in: a compiled size is wrong the moment the Bureau
+     * reissues the archive.
+     */
+    @Test
+    void takesSizeAndPublicationDateFromThePublisher() {
+        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(
+                (url) -> Optional.of(new SourceFileFacts(url.endsWith(".zip") ? 91_234_567L : 4_096L,
+                        LocalDate.of(2026, 3, 4))));
+
+        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+
+        assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2026, 3, 4));
+        assertThat(metadata.files())
+                .extracting(PublicDatasetFile::id, PublicDatasetFile::sizeBytes)
+                .containsExactly(
+                        tuple("source-zip", 91_234_567L),
+                        tuple("technical-documentation", 4_096L),
+                        // A landing page, not a file; a byte count for it would mean nothing.
+                        tuple("source-landing-page", null));
+    }
+
+    /** An unreachable publisher must degrade to compiled metadata, not fail the sync. */
+    @Test
+    void fallsBackToCompiledMetadataWhenThePublisherCannotBeReached() {
+        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe());
+
+        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+
+        assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2025, 9, 23));
+        assertThat(metadata.files()).extracting(PublicDatasetFile::sizeBytes).containsOnlyNulls();
+    }
+
+    /** A host that answers but sends no Last-Modified must not leave the release date empty. */
+    @Test
+    void keepsTheCompiledDateWhenThePublisherSendsNoLastModified() {
+        TigerLineMetadataAdapter adapter =
+                new TigerLineMetadataAdapter((url) -> Optional.of(new SourceFileFacts(512L, null)));
+
+        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+
+        assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2025, 9, 23));
+        assertThat(metadata.files().getFirst().sizeBytes()).isEqualTo(512L);
     }
 }

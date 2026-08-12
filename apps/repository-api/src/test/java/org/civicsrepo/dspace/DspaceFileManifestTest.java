@@ -1,6 +1,7 @@
 package org.civicsrepo.dspace;
 
 import org.civicsrepo.generated.dto.FileFormat;
+import org.civicsrepo.sources.OfflineSourceFileProbe;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
@@ -81,7 +82,7 @@ class DspaceFileManifestTest {
     @Test
     void mapsEveryAdapterFileIntoTheManifestField() {
         DspaceItemPayload payload =
-                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
 
         List<DspaceMetadataValue> manifest = payload.metadata().get(DspaceFileManifest.FIELD);
 

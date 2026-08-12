@@ -3,6 +3,7 @@ package org.civicsrepo.dspace;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.sources.OfflineSourceFileProbe;
 import org.junit.jupiter.api.Test;
 
 class DspaceItemPayloadMapperTest {
@@ -10,7 +11,7 @@ class DspaceItemPayloadMapperTest {
     void mapsPublicDatasetMetadataToDspaceItemPayload() {
         DspaceItemPayloadMapper mapper = new DspaceItemPayloadMapper();
 
-        DspaceItemPayload payload = mapper.toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+        DspaceItemPayload payload = mapper.toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
 
         assertThat(payload.name()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
         assertThat(payload.type()).isEqualTo("item");

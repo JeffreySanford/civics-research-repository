@@ -138,6 +138,27 @@ It is deliberately not part of `quality:all`. It depends on federal hosts being 
 
 Last full run on 2026-08-12: 328 URLs across 164 items, all resolving. It found five broken links that had been in the catalog unnoticed — three dead Census documentation pages, and a SIPP source template pointing at `pu{vintage}.csv.gz` when the published file is `pu{vintage}_csv.zip`. The two USGS documentation pages answer 403 to a default user agent while serving a browser normally, so the checker sends a browser user agent; without that it reports live pages as broken.
 
+### What is harvested and what is curated
+
+Two different things get called "source metadata", and they are handled differently.
+
+**Curated.** Which programs exist, which files each one has, and what they are called. These are decisions, they change rarely, and a wrong one is visible. They live in [tools/dspace/catalog.json](../tools/dspace/catalog.json).
+
+**Harvested.** How large a file is, and when the publisher last issued it. These are facts about the file that change without notice, so a compiled value is wrong the moment the Bureau reissues the archive. [HttpSourceFileProbe](../apps/repository-api/src/main/java/org/civicsrepo/sources/HttpSourceFileProbe.java) reads them from the response headers with a HEAD request, and the metadata adapter uses them in place of constants.
+
+Both facts were previously compiled in: every file reported no size at all, and the TIGER/Line release date was a literal. The first live run corrected that date from 2025-09-23 to 2025-09-22, which is what `Last-Modified` actually says.
+
+A dry run shows both, so the harvest is visible without reaching into DSpace:
+
+```
+Prepare DSpace item payload with 17 metadata fields and 3 file manifest entries, published 2025-09-22.
+Track 3 source files: source-zip=ZIP (1825199 bytes), technical-documentation=PDF (4598419 bytes), source-landing-page=OTHER.
+```
+
+An unreachable publisher is an expected condition, not an error. The probe returns nothing, the adapter falls back to its compiled release date, and sizes stay absent — a sync must not fail, or hang, because census.gov is slow. Timeouts are 3 seconds to connect and 6 to respond. Unit tests use an offline probe, so they neither depend on nor wait for a federal host.
+
+Still curated, and worth being plain about: the catalog is not discovered from the Census and USGS APIs. Harvesting _which_ datasets exist is a larger piece of work; `verify:sources` is the interim guard that what the catalog claims still resolves.
+
 ### Areas a program does not cover
 
 LODES is published for 49 of the 52 areas, not all of them:

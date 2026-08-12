@@ -14,7 +14,13 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 - [x] Update the search and dataset detail tests to cover the repository-backed path and the fallback separately.
 - [x] Seed LODES, ACS PUMS, and a second geography so facets exercise real repository data.
 - [x] Compute related research from the repository instead of hard-coding it.
-- [ ] Harvest live source metadata instead of static adapter constants.
+- [x] Harvest live source metadata instead of static adapter constants, for the facts that are
+      genuinely the publisher's: file size and publication date now come from a HEAD request
+      against the source, with the compiled values as fallback when the host is unreachable.
+      The first live run corrected the compiled release date by a day.
+- [ ] Harvest the catalog itself. Which files exist, and for which vintages, is still curated in
+      `tools/dspace/catalog.json` rather than discovered from the Census and USGS APIs. That is a
+      larger piece of work than the per-file facts, and `verify:sources` is the interim guard.
 - [x] Reconcile the file manifest as `crr.file.manifest` metadata so `sync:diff` reaches `SKIP_ITEM`.
 - [x] Scope the diff to the fields synchronization owns, so DSpace bookkeeping metadata is not reported as drift.
 

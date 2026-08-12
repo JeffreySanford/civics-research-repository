@@ -1,6 +1,7 @@
 package org.civicsrepo.dspace;
 
 import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.sources.OfflineSourceFileProbe;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.LinkedHashMap;
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class DspaceItemDiffPlannerTest {
     private final DspaceItemPayload sourcePayload =
-            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter().firstVisualSlice());
+            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
 
     @Test
     void createsItemWhenNoExistingRepositoryPayloadIsFound() {
