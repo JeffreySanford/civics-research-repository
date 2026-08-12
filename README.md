@@ -98,6 +98,8 @@ Public dataset metadata
 ```bash
 pnpm run start:all
 pnpm run docker:down
+pnpm run dspace:up
+pnpm run dspace:verify
 pnpm run sync:dry-run
 pnpm run sync:apply
 pnpm run test:all
@@ -109,6 +111,8 @@ pnpm run section508:report
 ```
 
 `start:all` runs the Docker Compose stack. The Java API is exposed at `http://localhost:8080/api`, the Angular UI at `http://localhost:4200`, PostgreSQL at `localhost:5432`, and Solr at `http://localhost:8983`.
+
+The optional DSpace profile is available with `pnpm run dspace:up` and verifies at `http://localhost:8081/server/api`. It uses persistent Docker volumes for the DSpace asset store, DSpace PostgreSQL database, and DSpace Solr cores.
 
 `wcag:report` and `section508:report` run the Playwright/axe checks with a console reporter so pass/fail results are visible in terminal output.
 

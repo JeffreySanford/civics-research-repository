@@ -99,7 +99,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Add Angular UI service.
 - [x] Add local environment sample.
 - [x] Document startup and reset commands.
-- [ ] Verify DSpace API is reachable locally.
+- [x] Verify DSpace API is reachable locally.
 - [x] Verify Solr is reachable locally.
 - [x] Verify startup sync creates or updates the seed repository objects.
 - [x] Index seed discovery objects into Solr on Java API startup.

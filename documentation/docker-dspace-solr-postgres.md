@@ -19,7 +19,7 @@ Current default stack:
 - Persistent Docker volumes for repository API artifacts, PostgreSQL, Solr, pnpm store, and container `node_modules`.
 - Optional DSpace REST profile on `http://localhost:8081/server/api`.
 
-DSpace REST is available as an optional Compose profile. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo remains reliable while DSpace initialization and repository seeding are added.
+DSpace REST is available as an optional Compose profile. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo remains reliable while DSpace repository seeding is added.
 
 `pnpm run start:all` is the preferred development command. It runs `docker compose down --remove-orphans` first so stale containers from earlier iterations are removed without changing the configured ports or deleting persistent volumes.
 
@@ -33,7 +33,7 @@ Public-facing search, dataset detail, mapping, and accessibility evidence UI.
 
 Repository API and content-management layer for communities, collections, items, metadata, bitstreams, and relationships.
 
-Status: optional Compose profile added. Runtime initialization and REST reachability verification remain the next DSpace-specific step.
+Status: optional Compose profile added and runtime verified. The profile seeds DSpace Solr cores into persistent storage, runs DSpace database migrations, then starts the REST API.
 
 Baseline confirmed from the DSpace project:
 
@@ -141,6 +141,7 @@ The DSpace profile is separated from the default demo stack because DSpace uses 
 
 ```bash
 pnpm run dspace:up
+pnpm run dspace:migrate
 pnpm run dspace:ps
 pnpm run dspace:logs
 pnpm run dspace:verify
@@ -158,6 +159,21 @@ The profile uses these images:
 - `dspace/dspace:dspace-9.0`
 - `dspace/dspace-postgres-pgcrypto:dspace-9.0`
 - `dspace/dspace-solr:dspace-9.0`
+
+Startup order:
+
+1. `dspace-solr-init` copies DSpace core templates into the persistent Solr volume when the `search` core is missing.
+2. `dspace-solr` starts and must report the `search` core as healthy.
+3. `dspace-db-init` runs `/dspace/bin/dspace database migrate` against the persistent DSpace PostgreSQL volume.
+4. `dspace-rest` starts after Solr is healthy and database migration has completed.
+
+Verified local REST response:
+
+```bash
+pnpm run dspace:verify
+```
+
+Expected result: JSON containing `dspaceName`, `dspaceServer`, `dspaceVersion`, and REST API links from `http://localhost:8081/server/api`.
 
 Use this only when working on DSpace REST integration. The default demo remains `pnpm run start:all`.
 

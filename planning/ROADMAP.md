@@ -67,7 +67,7 @@ Implementation order:
 4. Add persistent Docker volumes for DSpace assets, PostgreSQL, Solr, and small-to-medium mirrored demo artifacts.
 5. Create seed community, collection, and visual geospatial North Dakota item from TIGER/Line or LODES.
 6. Run startup sync when the app starts.
-7. Verify DSpace REST access.
+7. Verify DSpace REST access. Completed for the optional local DSpace profile on `http://localhost:8081/server/api`.
 8. Verify Solr discovery indexing.
 
 Storage rule: store metadata, manifests, source links, checksums where available, small fixtures, and small-to-medium mirrored demo artifacts. Do not mirror large public datasets until a later sprint explicitly needs that behavior.

@@ -71,9 +71,15 @@ services:
   dspace-rest:
     profiles: ['dspace']
     image: dspace/dspace:dspace-9.0
+    entrypoint:
+      - sh
+      - -c
+      - exec java -jar webapps/server-boot.jar --dspace.dir="$$DSPACE_INSTALL"
     depends_on:
-      - dspace-postgres
-      - dspace-solr
+      dspace-db-init:
+        condition: service_completed_successfully
+      dspace-solr:
+        condition: service_healthy
     environment:
       dspace__P__name: Civics Research Repository DSpace
       dspace__P__server__P__url: http://localhost:8081/server
@@ -98,14 +104,70 @@ services:
       - '5433:5432'
     volumes:
       - dspace-postgres-data:/pgdata
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dspace -d dspace']
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   dspace-solr:
     profiles: ['dspace']
     image: dspace/dspace-solr:dspace-9.0
+    depends_on:
+      dspace-solr-init:
+        condition: service_completed_successfully
     ports:
       - '8984:8983'
     volumes:
       - dspace-solr-data:/var/solr
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl -fsS http://localhost:8983/solr/search/admin/ping >/dev/null',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  dspace-solr-init:
+    profiles: ['dspace']
+    image: dspace/dspace:dspace-9.0
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -eu
+        mkdir -p /var/solr/data
+        if [ ! -d /var/solr/data/search ]; then
+          cp -R /dspace/solr/. /var/solr/data/
+        fi
+        chown -R 8983:8983 /var/solr
+    volumes:
+      - dspace-solr-data:/var/solr
+
+  dspace-db-init:
+    profiles: ['dspace']
+    image: dspace/dspace:dspace-9.0
+    depends_on:
+      dspace-postgres:
+        condition: service_healthy
+      dspace-solr:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - /dspace/bin/dspace database migrate
+    environment:
+      dspace__P__name: Civics Research Repository DSpace
+      dspace__P__server__P__url: http://localhost:8081/server
+      dspace__P__ui__P__url: http://localhost:4000
+      db__P__url: jdbc:postgresql://dspace-postgres:5432/dspace
+      db__P__username: dspace
+      db__P__password: dspace
+      solr__P__server: http://dspace-solr:8983/solr
+    volumes:
+      - dspace-assetstore:/dspace/assetstore
 
 volumes:
   civics-artifacts:
