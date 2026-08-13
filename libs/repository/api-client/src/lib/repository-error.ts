@@ -62,9 +62,12 @@ export function parseRepositoryError(
   if (isHttpErrorLike(error)) {
     const body = error.error;
     if (isErrorResponse(body)) {
+      const genericInternalError =
+        body.code === 'INTERNAL_ERROR' &&
+        body.message === 'An unexpected error occurred.';
       return {
         code: body.code,
-        message: body.message,
+        message: genericInternalError ? fallbackMessage : body.message,
         details: body.details,
         traceId: body.traceId ?? readTraceHeader(error),
       };

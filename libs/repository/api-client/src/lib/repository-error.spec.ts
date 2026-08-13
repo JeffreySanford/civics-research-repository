@@ -55,4 +55,23 @@ describe('parseRepositoryError', () => {
       message: 'Search failed.',
     });
   });
+
+  it('prefers the fallback message for generic internal error bodies', () => {
+    expect(
+      parseRepositoryError(
+        {
+          status: 500,
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'An unexpected error occurred.',
+          },
+          headers: { get: () => null },
+        },
+        'LODES flow sample for North Dakota failed to load.',
+      ),
+    ).toEqual({
+      code: 'INTERNAL_ERROR',
+      message: 'LODES flow sample for North Dakota failed to load.',
+    });
+  });
 });

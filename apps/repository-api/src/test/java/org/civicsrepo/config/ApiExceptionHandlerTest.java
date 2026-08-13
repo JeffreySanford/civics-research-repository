@@ -6,12 +6,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class ApiExceptionHandlerTest {
     private MockMvc mockMvc;
@@ -40,11 +42,24 @@ class ApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.traceId").value("trace-demo-1"));
     }
 
+    @Test
+    void serializesMissingRouteAsNotFound() throws Exception {
+        mockMvc.perform(get("/missing-route"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("API route not found: /missing-route"));
+    }
+
     @RestController
     static class TestController {
         @GetMapping("/not-found")
         void notFound() {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Dataset not found: missing");
+        }
+
+        @GetMapping("/missing-route")
+        void missingRoute() throws NoResourceFoundException {
+            throw new NoResourceFoundException(HttpMethod.GET, "/missing-route", "missing-route");
         }
     }
 }

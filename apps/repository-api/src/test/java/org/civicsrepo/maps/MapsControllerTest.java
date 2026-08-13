@@ -137,6 +137,17 @@ class MapsControllerTest {
                 .andExpect(jsonPath("$.flows[0].workerCount").value(1240));
     }
 
+    @Test
+    void returnsNotFoundForUnknownGeography() throws Exception {
+        given(lodesFlowService.findFlowSample("Atlantis"))
+                .willThrow(new IllegalArgumentException("Unknown geography: Atlantis"));
+
+        mockMvc.perform(get("/overlays/census/lodes-flow").param("geography", "Atlantis"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("Unknown geography: Atlantis"));
+    }
+
     private UsgsEarthquakeOverlay overlay(double minMagnitude, int days) {
         return new UsgsEarthquakeOverlay(
                 "USGS Earthquake Catalog",
