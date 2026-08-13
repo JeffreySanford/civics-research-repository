@@ -43,6 +43,10 @@ paths:
                 $ref: '#/components/schemas/SearchResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /datasets/{datasetId}:
     get:
       tags: [Datasets]
@@ -59,6 +63,10 @@ paths:
                 $ref: '#/components/schemas/DatasetDetail'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /datasets/{datasetId}/versions:
     get:
       tags: [Datasets]
@@ -77,6 +85,10 @@ paths:
                   $ref: '#/components/schemas/DatasetVersion'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /datasets/{datasetId}/map-layers:
     get:
       tags: [Maps]
@@ -95,6 +107,10 @@ paths:
                   $ref: '#/components/schemas/MapLayer'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /maps/census-areas:
     get:
       tags: [Maps]
@@ -111,6 +127,10 @@ paths:
                   $ref: '#/components/schemas/CensusAreaBoundary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /overlays/usgs/earthquakes:
     get:
       tags: [Maps]
@@ -140,6 +160,10 @@ paths:
                 $ref: '#/components/schemas/UsgsEarthquakeOverlay'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /accessibility/evidence:
     get:
       tags: [Evidence]
@@ -156,6 +180,10 @@ paths:
                   $ref: '#/components/schemas/AccessibilityEvidence'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /admin/sync:
     get:
       tags: [Admin]
@@ -172,6 +200,10 @@ paths:
                   $ref: '#/components/schemas/SyncJob'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     post:
       tags: [Admin]
       operationId: startRepositorySync
@@ -191,6 +223,10 @@ paths:
                 $ref: '#/components/schemas/SyncJob'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /admin/sync/{syncJobId}:
     get:
       tags: [Admin]
@@ -207,6 +243,41 @@ paths:
                 $ref: '#/components/schemas/SyncJob'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /admin/reindex:
+    get:
+      tags: [Admin]
+      operationId: getDiscoveryProjectionState
+      summary: Get the current discovery projection state without rebuilding it.
+      responses:
+        '200':
+          description: Discovery projection metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryProjectionState'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    post:
+      tags: [Admin]
+      operationId: reindexDiscoveryProjection
+      summary: Rebuild the discovery Solr projection from DSpace.
+      responses:
+        '202':
+          description: Reindex accepted and completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryProjectionState'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 components:
   parameters:
     SearchQuery:
@@ -280,6 +351,18 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     NotFound:
       description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Required dependency is unavailable.
       content:
         application/json:
           schema:
@@ -608,12 +691,31 @@ components:
       properties:
         code:
           type: string
+          description: Stable machine-readable error code.
         message:
           type: string
+          description: Human-readable summary safe to show in UI.
         details:
           type: array
           items:
             type: string
+          description: Optional validation or diagnostic detail lines.
+        traceId:
+          type: string
+          description: Correlation id for logs and support, echoed from X-Trace-Id when supplied.
+    DiscoveryProjectionState:
+      type: object
+      required: [source, objectCount]
+      properties:
+        source:
+          $ref: '#/components/schemas/RepositorySource'
+        objectCount:
+          type: integer
+          minimum: 0
+        rebuiltAt:
+          type: string
+          format: date-time
+          description: When the projection was last rebuilt; absent before the first reindex.
     SyncRequest:
       type: object
       required: [mode, source]

@@ -28,7 +28,7 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] Frontend TypeScript DTOs are generated from OpenAPI.
 - [x] Java DTOs are generated from OpenAPI on every build. _(Model types only; generated controller interfaces deferred until Spring 7 support.)_
 - [x] `pnpm run openapi:check` fails when generated frontend types drift.
-- [ ] API errors use typed error responses.
+- [x] API errors use typed error responses (`ErrorResponse` with `code`, `message`, optional `details`, and `traceId`; applied to 400/404/500/503 on search, datasets, maps, admin sync/reindex, and evidence routes).
 
 ## Backend
 

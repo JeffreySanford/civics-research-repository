@@ -158,6 +158,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/reindex': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the current discovery projection state without rebuilding it. */
+    get: operations['getDiscoveryProjectionState'];
+    put?: never;
+    /** Rebuild the discovery Solr projection from DSpace. */
+    post: operations['reindexDiscoveryProjection'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -312,9 +330,23 @@ export interface components {
       notes?: string;
     };
     ErrorResponse: {
+      /** @description Stable machine-readable error code. */
       code: string;
+      /** @description Human-readable summary safe to show in UI. */
       message: string;
+      /** @description Optional validation or diagnostic detail lines. */
       details?: string[];
+      /** @description Correlation id for logs and support, echoed from X-Trace-Id when supplied. */
+      traceId?: string;
+    };
+    DiscoveryProjectionState: {
+      source: components['schemas']['RepositorySource'];
+      objectCount: number;
+      /**
+       * Format: date-time
+       * @description When the projection was last rebuilt; absent before the first reindex.
+       */
+      rebuiltAt?: string;
     };
     SyncRequest: {
       mode: components['schemas']['SyncMode'];
@@ -437,6 +469,24 @@ export interface components {
         'application/json': components['schemas']['ErrorResponse'];
       };
     };
+    /** @description Unexpected server error. */
+    InternalServerError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': components['schemas']['ErrorResponse'];
+      };
+    };
+    /** @description Required dependency is unavailable. */
+    ServiceUnavailable: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': components['schemas']['ErrorResponse'];
+      };
+    };
   };
   parameters: {
     /** @description Keyword search terms. */
@@ -484,6 +534,8 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   getDataset: {
@@ -507,6 +559,8 @@ export interface operations {
         };
       };
       404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   getDatasetVersions: {
@@ -530,6 +584,8 @@ export interface operations {
         };
       };
       404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   getDatasetMapLayers: {
@@ -553,6 +609,8 @@ export interface operations {
         };
       };
       404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   listCensusAreaBoundaries: {
@@ -574,6 +632,8 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   getUsgsEarthquakeOverlay: {
@@ -598,6 +658,8 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   getAccessibilityEvidence: {
@@ -619,6 +681,8 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   listRepositorySyncJobs: {
@@ -640,6 +704,8 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   startRepositorySync: {
@@ -665,6 +731,8 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   getRepositorySyncJob: {
@@ -688,6 +756,52 @@ export interface operations {
         };
       };
       404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getDiscoveryProjectionState: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Discovery projection metadata. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DiscoveryProjectionState'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  reindexDiscoveryProjection: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reindex accepted and completed. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DiscoveryProjectionState'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
 }

@@ -12,6 +12,7 @@ This directory captures the product, architecture, data, accessibility, and plat
 - [USGS National Map Evaluation](usgs-national-map-evaluation.md): follow-on National Map reference overlay options.
 - [508/WCAG Accessibility](accessibility-508-wcag.md): accessibility standards, automated checks, and manual validation direction.
 - [Manual Accessibility Evidence](accessibility-manual-evidence.md): keyboard, NVDA, JAWS, map-equivalence, and cognitive checklists, plus the recording template and known limitations.
+- [Interview demo package](demo/README.md): demo script, ingestion walkthrough, mapping/USGS walkthrough, and architecture tradeoffs for stakeholder interviews.
 - [Docker, DSpace, Solr, PostgreSQL](docker-dspace-solr-postgres.md): local platform plan and service responsibilities.
 - [AWS Modernization](aws-modernization.md): EKS target, ECS/Fargate alternate, RDS, Solr persistence tradeoffs, CloudFront, observability, backup, and migration sequence.
 - [Nx, Angular 22, Material Design, WCAG, and Section 508](nx-angular-wcag.md): frontend workspace baseline and automated accessibility direction.
@@ -39,8 +40,8 @@ The vertical slice is connected. What remains is breadth and explainability:
 2. ~~Disambiguate the application and DSpace datastores by name and documented role.~~ **Delivered.**
 3. ~~Provide one command that starts the entire demo including DSpace.~~ **Delivered** — `pnpm run start:all` (alias `demo:up`).
 4. ~~Architecture diagrams and AWS modernization documentation.~~ **Delivered.**
-5. Harvest the catalog from live publishers rather than `tools/dspace/catalog.json` alone.
-6. Create the interview demo walkthrough scripts.
+5. ~~Harvest the catalog from live publishers rather than `tools/dspace/catalog.json` alone.~~ **Baseline delivered** — `pnpm run catalog:harvest`; full publisher auto-discovery remains incremental.
+6. ~~Create the interview demo walkthrough scripts.~~ **Delivered** — `documentation/demo/`.
 7. Record a manual accessibility evidence run against the delivered checklists.
 
 The active backlog and first vertical-slice criteria live in [planning](../planning/README.md).

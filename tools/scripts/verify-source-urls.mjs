@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { probeUrl, DEFAULT_TIMEOUT_MS } from './lib/url-probe.mjs';
 
 /**
  * Checks that every source URL the seeded catalog claims actually resolves.
@@ -26,15 +27,8 @@ const checkAll = args.includes('--all');
 const jsonIndex = args.indexOf('--json');
 const jsonPath = jsonIndex >= 0 ? args[jsonIndex + 1] : null;
 
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = DEFAULT_TIMEOUT_MS;
 const CONCURRENCY = 6;
-
-// usgs.gov answers 403 to the default fetch user agent while serving the same URL to a browser.
-// Without this the checker reports live pages as broken, which is the opposite of useful.
-const HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36',
-};
 
 function readValue(xml, pattern) {
   const match = xml.match(pattern);
@@ -99,39 +93,12 @@ function sample(targets) {
 }
 
 async function probe(url) {
-  // HEAD first: these are large archives and the body is never wanted. Some hosts answer 403 or
-  // 405 to HEAD while serving GET, so fall back to a ranged GET before calling it a failure.
-  try {
-    const head = await fetch(url, {
-      method: 'HEAD',
-      headers: HEADERS,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    if (head.ok || (head.status !== 403 && head.status !== 405)) {
-      return {
-        status: head.status,
-        contentType: head.headers.get('content-type'),
-      };
-    }
-  } catch (error) {
-    if (error.name !== 'TimeoutError') {
-      return { status: 0, error: error.message };
-    }
-  }
-
-  try {
-    const ranged = await fetch(url, {
-      method: 'GET',
-      headers: { ...HEADERS, Range: 'bytes=0-0' },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    return {
-      status: ranged.status,
-      contentType: ranged.headers.get('content-type'),
-    };
-  } catch (error) {
-    return { status: 0, error: error.message };
-  }
+  const outcome = await probeUrl(url, { timeoutMs: TIMEOUT_MS });
+  return {
+    status: outcome.status,
+    contentType: outcome.contentType,
+    error: outcome.error,
+  };
 }
 
 async function run(targets) {

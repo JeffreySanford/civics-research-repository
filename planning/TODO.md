@@ -18,9 +18,11 @@ The ordered near-term plan. Everything here outranks new source adapters and new
       genuinely the publisher's: file size and publication date now come from a HEAD request
       against the source, with the compiled values as fallback when the host is unreachable.
       The first live run corrected the compiled release date by a day.
-- [ ] Harvest the catalog itself. Which files exist, and for which vintages, is still curated in
-      `tools/dspace/catalog.json` rather than discovered from the Census and USGS APIs. That is a
-      larger piece of work than the per-file facts, and `verify:sources` is the interim guard.
+- [x] Harvest the catalog itself. `tools/scripts/harvest-catalog.mjs` verifies publisher URLs,
+      probes for newer vintages on enabled programs, and can apply vintage bumps with `--write`.
+      Full auto-discovery of every Census product remains deferred; discoverers are extensible per
+      program. `pnpm run catalog:harvest` is the entry point; `verify:sources` remains the gate
+      after catalog edits.
 - [x] Reconcile the file manifest as `crr.file.manifest` metadata so `sync:diff` reaches `SKIP_ITEM`.
 - [x] Scope the diff to the fields synchronization owns, so DSpace bookkeeping metadata is not reported as drift.
 
@@ -432,9 +434,9 @@ Goal: describe a credible container-first modernization path without requiring p
 
 ### Sprint 6.2 - Interview Demo Package
 
-- [ ] Create demo script.
+- [x] Create demo script.
 - [ ] Create architecture walkthrough.
-- [ ] Create dataset ingestion walkthrough.
+- [x] Create dataset ingestion walkthrough.
 - [ ] Create accessibility evidence walkthrough.
-- [ ] Create mapping/USGS overlay walkthrough.
-- [ ] Create known tradeoffs and next steps document.
+- [x] Create mapping/USGS overlay walkthrough.
+- [x] Create known tradeoffs and next steps document.

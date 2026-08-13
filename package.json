@@ -83,6 +83,7 @@
     "fixture:check": "node tools/scripts/check-fixture-catalog.mjs",
     "verify:sources": "node tools/scripts/verify-source-urls.mjs",
     "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",
+    "catalog:harvest": "node tools/scripts/harvest-catalog.mjs",
     "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
   },
   "dependencies": {
