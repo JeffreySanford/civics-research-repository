@@ -46,6 +46,9 @@ test.describe('map layer controls', () => {
       name: 'TIGER/Line boundary',
     });
 
+    await lodes.check();
+    await tiger.check();
+
     await expect(page.getByText('2023 LODES workplace flow')).toBeVisible();
     await expect(page.getByText('2025 TIGER/Line Census area')).toBeVisible();
 
@@ -66,6 +69,11 @@ test.describe('map layer controls', () => {
     await page
       .getByRole('group', { name: 'Map layer controls' })
       .getByRole('checkbox', { name: 'LODES workplace flow sample' })
+      .check();
+
+    await page
+      .getByRole('group', { name: 'Map layer controls' })
+      .getByRole('checkbox', { name: 'LODES workplace flow sample' })
       .uncheck();
 
     await expect(page).toHaveURL(/lodes=off/);
@@ -83,6 +91,17 @@ test.describe('map layer controls', () => {
   test('selecting a Census area loads that area layers @maps', async ({
     page,
   }) => {
+    const layerControls = page.getByRole('group', {
+      name: 'Map layer controls',
+    });
+
+    await layerControls
+      .getByRole('checkbox', { name: 'TIGER/Line boundary' })
+      .check();
+    await layerControls
+      .getByRole('checkbox', { name: 'LODES workplace flow sample' })
+      .check();
+
     await expect(
       page.getByText('2025 TIGER/Line Census area preview - North Dakota'),
     ).toBeVisible();
@@ -106,7 +125,7 @@ test.describe('map layer controls', () => {
   test('a dataset opens the map on its own geography @maps', async ({
     page,
   }) => {
-    await page.goto('/maps?area=Texas');
+    await page.goto('/maps?area=Texas&tiger=on&lodes=on');
 
     await expect(
       page.getByText('2025 TIGER/Line Census area preview - Texas'),

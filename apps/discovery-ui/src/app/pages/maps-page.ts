@@ -63,6 +63,8 @@ import {
 } from '../state/maps/maps.selectors';
 import {
   configureMapLibreWorker,
+  findCensusAreaForPoint,
+  MIN_ZOOM_FOR_PAN_AREA_SYNC,
   readMapDebugSnapshot,
   type MapDebugSnapshot,
   whenMapStyleReady,
@@ -137,12 +139,20 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingHydrographyLayer: MapLayer | null = null;
   /** True once the MapLibre style is parsed; overlays must not wait for raster tiles. */
   private mapStyleReady = false;
-  private tigerVisible = true;
-  private earthquakeVisible = true;
-  private lodesVisible = true;
+  private tigerVisible = false;
+  private earthquakeVisible = false;
+  private lodesVisible = false;
   private hydrographyVisible = false;
-  private saipeVisible = true;
+  private saipeVisible = false;
   private selectedFeatureId: string | null = null;
+  private censusAreaBoundaries: readonly CensusAreaBoundary[] = [];
+  private selectedGeography = 'North Dakota';
+  /** Skips pan-driven area sync while fitBounds runs after a dropdown change. */
+  private skipPanAreaSync = false;
+  /** Skips fitBounds while pan-driven area sync updates boundary data in place. */
+  private suppressBoundaryFit = false;
+  private panAreaSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  protected readonly areaSyncAnnouncement = signal<string | null>(null);
   protected readonly layerTooltips = {
     tiger:
       'Shows the Census TIGER/Line state or area boundary for the selected geography. Helps anchor discovery results to official Census boundaries.',
@@ -291,6 +301,18 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         this.renderHydrographyLayer();
       });
 
+    this.censusAreaBoundaries$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((boundaries) => {
+        this.censusAreaBoundaries = boundaries;
+      });
+
+    this.selectedGeography$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((geography) => {
+        this.selectedGeography = geography;
+      });
+
     // Selection drives the map. The list is the other half of this and sets selection through
     // selectFeature, so either view can originate a change and both reflect it.
     this.selectedFeature$
@@ -302,6 +324,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         if (feature) {
           // easeTo, not a focus change: moving the viewport must never move focus away from the
           // control the user is operating.
+          this.skipPanAreaSync = true;
           this.map?.easeTo({
             center: [feature.longitude, feature.latitude],
             zoom: Math.max(this.map.getZoom(), 6),
@@ -396,8 +419,78 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected selectCensusArea(geography: string): void {
+    this.suppressBoundaryFit = false;
     this.store.dispatch(MapsActions.censusAreaSelected({ geography }));
     this.updateMapUrl({ geography });
+  }
+
+  private syncCensusAreaFromMapCenter(): void {
+    if (
+      !this.map ||
+      this.skipPanAreaSync ||
+      this.censusAreaBoundaries.length === 0
+    ) {
+      return;
+    }
+
+    if (this.map.getZoom() < MIN_ZOOM_FOR_PAN_AREA_SYNC) {
+      return;
+    }
+
+    const center = this.map.getCenter();
+    const match = findCensusAreaForPoint(
+      this.censusAreaBoundaries,
+      center.lng,
+      center.lat,
+    );
+
+    if (!match || match.geography === this.selectedGeography) {
+      return;
+    }
+
+    this.suppressBoundaryFit = true;
+    this.store.dispatch(
+      MapsActions.censusAreaSelected({ geography: match.geography }),
+    );
+    this.updateMapUrl({ geography: match.geography });
+    this.areaSyncAnnouncement.set(
+      `Census area updated to ${match.geography} based on map center.`,
+    );
+  }
+
+  private schedulePanAreaSync(): void {
+    if (this.panAreaSyncTimer !== null) {
+      clearTimeout(this.panAreaSyncTimer);
+    }
+
+    this.panAreaSyncTimer = setTimeout(() => {
+      this.panAreaSyncTimer = null;
+      this.syncCensusAreaFromMapCenter();
+    }, 300);
+  }
+
+  private bindPanAreaSync(): void {
+    if (!this.map) {
+      return;
+    }
+
+    const onMoveEnd = (): void => {
+      if (this.skipPanAreaSync) {
+        this.skipPanAreaSync = false;
+        return;
+      }
+
+      this.schedulePanAreaSync();
+    };
+
+    this.map.on('moveend', onMoveEnd);
+    this.destroyRef.onDestroy(() => {
+      if (this.panAreaSyncTimer !== null) {
+        clearTimeout(this.panAreaSyncTimer);
+      }
+
+      this.map?.off('moveend', onMoveEnd);
+    });
   }
 
   protected toggleMapDebugPanel(): void {
@@ -613,6 +706,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.mapStyleReady = true;
       this.syncMapOverlays();
       this.bindMapDebugUpdates();
+      this.bindPanAreaSync();
     });
   }
 
@@ -1031,6 +1125,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private fitSelectedBoundary(boundary: CensusAreaBoundary): void {
+    if (this.suppressBoundaryFit) {
+      this.suppressBoundaryFit = false;
+      return;
+    }
+
+    this.skipPanAreaSync = true;
     this.map?.fitBounds(
       [
         [boundary.west, boundary.south],

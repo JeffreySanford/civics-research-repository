@@ -66,6 +66,10 @@ test.describe('map layer MapLibre visibility', () => {
   test('turning one layer off leaves the other MapLibre groups visible @maps', async ({
     page,
   }) => {
+    for (const group of MAP_LAYER_VISIBILITY_GROUPS) {
+      await page.getByTestId(group.toggleTestId).check();
+    }
+
     await page.getByTestId('map-layer-lodes').uncheck();
     await expect(page.getByTestId('map-layer-lodes')).not.toBeChecked();
 

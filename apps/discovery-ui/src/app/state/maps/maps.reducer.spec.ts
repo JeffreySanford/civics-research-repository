@@ -8,6 +8,14 @@ import {
 } from './maps.selectors';
 
 describe('mapsReducer', () => {
+  it('defaults every map layer toggle to hidden', () => {
+    expect(initialMapsState.tigerVisible).toBe(false);
+    expect(initialMapsState.lodesVisible).toBe(false);
+    expect(initialMapsState.saipeVisible).toBe(false);
+    expect(initialMapsState.hydrographyVisible).toBe(false);
+    expect(initialMapsState.earthquakeVisible).toBe(false);
+  });
+
   const censusAreaBoundary = {
     id: 'north-dakota',
     label: 'North Dakota Census area boundary preview',

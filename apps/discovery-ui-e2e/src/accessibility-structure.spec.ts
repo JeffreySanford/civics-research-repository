@@ -288,6 +288,11 @@ test.describe('accessibility structure', () => {
   }) => {
     await page.goto('/maps');
 
+    await expect(page.getByLabel('TIGER/Line boundary')).not.toBeChecked();
+    await expect(page.getByLabel('USGS earthquake overlay')).not.toBeChecked();
+
+    await page.getByLabel('TIGER/Line boundary').check();
+    await page.getByLabel('USGS earthquake overlay').check();
     await expect(page.getByLabel('TIGER/Line boundary')).toBeChecked();
     await expect(page.getByLabel('USGS earthquake overlay')).toBeChecked();
 
@@ -303,7 +308,7 @@ test.describe('accessibility structure', () => {
   test('the feature list carries every mapped event with place and magnitude @wcag @section508', async ({
     page,
   }) => {
-    await page.goto('/maps');
+    await page.goto('/maps?earthquakes=on');
 
     const overlay = await page.evaluate(async () => {
       const response = await fetch(
@@ -354,7 +359,7 @@ test.describe('accessibility structure', () => {
   test('map selection is announced through a status region @wcag @section508', async ({
     page,
   }) => {
-    await page.goto('/maps');
+    await page.goto('/maps?earthquakes=on');
 
     const announcement = page.locator('p.feature-announcement');
     await expect(announcement).toHaveAttribute('role', 'status');

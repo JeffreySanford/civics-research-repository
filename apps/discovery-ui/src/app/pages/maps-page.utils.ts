@@ -1,4 +1,8 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
+import type { CensusAreaBoundary } from 'repository-api-client';
+
+/** Map zoom must reach this level before panning can auto-select a census area. */
+export const MIN_ZOOM_FOR_PAN_AREA_SYNC = 5;
 
 /** MapLibre module shape used when configuring the GeoJSON worker. */
 export type MapLibreModule = {
@@ -105,6 +109,34 @@ export function readMapDebugSnapshot(
  * Use `isStyleLoaded()`, not `getStyle()`: the style object can exist before the style is ready,
  * and `style.load` may have already fired before a listener is attached.
  */
+/** Returns the census area whose bounding box contains the point, if any. */
+export function findCensusAreaForPoint(
+  boundaries: readonly CensusAreaBoundary[],
+  longitude: number,
+  latitude: number,
+): CensusAreaBoundary | null {
+  const matches = boundaries.filter(
+    (boundary) =>
+      longitude >= boundary.west &&
+      longitude <= boundary.east &&
+      latitude >= boundary.south &&
+      latitude <= boundary.north,
+  );
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  return matches.reduce((smallest, current) => {
+    const smallestArea =
+      (smallest.east - smallest.west) * (smallest.north - smallest.south);
+    const currentArea =
+      (current.east - current.west) * (current.north - current.south);
+
+    return currentArea < smallestArea ? current : smallest;
+  });
+}
+
 export function whenMapStyleReady(
   map: MapLibreMap | null,
   callback: () => void,

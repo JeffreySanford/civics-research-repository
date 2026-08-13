@@ -202,7 +202,7 @@ test.describe('demo storyboard checks', () => {
   test('map storyboard can switch Census area while retaining USGS overlay @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?area=California');
+    await page.goto('/maps?area=California&tiger=on&lodes=on&earthquakes=on');
 
     await page.locator('select option').first().waitFor({ state: 'attached' });
     await expect(page.locator('select option')).toHaveCount(3);
@@ -229,7 +229,7 @@ test.describe('demo storyboard checks', () => {
   test('map layer controls update visible layer evidence @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps');
+    await page.goto('/maps?tiger=on&lodes=on&earthquakes=on');
 
     await expect(
       page.getByText('North Dakota TIGER/Line preview'),
@@ -301,7 +301,7 @@ test.describe('demo storyboard checks', () => {
   test('map overlay stale and error states keep Census layers visible @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?overlay=stale');
+    await page.goto('/maps?overlay=stale&tiger=on&lodes=on&earthquakes=on');
 
     await expect(
       page.getByText('USGS overlay data may be stale').first(),
@@ -316,7 +316,7 @@ test.describe('demo storyboard checks', () => {
     ).toBeVisible();
     await expect(page.getByText('Stale', { exact: true })).toBeVisible();
 
-    await page.goto('/maps?overlay=error');
+    await page.goto('/maps?overlay=error&tiger=on&lodes=on&earthquakes=on');
 
     await expect(
       page.getByText('USGS earthquake overlay unavailable').first(),
@@ -391,7 +391,7 @@ test.describe('map and feature list selection', () => {
   test('keyboard focus on a feature selects it and announces it @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps');
+    await page.goto('/maps?earthquakes=on');
     await expect(page.getByText('No map feature selected.')).toBeVisible();
 
     await page
@@ -411,7 +411,7 @@ test.describe('map and feature list selection', () => {
   test('only one feature is selected at a time @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps');
+    await page.goto('/maps?earthquakes=on');
 
     await page.getByRole('button', { name: /Western North Dakota/ }).click();
     await page.getByRole('button', { name: /Central North Dakota/ }).click();
@@ -427,7 +427,7 @@ test.describe('map and feature list selection', () => {
   test('a selected feature can be restored from the URL @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?feature=demo-eastern-nd');
+    await page.goto('/maps?feature=demo-eastern-nd&earthquakes=on');
 
     await expect(
       page.getByRole('button', { name: /Eastern North Dakota/ }),
@@ -438,7 +438,7 @@ test.describe('map and feature list selection', () => {
   test('clearing selection restores the empty announcement @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?feature=demo-eastern-nd');
+    await page.goto('/maps?feature=demo-eastern-nd&earthquakes=on');
 
     await page.getByRole('button', { name: 'Clear selected feature' }).click();
 
@@ -452,7 +452,7 @@ test.describe('map and feature list selection', () => {
   test('hiding the overlay clears the selection @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?feature=demo-eastern-nd');
+    await page.goto('/maps?feature=demo-eastern-nd&earthquakes=on');
     await expect(page.getByText(/Selected Eastern North Dakota/)).toBeVisible();
 
     await page.getByLabel('USGS earthquake overlay').uncheck();

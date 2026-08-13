@@ -139,7 +139,11 @@
 
   @if (loading$ | async) {
   <p class="inline-status" role="status">Loading map data from the API</p>
-  } @if (error$ | async; as error) {
+  }
+  <p class="area-sync-announcement" role="status" aria-live="polite">
+    @if (areaSyncAnnouncement()) { {{ areaSyncAnnouncement() }} }
+  </p>
+  @if (error$ | async; as error) {
   <p class="error-message" role="alert">{{ error }}</p>
   } @if (earthquakeError$ | async; as earthquakeError) {
   <p class="warning-message" role="status">
