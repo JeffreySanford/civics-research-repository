@@ -435,8 +435,8 @@ Goal: describe a credible container-first modernization path without requiring p
 ### Sprint 6.2 - Interview Demo Package
 
 - [x] Create demo script.
-- [ ] Create architecture walkthrough.
+- [x] Create architecture walkthrough.
 - [x] Create dataset ingestion walkthrough.
-- [ ] Create accessibility evidence walkthrough.
+- [x] Create accessibility evidence walkthrough.
 - [x] Create mapping/USGS overlay walkthrough.
 - [x] Create known tradeoffs and next steps document.
