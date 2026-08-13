@@ -1487,24 +1487,24 @@
       ]
     },
     {
-      "id": "business-dynamics-statistics-2022",
-      "title": "2022 Business Dynamics Statistics",
+      "id": "business-dynamics-statistics-2023",
+      "title": "2023 Business Dynamics Statistics",
       "program": "BUSINESS_DYNAMICS",
       "publisher": "U.S. Census Bureau",
       "summary": "Business Dynamics Statistics metadata describing establishment openings, closings, job creation, and job destruction.",
       "geography": "United States",
       "geographyLevel": "National",
-      "vintageYear": 2022,
-      "releasedOn": "2022-09-01",
-      "citation": "U.S. Census Bureau. 2022 Business Dynamics Statistics.",
-      "sourceUrl": "https://www2.census.gov/programs-surveys/bds/tables/time-series/2022/bds2022.csv",
+      "vintageYear": 2023,
+      "releasedOn": "2023-09-01",
+      "citation": "U.S. Census Bureau. 2023 Business Dynamics Statistics.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/bds/tables/time-series/2023/bds2023.csv",
       "documentationUrl": "https://www.census.gov/programs-surveys/bds/documentation.html",
       "files": [
         {
           "id": "data-page",
           "label": "Business Dynamics Statistics data page",
           "format": "OTHER",
-          "url": "https://www2.census.gov/programs-surveys/bds/tables/time-series/2022/bds2022.csv"
+          "url": "https://www2.census.gov/programs-surveys/bds/tables/time-series/2023/bds2023.csv"
         },
         {
           "id": "documentation",
@@ -1543,24 +1543,24 @@
       ]
     },
     {
-      "id": "cps-public-use-2024",
-      "title": "2024 Current Population Survey Public Use Data",
+      "id": "cps-public-use-2025",
+      "title": "2025 Current Population Survey Public Use Data",
       "program": "CPS",
       "publisher": "U.S. Census Bureau",
       "summary": "Current Population Survey public-use metadata for labor force, employment, and demographic research.",
       "geography": "United States",
       "geographyLevel": "National",
-      "vintageYear": 2024,
-      "releasedOn": "2024-09-01",
-      "citation": "U.S. Census Bureau. Current Population Survey Public Use Data, 2024.",
-      "sourceUrl": "https://www2.census.gov/programs-surveys/cps/datasets/2024/basic/jan24pub.zip",
+      "vintageYear": 2025,
+      "releasedOn": "2025-09-01",
+      "citation": "U.S. Census Bureau. Current Population Survey Public Use Data, 2025.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/cps/datasets/2025/basic/jan25pub.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/cps/technical-documentation/complete.html",
       "files": [
         {
           "id": "source-directory",
           "label": "CPS basic monthly data directory",
           "format": "OTHER",
-          "url": "https://www2.census.gov/programs-surveys/cps/datasets/2024/basic/jan24pub.zip"
+          "url": "https://www2.census.gov/programs-surveys/cps/datasets/2025/basic/jan25pub.zip"
         },
         {
           "id": "technical-documentation",
@@ -2999,24 +2999,24 @@
       ]
     },
     {
-      "id": "saipe-2023",
-      "title": "2023 Small Area Income and Poverty Estimates",
+      "id": "saipe-2024",
+      "title": "2024 Small Area Income and Poverty Estimates",
       "program": "SAIPE",
       "publisher": "U.S. Census Bureau",
       "summary": "Small Area Income and Poverty Estimates metadata for county and school district income and poverty measures.",
       "geography": "United States",
       "geographyLevel": "County",
-      "vintageYear": 2023,
-      "releasedOn": "2023-12-01",
-      "citation": "U.S. Census Bureau. 2023 Small Area Income and Poverty Estimates.",
-      "sourceUrl": "https://www2.census.gov/programs-surveys/saipe/datasets/2023/2023-state-and-county/est23all.txt",
+      "vintageYear": 2024,
+      "releasedOn": "2024-12-01",
+      "citation": "U.S. Census Bureau. 2024 Small Area Income and Poverty Estimates.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/saipe/datasets/2024/2024-state-and-county/est24all.txt",
       "documentationUrl": "https://www.census.gov/programs-surveys/saipe/technical-documentation.html",
       "files": [
         {
           "id": "datasets-page",
           "label": "SAIPE datasets page",
           "format": "OTHER",
-          "url": "https://www2.census.gov/programs-surveys/saipe/datasets/2023/2023-state-and-county/est23all.txt"
+          "url": "https://www2.census.gov/programs-surveys/saipe/datasets/2024/2024-state-and-county/est24all.txt"
         },
         {
           "id": "technical-documentation",
@@ -3027,24 +3027,24 @@
       ]
     },
     {
-      "id": "sipp-public-use-2024",
-      "title": "2024 SIPP Public Use Data",
+      "id": "sipp-public-use-2025",
+      "title": "2025 SIPP Public Use Data",
       "program": "SIPP",
       "publisher": "U.S. Census Bureau",
       "summary": "Survey of Income and Program Participation public-use metadata for longitudinal income, program participation, and household research.",
       "geography": "United States",
       "geographyLevel": "National",
-      "vintageYear": 2024,
-      "releasedOn": "2024-09-01",
-      "citation": "U.S. Census Bureau. Survey of Income and Program Participation Public Use Data, 2024.",
-      "sourceUrl": "https://www2.census.gov/programs-surveys/sipp/data/datasets/2024/pu2024_csv.zip",
+      "vintageYear": 2025,
+      "releasedOn": "2025-09-01",
+      "citation": "U.S. Census Bureau. Survey of Income and Program Participation Public Use Data, 2025.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/sipp/data/datasets/2025/pu2025_csv.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/sipp/tech-documentation.html",
       "files": [
         {
           "id": "source-archive",
           "label": "SIPP public use archive",
           "format": "CSV",
-          "url": "https://www2.census.gov/programs-surveys/sipp/data/datasets/2024/pu2024_csv.zip"
+          "url": "https://www2.census.gov/programs-surveys/sipp/data/datasets/2025/pu2025_csv.zip"
         },
         {
           "id": "technical-documentation",
