@@ -1,141 +1,143 @@
-<section aria-labelledby="search-heading" class="search-panel">
-  <div>
-    <p class="eyebrow">Discovery</p>
-    <h1 id="search-heading">Find research objects</h1>
-    <p>
-      Initial search will focus on TIGER/Line, LODES, ACS PUMS, SIPP, CPS, and
-      USGS overlay metadata.
-    </p>
-  </div>
-
-  <form
-    class="search-form"
-    role="search"
-    aria-label="Repository search"
-    (submit)="$event.preventDefault(); submitSearch()"
-  >
-    <label for="repository-search">Search terms</label>
-    <div class="search-row">
-      <input
-        id="repository-search"
-        name="repository-search"
-        type="search"
-        autocomplete="off"
-        [formControl]="searchControl"
-        placeholder="Search by state, program, publisher, or topic"
-      />
-      <button mat-flat-button type="submit" [disabled]="loading$ | async">
-        Search
-      </button>
+<div class="page-stack">
+  <section aria-labelledby="search-heading" class="search-panel">
+    <div>
+      <p class="eyebrow">Discovery</p>
+      <h1 id="search-heading">Find research objects</h1>
+      <p>
+        Initial search will focus on TIGER/Line, LODES, ACS PUMS, SIPP, CPS, and
+        USGS overlay metadata.
+      </p>
     </div>
-  </form>
-</section>
 
-<section aria-labelledby="discovery-results-heading" class="discovery-layout">
-  <aside class="content-panel" aria-labelledby="filter-heading">
-    <p class="eyebrow">Filters</p>
-    <h2 id="filter-heading">Facets</h2>
-
-    @if (facets$ | async; as facets) { @if (facets.length > 0) {
-    <div class="facet-list">
-      @for (facet of facets; track facet.field) {
-      <section [attr.aria-labelledby]="'facet-' + facet.field">
-        <h3 [id]="'facet-' + facet.field">{{ facet.label }}</h3>
-        @if (facet.field === 'program') {
-        <p class="facet-hint">
-          Select any number of programs. TIGER/Line, LODES, and ACS are selected
-          by default.
-        </p>
-        }
-        <div class="facet-values">
-          @for (value of facet.values; track value.value) {
-          <button
-            mat-stroked-button
-            type="button"
-            [class.selected]="value.selected"
-            [attr.aria-pressed]="value.selected"
-            [disabled]="facet.field !== 'program' && facet.field !== 'geography'"
-            (click)="selectFacet(facet.field, value.value)"
-          >
-            {{ value.label }} ({{ value.count }})
-          </button>
-          }
-        </div>
-        @if (facet.field === 'program') {
-        <button type="button" class="facet-reset" (click)="resetPrograms()">
-          Reset to default programs
+    <form
+      class="search-form"
+      role="search"
+      aria-label="Repository search"
+      (submit)="$event.preventDefault(); submitSearch()"
+    >
+      <label for="repository-search">Search terms</label>
+      <div class="search-row">
+        <input
+          id="repository-search"
+          name="repository-search"
+          type="search"
+          autocomplete="off"
+          [formControl]="searchControl"
+          placeholder="Search by state, program, publisher, or topic"
+        />
+        <button mat-flat-button type="submit" [disabled]="loading$ | async">
+          Search
         </button>
-        }
-      </section>
-      }
-    </div>
-    <button mat-button type="button" (click)="clearFilters()">
-      Clear filters
-    </button>
-    } @else {
-    <p>No facets available yet.</p>
-    } }
-  </aside>
-
-  <div class="content-panel">
-    <div class="results-heading">
-      <div>
-        <p class="eyebrow">Results</p>
-        <h2 id="discovery-results-heading">
-          {{ totalResults$ | async }} research objects
-        </h2>
       </div>
+    </form>
+  </section>
 
-      @if (loading$ | async) {
-      <div class="inline-status" role="status">
-        <mat-spinner diameter="24"></mat-spinner>
-        <span>Searching</span>
-      </div>
-      }
-    </div>
+  <section aria-labelledby="discovery-results-heading" class="discovery-layout">
+    <aside class="content-panel" aria-labelledby="filter-heading">
+      <p class="eyebrow">Filters</p>
+      <h2 id="filter-heading">Facets</h2>
 
-    @if (error$ | async; as error) {
-    <p class="error-message" role="alert">{{ error }}</p>
-    } @if ((resultSource$ | async) === 'FIXTURE') {
-    <p class="fixture-notice" role="status">
-      <strong>Placeholder data.</strong> The repository is unavailable or holds
-      no items, so these records are generated examples rather than DSpace
-      repository content. Start DSpace and reseed to see repository-backed
-      results.
-    </p>
-    } @if (results$ | async; as results) { @if (results.length > 0) {
-    <ol class="result-list">
-      @for (result of results; track result.id) {
-      <li>
-        <article>
-          <div class="result-meta">
-            <span>{{ result.program }}</span>
-            <span>{{ result.contentType }}</span>
-            @if (result.geography) {
-            <span>{{ result.geography }}</span>
-            } @if (result.vintageYear) {
-            <span>{{ result.vintageYear }}</span>
+      @if (facets$ | async; as facets) { @if (facets.length > 0) {
+      <div class="facet-list">
+        @for (facet of facets; track facet.field) {
+        <section [attr.aria-labelledby]="'facet-' + facet.field">
+          <h3 [id]="'facet-' + facet.field">{{ facet.label }}</h3>
+          @if (facet.field === 'program') {
+          <p class="facet-hint">
+            Select any number of programs. TIGER/Line, LODES, and ACS are
+            selected by default.
+          </p>
+          }
+          <div class="facet-values">
+            @for (value of facet.values; track value.value) {
+            <button
+              mat-stroked-button
+              type="button"
+              [class.selected]="value.selected"
+              [attr.aria-pressed]="value.selected"
+              [disabled]="facet.field !== 'program' && facet.field !== 'geography'"
+              (click)="selectFacet(facet.field, value.value)"
+            >
+              {{ value.label }} ({{ value.count }})
+            </button>
             }
           </div>
-          <h3>{{ result.title }}</h3>
-          <p>{{ result.summary }}</p>
-          <a class="source-link" [routerLink]="['/datasets', result.id]">
-            Dataset detail
-          </a>
-          <a
-            class="source-link"
-            [href]="result.sourceUrl"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Source data
-          </a>
-        </article>
-      </li>
-      }
-    </ol>
-    } @else if ((loading$ | async) === false) {
-    <p class="empty-state">No research objects matched this search.</p>
-    } }
-  </div>
-</section>
+          @if (facet.field === 'program') {
+          <button type="button" class="facet-reset" (click)="resetPrograms()">
+            Reset to default programs
+          </button>
+          }
+        </section>
+        }
+      </div>
+      <button mat-button type="button" (click)="clearFilters()">
+        Clear filters
+      </button>
+      } @else {
+      <p>No facets available yet.</p>
+      } }
+    </aside>
+
+    <div class="content-panel">
+      <div class="results-heading">
+        <div>
+          <p class="eyebrow">Results</p>
+          <h2 id="discovery-results-heading">
+            {{ totalResults$ | async }} research objects
+          </h2>
+        </div>
+
+        @if (loading$ | async) {
+        <div class="inline-status" role="status">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>Searching</span>
+        </div>
+        }
+      </div>
+
+      @if (error$ | async; as error) {
+      <p class="error-message" role="alert">{{ error }}</p>
+      } @if ((resultSource$ | async) === 'FIXTURE') {
+      <p class="fixture-notice" role="status">
+        <strong>Placeholder data.</strong> The repository is unavailable or
+        holds no items, so these records are generated examples rather than
+        DSpace repository content. Start DSpace and reseed to see
+        repository-backed results.
+      </p>
+      } @if (results$ | async; as results) { @if (results.length > 0) {
+      <ol class="result-list">
+        @for (result of results; track result.id) {
+        <li>
+          <article>
+            <div class="result-meta">
+              <span>{{ result.program }}</span>
+              <span>{{ result.contentType }}</span>
+              @if (result.geography) {
+              <span>{{ result.geography }}</span>
+              } @if (result.vintageYear) {
+              <span>{{ result.vintageYear }}</span>
+              }
+            </div>
+            <h3>{{ result.title }}</h3>
+            <p>{{ result.summary }}</p>
+            <a class="source-link" [routerLink]="['/datasets', result.id]">
+              Dataset detail
+            </a>
+            <a
+              class="source-link"
+              [href]="result.sourceUrl"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source data
+            </a>
+          </article>
+        </li>
+        }
+      </ol>
+      } @else if ((loading$ | async) === false) {
+      <p class="empty-state">No research objects matched this search.</p>
+      } }
+    </div>
+  </section>
+</div>

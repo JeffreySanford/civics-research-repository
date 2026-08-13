@@ -1,179 +1,171 @@
-<section aria-labelledby="evidence-heading" class="content-panel">
-  <p class="eyebrow">Accessibility evidence</p>
-  <h1 id="evidence-heading">WCAG and Section 508 status</h1>
-  <p>
-    Repeatable automated scans run through Playwright and axe-core on every
-    release gate. Manual keyboard, screen-reader, and map-equivalence
-    checklists exist but are not yet recorded with assistive technology.
-  </p>
-
-  @if (loading$ | async) {
-  <div class="inline-status" role="status">
-    <mat-spinner diameter="24"></mat-spinner>
-    <span>Loading accessibility evidence</span>
-  </div>
-  } @if (error$ | async; as error) {
-  <p class="error-message" role="alert">{{ error }}</p>
-  }
-
-  @if (overallAutomatedStatus$ | async; as overallStatus) {
-  <div class="evidence-summary" role="status">
+<div class="page-stack">
+  <section aria-labelledby="evidence-heading" class="content-panel">
+    <p class="eyebrow">Accessibility evidence</p>
+    <h1 id="evidence-heading">WCAG and Section 508 status</h1>
     <p>
-      <strong>Latest automated baseline:</strong>
-      {{ evidenceStatusLabel(overallStatus) }}
-      @if (latestCapturedAt$ | async; as capturedAt) {
-      <span>({{ capturedAt | date: 'mediumDate' }})</span>
-      }
+      Repeatable automated scans run through Playwright and axe-core on every
+      release gate. Manual keyboard, screen-reader, and map-equivalence
+      checklists exist but are not yet recorded with assistive technology.
     </p>
-    @if (checkCounts$ | async; as counts) { @if (counts.total > 0) {
+
+    @if (loading$ | async) {
+    <div class="inline-status" role="status">
+      <mat-spinner diameter="24"></mat-spinner>
+      <span>Loading accessibility evidence</span>
+    </div>
+    } @if (error$ | async; as error) {
+    <p class="error-message" role="alert">{{ error }}</p>
+    } @if (overallAutomatedStatus$ | async; as overallStatus) {
+    <div class="evidence-summary" role="status">
+      <p>
+        <strong>Latest automated baseline:</strong>
+        {{ evidenceStatusLabel(overallStatus) }} @if (latestCapturedAt$ | async;
+        as capturedAt) {
+        <span>({{ capturedAt | date: 'mediumDate' }})</span>
+        }
+      </p>
+      @if (checkCounts$ | async; as counts) { @if (counts.total > 0) {
+      <p>
+        Approximately {{ counts.total }} automated checks recorded across axe,
+        structural, reflow, and storyboard suites.
+      </p>
+      } }
+      <p class="warning-message">
+        Passing automated scans is necessary, not sufficient, for Section 508 —
+        especially for the map workspace where the accessible feature list is
+        the conformance path.
+      </p>
+    </div>
+    }
+  </section>
+
+  @if (automatedEntries$ | async; as automatedEntries) {
+  <section aria-labelledby="automated-evidence-heading" class="content-panel">
+    <h2 id="automated-evidence-heading">Automated test summary</h2>
     <p>
-      Approximately {{ counts.total }} automated checks recorded across axe,
-      structural, reflow, and storyboard suites.
+      Console reports from <code>pnpm run wcag:report</code>,
+      <code>pnpm run section508:report</code>, and
+      <code>pnpm run storyboard</code>. Transient Playwright output lands in
+      <code>playwright-report/</code> and <code>test-results/</code> locally.
     </p>
+
+    @if (automatedEntries.length > 0) {
+    <table class="evidence-table">
+      <caption class="visually-hidden">
+        Automated accessibility evidence workflows
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Workflow</th>
+          <th scope="col">Standard</th>
+          <th scope="col">Status</th>
+          <th scope="col">Captured</th>
+          <th scope="col">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of automatedEntries; track entry.id) {
+        <tr>
+          <th scope="row">{{ entry.workflow }}</th>
+          <td>{{ standardLabel(entry.standard) }}</td>
+          <td>{{ evidenceStatusLabel(entry.status) }}</td>
+          <td>{{ entry.capturedAt | date: 'mediumDate' }}</td>
+          <td>
+            {{ entry.notes }} @if (extractArtifactPath(entry.notes); as
+            artifactPath) {
+            <span class="artifact-path">Artifact: {{ artifactPath }}</span>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    } @else { @if ((loading$ | async) === false) {
+    <p>No automated evidence entries are available.</p>
     } }
-    <p class="warning-message">
-      Passing automated scans is necessary, not sufficient, for Section 508 —
-      especially for the map workspace where the accessible feature list is the
-      conformance path.
+  </section>
+  }
+
+  <section aria-labelledby="manual-evidence-heading" class="content-panel">
+    <h2 id="manual-evidence-heading">Manual checklist status</h2>
+    <p>
+      Executable checklists live in
+      <code>documentation/accessibility-manual-evidence.md</code>. Record
+      completed runs under
+      <code>documentation/accessibility-evidence/release-checklists/</code>.
     </p>
-  </div>
-  }
-</section>
 
-@if (automatedEntries$ | async; as automatedEntries) {
-<section aria-labelledby="automated-evidence-heading" class="content-panel">
-  <h2 id="automated-evidence-heading">Automated test summary</h2>
-  <p>
-    Console reports from <code>pnpm run wcag:report</code>,
-    <code>pnpm run section508:report</code>, and
-    <code>pnpm run storyboard</code>. Transient Playwright output lands in
-    <code>playwright-report/</code> and <code>test-results/</code> locally.
-  </p>
+    @if (manualEntries$ | async; as manualEntries) {
+    <table class="evidence-table">
+      <caption class="visually-hidden">
+        Manual accessibility checklist completion status
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Checklist</th>
+          <th scope="col">Items</th>
+          <th scope="col">Status</th>
+          <th scope="col">Priority note</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (checklist of manualChecklists; track checklist.id) {
+        <tr>
+          <th scope="row">
+            {{ checklist.name }}
+            <span class="checklist-ref">({{ checklist.wcagReference }})</span>
+          </th>
+          <td>{{ checklist.itemCount }}</td>
+          <td>
+            {{ manualChecklistStatus( indexEvidenceById(manualEntries),
+            checklist.id ) }}
+          </td>
+          <td>
+            {{ checklist.priorityNote ??
+            (indexEvidenceById(manualEntries).get(checklist.id)?.notes ?? 'Not
+            recorded') }}
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    }
+  </section>
 
-  @if (automatedEntries.length > 0) {
-  <table class="evidence-table">
-    <caption class="visually-hidden">
-      Automated accessibility evidence workflows
-    </caption>
-    <thead>
-      <tr>
-        <th scope="col">Workflow</th>
-        <th scope="col">Standard</th>
-        <th scope="col">Status</th>
-        <th scope="col">Captured</th>
-        <th scope="col">Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (entry of automatedEntries; track entry.id) {
-      <tr>
-        <th scope="row">{{ entry.workflow }}</th>
-        <td>{{ standardLabel(entry.standard) }}</td>
-        <td>{{ evidenceStatusLabel(entry.status) }}</td>
-        <td>{{ entry.capturedAt | date: 'mediumDate' }}</td>
-        <td>
-          {{ entry.notes }}
-          @if (extractArtifactPath(entry.notes); as artifactPath) {
-          <span class="artifact-path">Artifact: {{ artifactPath }}</span>
-          }
-        </td>
-      </tr>
+  <section aria-labelledby="wcag-criteria-heading" class="content-panel">
+    <h2 id="wcag-criteria-heading">WCAG criteria with automated coverage</h2>
+    <p>
+      These criteria have machine-checkable preconditions in the Playwright
+      suites. They do not replace assistive-technology verification.
+    </p>
+    <ul class="criteria-list">
+      @for (criterion of wcagCriteria; track criterion) {
+      <li>{{ criterion }}</li>
       }
-    </tbody>
-  </table>
-  } @else {
-  @if ((loading$ | async) === false) {
-  <p>No automated evidence entries are available.</p>
-  }
-  }
-</section>
-}
+    </ul>
+  </section>
 
-<section aria-labelledby="manual-evidence-heading" class="content-panel">
-  <h2 id="manual-evidence-heading">Manual checklist status</h2>
-  <p>
-    Executable checklists live in
-    <code>documentation/accessibility-manual-evidence.md</code>. Record
-    completed runs under
-    <code>documentation/accessibility-evidence/release-checklists/</code>.
-  </p>
-
-  @if (manualEntries$ | async; as manualEntries) {
-  <table class="evidence-table">
-    <caption class="visually-hidden">
-      Manual accessibility checklist completion status
-    </caption>
-    <thead>
-      <tr>
-        <th scope="col">Checklist</th>
-        <th scope="col">Items</th>
-        <th scope="col">Status</th>
-        <th scope="col">Priority note</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (checklist of manualChecklists; track checklist.id) {
-      <tr>
-        <th scope="row">
-          {{ checklist.name }}
-          <span class="checklist-ref">({{ checklist.wcagReference }})</span>
-        </th>
-        <td>{{ checklist.itemCount }}</td>
-        <td>
-          {{
-            manualChecklistStatus(
-              indexEvidenceById(manualEntries),
-              checklist.id
-            )
-          }}
-        </td>
-        <td>
-          {{
-            checklist.priorityNote ??
-              (indexEvidenceById(manualEntries).get(checklist.id)?.notes ??
-                'Not recorded')
-          }}
-        </td>
-      </tr>
+  <section aria-labelledby="artifacts-heading" class="content-panel">
+    <h2 id="artifacts-heading">Report artifacts</h2>
+    <ul class="artifact-list">
+      @for (artifact of reportArtifacts; track artifact.path) {
+      <li>
+        <strong>{{ artifact.label }}</strong>
+        <span>{{ artifact.path }}</span>
+      </li>
       }
-    </tbody>
-  </table>
-  }
-</section>
+    </ul>
+  </section>
 
-<section aria-labelledby="wcag-criteria-heading" class="content-panel">
-  <h2 id="wcag-criteria-heading">WCAG criteria with automated coverage</h2>
-  <p>
-    These criteria have machine-checkable preconditions in the Playwright
-    suites. They do not replace assistive-technology verification.
-  </p>
-  <ul class="criteria-list">
-    @for (criterion of wcagCriteria; track criterion) {
-    <li>{{ criterion }}</li>
-    }
-  </ul>
-</section>
-
-<section aria-labelledby="artifacts-heading" class="content-panel">
-  <h2 id="artifacts-heading">Report artifacts</h2>
-  <ul class="artifact-list">
-    @for (artifact of reportArtifacts; track artifact.path) {
-    <li>
-      <strong>{{ artifact.label }}</strong>
-      <span>{{ artifact.path }}</span>
-    </li>
-    }
-  </ul>
-</section>
-
-<section aria-labelledby="gaps-heading" class="content-panel">
-  <h2 id="gaps-heading">Known gaps and honest limits</h2>
-  <ul class="gap-list">
-    @for (gap of knownGaps; track gap.title) {
-    <li>
-      <strong>{{ gap.title }}</strong>
-      <span>{{ gap.detail }}</span>
-    </li>
-    }
-  </ul>
-</section>
+  <section aria-labelledby="gaps-heading" class="content-panel">
+    <h2 id="gaps-heading">Known gaps and honest limits</h2>
+    <ul class="gap-list">
+      @for (gap of knownGaps; track gap.title) {
+      <li>
+        <strong>{{ gap.title }}</strong>
+        <span>{{ gap.detail }}</span>
+      </li>
+      }
+    </ul>
+  </section>
+</div>

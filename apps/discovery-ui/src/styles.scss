@@ -1,4 +1,7 @@
-@import '@angular/material/prebuilt-themes/azure-blue.css';
+@use '../../../libs/shared/material/src/lib/theme/civics-theme';
+@use '../../../libs/shared/material/src/lib/theme/civics-tokens';
+@use '../../../libs/shared/material/src/lib/theme/civics-layout';
+
 @import 'maplibre-gl/dist/maplibre-gl.css';
 @import '../../../libs/shared/material/src/lib/error-snackbar/error-snackbar.scss';
 
@@ -9,4 +12,7 @@ body {
 
 body {
   margin: 0;
+  font-family: var(--civics-font-family);
+  color: var(--civics-text-primary);
+  background: var(--civics-surface);
 }

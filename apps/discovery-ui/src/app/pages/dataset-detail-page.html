@@ -1,181 +1,183 @@
-<a class="back-link" routerLink="/discovery">Back to discovery</a>
+<div class="page-stack">
+  <a class="back-link" routerLink="/discovery">Back to discovery</a>
 
-@if (loading$ | async) {
-<p class="inline-status" role="status">Loading dataset detail</p>
-} @if (error$ | async; as error) {
-<p class="error-message" role="alert">{{ error }}</p>
-} @if ((datasetSource$ | async) === 'FIXTURE') {
-<p class="fixture-notice" role="status">
-  <strong>Placeholder data.</strong> The repository is unavailable or holds no
-  items, so these records are generated examples rather than DSpace repository
-  content. Start DSpace and reseed to see repository-backed results.
-</p>
-} @if (detail$ | async; as detail) {
-<section aria-labelledby="dataset-title" class="dataset-hero">
-  <div>
-    <p class="eyebrow">Dataset detail</p>
-    <h1 id="dataset-title">{{ detail.title }}</h1>
-    <p>{{ detail.abstractText }}</p>
-  </div>
-
-  <dl class="details-list">
+  @if (loading$ | async) {
+  <p class="inline-status" role="status">Loading dataset detail</p>
+  } @if (error$ | async; as error) {
+  <p class="error-message" role="alert">{{ error }}</p>
+  } @if ((datasetSource$ | async) === 'FIXTURE') {
+  <p class="fixture-notice" role="status">
+    <strong>Placeholder data.</strong> The repository is unavailable or holds no
+    items, so these records are generated examples rather than DSpace repository
+    content. Start DSpace and reseed to see repository-backed results.
+  </p>
+  } @if (detail$ | async; as detail) {
+  <section aria-labelledby="dataset-title" class="dataset-hero">
     <div>
-      <dt>Program</dt>
-      <dd>{{ detail.program }}</dd>
+      <p class="eyebrow">Dataset detail</p>
+      <h1 id="dataset-title">{{ detail.title }}</h1>
+      <p>{{ detail.abstractText }}</p>
     </div>
-    <div>
-      <dt>Publisher</dt>
-      <dd>{{ detail.publisher }}</dd>
-    </div>
-    <div>
-      <dt>Geography</dt>
-      <dd>{{ detail.geography ?? 'Not specified' }}</dd>
-    </div>
-    <div>
-      <dt>Vintage</dt>
-      <dd>{{ detail.vintageYear ?? 'Not specified' }}</dd>
-    </div>
-    <div>
-      <dt>Released</dt>
-      <dd>{{ detail.releasedOn | date: 'mediumDate' }}</dd>
-    </div>
-    <div>
-      <dt>Evidence</dt>
-      <dd>{{ detail.accessibilityEvidenceStatus ?? 'NOT_STARTED' }}</dd>
-    </div>
-  </dl>
-</section>
 
-<mat-tab-group
-  class="dataset-tabs content-panel"
-  aria-label="Dataset supporting information"
->
-  <mat-tab label="Files">
-    <section class="tab-panel" aria-labelledby="files-heading">
-      <h2 id="files-heading">Files and Source Links</h2>
-      <ul class="feature-list">
-        @for (file of detail.files; track file.id) {
-        <li>
-          <strong>{{ file.label }}</strong>
-          <span>{{ file.format }}</span>
-          <a
-            class="source-link"
-            [href]="file.url"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open source
-          </a>
-        </li>
-        }
-      </ul>
-    </section>
-  </mat-tab>
-
-  <mat-tab label="Citation">
-    <section class="tab-panel" aria-labelledby="citation-heading">
-      <h2 id="citation-heading">Citation</h2>
-      <p>{{ detail.citation }}</p>
-      <a
-        class="source-link"
-        [href]="detail.sourceUrl"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Source data page
-      </a>
-    </section>
-  </mat-tab>
-
-  <mat-tab label="Versions">
-    <section class="tab-panel" aria-labelledby="versions-heading">
-      <h2 id="versions-heading">Versions</h2>
-      @if (versions$ | async; as versions) {
-      <ol class="version-list">
-        @for (version of versions; track version.id) {
-        <li>
-          <strong>{{ version.label }}</strong>
-          <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
-          @if (version.current) {
-          <span class="status-pill">Current</span>
-          }
-        </li>
-        }
-      </ol>
-      }
-    </section>
-  </mat-tab>
-
-  <mat-tab label="Map Layers">
-    <section class="tab-panel" aria-labelledby="map-layers-heading">
-      <h2 id="map-layers-heading">Map Layers</h2>
-      @if (mapLayers$ | async; as mapLayers) {
-      <ul class="feature-list">
-        @for (layer of mapLayers; track layer.id) {
-        <li>
-          <strong>{{ layer.label }}</strong>
-          <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
-        </li>
-        }
-      </ul>
-      }
-      <!-- Carry the geography across, so the workspace opens positioned on this dataset's area
-           with that area's layers rather than the default one. -->
-      <a
-        class="source-link"
-        routerLink="/maps"
-        [queryParams]="{ area: detail.geography }"
-        >Open map workspace</a
-      >
-    </section>
-  </mat-tab>
-
-  <mat-tab label="Map Preview">
-    <section class="tab-panel" aria-labelledby="map-preview-heading">
-      <h2 id="map-preview-heading">Map Preview</h2>
-      <div class="detail-map-preview" aria-label="Dataset map preview">
-        <div class="preview-canvas" aria-hidden="true">
-          <span class="preview-boundary"></span>
-          <span class="preview-event event-primary"></span>
-          <span class="preview-event event-secondary"></span>
-          <span class="preview-event event-tertiary"></span>
-        </div>
-        <div>
-          <p class="eyebrow">Geospatial context</p>
-          <p>
-            {{ detail.geography ?? 'Selected geography' }} opens in the MapLibre
-            workspace with TIGER/Line boundary context and the USGS earthquake
-            overlay enabled by default.
-          </p>
-          <a
-            class="source-link"
-            routerLink="/maps"
-            [queryParams]="{ area: detail.geography }"
-          >
-            Open interactive map
-          </a>
-        </div>
+    <dl class="details-list">
+      <div>
+        <dt>Program</dt>
+        <dd>{{ detail.program }}</dd>
       </div>
-    </section>
-  </mat-tab>
+      <div>
+        <dt>Publisher</dt>
+        <dd>{{ detail.publisher }}</dd>
+      </div>
+      <div>
+        <dt>Geography</dt>
+        <dd>{{ detail.geography ?? 'Not specified' }}</dd>
+      </div>
+      <div>
+        <dt>Vintage</dt>
+        <dd>{{ detail.vintageYear ?? 'Not specified' }}</dd>
+      </div>
+      <div>
+        <dt>Released</dt>
+        <dd>{{ detail.releasedOn | date: 'mediumDate' }}</dd>
+      </div>
+      <div>
+        <dt>Evidence</dt>
+        <dd>{{ detail.accessibilityEvidenceStatus ?? 'NOT_STARTED' }}</dd>
+      </div>
+    </dl>
+  </section>
 
-  <mat-tab label="Related Research">
-    <section class="tab-panel" aria-labelledby="related-heading">
-      <h2 id="related-heading">Related Research</h2>
-      <ul class="feature-list">
-        @for (related of detail.relatedResearch; track related.id) {
-        <li>
-          <strong>{{ related.title }}</strong>
-          <span>
-            {{ related.program }} - {{ related.geography ?? 'Not specified' }}
-          </span>
-          <a class="source-link" [routerLink]="['/datasets', related.id]">
-            Open related dataset
-          </a>
-        </li>
+  <mat-tab-group
+    class="dataset-tabs content-panel"
+    aria-label="Dataset supporting information"
+  >
+    <mat-tab label="Files">
+      <section class="tab-panel" aria-labelledby="files-heading">
+        <h2 id="files-heading">Files and Source Links</h2>
+        <ul class="feature-list">
+          @for (file of detail.files; track file.id) {
+          <li>
+            <strong>{{ file.label }}</strong>
+            <span>{{ file.format }}</span>
+            <a
+              class="source-link"
+              [href]="file.url"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open source
+            </a>
+          </li>
+          }
+        </ul>
+      </section>
+    </mat-tab>
+
+    <mat-tab label="Citation">
+      <section class="tab-panel" aria-labelledby="citation-heading">
+        <h2 id="citation-heading">Citation</h2>
+        <p>{{ detail.citation }}</p>
+        <a
+          class="source-link"
+          [href]="detail.sourceUrl"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Source data page
+        </a>
+      </section>
+    </mat-tab>
+
+    <mat-tab label="Versions">
+      <section class="tab-panel" aria-labelledby="versions-heading">
+        <h2 id="versions-heading">Versions</h2>
+        @if (versions$ | async; as versions) {
+        <ol class="version-list">
+          @for (version of versions; track version.id) {
+          <li>
+            <strong>{{ version.label }}</strong>
+            <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
+            @if (version.current) {
+            <span class="status-pill">Current</span>
+            }
+          </li>
+          }
+        </ol>
         }
-      </ul>
-    </section>
-  </mat-tab>
-</mat-tab-group>
-}
+      </section>
+    </mat-tab>
+
+    <mat-tab label="Map Layers">
+      <section class="tab-panel" aria-labelledby="map-layers-heading">
+        <h2 id="map-layers-heading">Map Layers</h2>
+        @if (mapLayers$ | async; as mapLayers) {
+        <ul class="feature-list">
+          @for (layer of mapLayers; track layer.id) {
+          <li>
+            <strong>{{ layer.label }}</strong>
+            <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
+          </li>
+          }
+        </ul>
+        }
+        <!-- Carry the geography across, so the workspace opens positioned on this dataset's area
+           with that area's layers rather than the default one. -->
+        <a
+          class="source-link"
+          routerLink="/maps"
+          [queryParams]="{ area: detail.geography }"
+          >Open map workspace</a
+        >
+      </section>
+    </mat-tab>
+
+    <mat-tab label="Map Preview">
+      <section class="tab-panel" aria-labelledby="map-preview-heading">
+        <h2 id="map-preview-heading">Map Preview</h2>
+        <div class="detail-map-preview" aria-label="Dataset map preview">
+          <div class="preview-canvas" aria-hidden="true">
+            <span class="preview-boundary"></span>
+            <span class="preview-event event-primary"></span>
+            <span class="preview-event event-secondary"></span>
+            <span class="preview-event event-tertiary"></span>
+          </div>
+          <div>
+            <p class="eyebrow">Geospatial context</p>
+            <p>
+              {{ detail.geography ?? 'Selected geography' }} opens in the
+              MapLibre workspace with TIGER/Line boundary context and the USGS
+              earthquake overlay enabled by default.
+            </p>
+            <a
+              class="source-link"
+              routerLink="/maps"
+              [queryParams]="{ area: detail.geography }"
+            >
+              Open interactive map
+            </a>
+          </div>
+        </div>
+      </section>
+    </mat-tab>
+
+    <mat-tab label="Related Research">
+      <section class="tab-panel" aria-labelledby="related-heading">
+        <h2 id="related-heading">Related Research</h2>
+        <ul class="feature-list">
+          @for (related of detail.relatedResearch; track related.id) {
+          <li>
+            <strong>{{ related.title }}</strong>
+            <span>
+              {{ related.program }} - {{ related.geography ?? 'Not specified' }}
+            </span>
+            <a class="source-link" [routerLink]="['/datasets', related.id]">
+              Open related dataset
+            </a>
+          </li>
+          }
+        </ul>
+      </section>
+    </mat-tab>
+  </mat-tab-group>
+  }
+</div>

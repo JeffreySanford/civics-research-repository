@@ -1,0 +1,51 @@
+@use '@angular/material' as mat;
+
+// Soft federal blue primary with teal tertiary for open-science accents.
+html {
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$cyan-palette,
+        theme-type: light,
+      ),
+      typography: (
+        plain-family: (
+          Inter,
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif,
+        ),
+        brand-family: (
+          Inter,
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif,
+        ),
+      ),
+      density: (
+        scale: 0,
+      ),
+    )
+  );
+
+  // Pastel surface tuning — containers stay light; text roles remain MD3 defaults for AA contrast.
+  @include mat.theme-overrides(
+    (
+      background: #eef3fa,
+      surface: #f4f7fb,
+      surface-container-lowest: #ffffff,
+      surface-container-low: #eef3fa,
+      surface-container: #e4ecf6,
+      surface-container-high: #d8e4f0,
+      primary-container: #d6e8fa,
+      secondary-container: #dce8f0,
+      tertiary-container: #c8f0ec,
+      outline-variant: #c5d4e8,
+    )
+  );
+}

@@ -1,39 +1,96 @@
-<section aria-labelledby="overview-heading" class="hero-panel">
-  <div>
-    <p class="eyebrow">Docker-first open science demo</p>
-    <h1 id="overview-heading">
-      Census geospatial discovery with repository sync
-    </h1>
-    <p>
-      Run the local stack, sync a North Dakota TIGER/Line repository object,
-      expose it through a typed Java API, and prepare it for search, maps, and
-      accessibility evidence.
-    </p>
-  </div>
-  <div class="status-grid" aria-label="Current platform status">
-    <span><strong>API</strong> Java 21</span>
-    <span><strong>Sync</strong> Startup + admin</span>
-    <span><strong>Search</strong> Solr ready</span>
-    <span><strong>Storage</strong> Docker volumes</span>
-  </div>
-</section>
+<div class="landing-page">
+  <section aria-labelledby="overview-heading" class="landing-hero">
+    <div class="landing-hero__lead">
+      <p class="eyebrow">Docker-first open science demo</p>
+      <h1 id="overview-heading">
+        Census geospatial discovery with repository sync
+      </h1>
+      <p>
+        Run the local stack, sync a North Dakota TIGER/Line repository object,
+        expose it through a typed Java API, and prepare it for search, maps, and
+        accessibility evidence.
+      </p>
+      <div class="landing-hero__actions">
+        <a mat-flat-button color="primary" routerLink="/discovery">
+          Explore discovery
+        </a>
+        <a mat-stroked-button routerLink="/maps">Open maps</a>
+        <a mat-stroked-button routerLink="/evidence">View evidence</a>
+      </div>
+    </div>
 
-<section aria-labelledby="workflow-heading" class="workflow-grid">
-  <h2 id="workflow-heading">Demo workflows</h2>
-  <a routerLink="/discovery">
-    <strong>Discovery</strong>
-    <span>Search, facets, and dataset result scaffolding.</span>
-  </a>
-  <a routerLink="/admin/sync">
-    <strong>Admin sync</strong>
-    <span>Trigger dry-run or apply sync against the Java API.</span>
-  </a>
-  <a routerLink="/evidence">
-    <strong>Accessibility evidence</strong>
-    <span>Review WCAG and Section 508 automation status.</span>
-  </a>
-  <a routerLink="/maps">
-    <strong>Map preview</strong>
-    <span>MapLibre shell target for TIGER/Line and USGS overlays.</span>
-  </a>
-</section>
+    <ul
+      class="status-grid status-grid--hero"
+      aria-label="Current platform status"
+    >
+      <li>
+        <span><strong>API</strong> Java 21</span>
+      </li>
+      <li>
+        <span><strong>Sync</strong> Startup + admin</span>
+      </li>
+      <li>
+        <span><strong>Search</strong> Solr ready</span>
+      </li>
+      <li>
+        <span><strong>Storage</strong> Docker volumes</span>
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="workflow-heading" class="feature-cards">
+    <h2 id="workflow-heading" class="feature-cards__heading">Demo workflows</h2>
+    <p class="feature-cards__intro">
+      Jump into the core paths for repository discovery, geospatial preview,
+      sync administration, and accessibility evidence review.
+    </p>
+
+    <div class="feature-cards__grid">
+      <a class="feature-card feature-card--discovery" routerLink="/discovery">
+        <span class="feature-card__icon" aria-hidden="true">D</span>
+        <strong>Discovery</strong>
+        <span>Search, facets, and dataset result scaffolding.</span>
+      </a>
+      <a class="feature-card feature-card--maps" routerLink="/maps">
+        <span class="feature-card__icon" aria-hidden="true">M</span>
+        <strong>Map preview</strong>
+        <span>MapLibre shell for TIGER/Line and USGS overlays.</span>
+      </a>
+      <a class="feature-card feature-card--sync" routerLink="/admin/sync">
+        <span class="feature-card__icon" aria-hidden="true">S</span>
+        <strong>Admin sync</strong>
+        <span>Trigger dry-run or apply sync against the Java API.</span>
+      </a>
+      <a class="feature-card feature-card--evidence" routerLink="/evidence">
+        <span class="feature-card__icon" aria-hidden="true">A</span>
+        <strong>Accessibility evidence</strong>
+        <span>Review WCAG and Section 508 automation status.</span>
+      </a>
+    </div>
+  </section>
+
+  <section aria-labelledby="values-heading" class="landing-values">
+    <h2 id="values-heading" class="visually-hidden">Platform values</h2>
+    <article>
+      <h3>Open science ready</h3>
+      <p>
+        Typed OpenAPI contracts, DSpace integration, and Solr-backed discovery
+        for reproducible federal data workflows.
+      </p>
+    </article>
+    <article>
+      <h3>Geospatial by default</h3>
+      <p>
+        Census boundaries, LODES flows, and USGS overlays share one accessible
+        map workspace with tabular fallbacks.
+      </p>
+    </article>
+    <article>
+      <h3>Accessibility evidence</h3>
+      <p>
+        Automated axe and Playwright scans plus manual checklists document WCAG
+        and Section 508 conformance work.
+      </p>
+    </article>
+  </section>
+</div>

@@ -1,7 +1,7 @@
 .back-link {
   display: inline-block;
   margin-bottom: 1rem;
-  color: #0b57d0;
+  color: var(--civics-link);
   font-weight: 800;
 }
 
@@ -10,10 +10,11 @@
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem);
   gap: 1.5rem;
   align-items: start;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-md);
+  background: var(--civics-surface-panel);
   padding: 1.5rem;
+  box-shadow: 0 1px 2px rgb(26 35 50 / 4%);
 }
 
 .dataset-tabs {
@@ -35,11 +36,12 @@
   position: relative;
   min-height: 14rem;
   overflow: hidden;
-  border: 1px solid #9ab7c8;
-  border-radius: 0.5rem;
+  border: 1px solid var(--civics-border-strong);
+  border-radius: var(--civics-radius-md);
   background:
-    linear-gradient(90deg, rgba(47, 111, 143, 0.12) 1px, transparent 1px),
-    linear-gradient(rgba(47, 111, 143, 0.12) 1px, transparent 1px), #f8fafc;
+    linear-gradient(90deg, rgb(47 111 143 / 12%) 1px, transparent 1px),
+    linear-gradient(rgb(47 111 143 / 12%) 1px, transparent 1px),
+    var(--civics-surface-muted);
   background-size: 2.5rem 2.5rem;
 }
 
@@ -47,7 +49,7 @@
   position: absolute;
   inset: 2rem 2.5rem 2.25rem 2.25rem;
   border: 3px solid #164e63;
-  background: rgba(47, 111, 143, 0.18);
+  background: rgb(47 111 143 / 18%);
   clip-path: polygon(12% 8%, 96% 18%, 84% 91%, 8% 78%);
 }
 
@@ -90,10 +92,10 @@
 .status-pill {
   display: inline-block;
   width: fit-content;
-  border: 1px solid #9cc6a4;
-  border-radius: 0.25rem;
-  background: #e6f4ea;
-  color: #14532d;
+  border: 1px solid var(--civics-success-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-success-bg);
+  color: var(--civics-success-text);
   padding: 0.2rem 0.45rem;
   font-size: 0.8125rem;
   font-weight: 800;

@@ -1,133 +1,135 @@
-<section aria-labelledby="admin-sync-heading" class="admin-layout">
-  <div class="content-panel">
-    <p class="eyebrow">Admin workflow</p>
-    <h1 id="admin-sync-heading">Repository sync</h1>
-    <p>
-      Trigger the typed Java sync endpoint for a selected public metadata
-      source. Dry run shows planned DSpace/Solr actions; apply uses the same
-      workflow and persists job history in Postgres.
-    </p>
+<div class="page-stack">
+  <section aria-labelledby="admin-sync-heading" class="admin-layout">
+    <div class="content-panel">
+      <p class="eyebrow">Admin workflow</p>
+      <h1 id="admin-sync-heading">Repository sync</h1>
+      <p>
+        Trigger the typed Java sync endpoint for a selected public metadata
+        source. Dry run shows planned DSpace/Solr actions; apply uses the same
+        workflow and persists job history in Postgres.
+      </p>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Sync source</mat-label>
-      <mat-select
-        [value]="selectedSource$ | async"
-        (valueChange)="selectSource($event)"
-        aria-label="Repository sync source"
-      >
-        @for (source of syncSources; track source) {
-        <mat-option [value]="source">{{ source }}</mat-option>
+      <mat-form-field appearance="outline">
+        <mat-label>Sync source</mat-label>
+        <mat-select
+          [value]="selectedSource$ | async"
+          (valueChange)="selectSource($event)"
+          aria-label="Repository sync source"
+        >
+          @for (source of syncSources; track source) {
+          <mat-option [value]="source">{{ source }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="button-row">
+        <button
+          mat-flat-button
+          type="button"
+          (click)="requestDryRun()"
+          [disabled]="loading$ | async"
+        >
+          Dry run sync
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="requestDiff()"
+          [disabled]="loading$ | async"
+        >
+          Diff sync
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="requestApply()"
+          [disabled]="loading$ | async"
+        >
+          Apply sync
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="requestReindex()"
+          [disabled]="reindexing$ | async"
+        >
+          Reindex discovery
+        </button>
+      </div>
+
+      @if (loading$ | async) {
+      <div class="inline-status" role="status">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>Sync request running</span>
+      </div>
+      } @if (reindexing$ | async) {
+      <div class="inline-status" role="status">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>Discovery reindex running</span>
+      </div>
+      } @if (error$ | async; as error) {
+      <p class="error-message" role="alert">{{ error }}</p>
+      } @if (projection$ | async; as projection) {
+      <p class="inline-status" role="status">
+        Discovery projection rebuilt: {{ projection.objectCount }} objects from
+        {{ projection.source }}.
+      </p>
+      }
+    </div>
+
+    @if (selectedJob$ | async; as job) {
+    <article class="content-panel" aria-labelledby="selected-job-heading">
+      <p class="eyebrow">{{ job.source }}</p>
+      <h2 id="selected-job-heading">Selected sync job</h2>
+      <dl class="details-list">
+        <div>
+          <dt>Status</dt>
+          <dd>{{ job.status }}</dd>
+        </div>
+        <div>
+          <dt>Mode</dt>
+          <dd>{{ job.mode }}</dd>
+        </div>
+        <div>
+          <dt>Started</dt>
+          <dd>{{ job.startedAt | date: 'medium' }}</dd>
+        </div>
+      </dl>
+
+      <h3>Planned actions</h3>
+      <ol class="action-list">
+        @for (action of job.actions; track action.actionType + action.target) {
+        <li>
+          <strong>{{ action.actionType }}</strong>
+          <span>{{ action.target }}</span>
+          <p>{{ action.detail }}</p>
+        </li>
         }
-      </mat-select>
-    </mat-form-field>
-
-    <div class="button-row">
-      <button
-        mat-flat-button
-        type="button"
-        (click)="requestDryRun()"
-        [disabled]="loading$ | async"
-      >
-        Dry run sync
-      </button>
-      <button
-        mat-stroked-button
-        type="button"
-        (click)="requestDiff()"
-        [disabled]="loading$ | async"
-      >
-        Diff sync
-      </button>
-      <button
-        mat-stroked-button
-        type="button"
-        (click)="requestApply()"
-        [disabled]="loading$ | async"
-      >
-        Apply sync
-      </button>
-      <button
-        mat-stroked-button
-        type="button"
-        (click)="requestReindex()"
-        [disabled]="reindexing$ | async"
-      >
-        Reindex discovery
-      </button>
-    </div>
-
-    @if (loading$ | async) {
-    <div class="inline-status" role="status">
-      <mat-spinner diameter="24"></mat-spinner>
-      <span>Sync request running</span>
-    </div>
-    } @if (reindexing$ | async) {
-    <div class="inline-status" role="status">
-      <mat-spinner diameter="24"></mat-spinner>
-      <span>Discovery reindex running</span>
-    </div>
-    } @if (error$ | async; as error) {
-    <p class="error-message" role="alert">{{ error }}</p>
-    } @if (projection$ | async; as projection) {
-    <p class="inline-status" role="status">
-      Discovery projection rebuilt: {{ projection.objectCount }} objects from {{
-      projection.source }}.
-    </p>
+      </ol>
+    </article>
+    } @else {
+    <article class="content-panel" aria-labelledby="empty-job-heading">
+      <h2 id="empty-job-heading">No sync job selected</h2>
+      <p>Run a dry sync to preview repository actions.</p>
+    </article>
     }
-  </div>
+  </section>
 
-  @if (selectedJob$ | async; as job) {
-  <article class="content-panel" aria-labelledby="selected-job-heading">
-    <p class="eyebrow">{{ job.source }}</p>
-    <h2 id="selected-job-heading">Selected sync job</h2>
-    <dl class="details-list">
-      <div>
-        <dt>Status</dt>
-        <dd>{{ job.status }}</dd>
-      </div>
-      <div>
-        <dt>Mode</dt>
-        <dd>{{ job.mode }}</dd>
-      </div>
-      <div>
-        <dt>Started</dt>
-        <dd>{{ job.startedAt | date: 'medium' }}</dd>
-      </div>
-    </dl>
-
-    <h3>Planned actions</h3>
-    <ol class="action-list">
-      @for (action of job.actions; track action.actionType + action.target) {
+  <section aria-labelledby="history-heading" class="content-panel">
+    <h2 id="history-heading">Sync history</h2>
+    @if (jobs$ | async; as jobs) { @if (jobs.length > 0) {
+    <ul class="history-list">
+      @for (job of jobs; track job.id) {
       <li>
-        <strong>{{ action.actionType }}</strong>
-        <span>{{ action.target }}</span>
-        <p>{{ action.detail }}</p>
+        <button type="button" (click)="selectJob(job.id)">
+          <strong>{{ job.status }}</strong>
+          <span>{{ job.source }} - {{ job.startedAt | date: 'short' }}</span>
+        </button>
       </li>
       }
-    </ol>
-  </article>
-  } @else {
-  <article class="content-panel" aria-labelledby="empty-job-heading">
-    <h2 id="empty-job-heading">No sync job selected</h2>
-    <p>Run a dry sync to preview repository actions.</p>
-  </article>
-  }
-</section>
-
-<section aria-labelledby="history-heading" class="content-panel">
-  <h2 id="history-heading">Sync history</h2>
-  @if (jobs$ | async; as jobs) { @if (jobs.length > 0) {
-  <ul class="history-list">
-    @for (job of jobs; track job.id) {
-    <li>
-      <button type="button" (click)="selectJob(job.id)">
-        <strong>{{ job.status }}</strong>
-        <span>{{ job.source }} - {{ job.startedAt | date: 'short' }}</span>
-      </button>
-    </li>
-    }
-  </ul>
-  } @else {
-  <p>No sync jobs have been stored yet.</p>
-  } }
-</section>
+    </ul>
+    } @else {
+    <p>No sync jobs have been stored yet.</p>
+    } }
+  </section>
+</div>

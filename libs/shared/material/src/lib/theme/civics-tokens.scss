@@ -1,0 +1,49 @@
+// App-level tokens mapped to Material system roles for consistent page styling.
+:root {
+  --civics-font-family: Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --civics-text-primary: var(--mat-sys-on-surface);
+  --civics-text-secondary: var(--mat-sys-on-surface-variant);
+  --civics-text-muted: #45566f;
+
+  --civics-link: var(--mat-sys-primary);
+  --civics-link-active: #1a4574;
+
+  --civics-surface: var(--mat-sys-surface);
+  --civics-surface-panel: var(--mat-sys-surface-container-lowest);
+  --civics-surface-muted: var(--mat-sys-surface-container-low);
+  --civics-surface-accent: var(--mat-sys-primary-container);
+  --civics-surface-teal: var(--mat-sys-tertiary-container);
+  --civics-surface-lavender: #ebe4f8;
+
+  --civics-border: var(--mat-sys-outline-variant);
+  --civics-border-strong: #94a3b8;
+
+  --civics-header-bg: var(--mat-sys-surface-container-lowest);
+  --civics-nav-hover: var(--mat-sys-primary-container);
+  --civics-nav-active-text: var(--civics-link-active);
+
+  --civics-focus: var(--mat-sys-primary);
+  --civics-radius-sm: 0.375rem;
+  --civics-radius-md: 0.75rem;
+  --civics-radius-lg: 1rem;
+
+  --civics-error-bg: #fff1f0;
+  --civics-error-border: #b42318;
+  --civics-error-text: #7a271a;
+
+  --civics-warn-bg: #fff8e6;
+  --civics-warn-border: #b54708;
+  --civics-warn-text: #713b12;
+
+  --civics-success-bg: #e6f4ea;
+  --civics-success-border: #9cc6a4;
+  --civics-success-text: #14532d;
+
+  --civics-hero-gradient: linear-gradient(
+    135deg,
+    var(--mat-sys-primary-container) 0%,
+    var(--mat-sys-surface-container-low) 45%,
+    var(--mat-sys-tertiary-container) 100%
+  );
+}
