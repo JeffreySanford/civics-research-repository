@@ -4,9 +4,9 @@
 
 The first implementation milestone is complete when the demo can show one public research dataset flowing through the repository, API, Angular UI, map visualization, and accessibility evidence.
 
-**Status: not complete, despite most boxes below being checked.** The flow is broken in one place. The dataset reaches DSpace through sync, and the UI renders a dataset — but the UI renders it from fixtures rather than from DSpace, so the two halves are not connected. Criteria affected by this carry an inline note. Closing it is priority P1 in [TODO.md](TODO.md#current-priorities).
+**Status: complete for the connected slice.** Discovery, facets, dataset detail, and related research read from DSpace; the generated fixture catalog is a labelled fallback only when the repository is unavailable. Open items below are follow-on breadth, contract polish, or demo artifacts — not a broken integration.
 
-Checking a box here means the behavior is implemented and covered by a test, not that the surrounding integration is finished.
+Checking a box here means the behavior is implemented and covered by a test, not that every adjacent seam is closed.
 
 ## Data and Repository
 
@@ -26,7 +26,7 @@ Checking a box here means the behavior is implemented and covered by a test, not
 
 - [x] Search, dataset detail, versions, map layers, USGS earthquake overlay, and accessibility evidence endpoints are described in OpenAPI.
 - [x] Frontend TypeScript DTOs are generated from OpenAPI.
-- [ ] Java DTOs are generated from OpenAPI or mechanically verified against it. _(Last open contract gate — Java records are hand-written.)_
+- [x] Java DTOs are generated from OpenAPI on every build. _(Model types only; generated controller interfaces deferred until Spring 7 support.)_
 - [x] `pnpm run openapi:check` fails when generated frontend types drift.
 - [ ] API errors use typed error responses.
 
@@ -41,9 +41,9 @@ Checking a box here means the behavior is implemented and covered by a test, not
 
 ## Frontend
 
-- [x] Search page supports keyword search, facets, loading, empty, and error states. _(Served from fixtures, not DSpace — see P1.)_
+- [x] Search page supports keyword search, facets, loading, empty, and error states.
 - [x] Search state is represented in URL parameters where practical.
-- [x] Dataset detail page shows metadata, files, versions, citation, and map tab when geospatial metadata exists. _(Served from fixtures, not DSpace — see P1.)_
+- [x] Dataset detail page shows metadata, files, versions, citation, and map tab when geospatial metadata exists.
 - [x] Admin workflow exposes manual sync controls and sync status.
 - [x] Accessibility evidence view summarizes automated and manual evidence.
 - [x] Angular API imports use generated OpenAPI types.
@@ -70,7 +70,7 @@ Checking a box here means the behavior is implemented and covered by a test, not
 
 ## Demo Readiness
 
-- [x] `pnpm run start:all` starts the development experience. _(Excludes DSpace by design; one-command demo is P3.)_
+- [x] `pnpm run start:all` starts the full development and demonstration experience, including DSpace, seed, and reindex. _(Alias: `pnpm dev`, `pnpm run demo:up`.)_
 - [x] Docker Compose starts persistent local services and the app can be demoed after restart.
 - [x] `pnpm run test:all` passes.
 - [x] `pnpm run quality:all` passes.

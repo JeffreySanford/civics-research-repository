@@ -81,15 +81,9 @@ The `spring` generator can also emit controller interfaces. It writes them again
 
 ### Migration status
 
-`/maps/census-areas` is migrated end to end and serves byte-identical JSON. It was chosen first because its record carried no behavior, which made it a clean proof of the wiring rather than a redesign.
+**Complete for model DTOs.** Every wire type consumed by controllers and services is generated from the contract on every build. `/maps/census-areas` was migrated first as a clean proof of the wiring; `SearchResponse`, `SearchResult`, `DatasetDetail`, `SyncJob`, `MapLayer`, `UsgsEarthquake*`, and `RepositorySource` followed. Per-type decisions — for example removing `SearchResponse.withResultSource` rather than fighting the generator's mutable model — are recorded in [planning/TODO.md](../planning/TODO.md#p6---java-dto-generation-from-openapi).
 
-The remaining hand-written records are not yet migrated, and the reasons are worth stating because they are the actual work:
-
-- `SearchResponse.withResultSource` is behavior a generated record cannot carry. Either the behavior moves to the caller or the domain type stays and maps at the controller boundary.
-- `RepositorySource` lives in `org.civicsrepo.repository` and is used as a domain concept; the generator emits its own copy into the DTO package.
-- `DatasetDetail`, `SearchResult`, `SyncJob`, and `MapLayer` are used by services as domain types, not only as wire types. Adopting the generated versions means deciding, per type, whether the domain type and the wire type should be the same thing.
-
-Until each is migrated, drift is caught only for the parts already on generated DTOs. That is a real limit, not a technicality: the generator protects what uses it.
+Generated Spring controller interfaces remain deferred until the OpenAPI Generator supports Spring 7 conventions.
 
 ## Suggested Java Package Boundaries
 

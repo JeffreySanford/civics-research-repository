@@ -31,14 +31,16 @@ The demo should show a realistic federal open-science repository workflow:
 
 ## Planning Alignment
 
-The early decision gates are closed: Java 21 with Gradle in Docker, DSpace 9.0 as the Docker baseline, MapLibre GL as the map library, and OpenAPI as the contract source of truth with generated frontend types and a drift check in `quality:all`. One gate remains open — generating Java DTOs from OpenAPI rather than hand-writing records.
+The early decision gates are closed: Java 21 with Gradle in Docker, DSpace 9.0 as the Docker baseline, MapLibre GL as the map library, OpenAPI as the contract source of truth with generated frontend types and Java model DTOs on every build. Generated Spring controller interfaces remain deferred until the generator supports Spring 7.
 
-The current work is no longer scaffolding but closing the gap between the architecture and the implementation. In priority order:
+The vertical slice is connected. What remains is breadth and explainability:
 
-1. Make DSpace metadata drive discovery and dataset detail, replacing the fixture path.
-2. Disambiguate the application and DSpace datastores by name and documented role.
-3. Provide one command that starts the entire demo including DSpace.
-4. ~~Architecture diagrams and AWS modernization documentation.~~ Delivered.
-5. Record a manual accessibility evidence run against the delivered checklists.
+1. ~~Make DSpace metadata drive discovery and dataset detail.~~ **Delivered.**
+2. ~~Disambiguate the application and DSpace datastores by name and documented role.~~ **Delivered.**
+3. ~~Provide one command that starts the entire demo including DSpace.~~ **Delivered** — `pnpm run start:all` (alias `demo:up`).
+4. ~~Architecture diagrams and AWS modernization documentation.~~ **Delivered.**
+5. Harvest the catalog from live publishers rather than `tools/dspace/catalog.json` alone.
+6. Create the interview demo walkthrough scripts.
+7. Record a manual accessibility evidence run against the delivered checklists.
 
 The active backlog and first vertical-slice criteria live in [planning](../planning/README.md).

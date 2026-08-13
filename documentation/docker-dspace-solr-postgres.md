@@ -17,9 +17,7 @@ Current default stack:
 - PostgreSQL on `localhost:5432`.
 - Solr on `http://localhost:8983`.
 - Persistent Docker volumes for repository API artifacts, PostgreSQL, Solr, pnpm store, and container `node_modules`.
-- Optional DSpace REST profile on `http://localhost:8081/server/api`.
-
-DSpace REST is available as an optional Compose profile. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo remains reliable while DSpace repository seeding is added.
+- DSpace REST profile on `http://localhost:8081/server/api`, started by `pnpm run start:all`.
 
 `pnpm run start:all` is the preferred development command. It starts the DSpace profile, seeds when needed, starts the application stack, reindexes, and prints URLs when every service is healthy. It reconciles containers in both stacks — recreating only broken ones — without deleting persistent volumes. See [Why the scoped commands exist](#why-the-scoped-commands-exist) below.
 
@@ -33,7 +31,7 @@ Public-facing search, dataset detail, mapping, and accessibility evidence UI.
 
 Repository API and content-management layer for communities, collections, items, metadata, bitstreams, and relationships.
 
-Status: optional Compose profile added and runtime verified. The profile seeds DSpace Solr cores into persistent storage, runs DSpace database migrations, then starts the REST API.
+Status: Compose profile verified and activated by `pnpm run start:all`. The profile seeds DSpace Solr cores into persistent storage, runs DSpace database migrations, then starts the REST API.
 
 Baseline confirmed from the DSpace project:
 
@@ -56,11 +54,9 @@ Persistent database used by DSpace.
 
 Discovery index for DSpace search, facets, full text, and relevance.
 
-### Harvester
+### Sync orchestration (Java API)
 
-Small service or script that imports public metadata and source links from Census and USGS resources.
-
-Status: represented by the Java API sync placeholder. The API currently performs startup sync and exposes admin sync endpoints returning typed dry-run actions.
+Public metadata ingestion and DSpace reconciliation live in `apps/repository-api`. The API performs startup sync, exposes admin sync endpoints, and provides script entry points for dry-run, diff, and apply.
 
 ## Local Compose Sketch
 
@@ -81,10 +77,11 @@ services:
   solr:
     role: DSpace discovery/search index
 
-  harvester:
-    role: public metadata ingestion
+  repository-api:
+    role: Java API, sync orchestration, discovery projection
     depends_on:
-      - dspace-api
+      - postgres
+      - solr
 ```
 
 ## Implementation Notes
@@ -139,19 +136,19 @@ Use the smallest reset that solves the problem. Every command below except the l
 pnpm run docker:reset:containers
 ```
 
-Stops and removes the four application-stack containers. Named volumes survive, including PostgreSQL, Solr, pnpm store, container `node_modules`, Nx cache, and API artifact storage.
+Stops and removes the application-stack containers (`postgres`, `solr`, `repository-api`, `discovery-ui`). Named volumes survive. Does not stop the DSpace profile.
 
 ```bash
 pnpm run start:all:recreate
 ```
 
-Force-recreates the application-stack containers, then starts and attaches. Use when a container is wedged but you do not want to lose volume state.
+Force-recreates every container in the full startup flow (DSpace profile and application stack), then starts detached. Use when a container is wedged but you do not want to lose volume state.
 
 ```bash
 pnpm run start:all:rebuild
 ```
 
-Rebuilds the images first, then force-recreates. Use after changing the Java API `Dockerfile` or its dependencies.
+Rebuilds the images first, then force-recreates the full stack. Use after changing the Java API `Dockerfile` or its dependencies.
 
 ```bash
 pnpm run docker:reset:everything
@@ -229,15 +226,15 @@ pnpm run dspace:verify
 
 Expected result: JSON containing `dspaceName`, `dspaceServer`, `dspaceVersion`, and REST API links from `http://localhost:8081/server/api`.
 
-Seeded repository objects:
+Seeded repository objects come from [tools/dspace/catalog.json](../tools/dspace/catalog.json), expanded into SAF packages by `tools/scripts/generate-saf.mjs` at seed time:
 
 - Community: `Census Public Research Data`.
-- Collection: `TIGER/Line Geospatial Files`.
-- Item: `2025 TIGER/Line - Census Tracts - North Dakota`.
+- Collections per program (TIGER/Line, LODES, ACS PUMS, and eleven additional programs).
+- One hundred sixty-four research objects across 52 geographies, verified by `pnpm run dspace:verify:seed`.
 
-`pnpm run dspace:seed` is idempotent on normal persistent volumes. It creates a local admin account only when missing, imports the community/collection when missing, imports the metadata-only SAF item once, and then uses the DSpace import mapfile in the asset store to skip future duplicate item imports. `pnpm run dspace:verify:seed` confirms the TIGER/Line item appears through DSpace discovery.
+`pnpm run dspace:seed` is idempotent on normal persistent volumes. It creates a local admin account only when missing, imports communities and collections when missing, and uses the DSpace import mapfile in the asset store to skip duplicate item imports. `pnpm run dspace:verify:seed` confirms items appear through DSpace discovery.
 
-Use this only when working on DSpace REST integration. The default demo remains `pnpm run start:all`.
+Piecemeal DSpace commands (`pnpm run dspace:up`, `pnpm run dspace:seed`, `pnpm run dspace:verify:seed`) remain available when working on repository integration outside the unified `start:all` flow.
 
 ## Future AWS Direction
 
@@ -248,7 +245,7 @@ CloudFront
   -> Angular static or SSR frontend
   -> Application Load Balancer
   -> DSpace REST container
-  -> Harvester container
+  -> Repository API container (sync orchestration)
   -> RDS PostgreSQL
   -> Solr with persistent storage or managed search decision
 ```

@@ -39,8 +39,8 @@ The ordered near-term plan. Everything here outranks new source adapters and new
 - [x] Make the DSpace seed self-healing when its mapfile outlives the database.
 - [x] Persist the corepack and Nx caches instead of re-downloading and resetting on every start.
 - [x] Add `pnpm run demo:up`: DSpace profile, both PostgreSQL instances, both Solr instances, Java API, Angular, seed, sync, health checks.
-- [x] Keep `start:all` as the fast development path that excludes DSpace.
-- [x] Report the URLs to open when `demo:up` completes.
+- [x] Unify `start:all` and `demo:up` on the same full-stack flow via [tools/scripts/compose-stack.mjs](../tools/scripts/compose-stack.mjs).
+- [x] Report the URLs to open when startup completes.
 - [x] Add `pnpm run demo:down` and a documented reset path.
 - [x] Verify `demo:up` from a cold `pnpm run docker:reset:everything`.
 
@@ -115,7 +115,7 @@ layers.
 
 ### P8 - Repository breadth
 
-Discovery reads from DSpace, which holds six seeded items, so search shows six datasets across three geographies. The previous fifty-two states came from the generated fixture catalog, which is now only a labelled fallback. This is correct behavior, and it makes the demo look thinner than it did.
+Discovery reads from DSpace, which holds 164 research objects across 14 programs and 52 geographies. The generated fixture catalog is only a labelled fallback when the repository is unavailable.
 
 - [x] Decide the target breadth: full 52-area parity, 159 items.
 - [x] Generate SAF packages from `tools/dspace/catalog.json` rather than committing one directory per item. Generated packages are git-ignored; the table is the source of truth.

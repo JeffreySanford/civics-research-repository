@@ -29,7 +29,8 @@ libs/maps/visualization
 libs/maps/usgs-overlays
 libs/data-sources/census
 libs/data-sources/usgs
-tools/harvester
+tools/dspace
+tools/scripts
 schemas/openapi
 apps/repository-api
 ```

@@ -2,29 +2,29 @@
 
 ## Near-Term Order
 
-Phases 0 through 4 are substantially delivered. The work that remains is not more features — it is closing the distance between what the documentation claims and what runs, and producing the artifacts that make the system explainable. In priority order:
+Phases 0 through 4 are delivered. The vertical slice runs end to end: DSpace is the system of record for writes and reads, discovery is projected into Solr, and `pnpm run start:all` (alias `demo:up`) starts the full stack with seed and reindex.
 
-### 1. Make DSpace drive one complete vertical slice
+What remains is not more UI scaffolding — it is harvesting breadth, demo explainability, and a few contract and platform gaps. In priority order:
 
-Replace the in-memory seed list and hard-coded `DatasetService` fixtures as the primary runtime path with real repository metadata. Keep the fixtures only as a test and demo-recovery fallback, clearly labelled as such.
+### 1. Harvest the catalog from live publishers
 
-This is first because it is the difference between a demo that _describes_ a repository architecture and one that _demonstrates_ it. The sync path already writes to DSpace; nothing reads back from it.
+Which files exist, and for which vintages, is still curated in `tools/dspace/catalog.json` rather than discovered from Census and USGS APIs. Per-file facts such as size and release date already come from live HEAD requests where reachable; catalog discovery is the larger open ingestion piece. Tracked as the open item under P1 in [TODO.md](TODO.md#current-priorities).
 
-### 2. Disambiguate the two PostgreSQL and two Solr systems
+### 2. Interview demo package
 
-Rename the application database to `civics_ops`, and state explicitly that the custom Solr core is the public discovery projection. See DECISIONS.md, "Datastore Roles and Naming".
+Architecture diagrams and AWS modernization documentation are **delivered**. What is still missing is the spoken walkthrough material: demo script, ingestion walkthrough, accessibility evidence walkthrough, mapping/USGS overlay walkthrough, and known tradeoffs. Tracked as PI 6.2 in [TODO.md](TODO.md#pi-6---aws-modernization-documentation).
 
-### 3. Add a true one-command demo environment
+### 3. Finish manual accessibility evidence
 
-`start:all` does not activate the DSpace profile, so no single command produces a demonstrable system. Add `demo:up`: DSpace, both PostgreSQL instances, both Solr instances, the Java API, Angular, seed, sync, and health checks. This matters disproportionately during a live demonstration.
+Checklists are **delivered** in [accessibility-manual-evidence.md](../documentation/accessibility-manual-evidence.md). Map-to-list selection is implemented; Checklist 4 item M12 still needs a human click because WebGL hit tests cannot be asserted automatically. What remains is executing a run and recording it.
 
-### 4. Diagrams and AWS modernization
+### 4. Optional IaC for the documented AWS target
 
-**Delivered.** C4 context and container views and the ingestion, search, and map sequences are in [architecture-diagrams.md](../documentation/architecture-diagrams.md); the modernization target is in [aws-modernization.md](../documentation/aws-modernization.md). These were likely worth more than another feature, since they were the visibly missing pieces of the original job-alignment plan.
+C4 diagrams and the modernization narrative exist. Terraform or CDK for the documented target is still open (P4 / PI 6.1).
 
-### 5. Finish manual accessibility evidence
+### 5. Dependency and contract cleanup
 
-Checklists are **delivered** in [accessibility-manual-evidence.md](../documentation/accessibility-manual-evidence.md): keyboard, NVDA, JAWS, map equivalence, and cognitive review. What remains is executing a run and recording it. The automated axe work is strong, but the risk register is right that a map can pass axe and still be inaccessible — and a recorded run is what turns "I know WCAG" into "I know how Section 508 evidence is produced."
+Move NgRx to stable 22 when published, revisit generated controller interfaces when Spring 7 support lands, cover `JdbcSyncJobStore` with Testcontainers, and add typed API error responses where the contract still returns generic failures.
 
 ## Implementation Strategy
 
@@ -42,6 +42,8 @@ OpenAPI contract
   -> map tab with USGS overlay
   -> WCAG/Section 508 console and UI evidence
 ```
+
+The slice above is **delivered**. Further work extends ingestion breadth and demo artifacts rather than repeating it.
 
 ## Phase 0 - Baseline
 
@@ -63,11 +65,11 @@ Remaining cleanup:
 
 ## Phase 1 - Contracted Java API
 
-Status: delivered except Java DTO generation.
+Status: delivered.
 
 Primary goal: create a Java backend that is contract-first from day one.
 
-Decisions closed: Gradle in a container image, Java 21, DSpace 9.0 images. Still open: the Nx Java plugin, and generating Java DTOs from OpenAPI rather than hand-writing records — currently only the frontend half of the contract has a drift check.
+Decisions closed: Gradle in a container image, Java 21, DSpace 9.0 images, OpenAPI Generator Gradle plugin for model DTOs. Still open: the Nx Java plugin, and generated Spring controller interfaces once the generator supports Spring 7.
 
 Implementation order:
 
@@ -81,9 +83,11 @@ Implementation order:
 
 ## Phase 2 - DSpace, PostgreSQL, and Solr
 
-Status: platform delivered. The read path back out of DSpace is the open item, tracked as near-term priority 1.
+Status: delivered.
 
 Primary goal: start the local repository platform through Docker.
+
+The read path from DSpace through Solr projection to Angular is live. The fixture catalog survives only as a labelled fallback when the repository is unavailable.
 
 Implementation order:
 
@@ -93,14 +97,14 @@ Implementation order:
 4. Add persistent Docker volumes for DSpace assets, PostgreSQL, Solr, and small-to-medium mirrored demo artifacts.
 5. Create seed community, collection, and visual geospatial North Dakota item from TIGER/Line or LODES.
 6. Run startup sync when the app starts.
-7. Verify DSpace REST access. Completed for the optional local DSpace profile on `http://localhost:8081/server/api`.
+7. Verify DSpace REST access. Completed for the DSpace profile on `http://localhost:8081/server/api`.
 8. Verify Solr discovery indexing.
 
 Storage rule: store metadata, manifests, source links, checksums where available, small fixtures, and small-to-medium mirrored demo artifacts. Do not mirror large public datasets until a later sprint explicitly needs that behavior.
 
 ## Phase 3 - Angular Discovery UI
 
-Status: delivered, against fixture data. Repointing it at repository-backed data is near-term priority 1.
+Status: delivered against repository-backed data.
 
 Primary goal: replace starter UI with a typed, accessible discovery workflow.
 
@@ -120,6 +124,8 @@ Status: delivered.
 
 Primary goal: deliver the mapping data visualization with USGS overlays.
 
+Layer toggles, per-area layer resolution, list-to-map selection, and optional map debug diagnostics (`environment.mapDebugEnabled`) are implemented and covered by storyboard checks.
+
 Implementation order:
 
 1. Decide MapLibre GL vs Leaflet based on Census/USGS layer formats.
@@ -130,7 +136,7 @@ Implementation order:
 
 ## Phase 5 - Demo Evidence Package
 
-Status: in progress. This is now the largest remaining body of work alongside near-term priorities 1 through 3.
+Status: in progress. Automated evidence and architecture diagrams are delivered; spoken walkthrough scripts are not.
 
 Primary goal: make the demo explainable and reviewable.
 

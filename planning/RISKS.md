@@ -10,9 +10,9 @@ Mitigation: start from DSpace-supported Docker examples, keep local overrides sm
 
 Risk: frontend types, backend DTOs, and controllers can diverge as implementation speeds up.
 
-Mitigation: both sides are now generated from the contract. The frontend regenerates and is diffed by `openapi:check` inside `quality:all`; the Java side generates inside the Gradle build, with `compileJava` depending on it, so a breaking contract change fails compilation.
+Mitigation: both sides are now generated from the contract. The frontend regenerates and is diffed by `openapi:check` inside `quality:all`; the Java side generates model DTOs inside the Gradle build, with `compileJava` depending on it, so a breaking contract change fails compilation.
 
-Remaining exposure: only the Java types actually migrated to generated DTOs are protected. `/maps/census-areas` is migrated; the rest still use hand-written records, and drift in those is invisible until they move. The migration order and the per-type decisions are tracked as P6 in TODO.md.
+Remaining exposure: generated Spring controller interfaces are deferred until the OpenAPI Generator supports Spring 7. Controllers remain hand-written against the contract; drift there is caught by tests and review rather than generation.
 
 ## Angular 22 and NgRx RC
 
@@ -39,9 +39,9 @@ Mitigation: legacy NHD is removed as a fallback. Any hydrography overlay targets
 
 ## Map Accessibility
 
-Risk: interactive maps pass axe checks while remaining unusable with a screen reader. The current feature list renders the same data as the map but shares no state with it, so a non-visual user can read the events and still not know which one the map is showing, or move the map to the one they are reading about. Automated tooling cannot see this: the markup is valid and the equivalent content is present.
+Risk: interactive maps pass axe checks while remaining unusable with a screen reader.
 
-Mitigation: two-way selection synchronization between map and feature list, specified in documentation/mapping-visualization.md. Until it exists, the honest claim is "an accessible equivalent is present", not "the map is accessible". Manual Checklist 4 is what settles the question, and it cannot pass convincingly before this lands.
+Mitigation: two-way selection synchronization between map and feature list is **implemented** — list-to-map is automated; map-to-list requires trusted pointer events and is covered by Checklist 4 item M12. Manual Checklist 4 is what settles whether the experience is convincingly accessible, not whether the wiring exists.
 
 ## Public Data Size and Rate Limits
 
@@ -200,7 +200,7 @@ Closed by renaming the application database to `civics_ops` with the role `civic
 
 Was: no single command produced a demonstrable system, so a live demo depended on running several commands in the right order.
 
-Closed by `pnpm run demo:up`, verified from a cold `docker:reset:everything` and on a warm restart. `start:all` remains the DSpace-free development path and no longer destroys a running DSpace stack.
+Closed by `pnpm run start:all` and `pnpm run demo:up`, which share the same full-stack flow via [tools/scripts/compose-stack.mjs](../tools/scripts/compose-stack.mjs). Verified from a cold `docker:reset:everything` and on a warm restart.
 
 ### Fixture Data Masking an Unfinished Integration
 

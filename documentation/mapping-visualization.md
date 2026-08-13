@@ -118,7 +118,7 @@ Automated checks can prove the wiring, not the experience:
 - A storyboard check that activating a map feature moves focus to the matching list item.
 - A storyboard check that the announcement region receives the selected feature's name.
 
-The experience itself is verified by Checklist 4 in [accessibility-manual-evidence.md](accessibility-manual-evidence.md), whose determining question — can someone who never perceives the canvas obtain the same information and perform the same tasks — is only honestly answerable "yes" once this synchronization exists.
+The experience itself is verified by Checklist 4 in [accessibility-manual-evidence.md](accessibility-manual-evidence.md). List-to-map synchronization is automated; map-to-list is implemented but requires a human click (Checklist 4 item M12) because WebGL hit tests cannot be asserted synthetically.
 
 ### Verification status
 

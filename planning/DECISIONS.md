@@ -120,11 +120,11 @@ Alternative considered: drop the custom Solr core and query DSpace discovery dir
 
 ### One-Command Demo Environment
 
-Decision: add `pnpm run demo:up`, which starts the full stack including the DSpace profile, waits for health, seeds, and synchronizes — a single command that ends with a demonstrable system.
+Decision: `pnpm run start:all` and `pnpm run demo:up` both run the full stack including the DSpace profile, wait for health, seed, reindex, and print URLs — a single command that ends with a demonstrable system.
 
-Reason: `start:all` deliberately excludes the DSpace profile so routine development does not pay DSpace startup cost, which is the right default for development and the wrong one for a demonstration. Assembling the demo currently takes several commands in the correct order, which is exactly the situation where a live demo fails.
+Reason: assembling the demo from several commands in the correct order is exactly the situation where a live demo fails. Routine development should not pay that cost manually.
 
-Consequence: applied. `pnpm run demo:up` starts DSpace, waits for REST, seeds, starts the application stack, rebuilds the discovery projection, waits for the UI, and prints the URLs worth showing. Order matters: seeding must precede the API so startup sync does not run against an empty repository. `demo:down` stops everything and keeps data. `start:all` keeps its fast-path behavior and still excludes DSpace. Verified from a cold `docker:reset:everything` and on a warm restart.
+Consequence: applied. Both commands delegate to [tools/scripts/compose-stack.mjs](../tools/scripts/compose-stack.mjs). Order matters: DSpace must migrate and seed before the API starts so startup sync does not run against an empty repository. `demo:down` stops everything and keeps data. Verified from a cold `docker:reset:everything` and on a warm restart. Aliases: `pnpm dev` → `start:all`.
 
 ### Startup Sync Applies Live Data
 
@@ -178,9 +178,17 @@ Reason: no local Maven or Gradle install is required, the toolchain is pinned by
 
 ### DSpace Docker Baseline
 
-Decision: use the official `dspace/dspace:dspace-9.0` images — REST, `dspace-postgres-pgcrypto`, and `dspace-solr` — behind an optional `dspace` Compose profile, with project-local overrides kept minimal.
+Decision: use the official `dspace/dspace:dspace-9.0` images — REST, `dspace-postgres-pgcrypto`, and `dspace-solr` — behind a `dspace` Compose profile, with project-local overrides kept minimal.
 
-Reason: staying on DSpace-supported images keeps migration, seeding, and Solr core layout working the way DSpace documents them. The profile keeps DSpace startup cost off the routine development path.
+Reason: staying on DSpace-supported images keeps migration, seeding, and Solr core layout working the way DSpace documents them. The profile groups DSpace services; `pnpm run start:all` activates it as part of the default startup flow.
+
+### OpenAPI to Java DTO Tooling
+
+Decision: generate model DTOs from the contract with the OpenAPI Generator Gradle plugin (`org.openapi.generator`), wired into the compile task graph.
+
+Reason: the frontend already regenerates and drift-checks against `schemas/openapi/repository-api.yaml`. The backend must not silently diverge. Generating the contract from controllers (Springdoc) is rejected because it inverts the contract-first rule.
+
+Consequence: applied. DTOs generate into `org.civicsrepo.generated.dto` on every build; `compileJava` depends on `openApiGenerate`; every wire type used by controllers and services is migrated. Generated Spring controller interfaces remain deferred until the generator supports Spring 7.
 
 ## Pending
 
@@ -194,17 +202,6 @@ Options, Gradle-oriented only, since the build tool is settled:
 
 Recommendation: no plugin for now. Java tasks run through `nx:run-commands` targets that shell out to Docker, which already gives agents, local CLI, and CI one path. Adopt a plugin only if project-graph awareness of Java sources becomes worth the dependency, and only if it works against a containerized build rather than a host toolchain.
 
-### OpenAPI to Java DTO Tooling
+### Generated Spring Controller Interfaces
 
-Options:
-
-- OpenAPI Generator Gradle plugin (`org.openapi.generator`), generating DTOs and API interfaces from the contract.
-- Springdoc annotation flow, generating the contract from controllers.
-
-Recommendation: the OpenAPI Generator **Gradle** plugin, wired into the `compile` task graph so that editing `schemas/openapi/repository-api.yaml` regenerates Java types before compilation and a contract violation fails the build rather than surfacing at runtime. Generating the contract from controllers is rejected: it inverts the contract-first rule and makes the frontend a downstream consumer of Java annotations.
-
-This is the last open contract gate. Today only the frontend half is generated and drift-checked; Java records are hand-written against the schema, so the backend can silently diverge from the contract the frontend is built on.
-
-Applied for models. The plugin generates DTOs into `org.civicsrepo.generated.dto` on every build, `compileJava` depends on it, and `/maps/census-areas` is migrated end to end as proof of the wiring. Verified by renaming a contract field and confirming the build fails.
-
-Scoped to models rather than controller interfaces: the generator writes those against Spring 6 while this service runs Spring 7, which is a separate change. The remaining hand-written records are tracked in TODO.md, along with the reason each one is a decision rather than a rename — chiefly that several are used as domain types with behavior, not only as wire types.
+Deferred until the OpenAPI Generator supports Spring 7 conventions. Model DTOs are generated today; controllers remain hand-written against the contract.

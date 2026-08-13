@@ -58,7 +58,8 @@ libs/maps/visualization
 libs/maps/usgs-overlays
 libs/data-sources/census
 libs/data-sources/usgs
-tools/harvester
+tools/dspace
+tools/scripts
 apps/repository-api
 schemas/openapi
 ```

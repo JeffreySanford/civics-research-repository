@@ -2,7 +2,7 @@
 
 C4 context and container views plus the three sequences that carry the demo: public dataset ingestion, search and faceted discovery, and dataset map rendering.
 
-These diagrams describe **what runs today**, not the target state. Where the implementation is still fixture-backed, the diagram says so rather than drawing the intended arrow. Planned-but-absent paths are drawn as dashed lines and labelled `planned`. See [Known Seams](#known-seams) for the list and [planning/TODO.md](../planning/TODO.md) for the work that closes them.
+These diagrams describe **what runs today**. Fallback paths — fixture catalog when DSpace is down, bundled USGS fixture when the live feed fails — are drawn explicitly rather than implied. See [Known Seams](#known-seams) for remaining gaps and [planning/TODO.md](../planning/TODO.md) for the work that closes them.
 
 ## C4 Level 1 - System Context
 
@@ -38,7 +38,7 @@ flowchart TB
         discovery[("Solr<br/><i>discovery core</i><br/>Public discovery projection<br/>:8983")]
     end
 
-    subgraph dspace["DSpace Platform (optional 'dspace' Compose profile)"]
+    subgraph dspace["DSpace Platform ('dspace' Compose profile, started by start:all)"]
         dsrest["DSpace REST<br/><i>DSpace 9.0</i><br/>Communities, collections, items,<br/>metadata, bitstreams<br/>:8081/server"]
         dsdb[("PostgreSQL<br/><i>DSpace database</i><br/>Repository system of record<br/>:5433")]
         dssolr[("Solr<br/><i>DSpace cores</i><br/>DSpace internal discovery<br/>:8984")]
@@ -215,8 +215,8 @@ The two effects are deliberately independent: a USGS outage degrades the overlay
 
 Places where the implementation is narrower than the architecture. Each is tracked in [planning/TODO.md](../planning/TODO.md).
 
-1. **Source metadata is static.** `TigerLineMetadataAdapter` returns compile-time constants rather than harvesting Census.
+1. **Catalog contents are curated, not harvested.** `tools/dspace/catalog.json` lists which files exist and for which vintages. Per-file facts such as size and release date come from live HEAD requests where reachable; discovering the catalog itself from Census and USGS APIs is open (P1).
 2. **No bitstreams are uploaded.** By policy, public source files are linked and manifested rather than mirrored, so the repository holds no copies of them. If mirroring small artifacts becomes worthwhile, real bitstreams would be appended to the manifest rather than replacing it.
-3. **Only the TIGER/Line North Dakota item is synchronized.** The other five seeded items are imported by the DSpace seed and read back through discovery, but no adapter reconciles them.
+3. **Live sync reconciliation covers TIGER/Line only.** One hundred sixty-four research objects are seeded from the catalog and read back through discovery, but startup/admin sync adapters reconcile metadata for the TIGER/Line source only. Other programs rely on the seed until additional adapters exist.
 
-Closed: discovery and dataset detail are now served from DSpace. The fixture catalog remains only as a labelled fallback.
+Closed: discovery and dataset detail are served from DSpace. The fixture catalog remains only as a labelled fallback when the repository is unavailable.
