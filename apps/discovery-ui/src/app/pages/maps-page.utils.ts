@@ -4,6 +4,15 @@ import type { CensusAreaBoundary } from 'repository-api-client';
 /** Map zoom must reach this level before panning can auto-select a census area. */
 export const MIN_ZOOM_FOR_PAN_AREA_SYNC = 5;
 
+/**
+ * ArcGIS MapServer export template for the dynamic 3DHP_all service.
+ *
+ * That service has no fused tile cache, so `/tile/{z}/{y}/{x}` always 404s. MapLibre requests
+ * `{bbox-epsg-3857}` tiles through `/export` instead.
+ */
+export const USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE =
+  'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&f=image&transparent=true';
+
 /** MapLibre module shape used when configuring the GeoJSON worker. */
 export type MapLibreModule = {
   setWorkerUrl: (url: string) => void;

@@ -64,4 +64,15 @@ class MapLayerServiceTest {
                 .extracting(MapLayer::getLabel)
                 .anySatisfy(label -> assertThat(label).contains("United States"));
     }
+
+    /** 3DHP_all is a dynamic MapServer; MapLibre must use export bbox tiles, not /tile/{z}/{y}/{x}. */
+    @Test
+    void hydrographyLayerUsesArcGisExportTileTemplate() {
+        assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
+                .filteredOn(layer -> layer.getId().equals("usgs-3hp-hydrography"))
+                .singleElement()
+                .satisfies(layer -> assertThat(layer.getRasterTileUrlTemplate())
+                        .contains("/export?bbox={bbox-epsg-3857}")
+                        .doesNotContain("/tile/{z}/{y}/{x}"));
+    }
 }

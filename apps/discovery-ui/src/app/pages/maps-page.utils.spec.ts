@@ -3,8 +3,20 @@ import {
   configureMapLibreWorker,
   findCensusAreaForPoint,
   readMapDebugSnapshot,
+  USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE,
   whenMapStyleReady,
 } from './maps-page.utils';
+
+describe('USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE', () => {
+  it('uses ArcGIS export bbox tiles for the dynamic 3DHP_all MapServer', () => {
+    expect(USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE).toContain(
+      '/export?bbox={bbox-epsg-3857}',
+    );
+    expect(USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE).not.toContain(
+      '/tile/{z}/{y}/{x}',
+    );
+  });
+});
 
 describe('configureMapLibreWorker', () => {
   it('sets the bundled worker URL', () => {

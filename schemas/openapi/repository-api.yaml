@@ -621,7 +621,10 @@ components:
           default: false
         rasterTileUrlTemplate:
           type: string
-          description: Optional MapLibre raster tile URL template for reference overlays.
+          description: >-
+            Optional MapLibre raster tile URL template for reference overlays.
+            Use `{bbox-epsg-3857}` for dynamic ArcGIS MapServer `/export` endpoints
+            when no cached `/tile/{z}/{y}/{x}` service exists.
     CensusAreaBoundary:
       type: object
       required:

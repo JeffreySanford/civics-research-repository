@@ -67,6 +67,7 @@ import {
   MIN_ZOOM_FOR_PAN_AREA_SYNC,
   readMapDebugSnapshot,
   type MapDebugSnapshot,
+  USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE,
   whenMapStyleReady,
 } from './maps-page.utils';
 import { environment } from '../../environments/environment';
@@ -1045,7 +1046,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
     const tileTemplate =
       this.pendingHydrographyLayer.rasterTileUrlTemplate ??
-      'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/tile/{z}/{y}/{x}';
+      USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE;
 
     if (!this.map.getSource('usgs-3hp-hydrography')) {
       this.map.addSource('usgs-3hp-hydrography', {
@@ -1054,7 +1055,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         tileSize: 256,
         attribution: this.pendingHydrographyLayer.attribution,
       });
+    }
 
+    if (!this.map.getLayer('usgs-3hp-hydrography-raster')) {
       this.map.addLayer(
         {
           id: 'usgs-3hp-hydrography-raster',
@@ -1064,14 +1067,23 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             visibility: this.hydrographyVisible ? 'visible' : 'none',
           },
           paint: {
-            'raster-opacity': 0.78,
+            'raster-opacity': 0.85,
           },
         },
-        'census-area-fill',
+        this.overlayInsertBeforeId(),
       );
     }
 
     this.applyLayerVisibility();
+  }
+
+  /** Inserts vector overlays above the OSM basemap when census layers are not ready yet. */
+  private overlayInsertBeforeId(): string | undefined {
+    if (this.map?.getLayer('census-area-fill')) {
+      return 'census-area-fill';
+    }
+
+    return undefined;
   }
 
   private createEarthquakeGeoJson(

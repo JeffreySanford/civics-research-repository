@@ -62,7 +62,7 @@ public class MapLayerService {
                                 "U.S. Geological Survey 3D Hydrography Program")
                         .visibleByDefault(false)
                         .rasterTileUrlTemplate(
-                                "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/tile/{z}/{y}/{x}"),
+                                "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&f=image&transparent=true"),
                 new MapLayer(
                                 "usgs-earthquakes-" + slug,
                                 "USGS earthquake overlay",
