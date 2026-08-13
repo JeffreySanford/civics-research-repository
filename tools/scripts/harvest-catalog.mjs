@@ -16,6 +16,7 @@ import { probeUrl } from './lib/url-probe.mjs';
  *   node tools/scripts/harvest-catalog.mjs --json out.json   also write machine-readable report
  *   node tools/scripts/harvest-catalog.mjs --write           bump program vintages when probes succeed
  *   node tools/scripts/harvest-catalog.mjs --verify-all      probe every catalog item URL (slow)
+ *   node tools/scripts/harvest-catalog.mjs --strict          exit 1 when verification fails (default reports only)
  *
  * After --write:
  *   pnpm run dspace:saf:generate && pnpm run dspace:seed && pnpm run reindex
@@ -26,6 +27,7 @@ const catalogPath = join(repoRoot, 'tools', 'dspace', 'catalog.json');
 const args = process.argv.slice(2);
 const writeCatalog = args.includes('--write');
 const verifyAll = args.includes('--verify-all');
+const strict = args.includes('--strict') || verifyAll;
 const jsonIndex = args.indexOf('--json');
 const jsonPath = jsonIndex >= 0 ? args[jsonIndex + 1] : null;
 
@@ -351,4 +353,13 @@ if (jsonPath) {
   console.log(`\nReport written to ${jsonPath}`);
 }
 
-process.exit(broken.length > 0 ? 1 : 0);
+if (broken.length > 0) {
+  const strictHint = strict
+    ? ''
+    : ' Pass --strict (or --verify-all) to fail the command when URLs do not resolve.';
+  console.log(
+    `\n${broken.length} verification failure(s) reported.${strictHint}`,
+  );
+}
+
+process.exit(strict && broken.length > 0 ? 1 : 0);

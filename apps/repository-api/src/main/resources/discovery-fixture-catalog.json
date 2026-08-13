@@ -4834,7 +4834,7 @@
       "releasedOn": "2026-01-01",
       "citation": "U.S. Geological Survey. 3D Elevation Program.",
       "sourceUrl": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n48w104/USGS_13_n48w104.tif",
-      "documentationUrl": "https://www.usgs.gov/3d-elevation-program/about-3dep-products-services",
+      "documentationUrl": "https://apps.nationalmap.gov/3depdem/",
       "files": [
         {
           "id": "program-page",
@@ -4846,7 +4846,7 @@
           "id": "products-and-services",
           "label": "3DEP products and services",
           "format": "OTHER",
-          "url": "https://www.usgs.gov/3d-elevation-program/about-3dep-products-services"
+          "url": "https://apps.nationalmap.gov/3depdem/"
         }
       ]
     },
@@ -4862,7 +4862,7 @@
       "releasedOn": "2026-01-01",
       "citation": "U.S. Geological Survey. 3D Hydrography Program.",
       "sourceUrl": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/Beta/GDB/NHDPLUS_H_1003_HU4_GDB.zip",
-      "documentationUrl": "https://www.usgs.gov/national-hydrography/access-national-hydrography-products",
+      "documentationUrl": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer",
       "files": [
         {
           "id": "program-page",
@@ -4874,7 +4874,7 @@
           "id": "product-access",
           "label": "Hydrography product access",
           "format": "OTHER",
-          "url": "https://www.usgs.gov/national-hydrography/access-national-hydrography-products"
+          "url": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer"
         }
       ]
     },
