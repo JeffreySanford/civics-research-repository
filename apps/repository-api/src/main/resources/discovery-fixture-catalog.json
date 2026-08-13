@@ -59,6 +59,34 @@
       ]
     },
     {
+      "id": "acs-pums-american-samoa-2024",
+      "title": "2024 ACS 1-Year PUMS - American Samoa",
+      "program": "ACS",
+      "publisher": "U.S. Census Bureau",
+      "summary": "American Community Survey public use microdata sample metadata for American Samoa, represented as a repository object with source links rather than mirrored microdata.",
+      "geography": "American Samoa",
+      "geographyLevel": "Public use microdata area",
+      "vintageYear": 2024,
+      "releasedOn": "2024-10-01",
+      "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, American Samoa, 2024.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pas.zip",
+      "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "ACS PUMS person records archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pas.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "ACS PUMS documentation",
+          "format": "OTHER",
+          "url": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html"
+        }
+      ]
+    },
+    {
       "id": "acs-pums-arizona-2024",
       "title": "2024 ACS 1-Year PUMS - Arizona",
       "program": "ACS",
@@ -301,6 +329,34 @@
           "label": "ACS PUMS person records archive",
           "format": "ZIP",
           "url": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pga.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "ACS PUMS documentation",
+          "format": "OTHER",
+          "url": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html"
+        }
+      ]
+    },
+    {
+      "id": "acs-pums-guam-2024",
+      "title": "2024 ACS 1-Year PUMS - Guam",
+      "program": "ACS",
+      "publisher": "U.S. Census Bureau",
+      "summary": "American Community Survey public use microdata sample metadata for Guam, represented as a repository object with source links rather than mirrored microdata.",
+      "geography": "Guam",
+      "geographyLevel": "Public use microdata area",
+      "vintageYear": 2024,
+      "releasedOn": "2024-10-01",
+      "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Guam, 2024.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pgu.zip",
+      "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "ACS PUMS person records archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pgu.zip"
         },
         {
           "id": "technical-documentation",
@@ -983,6 +1039,34 @@
       ]
     },
     {
+      "id": "acs-pums-northern-mariana-islands-2024",
+      "title": "2024 ACS 1-Year PUMS - Northern Mariana Islands",
+      "program": "ACS",
+      "publisher": "U.S. Census Bureau",
+      "summary": "American Community Survey public use microdata sample metadata for Northern Mariana Islands, represented as a repository object with source links rather than mirrored microdata.",
+      "geography": "Northern Mariana Islands",
+      "geographyLevel": "Public use microdata area",
+      "vintageYear": 2024,
+      "releasedOn": "2024-10-01",
+      "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Northern Mariana Islands, 2024.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmp.zip",
+      "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "ACS PUMS person records archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmp.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "ACS PUMS documentation",
+          "format": "OTHER",
+          "url": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html"
+        }
+      ]
+    },
+    {
       "id": "acs-pums-ohio-2024",
       "title": "2024 ACS 1-Year PUMS - Ohio",
       "program": "ACS",
@@ -1253,6 +1337,34 @@
           "label": "ACS PUMS person records archive",
           "format": "ZIP",
           "url": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_ptx.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "ACS PUMS documentation",
+          "format": "OTHER",
+          "url": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html"
+        }
+      ]
+    },
+    {
+      "id": "acs-pums-u.s.-virgin-islands-2024",
+      "title": "2024 ACS 1-Year PUMS - U.S. Virgin Islands",
+      "program": "ACS",
+      "publisher": "U.S. Census Bureau",
+      "summary": "American Community Survey public use microdata sample metadata for U.S. Virgin Islands, represented as a repository object with source links rather than mirrored microdata.",
+      "geography": "U.S. Virgin Islands",
+      "geographyLevel": "Public use microdata area",
+      "vintageYear": 2024,
+      "releasedOn": "2024-10-01",
+      "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, U.S. Virgin Islands, 2024.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pvi.zip",
+      "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "ACS PUMS person records archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pvi.zip"
         },
         {
           "id": "technical-documentation",
@@ -1543,24 +1655,24 @@
       ]
     },
     {
-      "id": "cps-public-use-2025",
-      "title": "2025 Current Population Survey Public Use Data",
+      "id": "cps-public-use-2026",
+      "title": "2026 Current Population Survey Public Use Data",
       "program": "CPS",
       "publisher": "U.S. Census Bureau",
       "summary": "Current Population Survey public-use metadata for labor force, employment, and demographic research.",
       "geography": "United States",
       "geographyLevel": "National",
-      "vintageYear": 2025,
-      "releasedOn": "2025-09-01",
-      "citation": "U.S. Census Bureau. Current Population Survey Public Use Data, 2025.",
-      "sourceUrl": "https://www2.census.gov/programs-surveys/cps/datasets/2025/basic/jan25pub.zip",
+      "vintageYear": 2026,
+      "releasedOn": "2026-09-01",
+      "citation": "U.S. Census Bureau. Current Population Survey Public Use Data, 2026.",
+      "sourceUrl": "https://www2.census.gov/programs-surveys/cps/datasets/2026/basic/jan26pub.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/cps/technical-documentation/complete.html",
       "files": [
         {
           "id": "source-directory",
           "label": "CPS basic monthly data directory",
           "format": "OTHER",
-          "url": "https://www2.census.gov/programs-surveys/cps/datasets/2025/basic/jan25pub.zip"
+          "url": "https://www2.census.gov/programs-surveys/cps/datasets/2026/basic/jan26pub.zip"
         },
         {
           "id": "technical-documentation",
@@ -1617,6 +1729,34 @@
           "label": "LODES workplace area characteristics CSV",
           "format": "CSV",
           "url": "https://lehd.ces.census.gov/data/lodes/LODES8/al/wac/al_wac_S000_JT00_2023.csv.gz"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "LODES technical documentation",
+          "format": "PDF",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf"
+        }
+      ]
+    },
+    {
+      "id": "lodes-wac-american-samoa-2023",
+      "title": "2023 LODES Workplace Area Characteristics - American Samoa",
+      "program": "LODES",
+      "publisher": "U.S. Census Bureau",
+      "summary": "LEHD Origin-Destination Employment Statistics workplace area characteristics metadata for American Samoa workforce geography.",
+      "geography": "American Samoa",
+      "geographyLevel": "Census block",
+      "vintageYear": 2023,
+      "releasedOn": "2023-06-01",
+      "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, American Samoa, 2023.",
+      "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/as/wac/as_wac_S000_JT00_2023.csv.gz",
+      "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "files": [
+        {
+          "id": "source-csv",
+          "label": "LODES workplace area characteristics CSV",
+          "format": "CSV",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/as/wac/as_wac_S000_JT00_2023.csv.gz"
         },
         {
           "id": "technical-documentation",
@@ -1869,6 +2009,34 @@
           "label": "LODES workplace area characteristics CSV",
           "format": "CSV",
           "url": "https://lehd.ces.census.gov/data/lodes/LODES8/ga/wac/ga_wac_S000_JT00_2023.csv.gz"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "LODES technical documentation",
+          "format": "PDF",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf"
+        }
+      ]
+    },
+    {
+      "id": "lodes-wac-guam-2023",
+      "title": "2023 LODES Workplace Area Characteristics - Guam",
+      "program": "LODES",
+      "publisher": "U.S. Census Bureau",
+      "summary": "LEHD Origin-Destination Employment Statistics workplace area characteristics metadata for Guam workforce geography.",
+      "geography": "Guam",
+      "geographyLevel": "Census block",
+      "vintageYear": 2023,
+      "releasedOn": "2023-06-01",
+      "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Guam, 2023.",
+      "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/gu/wac/gu_wac_S000_JT00_2023.csv.gz",
+      "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "files": [
+        {
+          "id": "source-csv",
+          "label": "LODES workplace area characteristics CSV",
+          "format": "CSV",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/gu/wac/gu_wac_S000_JT00_2023.csv.gz"
         },
         {
           "id": "technical-documentation",
@@ -2523,6 +2691,34 @@
       ]
     },
     {
+      "id": "lodes-wac-northern-mariana-islands-2023",
+      "title": "2023 LODES Workplace Area Characteristics - Northern Mariana Islands",
+      "program": "LODES",
+      "publisher": "U.S. Census Bureau",
+      "summary": "LEHD Origin-Destination Employment Statistics workplace area characteristics metadata for Northern Mariana Islands workforce geography.",
+      "geography": "Northern Mariana Islands",
+      "geographyLevel": "Census block",
+      "vintageYear": 2023,
+      "releasedOn": "2023-06-01",
+      "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Northern Mariana Islands, 2023.",
+      "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/mp/wac/mp_wac_S000_JT00_2023.csv.gz",
+      "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "files": [
+        {
+          "id": "source-csv",
+          "label": "LODES workplace area characteristics CSV",
+          "format": "CSV",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/mp/wac/mp_wac_S000_JT00_2023.csv.gz"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "LODES technical documentation",
+          "format": "PDF",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf"
+        }
+      ]
+    },
+    {
       "id": "lodes-wac-ohio-2023",
       "title": "2023 LODES Workplace Area Characteristics - Ohio",
       "program": "LODES",
@@ -2765,6 +2961,34 @@
           "label": "LODES workplace area characteristics CSV",
           "format": "CSV",
           "url": "https://lehd.ces.census.gov/data/lodes/LODES8/tx/wac/tx_wac_S000_JT00_2023.csv.gz"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "LODES technical documentation",
+          "format": "PDF",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf"
+        }
+      ]
+    },
+    {
+      "id": "lodes-wac-u.s.-virgin-islands-2023",
+      "title": "2023 LODES Workplace Area Characteristics - U.S. Virgin Islands",
+      "program": "LODES",
+      "publisher": "U.S. Census Bureau",
+      "summary": "LEHD Origin-Destination Employment Statistics workplace area characteristics metadata for U.S. Virgin Islands workforce geography.",
+      "geography": "U.S. Virgin Islands",
+      "geographyLevel": "Census block",
+      "vintageYear": 2023,
+      "releasedOn": "2023-06-01",
+      "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, U.S. Virgin Islands, 2023.",
+      "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/vi/wac/vi_wac_S000_JT00_2023.csv.gz",
+      "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "files": [
+        {
+          "id": "source-csv",
+          "label": "LODES workplace area characteristics CSV",
+          "format": "CSV",
+          "url": "https://lehd.ces.census.gov/data/lodes/LODES8/vi/wac/vi_wac_S000_JT00_2023.csv.gz"
         },
         {
           "id": "technical-documentation",
@@ -3123,6 +3347,40 @@
       ]
     },
     {
+      "id": "tiger-line-american-samoa-2025",
+      "title": "2025 TIGER/Line - Census Tracts - American Samoa",
+      "program": "TIGER_LINE",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Census TIGER/Line tract boundary metadata for American Samoa, represented as a repository research object with source links and a file manifest rather than mirrored geometry.",
+      "geography": "American Samoa",
+      "geographyLevel": "Census tract",
+      "vintageYear": 2025,
+      "releasedOn": "2025-01-01",
+      "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, American Samoa.",
+      "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_60_tract.zip",
+      "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "TIGER/Line source archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_60_tract.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "TIGER/Line technical documentation",
+          "format": "PDF",
+          "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf"
+        },
+        {
+          "id": "source-landing-page",
+          "label": "TIGER/Line landing page",
+          "format": "OTHER",
+          "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
+        }
+      ]
+    },
+    {
       "id": "tiger-line-arizona-2025",
       "title": "2025 TIGER/Line - Census Tracts - Arizona",
       "program": "TIGER_LINE",
@@ -3413,6 +3671,40 @@
           "label": "TIGER/Line source archive",
           "format": "ZIP",
           "url": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_13_tract.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "TIGER/Line technical documentation",
+          "format": "PDF",
+          "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf"
+        },
+        {
+          "id": "source-landing-page",
+          "label": "TIGER/Line landing page",
+          "format": "OTHER",
+          "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
+        }
+      ]
+    },
+    {
+      "id": "tiger-line-guam-2025",
+      "title": "2025 TIGER/Line - Census Tracts - Guam",
+      "program": "TIGER_LINE",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Census TIGER/Line tract boundary metadata for Guam, represented as a repository research object with source links and a file manifest rather than mirrored geometry.",
+      "geography": "Guam",
+      "geographyLevel": "Census tract",
+      "vintageYear": 2025,
+      "releasedOn": "2025-01-01",
+      "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Guam.",
+      "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_66_tract.zip",
+      "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "TIGER/Line source archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_66_tract.zip"
         },
         {
           "id": "technical-documentation",
@@ -4245,6 +4537,40 @@
       ]
     },
     {
+      "id": "tiger-line-northern-mariana-islands-2025",
+      "title": "2025 TIGER/Line - Census Tracts - Northern Mariana Islands",
+      "program": "TIGER_LINE",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Census TIGER/Line tract boundary metadata for Northern Mariana Islands, represented as a repository research object with source links and a file manifest rather than mirrored geometry.",
+      "geography": "Northern Mariana Islands",
+      "geographyLevel": "Census tract",
+      "vintageYear": 2025,
+      "releasedOn": "2025-01-01",
+      "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Northern Mariana Islands.",
+      "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_69_tract.zip",
+      "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "TIGER/Line source archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_69_tract.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "TIGER/Line technical documentation",
+          "format": "PDF",
+          "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf"
+        },
+        {
+          "id": "source-landing-page",
+          "label": "TIGER/Line landing page",
+          "format": "OTHER",
+          "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
+        }
+      ]
+    },
+    {
       "id": "tiger-line-ohio-2025",
       "title": "2025 TIGER/Line - Census Tracts - Ohio",
       "program": "TIGER_LINE",
@@ -4569,6 +4895,40 @@
           "label": "TIGER/Line source archive",
           "format": "ZIP",
           "url": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_48_tract.zip"
+        },
+        {
+          "id": "technical-documentation",
+          "label": "TIGER/Line technical documentation",
+          "format": "PDF",
+          "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf"
+        },
+        {
+          "id": "source-landing-page",
+          "label": "TIGER/Line landing page",
+          "format": "OTHER",
+          "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
+        }
+      ]
+    },
+    {
+      "id": "tiger-line-u.s.-virgin-islands-2025",
+      "title": "2025 TIGER/Line - Census Tracts - U.S. Virgin Islands",
+      "program": "TIGER_LINE",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Census TIGER/Line tract boundary metadata for U.S. Virgin Islands, represented as a repository research object with source links and a file manifest rather than mirrored geometry.",
+      "geography": "U.S. Virgin Islands",
+      "geographyLevel": "Census tract",
+      "vintageYear": 2025,
+      "releasedOn": "2025-01-01",
+      "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, U.S. Virgin Islands.",
+      "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_78_tract.zip",
+      "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "files": [
+        {
+          "id": "source-zip",
+          "label": "TIGER/Line source archive",
+          "format": "ZIP",
+          "url": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_78_tract.zip"
         },
         {
           "id": "technical-documentation",

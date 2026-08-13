@@ -269,6 +269,26 @@
       "name": "Wyoming",
       "fips": "56",
       "abbreviation": "WY"
+    },
+    {
+      "name": "American Samoa",
+      "fips": "60",
+      "abbreviation": "AS"
+    },
+    {
+      "name": "Guam",
+      "fips": "66",
+      "abbreviation": "GU"
+    },
+    {
+      "name": "Northern Mariana Islands",
+      "fips": "69",
+      "abbreviation": "MP"
+    },
+    {
+      "name": "U.S. Virgin Islands",
+      "fips": "78",
+      "abbreviation": "VI"
     }
   ],
   "programs": [
@@ -285,10 +305,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/geo/tiger/TIGER{vintage}/TRACT/tl_{vintage}_{fips}_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
       "citationTemplate": "U.S. Census Bureau. {vintage} TIGER/Line Shapefiles: Census Tracts, {area}.",
-      "subjects": [
-        "TIGER/Line",
-        "Census tracts"
-      ],
+      "subjects": ["TIGER/Line", "Census tracts"],
       "publisher": "census",
       "files": [
         {
@@ -330,10 +347,7 @@
       },
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
       "citationTemplate": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, {area}, {vintage}.",
-      "subjects": [
-        "LODES",
-        "Workplace area characteristics"
-      ],
+      "subjects": ["LODES", "Workplace area characteristics"],
       "publisher": "census",
       "files": [
         {
@@ -363,10 +377,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/acs/data/pums/{vintage}/1-Year/csv_p{abbreviationLower}.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
       "citationTemplate": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, {area}, {vintage}.",
-      "subjects": [
-        "ACS PUMS",
-        "Public use microdata"
-      ],
+      "subjects": ["ACS PUMS", "Public use microdata"],
       "publisher": "census",
       "files": [
         {
@@ -397,10 +408,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/sipp/data/datasets/{vintage}/pu{vintage}_csv.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/sipp/tech-documentation.html",
       "citationTemplate": "U.S. Census Bureau. Survey of Income and Program Participation Public Use Data, {vintage}.",
-      "subjects": [
-        "SIPP",
-        "Income and program participation"
-      ],
+      "subjects": ["SIPP", "Income and program participation"],
       "publisher": "census",
       "files": [
         {
@@ -421,7 +429,7 @@
       "id": "CPS",
       "enabled": true,
       "scope": "national",
-      "vintage": 2025,
+      "vintage": 2026,
       "geography": "United States",
       "geographyLevel": "National",
       "idTemplate": "cps-public-use-{vintage}",
@@ -431,10 +439,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/cps/datasets/{vintage}/basic/jan{vintageShort}pub.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/cps/technical-documentation/complete.html",
       "citationTemplate": "U.S. Census Bureau. Current Population Survey Public Use Data, {vintage}.",
-      "subjects": [
-        "CPS",
-        "Labor force"
-      ],
+      "subjects": ["CPS", "Labor force"],
       "publisher": "census",
       "files": [
         {
@@ -465,10 +470,7 @@
       "sourceUrlTemplate": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson",
       "documentationUrl": "https://earthquake.usgs.gov/fdsnws/event/1/",
       "citationTemplate": "U.S. Geological Survey. Earthquake Catalog GeoJSON Feed.",
-      "subjects": [
-        "Earthquakes",
-        "Hazards"
-      ],
+      "subjects": ["Earthquakes", "Hazards"],
       "publisher": "usgs",
       "files": [
         {
@@ -498,10 +500,7 @@
       "sourceUrlTemplate": "https://lehd.ces.census.gov/data/lodes/LODES8/{abbreviationLower}/od/{abbreviationLower}_od_main_JT00_{vintage}.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
       "citationTemplate": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, {area}, {vintage}.",
-      "subjects": [
-        "LEHD",
-        "Commuting flows"
-      ],
+      "subjects": ["LEHD", "Commuting flows"],
       "publisher": "census",
       "files": [
         {
@@ -526,10 +525,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/economic-census/data/{vintage}/sector00/ECNBASIC{vintage}.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/economic-census/technical-documentation.html",
       "citationTemplate": "U.S. Census Bureau. {vintage} Economic Census.",
-      "subjects": [
-        "Economic Census",
-        "Business statistics"
-      ],
+      "subjects": ["Economic Census", "Business statistics"],
       "publisher": "census",
       "files": [
         {
@@ -560,10 +556,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/cbp/datasets/{vintage}/cbp{vintageShort}co.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/cbp/technical-documentation.html",
       "citationTemplate": "U.S. Census Bureau. {vintage} County Business Patterns.",
-      "subjects": [
-        "County Business Patterns",
-        "Business statistics"
-      ],
+      "subjects": ["County Business Patterns", "Business statistics"],
       "publisher": "census",
       "files": [
         {
@@ -594,10 +587,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/econ/bps/County/co{vintage}a.txt",
       "documentationUrl": "https://www.census.gov/construction/bps/methodology.html",
       "citationTemplate": "U.S. Census Bureau. {vintage} Building Permits Survey.",
-      "subjects": [
-        "Building permits",
-        "Construction"
-      ],
+      "subjects": ["Building permits", "Construction"],
       "publisher": "census",
       "files": [
         {
@@ -628,10 +618,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/popest/datasets/2020-{vintage}/counties/totals/co-est{vintage}-alldata.csv",
       "documentationUrl": "https://www.census.gov/programs-surveys/popest/technical-documentation.html",
       "citationTemplate": "U.S. Census Bureau. {vintage} Population Estimates Program.",
-      "subjects": [
-        "Population estimates",
-        "Demography"
-      ],
+      "subjects": ["Population estimates", "Demography"],
       "publisher": "census",
       "files": [
         {
@@ -662,10 +649,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/saipe/datasets/{vintage}/{vintage}-state-and-county/est{vintageShort}all.txt",
       "documentationUrl": "https://www.census.gov/programs-surveys/saipe/technical-documentation.html",
       "citationTemplate": "U.S. Census Bureau. {vintage} Small Area Income and Poverty Estimates.",
-      "subjects": [
-        "SAIPE",
-        "Income and poverty"
-      ],
+      "subjects": ["SAIPE", "Income and poverty"],
       "publisher": "census",
       "files": [
         {
@@ -696,10 +680,7 @@
       "sourceUrlTemplate": "https://www2.census.gov/programs-surveys/bds/tables/time-series/{vintage}/bds{vintage}.csv",
       "documentationUrl": "https://www.census.gov/programs-surveys/bds/documentation.html",
       "citationTemplate": "U.S. Census Bureau. {vintage} Business Dynamics Statistics.",
-      "subjects": [
-        "Business Dynamics Statistics",
-        "Firm dynamics"
-      ],
+      "subjects": ["Business Dynamics Statistics", "Firm dynamics"],
       "publisher": "census",
       "files": [
         {
@@ -730,10 +711,7 @@
       "sourceUrlTemplate": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n48w104/USGS_13_n48w104.tif",
       "documentationUrl": "https://apps.nationalmap.gov/3depdem/",
       "citationTemplate": "U.S. Geological Survey. 3D Elevation Program.",
-      "subjects": [
-        "Elevation",
-        "Lidar"
-      ],
+      "subjects": ["Elevation", "Lidar"],
       "publisher": "usgs",
       "files": [
         {
@@ -764,10 +742,7 @@
       "sourceUrlTemplate": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/Beta/GDB/NHDPLUS_H_1003_HU4_GDB.zip",
       "documentationUrl": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer",
       "citationTemplate": "U.S. Geological Survey. 3D Hydrography Program.",
-      "subjects": [
-        "Hydrography",
-        "Surface water"
-      ],
+      "subjects": ["Hydrography", "Surface water"],
       "publisher": "usgs",
       "files": [
         {
