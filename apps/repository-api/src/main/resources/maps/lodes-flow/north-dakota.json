@@ -1,0 +1,64 @@
+{
+  "flows": [
+    {
+      "id": "nd-burleigh-cass",
+      "originLabel": "Bismarck area (home)",
+      "destinationLabel": "Fargo area (work)",
+      "workerCount": 1240,
+      "originCounty": "Burleigh County",
+      "destinationCounty": "Cass County",
+      "originLongitude": -100.7837,
+      "originLatitude": 46.8083,
+      "destinationLongitude": -96.7898,
+      "destinationLatitude": 46.8772
+    },
+    {
+      "id": "nd-grand-forks-cass",
+      "originLabel": "Grand Forks area (home)",
+      "destinationLabel": "Fargo area (work)",
+      "workerCount": 860,
+      "originCounty": "Grand Forks County",
+      "destinationCounty": "Cass County",
+      "originLongitude": -97.0329,
+      "originLatitude": 47.9253,
+      "destinationLongitude": -96.7898,
+      "destinationLatitude": 46.8772
+    },
+    {
+      "id": "nd-ward-cass",
+      "originLabel": "Minot area (home)",
+      "destinationLabel": "Fargo area (work)",
+      "workerCount": 410,
+      "originCounty": "Ward County",
+      "destinationCounty": "Cass County",
+      "originLongitude": -101.2963,
+      "originLatitude": 48.2325,
+      "destinationLongitude": -96.7898,
+      "destinationLatitude": 46.8772
+    },
+    {
+      "id": "nd-stark-burleigh",
+      "originLabel": "Dickinson area (home)",
+      "destinationLabel": "Bismarck area (work)",
+      "workerCount": 355,
+      "originCounty": "Stark County",
+      "destinationCounty": "Burleigh County",
+      "originLongitude": -102.7896,
+      "originLatitude": 46.8792,
+      "destinationLongitude": -100.7837,
+      "destinationLatitude": 46.8083
+    },
+    {
+      "id": "nd-morton-burleigh",
+      "originLabel": "Mandan area (home)",
+      "destinationLabel": "Bismarck area (work)",
+      "workerCount": 520,
+      "originCounty": "Morton County",
+      "destinationCounty": "Burleigh County",
+      "originLongitude": -100.8897,
+      "originLatitude": 46.8265,
+      "destinationLongitude": -100.7837,
+      "destinationLatitude": 46.8083
+    }
+  ]
+}

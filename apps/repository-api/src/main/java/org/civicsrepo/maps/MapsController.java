@@ -2,13 +2,17 @@ package org.civicsrepo.maps;
 
 import java.util.List;
 import org.civicsrepo.generated.dto.CensusAreaBoundary;
+import org.civicsrepo.generated.dto.LodesFlowOverlay;
 import org.civicsrepo.generated.dto.MapLayer;
+import org.civicsrepo.generated.dto.SaipeCountyChoropleth;
 import org.civicsrepo.generated.dto.UsgsEarthquakeOverlay;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping
@@ -16,14 +20,20 @@ public class MapsController {
     private final CensusAreaBoundaryService censusAreaBoundaryService;
     private final MapLayerService mapLayerService;
     private final UsgsEarthquakeService usgsEarthquakeService;
+    private final LodesFlowService lodesFlowService;
+    private final SaipeCountyChoroplethService saipeCountyChoroplethService;
 
     public MapsController(
             CensusAreaBoundaryService censusAreaBoundaryService,
             MapLayerService mapLayerService,
-            UsgsEarthquakeService usgsEarthquakeService) {
+            UsgsEarthquakeService usgsEarthquakeService,
+            LodesFlowService lodesFlowService,
+            SaipeCountyChoroplethService saipeCountyChoroplethService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.mapLayerService = mapLayerService;
         this.usgsEarthquakeService = usgsEarthquakeService;
+        this.lodesFlowService = lodesFlowService;
+        this.saipeCountyChoroplethService = saipeCountyChoroplethService;
     }
 
     @GetMapping("/datasets/{datasetId}/map-layers")
@@ -40,5 +50,24 @@ public class MapsController {
     public UsgsEarthquakeOverlay getUsgsEarthquakeOverlay(
             @RequestParam(defaultValue = "0") double minMagnitude, @RequestParam(defaultValue = "7") int days) {
         return usgsEarthquakeService.findEarthquakes(minMagnitude, days);
+    }
+
+    @GetMapping("/overlays/census/lodes-flow")
+    public LodesFlowOverlay getLodesFlowOverlay(@RequestParam(defaultValue = "North Dakota") String geography) {
+        try {
+            return lodesFlowService.findFlowSample(geography);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
+    }
+
+    @GetMapping("/overlays/census/saipe-counties")
+    public SaipeCountyChoropleth getSaipeCountyChoropleth(
+            @RequestParam(defaultValue = "North Dakota") String geography) {
+        try {
+            return saipeCountyChoroplethService.findChoropleth(geography);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
     }
 }

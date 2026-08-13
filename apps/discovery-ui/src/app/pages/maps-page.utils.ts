@@ -29,6 +29,9 @@ export type MapDebugSnapshot = {
 const DEBUG_LAYER_IDS = [
   'census-area-fill',
   'census-area-outline',
+  'saipe-county-fill',
+  'saipe-county-outline',
+  'usgs-3hp-hydrography-raster',
   'usgs-earthquake-points',
   'lodes-workplace-flow-line',
   'lodes-workplace-flow-points',
@@ -36,6 +39,8 @@ const DEBUG_LAYER_IDS = [
 
 const DEBUG_SOURCE_IDS = [
   'census-area-boundary',
+  'saipe-county-choropleth',
+  'usgs-3hp-hydrography',
   'usgs-earthquakes',
   'lodes-workplace-flow',
 ] as const;

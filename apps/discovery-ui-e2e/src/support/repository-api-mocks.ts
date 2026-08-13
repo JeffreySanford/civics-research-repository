@@ -98,6 +98,27 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
           visibleByDefault: true,
         },
         {
+          id: 'saipe-county-poverty',
+          label: `2023 SAIPE county poverty - ${geography}`,
+          layerType: 'CENSUS_CHOROPLETH',
+          sourceUrl:
+            'https://www.census.gov/data/datasets/2023/demo-saipe/2023-state-and-county.html',
+          attribution:
+            'U.S. Census Bureau Small Area Income and Poverty Estimates',
+          visibleByDefault: true,
+        },
+        {
+          id: 'usgs-3hp-hydrography',
+          label: 'USGS 3D Hydrography Program reference',
+          layerType: 'USGS_REFERENCE',
+          sourceUrl:
+            'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer',
+          attribution: 'U.S. Geological Survey 3D Hydrography Program',
+          visibleByDefault: false,
+          rasterTileUrlTemplate:
+            'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/tile/{z}/{y}/{x}',
+        },
+        {
           id: 'usgs-earthquakes-preview',
           label: 'USGS earthquake overlay',
           layerType: 'USGS_EARTHQUAKE',
@@ -170,6 +191,28 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         ),
         censusArea('texas', 'Texas', -106.6456, 25.8371, -93.5083, 36.5007),
       ],
+    });
+  });
+
+  await page.route(`**/api/overlays/census/lodes-flow**`, async (route) => {
+    const geography =
+      new URL(route.request().url()).searchParams.get('geography') ??
+      'North Dakota';
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: lodesFlowOverlay(geography),
+    });
+  });
+
+  await page.route(`**/api/overlays/census/saipe-counties**`, async (route) => {
+    const geography =
+      new URL(route.request().url()).searchParams.get('geography') ??
+      'North Dakota';
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: saipeChoropleth(geography),
     });
   });
 
@@ -531,4 +574,127 @@ function geographyFromDatasetId(datasetId: string): string {
       .sort(([left], [right]) => right.length - left.length)
       .map(([, geography]) => geography)[0] ?? 'United States'
   );
+}
+
+function lodesFlowOverlay(geography: string): unknown {
+  return {
+    source: `LEHD LODES 2023 main OD sample - ${geography}`,
+    sourceUrl:
+      'https://lehd.ces.census.gov/data/lodes/LODES8/nd/od/nd_od_main_JT00_2023.csv.gz',
+    attribution:
+      'U.S. Census Bureau LEHD Origin-Destination Employment Statistics',
+    geography,
+    vintage: 2023,
+    fallback: false,
+    geoJson: {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: { id: 'demo-flow', workerCount: 1240 },
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [-100.7837, 46.8083],
+              [-96.7898, 46.8772],
+            ],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: { label: 'Bismarck area (home)' },
+          geometry: { type: 'Point', coordinates: [-100.7837, 46.8083] },
+        },
+        {
+          type: 'Feature',
+          properties: { label: 'Fargo area (work)' },
+          geometry: { type: 'Point', coordinates: [-96.7898, 46.8772] },
+        },
+      ],
+    },
+    flows: [
+      {
+        id: 'nd-burleigh-cass',
+        originLabel: 'Bismarck area (home)',
+        destinationLabel: 'Fargo area (work)',
+        workerCount: 1240,
+        originCounty: 'Burleigh County',
+        destinationCounty: 'Cass County',
+      },
+    ],
+  };
+}
+
+function saipeChoropleth(geography: string): unknown {
+  return {
+    source: `SAIPE 2023 county poverty - ${geography}`,
+    sourceUrl:
+      'https://www2.census.gov/programs-surveys/saipe/datasets/2023/2023-state-and-county/est23all.txt',
+    attribution:
+      'U.S. Census Bureau Small Area Income and Poverty Estimates (SAIPE)',
+    geography,
+    vintage: 2023,
+    measureLabel: 'Poverty rate, all ages (percent)',
+    geoJson: {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            fips: '38015',
+            name: 'Burleigh County',
+            povertyRate: 7.2,
+            medianHouseholdIncome: 71200,
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-101.0, 46.5],
+                [-100.2, 46.5],
+                [-100.2, 47.1],
+                [-101.0, 47.1],
+                [-101.0, 46.5],
+              ],
+            ],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {
+            fips: '38017',
+            name: 'Cass County',
+            povertyRate: 9.8,
+            medianHouseholdIncome: 66800,
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-97.4, 46.6],
+                [-96.6, 46.6],
+                [-96.6, 47.2],
+                [-97.4, 47.2],
+                [-97.4, 46.6],
+              ],
+            ],
+          },
+        },
+      ],
+    },
+    counties: [
+      {
+        fips: '38015',
+        name: 'Burleigh County',
+        povertyRate: 7.2,
+        medianHouseholdIncome: 71200,
+      },
+      {
+        fips: '38017',
+        name: 'Cass County',
+        povertyRate: 9.8,
+        medianHouseholdIncome: 66800,
+      },
+    ],
+  };
 }

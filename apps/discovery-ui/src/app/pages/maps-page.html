@@ -24,32 +24,105 @@
     </label>
 
     <fieldset class="layer-controls" aria-label="Map layer controls">
-      <label>
+      <label class="layer-toggle">
         <input
           type="checkbox"
           data-testid="map-layer-tiger"
           [checked]="tigerVisible$ | async"
           (change)="toggleTigerLayer($any($event.target).checked)"
         />
-        TIGER/Line boundary
+        <span class="layer-toggle-label">TIGER/Line boundary</span>
+        <button
+          type="button"
+          class="layer-info-button"
+          mat-icon-button
+          [matTooltip]="layerTooltips.tiger"
+          matTooltipPosition="above"
+          aria-label="About TIGER/Line boundary layer"
+          (click)="$event.preventDefault(); $event.stopPropagation()"
+        >
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+        </button>
       </label>
-      <label>
-        <input
-          type="checkbox"
-          data-testid="map-layer-earthquake"
-          [checked]="earthquakeVisible$ | async"
-          (change)="toggleEarthquakeLayer($any($event.target).checked)"
-        />
-        USGS earthquake overlay
-      </label>
-      <label>
+      <label class="layer-toggle">
         <input
           type="checkbox"
           data-testid="map-layer-lodes"
           [checked]="lodesVisible$ | async"
           (change)="toggleLodesLayer($any($event.target).checked)"
         />
-        LODES workplace flow sample
+        <span class="layer-toggle-label">LODES workplace flow sample</span>
+        <button
+          type="button"
+          class="layer-info-button"
+          mat-icon-button
+          [matTooltip]="layerTooltips.lodes"
+          matTooltipPosition="above"
+          aria-label="About LODES workplace flow layer"
+          (click)="$event.preventDefault(); $event.stopPropagation()"
+        >
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+        </button>
+      </label>
+      <label class="layer-toggle">
+        <input
+          type="checkbox"
+          data-testid="map-layer-saipe"
+          [checked]="saipeVisible$ | async"
+          (change)="toggleSaipeLayer($any($event.target).checked)"
+        />
+        <span class="layer-toggle-label">SAIPE county poverty</span>
+        <button
+          type="button"
+          class="layer-info-button"
+          mat-icon-button
+          [matTooltip]="layerTooltips.saipe"
+          matTooltipPosition="above"
+          aria-label="About SAIPE county poverty layer"
+          (click)="$event.preventDefault(); $event.stopPropagation()"
+        >
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+        </button>
+      </label>
+      <label class="layer-toggle">
+        <input
+          type="checkbox"
+          data-testid="map-layer-hydrography"
+          [checked]="hydrographyVisible$ | async"
+          (change)="toggleHydrographyLayer($any($event.target).checked)"
+        />
+        <span class="layer-toggle-label">USGS 3HP hydrography</span>
+        <button
+          type="button"
+          class="layer-info-button"
+          mat-icon-button
+          [matTooltip]="layerTooltips.hydrography"
+          matTooltipPosition="above"
+          aria-label="About USGS 3HP hydrography layer"
+          (click)="$event.preventDefault(); $event.stopPropagation()"
+        >
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+        </button>
+      </label>
+      <label class="layer-toggle">
+        <input
+          type="checkbox"
+          data-testid="map-layer-earthquake"
+          [checked]="earthquakeVisible$ | async"
+          (change)="toggleEarthquakeLayer($any($event.target).checked)"
+        />
+        <span class="layer-toggle-label">USGS earthquake overlay</span>
+        <button
+          type="button"
+          class="layer-info-button"
+          mat-icon-button
+          [matTooltip]="layerTooltips.earthquake"
+          matTooltipPosition="above"
+          aria-label="About USGS earthquake overlay layer"
+          (click)="$event.preventDefault(); $event.stopPropagation()"
+        >
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+        </button>
       </label>
     </fieldset>
   </div>
@@ -61,6 +134,14 @@
   } @if (earthquakeError$ | async; as earthquakeError) {
   <p class="warning-message" role="status">
     USGS earthquake overlay unavailable: {{ earthquakeError }}
+  </p>
+  } @if (lodesFlowError$ | async; as lodesError) {
+  <p class="warning-message" role="status">
+    LODES workplace flow sample unavailable: {{ lodesError }}
+  </p>
+  } @if (saipeChoroplethError$ | async; as saipeError) {
+  <p class="warning-message" role="status">
+    SAIPE county choropleth unavailable: {{ saipeError }}
   </p>
   } @if (earthquakeStale$ | async) {
   <p class="warning-message" role="status">
@@ -85,13 +166,24 @@
           @if (selectedBoundary$ | async; as boundary) { {{ boundary.geography
           }} TIGER/Line preview } @else { TIGER/Line preview }
         </li>
-        } @if (lodesVisible$ | async) { @if (lodesLayers$ | async; as
-        lodesLayers) { @if (lodesLayers.length > 0) {
+        } @if (lodesVisible$ | async) { @if (lodesFlowOverlay$ | async; as
+        lodesOverlay) {
         <li>
           <span class="swatch lodes"></span>
-          LODES workplace flow sample
+          LODES workplace flow sample ({{ lodesOverlay.flows.length }} flows)
         </li>
-        } } } @if (earthquakeVisible$ | async) {
+        } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as
+        saipe) {
+        <li>
+          <span class="swatch saipe"></span>
+          SAIPE county poverty ({{ saipe.counties.length }} counties)
+        </li>
+        } } @if (hydrographyVisible$ | async) {
+        <li>
+          <span class="swatch hydrography"></span>
+          USGS 3HP hydrography reference
+        </li>
+        } @if (earthquakeVisible$ | async) {
         <li>
           <span class="swatch usgs"></span>
           USGS event overlay @if (earthquakeOverlay$ | async; as overlay) {
@@ -186,8 +278,6 @@
     moves focus here.
   </p>
 
-  <!-- Polite so the selection is announced without interrupting; the map viewport change alone
-       conveys nothing to a screen-reader user. -->
   <p class="feature-announcement" role="status">
     @if (selectedFeature$ | async; as selected) { Selected {{ selected.place }},
     magnitude {{ selected.magnitude }}. } @else { No map feature selected. }
@@ -199,12 +289,70 @@
   </button>
   }
   <ul class="feature-list">
-    <!-- Each entry follows the toggle for the layer it describes, so this list and the map agree. -->
     @if (visibleLayers$ | async; as layers) { @for (layer of layers; track
     layer.id) {
     <li>
       <strong>{{ layer.label }}</strong>
       <span>{{ layer.layerType }} - {{ layer.attribution }}</span>
+    </li>
+    } } @if (lodesVisible$ | async) { @if (lodesFlowOverlay$ | async; as
+    lodesOverlay) {
+    <li>
+      <strong>{{ lodesOverlay.source }}</strong>
+      <span>{{ lodesOverlay.attribution }}</span>
+      <a class="source-link" [href]="lodesOverlay.sourceUrl"
+        >Open LODES source</a
+      >
+      <span
+        >{{ lodesOverlay.vintage }} vintage for {{ lodesOverlay.geography
+        }}</span
+      >
+      @if (lodesOverlay.fallback) {
+      <span
+        >Using generated sample geometry when a state fixture is
+        unavailable.</span
+      >
+      }
+    </li>
+    @for (flow of lodesOverlay.flows; track flow.id) {
+    <li>
+      <strong>{{ flow.originLabel }} → {{ flow.destinationLabel }}</strong>
+      <span>
+        {{ flow.workerCount }} workers from {{ flow.originCounty }} to {{
+        flow.destinationCounty }}
+      </span>
+    </li>
+    } } @else { @if (lodesFlowError$ | async) {
+    <li>
+      <strong>LODES workplace flow sample unavailable</strong>
+      <span>Other map layers remain available.</span>
+    </li>
+    } } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe)
+    {
+    <li>
+      <strong>{{ saipe.source }}</strong>
+      <span>{{ saipe.attribution }} — {{ saipe.measureLabel }}</span>
+      <a class="source-link" [href]="saipe.sourceUrl">Open SAIPE source</a>
+      <span>{{ saipe.vintage }} vintage for {{ saipe.geography }}</span>
+    </li>
+    } @else { @if (saipeChoroplethError$ | async) {
+    <li>
+      <strong>SAIPE county choropleth unavailable</strong>
+      <span>Other map layers remain available.</span>
+    </li>
+    } } } @if (hydrographyVisible$ | async) { @if (hydrographyLayer$ | async; as
+    hydrographyLayer) {
+    <li>
+      <strong>{{ hydrographyLayer.label }}</strong>
+      <span>{{ hydrographyLayer.attribution }}</span>
+      <a class="source-link" [href]="hydrographyLayer.sourceUrl"
+        >Open USGS 3HP MapServer</a
+      >
+      <span>
+        Raster reference overlay for streams, rivers, and lakes from the 3D
+        Hydrography Program. This is environmental geography, not Census
+        boundary data.
+      </span>
     </li>
     } } @if (earthquakeVisible$ | async) { @if (earthquakeOverlay$ | async; as
     overlay) {
@@ -253,4 +401,35 @@
     </li>
     } } }
   </ul>
+
+  @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {
+  <table class="county-value-table" aria-label="SAIPE county poverty values">
+    <caption>
+      County poverty rates for {{ saipe.geography }} (percent, all ages)
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">County</th>
+        <th scope="col">FIPS</th>
+        <th scope="col">Poverty rate</th>
+        <th scope="col">Median household income</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (county of saipe.counties; track county.fips) {
+      <tr>
+        <th scope="row">{{ county.name }}</th>
+        <td>{{ county.fips }}</td>
+        <td>{{ county.povertyRate | number: '1.1-1' }}%</td>
+        <td>
+          @if (county.medianHouseholdIncome) { ${{
+          county.medianHouseholdIncome | number: '1.0-0'
+          }}
+          } @else { — }
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  } }
 </section>

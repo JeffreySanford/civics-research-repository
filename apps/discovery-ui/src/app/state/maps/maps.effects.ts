@@ -65,15 +65,6 @@ export class MapsEffects {
     ),
   );
 
-  /**
-   * Loads the layer list for whichever Census area is selected.
-   *
-   * The layers used to be fetched once, alongside the boundaries, for North Dakota: selecting
-   * another state moved the viewport but left every state claiming North Dakota's layers. Opening
-   * the map is treated as a selection of the current area, so this is the only place layers are
-   * fetched — otherwise a slower boundary load could land after a URL-supplied area and overwrite
-   * it with the default. switchMap, so a fast series of selections resolves to the last one.
-   */
   readonly loadLayersForSelectedArea$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MapsActions.mapOpened, MapsActions.censusAreaSelected),
@@ -87,6 +78,54 @@ export class MapsEffects {
                 error: parseRepositoryError(
                   error,
                   `Map layers for ${geography} failed to load.`,
+                ),
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  readonly loadLodesFlowForSelectedArea$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.mapOpened, MapsActions.censusAreaSelected),
+      withLatestFrom(this.store.select(selectSelectedGeography)),
+      switchMap(([, geography]) =>
+        this.mapsApi.getLodesFlowOverlay(geography).pipe(
+          map((lodesFlowOverlay) =>
+            MapsActions.lodesFlowOverlayLoaded({ lodesFlowOverlay }),
+          ),
+          catchError((error: unknown) =>
+            of(
+              MapsActions.lodesFlowOverlayFailed({
+                error: parseRepositoryError(
+                  error,
+                  `LODES flow sample for ${geography} failed to load.`,
+                ),
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  readonly loadSaipeChoroplethForSelectedArea$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.mapOpened, MapsActions.censusAreaSelected),
+      withLatestFrom(this.store.select(selectSelectedGeography)),
+      switchMap(([, geography]) =>
+        this.mapsApi.getSaipeCountyChoropleth(geography).pipe(
+          map((saipeChoropleth) =>
+            MapsActions.saipeChoroplethLoaded({ saipeChoropleth }),
+          ),
+          catchError((error: unknown) =>
+            of(
+              MapsActions.saipeChoroplethFailed({
+                error: parseRepositoryError(
+                  error,
+                  `SAIPE choropleth for ${geography} failed to load.`,
                 ),
               }),
             ),

@@ -33,6 +33,26 @@ test.describe('map layer MapLibre visibility', () => {
     }) => {
       const toggle = page.getByTestId(group.toggleTestId);
 
+      if (group.defaultChecked) {
+        await expect(toggle).toBeChecked();
+        await expectLayerEvidenceVisible(page, group);
+
+        await toggle.uncheck();
+        await expect(toggle).not.toBeChecked();
+        await expect(page).toHaveURL(group.urlOffPattern);
+        await expectLayerEvidenceHidden(page, group);
+
+        await toggle.check();
+        await expect(toggle).toBeChecked();
+        await expect(page).not.toHaveURL(group.urlOffPattern);
+        await expectLayerEvidenceVisible(page, group);
+        return;
+      }
+
+      await expect(toggle).not.toBeChecked();
+      await expectLayerEvidenceHidden(page, group);
+
+      await toggle.check();
       await expect(toggle).toBeChecked();
       await expectLayerEvidenceVisible(page, group);
 
@@ -40,11 +60,6 @@ test.describe('map layer MapLibre visibility', () => {
       await expect(toggle).not.toBeChecked();
       await expect(page).toHaveURL(group.urlOffPattern);
       await expectLayerEvidenceHidden(page, group);
-
-      await toggle.check();
-      await expect(toggle).toBeChecked();
-      await expect(page).not.toHaveURL(group.urlOffPattern);
-      await expectLayerEvidenceVisible(page, group);
     });
   }
 
@@ -55,7 +70,8 @@ test.describe('map layer MapLibre visibility', () => {
     await expect(page.getByTestId('map-layer-lodes')).not.toBeChecked();
 
     await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[0]);
-    await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[1]);
-    await expectLayerEvidenceHidden(page, MAP_LAYER_VISIBILITY_GROUPS[2]);
+    await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[2]);
+    await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[4]);
+    await expectLayerEvidenceHidden(page, MAP_LAYER_VISIBILITY_GROUPS[1]);
   });
 });

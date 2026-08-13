@@ -408,7 +408,8 @@ input:focus-visible {
   padding: 0;
 }
 
-:host ::ng-deep .layer-controls label {
+:host ::ng-deep .layer-controls label,
+:host ::ng-deep .layer-controls .layer-toggle {
   display: inline-flex;
   gap: 0.5rem;
   align-items: center;
@@ -418,6 +419,22 @@ input:focus-visible {
   color: #253041;
   padding: 0.65rem 0.8rem;
   font-weight: 800;
+}
+
+:host ::ng-deep .layer-toggle-label {
+  flex: 1 1 auto;
+}
+
+:host ::ng-deep .layer-info-button {
+  flex: 0 0 auto;
+  margin: -0.35rem -0.45rem -0.35rem 0;
+  color: #475569;
+}
+
+:host ::ng-deep .layer-info-button .mat-icon {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 :host ::ng-deep .area-select {
@@ -594,6 +611,39 @@ input:focus-visible {
 
 :host ::ng-deep .swatch.usgs {
   background: #b45309;
+}
+
+:host ::ng-deep .swatch.saipe {
+  background: #d97706;
+}
+
+:host ::ng-deep .swatch.hydrography {
+  background: #0284c7;
+}
+
+:host ::ng-deep .county-value-table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+:host ::ng-deep .county-value-table caption {
+  caption-side: top;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+:host ::ng-deep .county-value-table th,
+:host ::ng-deep .county-value-table td {
+  border: 1px solid #cbd5e1;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+}
+
+:host ::ng-deep .county-value-table thead th {
+  background: #f1f5f9;
 }
 
 @media (max-width: 58rem) {

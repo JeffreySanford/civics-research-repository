@@ -131,6 +131,50 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /overlays/census/lodes-flow:
+    get:
+      tags: [Maps]
+      operationId: getLodesFlowOverlay
+      summary: Get a small LEHD LODES origin-destination flow sample for a Census area.
+      parameters:
+        - $ref: '#/components/parameters/Geography'
+      responses:
+        '200':
+          description: LODES workplace flow GeoJSON overlay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LodesFlowOverlay'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /overlays/census/saipe-counties:
+    get:
+      tags: [Maps]
+      operationId: getSaipeCountyChoropleth
+      summary: Get SAIPE county poverty choropleth GeoJSON and accessible county values.
+      parameters:
+        - $ref: '#/components/parameters/Geography'
+      responses:
+        '200':
+          description: SAIPE county choropleth overlay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaipeCountyChoropleth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /overlays/usgs/earthquakes:
     get:
       tags: [Maps]
@@ -543,6 +587,9 @@ components:
         visibleByDefault:
           type: boolean
           default: false
+        rasterTileUrlTemplate:
+          type: string
+          description: Optional MapLibre raster tile URL template for reference overlays.
     CensusAreaBoundary:
       type: object
       required:
@@ -805,7 +852,119 @@ components:
       enum: [CSV, ZIP, PDF, JSON, GEOJSON, SHAPEFILE, GEOPACKAGE, OTHER]
     MapLayerType:
       type: string
-      enum: [CENSUS_BOUNDARY, CENSUS_DATA, USGS_EARTHQUAKE, USGS_REFERENCE]
+      enum:
+        [
+          CENSUS_BOUNDARY,
+          CENSUS_DATA,
+          CENSUS_CHOROPLETH,
+          USGS_EARTHQUAKE,
+          USGS_REFERENCE,
+        ]
+    LodesFlowOverlay:
+      type: object
+      required:
+        - source
+        - sourceUrl
+        - attribution
+        - geography
+        - vintage
+        - fallback
+        - geoJson
+        - flows
+      properties:
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        attribution:
+          type: string
+        geography:
+          type: string
+        vintage:
+          type: integer
+          format: int32
+        fallback:
+          type: boolean
+        geoJson:
+          type: object
+          additionalProperties: true
+        flows:
+          type: array
+          items:
+            $ref: '#/components/schemas/LodesFlowSummary'
+    LodesFlowSummary:
+      type: object
+      required:
+        [
+          id,
+          originLabel,
+          destinationLabel,
+          workerCount,
+          originCounty,
+          destinationCounty,
+        ]
+      properties:
+        id:
+          type: string
+        originLabel:
+          type: string
+        destinationLabel:
+          type: string
+        workerCount:
+          type: integer
+          format: int32
+        originCounty:
+          type: string
+        destinationCounty:
+          type: string
+    SaipeCountyChoropleth:
+      type: object
+      required:
+        - source
+        - sourceUrl
+        - attribution
+        - geography
+        - vintage
+        - measureLabel
+        - geoJson
+        - counties
+      properties:
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        attribution:
+          type: string
+        geography:
+          type: string
+        vintage:
+          type: integer
+          format: int32
+        measureLabel:
+          type: string
+        geoJson:
+          type: object
+          additionalProperties: true
+        counties:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaipeCountyValue'
+    SaipeCountyValue:
+      type: object
+      required: [fips, name, povertyRate]
+      properties:
+        fips:
+          type: string
+        name:
+          type: string
+        povertyRate:
+          type: number
+          format: double
+        medianHouseholdIncome:
+          type: integer
+          format: int32
     EvidenceStatus:
       type: string
       enum:

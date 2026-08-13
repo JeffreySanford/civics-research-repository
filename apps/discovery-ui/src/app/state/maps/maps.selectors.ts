@@ -36,6 +36,26 @@ export const selectEarthquakeError = createSelector(
   (state) => state.earthquakeError,
 );
 
+export const selectLodesFlowOverlay = createSelector(
+  selectMapsState,
+  (state) => state.lodesFlowOverlay,
+);
+
+export const selectLodesFlowError = createSelector(
+  selectMapsState,
+  (state) => state.lodesFlowError,
+);
+
+export const selectSaipeChoropleth = createSelector(
+  selectMapsState,
+  (state) => state.saipeChoropleth,
+);
+
+export const selectSaipeChoroplethError = createSelector(
+  selectMapsState,
+  (state) => state.saipeChoroplethError,
+);
+
 export const selectTigerVisible = createSelector(
   selectMapsState,
   (state) => state.tigerVisible,
@@ -44,6 +64,26 @@ export const selectTigerVisible = createSelector(
 export const selectEarthquakeVisible = createSelector(
   selectMapsState,
   (state) => state.earthquakeVisible,
+);
+
+export const selectLodesVisible = createSelector(
+  selectMapsState,
+  (state) => state.lodesVisible,
+);
+
+export const selectHydrographyVisible = createSelector(
+  selectMapsState,
+  (state) => state.hydrographyVisible,
+);
+
+export const selectSaipeVisible = createSelector(
+  selectMapsState,
+  (state) => state.saipeVisible,
+);
+
+export const selectHydrographyLayer = createSelector(
+  selectMapLayers,
+  (layers) => layers.find((layer) => layer.layerType === 'USGS_REFERENCE'),
 );
 
 export const selectMapsLoading = createSelector(
@@ -68,9 +108,4 @@ export const selectSelectedEarthquakeFeature = createSelector(
     state.earthquakeOverlay?.features.find(
       (feature) => feature.id === state.selectedFeatureId,
     ) ?? null,
-);
-
-export const selectLodesVisible = createSelector(
-  selectMapsState,
-  (state) => state.lodesVisible,
 );

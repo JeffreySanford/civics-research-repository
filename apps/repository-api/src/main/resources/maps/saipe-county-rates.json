@@ -1,0 +1,422 @@
+{
+  "38": [
+    {
+      "fips": "38001",
+      "name": "Adams County",
+      "povertyRate": 12.1,
+      "medianHouseholdIncome": 54800
+    },
+    {
+      "fips": "38003",
+      "name": "Barnes County",
+      "povertyRate": 9.8,
+      "medianHouseholdIncome": 61200
+    },
+    {
+      "fips": "38005",
+      "name": "Benson County",
+      "povertyRate": 18.2,
+      "medianHouseholdIncome": 48900
+    },
+    {
+      "fips": "38007",
+      "name": "Billings County",
+      "povertyRate": 6.5,
+      "medianHouseholdIncome": 74500
+    },
+    {
+      "fips": "38009",
+      "name": "Bottineau County",
+      "povertyRate": 10.4,
+      "medianHouseholdIncome": 57100
+    },
+    {
+      "fips": "38011",
+      "name": "Bowman County",
+      "povertyRate": 8.9,
+      "medianHouseholdIncome": 64500
+    },
+    {
+      "fips": "38013",
+      "name": "Burke County",
+      "povertyRate": 11.7,
+      "medianHouseholdIncome": 58900
+    },
+    {
+      "fips": "38015",
+      "name": "Burleigh County",
+      "povertyRate": 7.2,
+      "medianHouseholdIncome": 71200
+    },
+    {
+      "fips": "38017",
+      "name": "Cass County",
+      "povertyRate": 9.8,
+      "medianHouseholdIncome": 66800
+    },
+    {
+      "fips": "38019",
+      "name": "Cavalier County",
+      "povertyRate": 10.6,
+      "medianHouseholdIncome": 55200
+    },
+    {
+      "fips": "38021",
+      "name": "Dickey County",
+      "povertyRate": 11.3,
+      "medianHouseholdIncome": 53400
+    },
+    {
+      "fips": "38023",
+      "name": "Divide County",
+      "povertyRate": 12.4,
+      "medianHouseholdIncome": 52100
+    },
+    {
+      "fips": "38025",
+      "name": "Dunn County",
+      "povertyRate": 11.8,
+      "medianHouseholdIncome": 67800
+    },
+    {
+      "fips": "38027",
+      "name": "Eddy County",
+      "povertyRate": 14.2,
+      "medianHouseholdIncome": 49800
+    },
+    {
+      "fips": "38029",
+      "name": "Emmons County",
+      "povertyRate": 13.5,
+      "medianHouseholdIncome": 51200
+    },
+    {
+      "fips": "38031",
+      "name": "Foster County",
+      "povertyRate": 10.1,
+      "medianHouseholdIncome": 56300
+    },
+    {
+      "fips": "38033",
+      "name": "Golden Valley County",
+      "povertyRate": 11.9,
+      "medianHouseholdIncome": 52800
+    },
+    {
+      "fips": "38035",
+      "name": "Grand Forks County",
+      "povertyRate": 11.5,
+      "medianHouseholdIncome": 59100
+    },
+    {
+      "fips": "38037",
+      "name": "Grant County",
+      "povertyRate": 9.2,
+      "medianHouseholdIncome": 60400
+    },
+    {
+      "fips": "38039",
+      "name": "Griggs County",
+      "povertyRate": 12.8,
+      "medianHouseholdIncome": 51900
+    },
+    {
+      "fips": "38041",
+      "name": "Hettinger County",
+      "povertyRate": 10.7,
+      "medianHouseholdIncome": 55600
+    },
+    {
+      "fips": "38043",
+      "name": "Kidder County",
+      "povertyRate": 11.4,
+      "medianHouseholdIncome": 54100
+    },
+    {
+      "fips": "38045",
+      "name": "LaMoure County",
+      "povertyRate": 9.6,
+      "medianHouseholdIncome": 59800
+    },
+    {
+      "fips": "38047",
+      "name": "Logan County",
+      "povertyRate": 12.2,
+      "medianHouseholdIncome": 52600
+    },
+    {
+      "fips": "38049",
+      "name": "McHenry County",
+      "povertyRate": 10.3,
+      "medianHouseholdIncome": 56700
+    },
+    {
+      "fips": "38051",
+      "name": "McIntosh County",
+      "povertyRate": 15.1,
+      "medianHouseholdIncome": 47200
+    },
+    {
+      "fips": "38053",
+      "name": "McKenzie County",
+      "povertyRate": 8.4,
+      "medianHouseholdIncome": 72100
+    },
+    {
+      "fips": "38055",
+      "name": "McLean County",
+      "povertyRate": 9.7,
+      "medianHouseholdIncome": 60200
+    },
+    {
+      "fips": "38057",
+      "name": "Mercer County",
+      "povertyRate": 10.8,
+      "medianHouseholdIncome": 57400
+    },
+    {
+      "fips": "38059",
+      "name": "Morton County",
+      "povertyRate": 8.1,
+      "medianHouseholdIncome": 68900
+    },
+    {
+      "fips": "38061",
+      "name": "Mountrail County",
+      "povertyRate": 9.3,
+      "medianHouseholdIncome": 66400
+    },
+    {
+      "fips": "38063",
+      "name": "Nelson County",
+      "povertyRate": 12.5,
+      "medianHouseholdIncome": 51500
+    },
+    {
+      "fips": "38065",
+      "name": "Oliver County",
+      "povertyRate": 7.8,
+      "medianHouseholdIncome": 70200
+    },
+    {
+      "fips": "38067",
+      "name": "Pembina County",
+      "povertyRate": 10.9,
+      "medianHouseholdIncome": 56100
+    },
+    {
+      "fips": "38069",
+      "name": "Pierce County",
+      "povertyRate": 13.2,
+      "medianHouseholdIncome": 50600
+    },
+    {
+      "fips": "38071",
+      "name": "Ramsey County",
+      "povertyRate": 12,
+      "medianHouseholdIncome": 52400
+    },
+    {
+      "fips": "38073",
+      "name": "Ransom County",
+      "povertyRate": 9.4,
+      "medianHouseholdIncome": 60700
+    },
+    {
+      "fips": "38075",
+      "name": "Renville County",
+      "povertyRate": 10.2,
+      "medianHouseholdIncome": 55900
+    },
+    {
+      "fips": "38077",
+      "name": "Richland County",
+      "povertyRate": 10.5,
+      "medianHouseholdIncome": 56800
+    },
+    {
+      "fips": "38079",
+      "name": "Rolette County",
+      "povertyRate": 28.4,
+      "medianHouseholdIncome": 42100
+    },
+    {
+      "fips": "38081",
+      "name": "Sargent County",
+      "povertyRate": 9.1,
+      "medianHouseholdIncome": 61100
+    },
+    {
+      "fips": "38083",
+      "name": "Sheridan County",
+      "povertyRate": 14.6,
+      "medianHouseholdIncome": 49100
+    },
+    {
+      "fips": "38085",
+      "name": "Sioux County",
+      "povertyRate": 32.1,
+      "medianHouseholdIncome": 38200
+    },
+    {
+      "fips": "38087",
+      "name": "Slope County",
+      "povertyRate": 11.6,
+      "medianHouseholdIncome": 53800
+    },
+    {
+      "fips": "38089",
+      "name": "Stark County",
+      "povertyRate": 8.6,
+      "medianHouseholdIncome": 67600
+    },
+    {
+      "fips": "38091",
+      "name": "Steele County",
+      "povertyRate": 11.1,
+      "medianHouseholdIncome": 54700
+    },
+    {
+      "fips": "38093",
+      "name": "Stutsman County",
+      "povertyRate": 10,
+      "medianHouseholdIncome": 57900
+    },
+    {
+      "fips": "38095",
+      "name": "Towner County",
+      "povertyRate": 12.7,
+      "medianHouseholdIncome": 51800
+    },
+    {
+      "fips": "38097",
+      "name": "Traill County",
+      "povertyRate": 8.8,
+      "medianHouseholdIncome": 62800
+    },
+    {
+      "fips": "38099",
+      "name": "Walsh County",
+      "povertyRate": 11.8,
+      "medianHouseholdIncome": 54300
+    },
+    {
+      "fips": "38101",
+      "name": "Ward County",
+      "povertyRate": 10.1,
+      "medianHouseholdIncome": 58200
+    },
+    {
+      "fips": "38103",
+      "name": "Wells County",
+      "povertyRate": 10.4,
+      "medianHouseholdIncome": 56500
+    },
+    {
+      "fips": "38105",
+      "name": "Williams County",
+      "povertyRate": 8.2,
+      "medianHouseholdIncome": 73400
+    }
+  ],
+  "48": [
+    {
+      "fips": "48029",
+      "name": "Bexar County",
+      "povertyRate": 14.2,
+      "medianHouseholdIncome": 61200
+    },
+    {
+      "fips": "48113",
+      "name": "Dallas County",
+      "povertyRate": 14.8,
+      "medianHouseholdIncome": 65800
+    },
+    {
+      "fips": "48141",
+      "name": "El Paso County",
+      "povertyRate": 18.9,
+      "medianHouseholdIncome": 52100
+    },
+    {
+      "fips": "48201",
+      "name": "Harris County",
+      "povertyRate": 14.5,
+      "medianHouseholdIncome": 67200
+    },
+    {
+      "fips": "48439",
+      "name": "Tarrant County",
+      "povertyRate": 12.1,
+      "medianHouseholdIncome": 70100
+    },
+    {
+      "fips": "48453",
+      "name": "Travis County",
+      "povertyRate": 11.3,
+      "medianHouseholdIncome": 84200
+    }
+  ],
+  "06": [
+    {
+      "fips": "06001",
+      "name": "Alameda County",
+      "povertyRate": 9.2,
+      "medianHouseholdIncome": 112800
+    },
+    {
+      "fips": "06013",
+      "name": "Contra Costa County",
+      "povertyRate": 8.4,
+      "medianHouseholdIncome": 104500
+    },
+    {
+      "fips": "06019",
+      "name": "Fresno County",
+      "povertyRate": 18.6,
+      "medianHouseholdIncome": 64200
+    },
+    {
+      "fips": "06037",
+      "name": "Los Angeles County",
+      "povertyRate": 14.8,
+      "medianHouseholdIncome": 78600
+    },
+    {
+      "fips": "06059",
+      "name": "Orange County",
+      "povertyRate": 9.7,
+      "medianHouseholdIncome": 98500
+    },
+    {
+      "fips": "06065",
+      "name": "Riverside County",
+      "povertyRate": 12.3,
+      "medianHouseholdIncome": 72100
+    },
+    {
+      "fips": "06071",
+      "name": "San Bernardino County",
+      "povertyRate": 15.1,
+      "medianHouseholdIncome": 68200
+    },
+    {
+      "fips": "06073",
+      "name": "San Diego County",
+      "povertyRate": 10.5,
+      "medianHouseholdIncome": 89200
+    },
+    {
+      "fips": "06075",
+      "name": "San Francisco County",
+      "povertyRate": 10.1,
+      "medianHouseholdIncome": 126000
+    },
+    {
+      "fips": "06081",
+      "name": "San Mateo County",
+      "povertyRate": 6.8,
+      "medianHouseholdIncome": 134500
+    }
+  ]
+}

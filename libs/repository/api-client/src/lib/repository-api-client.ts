@@ -21,6 +21,11 @@ export type UsgsEarthquakeOverlay =
   components['schemas']['UsgsEarthquakeOverlay'];
 export type UsgsEarthquakeFeature =
   components['schemas']['UsgsEarthquakeFeature'];
+export type LodesFlowOverlay = components['schemas']['LodesFlowOverlay'];
+export type LodesFlowSummary = components['schemas']['LodesFlowSummary'];
+export type SaipeCountyChoropleth =
+  components['schemas']['SaipeCountyChoropleth'];
+export type SaipeCountyValue = components['schemas']['SaipeCountyValue'];
 export type SearchResponse = components['schemas']['SearchResponse'];
 export type SearchResult = components['schemas']['SearchResult'];
 export type FacetGroup = components['schemas']['FacetGroup'];
@@ -105,6 +110,26 @@ export class RepositoryMapsApi {
           minMagnitude,
           days,
         },
+      },
+    );
+  }
+
+  getLodesFlowOverlay(geography: string): Observable<LodesFlowOverlay> {
+    return this.http.get<LodesFlowOverlay>(
+      `${this.baseUrl}/overlays/census/lodes-flow`,
+      {
+        params: { geography },
+      },
+    );
+  }
+
+  getSaipeCountyChoropleth(
+    geography: string,
+  ): Observable<SaipeCountyChoropleth> {
+    return this.http.get<SaipeCountyChoropleth>(
+      `${this.baseUrl}/overlays/census/saipe-counties`,
+      {
+        params: { geography },
       },
     );
   }

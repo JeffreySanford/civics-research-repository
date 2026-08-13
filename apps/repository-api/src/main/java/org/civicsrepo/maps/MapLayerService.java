@@ -47,6 +47,23 @@ public class MapLayerService {
                                 "U.S. Census Bureau LEHD Origin-Destination Employment Statistics")
                         .visibleByDefault(true),
                 new MapLayer(
+                                "saipe-county-poverty-" + slug,
+                                "2023 SAIPE county poverty - " + geography,
+                                MapLayerType.CENSUS_CHOROPLETH,
+                                URI.create(
+                                        "https://www.census.gov/data/datasets/2023/demo-saipe/2023-state-and-county.html"),
+                                "U.S. Census Bureau Small Area Income and Poverty Estimates")
+                        .visibleByDefault(true),
+                new MapLayer(
+                                "usgs-3hp-hydrography",
+                                "USGS 3D Hydrography Program reference",
+                                MapLayerType.USGS_REFERENCE,
+                                URI.create("https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer"),
+                                "U.S. Geological Survey 3D Hydrography Program")
+                        .visibleByDefault(false)
+                        .rasterTileUrlTemplate(
+                                "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/tile/{z}/{y}/{x}"),
+                new MapLayer(
                                 "usgs-earthquakes-" + slug,
                                 "USGS earthquake overlay",
                                 MapLayerType.USGS_EARTHQUAKE,

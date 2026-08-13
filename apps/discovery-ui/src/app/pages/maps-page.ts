@@ -1,6 +1,7 @@
 import {
   AsyncPipe,
   DatePipe,
+  DecimalPipe,
   KeyValuePipe,
   isPlatformBrowser,
 } from '@angular/common';
@@ -21,6 +22,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Store } from '@ngrx/store';
 import { combineLatest, distinctUntilChanged, map } from 'rxjs';
 import type {
@@ -30,7 +33,9 @@ import type {
 } from 'maplibre-gl';
 import type {
   CensusAreaBoundary,
+  LodesFlowOverlay,
   MapLayer,
+  SaipeCountyChoropleth,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { MapsActions } from '../state/maps/maps.actions';
@@ -39,10 +44,17 @@ import {
   selectEarthquakeError,
   selectEarthquakeOverlay,
   selectEarthquakeVisible,
+  selectHydrographyLayer,
+  selectHydrographyVisible,
+  selectLodesFlowError,
+  selectLodesFlowOverlay,
   selectLodesVisible,
   selectMapLayers,
   selectMapsError,
   selectMapsLoading,
+  selectSaipeChoropleth,
+  selectSaipeChoroplethError,
+  selectSaipeVisible,
   selectSelectedCensusAreaBoundary,
   selectSelectedEarthquakeFeature,
   selectSelectedFeatureId,
@@ -88,32 +100,23 @@ type BoundaryFeatureCollection = {
   }[];
 };
 
-type LodesFeatureCollection = {
+type GeoJsonFeatureCollection = {
   type: 'FeatureCollection';
-  features: (
-    | {
-        type: 'Feature';
-        properties: { label: string };
-        geometry: {
-          type: 'LineString';
-          coordinates: [number, number][];
-        };
-      }
-    | {
-        type: 'Feature';
-        properties: { label: string };
-        geometry: {
-          type: 'Point';
-          coordinates: [number, number];
-        };
-      }
-  )[];
+  features: unknown[];
 };
 
 @Component({
   selector: 'app-maps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, DatePipe, KeyValuePipe, MatButtonModule],
+  imports: [
+    AsyncPipe,
+    DatePipe,
+    DecimalPipe,
+    KeyValuePipe,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+  ],
   templateUrl: './maps-page.html',
 })
 export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
@@ -129,22 +132,46 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private map: MapLibreMap | null = null;
   private pendingBoundary: CensusAreaBoundary | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
-  private pendingLodesLayers: readonly MapLayer[] = [];
+  private pendingLodesFlowOverlay: LodesFlowOverlay | null = null;
+  private pendingSaipeChoropleth: SaipeCountyChoropleth | null = null;
+  private pendingHydrographyLayer: MapLayer | null = null;
   /** True once the MapLibre style is parsed; overlays must not wait for raster tiles. */
   private mapStyleReady = false;
   private tigerVisible = true;
   private earthquakeVisible = true;
   private lodesVisible = true;
+  private hydrographyVisible = false;
+  private saipeVisible = true;
   private selectedFeatureId: string | null = null;
+  protected readonly layerTooltips = {
+    tiger:
+      'Shows the Census TIGER/Line state or area boundary for the selected geography. Helps anchor discovery results to official Census boundaries.',
+    lodes:
+      'Displays a sample workplace flow from LEHD LODES data—where workers live versus where they work. Demo uses a small API-backed sample for the selected area.',
+    saipe:
+      'Colors counties by SAIPE poverty rate for the selected state. The county value table below lists the same statistics shown on the map.',
+    hydrography:
+      'Adds USGS 3D Hydrography Program surface-water context from The National Map. Environmental geography, not Census boundaries.',
+    earthquake:
+      'Plots recent earthquake epicenters from the USGS FDSN feed near the selected area. Updates from the live API when available.',
+  } as const;
   protected readonly mapDebugAvailable = environment.mapDebugEnabled;
   protected readonly mapDebugPanelOpen = signal(false);
   protected mapDebugSnapshot: MapDebugSnapshot | null = null;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
-  protected readonly lodesLayers$ = this.layers$.pipe(
-    map((layers) =>
-      layers.filter((layer) => layer.layerType === 'CENSUS_DATA'),
-    ),
+  protected readonly hydrographyLayer$ = this.store.select(
+    selectHydrographyLayer,
+  );
+  protected readonly lodesFlowOverlay$ = this.store.select(
+    selectLodesFlowOverlay,
+  );
+  protected readonly lodesFlowError$ = this.store.select(selectLodesFlowError);
+  protected readonly saipeChoropleth$ = this.store.select(
+    selectSaipeChoropleth,
+  );
+  protected readonly saipeChoroplethError$ = this.store.select(
+    selectSaipeChoroplethError,
   );
   /**
    * The layers currently drawn, for the accessible layer list.
@@ -157,20 +184,34 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.store.select(selectTigerVisible),
     this.store.select(selectEarthquakeVisible),
     this.store.select(selectLodesVisible),
+    this.store.select(selectHydrographyVisible),
+    this.store.select(selectSaipeVisible),
   ]).pipe(
-    map(([layers, tigerVisible, earthquakeVisible, lodesVisible]) =>
-      layers.filter((layer) => {
-        switch (layer.layerType) {
-          case 'CENSUS_BOUNDARY':
-            return tigerVisible;
-          case 'CENSUS_DATA':
-            return lodesVisible;
-          case 'USGS_EARTHQUAKE':
-            return earthquakeVisible;
-          default:
-            return true;
-        }
-      }),
+    map(
+      ([
+        layers,
+        tigerVisible,
+        earthquakeVisible,
+        lodesVisible,
+        hydrographyVisible,
+        saipeVisible,
+      ]) =>
+        layers.filter((layer) => {
+          switch (layer.layerType) {
+            case 'CENSUS_BOUNDARY':
+              return tigerVisible;
+            case 'CENSUS_DATA':
+              return lodesVisible;
+            case 'CENSUS_CHOROPLETH':
+              return saipeVisible;
+            case 'USGS_EARTHQUAKE':
+              return earthquakeVisible;
+            case 'USGS_REFERENCE':
+              return hydrographyVisible;
+            default:
+              return true;
+          }
+        }),
     ),
   );
   protected readonly censusAreaBoundaries$ = this.store.select(
@@ -198,6 +239,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     selectEarthquakeVisible,
   );
   protected readonly lodesVisible$ = this.store.select(selectLodesVisible);
+  protected readonly hydrographyVisible$ = this.store.select(
+    selectHydrographyVisible,
+  );
+  protected readonly saipeVisible$ = this.store.select(selectSaipeVisible);
   protected readonly loading$ = this.store.select(selectMapsLoading);
   protected readonly error$ = this.store.select(selectMapsError);
   protected readonly selectedFeatureId$ = this.store.select(
@@ -223,14 +268,27 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       .subscribe((boundary) => {
         this.pendingBoundary = boundary;
         this.renderCensusBoundary();
+      });
+
+    this.lodesFlowOverlay$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((overlay) => {
+        this.pendingLodesFlowOverlay = overlay;
         this.renderLodesSampleLayer();
       });
 
-    this.lodesLayers$
+    this.saipeChoropleth$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((layers) => {
-        this.pendingLodesLayers = layers;
-        this.renderLodesSampleLayer();
+      .subscribe((choropleth) => {
+        this.pendingSaipeChoropleth = choropleth;
+        this.renderSaipeChoropleth();
+      });
+
+    this.hydrographyLayer$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((layer) => {
+        this.pendingHydrographyLayer = layer ?? null;
+        this.renderHydrographyLayer();
       });
 
     // Selection drives the map. The list is the other half of this and sets selection through
@@ -256,14 +314,26 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.tigerVisible$,
       this.earthquakeVisible$,
       this.lodesVisible$,
+      this.hydrographyVisible$,
+      this.saipeVisible$,
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([tigerVisible, earthquakeVisible, lodesVisible]) => {
-        this.tigerVisible = tigerVisible;
-        this.earthquakeVisible = earthquakeVisible;
-        this.lodesVisible = lodesVisible;
-        this.applyLayerVisibility();
-      });
+      .subscribe(
+        ([
+          tigerVisible,
+          earthquakeVisible,
+          lodesVisible,
+          hydrographyVisible,
+          saipeVisible,
+        ]) => {
+          this.tigerVisible = tigerVisible;
+          this.earthquakeVisible = earthquakeVisible;
+          this.lodesVisible = lodesVisible;
+          this.hydrographyVisible = hydrographyVisible;
+          this.saipeVisible = saipeVisible;
+          this.applyLayerVisibility();
+        },
+      );
   }
 
   ngAfterViewInit(): void {
@@ -294,6 +364,16 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected toggleLodesLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.lodesLayerToggled({ visible }));
     this.updateMapUrl({ lodesVisible: visible });
+  }
+
+  protected toggleHydrographyLayer(visible: boolean): void {
+    this.store.dispatch(MapsActions.hydrographyLayerToggled({ visible }));
+    this.updateMapUrl({ hydrographyVisible: visible });
+  }
+
+  protected toggleSaipeLayer(visible: boolean): void {
+    this.store.dispatch(MapsActions.saipeLayerToggled({ visible }));
+    this.updateMapUrl({ saipeVisible: visible });
   }
 
   /** Called when a feature-list entry is activated or focused. */
@@ -333,6 +413,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           tigerVisible: this.toVisibleState(params.get('tiger')),
           earthquakeVisible: this.toVisibleState(params.get('earthquakes')),
           lodesVisible: this.toVisibleState(params.get('lodes')),
+          hydrographyVisible: this.toVisibleState(params.get('hydrography')),
+          saipeVisible: this.toVisibleState(params.get('saipe')),
           featureId: params.get('feature'),
         })),
         distinctUntilChanged(
@@ -341,6 +423,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             previous.tigerVisible === current.tigerVisible &&
             previous.earthquakeVisible === current.earthquakeVisible &&
             previous.lodesVisible === current.lodesVisible &&
+            previous.hydrographyVisible === current.hydrographyVisible &&
+            previous.saipeVisible === current.saipeVisible &&
             previous.featureId === current.featureId,
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -351,6 +435,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           tigerVisible,
           earthquakeVisible,
           lodesVisible,
+          hydrographyVisible,
+          saipeVisible,
           featureId,
         }) => {
           if (area) {
@@ -379,6 +465,20 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             );
           }
 
+          if (hydrographyVisible !== null) {
+            this.store.dispatch(
+              MapsActions.hydrographyLayerToggled({
+                visible: hydrographyVisible,
+              }),
+            );
+          }
+
+          if (saipeVisible !== null) {
+            this.store.dispatch(
+              MapsActions.saipeLayerToggled({ visible: saipeVisible }),
+            );
+          }
+
           if (featureId) {
             this.store.dispatch(MapsActions.mapFeatureSelected({ featureId }));
           }
@@ -391,6 +491,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     tigerVisible?: boolean;
     earthquakeVisible?: boolean;
     lodesVisible?: boolean;
+    hydrographyVisible?: boolean;
+    saipeVisible?: boolean;
     featureId?: string | null;
   }): void {
     void this.router.navigate([], {
@@ -413,6 +515,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           options.lodesVisible === undefined
             ? undefined
             : this.toLayerParam(options.lodesVisible),
+        hydrography:
+          options.hydrographyVisible === undefined
+            ? undefined
+            : this.toLayerParam(options.hydrographyVisible),
+        saipe:
+          options.saipeVisible === undefined
+            ? undefined
+            : this.toLayerParam(options.saipeVisible),
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,
@@ -532,6 +642,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
     this.renderCensusBoundary();
     this.renderLodesSampleLayer();
+    this.renderSaipeChoropleth();
+    this.renderHydrographyLayer();
     this.renderEarthquakeOverlay();
     this.applyLayerVisibility();
   }
@@ -708,16 +820,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private renderLodesSampleLayer(): void {
-    if (
-      !this.map ||
-      !this.mapStyleReady ||
-      !this.pendingBoundary ||
-      this.pendingLodesLayers.length === 0
-    ) {
+    if (!this.map || !this.mapStyleReady || !this.pendingLodesFlowOverlay) {
       return;
     }
 
-    const data = this.createLodesSampleGeoJson(this.pendingBoundary);
+    const data = this.pendingLodesFlowOverlay
+      .geoJson as GeoJsonFeatureCollection;
     const existingSource = this.map.getSource(
       'lodes-workplace-flow',
     ) as GeoJSONSource | null;
@@ -764,7 +872,108 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       },
     });
 
-    // Newly added layers default to visible, so they must be reconciled with the current toggles.
+    this.applyLayerVisibility();
+  }
+
+  private renderSaipeChoropleth(): void {
+    if (!this.map || !this.mapStyleReady || !this.pendingSaipeChoropleth) {
+      return;
+    }
+
+    const data = this.pendingSaipeChoropleth
+      .geoJson as GeoJsonFeatureCollection;
+    const existingSource = this.map.getSource(
+      'saipe-county-choropleth',
+    ) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+      this.applyLayerVisibility();
+      return;
+    }
+
+    this.map.addSource('saipe-county-choropleth', {
+      type: 'geojson',
+      data,
+    });
+
+    this.map.addLayer(
+      {
+        id: 'saipe-county-fill',
+        type: 'fill',
+        source: 'saipe-county-choropleth',
+        layout: {
+          visibility: this.saipeVisible ? 'visible' : 'none',
+        },
+        paint: {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'povertyRate'],
+            6,
+            '#fef3c7',
+            12,
+            '#f59e0b',
+            20,
+            '#b45309',
+            30,
+            '#7c2d12',
+          ],
+          'fill-opacity': 0.72,
+        },
+      },
+      'census-area-fill',
+    );
+
+    this.map.addLayer({
+      id: 'saipe-county-outline',
+      type: 'line',
+      source: 'saipe-county-choropleth',
+      layout: {
+        visibility: this.saipeVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'line-color': '#78350f',
+        'line-width': 1.5,
+      },
+    });
+
+    this.applyLayerVisibility();
+  }
+
+  private renderHydrographyLayer(): void {
+    if (!this.map || !this.mapStyleReady || !this.pendingHydrographyLayer) {
+      return;
+    }
+
+    const tileTemplate =
+      this.pendingHydrographyLayer.rasterTileUrlTemplate ??
+      'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/tile/{z}/{y}/{x}';
+
+    if (!this.map.getSource('usgs-3hp-hydrography')) {
+      this.map.addSource('usgs-3hp-hydrography', {
+        type: 'raster',
+        tiles: [tileTemplate],
+        tileSize: 256,
+        attribution: this.pendingHydrographyLayer.attribution,
+      });
+
+      this.map.addLayer(
+        {
+          id: 'usgs-3hp-hydrography-raster',
+          type: 'raster',
+          source: 'usgs-3hp-hydrography',
+          layout: {
+            visibility: this.hydrographyVisible ? 'visible' : 'none',
+          },
+          paint: {
+            'raster-opacity': 0.78,
+          },
+        },
+        'census-area-fill',
+      );
+    }
+
     this.applyLayerVisibility();
   }
 
@@ -812,55 +1021,6 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
                 [boundary.west, boundary.south],
               ],
             ],
-          },
-        },
-      ],
-    };
-  }
-
-  private createLodesSampleGeoJson(
-    boundary: CensusAreaBoundary,
-  ): LodesFeatureCollection {
-    const residentialPoint: [number, number] = [
-      boundary.west + (boundary.east - boundary.west) * 0.25,
-      boundary.south + (boundary.north - boundary.south) * 0.42,
-    ];
-    const workplacePoint: [number, number] = [
-      boundary.west + (boundary.east - boundary.west) * 0.72,
-      boundary.south + (boundary.north - boundary.south) * 0.62,
-    ];
-
-    return {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          properties: {
-            label: `${boundary.geography} LODES workplace flow sample`,
-          },
-          geometry: {
-            type: 'LineString',
-            coordinates: [residentialPoint, workplacePoint],
-          },
-        },
-        {
-          type: 'Feature',
-          properties: {
-            label: `${boundary.geography} residential workforce sample`,
-          },
-          geometry: {
-            type: 'Point',
-            coordinates: residentialPoint,
-          },
-        },
-        {
-          type: 'Feature',
-          properties: {
-            label: `${boundary.geography} workplace destination sample`,
-          },
-          geometry: {
-            type: 'Point',
-            coordinates: workplacePoint,
           },
         },
       ],
@@ -930,6 +1090,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.setLayerVisibility(
       ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
       this.lodesVisible,
+    );
+    this.setLayerVisibility(
+      ['saipe-county-fill', 'saipe-county-outline'],
+      this.saipeVisible,
+    );
+    this.setLayerVisibility(
+      ['usgs-3hp-hydrography-raster'],
+      this.hydrographyVisible,
     );
     this.refreshMapDebugSnapshot();
   }

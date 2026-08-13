@@ -89,6 +89,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/overlays/census/lodes-flow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a small LEHD LODES origin-destination flow sample for a Census area. */
+    get: operations['getLodesFlowOverlay'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/overlays/census/saipe-counties': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get SAIPE county poverty choropleth GeoJSON and accessible county values. */
+    get: operations['getSaipeCountyChoropleth'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/overlays/usgs/earthquakes': {
     parameters: {
       query?: never;
@@ -260,6 +294,8 @@ export interface components {
       attribution: string;
       /** @default false */
       visibleByDefault: boolean;
+      /** @description Optional MapLibre raster tile URL template for reference overlays. */
+      rasterTileUrlTemplate?: string;
     };
     CensusAreaBoundary: {
       id: string;
@@ -422,8 +458,54 @@ export interface components {
     MapLayerType:
       | 'CENSUS_BOUNDARY'
       | 'CENSUS_DATA'
+      | 'CENSUS_CHOROPLETH'
       | 'USGS_EARTHQUAKE'
       | 'USGS_REFERENCE';
+    LodesFlowOverlay: {
+      source: string;
+      /** Format: uri */
+      sourceUrl: string;
+      attribution: string;
+      geography: string;
+      /** Format: int32 */
+      vintage: number;
+      fallback: boolean;
+      geoJson: {
+        [key: string]: unknown;
+      };
+      flows: components['schemas']['LodesFlowSummary'][];
+    };
+    LodesFlowSummary: {
+      id: string;
+      originLabel: string;
+      destinationLabel: string;
+      /** Format: int32 */
+      workerCount: number;
+      originCounty: string;
+      destinationCounty: string;
+    };
+    SaipeCountyChoropleth: {
+      source: string;
+      /** Format: uri */
+      sourceUrl: string;
+      attribution: string;
+      geography: string;
+      /** Format: int32 */
+      vintage: number;
+      measureLabel: string;
+      geoJson: {
+        [key: string]: unknown;
+      };
+      counties: components['schemas']['SaipeCountyValue'][];
+    };
+    SaipeCountyValue: {
+      fips: string;
+      name: string;
+      /** Format: double */
+      povertyRate: number;
+      /** Format: int32 */
+      medianHouseholdIncome?: number;
+    };
     /** @enum {string} */
     EvidenceStatus:
       | 'NOT_STARTED'
@@ -632,6 +714,58 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getLodesFlowOverlay: {
+    parameters: {
+      query?: {
+        geography?: components['parameters']['Geography'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description LODES workplace flow GeoJSON overlay. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LodesFlowOverlay'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getSaipeCountyChoropleth: {
+    parameters: {
+      query?: {
+        geography?: components['parameters']['Geography'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SAIPE county choropleth overlay. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SaipeCountyChoropleth'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
       500: components['responses']['InternalServerError'];
       503: components['responses']['ServiceUnavailable'];
     };

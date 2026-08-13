@@ -10,6 +10,16 @@ class MapLayerServiceTest {
     private final MapLayerService mapLayerService = new MapLayerService(new CensusAreaBoundaryService());
 
     @Test
+    void includesReferenceAndChoroplethLayers() {
+        assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
+                .extracting(MapLayer::getLayerType)
+                .contains(
+                        MapLayerType.CENSUS_CHOROPLETH,
+                        MapLayerType.USGS_REFERENCE,
+                        MapLayerType.USGS_EARTHQUAKE);
+    }
+
+    @Test
     void includesLodesSampleLayerWithCensusDataType() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
                 .anySatisfy(layer -> {

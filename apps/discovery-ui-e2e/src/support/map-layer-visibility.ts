@@ -1,9 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
-/** Every MapLibre layer the maps page registers for the three demo toggles. */
+/** Every MapLibre layer the maps page registers for the demo toggles. */
 export const REGISTERED_MAP_LAYER_IDS = [
   'census-area-fill',
   'census-area-outline',
+  'saipe-county-fill',
+  'saipe-county-outline',
+  'usgs-3hp-hydrography-raster',
   'usgs-earthquake-points',
   'usgs-earthquake-labels',
   'usgs-earthquake-selected',
@@ -19,6 +22,7 @@ export type MapLayerVisibility = Record<
 type MapLayerVisibilityGroup = {
   name: string;
   toggleTestId: string;
+  defaultChecked: boolean;
   mapLayerIds: readonly (typeof REGISTERED_MAP_LAYER_IDS)[number][];
   accessibleListText: string;
   legendText: string | RegExp;
@@ -29,14 +33,44 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   {
     name: 'TIGER/Line boundary',
     toggleTestId: 'map-layer-tiger',
+    defaultChecked: true,
     mapLayerIds: ['census-area-fill', 'census-area-outline'],
     accessibleListText: '2025 TIGER/Line Census area preview - North Dakota',
     legendText: 'North Dakota TIGER/Line preview',
     urlOffPattern: /tiger=off/,
   },
   {
+    name: 'LODES workplace flow sample',
+    toggleTestId: 'map-layer-lodes',
+    defaultChecked: true,
+    mapLayerIds: ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
+    accessibleListText: 'LEHD LODES 2023 main OD sample - North Dakota',
+    legendText: /LODES workplace flow sample/,
+    urlOffPattern: /lodes=off/,
+  },
+  {
+    name: 'SAIPE county poverty',
+    toggleTestId: 'map-layer-saipe',
+    defaultChecked: true,
+    mapLayerIds: ['saipe-county-fill', 'saipe-county-outline'],
+    accessibleListText: 'SAIPE 2023 county poverty - North Dakota',
+    legendText: /SAIPE county poverty/,
+    urlOffPattern: /saipe=off/,
+  },
+  {
+    name: 'USGS 3HP hydrography',
+    toggleTestId: 'map-layer-hydrography',
+    defaultChecked: false,
+    mapLayerIds: ['usgs-3hp-hydrography-raster'],
+    accessibleListText:
+      'Raster reference overlay for streams, rivers, and lakes from the 3D Hydrography Program',
+    legendText: 'USGS 3HP hydrography reference',
+    urlOffPattern: /hydrography=off/,
+  },
+  {
     name: 'USGS earthquake overlay',
     toggleTestId: 'map-layer-earthquake',
+    defaultChecked: true,
     mapLayerIds: [
       'usgs-earthquake-points',
       'usgs-earthquake-labels',
@@ -45,14 +79,6 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
     accessibleListText: 'USGS earthquake overlay',
     legendText: 'USGS event overlay',
     urlOffPattern: /earthquakes=off/,
-  },
-  {
-    name: 'LODES workplace flow sample',
-    toggleTestId: 'map-layer-lodes',
-    mapLayerIds: ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
-    accessibleListText: '2023 LODES workplace flow sample - North Dakota',
-    legendText: 'LODES workplace flow sample',
-    urlOffPattern: /lodes=off/,
   },
 ] as const;
 
@@ -112,13 +138,27 @@ export async function expectMapLayersVisibility(
 
 export async function waitForRegisteredMapLayers(page: Page): Promise<void> {
   await expect(page.getByTestId('discovery-map-canvas')).toBeVisible();
+
+  const defaultVisibleIds = REGISTERED_MAP_LAYER_IDS.filter(
+    (id) => id !== 'usgs-3hp-hydrography-raster',
+  );
+
   await expect
-    .poll(async () => readMapLayerVisibility(page, REGISTERED_MAP_LAYER_IDS), {
-      message: 'All registered MapLibre layers should exist and be visible',
+    .poll(async () => readMapLayerVisibility(page, defaultVisibleIds), {
+      message: 'Default MapLibre layers should exist and be visible',
     })
     .toEqual(
-      Object.fromEntries(REGISTERED_MAP_LAYER_IDS.map((id) => [id, 'visible'])),
+      Object.fromEntries(defaultVisibleIds.map((id) => [id, 'visible'])),
     );
+
+  await expect
+    .poll(
+      async () => readMapLayerVisibility(page, ['usgs-3hp-hydrography-raster']),
+      {
+        message: 'Hydrography layer should exist but stay hidden by default',
+      },
+    )
+    .toEqual({ 'usgs-3hp-hydrography-raster': 'none' });
 }
 
 export async function expectLayerEvidenceVisible(

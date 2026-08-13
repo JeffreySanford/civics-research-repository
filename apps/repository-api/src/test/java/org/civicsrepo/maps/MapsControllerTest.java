@@ -35,6 +35,12 @@ class MapsControllerTest {
     @MockitoBean
     private UsgsEarthquakeService usgsEarthquakeService;
 
+    @MockitoBean
+    private LodesFlowService lodesFlowService;
+
+    @MockitoBean
+    private SaipeCountyChoroplethService saipeCountyChoroplethService;
+
     @Test
     void serializesDatasetMapLayersIncludingAttribution() throws Exception {
         given(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
@@ -104,6 +110,31 @@ class MapsControllerTest {
     void rejectsANonNumericMagnitudeFilter() throws Exception {
         mockMvc.perform(get("/overlays/usgs/earthquakes").param("minMagnitude", "strong"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void serializesLodesFlowOverlay() throws Exception {
+        given(lodesFlowService.findFlowSample("North Dakota"))
+                .willReturn(new org.civicsrepo.generated.dto.LodesFlowOverlay(
+                        "LEHD LODES 2023 main OD sample - North Dakota",
+                        URI.create("https://lehd.ces.census.gov/data/lodes/LODES8/nd/od/nd_od_main_JT00_2023.csv.gz"),
+                        "U.S. Census Bureau LEHD Origin-Destination Employment Statistics",
+                        "North Dakota",
+                        2023,
+                        false,
+                        java.util.Map.of("type", "FeatureCollection", "features", List.of()),
+                        List.of(new org.civicsrepo.generated.dto.LodesFlowSummary(
+                                "nd-burleigh-cass",
+                                "Bismarck area (home)",
+                                "Fargo area (work)",
+                                1240,
+                                "Burleigh County",
+                                "Cass County"))));
+
+        mockMvc.perform(get("/overlays/census/lodes-flow").param("geography", "North Dakota"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.geography").value("North Dakota"))
+                .andExpect(jsonPath("$.flows[0].workerCount").value(1240));
     }
 
     private UsgsEarthquakeOverlay overlay(double minMagnitude, int days) {
