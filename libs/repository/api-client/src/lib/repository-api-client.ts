@@ -36,6 +36,9 @@ export type DatasetFile = components['schemas']['DatasetFile'];
 export type DatasetVersion = components['schemas']['DatasetVersion'];
 export type DiscoveryProjectionState =
   components['schemas']['DiscoveryProjectionState'];
+export type AccessibilityEvidence =
+  components['schemas']['AccessibilityEvidence'];
+export type EvidenceStatus = components['schemas']['EvidenceStatus'];
 
 export interface SearchQuery {
   readonly q?: string;
@@ -151,6 +154,20 @@ export class RepositoryDatasetsApi {
   getDatasetVersions(datasetId: string): Observable<DatasetVersion[]> {
     return this.http.get<DatasetVersion[]>(
       `${this.baseUrl}/datasets/${datasetId}/versions`,
+    );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class RepositoryEvidenceApi {
+  constructor(
+    private readonly http: HttpClient,
+    @Inject(REPOSITORY_API_BASE_URL) private readonly baseUrl: string,
+  ) {}
+
+  listAccessibilityEvidence(): Observable<AccessibilityEvidence[]> {
+    return this.http.get<AccessibilityEvidence[]>(
+      `${this.baseUrl}/accessibility/evidence`,
     );
   }
 }

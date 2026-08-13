@@ -1,0 +1,82 @@
+[
+  {
+    "id": "axe-wcag-2026-08-12",
+    "workflow": "axe-core scans (6 routes)",
+    "status": "AUTOMATED_PASS",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "57 checks passed. Command: pnpm run wcag:report. Artifact: documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md"
+  },
+  {
+    "id": "section508-2026-08-12",
+    "workflow": "Section 508 tagged scans",
+    "status": "AUTOMATED_PASS",
+    "standard": "SECTION_508",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "57 checks passed (same axe suite, @section508 tag). Command: pnpm run section508:report. Artifact: documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md"
+  },
+  {
+    "id": "structural-2026-08-12",
+    "workflow": "Structural accessibility preconditions",
+    "status": "AUTOMATED_PASS",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "39 machine-checkable preconditions per route (titles, landmarks, tab order, accessible names, live regions). Included in wcag:report."
+  },
+  {
+    "id": "reflow-contrast-2026-08-12",
+    "workflow": "Reflow and color contrast",
+    "status": "AUTOMATED_PASS",
+    "standard": "WCAG_2_2_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "320px reflow, 200% zoom operability, AA contrast per route. Included in wcag:report."
+  },
+  {
+    "id": "storyboard-2026-08-12",
+    "workflow": "Demo storyboard workflows",
+    "status": "AUTOMATED_PASS",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "72 end-to-end workflow checks across discovery, maps, admin sync, and failure states. Command: pnpm run storyboard."
+  },
+  {
+    "id": "keyboard-checklist",
+    "workflow": "Manual keyboard-only checklist (K1–K31)",
+    "status": "MANUAL_REVIEW_REQUIRED",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "Preconditions automated; full mouse-free end-to-end run not recorded. Checklist: documentation/accessibility-manual-evidence.md"
+  },
+  {
+    "id": "nvda-checklist",
+    "workflow": "NVDA smoke test (N1–N20)",
+    "status": "NOT_STARTED",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "Not run. Requires NVDA and a human listener. Checklist: documentation/accessibility-manual-evidence.md"
+  },
+  {
+    "id": "jaws-checklist",
+    "workflow": "JAWS smoke test (J1–J8)",
+    "status": "NOT_STARTED",
+    "standard": "SECTION_508",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "Not run. Record N/A with licensing reason if unavailable. Checklist: documentation/accessibility-manual-evidence.md"
+  },
+  {
+    "id": "map-equivalence",
+    "workflow": "Map equivalence checklist (M1–M15)",
+    "status": "MANUAL_REVIEW_REQUIRED",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "M1, M2, M14, M15 preconditions automated. M12 map-to-list focus is the priority manual check. Checklist: documentation/accessibility-manual-evidence.md"
+  },
+  {
+    "id": "cognitive-review",
+    "workflow": "Cognitive and workflow review (C1–C9)",
+    "status": "NOT_STARTED",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-12T00:00:00Z",
+    "notes": "Judgement-only checks not run. Checklist: documentation/accessibility-manual-evidence.md"
+  }
+]

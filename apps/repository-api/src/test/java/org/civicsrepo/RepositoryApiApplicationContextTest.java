@@ -10,6 +10,7 @@ import org.civicsrepo.dspace.DspaceItemDiffPlanner;
 import org.civicsrepo.dspace.DspaceItemStateReader;
 import org.civicsrepo.dspace.DspaceItemWriteGateway;
 import org.civicsrepo.dspace.DspaceRestClient;
+import org.civicsrepo.evidence.AccessibilityEvidenceController;
 import org.civicsrepo.maps.MapsController;
 import org.civicsrepo.search.SearchController;
 import org.civicsrepo.search.SolrSearchClient;
@@ -49,6 +50,7 @@ class RepositoryApiApplicationContextTest {
         assertThat(applicationContext.getBean(MapsController.class)).isNotNull();
         assertThat(applicationContext.getBean(SearchController.class)).isNotNull();
         assertThat(applicationContext.getBean(SyncController.class)).isNotNull();
+        assertThat(applicationContext.getBean(AccessibilityEvidenceController.class)).isNotNull();
         assertThat(applicationContext.getBean(SyncService.class)).isNotNull();
         assertThat(applicationContext.getBean(SyncJobStore.class)).isNotNull();
         assertThat(applicationContext.getBean(DspaceItemDiffPlanner.class)).isNotNull();

@@ -297,6 +297,73 @@ input:focus-visible {
   margin-bottom: 1rem;
 }
 
+:host ::ng-deep .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:host ::ng-deep .evidence-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+:host ::ng-deep .evidence-table th,
+:host ::ng-deep .evidence-table td {
+  border: 1px solid #d7dee8;
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+:host ::ng-deep .evidence-table thead th {
+  background: #f8fafc;
+  color: #253041;
+}
+
+:host ::ng-deep .evidence-table tbody th {
+  font-weight: 800;
+  color: #172033;
+}
+
+:host ::ng-deep .evidence-summary {
+  margin-top: 1rem;
+}
+
+:host ::ng-deep .criteria-list,
+:host ::ng-deep .artifact-list,
+:host ::ng-deep .gap-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+}
+
+:host ::ng-deep .artifact-list li,
+:host ::ng-deep .gap-list li {
+  display: grid;
+  gap: 0.35rem;
+}
+
+:host ::ng-deep .artifact-path,
+:host ::ng-deep .checklist-ref {
+  display: block;
+  color: #45566f;
+  font-size: 0.875rem;
+}
+
+:host ::ng-deep code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+}
+
 :host ::ng-deep .discovery-layout {
   display: grid;
   grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);

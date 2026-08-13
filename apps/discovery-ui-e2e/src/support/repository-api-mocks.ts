@@ -307,6 +307,13 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
       },
     });
   });
+
+  await page.route(`**/api/accessibility/evidence`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: accessibilityEvidence(),
+    });
+  });
 }
 
 const SYNC_STATUS_BY_MODE = {
@@ -354,6 +361,59 @@ const SYNC_ACTIONS_BY_MODE = {
     },
   ],
 } as const;
+
+function accessibilityEvidence() {
+  return [
+    {
+      id: 'axe-wcag-2026-08-12',
+      workflow: 'axe-core scans (6 routes)',
+      status: 'AUTOMATED_PASS',
+      standard: 'WCAG_2_1_AA',
+      capturedAt: '2026-08-12T00:00:00Z',
+      notes: '57 checks passed. Command: pnpm run wcag:report. Artifact: documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md',
+    },
+    {
+      id: 'section508-2026-08-12',
+      workflow: 'Section 508 tagged scans',
+      status: 'AUTOMATED_PASS',
+      standard: 'SECTION_508',
+      capturedAt: '2026-08-12T00:00:00Z',
+      notes: '57 checks passed. Command: pnpm run section508:report.',
+    },
+    {
+      id: 'storyboard-2026-08-12',
+      workflow: 'Demo storyboard workflows',
+      status: 'AUTOMATED_PASS',
+      standard: 'WCAG_2_1_AA',
+      capturedAt: '2026-08-12T00:00:00Z',
+      notes: '72 end-to-end workflow checks. Command: pnpm run storyboard.',
+    },
+    {
+      id: 'keyboard-checklist',
+      workflow: 'Manual keyboard-only checklist (K1–K31)',
+      status: 'MANUAL_REVIEW_REQUIRED',
+      standard: 'WCAG_2_1_AA',
+      capturedAt: '2026-08-12T00:00:00Z',
+      notes: 'Preconditions automated; full mouse-free end-to-end run not recorded.',
+    },
+    {
+      id: 'nvda-checklist',
+      workflow: 'NVDA smoke test (N1–N20)',
+      status: 'NOT_STARTED',
+      standard: 'WCAG_2_1_AA',
+      capturedAt: '2026-08-12T00:00:00Z',
+      notes: 'Not run.',
+    },
+    {
+      id: 'map-equivalence',
+      workflow: 'Map equivalence checklist (M1–M15)',
+      status: 'MANUAL_REVIEW_REQUIRED',
+      standard: 'WCAG_2_1_AA',
+      capturedAt: '2026-08-12T00:00:00Z',
+      notes: 'M12 map-to-list focus is the priority manual check.',
+    },
+  ];
+}
 
 function datasetIdFromUrl(url: string, suffix = ''): string {
   const pathname = new URL(url).pathname;

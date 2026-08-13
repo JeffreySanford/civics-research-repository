@@ -2,6 +2,7 @@ import { firstValueFrom, of } from 'rxjs';
 import {
   RepositoryAdminApi,
   RepositoryDatasetsApi,
+  RepositoryEvidenceApi,
   RepositoryMapsApi,
   RepositorySearchApi,
   type DatasetDetail,
@@ -88,6 +89,31 @@ describe('RepositoryDatasetsApi', () => {
     ).resolves.toEqual(versions);
     expect(http.get).toHaveBeenCalledWith(
       'http://api.test/api/datasets/tiger-line-north-dakota-2025/versions',
+    );
+  });
+});
+
+describe('RepositoryEvidenceApi', () => {
+  it('loads accessibility evidence summaries', async () => {
+    const entries = [
+      {
+        id: 'axe-wcag-2026-08-12',
+        workflow: 'axe-core scans (6 routes)',
+        status: 'AUTOMATED_PASS' as const,
+        standard: 'WCAG_2_1_AA' as const,
+        capturedAt: '2026-08-12T00:00:00Z',
+      },
+    ];
+    const http = {
+      get: vi.fn(() => of(entries)),
+    };
+    const api = new RepositoryEvidenceApi(http as never, 'http://api.test/api');
+
+    await expect(firstValueFrom(api.listAccessibilityEvidence())).resolves.toEqual(
+      entries,
+    );
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/accessibility/evidence',
     );
   });
 });

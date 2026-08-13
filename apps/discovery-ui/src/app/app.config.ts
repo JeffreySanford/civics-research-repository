@@ -23,6 +23,11 @@ import { SearchEffects } from './state/search/search.effects';
 import { searchFeatureKey, searchReducer } from './state/search/search.reducer';
 import { SyncEffects } from './state/sync/sync.effects';
 import { syncFeatureKey, syncReducer } from './state/sync/sync.reducer';
+import { EvidenceEffects } from './state/evidence/evidence.effects';
+import {
+  evidenceFeatureKey,
+  evidenceReducer,
+} from './state/evidence/evidence.reducer';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -47,9 +52,11 @@ export const appConfig: ApplicationConfig = {
     provideState(mapsFeatureKey, mapsReducer),
     provideState(searchFeatureKey, searchReducer),
     provideState(syncFeatureKey, syncReducer),
+    provideState(evidenceFeatureKey, evidenceReducer),
     provideEffects([
       DatasetsEffects,
       ErrorNotificationEffects,
+      EvidenceEffects,
       MapsEffects,
       SearchEffects,
       SyncEffects,
