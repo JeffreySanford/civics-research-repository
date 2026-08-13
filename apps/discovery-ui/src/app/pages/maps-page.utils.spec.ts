@@ -2,6 +2,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import {
   configureMapLibreWorker,
   findCensusAreaForPoint,
+  MAP_LAYER_GROUPS,
   readMapDebugSnapshot,
   resolveRasterTileUrlTemplate,
   USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE,
@@ -59,35 +60,127 @@ describe('configureMapLibreWorker', () => {
 });
 
 describe('readMapDebugSnapshot', () => {
-  it('returns null when the map is missing', () => {
-    expect(readMapDebugSnapshot(null, false)).toBeNull();
-  });
+  const allOn = {
+    tiger: true,
+    earthquake: true,
+    lodes: true,
+    saipe: true,
+    hydrography: true,
+  };
 
-  it('summarizes layer visibility and source feature counts', () => {
-    const map = {
+  function fakeMap(overrides: Record<string, unknown> = {}) {
+    return {
       isStyleLoaded: vi.fn().mockReturnValue(true),
       getStyle: vi.fn().mockReturnValue({ layers: [{ id: 'osm' }] }),
-      getLayer: vi.fn((id: string) => (id === 'census-area-fill' ? {} : null)),
+      getLayer: vi.fn().mockReturnValue({}),
       getLayoutProperty: vi.fn().mockReturnValue('visible'),
       getSource: vi.fn().mockReturnValue({}),
       isSourceLoaded: vi.fn().mockReturnValue(true),
       querySourceFeatures: vi.fn().mockReturnValue([{}, {}]),
+      ...overrides,
     } as unknown as MapLibreMap;
+  }
 
-    expect(readMapDebugSnapshot(map, true)).toEqual(
-      expect.objectContaining({
-        mapStyleReady: true,
-        styleLoaded: true,
-        layerCount: 1,
-        featureCounts: expect.objectContaining({
-          'census-area-boundary': 2,
-        }),
-        visibility: expect.objectContaining({
-          'census-area-fill': 'visible',
-          'census-area-outline': 'missing',
+  it('returns null when the map is missing', () => {
+    expect(readMapDebugSnapshot(null, false, allOn)).toBeNull();
+  });
+
+  /**
+   * The panel kept its own layer list and had fallen two behind: the earthquake labels and the
+   * selection ring were drawn and toggled but never reported. Reporting every layer in every group
+   * is the point.
+   */
+  it('reports every layer of every group', () => {
+    const snapshot = readMapDebugSnapshot(fakeMap(), true, allOn);
+
+    expect(snapshot?.groups.map((group) => group.id)).toEqual(
+      MAP_LAYER_GROUPS.map((group) => group.id),
+    );
+    expect(
+      snapshot?.groups.flatMap((group) =>
+        group.layers.map((layer) => layer.id),
+      ),
+    ).toEqual(MAP_LAYER_GROUPS.flatMap((group) => group.layerIds));
+  });
+
+  it('carries each toggle position alongside what is drawn', () => {
+    const snapshot = readMapDebugSnapshot(fakeMap(), true, {
+      ...allOn,
+      lodes: false,
+    });
+
+    const lodes = snapshot?.groups.find((group) => group.id === 'lodes');
+    expect(lodes?.toggledOn).toBe(false);
+    // Still drawn while the toggle says off: exactly the disagreement this panel exists to show.
+    expect(lodes?.matchesToggle).toBe(false);
+    expect(snapshot?.mismatchedGroups).toContain('lodes');
+  });
+
+  it('reports a hidden layer as none and treats it as matching an off toggle', () => {
+    // Every layer hidden, every toggle off: the state after clearing all the checkboxes.
+    const snapshot = readMapDebugSnapshot(
+      fakeMap({ getLayoutProperty: vi.fn().mockReturnValue('none') }),
+      true,
+      {
+        tiger: false,
+        earthquake: false,
+        lodes: false,
+        saipe: false,
+        hydrography: false,
+      },
+    );
+
+    const lodes = snapshot?.groups.find((group) => group.id === 'lodes');
+    expect(lodes?.layers.map((layer) => layer.visibility)).toEqual([
+      'none',
+      'none',
+    ]);
+    expect(lodes?.matchesToggle).toBe(true);
+    expect(snapshot?.mismatchedGroups).toEqual([]);
+  });
+
+  /** A layer whose data has not arrived is missing, not hidden; the causes differ. */
+  it('separates a layer that was never added from one that was hidden', () => {
+    const snapshot = readMapDebugSnapshot(
+      fakeMap({
+        getLayer: vi.fn((id: string) =>
+          id === 'census-area-fill' ? {} : null,
+        ),
+      }),
+      true,
+      allOn,
+    );
+
+    const tiger = snapshot?.groups.find((group) => group.id === 'tiger');
+    expect(tiger?.layers).toEqual([
+      { id: 'census-area-fill', visibility: 'visible' },
+      { id: 'census-area-outline', visibility: 'missing' },
+    ]);
+    // Waiting for data is not a mismatch.
+    expect(tiger?.matchesToggle).toBe(true);
+  });
+
+  it('reports raster sources that cannot be queried as -1 rather than empty', () => {
+    const snapshot = readMapDebugSnapshot(
+      fakeMap({
+        querySourceFeatures: vi.fn((sourceId: string) => {
+          if (sourceId === 'usgs-3hp-hydrography') {
+            throw new Error('not a geojson source');
+          }
+          return [{}, {}];
         }),
       }),
+      true,
+      allOn,
     );
+
+    expect(
+      snapshot?.groups.find((group) => group.id === 'hydrography')
+        ?.featureCount,
+    ).toBe(-1);
+    expect(
+      snapshot?.groups.find((group) => group.id === 'tiger')?.featureCount,
+    ).toBe(2);
   });
 });
 

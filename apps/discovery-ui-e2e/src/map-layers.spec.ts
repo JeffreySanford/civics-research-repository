@@ -121,6 +121,50 @@ test.describe('map layer controls', () => {
     ).toHaveCount(0);
   });
 
+  /**
+   * The debug panel is the tool for answering "is this layer actually drawn?", so it has to
+   * account for every layer group and follow the toggles. It previously kept its own layer list
+   * and had fallen two behind.
+   */
+  test('map debug reports every layer group and follows the toggles @maps', async ({
+    page,
+  }) => {
+    await page.getByTestId('map-debug-toggle').click();
+    const panel = page.getByTestId('map-debug-panel');
+    await expect(panel).toBeVisible();
+
+    for (const group of [
+      'tiger',
+      'earthquake',
+      'lodes',
+      'saipe',
+      'hydrography',
+    ]) {
+      await expect(page.getByTestId(`map-debug-group-${group}`)).toBeVisible();
+    }
+
+    // The two layers the panel used to omit entirely.
+    await expect(page.getByTestId('map-debug-group-earthquake')).toContainText(
+      'usgs-earthquake-labels',
+    );
+    await expect(page.getByTestId('map-debug-group-earthquake')).toContainText(
+      'usgs-earthquake-selected',
+    );
+
+    const lodesGroup = page.getByTestId('map-debug-group-lodes');
+    const lodes = page
+      .getByRole('group', { name: 'Map layer controls' })
+      .getByRole('checkbox', { name: 'LODES workplace flow sample' });
+
+    await lodes.check();
+    await expect(lodesGroup).toHaveAttribute('data-toggled', 'on');
+
+    await lodes.uncheck();
+    await expect(lodesGroup).toHaveAttribute('data-toggled', 'off');
+    // Off in the panel means off on the map, not merely off in the store.
+    await expect(lodesGroup).toHaveAttribute('data-matches-toggle', 'true');
+  });
+
   /** Opening the map from a dataset must land on that dataset's geography, not the default. */
   test('a dataset opens the map on its own geography @maps', async ({
     page,

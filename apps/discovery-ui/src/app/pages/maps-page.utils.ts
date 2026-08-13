@@ -63,81 +63,175 @@ export function configureMapLibreWorker(maplibregl: MapLibreModule): void {
   maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
 }
 
+/** The toggles the map exposes. One per checkbox in the layer controls. */
+export type MapLayerGroupId =
+  | 'tiger'
+  | 'earthquake'
+  | 'lodes'
+  | 'saipe'
+  | 'hydrography';
+
+export type MapLayerGroup = {
+  readonly id: MapLayerGroupId;
+  readonly label: string;
+  readonly sourceId: string;
+  readonly layerIds: readonly string[];
+};
+
+/**
+ * Every rendered overlay, grouped by the toggle that owns it.
+ *
+ * The single definition of which layers belong to which control. Visibility is applied from this,
+ * and the debug panel reports from it, so a layer cannot be added to the map without appearing in
+ * both. The debug panel previously kept its own list and had already fallen behind by two layers:
+ * the earthquake labels and the selection ring were drawn and toggled but never reported.
+ *
+ * `osm` is deliberately absent. It is the base map, has no toggle, and is never hidden.
+ */
+export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
+  {
+    id: 'tiger',
+    label: 'TIGER/Line boundary',
+    sourceId: 'census-area-boundary',
+    layerIds: ['census-area-fill', 'census-area-outline'],
+  },
+  {
+    id: 'earthquake',
+    label: 'USGS earthquake overlay',
+    sourceId: 'usgs-earthquakes',
+    layerIds: [
+      'usgs-earthquake-points',
+      'usgs-earthquake-labels',
+      'usgs-earthquake-selected',
+    ],
+  },
+  {
+    id: 'lodes',
+    label: 'LODES workplace flow sample',
+    sourceId: 'lodes-workplace-flow',
+    layerIds: ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
+  },
+  {
+    id: 'saipe',
+    label: 'SAIPE county choropleth',
+    sourceId: 'saipe-county-choropleth',
+    layerIds: ['saipe-county-fill', 'saipe-county-outline'],
+  },
+  {
+    id: 'hydrography',
+    label: 'USGS 3HP hydrography',
+    sourceId: 'usgs-3hp-hydrography',
+    layerIds: ['usgs-3hp-hydrography-raster'],
+  },
+];
+
+/**
+ * Whether each toggle is currently on.
+ *
+ * Passed into the snapshot so the panel can say what was asked for next to what the map actually
+ * did. The two disagreeing is the interesting case, and the whole reason to look at this panel:
+ * a layer that reads `off / visible` is still being drawn after its toggle was cleared.
+ */
+export type MapLayerToggleState = Record<MapLayerGroupId, boolean>;
+
+export type MapLayerDebugState = {
+  id: string;
+  visibility: 'visible' | 'none' | 'missing';
+};
+
+export type MapLayerGroupDebugState = {
+  id: MapLayerGroupId;
+  label: string;
+  toggledOn: boolean;
+  sourceId: string;
+  sourceLoaded: boolean;
+  featureCount: number;
+  layers: readonly MapLayerDebugState[];
+  /** True when every layer in the group matches its toggle. */
+  matchesToggle: boolean;
+};
+
 export type MapDebugSnapshot = {
   mapStyleReady: boolean;
   styleLoaded: boolean;
   layerCount: number;
-  featureCounts: Record<string, number>;
-  visibility: Record<string, 'visible' | 'none' | 'missing'>;
-  geoJsonSourcesLoaded: Record<string, boolean>;
+  groups: readonly MapLayerGroupDebugState[];
+  /** Groups whose drawn state disagrees with their toggle; empty is the healthy case. */
+  mismatchedGroups: readonly MapLayerGroupId[];
 };
 
-const DEBUG_LAYER_IDS = [
-  'census-area-fill',
-  'census-area-outline',
-  'saipe-county-fill',
-  'saipe-county-outline',
-  'usgs-3hp-hydrography-raster',
-  'usgs-earthquake-points',
-  'lodes-workplace-flow-line',
-  'lodes-workplace-flow-points',
-] as const;
+function layerVisibility(
+  map: MapLibreMap,
+  layerId: string,
+): MapLayerDebugState['visibility'] {
+  if (!map.getLayer(layerId)) {
+    return 'missing';
+  }
 
-const DEBUG_SOURCE_IDS = [
-  'census-area-boundary',
-  'saipe-county-choropleth',
-  'usgs-3hp-hydrography',
-  'usgs-earthquakes',
-  'lodes-workplace-flow',
-] as const;
+  return map.getLayoutProperty(layerId, 'visibility') === 'none'
+    ? 'none'
+    : 'visible';
+}
 
-/** Dev-only snapshot of map readiness, source data, and layer visibility. */
+function featureCount(map: MapLibreMap, sourceId: string): number {
+  try {
+    return map.querySourceFeatures(sourceId).length;
+  } catch {
+    // Raster sources cannot be queried for features; -1 distinguishes that from an empty source.
+    return -1;
+  }
+}
+
+/**
+ * Dev-only snapshot of map readiness and, per toggle, what is actually drawn.
+ *
+ * A layer that has not been added yet reports `missing` rather than `none`. The distinction
+ * matters: `none` means the map was told to hide it, `missing` means the data never arrived, and
+ * those have different causes.
+ */
 export function readMapDebugSnapshot(
   map: MapLibreMap | null,
   mapStyleReady: boolean,
+  toggles: MapLayerToggleState,
 ): MapDebugSnapshot | null {
   if (!map) {
     return null;
   }
 
-  const featureCounts = Object.fromEntries(
-    DEBUG_SOURCE_IDS.map((sourceId) => {
-      try {
-        return [sourceId, map.querySourceFeatures(sourceId).length];
-      } catch {
-        return [sourceId, -1];
-      }
-    }),
-  );
+  const groups = MAP_LAYER_GROUPS.map((group) => {
+    const toggledOn = toggles[group.id];
+    const layers = group.layerIds.map((layerId) => ({
+      id: layerId,
+      visibility: layerVisibility(map, layerId),
+    }));
 
-  const visibility = Object.fromEntries(
-    DEBUG_LAYER_IDS.map((layerId) => {
-      if (!map.getLayer(layerId)) {
-        return [layerId, 'missing' as const];
-      }
-
-      const value = map.getLayoutProperty(layerId, 'visibility');
-      return [
-        layerId,
-        value === 'none' ? ('none' as const) : ('visible' as const),
-      ];
-    }),
-  );
-
-  const geoJsonSourcesLoaded = Object.fromEntries(
-    DEBUG_SOURCE_IDS.map((sourceId) => [
-      sourceId,
-      map.getSource(sourceId) ? map.isSourceLoaded(sourceId) : false,
-    ]),
-  );
+    return {
+      id: group.id,
+      label: group.label,
+      toggledOn,
+      sourceId: group.sourceId,
+      sourceLoaded: map.getSource(group.sourceId)
+        ? map.isSourceLoaded(group.sourceId)
+        : false,
+      featureCount: featureCount(map, group.sourceId),
+      layers,
+      // A layer still waiting for data is not a mismatch; being drawn when the toggle is off is.
+      matchesToggle: layers.every(
+        (layer) =>
+          layer.visibility === 'missing' ||
+          (layer.visibility === 'visible') === toggledOn,
+      ),
+    };
+  });
 
   return {
     mapStyleReady,
     styleLoaded: map.isStyleLoaded() === true,
     layerCount: map.getStyle().layers.length,
-    featureCounts,
-    visibility,
-    geoJsonSourcesLoaded,
+    groups,
+    mismatchedGroups: groups
+      .filter((group) => !group.matchesToggle)
+      .map((group) => group.id),
   };
 }
 

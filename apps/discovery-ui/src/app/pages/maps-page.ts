@@ -66,8 +66,10 @@ import {
   configureMapLibreWorker,
   findCensusAreaForPoint,
   MIN_ZOOM_FOR_PAN_AREA_SYNC,
+  MAP_LAYER_GROUPS,
   readMapDebugSnapshot,
   type MapDebugSnapshot,
+  type MapLayerToggleState,
   USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE,
   resolveRasterTileUrlTemplate,
   whenMapStyleReady,
@@ -723,6 +725,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.mapDebugSnapshot = readMapDebugSnapshot(
         this.map,
         this.mapStyleReady,
+        this.layerToggleState(),
       );
       this.changeDetectorRef.markForCheck();
     };
@@ -1157,7 +1160,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  private setLayerVisibility(layerIds: string[], visible: boolean): void {
+  private setLayerVisibility(
+    layerIds: readonly string[],
+    visible: boolean,
+  ): void {
     if (!this.map) {
       return;
     }
@@ -1195,31 +1201,23 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.setLayerVisibility(
-      ['census-area-fill', 'census-area-outline'],
-      this.tigerVisible,
-    );
-    this.setLayerVisibility(
-      [
-        'usgs-earthquake-points',
-        'usgs-earthquake-labels',
-        'usgs-earthquake-selected',
-      ],
-      this.earthquakeVisible,
-    );
-    this.setLayerVisibility(
-      ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
-      this.lodesVisible,
-    );
-    this.setLayerVisibility(
-      ['saipe-county-fill', 'saipe-county-outline'],
-      this.saipeVisible,
-    );
-    this.setLayerVisibility(
-      ['usgs-3hp-hydrography-raster'],
-      this.hydrographyVisible,
-    );
+    const toggles = this.layerToggleState();
+    for (const group of MAP_LAYER_GROUPS) {
+      this.setLayerVisibility(group.layerIds, toggles[group.id]);
+    }
+
     this.refreshMapDebugSnapshot();
+  }
+
+  /** The current toggle positions, keyed the way MAP_LAYER_GROUPS is. */
+  private layerToggleState(): MapLayerToggleState {
+    return {
+      tiger: this.tigerVisible,
+      earthquake: this.earthquakeVisible,
+      lodes: this.lodesVisible,
+      saipe: this.saipeVisible,
+      hydrography: this.hydrographyVisible,
+    };
   }
 
   private refreshMapDebugSnapshot(): void {
@@ -1227,7 +1225,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.mapDebugSnapshot = readMapDebugSnapshot(this.map, this.mapStyleReady);
+    this.mapDebugSnapshot = readMapDebugSnapshot(
+      this.map,
+      this.mapStyleReady,
+      this.layerToggleState(),
+    );
     this.changeDetectorRef.markForCheck();
   }
 

@@ -248,33 +248,61 @@
             <dd>{{ mapDebugSnapshot.layerCount }}</dd>
           </div>
           <div>
-            <dt>GeoJSON sources loaded</dt>
+            <dt>Toggles matching the map</dt>
             <dd>
-              @for (entry of mapDebugSnapshot.geoJsonSourcesLoaded | keyvalue;
-              track entry.key) {
-              <span>{{ entry.key }}={{ entry.value ? 'yes' : 'no' }}</span>
-              }
-            </dd>
-          </div>
-          <div>
-            <dt>Feature counts</dt>
-            <dd>
-              @for (entry of mapDebugSnapshot.featureCounts | keyvalue; track
-              entry.key) {
-              <span>{{ entry.key }}={{ entry.value }}</span>
-              }
-            </dd>
-          </div>
-          <div>
-            <dt>Visibility</dt>
-            <dd>
-              @for (entry of mapDebugSnapshot.visibility | keyvalue; track
-              entry.key) {
-              <span>{{ entry.key }}={{ entry.value }}</span>
+              @if (mapDebugSnapshot.mismatchedGroups.length === 0) {
+              <span data-testid="map-debug-groups-match">all match</span>
+              } @else {
+              <span
+                data-testid="map-debug-groups-mismatch"
+                class="map-debug-mismatch"
+              >
+                drawn state disagrees with the toggle: {{
+                mapDebugSnapshot.mismatchedGroups.join(', ') }}
+              </span>
               }
             </dd>
           </div>
         </dl>
+
+        <!-- One block per toggle, so every rendered layer is accounted for whether it is on or
+             off. A layer reads `missing` until its data arrives, `none` once the map has been
+             told to hide it. -->
+        @for (group of mapDebugSnapshot.groups; track group.id) {
+        <section
+          class="map-debug-group"
+          [class.map-debug-group-off]="!group.toggledOn"
+          [attr.data-testid]="'map-debug-group-' + group.id"
+          [attr.data-toggled]="group.toggledOn ? 'on' : 'off'"
+          [attr.data-matches-toggle]="group.matchesToggle"
+        >
+          <h3>
+            {{ group.label }}
+            <span class="map-debug-state"
+              >{{ group.toggledOn ? 'ON' : 'OFF' }}</span
+            >
+          </h3>
+          <dl>
+            <div>
+              <dt>Source</dt>
+              <dd>
+                {{ group.sourceId }}, loaded={{ group.sourceLoaded ? 'yes' :
+                'no' }}, @if (group.featureCount < 0) { features=n/a (raster) }
+                @else { features={{ group.featureCount }} }
+              </dd>
+            </div>
+            <div>
+              <dt>Layers</dt>
+              <dd>
+                @for (layer of group.layers; track layer.id) {
+                <span>{{ layer.id }}={{ layer.visibility }}</span>
+                }
+              </dd>
+            </div>
+          </dl>
+        </section>
+        }
+
         <p class="map-debug-note">
           GeoJSON overlays require the MapLibre worker at
           <code>/maplibre-gl-worker.mjs</code> and
