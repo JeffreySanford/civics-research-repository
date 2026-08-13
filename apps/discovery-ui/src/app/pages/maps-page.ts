@@ -2,7 +2,6 @@ import {
   AsyncPipe,
   DatePipe,
   DecimalPipe,
-  KeyValuePipe,
   isPlatformBrowser,
 } from '@angular/common';
 import {
@@ -67,6 +66,7 @@ import {
   findCensusAreaForPoint,
   MIN_ZOOM_FOR_PAN_AREA_SYNC,
   MAP_LAYER_GROUPS,
+  USGS_3HP_MIN_ZOOM,
   readMapDebugSnapshot,
   type MapDebugSnapshot,
   type MapLayerToggleState,
@@ -119,7 +119,6 @@ type GeoJsonFeatureCollection = {
     AsyncPipe,
     DatePipe,
     DecimalPipe,
-    KeyValuePipe,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
@@ -171,6 +170,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     earthquake:
       'Plots recent earthquake epicenters from the USGS FDSN feed near the selected area. Updates from the live API when available.',
   } as const;
+  /**
+   * True while the hydrography overlay is on but the view is too wide for it to draw anything.
+   *
+   * Without this the toggle appears broken: the layer is on, the request succeeds, and the map is
+   * unchanged, because the USGS service suppresses every layer above 1:300,000.
+   */
+  protected readonly hydrographyBelowMinZoom = signal(false);
+  protected readonly usgsHydrographyMinZoom = USGS_3HP_MIN_ZOOM;
   protected readonly mapDebugAvailable = environment.mapDebugEnabled;
   protected readonly mapDebugPanelOpen = signal(false);
   protected mapDebugSnapshot: MapDebugSnapshot | null = null;
@@ -489,13 +496,18 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.schedulePanAreaSync();
     };
 
+    const onZoomChanged = (): void => this.refreshHydrographyZoomHint();
+
     this.map.on('moveend', onMoveEnd);
+    this.map.on('zoomend', onZoomChanged);
+    onZoomChanged();
     this.destroyRef.onDestroy(() => {
       if (this.panAreaSyncTimer !== null) {
         clearTimeout(this.panAreaSyncTimer);
       }
 
       this.map?.off('moveend', onMoveEnd);
+      this.map?.off('zoomend', onZoomChanged);
     });
   }
 
@@ -1071,6 +1083,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           id: 'usgs-3hp-hydrography-raster',
           type: 'raster',
           source: 'usgs-3hp-hydrography',
+          // Below this the service returns blank images, so requesting them wastes a round trip
+          // per tile and tells the user nothing.
+          minzoom: USGS_3HP_MIN_ZOOM,
           layout: {
             visibility: this.hydrographyVisible ? 'visible' : 'none',
           },
@@ -1207,6 +1222,16 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.refreshMapDebugSnapshot();
+  }
+
+  private refreshHydrographyZoomHint(): void {
+    const belowMinZoom =
+      this.hydrographyVisible && (this.map?.getZoom() ?? 0) < USGS_3HP_MIN_ZOOM;
+
+    if (belowMinZoom !== this.hydrographyBelowMinZoom()) {
+      this.hydrographyBelowMinZoom.set(belowMinZoom);
+      this.changeDetectorRef.markForCheck();
+    }
   }
 
   /** The current toggle positions, keyed the way MAP_LAYER_GROUPS is. */

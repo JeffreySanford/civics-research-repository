@@ -21,7 +21,9 @@ test.describe('repository API failure states', () => {
     await failRepositoryApi(page, '**/api/search**');
     await page.goto('/discovery');
 
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Search results failed' }),
+    ).toBeVisible();
     await expect(page.getByLabel('Search terms')).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Find research objects' }),
@@ -33,7 +35,9 @@ test.describe('repository API failure states', () => {
   }) => {
     await failRepositoryApi(page, '**/api/search**');
     await page.goto('/discovery');
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Search results failed' }),
+    ).toBeVisible();
 
     await page.unrouteAll({ behavior: 'ignoreErrors' });
     await mockRepositoryApi(page);
@@ -45,14 +49,22 @@ test.describe('repository API failure states', () => {
         name: '2025 TIGER/Line - Census Tracts - Texas',
       }),
     ).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    // The search error specifically, not every alert on the page: the failed request also raised
+    // a snackbar, and whether that has faded yet is not what this test is about.
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Search results failed' }),
+    ).toHaveCount(0);
   });
 
   test('dataset detail reports an outage @storyboard', async ({ page }) => {
     await failRepositoryApi(page, '**/api/datasets/*');
     await page.goto('/datasets/tiger-line-north-dakota-2025');
 
-    await expect(page.getByRole('alert')).toBeVisible();
+    // Named, not just "an alert": a page can raise several at once, and asserting on the count of
+    // anonymous alerts breaks whenever an unrelated request also fails.
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Dataset detail failed' }),
+    ).toBeVisible();
   });
 
   test('admin sync reports a failed sync request @storyboard', async ({
@@ -63,7 +75,11 @@ test.describe('repository API failure states', () => {
 
     await page.getByRole('button', { name: 'Dry run sync' }).click();
 
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'Repository sync request failed' }),
+    ).toBeVisible();
   });
 
   /**
@@ -78,7 +94,14 @@ test.describe('repository API failure states', () => {
     await expect(
       page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
     ).toBeVisible();
-    await expect(page.getByRole('alert')).toBeVisible();
+    // Scoped to the workspace: the same failure is also announced in a snackbar, and this test
+    // is about the page itself reporting the outage inline rather than only in a transient toast.
+    await expect(
+      page
+        .getByLabel('MapLibre geospatial workspace')
+        .getByRole('alert')
+        .filter({ hasText: 'Map data failed to load' }),
+    ).toBeVisible();
   });
 });
 

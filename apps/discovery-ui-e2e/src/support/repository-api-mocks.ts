@@ -216,15 +216,18 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     });
   });
 
-  await page.route(`**/api/overlays/usgs/hydrography/export**`, async (route) => {
-    await route.fulfill({
-      contentType: 'image/png',
-      body: Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X2ZkAAAAASUVORK5CYII=',
-        'base64',
-      ),
-    });
-  });
+  await page.route(
+    `**/api/overlays/usgs/hydrography/export**`,
+    async (route) => {
+      await route.fulfill({
+        contentType: 'image/png',
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X2ZkAAAAASUVORK5CYII=',
+          'base64',
+        ),
+      });
+    },
+  );
 
   await page.route(`**/api/overlays/usgs/earthquakes**`, async (route) => {
     const overlayState = new URL(page.url()).searchParams.get('overlay');

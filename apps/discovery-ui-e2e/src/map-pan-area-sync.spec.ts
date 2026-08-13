@@ -68,6 +68,9 @@ test.describe('map pan census area sync', () => {
   }) => {
     await panMapTo(page, { longitude: -130, latitude: 40 });
 
+    // Waiting out the sync debounce is the assertion: there is no state change to wait for, and
+    // checking immediately would pass even if the area did change a moment later.
+    // eslint-disable-next-line playwright/no-wait-for-timeout
     await page.waitForTimeout(500);
 
     await expect(page.getByLabel('Census area')).toHaveValue('North Dakota');

@@ -87,6 +87,10 @@ public class UsgsHydrographyTileService {
                 "imageSR=" + imageSr,
                 "size=" + encode(size),
                 "f=image",
+                // png32, explicitly. Without a format the service defaults to a paletted PNG and
+                // returns a blank 205-byte image for every bbox: a 200 with the right content type
+                // and nothing drawn in it, so the overlay looked identical on and off.
+                "format=png32",
                 "transparent=" + transparent);
         return URI.create(UPSTREAM_EXPORT + "?" + query);
     }

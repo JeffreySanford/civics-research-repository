@@ -135,6 +135,10 @@ test.describe('accessibility structure', () => {
         'textbox',
         'tab',
       ] as const) {
+        // Collect, then assert once below. The rule wants no branching in a test, but an audit
+        // that walks every control has to skip the hidden ones and record the rest; a single
+        // assertion naming every offender is more useful than failing on the first.
+        /* eslint-disable playwright/no-conditional-in-test */
         const controls = await page.getByRole(role).all();
         for (const control of controls) {
           if (!(await control.isVisible())) {
@@ -193,6 +197,7 @@ test.describe('accessibility structure', () => {
             machineNamed.push(`${role}: ${name}`);
           }
         }
+        /* eslint-enable playwright/no-conditional-in-test */
       }
 
       expect(unnamed, 'controls with no accessible name').toEqual([]);
@@ -288,16 +293,29 @@ test.describe('accessibility structure', () => {
   }) => {
     await page.goto('/maps');
 
-    await expect(page.getByLabel('TIGER/Line boundary')).not.toBeChecked();
-    await expect(page.getByLabel('USGS earthquake overlay')).not.toBeChecked();
+    // By accessible name, and by checkbox role: naming alone is now ambiguous, because each
+    // toggle sits beside an info button whose name contains the same layer name. Requiring the
+    // role keeps this asserting what N13 is about -- the control is a labelled checkbox -- while
+    // still failing if a toggle loses its name.
+    const layerNames = [
+      'TIGER/Line boundary',
+      'LODES workplace flow sample',
+      'SAIPE county poverty',
+      'USGS 3HP hydrography',
+      'USGS earthquake overlay',
+    ];
 
-    await page.getByLabel('TIGER/Line boundary').check();
-    await page.getByLabel('USGS earthquake overlay').check();
-    await expect(page.getByLabel('TIGER/Line boundary')).toBeChecked();
-    await expect(page.getByLabel('USGS earthquake overlay')).toBeChecked();
+    for (const name of layerNames) {
+      const toggle = page.getByRole('checkbox', { name });
 
-    await page.getByLabel('USGS earthquake overlay').uncheck();
-    await expect(page.getByLabel('USGS earthquake overlay')).not.toBeChecked();
+      await expect(toggle).not.toBeChecked();
+
+      await toggle.check();
+      await expect(toggle).toBeChecked();
+
+      await toggle.uncheck();
+      await expect(toggle).not.toBeChecked();
+    }
   });
 
   /**
@@ -317,7 +335,10 @@ test.describe('accessibility structure', () => {
       return response.ok ? await response.json() : null;
     });
 
+    // The empty fallback is not a branch that hides a failure: the assertion below fails loudly
+    // if the overlay did not load, rather than passing an empty loop.
     const features: Array<{ place: string; magnitude: number }> =
+      // eslint-disable-next-line playwright/no-conditional-in-test
       overlay?.features ?? [];
     expect(
       features.length,
@@ -384,6 +405,14 @@ test.describe('accessibility structure', () => {
 
     await page.getByRole('button', { name: 'Dry run sync' }).click();
 
-    await expect(page.getByRole('alert')).toBeVisible();
+    // Named: the failure is announced in the page and in a snackbar, and a bare `alert` role
+    // lookup matches both plus the live region, which is a strict-mode violation rather than a
+    // finding. What this check is about is the sync panel carrying the failure as an alert.
+    await expect(
+      page
+        .getByLabel('Sync workflow')
+        .getByRole('alert')
+        .filter({ hasText: 'Repository sync request failed' }),
+    ).toBeVisible();
   });
 });

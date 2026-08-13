@@ -1,22 +1,38 @@
 import { Route } from '@angular/router';
-import { AdminSyncPage } from './pages/admin-sync-page';
-import { DiscoveryPage } from './pages/discovery-page';
-import { EvidencePage } from './pages/evidence-page';
 import { HomePage } from './pages/home-page';
 
+/**
+ * Only the landing page is eager.
+ *
+ * Every other page was compiled into the initial bundle, which meant a visitor to `/` downloaded
+ * the admin sync form's select, tabs, and form-field machinery before seeing anything. Lazy routes
+ * cost one small fetch on first navigation and keep the initial payload to what the landing page
+ * actually renders.
+ */
 export const appRoutes: Route[] = [
   { path: '', component: HomePage, title: 'Civics Research Repository' },
-  { path: 'discovery', component: DiscoveryPage, title: 'Discovery' },
+  {
+    path: 'discovery',
+    loadComponent: () =>
+      import('./pages/discovery-page').then((m) => m.DiscoveryPage),
+    title: 'Discovery',
+  },
   {
     path: 'datasets/:datasetId',
     loadComponent: () =>
       import('./pages/dataset-detail-page').then((m) => m.DatasetDetailPage),
     title: 'Dataset Detail',
   },
-  { path: 'admin/sync', component: AdminSyncPage, title: 'Repository Sync' },
+  {
+    path: 'admin/sync',
+    loadComponent: () =>
+      import('./pages/admin-sync-page').then((m) => m.AdminSyncPage),
+    title: 'Repository Sync',
+  },
   {
     path: 'evidence',
-    component: EvidencePage,
+    loadComponent: () =>
+      import('./pages/evidence-page').then((m) => m.EvidencePage),
     title: 'Accessibility Evidence',
   },
   {

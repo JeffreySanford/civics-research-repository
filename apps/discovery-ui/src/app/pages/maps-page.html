@@ -197,7 +197,11 @@
           } } @if (hydrographyVisible$ | async) {
           <li>
             <span class="swatch hydrography"></span>
-            USGS 3HP hydrography reference
+            USGS 3HP hydrography reference @if (hydrographyBelowMinZoom()) {
+            <span class="status-pill stale" data-testid="hydrography-zoom-hint"
+              >Zoom to level {{ usgsHydrographyMinZoom }} to see it</span
+            >
+            }
           </li>
           } @if (earthquakeVisible$ | async) {
           <li>

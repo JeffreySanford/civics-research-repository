@@ -2,8 +2,10 @@
 @use '../../../libs/shared/material/src/lib/theme/civics-tokens';
 @use '../../../libs/shared/material/src/lib/theme/civics-layout';
 
-@import 'maplibre-gl/dist/maplibre-gl.css';
-@import '../../../libs/shared/material/src/lib/error-snackbar/error-snackbar.scss';
+// @use, not @import: Sass @import is deprecated and removed in Dart Sass 3. Both of these are
+// plain rule sets with nothing to export, so they load for their side effects only.
+@use 'maplibre-gl/dist/maplibre-gl.css';
+@use '../../../libs/shared/material/src/lib/error-snackbar/error-snackbar.scss';
 
 html,
 body {

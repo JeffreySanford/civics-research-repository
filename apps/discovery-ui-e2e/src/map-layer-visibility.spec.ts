@@ -33,22 +33,8 @@ test.describe('map layer MapLibre visibility', () => {
     }) => {
       const toggle = page.getByTestId(group.toggleTestId);
 
-      if (group.defaultChecked) {
-        await expect(toggle).toBeChecked();
-        await expectLayerEvidenceVisible(page, group);
-
-        await toggle.uncheck();
-        await expect(toggle).not.toBeChecked();
-        await expect(page).toHaveURL(group.urlOffPattern);
-        await expectLayerEvidenceHidden(page, group);
-
-        await toggle.check();
-        await expect(toggle).toBeChecked();
-        await expect(page).not.toHaveURL(group.urlOffPattern);
-        await expectLayerEvidenceVisible(page, group);
-        return;
-      }
-
+      // Every layer starts off. There used to be a branch here for layers that started on; it has
+      // been dead since the defaults changed, and a conditional in a test hides which path ran.
       await expect(toggle).not.toBeChecked();
       await expectLayerEvidenceHidden(page, group);
 

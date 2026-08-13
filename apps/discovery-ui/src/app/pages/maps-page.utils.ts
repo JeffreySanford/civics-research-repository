@@ -5,6 +5,19 @@ import type { CensusAreaBoundary } from 'repository-api-client';
 export const MIN_ZOOM_FOR_PAN_AREA_SYNC = 5;
 
 /**
+ * The zoom below which the USGS 3HP service draws nothing.
+ *
+ * 3DHP_all publishes `minScale: 300000`: every layer in it is scale-suppressed when the view is
+ * wider than about 1:300,000. A state-level view is nearer 1:5,000,000, so the overlay returned a
+ * correctly-formed, entirely empty image and toggling it looked like nothing happened.
+ *
+ * Web Mercator scale is roughly 559,082,264 / 2^zoom at the equator, which puts 1:300,000 just
+ * under zoom 11. Rounded down to 10 because the same scale falls at a lower zoom away from the
+ * equator, and asking for one blank tile is cheaper than hiding a band of real data.
+ */
+export const USGS_3HP_MIN_ZOOM = 10;
+
+/**
  * Proxied ArcGIS MapServer export template for the dynamic 3DHP_all service.
  *
  * MapLibre requests `{bbox-epsg-3857}` tiles through repository-api so the browser never

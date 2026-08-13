@@ -719,3 +719,118 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+/**
+ * Reflow at 320px (WCAG 1.4.10).
+ *
+ * Grid and flex children default to `min-width: auto`, which means they refuse to shrink below
+ * their content. One wide descendant -- a Material tab strip that cannot paginate, a long
+ * unbroken URL -- then stretches its track and pushes the whole page wider than the viewport,
+ * which is what made four pages scroll horizontally at 320px while their own grids had already
+ * collapsed to a single column.
+ *
+ * `min-width: 0` lets the track shrink so the descendant can paginate, wrap, or scroll inside its
+ * own box instead of widening the document.
+ */
+.content-panel,
+.search-panel,
+.hero-panel,
+.admin-layout,
+.discovery-layout,
+.map-workspace,
+.map-stage,
+.dataset-hero,
+.workflow-grid,
+.details-list {
+  min-width: 0;
+}
+
+.content-panel > *,
+.admin-layout > *,
+.discovery-layout > *,
+.hero-panel > *,
+.map-workspace > * {
+  min-width: 0;
+}
+
+/**
+ * Material tab headers scroll rather than widen the page.
+ *
+ * The label strip is laid out at its natural width, so a group with several tabs is wider than a
+ * narrow viewport. Material paginates it only when its container actually constrains it.
+ */
+.mat-mdc-tab-group,
+.mat-mdc-tab-header,
+.mat-mdc-tab-label-container {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/** A long source URL is the other thing that will not shrink on its own. */
+.details-list dd,
+.feature-list span,
+.source-link {
+  overflow-wrap: anywhere;
+}
+
+/**
+ * A layer toggle and its info button stay on one line, but the pair must still fit.
+ *
+ * The row is inline-flex, so at 320px a long label such as "LODES workplace flow sample" plus the
+ * icon button measured 363px and scrolled the whole page sideways. Capping the row at the
+ * container width and letting the label wrap keeps the control intact and the page reflowed.
+ *
+ * `min-inline-size` on the fieldset, not `min-width`: the HTML rendering spec gives fieldset a UA
+ * `min-inline-size: min-content`, which no amount of `min-width: 0` overrides. Without resetting
+ * it the fieldset refuses to be narrower than its widest toggle, and takes the page with it.
+ */
+.layer-controls {
+  min-inline-size: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.map-toolbar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.layer-toggle-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.layer-controls .layer-toggle {
+  min-width: 0;
+}
+
+.layer-controls .layer-toggle-label {
+  overflow-wrap: anywhere;
+}
+
+/**
+ * The toggle label wraps at 320px.
+ *
+ * `white-space: nowrap` keeps each label on one line at comfortable widths, which is what it is
+ * for, but at 320px "LODES workplace flow sample" plus its info button ran ten pixels past the
+ * right edge and scrolled the page. Below the narrow breakpoint the label wraps instead.
+ */
+@media (max-width: 26rem) {
+  .layer-toggle-label {
+    white-space: normal;
+  }
+}
+
+/**
+ * Wide data tables scroll in their own box.
+ *
+ * WCAG 1.4.10 exempts content that genuinely requires two-dimensional layout, and a comparison
+ * table is that. What it does not allow is the table widening the document, so the scrolling has
+ * to be the table's, not the page's. `display: block` makes the table itself the scroll container
+ * without needing a wrapper element around every table in the markup.
+ */
+.evidence-table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}

@@ -199,10 +199,136 @@ test.describe('demo storyboard checks', () => {
     ).toBeVisible();
   });
 
+  /**
+   * Every layer the map can draw, with the legend text that proves it is on.
+   *
+   * Toggles are addressed by test id, not by label: each control now sits beside an info button
+   * whose accessible name contains the same layer name, so getByLabel matches two elements.
+   *
+   * The URL parameter is not always the toggle id -- the earthquake overlay is `earthquakes` --
+   * which is exactly the kind of detail a table keeps honest.
+   */
+  const MAP_LAYERS = [
+    { id: 'tiger', param: 'tiger', legend: /TIGER\/Line preview/ },
+    { id: 'lodes', param: 'lodes', legend: /LODES workplace flow sample/ },
+    { id: 'saipe', param: 'saipe', legend: /SAIPE county poverty/ },
+    {
+      id: 'hydrography',
+      param: 'hydrography',
+      legend: /USGS 3HP hydrography reference/,
+    },
+    { id: 'earthquake', param: 'earthquakes', legend: /USGS event overlay/ },
+  ] as const;
+
+  const allLayersOn = MAP_LAYERS.map((layer) => layer.param + '=on').join('&');
+
+  for (const layer of MAP_LAYERS) {
+    test(
+      layer.id + ' layer toggles on and off on its own @storyboard',
+      async ({ page }) => {
+        await page.goto('/maps');
+
+        const legend = page.getByLabel('Visible map layer legend');
+        const toggle = page.getByTestId('map-layer-' + layer.id);
+
+        // Every layer starts off, so the legend is the evidence that the toggle did something.
+        await expect(toggle).not.toBeChecked();
+        await expect(legend.getByText(layer.legend)).toHaveCount(0);
+
+        await toggle.check();
+        await expect(legend.getByText(layer.legend)).toBeVisible();
+
+        await toggle.uncheck();
+        await expect(legend.getByText(layer.legend)).toHaveCount(0);
+        await expect(page).toHaveURL(new RegExp(layer.param + '=off'));
+      },
+    );
+
+    test(
+      layer.id + ' layer state survives a reload @storyboard',
+      async ({ page }) => {
+        await page.goto('/maps?' + layer.param + '=on');
+
+        await expect(page.getByTestId('map-layer-' + layer.id)).toBeChecked();
+        await expect(
+          page.getByLabel('Visible map layer legend').getByText(layer.legend),
+        ).toBeVisible();
+      },
+    );
+  }
+
+  /**
+   * The 3HP service suppresses every layer above 1:300,000, which covers most of how this map is
+   * used. That made the toggle look broken: on, request succeeds, map unchanged. The legend has to
+   * say so rather than leave the user to guess.
+   */
+  test('hydrography says when the view is too wide to draw it @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps?hydrography=on');
+
+    await expect(
+      page
+        .getByLabel('Visible map layer legend')
+        .getByText(/USGS 3HP hydrography reference/),
+    ).toBeVisible();
+    await expect(page.getByTestId('hydrography-zoom-hint')).toBeVisible();
+  });
+
+  test('the hydrography hint goes away once the layer can draw @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps?hydrography=on');
+    await expect(page.getByTestId('hydrography-zoom-hint')).toBeVisible();
+
+    // Past the service's scale threshold, where the overlay can actually render.
+    await page.evaluate(() => {
+      const container = document.querySelector(
+        '[data-testid="discovery-map-canvas"]',
+      );
+      const map = (
+        container as HTMLElement & {
+          __map?: { zoomTo: (zoom: number, options?: unknown) => void };
+        }
+      )?.__map;
+
+      map?.zoomTo(11, { duration: 0 });
+    });
+
+    await expect(page.getByTestId('hydrography-zoom-hint')).toHaveCount(0);
+  });
+
+  test('every layer can be on at once @storyboard', async ({ page }) => {
+    await page.goto('/maps?' + allLayersOn);
+
+    const legend = page.getByLabel('Visible map layer legend');
+    for (const layer of MAP_LAYERS) {
+      await expect(page.getByTestId('map-layer-' + layer.id)).toBeChecked();
+      await expect(legend.getByText(layer.legend)).toBeVisible();
+    }
+
+    await expect(legend.getByRole('listitem')).toHaveCount(MAP_LAYERS.length);
+  });
+
+  /** Turning one layer off must not disturb its neighbours. */
+  test('turning one layer off leaves the others alone @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/maps?' + allLayersOn);
+
+    const legend = page.getByLabel('Visible map layer legend');
+    await page.getByTestId('map-layer-saipe').uncheck();
+
+    await expect(legend.getByText(/SAIPE county poverty/)).toHaveCount(0);
+    for (const layer of MAP_LAYERS.filter((entry) => entry.id !== 'saipe')) {
+      await expect(legend.getByText(layer.legend)).toBeVisible();
+    }
+  });
+
   test('map storyboard can switch Census area while retaining USGS overlay @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?area=California&tiger=on&lodes=on&earthquakes=on');
+    await page.goto('/maps?area=California&' + allLayersOn);
 
     await page.locator('select option').first().waitFor({ state: 'attached' });
     await expect(page.locator('select option')).toHaveCount(3);
@@ -211,7 +337,7 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText('LODES workplace flow sample', { exact: true }),
+        .getByText(/LODES workplace flow sample/),
     ).toBeVisible();
     await expect(page.getByText('3 loaded')).toBeVisible();
 
@@ -241,10 +367,10 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText('LODES workplace flow sample', { exact: true }),
+        .getByText(/LODES workplace flow sample/),
     ).toBeVisible();
 
-    await page.getByLabel('TIGER/Line boundary').uncheck();
+    await page.getByTestId('map-layer-tiger').uncheck();
     await expect(page.getByText('North Dakota TIGER/Line preview')).toHaveCount(
       0,
     );
@@ -252,7 +378,7 @@ test.describe('demo storyboard checks', () => {
       page.getByText('2025 TIGER/Line Census area preview'),
     ).toHaveCount(0);
 
-    await page.getByLabel('USGS earthquake overlay').uncheck();
+    await page.getByTestId('map-layer-earthquake').uncheck();
     await expect(page.getByText('USGS event overlay')).toHaveCount(0);
     await expect(page).toHaveURL(/earthquakes=off/);
     await expect(
@@ -260,8 +386,8 @@ test.describe('demo storyboard checks', () => {
     ).toHaveCount(0);
     await expect(page.getByText('Western North Dakota')).toHaveCount(0);
 
-    await page.getByLabel('TIGER/Line boundary').check();
-    await page.getByLabel('USGS earthquake overlay').check();
+    await page.getByTestId('map-layer-tiger').check();
+    await page.getByTestId('map-layer-earthquake').check();
     await expect(page).not.toHaveURL(/tiger=off/);
     await expect(page).not.toHaveURL(/earthquakes=off/);
 
@@ -272,36 +398,34 @@ test.describe('demo storyboard checks', () => {
     await expect(page.getByText('Western North Dakota')).toBeVisible();
   });
 
+  /** Every toggle has to be operable without a mouse, not just the first two. */
   test('map layer controls are keyboard operable @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?tiger=off&earthquakes=off');
+    await page.goto('/maps');
 
-    await expect(page.getByLabel('TIGER/Line boundary')).not.toBeChecked();
-    await expect(page.getByLabel('USGS earthquake overlay')).not.toBeChecked();
-    await expect(page.getByText('North Dakota TIGER/Line preview')).toHaveCount(
-      0,
-    );
-    await expect(page.getByText('USGS event overlay')).toHaveCount(0);
+    const legend = page.getByLabel('Visible map layer legend');
 
-    await page.getByLabel('TIGER/Line boundary').focus();
-    await page.keyboard.press('Space');
-    await expect(
-      page.getByText('North Dakota TIGER/Line preview'),
-    ).toBeVisible();
-    await expect(page).not.toHaveURL(/tiger=off/);
+    for (const layer of MAP_LAYERS) {
+      const toggle = page.getByTestId('map-layer-' + layer.id);
+      await toggle.focus();
+      await expect(toggle).toBeFocused();
 
-    await page.getByLabel('USGS earthquake overlay').focus();
-    await page.keyboard.press('Space');
-    await expect(page.getByText('USGS event overlay')).toBeVisible();
-    await expect(page.getByText('Western North Dakota')).toBeVisible();
-    await expect(page).not.toHaveURL(/earthquakes=off/);
+      await page.keyboard.press('Space');
+      await expect(toggle).toBeChecked();
+      await expect(legend.getByText(layer.legend)).toBeVisible();
+      await expect(page).not.toHaveURL(new RegExp(layer.param + '=off'));
+
+      await page.keyboard.press('Space');
+      await expect(toggle).not.toBeChecked();
+      await expect(page).toHaveURL(new RegExp(layer.param + '=off'));
+    }
   });
 
   test('map overlay stale and error states keep Census layers visible @storyboard', async ({
     page,
   }) => {
-    await page.goto('/maps?overlay=stale&tiger=on&lodes=on&earthquakes=on');
+    await page.goto('/maps?overlay=stale&' + allLayersOn);
 
     await expect(
       page.getByText('USGS overlay data may be stale').first(),
@@ -312,11 +436,11 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText('LODES workplace flow sample', { exact: true }),
+        .getByText(/LODES workplace flow sample/),
     ).toBeVisible();
     await expect(page.getByText('Stale', { exact: true })).toBeVisible();
 
-    await page.goto('/maps?overlay=error&tiger=on&lodes=on&earthquakes=on');
+    await page.goto('/maps?overlay=error&' + allLayersOn);
 
     await expect(
       page.getByText('USGS earthquake overlay unavailable').first(),
@@ -327,7 +451,7 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText('LODES workplace flow sample', { exact: true }),
+        .getByText(/LODES workplace flow sample/),
     ).toBeVisible();
     await expect(page.getByText('unavailable', { exact: true })).toBeVisible();
   });
@@ -455,7 +579,7 @@ test.describe('map and feature list selection', () => {
     await page.goto('/maps?feature=demo-eastern-nd&earthquakes=on');
     await expect(page.getByText(/Selected Eastern North Dakota/)).toBeVisible();
 
-    await page.getByLabel('USGS earthquake overlay').uncheck();
+    await page.getByTestId('map-layer-earthquake').uncheck();
 
     await expect(page.getByText('No map feature selected.')).toBeVisible();
   });

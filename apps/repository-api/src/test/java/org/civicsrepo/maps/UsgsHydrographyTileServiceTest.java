@@ -43,6 +43,9 @@ class UsgsHydrographyTileServiceTest {
                 .contains("bbox=-100%2C40%2C-99%2C41")
                 .contains("bboxSR=3857")
                 .contains("size=256%2C256")
+                // Without an explicit format the service returns a blank paletted PNG for every
+                // bbox, so the overlay drew nothing and looked the same toggled on or off.
+                .contains("format=png32")
                 .contains("transparent=true");
     }
 

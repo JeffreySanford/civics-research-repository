@@ -22,7 +22,6 @@ export type MapLayerVisibility = Record<
 type MapLayerVisibilityGroup = {
   name: string;
   toggleTestId: string;
-  defaultChecked: boolean;
   mapLayerIds: readonly (typeof REGISTERED_MAP_LAYER_IDS)[number][];
   accessibleListText: string;
   legendText: string | RegExp;
@@ -33,7 +32,6 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   {
     name: 'TIGER/Line boundary',
     toggleTestId: 'map-layer-tiger',
-    defaultChecked: false,
     mapLayerIds: ['census-area-fill', 'census-area-outline'],
     accessibleListText: '2025 TIGER/Line Census area preview - North Dakota',
     legendText: 'North Dakota TIGER/Line preview',
@@ -42,7 +40,6 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   {
     name: 'LODES workplace flow sample',
     toggleTestId: 'map-layer-lodes',
-    defaultChecked: false,
     mapLayerIds: ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
     accessibleListText: 'LEHD LODES 2023 main OD sample - North Dakota',
     legendText: /LODES workplace flow sample/,
@@ -51,7 +48,6 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   {
     name: 'SAIPE county poverty',
     toggleTestId: 'map-layer-saipe',
-    defaultChecked: false,
     mapLayerIds: ['saipe-county-fill', 'saipe-county-outline'],
     accessibleListText: 'SAIPE 2023 county poverty - North Dakota',
     legendText: /SAIPE county poverty/,
@@ -60,7 +56,6 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   {
     name: 'USGS 3HP hydrography',
     toggleTestId: 'map-layer-hydrography',
-    defaultChecked: false,
     mapLayerIds: ['usgs-3hp-hydrography-raster'],
     accessibleListText:
       'Raster reference overlay for streams, rivers, and lakes from the 3D Hydrography Program',
@@ -70,7 +65,6 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   {
     name: 'USGS earthquake overlay',
     toggleTestId: 'map-layer-earthquake',
-    defaultChecked: false,
     mapLayerIds: [
       'usgs-earthquake-points',
       'usgs-earthquake-labels',
