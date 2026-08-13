@@ -9,8 +9,8 @@ import { mockRepositoryApi } from './support/repository-api-mocks';
  * And the layer list was fetched once, for North Dakota, so selecting another Census area moved
  * the viewport while every state kept claiming North Dakota's layers.
  *
- * MapLibre draws to a canvas, so layer visibility is asserted through the accessible layer list
- * and the URL — the two surfaces that must agree with the map rather than drift from it.
+ * MapLibre layout visibility is asserted in map-layer-visibility.spec.ts via map.getLayoutProperty.
+ * This file keeps legend/URL/geography regressions that do not need the MapLibre handle.
  */
 test.describe('map layer controls', () => {
   test.beforeEach(async ({ page }) => {

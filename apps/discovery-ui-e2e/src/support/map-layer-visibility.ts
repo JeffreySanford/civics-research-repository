@@ -1,0 +1,154 @@
+import { expect, type Page } from '@playwright/test';
+
+/** Every MapLibre layer the maps page registers for the three demo toggles. */
+export const REGISTERED_MAP_LAYER_IDS = [
+  'census-area-fill',
+  'census-area-outline',
+  'usgs-earthquake-points',
+  'usgs-earthquake-labels',
+  'usgs-earthquake-selected',
+  'lodes-workplace-flow-line',
+  'lodes-workplace-flow-points',
+] as const;
+
+export type MapLayerVisibility = Record<
+  (typeof REGISTERED_MAP_LAYER_IDS)[number],
+  'visible' | 'none' | 'missing' | 'missing-map'
+>;
+
+type MapLayerVisibilityGroup = {
+  name: string;
+  toggleTestId: string;
+  mapLayerIds: readonly (typeof REGISTERED_MAP_LAYER_IDS)[number][];
+  accessibleListText: string;
+  legendText: string | RegExp;
+  urlOffPattern: RegExp;
+};
+
+export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
+  {
+    name: 'TIGER/Line boundary',
+    toggleTestId: 'map-layer-tiger',
+    mapLayerIds: ['census-area-fill', 'census-area-outline'],
+    accessibleListText: '2025 TIGER/Line Census area preview - North Dakota',
+    legendText: 'North Dakota TIGER/Line preview',
+    urlOffPattern: /tiger=off/,
+  },
+  {
+    name: 'USGS earthquake overlay',
+    toggleTestId: 'map-layer-earthquake',
+    mapLayerIds: [
+      'usgs-earthquake-points',
+      'usgs-earthquake-labels',
+      'usgs-earthquake-selected',
+    ],
+    accessibleListText: 'USGS earthquake overlay',
+    legendText: 'USGS event overlay',
+    urlOffPattern: /earthquakes=off/,
+  },
+  {
+    name: 'LODES workplace flow sample',
+    toggleTestId: 'map-layer-lodes',
+    mapLayerIds: ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
+    accessibleListText: '2023 LODES workplace flow sample - North Dakota',
+    legendText: 'LODES workplace flow sample',
+    urlOffPattern: /lodes=off/,
+  },
+] as const;
+
+/**
+ * Reads MapLibre layout visibility from the live map instance.
+ *
+ * Limitations:
+ * - Requires the maps page to expose its MapLibre handle on the canvas element because MapLibre
+ *   does not publish a DOM lookup API.
+ * - Asserts layout visibility only; it does not inspect rendered pixels or source feature counts.
+ * - Layers that have not been added yet report `missing` rather than failing the poll immediately.
+ */
+export async function readMapLayerVisibility(
+  page: Page,
+  layerIds: readonly string[],
+): Promise<Record<string, MapLayerVisibility[keyof MapLayerVisibility]>> {
+  return page.evaluate((ids) => {
+    const container = document.querySelector(
+      '[data-testid="discovery-map-canvas"]',
+    );
+    const map = (
+      container as HTMLElement & {
+        __map?: {
+          getLayer: (id: string) => unknown;
+          getLayoutProperty: (id: string, name: string) => string;
+        };
+      }
+    )?.__map;
+
+    if (!map) {
+      return Object.fromEntries(ids.map((id) => [id, 'missing-map']));
+    }
+
+    return Object.fromEntries(
+      ids.map((id) => {
+        if (!map.getLayer(id)) {
+          return [id, 'missing'];
+        }
+
+        return [id, map.getLayoutProperty(id, 'visibility') ?? 'visible'];
+      }),
+    );
+  }, layerIds);
+}
+
+export async function expectMapLayersVisibility(
+  page: Page,
+  layerIds: readonly string[],
+  expected: 'visible' | 'none',
+): Promise<void> {
+  await expect
+    .poll(async () => readMapLayerVisibility(page, layerIds), {
+      message: `MapLibre layers should be ${expected}: ${layerIds.join(', ')}`,
+    })
+    .toEqual(Object.fromEntries(layerIds.map((id) => [id, expected])));
+}
+
+export async function waitForRegisteredMapLayers(page: Page): Promise<void> {
+  await expect(page.getByTestId('discovery-map-canvas')).toBeVisible();
+  await expect
+    .poll(async () => readMapLayerVisibility(page, REGISTERED_MAP_LAYER_IDS), {
+      message: 'All registered MapLibre layers should exist and be visible',
+    })
+    .toEqual(
+      Object.fromEntries(REGISTERED_MAP_LAYER_IDS.map((id) => [id, 'visible'])),
+    );
+}
+
+export async function expectLayerEvidenceVisible(
+  page: Page,
+  group: MapLayerVisibilityGroup,
+): Promise<void> {
+  const featureList = page.locator(
+    'section[aria-labelledby="features-heading"]',
+  );
+
+  await expect(featureList.getByText(group.accessibleListText)).toBeVisible();
+
+  const legend = page.getByLabel('Visible map layer legend');
+  await expect(legend.getByText(group.legendText)).toBeVisible();
+
+  await expectMapLayersVisibility(page, group.mapLayerIds, 'visible');
+}
+
+export async function expectLayerEvidenceHidden(
+  page: Page,
+  group: MapLayerVisibilityGroup,
+): Promise<void> {
+  const featureList = page.locator(
+    'section[aria-labelledby="features-heading"]',
+  );
+
+  await expect(featureList.getByText(group.accessibleListText)).toHaveCount(0);
+
+  const legend = page.getByLabel('Visible map layer legend');
+  await expect(legend.getByText(group.legendText)).toHaveCount(0);
+
+  await expectMapLayersVisibility(page, group.mapLayerIds, 'none');
+}

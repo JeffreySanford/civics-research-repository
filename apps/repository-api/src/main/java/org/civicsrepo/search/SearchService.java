@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.civicsrepo.repository.FixtureCatalog;
 import org.civicsrepo.repository.RepositoryCatalog;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.FacetValue;
@@ -25,82 +26,31 @@ import org.springframework.stereotype.Service;
 @Service
 public class SearchService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
-    private static final List<String> CENSUS_AREAS = List.of(
-            "Alabama",
-            "Alaska",
-            "Arizona",
-            "Arkansas",
-            "California",
-            "Colorado",
-            "Connecticut",
-            "Delaware",
-            "District of Columbia",
-            "Florida",
-            "Georgia",
-            "Hawaii",
-            "Idaho",
-            "Illinois",
-            "Indiana",
-            "Iowa",
-            "Kansas",
-            "Kentucky",
-            "Louisiana",
-            "Maine",
-            "Maryland",
-            "Massachusetts",
-            "Michigan",
-            "Minnesota",
-            "Mississippi",
-            "Missouri",
-            "Montana",
-            "Nebraska",
-            "Nevada",
-            "New Hampshire",
-            "New Jersey",
-            "New Mexico",
-            "New York",
-            "North Carolina",
-            "North Dakota",
-            "Ohio",
-            "Oklahoma",
-            "Oregon",
-            "Pennsylvania",
-            "Puerto Rico",
-            "Rhode Island",
-            "South Carolina",
-            "South Dakota",
-            "Tennessee",
-            "Texas",
-            "Utah",
-            "Vermont",
-            "Virginia",
-            "Washington",
-            "West Virginia",
-            "Wisconsin",
-            "Wyoming");
-    private static final List<SearchResult> SEED_RESULTS = seedResultsForAllCensusAreas();
-
     private final SolrSearchClient solrSearchClient;
     private final RepositoryCatalog repositoryCatalog;
+    private final FixtureCatalog fixtureCatalog;
 
     public SearchService() {
-        this(null, null);
+        this(null, null, new FixtureCatalog());
     }
 
     @Autowired
-    public SearchService(SolrSearchClient solrSearchClient, RepositoryCatalog repositoryCatalog) {
+    public SearchService(
+            SolrSearchClient solrSearchClient, RepositoryCatalog repositoryCatalog, FixtureCatalog fixtureCatalog) {
         this.solrSearchClient = solrSearchClient;
         this.repositoryCatalog = repositoryCatalog;
+        this.fixtureCatalog = fixtureCatalog;
     }
 
     /**
      * The generated placeholder catalog.
      *
-     * <p>Retained only as a fallback for tests and for demo recovery when the repository is not
-     * available. Every response built from it is labelled {@link RepositorySource#FIXTURE}.
+     * <p>A fallback for demo recovery when the repository is not available. Every response built
+     * from it is labelled {@link RepositorySource#FIXTURE}. It is generated from the same catalog
+     * that seeds DSpace, so the two describe the same objects rather than drifting apart.
      */
     public List<SearchResult> fixtureResults() {
-        return SEED_RESULTS;
+        return fixtureCatalog.searchResults();
     }
 
     public SearchResponse search(
@@ -140,7 +90,14 @@ public class SearchService {
         }
 
         return searchInMemory(
-                SEED_RESULTS, RepositorySource.FIXTURE, query, programs, geography, vintageYear, page, pageSize);
+                fixtureCatalog.searchResults(),
+                RepositorySource.FIXTURE,
+                query,
+                programs,
+                geography,
+                vintageYear,
+                page,
+                pageSize);
     }
 
     /**
@@ -273,75 +230,5 @@ public class SearchService {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
-    private static List<SearchResult> seedResultsForAllCensusAreas() {
-        return Stream.concat(
-                        CENSUS_AREAS.stream().flatMap(SearchService::stateLevelCensusResults),
-                        Stream.of(
-                                new SearchResult(
-                                        "sipp-public-use",
-                                        "SIPP Public Use Data",
-                                        ResearchObjectType.DATASET,
-                                        ResearchProgram.SIPP,
-                                        "U.S. Census Bureau",
-                                        "Survey of Income and Program Participation public-use metadata for longitudinal research.",
-                        URI.create("https://www.census.gov/programs-surveys/sipp/data/datasets.html"))
-                        .geography("United States")
-                        .vintageYear(2024),
-                                new SearchResult(
-                                        "cps-public-use",
-                                        "Current Population Survey Public Use Data",
-                                        ResearchObjectType.DATASET,
-                                        ResearchProgram.CPS,
-                                        "U.S. Census Bureau",
-                                        "Current Population Survey public-use metadata for labor force and demographic analysis.",
-                        URI.create("https://www.census.gov/programs-surveys/cps/data/datasets.html"))
-                        .geography("United States")
-                        .vintageYear(2024),
-                                new SearchResult(
-                                        "usgs-earthquakes-overlay",
-                                        "USGS Earthquake Overlay",
-                                        ResearchObjectType.DATASET,
-                                        ResearchProgram.USGS,
-                                        "U.S. Geological Survey",
-                                        "Earthquake Hazards Program GeoJSON overlay metadata for map context and event lists.",
-                        URI.create("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"))
-                        .geography("United States")
-                        .vintageYear(2026)))
-                .toList();
-    }
 
-    private static Stream<SearchResult> stateLevelCensusResults(String censusArea) {
-        String idSuffix = censusArea.toLowerCase(Locale.ROOT).replace(" ", "-");
-        return Stream.of(
-                new SearchResult(
-                        "tiger-line-" + idSuffix + "-2025",
-                        "2025 TIGER/Line - Census Tracts - " + censusArea,
-                        ResearchObjectType.DATASET,
-                        ResearchProgram.TIGER_LINE,
-                        "U.S. Census Bureau",
-                        "Cartographic boundary and tract geometry metadata for " + censusArea + " census geography.",
-                        URI.create("https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"))
-                        .geography(censusArea)
-                        .vintageYear(2025),
-                new SearchResult(
-                        "lodes-wac-" + idSuffix + "-2023",
-                        "2023 LODES Workplace Area Characteristics - " + censusArea,
-                        ResearchObjectType.DATASET,
-                        ResearchProgram.LODES,
-                        "U.S. Census Bureau",
-                        "LEHD Origin-Destination Employment Statistics metadata for " + censusArea + " workforce geography.",
-                        URI.create("https://lehd.ces.census.gov/data/"))
-                        .geography(censusArea)
-                        .vintageYear(2023),
-                new SearchResult(
-                        "acs-pums-" + idSuffix + "-2024",
-                        "2024 ACS 1-Year PUMS - " + censusArea,
-                        ResearchObjectType.DATASET,
-                        ResearchProgram.ACS,
-                        "U.S. Census Bureau",
-                        "American Community Survey public use microdata metadata for " + censusArea + " demographic research.",
-                        URI.create("https://www.census.gov/programs-surveys/acs/microdata.html"))
-                        .geography(censusArea)
-                        .vintageYear(2024));
-    }
 }

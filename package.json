@@ -28,7 +28,8 @@
     "demo:up": "node tools/scripts/demo.mjs",
     "demo:down": "node tools/scripts/demo.mjs --down",
     "start:all": "node tools/scripts/stack.mjs",
-    "start:all:detached": "node tools/scripts/stack.mjs --detach",
+    "start:all:attach": "node tools/scripts/stack.mjs --attach",
+    "start:all:detached": "node tools/scripts/stack.mjs",
     "start:all:recreate": "node tools/scripts/stack.mjs --recreate",
     "start:all:rebuild": "node tools/scripts/stack.mjs --rebuild",
     "start:ui": "pnpm nx run discovery-ui:serve",
@@ -79,9 +80,10 @@
     "section508": "pnpm nx run-many -t section508",
     "section508:report": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @section508 --reporter=list",
     "e2e:reports": "node tools/scripts/e2e-reports.mjs",
+    "fixture:check": "node tools/scripts/check-fixture-catalog.mjs",
     "verify:sources": "node tools/scripts/verify-source-urls.mjs",
     "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",
-    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
+    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
   },
   "dependencies": {
     "@angular/cdk": "22.1.1",

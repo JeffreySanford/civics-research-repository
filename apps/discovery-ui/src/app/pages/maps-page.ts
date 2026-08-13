@@ -1,11 +1,18 @@
-import { AsyncPipe, DatePipe, isPlatformBrowser } from '@angular/common';
+import {
+  AsyncPipe,
+  DatePipe,
+  KeyValuePipe,
+  isPlatformBrowser,
+} from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
   ElementRef,
   OnInit,
+  signal,
   OnDestroy,
   PLATFORM_ID,
   ViewChild,
@@ -13,6 +20,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { Store } from '@ngrx/store';
 import { combineLatest, distinctUntilChanged, map } from 'rxjs';
 import type {
@@ -41,6 +49,13 @@ import {
   selectSelectedGeography,
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
+import {
+  configureMapLibreWorker,
+  readMapDebugSnapshot,
+  type MapDebugSnapshot,
+  whenMapStyleReady,
+} from './maps-page.utils';
+import { environment } from '../../environments/environment';
 
 type EarthquakeFeatureCollection = {
   type: 'FeatureCollection';
@@ -98,7 +113,7 @@ type LodesFeatureCollection = {
 @Component({
   selector: 'app-maps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, DatePipe],
+  imports: [AsyncPipe, DatePipe, KeyValuePipe, MatButtonModule],
   templateUrl: './maps-page.html',
 })
 export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
@@ -107,6 +122,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly store = inject(Store);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -114,11 +130,15 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingBoundary: CensusAreaBoundary | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
   private pendingLodesLayers: readonly MapLayer[] = [];
-  private mapLoaded = false;
+  /** True once the MapLibre style is parsed; overlays must not wait for raster tiles. */
+  private mapStyleReady = false;
   private tigerVisible = true;
   private earthquakeVisible = true;
   private lodesVisible = true;
   private selectedFeatureId: string | null = null;
+  protected readonly mapDebugAvailable = environment.mapDebugEnabled;
+  protected readonly mapDebugPanelOpen = signal(false);
+  protected mapDebugSnapshot: MapDebugSnapshot | null = null;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
   protected readonly lodesLayers$ = this.layers$.pipe(
@@ -255,6 +275,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    delete (
+      this.mapCanvas.nativeElement as HTMLElement & { __map?: MapLibreMap }
+    ).__map;
     this.map?.remove();
   }
 
@@ -295,6 +318,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected selectCensusArea(geography: string): void {
     this.store.dispatch(MapsActions.censusAreaSelected({ geography }));
     this.updateMapUrl({ geography });
+  }
+
+  protected toggleMapDebugPanel(): void {
+    this.mapDebugPanelOpen.update((open) => !open);
+    this.refreshMapDebugSnapshot();
   }
 
   private bindUrlState(): void {
@@ -419,6 +447,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   private async initializeMap(): Promise<void> {
     const maplibregl = await import('maplibre-gl');
+    configureMapLibreWorker(maplibregl);
 
     this.map = new maplibregl.Map({
       container: this.mapCanvas.nativeElement,
@@ -428,6 +457,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       maxZoom: 12,
       minZoom: 3,
     });
+
+    // Playwright reads MapLibre layout visibility through this handle; MapLibre has no public DOM lookup.
+    (
+      this.mapCanvas.nativeElement as HTMLElement & { __map?: MapLibreMap }
+    ).__map = this.map;
 
     this.map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
@@ -459,17 +493,51 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    this.map.on('load', () => {
-      this.mapLoaded = true;
-      this.renderCensusBoundary();
-      this.renderLodesSampleLayer();
-      this.renderEarthquakeOverlay();
-      this.applyLayerVisibility();
+    // Overlays attach on style readiness, not map `load`. Map `load` waits for every raster tile
+    // manager; slow or blocked OSM tiles leave mapLoaded false forever, so toggles only move the
+    // legend while the canvas stays bare.
+    whenMapStyleReady(this.map, () => {
+      this.mapStyleReady = true;
+      this.syncMapOverlays();
+      this.bindMapDebugUpdates();
     });
   }
 
+  private bindMapDebugUpdates(): void {
+    if (!this.mapDebugAvailable || !this.map) {
+      return;
+    }
+
+    const refresh = (): void => {
+      this.mapDebugSnapshot = readMapDebugSnapshot(
+        this.map,
+        this.mapStyleReady,
+      );
+      this.changeDetectorRef.markForCheck();
+    };
+
+    refresh();
+    this.map.on('idle', refresh);
+    this.map.on('sourcedata', refresh);
+    this.destroyRef.onDestroy(() => {
+      this.map?.off('idle', refresh);
+      this.map?.off('sourcedata', refresh);
+    });
+  }
+
+  private syncMapOverlays(): void {
+    if (!this.map || !this.mapStyleReady) {
+      return;
+    }
+
+    this.renderCensusBoundary();
+    this.renderLodesSampleLayer();
+    this.renderEarthquakeOverlay();
+    this.applyLayerVisibility();
+  }
+
   private renderCensusBoundary(): void {
-    if (!this.map || !this.mapLoaded || !this.pendingBoundary) {
+    if (!this.map || !this.mapStyleReady || !this.pendingBoundary) {
       return;
     }
 
@@ -494,9 +562,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       id: 'census-area-fill',
       type: 'fill',
       source: 'census-area-boundary',
+      layout: {
+        visibility: this.tigerVisible ? 'visible' : 'none',
+      },
       paint: {
-        'fill-color': '#2f6f8f',
-        'fill-opacity': 0.18,
+        'fill-color': '#0ea5e9',
+        'fill-opacity': 0.38,
       },
     });
 
@@ -504,9 +575,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       id: 'census-area-outline',
       type: 'line',
       source: 'census-area-boundary',
+      layout: {
+        visibility: this.tigerVisible ? 'visible' : 'none',
+      },
       paint: {
-        'line-color': '#164e63',
-        'line-width': 2,
+        'line-color': '#0369a1',
+        'line-width': 3,
       },
     });
 
@@ -515,7 +589,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private renderEarthquakeOverlay(): void {
-    if (!this.map || !this.mapLoaded || !this.pendingEarthquakeOverlay) {
+    if (!this.map || !this.mapStyleReady || !this.pendingEarthquakeOverlay) {
       return;
     }
 
@@ -539,6 +613,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       id: 'usgs-earthquake-points',
       type: 'circle',
       source: 'usgs-earthquakes',
+      layout: {
+        visibility: this.earthquakeVisible ? 'visible' : 'none',
+      },
       paint: {
         'circle-color': '#b45309',
         'circle-radius': [
@@ -552,7 +629,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           3,
           18,
         ],
-        'circle-opacity': 0.86,
+        'circle-opacity': 0.95,
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 3,
       },
@@ -563,6 +640,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       type: 'symbol',
       source: 'usgs-earthquakes',
       layout: {
+        visibility: this.earthquakeVisible ? 'visible' : 'none',
         'text-field': ['concat', 'M ', ['to-string', ['get', 'magnitude']]],
         'text-size': 12,
         'text-offset': [0, 1.4],
@@ -579,6 +657,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       id: 'usgs-earthquake-selected',
       type: 'circle',
       source: 'usgs-earthquakes',
+      layout: {
+        visibility: this.earthquakeVisible ? 'visible' : 'none',
+      },
       // Selection is conveyed by an outline ring and a wider stroke, not by color alone.
       filter: ['==', ['get', 'id'], ''],
       paint: {
@@ -629,7 +710,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private renderLodesSampleLayer(): void {
     if (
       !this.map ||
-      !this.mapLoaded ||
+      !this.mapStyleReady ||
       !this.pendingBoundary ||
       this.pendingLodesLayers.length === 0
     ) {
@@ -643,6 +724,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
     if (existingSource) {
       existingSource.setData(data);
+      this.applyLayerVisibility();
       return;
     }
 
@@ -656,10 +738,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       type: 'line',
       source: 'lodes-workplace-flow',
       filter: ['==', ['geometry-type'], 'LineString'],
+      layout: {
+        visibility: this.lodesVisible ? 'visible' : 'none',
+      },
       paint: {
-        'line-color': '#6d5dfc',
-        'line-width': 4,
-        'line-opacity': 0.78,
+        'line-color': '#7c3aed',
+        'line-width': 5,
+        'line-opacity': 0.92,
       },
     });
 
@@ -668,9 +753,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       type: 'circle',
       source: 'lodes-workplace-flow',
       filter: ['==', ['geometry-type'], 'Point'],
+      layout: {
+        visibility: this.lodesVisible ? 'visible' : 'none',
+      },
       paint: {
-        'circle-color': '#6d5dfc',
-        'circle-radius': 7,
+        'circle-color': '#7c3aed',
+        'circle-radius': 8,
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 2,
       },
@@ -790,15 +878,28 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private setLayerVisibility(layerIds: string[], visible: boolean): void {
+    if (!this.map) {
+      return;
+    }
+
+    const visibility = visible ? 'visible' : 'none';
+
     for (const layerId of layerIds) {
-      if (this.map?.getLayer(layerId)) {
-        this.map.setLayoutProperty(
-          layerId,
-          'visibility',
-          visible ? 'visible' : 'none',
+      if (!this.map.getLayer(layerId)) {
+        continue;
+      }
+
+      try {
+        this.map.setLayoutProperty(layerId, 'visibility', visibility);
+      } catch (error) {
+        console.warn(
+          `Failed to set visibility for map layer "${layerId}"`,
+          error,
         );
       }
     }
+
+    this.map.triggerRepaint();
   }
 
   /**
@@ -810,6 +911,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
    * appeared to change only the legend: the legend read from the store, the map did not.
    */
   private applyLayerVisibility(): void {
+    if (!this.map || !this.mapStyleReady) {
+      return;
+    }
+
     this.setLayerVisibility(
       ['census-area-fill', 'census-area-outline'],
       this.tigerVisible,
@@ -826,11 +931,22 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
       this.lodesVisible,
     );
+    this.refreshMapDebugSnapshot();
+  }
+
+  private refreshMapDebugSnapshot(): void {
+    if (!this.mapDebugAvailable) {
+      return;
+    }
+
+    this.mapDebugSnapshot = readMapDebugSnapshot(this.map, this.mapStyleReady);
+    this.changeDetectorRef.markForCheck();
   }
 
   private createBaseStyle(): StyleSpecification {
     return {
       version: 8,
+      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
       sources: {
         osm: {
           type: 'raster',

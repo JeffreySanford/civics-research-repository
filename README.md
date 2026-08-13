@@ -29,7 +29,7 @@ The target experience is a Census-style Open Science portal that supports:
 - DSpace 9.0 for repository content, metadata, item/version/file management, and REST APIs.
 - Apache Solr for discovery search, facets, and relevance.
 - PostgreSQL for DSpace persistence and for application sync state, as two separate databases.
-- Docker Compose for local development, with DSpace behind an optional profile.
+- Docker Compose for local development; `pnpm run start:all` brings up DSpace and the application stack together.
 - Playwright and axe-core for automated WCAG and Section 508 evidence, plus manual assistive-technology checklists.
 
 Sync orchestration lives in the Java API rather than in a separate harvester service; a Node harvester was considered and rejected to keep repository writes next to the typed backend.
@@ -65,7 +65,7 @@ civics-research-repository/
 │   └── shared/                  accessibility, material, ui
 ├── tools/
 │   ├── dspace/                  DSpace seed structure, SAF package, and crr metadata schema
-│   └── scripts/                 OpenAPI drift check, DSpace readiness/seed verification, web-server launcher
+│   └── scripts/                 Stack orchestration, OpenAPI drift check, DSpace seed verification
 ├── schemas/
 │   └── openapi/                 repository-api.yaml contract (source of truth)
 ├── documentation/
@@ -136,11 +136,13 @@ cp .env.sample .env
 ## Development Scripts
 
 ```bash
-pnpm run demo:up
+pnpm run start:all              # primary daily command (aliases: dev, demo:up)
 pnpm run demo:down
-pnpm run start:all
-pnpm run start:all:rebuild
 pnpm run docker:down
+pnpm run start:all:recreate
+pnpm run start:all:rebuild
+pnpm run start:all:attach
+pnpm run docker:reset:everything
 pnpm run dspace:up
 pnpm run dspace:seed
 pnpm run dspace:verify:seed
@@ -156,13 +158,57 @@ pnpm run wcag:report
 pnpm run section508:report
 ```
 
-`demo:up` is the one command for a demonstration: it starts DSpace, waits for it, seeds the repository, starts the application stack, rebuilds the discovery projection, waits for the UI, and prints the URLs worth showing. It is safe to re-run — the seed and the sync are both idempotent. A cold run from `docker:reset:everything` takes several minutes because DSpace migrates its database; a warm restart takes about ninety seconds. `demo:down` stops everything and keeps all data.
+### Daily development
 
-`start:all` is the faster development path and excludes DSpace. It runs the application stack. The Java API is exposed at `http://localhost:8080/api`, the Angular UI at `http://localhost:4200`, PostgreSQL at `localhost:5432`, and Solr at `http://localhost:8983`.
+`pnpm run start:all` is the one command for daily development and demonstrations. Aliases: `pnpm dev` and `pnpm demo:up`.
 
-It is scoped to the services in the active Compose profile and never touches a running DSpace stack. It inspects each container and recreates only the ones that are actually broken, so a healthy database is not thrown away on every start. `start:all:rebuild` rebuilds images first; `docker:reset:everything` is the only command that destroys volumes, DSpace included.
+It runs the full stack in order:
 
-The optional DSpace profile is available with `pnpm run dspace:up` and verifies at `http://localhost:8081/server/api`. It uses persistent Docker volumes for the DSpace asset store, DSpace PostgreSQL database, and DSpace Solr cores.
+1. DSpace profile (PostgreSQL, Solr, database migration, REST)
+2. Wait for DSpace REST
+3. Generate SAF packages (skipped when [tools/dspace/catalog.json](tools/dspace/catalog.json) is unchanged)
+4. Seed DSpace (idempotent)
+5. Application stack (PostgreSQL, Solr, Java API, Angular UI)
+6. Rebuild the discovery Solr projection from DSpace
+7. Print URLs when every service is healthy
+
+By default it runs detached. Re-running is safe — seed, SAF generation, and sync are all idempotent. A cold run after `docker:reset:everything` takes several minutes because DSpace migrates its database; a warm restart takes about ninety seconds.
+
+When ready:
+
+- Discovery UI — `http://localhost:4200`
+- Repository API — `http://localhost:8080/api`
+- DSpace REST — `http://localhost:8081/server/api`
+- Discovery Solr — `http://localhost:8983/solr`
+- DSpace Solr — `http://localhost:8984/solr`
+
+If DSpace is unreachable, the API serves fixture data with a warning and the UI shows a placeholder-data notice. That is acceptable for local development but means discovery is not reading from the repository. Check `pnpm run dspace:verify:seed` or re-run `pnpm run start:all`.
+
+### Smart container management
+
+Startup is orchestrated by [tools/scripts/stack.mjs](tools/scripts/stack.mjs) through shared logic in [tools/scripts/compose-stack.mjs](tools/scripts/compose-stack.mjs). You should not need to kill containers manually.
+
+- Healthy running containers are left alone
+- Only unhealthy, dead, or crash-looping containers are recreated
+- Named volumes are preserved (DSpace assetstore, both PostgreSQL databases, both Solr cores)
+- Compose still recreates a service when its image or configuration changed
+
+Before any container starts, the launcher checks that `pnpm-lock.yaml` matches `package.json`. A mismatch would make the UI container exit immediately with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`; the check turns that into a clear fix (`pnpm install --no-frozen-lockfile`).
+
+### Stopping the stack
+
+- `pnpm run demo:down` — stops everything (application stack and DSpace profile), keeps all volumes
+- `pnpm run docker:down` — stops the application stack only; DSpace keeps running
+
+`docker:reset:everything` is the only command that destroys volumes, DSpace included.
+
+### Escape hatches
+
+- `pnpm run start:all:recreate` — force-recreate every container, then start detached
+- `pnpm run start:all:rebuild` — rebuild images first, then force-recreate
+- `pnpm run start:all:attach` — start detached, then tail discovery-ui logs
+
+The optional DSpace profile is also available piecemeal with `pnpm run dspace:up`, `pnpm run dspace:seed`, and `pnpm run dspace:verify:seed` when working on repository integration outside the unified startup flow.
 
 `wcag:report` and `section508:report` run the Playwright/axe checks with a console reporter so pass/fail results are visible in terminal output.
 

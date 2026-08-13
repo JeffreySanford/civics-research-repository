@@ -21,7 +21,7 @@ Current default stack:
 
 DSpace REST is available as an optional Compose profile. The default stack intentionally starts with the Java API, PostgreSQL, and Solr so the local demo remains reliable while DSpace repository seeding is added.
 
-`pnpm run start:all` is the preferred development command. It reconciles the containers in the active Compose profile — recreating only the broken ones — without changing the configured ports or deleting persistent volumes. See [Why the scoped commands exist](#why-the-scoped-commands-exist) below.
+`pnpm run start:all` is the preferred development command. It starts the DSpace profile, seeds when needed, starts the application stack, reindexes, and prints URLs when every service is healthy. It reconciles containers in both stacks — recreating only broken ones — without deleting persistent volumes. See [Why the scoped commands exist](#why-the-scoped-commands-exist) below.
 
 ## Planned Services
 
@@ -103,7 +103,7 @@ services:
 pnpm run demo:up
 ```
 
-One command for a demonstration. It starts DSpace, waits for REST, seeds the repository, starts the application stack, rebuilds the discovery projection from DSpace, waits for the Angular UI, and prints the URLs worth showing in order. Re-running is safe: the seed and the sync are both idempotent.
+One command for a demonstration or daily development. Same flow as `pnpm run start:all`: starts DSpace, waits for REST, seeds the repository, starts the application stack, rebuilds the discovery projection from DSpace, waits for the Angular UI, and prints the URLs worth showing. Re-running is safe: the seed, SAF generation, and sync are all idempotent.
 
 Order matters and is the reason this is a script rather than a Compose profile: DSpace must be migrated and seeded **before** the API starts, otherwise startup sync runs against an empty repository and reports a failure that looks like a defect.
 
@@ -163,7 +163,7 @@ The only destructive command: takes down **every** container in the project, DSp
 
 `docker compose down` is not profile-scoped. It removes every container in the project, including the DSpace profile, and `down --volumes` additionally destroys the DSpace assetstore and databases. `start:all` used to begin with `docker compose down --remove-orphans`, which meant starting the UI silently dismantled a running DSpace stack.
 
-`start:all` now runs [tools/scripts/stack.mjs](../tools/scripts/stack.mjs), which reads the services in the active Compose profile, inspects each container, and removes only the ones that are actually broken — unhealthy, dead, stuck restarting, or exited non-zero. Healthy containers are left running, and any container outside the active profile is reported and left alone.
+`start:all` now runs [tools/scripts/stack.mjs](../tools/scripts/stack.mjs), which orchestrates DSpace startup, seeding, and the application stack through [tools/scripts/compose-stack.mjs](../tools/scripts/compose-stack.mjs). Each service is inspected and only broken containers — unhealthy, dead, stuck restarting, or exited non-zero — are removed before `docker compose up`. Healthy containers are left running. Compose still recreates a service when its image or configuration changed. A lockfile mismatch against `package.json` is checked before the UI container starts.
 
 For normal development, prefer:
 

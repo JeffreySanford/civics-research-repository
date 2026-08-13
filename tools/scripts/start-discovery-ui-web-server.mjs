@@ -1,28 +1,32 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { workspaceRoot } from '@nx/devkit';
 
 const env = { ...process.env };
 
 for (const key of Object.keys(env)) {
-  if (key.startsWith('NX_TASK_')) {
+  if (key.startsWith('NX_')) {
     delete env[key];
   }
 }
 
+const serveCommand =
+  process.platform === 'win32'
+    ? 'pnpm exec nx run discovery-ui:serve --port=4300'
+    : 'pnpm exec nx run discovery-ui:serve --port=4300';
+
 const child =
   process.platform === 'win32'
-    ? spawn(
-        'cmd.exe',
-        ['/d', '/s', '/c', 'pnpm exec nx run discovery-ui:serve --port=4300'],
-        {
-          env,
-          stdio: 'inherit',
-        },
-      )
+    ? spawn('cmd.exe', ['/d', '/s', '/c', serveCommand], {
+        env,
+        cwd: workspaceRoot,
+        stdio: 'inherit',
+      })
     : spawn(
         'pnpm',
         ['exec', 'nx', 'run', 'discovery-ui:serve', '--port=4300'],
         {
           env,
+          cwd: workspaceRoot,
           stdio: 'inherit',
         },
       );

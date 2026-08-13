@@ -484,6 +484,70 @@ input:focus-visible {
   font-size: 1rem;
 }
 
+:host ::ng-deep .map-debug-toggle {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+  min-height: 2rem;
+  padding: 0 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  background: rgb(255 255 255 / 94%);
+  color: #475569;
+  font-size: 0.8125rem;
+  box-shadow: 0 0.35rem 0.75rem rgb(15 23 42 / 10%);
+}
+
+:host ::ng-deep .map-debug {
+  position: absolute;
+  top: 3.5rem;
+  left: 1rem;
+  z-index: 2;
+  display: grid;
+  gap: 0.5rem;
+  max-width: min(24rem, calc(100% - 2rem));
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 96%);
+  padding: 0.85rem 1rem;
+  box-shadow: 0 0.75rem 1.5rem rgb(15 23 42 / 12%);
+  font-size: 0.8125rem;
+}
+
+:host ::ng-deep .map-debug h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+:host ::ng-deep .map-debug dl {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+:host ::ng-deep .map-debug dt {
+  margin: 0;
+  color: #475569;
+  font-weight: 800;
+}
+
+:host ::ng-deep .map-debug dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  margin: 0;
+  color: #172033;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+:host ::ng-deep .map-debug-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
 :host ::ng-deep .map-legend ul,
 :host ::ng-deep .feature-list {
   display: grid;

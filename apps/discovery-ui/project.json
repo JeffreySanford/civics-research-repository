@@ -19,12 +19,28 @@
           {
             "glob": "**/*",
             "input": "apps/discovery-ui/public"
+          },
+          {
+            "glob": "maplibre-gl-worker.mjs",
+            "input": "node_modules/maplibre-gl/dist",
+            "output": "."
+          },
+          {
+            "glob": "maplibre-gl-shared.mjs",
+            "input": "node_modules/maplibre-gl/dist",
+            "output": "."
           }
         ],
         "styles": ["apps/discovery-ui/src/styles.scss"]
       },
       "configurations": {
         "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/discovery-ui/src/environments/environment.ts",
+              "with": "apps/discovery-ui/src/environments/environment.production.ts"
+            }
+          ],
           "budgets": [
             {
               "type": "initial",
@@ -33,8 +49,8 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "8kb",
-              "maximumError": "10kb"
+              "maximumWarning": "10kb",
+              "maximumError": "12kb"
             }
           ],
           "outputHashing": "all"

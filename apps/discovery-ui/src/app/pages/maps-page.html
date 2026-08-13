@@ -27,6 +27,7 @@
       <label>
         <input
           type="checkbox"
+          data-testid="map-layer-tiger"
           [checked]="tigerVisible$ | async"
           (change)="toggleTigerLayer($any($event.target).checked)"
         />
@@ -35,6 +36,7 @@
       <label>
         <input
           type="checkbox"
+          data-testid="map-layer-earthquake"
           [checked]="earthquakeVisible$ | async"
           (change)="toggleEarthquakeLayer($any($event.target).checked)"
         />
@@ -43,6 +45,7 @@
       <label>
         <input
           type="checkbox"
+          data-testid="map-layer-lodes"
           [checked]="lodesVisible$ | async"
           (change)="toggleLodesLayer($any($event.target).checked)"
         />
@@ -69,6 +72,7 @@
     <div
       #mapCanvas
       class="map-canvas"
+      data-testid="discovery-map-canvas"
       role="region"
       aria-label="Interactive map"
     ></div>
@@ -103,6 +107,74 @@
         }
       </ul>
     </aside>
+    @if (mapDebugAvailable) {
+    <button
+      type="button"
+      mat-button
+      class="map-debug-toggle"
+      data-testid="map-debug-toggle"
+      [attr.aria-expanded]="mapDebugPanelOpen()"
+      aria-controls="map-debug-panel"
+      (click)="toggleMapDebugPanel()"
+    >
+      {{ mapDebugPanelOpen() ? 'Hide map debug' : 'Map debug' }}
+    </button>
+    } @if (mapDebugAvailable && mapDebugPanelOpen() && mapDebugSnapshot) {
+    <aside
+      id="map-debug-panel"
+      class="map-debug"
+      data-testid="map-debug-panel"
+      aria-label="Map debug diagnostics"
+    >
+      <h2>Map debug</h2>
+      <dl>
+        <div>
+          <dt>Style ready</dt>
+          <dd>
+            mapStyleReady={{ mapDebugSnapshot.mapStyleReady }}, isStyleLoaded={{
+            mapDebugSnapshot.styleLoaded }}
+          </dd>
+        </div>
+        <div>
+          <dt>Layer count</dt>
+          <dd>{{ mapDebugSnapshot.layerCount }}</dd>
+        </div>
+        <div>
+          <dt>GeoJSON sources loaded</dt>
+          <dd>
+            @for (entry of mapDebugSnapshot.geoJsonSourcesLoaded | keyvalue;
+            track entry.key) {
+            <span>{{ entry.key }}={{ entry.value ? 'yes' : 'no' }}</span>
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Feature counts</dt>
+          <dd>
+            @for (entry of mapDebugSnapshot.featureCounts | keyvalue; track
+            entry.key) {
+            <span>{{ entry.key }}={{ entry.value }}</span>
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Visibility</dt>
+          <dd>
+            @for (entry of mapDebugSnapshot.visibility | keyvalue; track
+            entry.key) {
+            <span>{{ entry.key }}={{ entry.value }}</span>
+            }
+          </dd>
+        </div>
+      </dl>
+      <p class="map-debug-note">
+        GeoJSON overlays require the MapLibre worker at
+        <code>/maplibre-gl-worker.mjs</code> and
+        <code>/maplibre-gl-shared.mjs</code>. If feature counts stay 0, check
+        the network panel for blocked worker requests.
+      </p>
+    </aside>
+    }
   </div>
 </section>
 
