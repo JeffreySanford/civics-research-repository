@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.civicsrepo.generated.dto.FacetGroup;
@@ -48,6 +49,44 @@ public class SolrSearchClient {
 
     public boolean isEnabled() {
         return !baseUrl.isBlank() && !core.isBlank();
+    }
+
+    public String baseUrl() {
+        return baseUrl;
+    }
+
+    public String coreName() {
+        return core;
+    }
+
+    /** Cheap liveness probe against the configured discovery core. */
+    public boolean isReachable() {
+        return documentCount().isPresent();
+    }
+
+    /** Document count in the configured core, when Solr is enabled and answering. */
+    public Optional<Integer> documentCount() {
+        if (!isEnabled()) {
+            return Optional.empty();
+        }
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder(countUri())
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 300) {
+                return Optional.empty();
+            }
+            JsonNode root = objectMapper.readTree(response.body());
+            return Optional.of(Math.max(0, root.path("response").path("numFound").asInt(0)));
+        } catch (IOException | InterruptedException exception) {
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return Optional.empty();
+        }
     }
 
     public void indexResearchObjects(List<SearchResult> results) {
@@ -200,6 +239,10 @@ public class SolrSearchClient {
 
     private URI updateUri() {
         return URI.create(baseUrl + "/" + encode(core) + "/update?commit=true&overwrite=true");
+    }
+
+    private URI countUri() {
+        return URI.create(baseUrl + "/" + encode(core) + "/select?q=*:*&rows=0&wt=json");
     }
 
     private URI selectUri(

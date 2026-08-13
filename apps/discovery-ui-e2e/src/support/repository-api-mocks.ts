@@ -308,6 +308,76 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     });
   });
 
+  await page.route(`**/api/admin/reindex`, async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        contentType: 'application/json',
+        status: 202,
+        json: {
+          source: 'REPOSITORY',
+          objectCount: 3,
+          rebuiltAt: '2026-08-11T19:00:05Z',
+        },
+      });
+      return;
+    }
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        source: 'REPOSITORY',
+        objectCount: 3,
+        rebuiltAt: '2026-08-11T19:00:05Z',
+      },
+    });
+  });
+
+  await page.route(`**/api/admin/dspace/overview`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        reachable: true,
+        readEnabled: true,
+        writeEnabled: false,
+        baseUrl: 'http://localhost:8081/server',
+        itemCount: 3,
+        communityCount: 1,
+        collectionCount: 1,
+        communities: [
+          {
+            name: 'Census Public Research Data',
+            uuid: '11111111-1111-4111-8111-111111111111',
+          },
+        ],
+        collections: [
+          {
+            name: 'TIGER/Line Geospatial Files',
+            uuid: '22222222-2222-4222-8222-222222222222',
+          },
+        ],
+        lastSyncStatus: 'APPLIED',
+        lastSyncSource: 'TIGER_LINE',
+        lastSyncStartedAt: '2026-08-11T19:00:00Z',
+      },
+    });
+  });
+
+  await page.route(`**/api/admin/solr/overview`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        enabled: true,
+        reachable: true,
+        baseUrl: 'http://localhost:8983/solr',
+        core: 'discovery',
+        indexedDocumentCount: 3,
+        projectionSource: 'REPOSITORY',
+        projectionObjectCount: 3,
+        lastRebuiltAt: '2026-08-11T19:00:05Z',
+      },
+    });
+  });
+
   await page.route(`**/api/accessibility/evidence`, async (route) => {
     await route.fulfill({
       contentType: 'application/json',
@@ -370,7 +440,8 @@ function accessibilityEvidence() {
       status: 'AUTOMATED_PASS',
       standard: 'WCAG_2_1_AA',
       capturedAt: '2026-08-12T00:00:00Z',
-      notes: '57 checks passed. Command: pnpm run wcag:report. Artifact: documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md',
+      notes:
+        '57 checks passed. Command: pnpm run wcag:report. Artifact: documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md',
     },
     {
       id: 'section508-2026-08-12',
@@ -394,7 +465,8 @@ function accessibilityEvidence() {
       status: 'MANUAL_REVIEW_REQUIRED',
       standard: 'WCAG_2_1_AA',
       capturedAt: '2026-08-12T00:00:00Z',
-      notes: 'Preconditions automated; full mouse-free end-to-end run not recorded.',
+      notes:
+        'Preconditions automated; full mouse-free end-to-end run not recorded.',
     },
     {
       id: 'nvda-checklist',

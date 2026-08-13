@@ -1,0 +1,50 @@
+.admin-page__intro {
+  margin-bottom: 0;
+}
+
+.admin-tabs {
+  margin-top: 0;
+}
+
+.admin-tab-panel {
+  display: grid;
+  gap: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+.hierarchy-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.hierarchy-list li {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-muted);
+  padding: 1rem;
+  list-style-position: outside;
+}
+
+.hierarchy-list strong {
+  color: var(--civics-text-primary);
+}
+
+.hierarchy-list span {
+  color: var(--civics-text-secondary);
+}
+
+.admin-tabs ::ng-deep .mat-mdc-tab-body-content {
+  overflow: visible;
+}
+
+.admin-tabs ::ng-deep .mat-mdc-tab-header {
+  border-bottom: 1px solid var(--civics-border);
+}
+
+.admin-tabs ::ng-deep .mat-mdc-tab .mdc-tab__text-label {
+  font-weight: 700;
+}

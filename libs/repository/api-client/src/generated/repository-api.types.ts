@@ -210,6 +210,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/dspace/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** DSpace repository container overview and live stats. */
+    get: operations['getDspaceOverview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/solr/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Discovery Solr projection overview and live stats. */
+    get: operations['getSolrOverview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -383,6 +417,53 @@ export interface components {
        * @description When the projection was last rebuilt; absent before the first reindex.
        */
       rebuiltAt?: string;
+    };
+    DspaceContainerSummary: {
+      name: string;
+      /** Format: uuid */
+      uuid?: string;
+    };
+    DspaceOverview: {
+      /** @description Whether the DSpace REST API answered a liveness probe. */
+      reachable: boolean;
+      /** @description Whether a base URL is configured for discovery reads. */
+      readEnabled: boolean;
+      /** @description Whether sync apply can authenticate and write metadata. */
+      writeEnabled: boolean;
+      /** @description Configured DSpace REST endpoint, when set. */
+      baseUrl?: string;
+      /** @description Non-withdrawn items visible to discovery, when reachable. */
+      itemCount?: number;
+      communityCount?: number;
+      collectionCount?: number;
+      communities?: components['schemas']['DspaceContainerSummary'][];
+      collections?: components['schemas']['DspaceContainerSummary'][];
+      lastSyncStatus?: components['schemas']['SyncStatus'];
+      lastSyncSource?: components['schemas']['SyncSource'];
+      /** Format: date-time */
+      lastSyncStartedAt?: string;
+      /** @description Human-readable note when stats are partial or DSpace is unavailable. */
+      statusMessage?: string;
+    };
+    SolrOverview: {
+      /** @description Whether a Solr base URL and core are configured. */
+      enabled: boolean;
+      /** @description Whether the discovery core answered a select probe. */
+      reachable: boolean;
+      baseUrl?: string;
+      core?: string;
+      /** @description Documents in the discovery core, when reachable. */
+      indexedDocumentCount?: number;
+      projectionSource?: components['schemas']['RepositorySource'];
+      /** @description Objects the API last projected into Solr. */
+      projectionObjectCount?: number;
+      /**
+       * Format: date-time
+       * @description When the discovery projection was last rebuilt.
+       */
+      lastRebuiltAt?: string;
+      /** @description Human-readable note when stats are partial or Solr is unavailable. */
+      statusMessage?: string;
     };
     SyncRequest: {
       mode: components['schemas']['SyncMode'];
@@ -932,6 +1013,50 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['DiscoveryProjectionState'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getDspaceOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description DSpace overview with live counts when the REST API is reachable. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DspaceOverview'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getSolrOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Solr overview with indexed document counts when the discovery core is reachable. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SolrOverview'];
         };
       };
       500: components['responses']['InternalServerError'];

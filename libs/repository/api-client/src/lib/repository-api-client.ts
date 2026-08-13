@@ -36,6 +36,8 @@ export type DatasetFile = components['schemas']['DatasetFile'];
 export type DatasetVersion = components['schemas']['DatasetVersion'];
 export type DiscoveryProjectionState =
   components['schemas']['DiscoveryProjectionState'];
+export type DspaceOverview = components['schemas']['DspaceOverview'];
+export type SolrOverview = components['schemas']['SolrOverview'];
 export type AccessibilityEvidence =
   components['schemas']['AccessibilityEvidence'];
 export type EvidenceStatus = components['schemas']['EvidenceStatus'];
@@ -80,6 +82,16 @@ export class RepositoryAdminApi {
     return this.http.get<DiscoveryProjectionState>(
       `${this.baseUrl}/admin/reindex`,
     );
+  }
+
+  getDspaceOverview(): Observable<DspaceOverview> {
+    return this.http.get<DspaceOverview>(
+      `${this.baseUrl}/admin/dspace/overview`,
+    );
+  }
+
+  getSolrOverview(): Observable<SolrOverview> {
+    return this.http.get<SolrOverview>(`${this.baseUrl}/admin/solr/overview`);
   }
 }
 

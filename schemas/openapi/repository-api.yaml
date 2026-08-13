@@ -322,6 +322,38 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /admin/dspace/overview:
+    get:
+      tags: [Admin]
+      operationId: getDspaceOverview
+      summary: DSpace repository container overview and live stats.
+      responses:
+        '200':
+          description: DSpace overview with live counts when the REST API is reachable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DspaceOverview'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /admin/solr/overview:
+    get:
+      tags: [Admin]
+      operationId: getSolrOverview
+      summary: Discovery Solr projection overview and live stats.
+      responses:
+        '200':
+          description: Solr overview with indexed document counts when the discovery core is reachable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolrOverview'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 components:
   parameters:
     SearchQuery:
@@ -763,6 +795,90 @@ components:
           type: string
           format: date-time
           description: When the projection was last rebuilt; absent before the first reindex.
+    DspaceContainerSummary:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        uuid:
+          type: string
+          format: uuid
+    DspaceOverview:
+      type: object
+      required: [reachable, readEnabled, writeEnabled]
+      properties:
+        reachable:
+          type: boolean
+          description: Whether the DSpace REST API answered a liveness probe.
+        readEnabled:
+          type: boolean
+          description: Whether a base URL is configured for discovery reads.
+        writeEnabled:
+          type: boolean
+          description: Whether sync apply can authenticate and write metadata.
+        baseUrl:
+          type: string
+          description: Configured DSpace REST endpoint, when set.
+        itemCount:
+          type: integer
+          minimum: 0
+          description: Non-withdrawn items visible to discovery, when reachable.
+        communityCount:
+          type: integer
+          minimum: 0
+        collectionCount:
+          type: integer
+          minimum: 0
+        communities:
+          type: array
+          items:
+            $ref: '#/components/schemas/DspaceContainerSummary'
+        collections:
+          type: array
+          items:
+            $ref: '#/components/schemas/DspaceContainerSummary'
+        lastSyncStatus:
+          $ref: '#/components/schemas/SyncStatus'
+        lastSyncSource:
+          $ref: '#/components/schemas/SyncSource'
+        lastSyncStartedAt:
+          type: string
+          format: date-time
+        statusMessage:
+          type: string
+          description: Human-readable note when stats are partial or DSpace is unavailable.
+    SolrOverview:
+      type: object
+      required: [enabled, reachable]
+      properties:
+        enabled:
+          type: boolean
+          description: Whether a Solr base URL and core are configured.
+        reachable:
+          type: boolean
+          description: Whether the discovery core answered a select probe.
+        baseUrl:
+          type: string
+        core:
+          type: string
+        indexedDocumentCount:
+          type: integer
+          minimum: 0
+          description: Documents in the discovery core, when reachable.
+        projectionSource:
+          $ref: '#/components/schemas/RepositorySource'
+        projectionObjectCount:
+          type: integer
+          minimum: 0
+          description: Objects the API last projected into Solr.
+        lastRebuiltAt:
+          type: string
+          format: date-time
+          description: When the discovery projection was last rebuilt.
+        statusMessage:
+          type: string
+          description: Human-readable note when stats are partial or Solr is unavailable.
     SyncRequest:
       type: object
       required: [mode, source]

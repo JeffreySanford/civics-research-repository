@@ -76,6 +76,83 @@ public class DspaceRestClient {
         return baseUrl;
     }
 
+    /** Non-withdrawn item count from the discovery index, when reads are enabled. */
+    public Optional<Integer> countDiscoverableItems() {
+        if (!isReadEnabled()) {
+            return Optional.empty();
+        }
+
+        try {
+            HttpResponse<String> response = send(HttpRequest.newBuilder(allItemsUri(0, 1))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET());
+            if (response.statusCode() >= 300) {
+                return Optional.empty();
+            }
+            return Optional.of(parseDiscoveryTotalElements(response.body()));
+        } catch (DspaceUnavailableException exception) {
+            return Optional.empty();
+        }
+    }
+
+    /** Top-level communities from the core API, when reads are enabled. */
+    public List<ContainerSummary> listCommunities() {
+        return listContainers("/api/core/communities", "communities");
+    }
+
+    /** Collections from the core API, when reads are enabled. */
+    public List<ContainerSummary> listCollections() {
+        return listContainers("/api/core/collections", "collections");
+    }
+
+    private List<ContainerSummary> listContainers(String path, String embeddedKey) {
+        if (!isReadEnabled()) {
+            return List.of();
+        }
+
+        try {
+            HttpResponse<String> response = send(HttpRequest.newBuilder(URI.create(baseUrl + path + "?size=50"))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET());
+            if (response.statusCode() >= 300) {
+                return List.of();
+            }
+            return parseContainerSummaries(response.body(), embeddedKey);
+        } catch (DspaceUnavailableException exception) {
+            return List.of();
+        }
+    }
+
+    private int parseDiscoveryTotalElements(String responseBody) {
+        try {
+            JsonNode page = objectMapper
+                    .readTree(responseBody)
+                    .path("_embedded")
+                    .path("searchResult")
+                    .path("page");
+            return Math.max(0, page.path("totalElements").asInt(0));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("DSpace discovery response could not be parsed.", exception);
+        }
+    }
+
+    private List<ContainerSummary> parseContainerSummaries(String responseBody, String embeddedKey) {
+        try {
+            JsonNode containers = objectMapper.readTree(responseBody).path("_embedded").path(embeddedKey);
+            List<ContainerSummary> summaries = new ArrayList<>();
+            for (JsonNode container : containers) {
+                summaries.add(new ContainerSummary(
+                        container.path("uuid").asText(null),
+                        container.path("name").asText("")));
+            }
+            return List.copyOf(summaries);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("DSpace container response could not be parsed.", exception);
+        }
+    }
+
+    public record ContainerSummary(String uuid, String name) {}
+
     /**
      * Resolves the one item a source identifier refers to, searching by identifier first and
      * falling back to the normalized title for items that have not been stamped yet.

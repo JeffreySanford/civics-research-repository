@@ -43,6 +43,34 @@ describe('RepositoryAdminApi', () => {
     await expect(firstValueFrom(api.listSyncJobs())).resolves.toEqual([job]);
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/admin/sync');
   });
+
+  it('loads DSpace and Solr admin overviews', async () => {
+    const dspaceOverview = {
+      reachable: true,
+      readEnabled: true,
+      writeEnabled: false,
+      itemCount: 2,
+    };
+    const solrOverview = {
+      enabled: true,
+      reachable: true,
+      core: 'discovery',
+      indexedDocumentCount: 2,
+    };
+    const http = {
+      get: vi.fn((url: string) =>
+        of(url.includes('/solr/') ? solrOverview : dspaceOverview),
+      ),
+    };
+    const api = new RepositoryAdminApi(http as never, 'http://api.test/api');
+
+    await expect(firstValueFrom(api.getDspaceOverview())).resolves.toEqual(
+      dspaceOverview,
+    );
+    await expect(firstValueFrom(api.getSolrOverview())).resolves.toEqual(
+      solrOverview,
+    );
+  });
 });
 
 describe('RepositoryDatasetsApi', () => {
@@ -109,9 +137,9 @@ describe('RepositoryEvidenceApi', () => {
     };
     const api = new RepositoryEvidenceApi(http as never, 'http://api.test/api');
 
-    await expect(firstValueFrom(api.listAccessibilityEvidence())).resolves.toEqual(
-      entries,
-    );
+    await expect(
+      firstValueFrom(api.listAccessibilityEvidence()),
+    ).resolves.toEqual(entries);
     expect(http.get).toHaveBeenCalledWith(
       'http://api.test/api/accessibility/evidence',
     );

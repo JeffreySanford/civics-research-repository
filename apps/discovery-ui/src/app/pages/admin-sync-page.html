@@ -1,135 +1,440 @@
-<div class="page-stack">
-  <section aria-labelledby="admin-sync-heading" class="admin-layout">
-    <div class="content-panel">
-      <p class="eyebrow">Admin workflow</p>
-      <h1 id="admin-sync-heading">Repository sync</h1>
-      <p>
-        Trigger the typed Java sync endpoint for a selected public metadata
-        source. Dry run shows planned DSpace/Solr actions; apply uses the same
-        workflow and persists job history in Postgres.
-      </p>
+<div class="page-stack admin-page">
+  <header class="content-panel admin-page__intro">
+    <p class="eyebrow">Admin workflow</p>
+    <h1 id="admin-sync-heading">Repository sync</h1>
+    <p>
+      Operate the typed Java sync workflow, then inspect how DSpace stores
+      repository objects and how Solr projects them for public discovery.
+    </p>
+  </header>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Sync source</mat-label>
-        <mat-select
-          [value]="selectedSource$ | async"
-          (valueChange)="selectSource($event)"
-          aria-label="Repository sync source"
-        >
-          @for (source of syncSources; track source) {
-          <mat-option [value]="source">{{ source }}</mat-option>
+  <mat-tab-group
+    class="admin-tabs"
+    dynamicHeight
+    aria-labelledby="admin-sync-heading"
+  >
+    <mat-tab label="Repository sync">
+      <div class="admin-tab-panel">
+        <section aria-labelledby="sync-workflow-heading" class="admin-layout">
+          <div class="content-panel">
+            <h2 id="sync-workflow-heading">Sync workflow</h2>
+            <p>
+              Trigger the typed Java sync endpoint for a selected public
+              metadata source. Dry run shows planned DSpace/Solr actions; apply
+              uses the same workflow and persists job history in Postgres.
+            </p>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Sync source</mat-label>
+              <mat-select
+                [value]="selectedSource$ | async"
+                (valueChange)="selectSource($event)"
+                aria-label="Repository sync source"
+              >
+                @for (source of syncSources; track source) {
+                <mat-option [value]="source">{{ source }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <div class="button-row">
+              <button
+                mat-flat-button
+                type="button"
+                (click)="requestDryRun()"
+                [disabled]="loading$ | async"
+              >
+                Dry run sync
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="requestDiff()"
+                [disabled]="loading$ | async"
+              >
+                Diff sync
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="requestApply()"
+                [disabled]="loading$ | async"
+              >
+                Apply sync
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="requestReindex()"
+                [disabled]="reindexing$ | async"
+              >
+                Reindex discovery
+              </button>
+            </div>
+
+            @if (loading$ | async) {
+            <div class="inline-status" role="status">
+              <mat-spinner diameter="24"></mat-spinner>
+              <span>Sync request running</span>
+            </div>
+            } @if (reindexing$ | async) {
+            <div class="inline-status" role="status">
+              <mat-spinner diameter="24"></mat-spinner>
+              <span>Discovery reindex running</span>
+            </div>
+            } @if (error$ | async; as error) {
+            <p class="error-message" role="alert">{{ error }}</p>
+            } @if (projection$ | async; as projection) {
+            <p class="inline-status" role="status">
+              Discovery projection rebuilt: {{ projection.objectCount }} objects
+              from {{ projection.source }}.
+            </p>
+            }
+          </div>
+
+          @if (selectedJob$ | async; as job) {
+          <article class="content-panel" aria-labelledby="selected-job-heading">
+            <p class="eyebrow">{{ job.source }}</p>
+            <h2 id="selected-job-heading">Selected sync job</h2>
+            <dl class="details-list">
+              <div>
+                <dt>Status</dt>
+                <dd>{{ job.status }}</dd>
+              </div>
+              <div>
+                <dt>Mode</dt>
+                <dd>{{ job.mode }}</dd>
+              </div>
+              <div>
+                <dt>Started</dt>
+                <dd>{{ job.startedAt | date: 'medium' }}</dd>
+              </div>
+            </dl>
+
+            <h3>Planned actions</h3>
+            <ol class="action-list">
+              @for (action of job.actions; track action.actionType +
+              action.target) {
+              <li>
+                <strong>{{ action.actionType }}</strong>
+                <span>{{ action.target }}</span>
+                <p>{{ action.detail }}</p>
+              </li>
+              }
+            </ol>
+          </article>
+          } @else {
+          <article class="content-panel" aria-labelledby="empty-job-heading">
+            <h2 id="empty-job-heading">No sync job selected</h2>
+            <p>Run a dry sync to preview repository actions.</p>
+          </article>
           }
-        </mat-select>
-      </mat-form-field>
+        </section>
 
-      <div class="button-row">
-        <button
-          mat-flat-button
-          type="button"
-          (click)="requestDryRun()"
-          [disabled]="loading$ | async"
-        >
-          Dry run sync
-        </button>
-        <button
-          mat-stroked-button
-          type="button"
-          (click)="requestDiff()"
-          [disabled]="loading$ | async"
-        >
-          Diff sync
-        </button>
-        <button
-          mat-stroked-button
-          type="button"
-          (click)="requestApply()"
-          [disabled]="loading$ | async"
-        >
-          Apply sync
-        </button>
-        <button
-          mat-stroked-button
-          type="button"
-          (click)="requestReindex()"
-          [disabled]="reindexing$ | async"
-        >
-          Reindex discovery
-        </button>
+        <section aria-labelledby="history-heading" class="content-panel">
+          <h2 id="history-heading">Sync history</h2>
+          @if (jobs$ | async; as jobs) { @if (jobs.length > 0) {
+          <ul class="history-list">
+            @for (job of jobs; track job.id) {
+            <li>
+              <button type="button" (click)="selectJob(job.id)">
+                <strong>{{ job.status }}</strong>
+                <span
+                  >{{ job.source }} - {{ job.startedAt | date: 'short' }}</span
+                >
+              </button>
+            </li>
+            }
+          </ul>
+          } @else {
+          <p>No sync jobs have been stored yet.</p>
+          } }
+        </section>
       </div>
+    </mat-tab>
 
-      @if (loading$ | async) {
-      <div class="inline-status" role="status">
-        <mat-spinner diameter="24"></mat-spinner>
-        <span>Sync request running</span>
-      </div>
-      } @if (reindexing$ | async) {
-      <div class="inline-status" role="status">
-        <mat-spinner diameter="24"></mat-spinner>
-        <span>Discovery reindex running</span>
-      </div>
-      } @if (error$ | async; as error) {
-      <p class="error-message" role="alert">{{ error }}</p>
-      } @if (projection$ | async; as projection) {
-      <p class="inline-status" role="status">
-        Discovery projection rebuilt: {{ projection.objectCount }} objects from
-        {{ projection.source }}.
-      </p>
-      }
-    </div>
+    <mat-tab label="DSpace overview">
+      <div class="admin-tab-panel">
+        @if (dspaceOverview$ | async; as overview) {
+        <section aria-labelledby="dspace-model-heading" class="content-panel">
+          <p class="eyebrow">DStore container</p>
+          <h2 id="dspace-model-heading">
+            How DSpace organizes repository data
+          </h2>
+          <p>
+            DSpace (DStore) is the system of record. Public metadata sync writes
+            Dublin Core and <code>crr.*</code> fields into items; bitstreams
+            stay referenced, not mirrored, in this demo slice.
+          </p>
 
-    @if (selectedJob$ | async; as job) {
-    <article class="content-panel" aria-labelledby="selected-job-heading">
-      <p class="eyebrow">{{ job.source }}</p>
-      <h2 id="selected-job-heading">Selected sync job</h2>
-      <dl class="details-list">
-        <div>
-          <dt>Status</dt>
-          <dd>{{ job.status }}</dd>
-        </div>
-        <div>
-          <dt>Mode</dt>
-          <dd>{{ job.mode }}</dd>
-        </div>
-        <div>
-          <dt>Started</dt>
-          <dd>{{ job.startedAt | date: 'medium' }}</dd>
-        </div>
-      </dl>
+          <ol class="hierarchy-list">
+            <li>
+              <strong>Communities</strong>
+              <span
+                >Top-level groupings such as Census Public Research Data.</span
+              >
+            </li>
+            <li>
+              <strong>Collections</strong>
+              <span
+                >Curated sets inside a community, for example TIGER/Line
+                Geospatial Files.</span
+              >
+            </li>
+            <li>
+              <strong>Items</strong>
+              <span
+                >Research objects with metadata, relationships, and optional
+                bitstreams.</span
+              >
+            </li>
+            <li>
+              <strong>Metadata schema</strong>
+              <span
+                >Dublin Core plus <code>crr.program</code>,
+                <code>crr.geography</code>, <code>crr.file.manifest</code>, and
+                related fields.</span
+              >
+            </li>
+          </ol>
+        </section>
 
-      <h3>Planned actions</h3>
-      <ol class="action-list">
-        @for (action of job.actions; track action.actionType + action.target) {
-        <li>
-          <strong>{{ action.actionType }}</strong>
-          <span>{{ action.target }}</span>
-          <p>{{ action.detail }}</p>
-        </li>
+        <section aria-labelledby="dspace-flow-heading" class="content-panel">
+          <h2 id="dspace-flow-heading">Seed and persistence flow</h2>
+          <ul class="feature-list">
+            <li>
+              <strong>SAF seed package</strong>
+              <span
+                ><code>pnpm run dspace:seed</code> imports communities,
+                collections, and starter items idempotently.</span
+              >
+            </li>
+            <li>
+              <strong>Asset store</strong>
+              <span
+                >Bitstreams live in the DSpace asset store; sync reconciles
+                metadata and source links only.</span
+              >
+            </li>
+            <li>
+              <strong>DSpace PostgreSQL</strong>
+              <span
+                >Repository state persists on <code>dspace-postgres:5433</code>,
+                separate from application <code>civics_ops</code> on port
+                5432.</span
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="dspace-stats-heading" class="content-panel">
+          <h2 id="dspace-stats-heading">Live repository stats</h2>
+          @if (overview.statusMessage) {
+          <p class="warning-message" role="status">
+            {{ overview.statusMessage }}
+          </p>
+          }
+          <dl class="status-grid">
+            <div>
+              <dt>REST reachable</dt>
+              <dd>{{ overview.reachable ? 'Yes' : 'No' }}</dd>
+            </div>
+            <div>
+              <dt>Reads enabled</dt>
+              <dd>{{ overview.readEnabled ? 'Yes' : 'No' }}</dd>
+            </div>
+            <div>
+              <dt>Writes enabled</dt>
+              <dd>{{ overview.writeEnabled ? 'Yes' : 'No' }}</dd>
+            </div>
+            <div>
+              <dt>Item count</dt>
+              <dd>{{ overview.itemCount ?? 'Unavailable' }}</dd>
+            </div>
+            <div>
+              <dt>Communities</dt>
+              <dd>{{ overview.communityCount ?? 'Unavailable' }}</dd>
+            </div>
+            <div>
+              <dt>Collections</dt>
+              <dd>{{ overview.collectionCount ?? 'Unavailable' }}</dd>
+            </div>
+          </dl>
+
+          @if (overview.communities?.length) {
+          <h3>Communities</h3>
+          <ul class="feature-list">
+            @for (community of overview.communities; track community.uuid ??
+            community.name) {
+            <li>
+              <strong>{{ community.name }}</strong>
+              @if (community.uuid) {
+              <span>{{ community.uuid }}</span>
+              }
+            </li>
+            }
+          </ul>
+          } @if (overview.collections?.length) {
+          <h3>Collections</h3>
+          <ul class="feature-list">
+            @for (collection of overview.collections; track collection.uuid ??
+            collection.name) {
+            <li>
+              <strong>{{ collection.name }}</strong>
+              @if (collection.uuid) {
+              <span>{{ collection.uuid }}</span>
+              }
+            </li>
+            }
+          </ul>
+          } @if (overview.lastSyncStatus) {
+          <p class="inline-status" role="status">
+            Last sync job: {{ overview.lastSyncStatus }} @if
+            (overview.lastSyncSource) { for {{ overview.lastSyncSource }} } @if
+            (overview.lastSyncStartedAt) { at {{ overview.lastSyncStartedAt |
+            date: 'medium' }}. }
+          </p>
+          }
+        </section>
+
+        <section aria-labelledby="dspace-io-heading" class="content-panel">
+          <h2 id="dspace-io-heading">Performance and I/O notes</h2>
+          <ul class="feature-list">
+            <li>
+              <strong>Idempotent seeding</strong>
+              <span
+                >Re-running the SAF seed skips structure that already exists,
+                keeping cold starts predictable.</span
+              >
+            </li>
+            <li>
+              <strong>No bitstream mirroring</strong>
+              <span
+                >Sync updates metadata and manifests; large federal files stay
+                at their source URLs.</span
+              >
+            </li>
+            <li>
+              <strong>Cold start timing</strong>
+              <span
+                >DSpace REST and PostgreSQL must be healthy before apply or
+                reindex produce live repository stats.</span
+              >
+            </li>
+          </ul>
+        </section>
         }
-      </ol>
-    </article>
-    } @else {
-    <article class="content-panel" aria-labelledby="empty-job-heading">
-      <h2 id="empty-job-heading">No sync job selected</h2>
-      <p>Run a dry sync to preview repository actions.</p>
-    </article>
-    }
-  </section>
+      </div>
+    </mat-tab>
 
-  <section aria-labelledby="history-heading" class="content-panel">
-    <h2 id="history-heading">Sync history</h2>
-    @if (jobs$ | async; as jobs) { @if (jobs.length > 0) {
-    <ul class="history-list">
-      @for (job of jobs; track job.id) {
-      <li>
-        <button type="button" (click)="selectJob(job.id)">
-          <strong>{{ job.status }}</strong>
-          <span>{{ job.source }} - {{ job.startedAt | date: 'short' }}</span>
-        </button>
-      </li>
-      }
-    </ul>
-    } @else {
-    <p>No sync jobs have been stored yet.</p>
-    } }
-  </section>
+    <mat-tab label="Solr overview">
+      <div class="admin-tab-panel">
+        @if (solrOverview$ | async; as overview) {
+        <section aria-labelledby="solr-model-heading" class="content-panel">
+          <p class="eyebrow">Discovery projection</p>
+          <h2 id="solr-model-heading">How Solr serves public search</h2>
+          <p>
+            Solr is a rebuildable projection of DSpace. The
+            <code>discovery</code> core on port 8983 powers keyword search,
+            facets, and counts for the Angular UI. DSpace keeps its own internal
+            Solr on port 8984 for repository-native search and OAI cores.
+          </p>
+
+          <ol class="hierarchy-list">
+            <li>
+              <strong>Discovery Solr (:8983)</strong>
+              <span
+                >Owned by <code>repository-api</code>; rebuilt from DSpace via
+                Reindex discovery.</span
+              >
+            </li>
+            <li>
+              <strong>DSpace Solr (:8984)</strong>
+              <span
+                >Internal to DSpace; not queried directly by the public
+                UI.</span
+              >
+            </li>
+            <li>
+              <strong>Query path</strong>
+              <span
+                >Discovery UI → repository-api → discovery core → typed
+                SearchResponse.</span
+              >
+            </li>
+          </ol>
+        </section>
+
+        <section aria-labelledby="solr-stats-heading" class="content-panel">
+          <h2 id="solr-stats-heading">Live index stats</h2>
+          @if (overview.statusMessage) {
+          <p class="warning-message" role="status">
+            {{ overview.statusMessage }}
+          </p>
+          }
+          <dl class="status-grid">
+            <div>
+              <dt>Solr enabled</dt>
+              <dd>{{ overview.enabled ? 'Yes' : 'No' }}</dd>
+            </div>
+            <div>
+              <dt>Core reachable</dt>
+              <dd>{{ overview.reachable ? 'Yes' : 'No' }}</dd>
+            </div>
+            <div>
+              <dt>Core name</dt>
+              <dd>{{ overview.core ?? 'discovery' }}</dd>
+            </div>
+            <div>
+              <dt>Indexed documents</dt>
+              <dd>{{ overview.indexedDocumentCount ?? 'Unavailable' }}</dd>
+            </div>
+            <div>
+              <dt>Projection source</dt>
+              <dd>{{ overview.projectionSource ?? 'Unknown' }}</dd>
+            </div>
+            <div>
+              <dt>Projected objects</dt>
+              <dd>{{ overview.projectionObjectCount ?? 'Unavailable' }}</dd>
+            </div>
+          </dl>
+
+          @if (overview.lastRebuiltAt) {
+          <p class="inline-status" role="status">
+            Last projection rebuild: {{ overview.lastRebuiltAt | date: 'medium'
+            }}.
+          </p>
+          }
+        </section>
+
+        <section aria-labelledby="solr-rebuild-heading" class="content-panel">
+          <h2 id="solr-rebuild-heading">Rebuild expectations</h2>
+          <ul class="feature-list">
+            <li>
+              <strong>Projection rule</strong>
+              <span
+                >Anything that exists only in Solr is a bug; the index must
+                always be rebuildable from DSpace.</span
+              >
+            </li>
+            <li>
+              <strong>Fixture fallback</strong>
+              <span
+                >When DSpace is empty or unreachable, the API indexes fixture
+                catalog entries and labels responses as FIXTURE.</span
+              >
+            </li>
+            <li>
+              <strong>Operator action</strong>
+              <span
+                >Use Reindex discovery on the Repository sync tab after apply or
+                a DSpace restore.</span
+              >
+            </li>
+          </ul>
+        </section>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>
