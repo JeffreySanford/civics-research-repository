@@ -38,6 +38,9 @@ export type DiscoveryProjectionState =
   components['schemas']['DiscoveryProjectionState'];
 export type DspaceOverview = components['schemas']['DspaceOverview'];
 export type SolrOverview = components['schemas']['SolrOverview'];
+export type ProgramCount = components['schemas']['ProgramCount'];
+export type SyncActionSummary = components['schemas']['SyncActionSummary'];
+export type ProjectionBreakdown = components['schemas']['ProjectionBreakdown'];
 export type AccessibilityEvidence =
   components['schemas']['AccessibilityEvidence'];
 export type EvidenceStatus = components['schemas']['EvidenceStatus'];

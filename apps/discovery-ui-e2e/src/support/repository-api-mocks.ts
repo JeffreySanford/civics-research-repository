@@ -358,6 +358,18 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         lastSyncStatus: 'APPLIED',
         lastSyncSource: 'TIGER_LINE',
         lastSyncStartedAt: '2026-08-11T19:00:00Z',
+        storedMetadataFields: [
+          'dc.title',
+          'dc.description',
+          'crr.program',
+          'crr.geography',
+          'crr.file.manifest',
+        ],
+        programCounts: [{ program: 'TIGER_LINE', count: 3 }],
+        recentSyncActionSummary: [
+          { actionType: 'UPSERT_ITEM', count: 2 },
+          { actionType: 'UPSERT_FILE_MANIFEST', count: 1 },
+        ],
       },
     });
   });
@@ -374,6 +386,12 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         projectionSource: 'REPOSITORY',
         projectionObjectCount: 3,
         lastRebuiltAt: '2026-08-11T19:00:05Z',
+        projectionBreakdown: {
+          indexedCount: 3,
+          projectedCount: 3,
+          repositoryItemCount: 3,
+          source: 'REPOSITORY',
+        },
       },
     });
   });

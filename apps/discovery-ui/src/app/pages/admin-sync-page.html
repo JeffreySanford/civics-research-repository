@@ -14,7 +14,19 @@
     aria-labelledby="admin-sync-heading"
   >
     <mat-tab label="Repository sync">
-      <div class="admin-tab-panel">
+      <div class="admin-tab-panel" @adminPanelEnter>
+        <section aria-labelledby="sync-pipeline-heading" class="content-panel">
+          <p class="eyebrow">Request path</p>
+          <h2 id="sync-pipeline-heading">Sync and reindex pipeline</h2>
+          <p>
+            Dry run, diff, and apply flow through repository-api into DSpace and
+            Postgres; reindex rebuilds the discovery Solr projection.
+          </p>
+          <app-admin-sync-pipeline
+            [activeStage]="(pipelineStage$ | async) ?? 'idle'"
+          />
+        </section>
+
         <section aria-labelledby="sync-workflow-heading" class="admin-layout">
           <div class="content-panel">
             <h2 id="sync-workflow-heading">Sync workflow</h2>
@@ -75,12 +87,16 @@
             @if (loading$ | async) {
             <div class="inline-status" role="status">
               <mat-spinner diameter="24"></mat-spinner>
-              <span>Sync request running</span>
+              <span>Sync request running through repository-api</span>
             </div>
             } @if (reindexing$ | async) {
-            <div class="inline-status" role="status">
+            <div class="inline-status admin-viz-reindex-pulse" role="status">
+              <span
+                class="admin-viz-reindex-pulse__dot"
+                aria-hidden="true"
+              ></span>
               <mat-spinner diameter="24"></mat-spinner>
-              <span>Discovery reindex running</span>
+              <span>Discovery reindex running into Solr</span>
             </div>
             } @if (error$ | async; as error) {
             <p class="error-message" role="alert">{{ error }}</p>
@@ -131,6 +147,21 @@
           }
         </section>
 
+        @if (actionSummary$ | async; as actionItems) { @if (actionItems.length >
+        0) {
+        <section
+          aria-labelledby="sync-actions-viz-heading"
+          class="content-panel"
+        >
+          <h2 id="sync-actions-viz-heading">Recent sync activity</h2>
+          <p>Aggregated action counts from stored sync jobs.</p>
+          <app-admin-bar-chart
+            caption="Recent sync action counts"
+            [items]="actionItems"
+          />
+        </section>
+        } }
+
         <section aria-labelledby="history-heading" class="content-panel">
           <h2 id="history-heading">Sync history</h2>
           @if (jobs$ | async; as jobs) { @if (jobs.length > 0) {
@@ -154,77 +185,24 @@
     </mat-tab>
 
     <mat-tab label="DSpace overview">
-      <div class="admin-tab-panel">
+      <div class="admin-tab-panel" @adminPanelEnter>
         @if (dspaceOverview$ | async; as overview) {
-        <section aria-labelledby="dspace-model-heading" class="content-panel">
-          <p class="eyebrow">DStore container</p>
-          <h2 id="dspace-model-heading">
-            How DSpace organizes repository data
-          </h2>
-          <p>
-            DSpace (DStore) is the system of record. Public metadata sync writes
-            Dublin Core and <code>crr.*</code> fields into items; bitstreams
-            stay referenced, not mirrored, in this demo slice.
-          </p>
-
-          <ol class="hierarchy-list">
-            <li>
-              <strong>Communities</strong>
-              <span
-                >Top-level groupings such as Census Public Research Data.</span
-              >
-            </li>
-            <li>
-              <strong>Collections</strong>
-              <span
-                >Curated sets inside a community, for example TIGER/Line
-                Geospatial Files.</span
-              >
-            </li>
-            <li>
-              <strong>Items</strong>
-              <span
-                >Research objects with metadata, relationships, and optional
-                bitstreams.</span
-              >
-            </li>
-            <li>
-              <strong>Metadata schema</strong>
-              <span
-                >Dublin Core plus <code>crr.program</code>,
-                <code>crr.geography</code>, <code>crr.file.manifest</code>, and
-                related fields.</span
-              >
-            </li>
-          </ol>
-        </section>
+        <p class="visually-hidden" aria-live="polite" aria-atomic="true">
+          {{ liveDspaceSummary(overview) }}
+        </p>
 
         <section aria-labelledby="dspace-flow-heading" class="content-panel">
-          <h2 id="dspace-flow-heading">Seed and persistence flow</h2>
-          <ul class="feature-list">
-            <li>
-              <strong>SAF seed package</strong>
-              <span
-                ><code>pnpm run dspace:seed</code> imports communities,
-                collections, and starter items idempotently.</span
-              >
-            </li>
-            <li>
-              <strong>Asset store</strong>
-              <span
-                >Bitstreams live in the DSpace asset store; sync reconciles
-                metadata and source links only.</span
-              >
-            </li>
-            <li>
-              <strong>DSpace PostgreSQL</strong>
-              <span
-                >Repository state persists on <code>dspace-postgres:5433</code>,
-                separate from application <code>civics_ops</code> on port
-                5432.</span
-              >
-            </li>
-          </ul>
+          <p class="eyebrow">Storage flow</p>
+          <h2 id="dspace-flow-heading">Catalog to DSpace hierarchy</h2>
+          <p>
+            Public metadata sync writes Dublin Core and
+            <code>crr.*</code> fields into items; bitstreams stay referenced,
+            not mirrored, in this demo slice.
+          </p>
+          <app-admin-flow-diagram
+            caption="Catalog through SAF seed into DSpace communities, collections, and items"
+            [steps]="dspaceFlowSteps(overview)"
+          />
         </section>
 
         <section aria-labelledby="dspace-stats-heading" class="content-panel">
@@ -234,60 +212,57 @@
             {{ overview.statusMessage }}
           </p>
           }
-          <dl class="status-grid">
-            <div>
+
+          <dl class="admin-viz-stat-cards" @adminCardStagger>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>REST reachable</dt>
               <dd>{{ overview.reachable ? 'Yes' : 'No' }}</dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Reads enabled</dt>
               <dd>{{ overview.readEnabled ? 'Yes' : 'No' }}</dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Writes enabled</dt>
               <dd>{{ overview.writeEnabled ? 'Yes' : 'No' }}</dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Item count</dt>
-              <dd>{{ overview.itemCount ?? 'Unavailable' }}</dd>
+              <dd>
+                <app-animated-counter [value]="overview.itemCount ?? 0" />
+              </dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Communities</dt>
-              <dd>{{ overview.communityCount ?? 'Unavailable' }}</dd>
+              <dd>
+                <app-animated-counter [value]="overview.communityCount ?? 0" />
+              </dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Collections</dt>
-              <dd>{{ overview.collectionCount ?? 'Unavailable' }}</dd>
+              <dd>
+                <app-animated-counter [value]="overview.collectionCount ?? 0" />
+              </dd>
             </div>
           </dl>
 
-          @if (overview.communities?.length) {
-          <h3>Communities</h3>
-          <ul class="feature-list">
-            @for (community of overview.communities; track community.uuid ??
-            community.name) {
-            <li>
-              <strong>{{ community.name }}</strong>
-              @if (community.uuid) {
-              <span>{{ community.uuid }}</span>
-              }
-            </li>
-            }
-          </ul>
-          } @if (overview.collections?.length) {
-          <h3>Collections</h3>
-          <ul class="feature-list">
-            @for (collection of overview.collections; track collection.uuid ??
-            collection.name) {
-            <li>
-              <strong>{{ collection.name }}</strong>
-              @if (collection.uuid) {
-              <span>{{ collection.uuid }}</span>
-              }
-            </li>
-            }
-          </ul>
-          } @if (overview.lastSyncStatus) {
+          <dl class="status-grid">
+            @if (overview.communities?.length) { @for (community of
+            overview.communities; track community.uuid ?? community.name) {
+            <div>
+              <dt>Community</dt>
+              <dd>{{ community.name }}</dd>
+            </div>
+            } } @if (overview.collections?.length) { @for (collection of
+            overview.collections; track collection.uuid ?? collection.name) {
+            <div>
+              <dt>Collection</dt>
+              <dd>{{ collection.name }}</dd>
+            </div>
+            } }
+          </dl>
+
+          @if (overview.lastSyncStatus) {
           <p class="inline-status" role="status">
             Last sync job: {{ overview.lastSyncStatus }} @if
             (overview.lastSyncSource) { for {{ overview.lastSyncSource }} } @if
@@ -297,72 +272,81 @@
           }
         </section>
 
-        <section aria-labelledby="dspace-io-heading" class="content-panel">
-          <h2 id="dspace-io-heading">Performance and I/O notes</h2>
-          <ul class="feature-list">
-            <li>
-              <strong>Idempotent seeding</strong>
-              <span
-                >Re-running the SAF seed skips structure that already exists,
-                keeping cold starts predictable.</span
-              >
-            </li>
-            <li>
-              <strong>No bitstream mirroring</strong>
-              <span
-                >Sync updates metadata and manifests; large federal files stay
-                at their source URLs.</span
-              >
-            </li>
-            <li>
-              <strong>Cold start timing</strong>
-              <span
-                >DSpace REST and PostgreSQL must be healthy before apply or
-                reindex produce live repository stats.</span
-              >
-            </li>
-          </ul>
+        @if (programBarItems$ | async; as programItems) { @if
+        (programItems.length > 0) {
+        <section aria-labelledby="dspace-program-heading" class="content-panel">
+          <h2 id="dspace-program-heading">Program breakdown</h2>
+          <p>Items or sync jobs grouped by research program.</p>
+          <app-admin-bar-chart
+            caption="Research program counts in DSpace or sync history"
+            [items]="programItems"
+          />
         </section>
-        }
+        } } @if (overview.storedMetadataFields?.length) {
+        <section
+          aria-labelledby="dspace-metadata-heading"
+          class="content-panel"
+        >
+          <h2 id="dspace-metadata-heading">Stored metadata fields</h2>
+          <p>
+            Key fields written during metadata sync (no bitstream payloads).
+          </p>
+          <ul class="admin-viz-metadata-grid">
+            @for (field of overview.storedMetadataFields; track field) {
+            <li class="admin-viz-metadata-chip">{{ field }}</li>
+            }
+          </ul>
+          <table class="visually-hidden">
+            <caption>
+              DSpace metadata fields stored by sync
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Field</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (field of overview.storedMetadataFields; track field) {
+              <tr>
+                <th scope="row">{{ field }}</th>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+        } @if (actionSummary$ | async; as actionItems) { @if (actionItems.length
+        > 0) {
+        <section aria-labelledby="dspace-actions-heading" class="content-panel">
+          <h2 id="dspace-actions-heading">Sync activity</h2>
+          <p>Recent UPSERT_ITEM, file manifest, and verification actions.</p>
+          <app-admin-bar-chart
+            caption="Recent DSpace sync action counts"
+            [items]="actionItems"
+          />
+        </section>
+        } } }
       </div>
     </mat-tab>
 
     <mat-tab label="Solr overview">
-      <div class="admin-tab-panel">
+      <div class="admin-tab-panel" @adminPanelEnter>
         @if (solrOverview$ | async; as overview) {
-        <section aria-labelledby="solr-model-heading" class="content-panel">
-          <p class="eyebrow">Discovery projection</p>
-          <h2 id="solr-model-heading">How Solr serves public search</h2>
+        <p class="visually-hidden" aria-live="polite" aria-atomic="true">
+          {{ liveSolrSummary(overview) }}
+        </p>
+
+        <section aria-labelledby="solr-flow-heading" class="content-panel">
+          <p class="eyebrow">Projection flow</p>
+          <h2 id="solr-flow-heading">DSpace to discovery core</h2>
           <p>
             Solr is a rebuildable projection of DSpace. The
             <code>discovery</code> core on port 8983 powers keyword search,
-            facets, and counts for the Angular UI. DSpace keeps its own internal
-            Solr on port 8984 for repository-native search and OAI cores.
+            facets, and counts for the Angular UI.
           </p>
-
-          <ol class="hierarchy-list">
-            <li>
-              <strong>Discovery Solr (:8983)</strong>
-              <span
-                >Owned by <code>repository-api</code>; rebuilt from DSpace via
-                Reindex discovery.</span
-              >
-            </li>
-            <li>
-              <strong>DSpace Solr (:8984)</strong>
-              <span
-                >Internal to DSpace; not queried directly by the public
-                UI.</span
-              >
-            </li>
-            <li>
-              <strong>Query path</strong>
-              <span
-                >Discovery UI → repository-api → discovery core → typed
-                SearchResponse.</span
-              >
-            </li>
-          </ol>
+          <app-admin-flow-diagram
+            caption="DSpace items projected through DiscoveryProjectionService into Solr"
+            [steps]="solrFlowSteps(overview)"
+          />
         </section>
 
         <section aria-labelledby="solr-stats-heading" class="content-panel">
@@ -372,66 +356,94 @@
             {{ overview.statusMessage }}
           </p>
           }
-          <dl class="status-grid">
-            <div>
+
+          <dl class="admin-viz-stat-cards" @adminCardStagger>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Solr enabled</dt>
               <dd>{{ overview.enabled ? 'Yes' : 'No' }}</dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Core reachable</dt>
               <dd>{{ overview.reachable ? 'Yes' : 'No' }}</dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Core name</dt>
               <dd>{{ overview.core ?? 'discovery' }}</dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Indexed documents</dt>
-              <dd>{{ overview.indexedDocumentCount ?? 'Unavailable' }}</dd>
+              <dd>
+                <app-animated-counter
+                  [value]="overview.indexedDocumentCount ?? 0"
+                />
+              </dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Projection source</dt>
               <dd>{{ overview.projectionSource ?? 'Unknown' }}</dd>
             </div>
-            <div>
+            <div class="admin-viz-stat-card admin-viz-card">
               <dt>Projected objects</dt>
-              <dd>{{ overview.projectionObjectCount ?? 'Unavailable' }}</dd>
+              <dd>
+                <app-animated-counter
+                  [value]="overview.projectionObjectCount ?? 0"
+                />
+              </dd>
             </div>
           </dl>
 
           @if (overview.lastRebuiltAt) {
-          <p class="inline-status" role="status">
+          <p class="inline-status admin-viz-reindex-pulse" role="status">
+            <span
+              class="admin-viz-reindex-pulse__dot"
+              aria-hidden="true"
+            ></span>
             Last projection rebuild: {{ overview.lastRebuiltAt | date: 'medium'
             }}.
           </p>
           }
         </section>
 
-        <section aria-labelledby="solr-rebuild-heading" class="content-panel">
-          <h2 id="solr-rebuild-heading">Rebuild expectations</h2>
-          <ul class="feature-list">
-            <li>
-              <strong>Projection rule</strong>
-              <span
-                >Anything that exists only in Solr is a bug; the index must
-                always be rebuildable from DSpace.</span
-              >
-            </li>
-            <li>
-              <strong>Fixture fallback</strong>
-              <span
-                >When DSpace is empty or unreachable, the API indexes fixture
-                catalog entries and labels responses as FIXTURE.</span
-              >
-            </li>
-            <li>
-              <strong>Operator action</strong>
-              <span
-                >Use Reindex discovery on the Repository sync tab after apply or
-                a DSpace restore.</span
-              >
-            </li>
-          </ul>
+        <section aria-labelledby="solr-index-viz-heading" class="content-panel">
+          <h2 id="solr-index-viz-heading">Indexed vs repository items</h2>
+          <p>
+            Compare Solr document counts with DSpace items. Fixture fallback is
+            labeled when the repository is empty or unreachable.
+          </p>
+          <app-admin-donut-chart
+            caption="Solr indexed documents compared with repository item count"
+            [segments]="solrDonutSegments(overview)"
+          />
+          <dl class="status-grid">
+            <div>
+              <dt>Result source</dt>
+              <dd>
+                {{ overview.projectionBreakdown?.source ??
+                overview.projectionSource ?? 'Unknown' }}
+              </dd>
+            </div>
+            <div>
+              <dt>Repository items</dt>
+              <dd>
+                {{ overview.projectionBreakdown?.repositoryItemCount ??
+                'Unavailable' }}
+              </dd>
+            </div>
+            <div>
+              <dt>Indexed documents</dt>
+              <dd>
+                {{ overview.projectionBreakdown?.indexedCount ??
+                overview.indexedDocumentCount ?? 'Unavailable' }}
+              </dd>
+            </div>
+            <div>
+              <dt>Projected objects</dt>
+              <dd>
+                {{ overview.projectionBreakdown?.projectedCount ??
+                overview.projectionObjectCount ?? 'Unavailable' }}
+              </dd>
+            </div>
+          </dl>
         </section>
         }
       </div>

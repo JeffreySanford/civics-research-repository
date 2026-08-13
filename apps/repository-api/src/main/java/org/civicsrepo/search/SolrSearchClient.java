@@ -89,6 +89,45 @@ public class SolrSearchClient {
         }
     }
 
+    /** Program facet counts from the discovery core, when Solr is reachable. */
+    public Map<ResearchProgram, Integer> programFacetCounts() {
+        if (!isEnabled()) {
+            return Map.of();
+        }
+
+        try {
+            String uri = baseUrl + "/" + encode(core)
+                    + "/select?q=*:*&rows=0&wt=json&facet=true&facet.mincount=1&facet.field="
+                    + encode("program_s");
+            HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 300) {
+                return Map.of();
+            }
+            JsonNode values =
+                    objectMapper.readTree(response.body()).path("facet_counts").path("facet_fields").path("program_s");
+            Map<ResearchProgram, Integer> counts = new LinkedHashMap<>();
+            for (int index = 0; index + 1 < values.size(); index += 2) {
+                String programValue = values.get(index).asText();
+                int count = values.get(index + 1).asInt();
+                try {
+                    counts.put(ResearchProgram.valueOf(programValue), count);
+                } catch (IllegalArgumentException exception) {
+                    counts.put(ResearchProgram.OTHER, counts.getOrDefault(ResearchProgram.OTHER, 0) + count);
+                }
+            }
+            return counts;
+        } catch (IOException | InterruptedException exception) {
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return Map.of();
+        }
+    }
+
     public void indexResearchObjects(List<SearchResult> results) {
         if (!isEnabled()) {
             return;

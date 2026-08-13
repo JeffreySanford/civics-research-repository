@@ -444,6 +444,12 @@ export interface components {
       lastSyncStartedAt?: string;
       /** @description Human-readable note when stats are partial or DSpace is unavailable. */
       statusMessage?: string;
+      /** @description Item counts grouped by research program when Solr or sync history is available. */
+      programCounts?: components['schemas']['ProgramCount'][];
+      /** @description Aggregated sync action counts from recent jobs. */
+      recentSyncActionSummary?: components['schemas']['SyncActionSummary'][];
+      /** @description Key Dublin Core and crr.* metadata fields stored on synced items. */
+      storedMetadataFields?: string[];
     };
     SolrOverview: {
       /** @description Whether a Solr base URL and core are configured. */
@@ -464,6 +470,24 @@ export interface components {
       lastRebuiltAt?: string;
       /** @description Human-readable note when stats are partial or Solr is unavailable. */
       statusMessage?: string;
+      projectionBreakdown?: components['schemas']['ProjectionBreakdown'];
+    };
+    ProgramCount: {
+      program: components['schemas']['ResearchProgram'];
+      count: number;
+    };
+    SyncActionSummary: {
+      actionType: string;
+      count: number;
+    };
+    ProjectionBreakdown: {
+      /** @description Documents currently in the discovery Solr core. */
+      indexedCount: number;
+      /** @description Objects the API last projected into Solr. */
+      projectedCount: number;
+      /** @description DSpace discoverable item count when available as the projection denominator. */
+      repositoryItemCount?: number;
+      source: components['schemas']['RepositorySource'];
     };
     SyncRequest: {
       mode: components['schemas']['SyncMode'];

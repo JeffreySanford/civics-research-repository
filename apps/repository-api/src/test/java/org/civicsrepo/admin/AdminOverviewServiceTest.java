@@ -5,10 +5,13 @@ import static org.mockito.BDDMockito.given;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.civicsrepo.dspace.DspaceRestClient;
+import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.SyncAction;
 import org.civicsrepo.generated.dto.SyncJob;
 import org.civicsrepo.generated.dto.SyncMode;
 import org.civicsrepo.generated.dto.SyncSource;
@@ -44,6 +47,15 @@ class AdminOverviewServiceTest {
 
     @Test
     void buildsDspaceOverviewWhenRepositoryIsReachable() {
+        given(syncService.findRecentJobs())
+                .willReturn(List.of(new SyncJob(
+                        JOB_ID,
+                        SyncMode.APPLY,
+                        SyncSource.TIGER_LINE,
+                        SyncStatus.APPLIED,
+                        OffsetDateTime.parse("2026-08-11T19:00:00Z"),
+                        List.of(new SyncAction(
+                                SyncAction.ActionTypeEnum.UPSERT_ITEM, "Demo item", "Upsert metadata.")))));
         given(dspaceRestClient.isReachable()).willReturn(true);
         given(dspaceRestClient.isReadEnabled()).willReturn(true);
         given(dspaceRestClient.isWriteEnabled()).willReturn(true);
@@ -55,14 +67,8 @@ class AdminOverviewServiceTest {
                 .willReturn(List.of(new DspaceRestClient.ContainerSummary(
                         "22222222-2222-4222-8222-222222222222", "TIGER/Line Geospatial Files")));
         given(dspaceRestClient.countDiscoverableItems()).willReturn(Optional.of(2));
-        given(syncService.findRecentJobs())
-                .willReturn(List.of(new SyncJob(
-                        JOB_ID,
-                        SyncMode.APPLY,
-                        SyncSource.TIGER_LINE,
-                        SyncStatus.APPLIED,
-                        OffsetDateTime.parse("2026-08-11T19:00:00Z"),
-                        List.of())));
+        given(solrSearchClient.programFacetCounts())
+                .willReturn(Map.of(ResearchProgram.TIGER_LINE, 2));
 
         var overview = adminOverviewService.dspaceOverview();
 
@@ -70,10 +76,20 @@ class AdminOverviewServiceTest {
         assertThat(overview.getItemCount()).isEqualTo(2);
         assertThat(overview.getCommunities()).hasSize(1);
         assertThat(overview.getLastSyncStatus()).isEqualTo(SyncStatus.APPLIED);
+        assertThat(overview.getStoredMetadataFields()).contains("crr.program");
+        assertThat(overview.getRecentSyncActionSummary()).singleElement().satisfies((summary) -> {
+            assertThat(summary.getActionType()).isEqualTo("UPSERT_ITEM");
+            assertThat(summary.getCount()).isEqualTo(1);
+        });
+        assertThat(overview.getProgramCounts()).singleElement().satisfies((count) -> {
+            assertThat(count.getProgram()).isEqualTo(ResearchProgram.TIGER_LINE);
+            assertThat(count.getCount()).isEqualTo(2);
+        });
     }
 
     @Test
     void reportsDisabledDspaceReadsWithoutCallingTheRepository() {
+        given(syncService.findRecentJobs()).willReturn(List.of());
         given(dspaceRestClient.isReachable()).willReturn(false);
         given(dspaceRestClient.isReadEnabled()).willReturn(false);
         given(dspaceRestClient.isWriteEnabled()).willReturn(false);
@@ -93,11 +109,20 @@ class AdminOverviewServiceTest {
         given(discoveryProjectionService.state())
                 .willReturn(new ProjectionState(
                         RepositorySource.REPOSITORY, 4, OffsetDateTime.parse("2026-08-11T19:00:05Z")));
+        given(dspaceRestClient.isReadEnabled()).willReturn(true);
+        given(dspaceRestClient.isReachable()).willReturn(true);
+        given(dspaceRestClient.countDiscoverableItems()).willReturn(Optional.of(4));
 
         var overview = adminOverviewService.solrOverview();
 
         assertThat(overview.getIndexedDocumentCount()).isEqualTo(4);
         assertThat(overview.getProjectionSource()).isEqualTo(RepositorySource.REPOSITORY);
         assertThat(overview.getLastRebuiltAt()).isEqualTo(OffsetDateTime.parse("2026-08-11T19:00:05Z"));
+        assertThat(overview.getProjectionBreakdown()).satisfies((breakdown) -> {
+            assertThat(breakdown.getIndexedCount()).isEqualTo(4);
+            assertThat(breakdown.getProjectedCount()).isEqualTo(4);
+            assertThat(breakdown.getRepositoryItemCount()).isEqualTo(4);
+            assertThat(breakdown.getSource()).isEqualTo(RepositorySource.REPOSITORY);
+        });
     }
 }

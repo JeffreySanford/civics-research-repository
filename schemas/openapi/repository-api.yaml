@@ -848,6 +848,21 @@ components:
         statusMessage:
           type: string
           description: Human-readable note when stats are partial or DSpace is unavailable.
+        programCounts:
+          type: array
+          description: Item counts grouped by research program when Solr or sync history is available.
+          items:
+            $ref: '#/components/schemas/ProgramCount'
+        recentSyncActionSummary:
+          type: array
+          description: Aggregated sync action counts from recent jobs.
+          items:
+            $ref: '#/components/schemas/SyncActionSummary'
+        storedMetadataFields:
+          type: array
+          description: Key Dublin Core and crr.* metadata fields stored on synced items.
+          items:
+            type: string
     SolrOverview:
       type: object
       required: [enabled, reachable]
@@ -879,6 +894,44 @@ components:
         statusMessage:
           type: string
           description: Human-readable note when stats are partial or Solr is unavailable.
+        projectionBreakdown:
+          $ref: '#/components/schemas/ProjectionBreakdown'
+    ProgramCount:
+      type: object
+      required: [program, count]
+      properties:
+        program:
+          $ref: '#/components/schemas/ResearchProgram'
+        count:
+          type: integer
+          minimum: 0
+    SyncActionSummary:
+      type: object
+      required: [actionType, count]
+      properties:
+        actionType:
+          type: string
+        count:
+          type: integer
+          minimum: 0
+    ProjectionBreakdown:
+      type: object
+      required: [indexedCount, projectedCount, source]
+      properties:
+        indexedCount:
+          type: integer
+          minimum: 0
+          description: Documents currently in the discovery Solr core.
+        projectedCount:
+          type: integer
+          minimum: 0
+          description: Objects the API last projected into Solr.
+        repositoryItemCount:
+          type: integer
+          minimum: 0
+          description: DSpace discoverable item count when available as the projection denominator.
+        source:
+          $ref: '#/components/schemas/RepositorySource'
     SyncRequest:
       type: object
       required: [mode, source]

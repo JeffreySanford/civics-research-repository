@@ -1,12 +1,22 @@
 package org.civicsrepo.admin;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.generated.dto.DspaceContainerSummary;
 import org.civicsrepo.generated.dto.DspaceOverview;
+import org.civicsrepo.generated.dto.ProgramCount;
+import org.civicsrepo.generated.dto.ProjectionBreakdown;
+import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SolrOverview;
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncActionSummary;
 import org.civicsrepo.generated.dto.SyncJob;
+import org.civicsrepo.generated.dto.SyncSource;
 import org.civicsrepo.repository.DiscoveryProjectionService;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.search.SolrSearchClient;
@@ -15,6 +25,16 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AdminOverviewService {
+    private static final List<String> STORED_METADATA_FIELDS = List.of(
+            "dc.title",
+            "dc.description",
+            "dc.date.issued",
+            "crr.program",
+            "crr.geography",
+            "crr.file.manifest",
+            "crr.releaseDate",
+            "crr.sourceUrl");
+
     private final DspaceRestClient dspaceRestClient;
     private final SolrSearchClient solrSearchClient;
     private final DiscoveryProjectionService discoveryProjectionService;
@@ -37,9 +57,16 @@ public class AdminOverviewService {
                 dspaceRestClient.isReadEnabled(),
                 dspaceRestClient.isWriteEnabled());
 
+        overview.storedMetadataFields(STORED_METADATA_FIELDS);
+
+        List<SyncJob> recentJobs = syncService.findRecentJobs();
+        overview.recentSyncActionSummary(summarizeRecentActions(recentJobs));
+
         if (!dspaceRestClient.isReadEnabled()) {
-            return overview.statusMessage(
-                    "DSpace reads are disabled. Set CIVICS_DSPACE_BASE_URL to enable repository stats.");
+            return overview
+                    .statusMessage(
+                            "DSpace reads are disabled. Set CIVICS_DSPACE_BASE_URL to enable repository stats.")
+                    .programCounts(programCountsFromJobs(recentJobs));
         }
 
         if (!dspaceRestClient.baseUrl().isBlank()) {
@@ -47,8 +74,10 @@ public class AdminOverviewService {
         }
 
         if (!overview.getReachable()) {
-            return overview.statusMessage(
-                    "DSpace REST is not reachable. Start the dspace-rest profile and run pnpm run dspace:seed.");
+            return overview
+                    .statusMessage(
+                            "DSpace REST is not reachable. Start the dspace-rest profile and run pnpm run dspace:seed.")
+                    .programCounts(programCountsFromJobs(recentJobs));
         }
 
         List<DspaceRestClient.ContainerSummary> communities = dspaceRestClient.listCommunities();
@@ -61,11 +90,13 @@ public class AdminOverviewService {
 
         dspaceRestClient.countDiscoverableItems().ifPresent(overview::itemCount);
 
-        Optional<SyncJob> latestJob = syncService.findRecentJobs().stream().findFirst();
+        Optional<SyncJob> latestJob = recentJobs.stream().findFirst();
         latestJob.ifPresent((job) -> overview
                 .lastSyncStatus(job.getStatus())
                 .lastSyncSource(job.getSource())
                 .lastSyncStartedAt(job.getStartedAt()));
+
+        overview.programCounts(resolveProgramCounts(recentJobs));
 
         return overview;
     }
@@ -86,13 +117,26 @@ public class AdminOverviewService {
             overview.core(solrSearchClient.coreName());
         }
 
-        solrSearchClient.documentCount().ifPresent(overview::indexedDocumentCount);
+        Optional<Integer> indexedCount = solrSearchClient.documentCount();
+        indexedCount.ifPresent(overview::indexedDocumentCount);
 
         ProjectionState projection = discoveryProjectionService.state();
         overview
                 .projectionSource(projection.source())
                 .projectionObjectCount(projection.objectCount())
                 .lastRebuiltAt(projection.rebuiltAt());
+
+        Optional<Integer> repositoryItemCount =
+                dspaceRestClient.isReadEnabled() && dspaceRestClient.isReachable()
+                        ? dspaceRestClient.countDiscoverableItems()
+                        : Optional.empty();
+
+        ProjectionBreakdown breakdown = new ProjectionBreakdown(
+                        indexedCount.orElse(0),
+                        projection.objectCount(),
+                        projection.source())
+                .repositoryItemCount(repositoryItemCount.orElse(null));
+        overview.projectionBreakdown(breakdown);
 
         if (!overview.getReachable()) {
             overview.statusMessage(
@@ -101,6 +145,56 @@ public class AdminOverviewService {
         }
 
         return overview;
+    }
+
+    private List<ProgramCount> resolveProgramCounts(List<SyncJob> recentJobs) {
+        Map<ResearchProgram, Integer> solrCounts = solrSearchClient.programFacetCounts();
+        if (!solrCounts.isEmpty()) {
+            return solrCounts.entrySet().stream()
+                    .sorted(Comparator.comparing((entry) -> entry.getKey().getValue()))
+                    .map((entry) -> new ProgramCount(entry.getKey(), entry.getValue()))
+                    .toList();
+        }
+        return programCountsFromJobs(recentJobs);
+    }
+
+    private List<ProgramCount> programCountsFromJobs(List<SyncJob> recentJobs) {
+        Map<ResearchProgram, Integer> counts = new LinkedHashMap<>();
+        for (SyncJob job : recentJobs) {
+            if (job.getSource() != null) {
+                counts.merge(toResearchProgram(job.getSource()), 1, Integer::sum);
+            }
+        }
+        return counts.entrySet().stream()
+                .sorted(Comparator.comparing((entry) -> entry.getKey().getValue()))
+                .map((entry) -> new ProgramCount(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    private ResearchProgram toResearchProgram(SyncSource source) {
+        return switch (source) {
+            case TIGER_LINE -> ResearchProgram.TIGER_LINE;
+            case LODES -> ResearchProgram.LODES;
+            case ACS_PUMS -> ResearchProgram.ACS;
+            case SIPP -> ResearchProgram.SIPP;
+            case CPS -> ResearchProgram.CPS;
+            case USGS_EARTHQUAKES -> ResearchProgram.USGS;
+        };
+    }
+
+    private List<SyncActionSummary> summarizeRecentActions(List<SyncJob> recentJobs) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (SyncJob job : recentJobs) {
+            for (SyncAction action : job.getActions()) {
+                String actionType =
+                        action.getActionType() == null ? "UNKNOWN" : action.getActionType().getValue();
+                counts.merge(actionType, 1, Integer::sum);
+            }
+        }
+        List<SyncActionSummary> summaries = new ArrayList<>();
+        counts.forEach((actionType, count) -> summaries.add(new SyncActionSummary(actionType, count)));
+        summaries.sort(Comparator.comparing(SyncActionSummary::getActionType));
+        return summaries;
     }
 
     private DspaceContainerSummary toContainerSummary(DspaceRestClient.ContainerSummary container) {

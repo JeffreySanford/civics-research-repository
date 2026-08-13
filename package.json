@@ -87,6 +87,7 @@
     "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
   },
   "dependencies": {
+    "@angular/animations": "22.1.1",
     "@angular/cdk": "22.1.1",
     "@angular/common": "22.1.1",
     "@angular/compiler": "22.1.1",
