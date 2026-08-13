@@ -4,6 +4,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.net.URI;
@@ -40,6 +41,9 @@ class MapsControllerTest {
 
     @MockitoBean
     private SaipeCountyChoroplethService saipeCountyChoroplethService;
+
+    @MockitoBean
+    private UsgsHydrographyTileService usgsHydrographyTileService;
 
     @Test
     void serializesDatasetMapLayersIncludingAttribution() throws Exception {
@@ -110,6 +114,24 @@ class MapsControllerTest {
     void rejectsANonNumericMagnitudeFilter() throws Exception {
         mockMvc.perform(get("/overlays/usgs/earthquakes").param("minMagnitude", "strong"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void proxiesHydrographyExportTilesAsPng() throws Exception {
+        given(usgsHydrographyTileService.exportTile("-100,40,-99,41", 3857, 3857, "256,256", true))
+                .willReturn(UsgsHydrographyTileService.TRANSPARENT_PNG);
+
+        mockMvc.perform(get("/overlays/usgs/hydrography/export")
+                        .param("bbox", "-100,40,-99,41")
+                        .param("bboxSR", "3857")
+                        .param("imageSR", "3857")
+                        .param("size", "256,256")
+                        .param("transparent", "true"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "image/png"))
+                .andExpect(header().exists("Cache-Control"));
+
+        verify(usgsHydrographyTileService).exportTile("-100,40,-99,41", 3857, 3857, "256,256", true);
     }
 
     @Test

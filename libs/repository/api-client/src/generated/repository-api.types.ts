@@ -140,6 +140,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/overlays/usgs/hydrography/export': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Proxy USGS 3DHP hydrography raster tile export.
+     * @description Fetches ArcGIS MapServer `/export` tiles from The National Map on the server so the discovery UI can load hydrography without cross-origin browser requests.
+     */
+    get: operations['getUsgsHydrographyTileExport'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/accessibility/evidence': {
     parameters: {
       query?: never;
@@ -328,7 +348,7 @@ export interface components {
       attribution: string;
       /** @default false */
       visibleByDefault: boolean;
-      /** @description Optional MapLibre raster tile URL template for reference overlays. */
+      /** @description Optional MapLibre raster tile URL template for reference overlays. Use `{bbox-epsg-3857}` for dynamic ArcGIS MapServer `/export` endpoints when no cached `/tile/{z}/{y}/{x}` service exists. Hydrography templates are served through `/overlays/usgs/hydrography/export` on this API. */
       rasterTileUrlTemplate?: string;
     };
     CensusAreaBoundary: {
@@ -899,6 +919,36 @@ export interface operations {
       400: components['responses']['BadRequest'];
       500: components['responses']['InternalServerError'];
       503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getUsgsHydrographyTileExport: {
+    parameters: {
+      query: {
+        /** @description Comma-separated west,south,east,north in EPSG:3857 (Web Mercator). */
+        bbox: string;
+        bboxSR?: number;
+        imageSR?: number;
+        size?: string;
+        f?: string;
+        transparent?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Hydrography raster tile PNG. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'image/png': string;
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
     };
   };
   getAccessibilityEvidence: {

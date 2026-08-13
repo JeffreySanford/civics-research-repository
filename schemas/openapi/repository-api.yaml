@@ -208,6 +208,58 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /overlays/usgs/hydrography/export:
+    get:
+      tags: [Maps]
+      operationId: getUsgsHydrographyTileExport
+      summary: Proxy USGS 3DHP hydrography raster tile export.
+      description: >-
+        Fetches ArcGIS MapServer `/export` tiles from The National Map on the server so the
+        discovery UI can load hydrography without cross-origin browser requests.
+      parameters:
+        - name: bbox
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated west,south,east,north in EPSG:3857 (Web Mercator).
+        - name: bboxSR
+          in: query
+          schema:
+            type: integer
+            default: 3857
+        - name: imageSR
+          in: query
+          schema:
+            type: integer
+            default: 3857
+        - name: size
+          in: query
+          schema:
+            type: string
+            default: '256,256'
+        - name: f
+          in: query
+          schema:
+            type: string
+            default: image
+        - name: transparent
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Hydrography raster tile PNG.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /accessibility/evidence:
     get:
       tags: [Evidence]
@@ -624,7 +676,8 @@ components:
           description: >-
             Optional MapLibre raster tile URL template for reference overlays.
             Use `{bbox-epsg-3857}` for dynamic ArcGIS MapServer `/export` endpoints
-            when no cached `/tile/{z}/{y}/{x}` service exists.
+            when no cached `/tile/{z}/{y}/{x}` service exists. Hydrography templates
+            are served through `/overlays/usgs/hydrography/export` on this API.
     CensusAreaBoundary:
       type: object
       required:

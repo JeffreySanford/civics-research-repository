@@ -38,6 +38,7 @@ import type {
   SaipeCountyChoropleth,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
+import { REPOSITORY_API_BASE_URL } from 'repository-api-client';
 import { MapsActions } from '../state/maps/maps.actions';
 import {
   selectCensusAreaBoundaries,
@@ -68,6 +69,7 @@ import {
   readMapDebugSnapshot,
   type MapDebugSnapshot,
   USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE,
+  resolveRasterTileUrlTemplate,
   whenMapStyleReady,
 } from './maps-page.utils';
 import { environment } from '../../environments/environment';
@@ -132,6 +134,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly store = inject(Store);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly repositoryApiBaseUrl = inject(REPOSITORY_API_BASE_URL);
   private map: MapLibreMap | null = null;
   private pendingBoundary: CensusAreaBoundary | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
@@ -1044,9 +1047,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const tileTemplate =
+    const tileTemplate = resolveRasterTileUrlTemplate(
       this.pendingHydrographyLayer.rasterTileUrlTemplate ??
-      USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE;
+        USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE,
+      this.repositoryApiBaseUrl,
+    );
 
     if (!this.map.getSource('usgs-3hp-hydrography')) {
       this.map.addSource('usgs-3hp-hydrography', {

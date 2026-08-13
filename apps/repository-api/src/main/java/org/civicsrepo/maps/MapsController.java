@@ -1,12 +1,16 @@
 package org.civicsrepo.maps;
 
 import java.util.List;
+import java.time.Duration;
 import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.civicsrepo.generated.dto.LodesFlowOverlay;
 import org.civicsrepo.generated.dto.MapLayer;
 import org.civicsrepo.generated.dto.SaipeCountyChoropleth;
 import org.civicsrepo.generated.dto.UsgsEarthquakeOverlay;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,18 +26,21 @@ public class MapsController {
     private final UsgsEarthquakeService usgsEarthquakeService;
     private final LodesFlowService lodesFlowService;
     private final SaipeCountyChoroplethService saipeCountyChoroplethService;
+    private final UsgsHydrographyTileService usgsHydrographyTileService;
 
     public MapsController(
             CensusAreaBoundaryService censusAreaBoundaryService,
             MapLayerService mapLayerService,
             UsgsEarthquakeService usgsEarthquakeService,
             LodesFlowService lodesFlowService,
-            SaipeCountyChoroplethService saipeCountyChoroplethService) {
+            SaipeCountyChoroplethService saipeCountyChoroplethService,
+            UsgsHydrographyTileService usgsHydrographyTileService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.mapLayerService = mapLayerService;
         this.usgsEarthquakeService = usgsEarthquakeService;
         this.lodesFlowService = lodesFlowService;
         this.saipeCountyChoroplethService = saipeCountyChoroplethService;
+        this.usgsHydrographyTileService = usgsHydrographyTileService;
     }
 
     @GetMapping("/datasets/{datasetId}/map-layers")
@@ -50,6 +57,20 @@ public class MapsController {
     public UsgsEarthquakeOverlay getUsgsEarthquakeOverlay(
             @RequestParam(defaultValue = "0") double minMagnitude, @RequestParam(defaultValue = "7") int days) {
         return usgsEarthquakeService.findEarthquakes(minMagnitude, days);
+    }
+
+    @GetMapping(value = "/overlays/usgs/hydrography/export", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> getUsgsHydrographyTileExport(
+            @RequestParam String bbox,
+            @RequestParam(defaultValue = "3857") int bboxSR,
+            @RequestParam(defaultValue = "3857") int imageSR,
+            @RequestParam(defaultValue = "256,256") String size,
+            @RequestParam(defaultValue = "true") boolean transparent) {
+        byte[] tile = usgsHydrographyTileService.exportTile(bbox, bboxSR, imageSR, size, transparent);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic())
+                .contentType(MediaType.IMAGE_PNG)
+                .body(tile);
     }
 
     @GetMapping("/overlays/census/lodes-flow")

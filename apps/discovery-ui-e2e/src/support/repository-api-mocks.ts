@@ -116,7 +116,7 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
           attribution: 'U.S. Geological Survey 3D Hydrography Program',
           visibleByDefault: false,
           rasterTileUrlTemplate:
-            'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&f=image&transparent=true',
+            '/overlays/usgs/hydrography/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&f=image&transparent=true',
         },
         {
           id: 'usgs-earthquakes-preview',
@@ -213,6 +213,16 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     await route.fulfill({
       contentType: 'application/json',
       json: saipeChoropleth(geography),
+    });
+  });
+
+  await page.route(`**/api/overlays/usgs/hydrography/export**`, async (route) => {
+    await route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X2ZkAAAAASUVORK5CYII=',
+        'base64',
+      ),
     });
   });
 

@@ -3,17 +3,45 @@ import {
   configureMapLibreWorker,
   findCensusAreaForPoint,
   readMapDebugSnapshot,
+  resolveRasterTileUrlTemplate,
   USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE,
   whenMapStyleReady,
 } from './maps-page.utils';
 
 describe('USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE', () => {
-  it('uses ArcGIS export bbox tiles for the dynamic 3DHP_all MapServer', () => {
+  it('uses the proxied ArcGIS export bbox template', () => {
     expect(USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE).toContain(
-      '/export?bbox={bbox-epsg-3857}',
+      '/overlays/usgs/hydrography/export?bbox={bbox-epsg-3857}',
+    );
+    expect(USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE).not.toContain(
+      'hydro.nationalmap.gov',
     );
     expect(USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE).not.toContain(
       '/tile/{z}/{y}/{x}',
+    );
+  });
+});
+
+describe('resolveRasterTileUrlTemplate', () => {
+  it('joins relative API paths to the repository base URL', () => {
+    expect(
+      resolveRasterTileUrlTemplate(
+        '/overlays/usgs/hydrography/export?bbox={bbox-epsg-3857}',
+        'http://localhost:8080/api',
+      ),
+    ).toBe(
+      'http://localhost:8080/api/overlays/usgs/hydrography/export?bbox={bbox-epsg-3857}',
+    );
+  });
+
+  it('rewrites legacy National Map URLs to the proxied export endpoint', () => {
+    expect(
+      resolveRasterTileUrlTemplate(
+        'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/export?bbox={bbox-epsg-3857}&size=256,256',
+        'http://localhost:8080/api',
+      ),
+    ).toBe(
+      'http://localhost:8080/api/overlays/usgs/hydrography/export?bbox={bbox-epsg-3857}&size=256,256',
     );
   });
 });

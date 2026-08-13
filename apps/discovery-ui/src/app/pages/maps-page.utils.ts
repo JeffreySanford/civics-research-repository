@@ -5,13 +5,46 @@ import type { CensusAreaBoundary } from 'repository-api-client';
 export const MIN_ZOOM_FOR_PAN_AREA_SYNC = 5;
 
 /**
- * ArcGIS MapServer export template for the dynamic 3DHP_all service.
+ * Proxied ArcGIS MapServer export template for the dynamic 3DHP_all service.
  *
- * That service has no fused tile cache, so `/tile/{z}/{y}/{x}` always 404s. MapLibre requests
- * `{bbox-epsg-3857}` tiles through `/export` instead.
+ * MapLibre requests `{bbox-epsg-3857}` tiles through repository-api so the browser never
+ * fetches hydro.nationalmap.gov directly (that host does not send CORS headers).
  */
 export const USGS_3HP_HYDROGRAPHY_TILE_TEMPLATE =
-  'https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&f=image&transparent=true';
+  '/overlays/usgs/hydrography/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&f=image&transparent=true';
+
+/**
+ * Resolves a MapLibre raster tile URL template against the repository API base URL.
+ *
+ * Rewrites legacy National Map URLs to the proxied export endpoint for backwards compatibility.
+ */
+export function resolveRasterTileUrlTemplate(
+  template: string,
+  apiBaseUrl: string,
+): string {
+  const normalizedBase = apiBaseUrl.replace(/\/$/, '');
+
+  if (template.includes('hydro.nationalmap.gov')) {
+    const queryStart = template.indexOf('?');
+    const query = queryStart >= 0 ? template.slice(queryStart + 1) : '';
+    return `${normalizedBase}/overlays/usgs/hydrography/export?${query}`;
+  }
+
+  if (template.startsWith('http://') || template.startsWith('https://')) {
+    return template;
+  }
+
+  if (template.startsWith('/api/')) {
+    const apiRoot = normalizedBase.replace(/\/api$/, '');
+    return `${apiRoot}${template}`;
+  }
+
+  if (template.startsWith('/')) {
+    return `${normalizedBase}${template}`;
+  }
+
+  return `${normalizedBase}/${template}`;
+}
 
 /** MapLibre module shape used when configuring the GeoJSON worker. */
 export type MapLibreModule = {
