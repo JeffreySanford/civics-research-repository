@@ -4,6 +4,7 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
@@ -15,6 +16,7 @@ import {
   datasetsFeatureKey,
   datasetsReducer,
 } from './state/datasets/datasets.reducer';
+import { ErrorNotificationEffects } from './state/error-notification/error-notification.effects';
 import { MapsEffects } from './state/maps/maps.effects';
 import { mapsFeatureKey, mapsReducer } from './state/maps/maps.reducer';
 import { SearchEffects } from './state/search/search.effects';
@@ -25,6 +27,7 @@ import { syncFeatureKey, syncReducer } from './state/sync/sync.reducer';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    provideAnimations(),
     provideHttpClient(),
     provideRouter(appRoutes),
     provideStore(
@@ -44,7 +47,13 @@ export const appConfig: ApplicationConfig = {
     provideState(mapsFeatureKey, mapsReducer),
     provideState(searchFeatureKey, searchReducer),
     provideState(syncFeatureKey, syncReducer),
-    provideEffects([DatasetsEffects, MapsEffects, SearchEffects, SyncEffects]),
+    provideEffects([
+      DatasetsEffects,
+      ErrorNotificationEffects,
+      MapsEffects,
+      SearchEffects,
+      SyncEffects,
+    ]),
     provideRouterStore(),
     provideStoreDevtools({
       maxAge: 25,

@@ -117,7 +117,9 @@ describe('DatasetsEffects', () => {
     const emitted = await firstValueFrom(effects.openDataset$);
 
     expect(emitted).toEqual(
-      DatasetsActions.datasetFailed({ error: 'Map layers unavailable' }),
+      DatasetsActions.datasetFailed({
+        error: { code: 'UNKNOWN', message: 'Map layers unavailable' },
+      }),
     );
   });
 
@@ -139,7 +141,10 @@ describe('DatasetsEffects', () => {
 
     expect(emitted).toEqual(
       DatasetsActions.datasetFailed({
-        error: 'Dataset detail failed to load.',
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Dataset detail failed to load.',
+        },
       }),
     );
   });

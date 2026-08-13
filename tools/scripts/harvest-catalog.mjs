@@ -15,6 +15,8 @@ import { probeUrl } from './lib/url-probe.mjs';
  *   node tools/scripts/harvest-catalog.mjs                 report to stdout
  *   node tools/scripts/harvest-catalog.mjs --json out.json   also write machine-readable report
  *   node tools/scripts/harvest-catalog.mjs --write           bump program vintages when probes succeed
+ *   node tools/scripts/harvest-catalog.mjs --discover-new      report candidate catalog entries not yet seeded
+ *   node tools/scripts/harvest-catalog.mjs --write-new         append verified new areas after --discover-new
  *   node tools/scripts/harvest-catalog.mjs --verify-all      probe every catalog item URL (slow)
  *   node tools/scripts/harvest-catalog.mjs --strict          exit 1 when verification fails (default reports only)
  *
@@ -26,6 +28,8 @@ const catalogPath = join(repoRoot, 'tools', 'dspace', 'catalog.json');
 
 const args = process.argv.slice(2);
 const writeCatalog = args.includes('--write');
+const discoverNew = args.includes('--discover-new');
+const writeNew = args.includes('--write-new');
 const verifyAll = args.includes('--verify-all');
 const strict = args.includes('--strict') || verifyAll;
 const jsonIndex = args.indexOf('--json');
@@ -224,6 +228,232 @@ async function discoverSequentialNational(program, catalog, step) {
   return result.ok ? candidate : null;
 }
 
+/** Optional territories beyond the fifty-two seeded state/DC/PR areas. */
+const OPTIONAL_TERRITORY_AREAS = [
+  { name: 'American Samoa', fips: '60', abbreviation: 'AS' },
+  { name: 'Guam', fips: '66', abbreviation: 'GU' },
+  { name: 'Northern Mariana Islands', fips: '69', abbreviation: 'MP' },
+  { name: 'U.S. Virgin Islands', fips: '78', abbreviation: 'VI' },
+];
+
+function catalogAreaKeys(catalog) {
+  return new Set(catalog.areas.map((area) => area.fips));
+}
+
+function existingItemIds(catalog) {
+  return new Set(expandCatalog(catalog).map((item) => item.id));
+}
+
+async function discoverTigerMissingAreas(program, catalog) {
+  const known = catalogAreaKeys(catalog);
+  const candidates = [];
+
+  for (const area of OPTIONAL_TERRITORY_AREAS) {
+    if (known.has(area.fips)) {
+      continue;
+    }
+    const item = buildItem(program, area, catalog);
+    const source = await probeUrl(item.sourceUrl);
+    if (source.ok) {
+      candidates.push({
+        kind: 'area',
+        programId: program.id,
+        reason:
+          'TIGER tract archive resolves for territory not yet in catalog.areas',
+        suggestedArea: area,
+        item,
+      });
+    }
+  }
+
+  return candidates;
+}
+
+async function discoverLodesMissingAreas(program, catalog) {
+  const known = new Set(catalog.areas.map((area) => area.name));
+  const candidates = [];
+
+  for (const area of catalog.areas) {
+    if (program.unavailableAreas?.[area.name]) {
+      continue;
+    }
+    const item = buildItem(program, area, catalog);
+    if (existingItemIds(catalog).has(item.id)) {
+      continue;
+    }
+    const source = await probeUrl(item.sourceUrl);
+    if (source.ok) {
+      candidates.push({
+        kind: 'catalog-item',
+        programId: program.id,
+        reason:
+          'LODES WAC resolves but item id is absent from expanded catalog',
+        item,
+      });
+    }
+  }
+
+  for (const areaName of Object.keys(program.unavailableAreas ?? {})) {
+    if (!known.has(areaName)) {
+      continue;
+    }
+    const area = catalog.areas.find((entry) => entry.name === areaName);
+    if (!area) {
+      continue;
+    }
+    const item = buildItem(program, area, catalog);
+    const source = await probeUrl(item.sourceUrl);
+    if (source.ok) {
+      candidates.push({
+        kind: 'availability',
+        programId: program.id,
+        reason: `${areaName} is marked unavailable but the WAC URL now resolves`,
+        item,
+        removeUnavailableArea: areaName,
+      });
+    }
+  }
+
+  return candidates;
+}
+
+async function discoverAcsMissingAreas(program, catalog) {
+  const candidates = [];
+  const ids = existingItemIds(catalog);
+
+  for (const area of catalog.areas) {
+    const item = buildItem(program, area, catalog);
+    if (ids.has(item.id)) {
+      continue;
+    }
+    const source = await probeUrl(item.sourceUrl);
+    if (source.ok) {
+      candidates.push({
+        kind: 'catalog-item',
+        programId: program.id,
+        reason:
+          'ACS PUMS archive resolves but item id is absent from expanded catalog',
+        item,
+      });
+    }
+  }
+
+  return candidates;
+}
+
+async function discoverNationalVintageEntry(program, catalog) {
+  const candidates = [];
+  for (const step of [1, 2]) {
+    const vintage = program.vintage + step;
+    const candidateProgram = programWithVintage(program, vintage);
+    const item = buildItem(candidateProgram, null, catalog);
+    if (existingItemIds(catalog).has(item.id)) {
+      continue;
+    }
+    const source = await probeUrl(item.sourceUrl);
+    if (source.ok) {
+      candidates.push({
+        kind: 'vintage-entry',
+        programId: program.id,
+        reason: `${program.id} ${vintage} resolves but catalog still lists vintage ${program.vintage}`,
+        suggestedVintage: vintage,
+        item,
+        suggestedProgramPatch: { ...program, vintage },
+      });
+    }
+  }
+  return candidates;
+}
+
+/** @type {Record<string, (program: object, catalog: object) => Promise<object[]>>} */
+const NEW_ENTRY_DISCOVERERS = {
+  TIGER_LINE: discoverTigerMissingAreas,
+  LODES: discoverLodesMissingAreas,
+  ACS: discoverAcsMissingAreas,
+  CPS: discoverNationalVintageEntry,
+  SIPP: discoverNationalVintageEntry,
+};
+
+async function discoverNewEntries(catalog) {
+  const candidates = [];
+  const programs = catalog.programs.filter((program) => program.enabled);
+
+  for (const program of programs) {
+    const discover = NEW_ENTRY_DISCOVERERS[program.id];
+    if (!discover) {
+      continue;
+    }
+
+    process.stdout.write(`Discovering new ${program.id} entries... `);
+    const found = await discover(program, catalog);
+    process.stdout.write(`${found.length} candidate(s)\n`);
+    candidates.push(...found);
+  }
+
+  return candidates;
+}
+
+function summarizeCandidates(candidates) {
+  const missingFromCatalog = candidates.filter(
+    (candidate) =>
+      candidate.kind === 'catalog-item' || candidate.kind === 'area',
+  );
+  const suggestedEntries = candidates.map((candidate) => ({
+    programId: candidate.programId,
+    id: candidate.item.id,
+    geography: candidate.item.geography,
+    vintage: candidate.item.vintage,
+    sourceUrl: candidate.item.sourceUrl,
+    reason: candidate.reason,
+    suggestedArea: candidate.suggestedArea ?? null,
+    suggestedVintage: candidate.suggestedVintage ?? null,
+  }));
+
+  return { missingFromCatalog, suggestedEntries };
+}
+
+function applyNewEntryUpdates(catalog, candidates) {
+  let changed = false;
+
+  for (const candidate of candidates) {
+    if (candidate.kind === 'area' && candidate.suggestedArea) {
+      const exists = catalog.areas.some(
+        (area) => area.fips === candidate.suggestedArea.fips,
+      );
+      if (!exists) {
+        catalog.areas.push(candidate.suggestedArea);
+        changed = true;
+      }
+    }
+
+    if (candidate.kind === 'availability' && candidate.removeUnavailableArea) {
+      const program = catalog.programs.find(
+        (entry) => entry.id === candidate.programId,
+      );
+      if (program?.unavailableAreas?.[candidate.removeUnavailableArea]) {
+        delete program.unavailableAreas[candidate.removeUnavailableArea];
+        changed = true;
+      }
+    }
+
+    if (candidate.kind === 'vintage-entry' && candidate.suggestedVintage) {
+      const program = catalog.programs.find(
+        (entry) => entry.id === candidate.programId,
+      );
+      if (program && program.vintage < candidate.suggestedVintage) {
+        program.vintage = candidate.suggestedVintage;
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) {
+    writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+  }
+
+  return changed;
+}
+
 async function discoverVintages(catalog) {
   const suggestions = [];
   const programs = catalog.programs.filter((program) => program.enabled);
@@ -274,6 +504,11 @@ const verificationTargets = verifyAll
   ? items
   : sampleVerificationTargets(items);
 
+let newEntryCandidates = [];
+if (discoverNew || writeNew) {
+  newEntryCandidates = await discoverNewEntries(catalog);
+}
+
 console.log(
   `Catalog harvest — ${items.length} expanded item(s), verifying ${verificationTargets.length} URL pair(s)${verifyAll ? '' : ' (one program sample; pass --verify-all for every item)'}.\n`,
 );
@@ -281,6 +516,7 @@ console.log(
 const verification = await runProbes(verificationTargets);
 const broken = verification.filter((entry) => !entry.ok);
 const vintageSuggestions = await discoverVintages(catalog);
+const newEntryReport = summarizeCandidates(newEntryCandidates);
 
 const report = {
   checkedAt: new Date().toISOString(),
@@ -301,7 +537,13 @@ const report = {
     })),
   },
   vintageSuggestions,
+  newEntries: {
+    candidateCount: newEntryCandidates.length,
+    missingFromCatalog: newEntryReport.missingFromCatalog.length,
+    candidates: newEntryReport.suggestedEntries,
+  },
   writeApplied: false,
+  writeNewApplied: false,
 };
 
 console.log('\nVerification summary');
@@ -329,6 +571,27 @@ if (vintageSuggestions.length > 0) {
   console.log('\nNo newer vintages discovered for enabled programs.');
 }
 
+if (discoverNew || writeNew) {
+  console.log('\nNew entry discovery');
+  if (newEntryCandidates.length === 0) {
+    console.log('  No verified new catalog candidates found.');
+  } else {
+    console.log(
+      `  ${newEntryCandidates.length} candidate(s); ${newEntryReport.missingFromCatalog.length} absent from expanded catalog.`,
+    );
+    for (const candidate of newEntryReport.suggestedEntries.slice(0, 12)) {
+      console.log(
+        `  - ${candidate.programId} ${candidate.id}: ${candidate.reason}`,
+      );
+    }
+    if (newEntryReport.suggestedEntries.length > 12) {
+      console.log(
+        `  ... and ${newEntryReport.suggestedEntries.length - 12} more (see --json report).`,
+      );
+    }
+  }
+}
+
 if (writeCatalog) {
   if (vintageSuggestions.length === 0) {
     console.log('\n--write: nothing to apply.');
@@ -345,6 +608,29 @@ if (writeCatalog) {
 } else if (vintageSuggestions.length > 0) {
   console.log(
     '\nPass --write to apply suggested vintage bumps to catalog.json.',
+  );
+}
+
+if (writeNew) {
+  if (newEntryCandidates.length === 0) {
+    console.log('\n--write-new: nothing to apply.');
+  } else {
+    const applied = applyNewEntryUpdates(catalog, newEntryCandidates);
+    report.writeNewApplied = applied;
+    console.log(
+      applied
+        ? `\n--write-new: updated catalog.json with ${newEntryCandidates.length} verified candidate(s).`
+        : '\n--write-new: candidates were already present; no changes written.',
+    );
+    if (applied) {
+      console.log(
+        'Next: pnpm run dspace:saf:generate && pnpm run dspace:seed && pnpm run reindex',
+      );
+    }
+  }
+} else if ((discoverNew || writeNew) && newEntryCandidates.length > 0) {
+  console.log(
+    '\nPass --write-new to append verified new areas or availability fixes to catalog.json.',
   );
 }
 

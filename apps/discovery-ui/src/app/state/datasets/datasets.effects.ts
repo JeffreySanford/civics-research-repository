@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import {
+  parseRepositoryError,
   RepositoryDatasetsApi,
   RepositoryMapsApi,
 } from 'repository-api-client';
@@ -28,10 +29,10 @@ export class DatasetsEffects {
           catchError((error: unknown) =>
             of(
               DatasetsActions.datasetFailed({
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Dataset detail failed to load.',
+                error: parseRepositoryError(
+                  error,
+                  'Dataset detail failed to load.',
+                ),
               }),
             ),
           ),

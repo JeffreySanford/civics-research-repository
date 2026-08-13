@@ -97,7 +97,10 @@ describe('mapsReducer', () => {
         censusAreaBoundaries: [censusAreaBoundary],
       },
       MapsActions.earthquakeOverlayFailed({
-        error: 'USGS overlay service unavailable.',
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'USGS overlay service unavailable.',
+        },
       }),
     );
 

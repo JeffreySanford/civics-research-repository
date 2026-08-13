@@ -129,7 +129,9 @@ describe('MapsEffects', () => {
     const emitted = await firstValueFrom(effects.loadMapData$);
 
     expect(emitted).toEqual(
-      MapsActions.mapDataFailed({ error: 'Boundaries unavailable' }),
+      MapsActions.mapDataFailed({
+        error: { code: 'UNKNOWN', message: 'Boundaries unavailable' },
+      }),
     );
   });
 
@@ -158,7 +160,12 @@ describe('MapsEffects', () => {
     const emitted = await firstValueFrom(effects.loadMapData$);
 
     expect(emitted).toEqual(
-      MapsActions.mapDataFailed({ error: 'Map data failed to load.' }),
+      MapsActions.mapDataFailed({
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Map data failed to load.',
+        },
+      }),
     );
   });
 
@@ -223,7 +230,10 @@ describe('MapsEffects', () => {
 
     expect(await firstValueFrom(effects.loadLayersForSelectedArea$)).toEqual(
       MapsActions.mapDataFailed({
-        error: 'Map layers for California failed to load.',
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'Map layers for California failed to load.',
+        },
       }),
     );
   });
@@ -247,7 +257,9 @@ describe('MapsEffects', () => {
       MapsActions.mapDataLoaded({ censusAreaBoundaries }),
     );
     expect(await firstValueFrom(effects.loadEarthquakeOverlay$)).toEqual(
-      MapsActions.earthquakeOverlayFailed({ error: 'USGS feed down' }),
+      MapsActions.earthquakeOverlayFailed({
+        error: { code: 'UNKNOWN', message: 'USGS feed down' },
+      }),
     );
   });
 });

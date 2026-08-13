@@ -1,0 +1,19 @@
+.mat-mdc-snack-bar-container {
+  &.snackbar-error {
+    --mdc-snackbar-container-color: #7a271a;
+    --mdc-snackbar-supporting-text-color: #fff1f0;
+    --mat-snack-bar-button-color: #ffd8d6;
+  }
+
+  &.snackbar-warn {
+    --mdc-snackbar-container-color: #713b12;
+    --mdc-snackbar-supporting-text-color: #fff8e6;
+    --mat-snack-bar-button-color: #ffe8b3;
+  }
+
+  &.snackbar-info {
+    --mdc-snackbar-container-color: #1e3a5f;
+    --mdc-snackbar-supporting-text-color: #eff6ff;
+    --mat-snack-bar-button-color: #bfdbfe;
+  }
+}

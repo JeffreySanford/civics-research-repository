@@ -3,6 +3,7 @@ import type {
   DatasetDetail,
   DatasetVersion,
   MapLayer,
+  RepositoryError,
 } from 'repository-api-client';
 
 export const DatasetsActions = createActionGroup({
@@ -14,6 +15,6 @@ export const DatasetsActions = createActionGroup({
       versions: DatasetVersion[];
       mapLayers: MapLayer[];
     }>(),
-    'Dataset Failed': props<{ error: string }>(),
+    'Dataset Failed': props<{ error: RepositoryError }>(),
   },
 });

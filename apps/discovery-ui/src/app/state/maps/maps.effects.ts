@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { catchError, map, mergeMap, of, switchMap, withLatestFrom } from 'rxjs';
-import { RepositoryMapsApi } from 'repository-api-client';
+import { parseRepositoryError, RepositoryMapsApi } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { selectSelectedGeography } from './maps.selectors';
 
@@ -33,7 +33,7 @@ export class MapsEffects {
           catchError((error: unknown) =>
             of(
               MapsActions.mapDataFailed({
-                error: this.errorMessage(error, 'Map data failed to load.'),
+                error: parseRepositoryError(error, 'Map data failed to load.'),
               }),
             ),
           ),
@@ -53,7 +53,7 @@ export class MapsEffects {
           catchError((error: unknown) =>
             of(
               MapsActions.earthquakeOverlayFailed({
-                error: this.errorMessage(
+                error: parseRepositoryError(
                   error,
                   'USGS earthquake overlay failed to load.',
                 ),
@@ -84,7 +84,7 @@ export class MapsEffects {
           catchError((error: unknown) =>
             of(
               MapsActions.mapDataFailed({
-                error: this.errorMessage(
+                error: parseRepositoryError(
                   error,
                   `Map layers for ${geography} failed to load.`,
                 ),
@@ -95,21 +95,4 @@ export class MapsEffects {
       ),
     ),
   );
-
-  private errorMessage(error: unknown, fallback: string): string {
-    if (this.isHttpError(error)) {
-      return fallback;
-    }
-
-    return error instanceof Error ? error.message : fallback;
-  }
-
-  private isHttpError(error: unknown): boolean {
-    return (
-      typeof error === 'object' &&
-      error !== null &&
-      'status' in error &&
-      'url' in error
-    );
-  }
 }

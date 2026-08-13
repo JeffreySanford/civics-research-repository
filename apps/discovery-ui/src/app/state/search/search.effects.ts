@@ -1,7 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap } from 'rxjs';
-import { RepositorySearchApi } from 'repository-api-client';
+import {
+  parseRepositoryError,
+  RepositorySearchApi,
+} from 'repository-api-client';
 import { SearchActions } from './search.actions';
 
 @Injectable()
@@ -18,10 +21,10 @@ export class SearchEffects {
           catchError((error: unknown) =>
             of(
               SearchActions.searchFailed({
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Search results failed to load.',
+                error: parseRepositoryError(
+                  error,
+                  'Search results failed to load.',
+                ),
               }),
             ),
           ),

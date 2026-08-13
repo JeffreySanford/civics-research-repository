@@ -1,19 +1,26 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, mergeMap, of } from 'rxjs';
-import { RepositoryAdminApi } from 'repository-api-client';
+import { Store } from '@ngrx/store';
+import { catchError, map, mergeMap, of, withLatestFrom } from 'rxjs';
+import {
+  parseRepositoryError,
+  RepositoryAdminApi,
+} from 'repository-api-client';
 import { SyncActions } from './sync.actions';
+import { selectSelectedSyncSource } from './sync.selectors';
 
 @Injectable()
 export class SyncEffects {
   private readonly actions$ = inject(Actions);
   private readonly adminApi = inject(RepositoryAdminApi);
+  private readonly store = inject(Store);
 
   readonly requestDryRun$ = createEffect(() =>
     this.actions$.pipe(
       ofType(SyncActions.dryRunRequested),
-      map(() =>
-        SyncActions.syncRequested({ mode: 'DRY_RUN', source: 'TIGER_LINE' }),
+      withLatestFrom(this.store.select(selectSelectedSyncSource)),
+      map(([, source]) =>
+        SyncActions.syncRequested({ mode: 'DRY_RUN', source }),
       ),
     ),
   );
@@ -21,18 +28,16 @@ export class SyncEffects {
   readonly requestApply$ = createEffect(() =>
     this.actions$.pipe(
       ofType(SyncActions.applyRequested),
-      map(() =>
-        SyncActions.syncRequested({ mode: 'APPLY', source: 'TIGER_LINE' }),
-      ),
+      withLatestFrom(this.store.select(selectSelectedSyncSource)),
+      map(([, source]) => SyncActions.syncRequested({ mode: 'APPLY', source })),
     ),
   );
 
   readonly requestDiff$ = createEffect(() =>
     this.actions$.pipe(
       ofType(SyncActions.diffRequested),
-      map(() =>
-        SyncActions.syncRequested({ mode: 'DIFF', source: 'TIGER_LINE' }),
-      ),
+      withLatestFrom(this.store.select(selectSelectedSyncSource)),
+      map(([, source]) => SyncActions.syncRequested({ mode: 'DIFF', source })),
     ),
   );
 
@@ -45,10 +50,10 @@ export class SyncEffects {
           catchError((error: unknown) =>
             of(
               SyncActions.syncFailed({
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Repository sync request failed.',
+                error: parseRepositoryError(
+                  error,
+                  'Repository sync request failed.',
+                ),
               }),
             ),
           ),
@@ -66,10 +71,28 @@ export class SyncEffects {
           catchError((error: unknown) =>
             of(
               SyncActions.syncFailed({
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Repository sync history failed to load.',
+                error: parseRepositoryError(
+                  error,
+                  'Repository sync history failed to load.',
+                ),
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  readonly runReindex$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(SyncActions.reindexRequested),
+      mergeMap(() =>
+        this.adminApi.reindexDiscovery().pipe(
+          map((projection) => SyncActions.reindexSucceeded({ projection })),
+          catchError((error: unknown) =>
+            of(
+              SyncActions.reindexFailed({
+                error: parseRepositoryError(error, 'Discovery reindex failed.'),
               }),
             ),
           ),

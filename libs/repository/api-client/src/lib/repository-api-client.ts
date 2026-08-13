@@ -29,6 +29,8 @@ export type ResearchProgram = components['schemas']['ResearchProgram'];
 export type DatasetDetail = components['schemas']['DatasetDetail'];
 export type DatasetFile = components['schemas']['DatasetFile'];
 export type DatasetVersion = components['schemas']['DatasetVersion'];
+export type DiscoveryProjectionState =
+  components['schemas']['DiscoveryProjectionState'];
 
 export interface SearchQuery {
   readonly q?: string;
@@ -57,6 +59,19 @@ export class RepositoryAdminApi {
 
   getSyncJob(syncJobId: string): Observable<SyncJob> {
     return this.http.get<SyncJob>(`${this.baseUrl}/admin/sync/${syncJobId}`);
+  }
+
+  reindexDiscovery(): Observable<DiscoveryProjectionState> {
+    return this.http.post<DiscoveryProjectionState>(
+      `${this.baseUrl}/admin/reindex`,
+      null,
+    );
+  }
+
+  getDiscoveryProjectionState(): Observable<DiscoveryProjectionState> {
+    return this.http.get<DiscoveryProjectionState>(
+      `${this.baseUrl}/admin/reindex`,
+    );
   }
 }
 

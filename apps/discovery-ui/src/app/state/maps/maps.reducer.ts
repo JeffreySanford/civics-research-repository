@@ -66,7 +66,7 @@ export const mapsReducer = createReducer(
   on(MapsActions.earthquakeOverlayFailed, (state, { error }) => ({
     ...state,
     earthquakeOverlay: null,
-    earthquakeError: error,
+    earthquakeError: error.message,
   })),
   on(MapsActions.censusAreaSelected, (state, { geography }) => ({
     ...state,
@@ -77,7 +77,7 @@ export const mapsReducer = createReducer(
   on(MapsActions.mapDataFailed, (state, { error }) => ({
     ...state,
     loading: false,
-    error,
+    error: error.message,
   })),
   on(MapsActions.tigerLayerToggled, (state, { visible }) => ({
     ...state,

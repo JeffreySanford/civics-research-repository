@@ -48,6 +48,6 @@ export const datasetsReducer = createReducer(
   on(DatasetsActions.datasetFailed, (state, { error }) => ({
     ...state,
     loading: false,
-    error,
+    error: error.message,
   })),
 );

@@ -74,7 +74,9 @@ describe('SearchEffects', () => {
     const emitted = await firstValueFrom(effects.submitSearch$);
 
     expect(emitted).toEqual(
-      SearchActions.searchFailed({ error: 'Gateway timeout' }),
+      SearchActions.searchFailed({
+        error: { code: 'UNKNOWN', message: 'Gateway timeout' },
+      }),
     );
   });
 
@@ -91,7 +93,12 @@ describe('SearchEffects', () => {
     const emitted = await firstValueFrom(effects.submitSearch$);
 
     expect(emitted).toEqual(
-      SearchActions.searchFailed({ error: 'Search results failed to load.' }),
+      SearchActions.searchFailed({
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Search results failed to load.',
+        },
+      }),
     );
   });
 
@@ -112,7 +119,9 @@ describe('SearchEffects', () => {
     effects.submitSearch$.subscribe((action) => emitted.push(action));
 
     expect(emitted).toEqual([
-      SearchActions.searchFailed({ error: 'Gateway timeout' }),
+      SearchActions.searchFailed({
+        error: { code: 'UNKNOWN', message: 'Gateway timeout' },
+      }),
       SearchActions.searchLoaded({ response }),
     ]);
   });

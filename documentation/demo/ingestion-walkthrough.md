@@ -69,7 +69,7 @@ pnpm run dspace:verify
 
 ## Step 4 — Startup sync (TIGER adapter)
 
-On API startup, `StartupSyncRunner` reconciles live publisher metadata against DSpace for configured sources. The first adapter is **TIGER/Line** for the North Dakota visual slice:
+On API startup, `StartupSyncRunner` reconciles live publisher metadata against DSpace for configured sources. Registered adapters include **TIGER/Line**, **LODES**, **CPS**, **SIPP**, and **USGS earthquakes** (each starting with a pragmatic North Dakota or national slice):
 
 - Reads file size and `Last-Modified` from the publisher URL when census.gov responds.
 - Normalizes title, program, geography, vintage, file manifest (`crr.file.manifest`), and citation.
@@ -110,6 +110,8 @@ Hand-curated breadth in `catalog.json` is the interim model; `verify:sources` gu
 ```bash
 pnpm run catalog:harvest              # report: broken URLs, vintage hints
 pnpm run catalog:harvest -- --write   # apply verified vintage bumps to catalog.json
+pnpm run catalog:harvest -- --discover-new   # report candidate entries missing from catalog
+pnpm run catalog:harvest -- --write-new      # append verified new areas / availability fixes
 pnpm run verify:sources               # fast sample check after catalog changes
 pnpm run verify:sources:all           # every URL in every SAF package
 ```
@@ -119,7 +121,8 @@ pnpm run verify:sources:all           # every URL in every SAF package
 - Expands the catalog the same way SAF generation does.
 - Probes publisher URLs (HEAD with GET fallback).
 - Suggests newer vintages where directory patterns or sample files resolve.
-- Optionally writes vintage updates back to `catalog.json`; always regenerate SAF after a write.
+- With `--discover-new`, probes for verified entries not yet represented in `catalog.json` (for example optional TIGER territories, LODES areas marked unavailable, or newer CPS/SIPP vintages).
+- Optionally writes vintage updates (`--write`) or idempotent new-area / availability fixes (`--write-new`); always regenerate SAF after a write.
 
 Harvest coverage starts with programs already in the catalog (ACS PUMS, TIGER, LODES, CPS, SIPP, USGS overlays). Additional discoverers can be registered without changing the pipeline shape.
 

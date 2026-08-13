@@ -3,10 +3,23 @@
     <p class="eyebrow">Admin workflow</p>
     <h1 id="admin-sync-heading">Repository sync</h1>
     <p>
-      Trigger the typed Java sync endpoint for the first visual geospatial
-      repository object. Dry run shows planned DSpace/Solr actions; apply will
-      use the same workflow and persist the job history in Postgres.
+      Trigger the typed Java sync endpoint for a selected public metadata
+      source. Dry run shows planned DSpace/Solr actions; apply uses the same
+      workflow and persists job history in Postgres.
     </p>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Sync source</mat-label>
+      <mat-select
+        [value]="selectedSource$ | async"
+        (valueChange)="selectSource($event)"
+        aria-label="Repository sync source"
+      >
+        @for (source of syncSources; track source) {
+        <mat-option [value]="source">{{ source }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
 
     <div class="button-row">
       <button
@@ -33,6 +46,14 @@
       >
         Apply sync
       </button>
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="requestReindex()"
+        [disabled]="reindexing$ | async"
+      >
+        Reindex discovery
+      </button>
     </div>
 
     @if (loading$ | async) {
@@ -40,8 +61,18 @@
       <mat-spinner diameter="24"></mat-spinner>
       <span>Sync request running</span>
     </div>
+    } @if (reindexing$ | async) {
+    <div class="inline-status" role="status">
+      <mat-spinner diameter="24"></mat-spinner>
+      <span>Discovery reindex running</span>
+    </div>
     } @if (error$ | async; as error) {
     <p class="error-message" role="alert">{{ error }}</p>
+    } @if (projection$ | async; as projection) {
+    <p class="inline-status" role="status">
+      Discovery projection rebuilt: {{ projection.objectCount }} objects from {{
+      projection.source }}.
+    </p>
     }
   </div>
 

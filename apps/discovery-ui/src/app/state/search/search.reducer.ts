@@ -39,6 +39,6 @@ export const searchReducer = createReducer(
   on(SearchActions.searchFailed, (state, { error }) => ({
     ...state,
     loading: false,
-    error,
+    error: error.message,
   })),
 );
