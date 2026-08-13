@@ -24,106 +24,116 @@
     </label>
 
     <fieldset class="layer-controls" aria-label="Map layer controls">
-      <label class="layer-toggle">
-        <input
-          type="checkbox"
-          data-testid="map-layer-tiger"
-          [checked]="tigerVisible$ | async"
-          (change)="toggleTigerLayer($any($event.target).checked)"
-        />
-        <span class="layer-toggle-label">TIGER/Line boundary</span>
+      <span class="layer-toggle-row">
+        <label class="layer-toggle">
+          <input
+            type="checkbox"
+            data-testid="map-layer-tiger"
+            [checked]="tigerVisible$ | async"
+            (change)="toggleTigerLayer($any($event.target).checked)"
+          />
+          <span class="layer-toggle-label">TIGER/Line boundary</span>
+        </label>
         <button
           type="button"
           class="layer-info-button"
           mat-icon-button
+          data-testid="map-layer-tiger-info"
           [matTooltip]="layerTooltips.tiger"
           matTooltipPosition="above"
           aria-label="About TIGER/Line boundary layer"
-          (click)="$event.preventDefault(); $event.stopPropagation()"
         >
           <mat-icon aria-hidden="true">info_outline</mat-icon>
         </button>
-      </label>
-      <label class="layer-toggle">
-        <input
-          type="checkbox"
-          data-testid="map-layer-lodes"
-          [checked]="lodesVisible$ | async"
-          (change)="toggleLodesLayer($any($event.target).checked)"
-        />
-        <span class="layer-toggle-label">LODES workplace flow sample</span>
+      </span>
+      <span class="layer-toggle-row">
+        <label class="layer-toggle">
+          <input
+            type="checkbox"
+            data-testid="map-layer-lodes"
+            [checked]="lodesVisible$ | async"
+            (change)="toggleLodesLayer($any($event.target).checked)"
+          />
+          <span class="layer-toggle-label">LODES workplace flow sample</span>
+        </label>
         <button
           type="button"
           class="layer-info-button"
           mat-icon-button
+          data-testid="map-layer-lodes-info"
           [matTooltip]="layerTooltips.lodes"
           matTooltipPosition="above"
           aria-label="About LODES workplace flow layer"
-          (click)="$event.preventDefault(); $event.stopPropagation()"
         >
           <mat-icon aria-hidden="true">info_outline</mat-icon>
         </button>
-      </label>
-      <label class="layer-toggle">
-        <input
-          type="checkbox"
-          data-testid="map-layer-saipe"
-          [checked]="saipeVisible$ | async"
-          (change)="toggleSaipeLayer($any($event.target).checked)"
-        />
-        <span class="layer-toggle-label">SAIPE county poverty</span>
+      </span>
+      <span class="layer-toggle-row">
+        <label class="layer-toggle">
+          <input
+            type="checkbox"
+            data-testid="map-layer-saipe"
+            [checked]="saipeVisible$ | async"
+            (change)="toggleSaipeLayer($any($event.target).checked)"
+          />
+          <span class="layer-toggle-label">SAIPE county poverty</span>
+        </label>
         <button
           type="button"
           class="layer-info-button"
           mat-icon-button
+          data-testid="map-layer-saipe-info"
           [matTooltip]="layerTooltips.saipe"
           matTooltipPosition="above"
           aria-label="About SAIPE county poverty layer"
-          (click)="$event.preventDefault(); $event.stopPropagation()"
         >
           <mat-icon aria-hidden="true">info_outline</mat-icon>
         </button>
-      </label>
-      <label class="layer-toggle">
-        <input
-          type="checkbox"
-          data-testid="map-layer-hydrography"
-          [checked]="hydrographyVisible$ | async"
-          (change)="toggleHydrographyLayer($any($event.target).checked)"
-        />
-        <span class="layer-toggle-label">USGS 3HP hydrography</span>
+      </span>
+      <span class="layer-toggle-row">
+        <label class="layer-toggle">
+          <input
+            type="checkbox"
+            data-testid="map-layer-hydrography"
+            [checked]="hydrographyVisible$ | async"
+            (change)="toggleHydrographyLayer($any($event.target).checked)"
+          />
+          <span class="layer-toggle-label">USGS 3HP hydrography</span>
+        </label>
         <button
           type="button"
           class="layer-info-button"
           mat-icon-button
+          data-testid="map-layer-hydrography-info"
           [matTooltip]="layerTooltips.hydrography"
           matTooltipPosition="above"
           aria-label="About USGS 3HP hydrography layer"
-          (click)="$event.preventDefault(); $event.stopPropagation()"
         >
           <mat-icon aria-hidden="true">info_outline</mat-icon>
         </button>
-      </label>
-      <label class="layer-toggle">
-        <input
-          type="checkbox"
-          data-testid="map-layer-earthquake"
-          [checked]="earthquakeVisible$ | async"
-          (change)="toggleEarthquakeLayer($any($event.target).checked)"
-        />
-        <span class="layer-toggle-label">USGS earthquake overlay</span>
+      </span>
+      <span class="layer-toggle-row">
+        <label class="layer-toggle">
+          <input
+            type="checkbox"
+            data-testid="map-layer-earthquake"
+            [checked]="earthquakeVisible$ | async"
+            (change)="toggleEarthquakeLayer($any($event.target).checked)"
+          />
+          <span class="layer-toggle-label">USGS earthquake overlay</span>
+        </label>
         <button
           type="button"
           class="layer-info-button"
           mat-icon-button
+          data-testid="map-layer-earthquake-info"
           [matTooltip]="layerTooltips.earthquake"
           matTooltipPosition="above"
           aria-label="About USGS earthquake overlay layer"
-          (click)="$event.preventDefault(); $event.stopPropagation()"
         >
           <mat-icon aria-hidden="true">info_outline</mat-icon>
         </button>
-      </label>
+      </span>
     </fieldset>
   </div>
 
@@ -422,10 +432,8 @@
         <td>{{ county.fips }}</td>
         <td>{{ county.povertyRate | number: '1.1-1' }}%</td>
         <td>
-          @if (county.medianHouseholdIncome) { ${{
-          county.medianHouseholdIncome | number: '1.0-0'
-          }}
-          } @else { — }
+          @if (county.medianHouseholdIncome) { ${{ county.medianHouseholdIncome
+          | number: '1.0-0' }} } @else { — }
         </td>
       </tr>
       }

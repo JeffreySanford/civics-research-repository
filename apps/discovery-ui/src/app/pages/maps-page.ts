@@ -566,6 +566,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       zoom: 5,
       maxZoom: 12,
       minZoom: 3,
+      // Attribution lives in the accessible feature list; the default MapLibre
+      // compact (i) control overlaps the custom legend at bottom-right.
+      attributionControl: false,
     });
 
     // Playwright reads MapLibre layout visibility through this handle; MapLibre has no public DOM lookup.

@@ -21,6 +21,20 @@ test.describe('map layer controls', () => {
     ).toBeVisible();
   });
 
+  test('layer info icons appear beside each toggle @maps', async ({ page }) => {
+    for (const testId of [
+      'map-layer-tiger-info',
+      'map-layer-lodes-info',
+      'map-layer-saipe-info',
+      'map-layer-hydrography-info',
+      'map-layer-earthquake-info',
+    ]) {
+      await expect(page.getByTestId(testId)).toBeVisible();
+    }
+
+    await expect(page.locator('.maplibregl-ctrl-attrib')).toHaveCount(0);
+  });
+
   test('each layer toggle removes its own layer @maps', async ({ page }) => {
     const layerControls = page.getByRole('group', {
       name: 'Map layer controls',

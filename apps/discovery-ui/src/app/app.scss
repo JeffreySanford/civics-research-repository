@@ -408,26 +408,35 @@ input:focus-visible {
   padding: 0;
 }
 
-:host ::ng-deep .layer-controls label,
-:host ::ng-deep .layer-controls .layer-toggle {
+:host ::ng-deep .layer-toggle-row {
   display: inline-flex;
-  gap: 0.5rem;
+  gap: 0;
   align-items: center;
   border: 1px solid #cbd5e1;
   border-radius: 0.25rem;
   background: #ffffff;
   color: #253041;
-  padding: 0.65rem 0.8rem;
+}
+
+:host ::ng-deep .layer-controls .layer-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  padding: 0.65rem 0.35rem 0.65rem 0.8rem;
   font-weight: 800;
 }
 
 :host ::ng-deep .layer-toggle-label {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  white-space: nowrap;
 }
 
 :host ::ng-deep .layer-info-button {
   flex: 0 0 auto;
-  margin: -0.35rem -0.45rem -0.35rem 0;
+  margin: 0 0.15rem 0 0;
   color: #475569;
 }
 
