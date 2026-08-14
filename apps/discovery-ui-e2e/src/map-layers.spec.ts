@@ -170,6 +170,65 @@ test.describe('map layer controls', () => {
     );
   });
 
+  /**
+   * With every group open the panel outgrew the map stage, which clips its overflow, so the lower
+   * groups were cut off rather than scrollable and the toggle that closes it was out of reach.
+   */
+  test('the map debug panel scrolls and keeps its toggle reachable @maps', async ({
+    page,
+  }) => {
+    const layerControls = page.getByRole('group', {
+      name: 'Map layer controls',
+    });
+    for (const name of [
+      'TIGER/Line boundary',
+      'LODES workplace flow sample',
+      'SAIPE county poverty',
+      'USGS 3HP hydrography',
+      'USGS earthquake overlay',
+    ]) {
+      await layerControls.getByRole('checkbox', { name }).check();
+    }
+
+    const toggle = page.getByTestId('map-debug-toggle');
+    await toggle.click();
+
+    const panel = page.getByTestId('map-debug-panel');
+    await expect(panel).toBeVisible();
+
+    // Taller than it can show, and able to scroll rather than clip.
+    const scroll = await panel.evaluate((element) => ({
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+      overflowY: getComputedStyle(element).overflowY,
+    }));
+    expect(scroll.overflowY).toBe('auto');
+    expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight);
+
+    // The last group is reachable by scrolling the panel.
+    const lastGroup = page.getByTestId('map-debug-group-hydrography');
+    await lastGroup.scrollIntoViewIfNeeded();
+    await expect(lastGroup).toBeVisible();
+
+    // And the panel never grows past the stage that contains it.
+    const fits = await panel.evaluate((element) => {
+      const stage = element.closest('.map-stage');
+      if (!stage) {
+        return false;
+      }
+      return (
+        element.getBoundingClientRect().bottom <=
+        stage.getBoundingClientRect().bottom + 1
+      );
+    });
+    expect(fits).toBe(true);
+
+    // The toggle stays usable, so the panel can always be closed again.
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(panel).toHaveCount(0);
+  });
+
   /** Opening the map from a dataset must land on that dataset's geography, not the default. */
   test('a dataset opens the map on its own geography @maps', async ({
     page,

@@ -545,7 +545,19 @@ code {
   z-index: 2;
   display: grid;
   gap: 0.5rem;
+  align-content: start;
   max-width: min(24rem, calc(100% - 2rem));
+  /*
+   * The panel is absolutely positioned inside .map-stage, which clips its overflow. With five
+   * layer groups open it grew past the stage and the rest was simply cut off -- not scrolled,
+   * cut off -- so the end of the panel was unreachable. Capping it against the stage height and
+   * giving it its own scrollbar makes every group reachable while leaving the toggle above it in
+   * view. `overscroll-behavior` keeps a scroll that reaches the end of the panel from continuing
+   * into the page behind it.
+   */
+  max-height: calc(100% - 4.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid var(--civics-border);
   border-radius: var(--civics-radius-md);
   background: rgb(255 255 255 / 96%);
@@ -554,8 +566,13 @@ code {
   font-size: 0.8125rem;
 }
 
+/* Opaque, because translucent would let the scrolled content show through the heading. */
 .map-debug h2 {
-  margin: 0;
+  position: sticky;
+  top: -0.85rem;
+  margin: -0.85rem -1rem 0;
+  background: #fff;
+  padding: 0.85rem 1rem 0.35rem;
   font-size: 0.95rem;
 }
 
