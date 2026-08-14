@@ -148,21 +148,24 @@ test.describe('map layer controls', () => {
       .getByRole('group', { name: 'Map layer controls' })
       .getByRole('checkbox', { name: 'USGS earthquake overlay' });
 
-    // Off: the group is listed, and says only that it is off.
+    // Off: still reported in full. "Source loaded, layers none" is how an unused layer is told
+    // apart from a broken one, so the details are not something to hide.
     await expect(earthquakeGroup).toHaveAttribute('data-toggled', 'off');
     await expect(earthquakeGroup).toContainText('OFF');
-    await expect(earthquakeGroup).not.toContainText('usgs-earthquake-points');
+    await expect(earthquakeGroup).toContainText('usgs-earthquake-points=none');
+    await expect(earthquakeGroup).toContainText('usgs-earthquake-labels=none');
+    await expect(earthquakeGroup).toContainText(
+      'usgs-earthquake-selected=none',
+    );
 
-    // On: the details appear, including the two layers the panel used to omit entirely.
     await earthquake.check();
     await expect(earthquakeGroup).toHaveAttribute('data-toggled', 'on');
-    await expect(earthquakeGroup).toContainText('usgs-earthquake-labels');
-    await expect(earthquakeGroup).toContainText('usgs-earthquake-selected');
-    await expect(earthquakeGroup).toContainText('usgs-earthquakes');
+    await expect(earthquakeGroup).toContainText(
+      'usgs-earthquake-points=visible',
+    );
 
     await earthquake.uncheck();
     await expect(earthquakeGroup).toHaveAttribute('data-toggled', 'off');
-    await expect(earthquakeGroup).not.toContainText('usgs-earthquake-labels');
     // Off in the panel means off on the map, not merely off in the store.
     await expect(earthquakeGroup).toHaveAttribute(
       'data-matches-toggle',
@@ -224,6 +227,30 @@ test.describe('map layer controls', () => {
     expect(fits).toBe(true);
 
     // The toggle stays usable, so the panel can always be closed again.
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(panel).toHaveCount(0);
+  });
+
+  /**
+   * The toggle was reported as missing, and it was: Material's own button styles beat the bare
+   * class, so it rendered as blue text with no background over a moving map.
+   */
+  test('the map debug toggle stays legible and closes the panel @maps', async ({
+    page,
+  }) => {
+    const toggle = page.getByTestId('map-debug-toggle');
+    await toggle.click();
+
+    const panel = page.getByTestId('map-debug-panel');
+    await expect(panel).toBeVisible();
+
+    const background = await toggle.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    );
+    expect(background).not.toBe('rgba(0, 0, 0, 0)');
+    expect(background).not.toBe('transparent');
+
     await expect(toggle).toBeVisible();
     await toggle.click();
     await expect(panel).toHaveCount(0);

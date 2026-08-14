@@ -523,6 +523,14 @@ code {
   font-size: 1rem;
 }
 
+/*
+ * `.mat-mdc-button` in the selector on purpose.
+ *
+ * Material sets its own transparent background on the button, at a specificity the bare class
+ * could not beat, so the intended white pill never rendered: the control was blue text floating
+ * over a moving map, which is a hard thing to notice and the reason this was reported as missing.
+ */
+.map-debug-toggle.mat-mdc-button,
 .map-debug-toggle {
   position: absolute;
   top: 1rem;
@@ -530,12 +538,22 @@ code {
   z-index: 10;
   min-height: 2rem;
   padding: 0 0.65rem;
-  border: 1px solid var(--civics-border);
+  border: 1px solid var(--civics-border-strong);
   border-radius: var(--civics-radius-sm);
-  background: rgb(255 255 255 / 94%);
-  color: var(--civics-text-muted);
+  background-color: rgb(255 255 255 / 96%);
+  color: var(--civics-text-primary);
   font-size: 0.8125rem;
-  box-shadow: 0 0.35rem 0.75rem rgb(15 23 42 / 10%);
+  box-shadow: 0 0.35rem 0.75rem rgb(15 23 42 / 18%);
+}
+
+/* Opaque, because translucent would let the scrolled content show through the heading. */
+.map-debug h2 {
+  position: sticky;
+  top: -0.85rem;
+  z-index: 1;
+  margin: -0.85rem -1rem 0;
+  background: #fff;
+  padding: 0.85rem 1rem 0.35rem;
 }
 
 .map-debug {
@@ -555,6 +573,12 @@ code {
    * view. `overscroll-behavior` keeps a scroll that reaches the end of the panel from continuing
    * into the page behind it.
    */
+  /*
+   * border-box, so max-height covers the padding too. Without it the cap applies to the content
+   * box alone and the panel ends up its padding taller than the space it was given, which put it
+   * back outside the stage by exactly 27px.
+   */
+  box-sizing: border-box;
   max-height: calc(100% - 4.5rem);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -566,13 +590,7 @@ code {
   font-size: 0.8125rem;
 }
 
-/* Opaque, because translucent would let the scrolled content show through the heading. */
 .map-debug h2 {
-  position: sticky;
-  top: -0.85rem;
-  margin: -0.85rem -1rem 0;
-  background: #fff;
-  padding: 0.85rem 1rem 0.35rem;
   font-size: 0.95rem;
 }
 
