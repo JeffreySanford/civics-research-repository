@@ -143,26 +143,31 @@ test.describe('map layer controls', () => {
       await expect(page.getByTestId(`map-debug-group-${group}`)).toBeVisible();
     }
 
-    // The two layers the panel used to omit entirely.
-    await expect(page.getByTestId('map-debug-group-earthquake')).toContainText(
-      'usgs-earthquake-labels',
-    );
-    await expect(page.getByTestId('map-debug-group-earthquake')).toContainText(
-      'usgs-earthquake-selected',
-    );
-
-    const lodesGroup = page.getByTestId('map-debug-group-lodes');
-    const lodes = page
+    const earthquakeGroup = page.getByTestId('map-debug-group-earthquake');
+    const earthquake = page
       .getByRole('group', { name: 'Map layer controls' })
-      .getByRole('checkbox', { name: 'LODES workplace flow sample' });
+      .getByRole('checkbox', { name: 'USGS earthquake overlay' });
 
-    await lodes.check();
-    await expect(lodesGroup).toHaveAttribute('data-toggled', 'on');
+    // Off: the group is listed, and says only that it is off.
+    await expect(earthquakeGroup).toHaveAttribute('data-toggled', 'off');
+    await expect(earthquakeGroup).toContainText('OFF');
+    await expect(earthquakeGroup).not.toContainText('usgs-earthquake-points');
 
-    await lodes.uncheck();
-    await expect(lodesGroup).toHaveAttribute('data-toggled', 'off');
+    // On: the details appear, including the two layers the panel used to omit entirely.
+    await earthquake.check();
+    await expect(earthquakeGroup).toHaveAttribute('data-toggled', 'on');
+    await expect(earthquakeGroup).toContainText('usgs-earthquake-labels');
+    await expect(earthquakeGroup).toContainText('usgs-earthquake-selected');
+    await expect(earthquakeGroup).toContainText('usgs-earthquakes');
+
+    await earthquake.uncheck();
+    await expect(earthquakeGroup).toHaveAttribute('data-toggled', 'off');
+    await expect(earthquakeGroup).not.toContainText('usgs-earthquake-labels');
     // Off in the panel means off on the map, not merely off in the store.
-    await expect(lodesGroup).toHaveAttribute('data-matches-toggle', 'true');
+    await expect(earthquakeGroup).toHaveAttribute(
+      'data-matches-toggle',
+      'true',
+    );
   });
 
   /** Opening the map from a dataset must land on that dataset's geography, not the default. */

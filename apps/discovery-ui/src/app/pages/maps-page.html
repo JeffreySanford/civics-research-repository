@@ -271,7 +271,12 @@
 
         <!-- One block per toggle, so every rendered layer is accounted for whether it is on or
              off. A layer reads `missing` until its data arrives, `none` once the map has been
-             told to hide it. -->
+             told to hide it.
+
+             A group that is off collapses to its name and OFF: there is nothing to diagnose about
+             a layer nobody asked for, and five collapsed groups keep the one you care about
+             readable. The exception is a group that is off and still drawn -- that disagreement is
+             the whole point of the panel, so it keeps its details. -->
         @for (group of mapDebugSnapshot.groups; track group.id) {
         <section
           class="map-debug-group"
@@ -286,6 +291,7 @@
               >{{ group.toggledOn ? 'ON' : 'OFF' }}</span
             >
           </h3>
+          @if (group.toggledOn || !group.matchesToggle) {
           <dl>
             <div>
               <dt>Source</dt>
@@ -304,6 +310,7 @@
               </dd>
             </div>
           </dl>
+          }
         </section>
         }
 

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockRepositoryApi } from './support/repository-api-mocks';
+import { waitForStablePage } from './support/wait-for-stable-page';
 
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 
@@ -27,6 +28,7 @@ test.describe('accessibility evidence', () => {
       await expect(
         page.getByRole('heading', { name: route.heading }),
       ).toBeVisible();
+      await waitForStablePage(page);
 
       const results = await new AxeBuilder({ page })
         .withTags(axeTags)

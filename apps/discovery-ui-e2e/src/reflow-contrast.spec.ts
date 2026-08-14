@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockRepositoryApi } from './support/repository-api-mocks';
+import { waitForStablePage } from './support/wait-for-stable-page';
 
 const routes = [
   { path: '/', heading: 'Census geospatial discovery with repository sync' },
@@ -32,6 +33,7 @@ test.describe('WCAG reflow and contrast evidence', () => {
       await expect(
         page.getByRole('heading', { name: route.heading }),
       ).toBeVisible();
+      await waitForStablePage(page);
 
       const overflow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
@@ -83,6 +85,7 @@ test.describe('WCAG reflow and contrast evidence', () => {
       await expect(
         page.getByRole('heading', { name: route.heading }),
       ).toBeVisible();
+      await waitForStablePage(page);
 
       const results = await new AxeBuilder({ page })
         .withRules(['color-contrast'])
