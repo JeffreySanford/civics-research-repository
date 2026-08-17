@@ -589,6 +589,87 @@ test.describe('map and feature list selection', () => {
  * The program facet is multi-select with defaults. Selecting one program must not hide the others,
  * or the selection becomes a one-way door.
  */
+/**
+ * The evidence page now carries two tabs. The second one answers a different question from the
+ * first: not "is this accessible" but "how much data is behind it, and how stale is that figure".
+ */
+test.describe('evidence data pipeline tab', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/evidence');
+    await expect(
+      page.getByRole('heading', { name: 'WCAG and Section 508 status' }),
+    ).toBeVisible();
+  });
+
+  test('the accessibility tab stays the one that opens @storyboard', async ({
+    page,
+  }) => {
+    await expect(
+      page.getByRole('tab', { name: 'WCAG and Section 508' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    await expect(
+      page.getByRole('tab', { name: 'Data pipeline' }),
+    ).toHaveAttribute('aria-selected', 'false');
+  });
+
+  test('the pipeline tab reports subscribed, curated, and indexed @storyboard', async ({
+    page,
+  }) => {
+    await page.getByRole('tab', { name: 'Data pipeline' }).click();
+
+    // Subscribed: the publishers' bytes, in binary units.
+    await expect(page.getByText('1.7 GiB')).toBeVisible();
+    await expect(page.getByText('191 distinct files')).toBeVisible();
+
+    // Curated and indexed come from the live DSpace and Solr overviews. Asserted by their labels:
+    // the counts themselves depend on what the repository currently holds.
+    await expect(page.getByText('Stored in the repository')).toBeVisible();
+    await expect(page.getByText('Indexed for discovery')).toBeVisible();
+    await expect(
+      page.getByText('The assetstore holds none of the source bytes.'),
+    ).toBeVisible();
+
+    // An as-of date, because a byte total without one is a number pretending to be current.
+    await expect(page.getByText(/Sizes measured/)).toBeVisible();
+    await expect(
+      page.getByText(/8 source file\(s\) did not answer/),
+    ).toBeVisible();
+  });
+
+  /** The bars are decorative; the table is the accessible equivalent and carries the same numbers. */
+  test('the per-program breakdown has a table, not only bars @storyboard', async ({
+    page,
+  }) => {
+    await page.getByRole('tab', { name: 'Data pipeline' }).click();
+
+    const table = page.getByRole('table', {
+      name: /Subscribed source data by program/,
+    });
+    await expect(table).toBeVisible();
+    await expect(table.getByRole('row')).toHaveCount(4);
+    await expect(table.getByRole('rowheader', { name: 'ACS' })).toBeVisible();
+  });
+
+  test('the pipeline tab is reachable from the keyboard @storyboard', async ({
+    page,
+  }) => {
+    const accessibility = page.getByRole('tab', {
+      name: 'WCAG and Section 508',
+    });
+    await accessibility.focus();
+    await page.keyboard.press('ArrowRight');
+
+    await expect(
+      page.getByRole('tab', { name: 'Data pipeline' }),
+    ).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(
+      page.getByRole('heading', { name: 'Subscribed, curated, indexed' }),
+    ).toBeVisible();
+  });
+});
+
 test.describe('program facet selection', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);

@@ -14,7 +14,8 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
 /**
  * @param {string} url
  * @param {{ timeoutMs?: number }} [options]
- * @returns {Promise<{ ok: boolean, status: number, contentType?: string | null, error?: string }>}
+ * @returns {Promise<{ ok: boolean, status: number, contentType?: string | null,
+ *   contentLength?: number | null, error?: string }>}
  */
 export async function probeUrl(url, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   try {
@@ -28,6 +29,7 @@ export async function probeUrl(url, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
         ok: head.status >= 200 && head.status < 400,
         status: head.status,
         contentType: head.headers.get('content-type'),
+        contentLength: parseContentLength(head.headers.get('content-length')),
       };
     }
   } catch (error) {
@@ -46,8 +48,32 @@ export async function probeUrl(url, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
       ok: ranged.status >= 200 && ranged.status < 400,
       status: ranged.status,
       contentType: ranged.headers.get('content-type'),
+      // A ranged reply's Content-Length is the slice, not the file. The total is after the slash
+      // in `Content-Range: bytes 0-0/12345`.
+      contentLength: parseContentRangeTotal(
+        ranged.headers.get('content-range'),
+      ),
     };
   } catch (error) {
     return { ok: false, status: 0, error: error.message };
   }
+}
+
+function parseContentLength(value) {
+  if (!value) {
+    return null;
+  }
+
+  const length = Number(value.trim());
+  return Number.isFinite(length) && length >= 0 ? length : null;
+}
+
+function parseContentRangeTotal(value) {
+  const total = value?.split('/')[1]?.trim();
+  if (!total || total === '*') {
+    return null;
+  }
+
+  const length = Number(total);
+  return Number.isFinite(length) && length >= 0 ? length : null;
 }

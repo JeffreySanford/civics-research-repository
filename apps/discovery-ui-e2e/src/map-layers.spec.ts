@@ -233,10 +233,11 @@ test.describe('map layer controls', () => {
   });
 
   /**
-   * The toggle was reported as missing, and it was: Material's own button styles beat the bare
-   * class, so it rendered as blue text with no background over a moving map.
+   * Two ways out, both required. The toggle was reported as missing, and it was: Material's own
+   * button styles beat the bare class, so it rendered as blue text with no background over a
+   * moving map. Close lives in the panel's sticky header, within reach however far it is scrolled.
    */
-  test('the map debug toggle stays legible and closes the panel @maps', async ({
+  test('the map debug panel closes from the toggle and from Close @maps', async ({
     page,
   }) => {
     const toggle = page.getByTestId('map-debug-toggle');
@@ -245,15 +246,23 @@ test.describe('map layer controls', () => {
     const panel = page.getByTestId('map-debug-panel');
     await expect(panel).toBeVisible();
 
+    // The toggle is legible: a real background, not Material's transparent one.
     const background = await toggle.evaluate(
       (element) => getComputedStyle(element).backgroundColor,
     );
     expect(background).not.toBe('rgba(0, 0, 0, 0)');
     expect(background).not.toBe('transparent');
 
-    await expect(toggle).toBeVisible();
-    await toggle.click();
+    const close = page.getByTestId('map-debug-close');
+    await expect(close).toBeVisible();
+    await close.click();
     await expect(panel).toHaveCount(0);
+
+    // And the toggle still both opens and closes it.
+    await toggle.click();
+    await expect(page.getByTestId('map-debug-panel')).toBeVisible();
+    await toggle.click();
+    await expect(page.getByTestId('map-debug-panel')).toHaveCount(0);
   });
 
   /** Opening the map from a dataset must land on that dataset's geography, not the default. */

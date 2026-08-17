@@ -247,6 +247,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/sources/inventory': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * How much source data the repository is subscribed to, as last measured.
+     * @description Aggregate size of the publisher files every research object points at, measured by asking each host for the file length. Sizes change when an agency reissues a file, so the response carries the date it was taken rather than implying it is live.
+     */
+    get: operations['getSourceInventory'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/solr/overview': {
     parameters: {
       query?: never;
@@ -442,6 +462,57 @@ export interface components {
       name: string;
       /** Format: uuid */
       uuid?: string;
+    };
+    SourceInventoryProgram: {
+      program: components['schemas']['ResearchProgram'];
+      /**
+       * Format: int32
+       * @description Research objects in this program.
+       */
+      objectCount: number;
+      /**
+       * Format: int32
+       * @description Distinct source files referenced by those objects.
+       */
+      fileCount: number;
+      /**
+       * Format: int32
+       * @description Files whose length the publisher reported. The rest are counted but not sized.
+       */
+      measuredFileCount: number;
+      /**
+       * Format: int32
+       * @description Files whose host did not answer when last measured.
+       */
+      unreachableFileCount: number;
+      /**
+       * Format: int64
+       * @description Sum of the measured file lengths.
+       */
+      totalBytes: number;
+    };
+    SourceInventory: {
+      /**
+       * Format: date-time
+       * @description When the sizes were measured. A byte total without this is not a fact about now.
+       */
+      checkedAt: string;
+      /** Format: int32 */
+      objectCount: number;
+      /** Format: int32 */
+      programCount: number;
+      /**
+       * Format: int32
+       * @description Counted once per URL. Several objects legitimately reference the same national file, and counting it once per reference would inflate the total.
+       */
+      distinctFileCount: number;
+      /** Format: int32 */
+      measuredFileCount: number;
+      /** Format: int32 */
+      unreachableFileCount: number;
+      /** Format: int64 */
+      totalBytes: number;
+      byProgram: components['schemas']['SourceInventoryProgram'][];
     };
     DspaceOverview: {
       /** @description Whether the DSpace REST API answered a liveness probe. */
@@ -1113,6 +1184,27 @@ export interface operations {
       };
       500: components['responses']['InternalServerError'];
       503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getSourceInventory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Source inventory totals and per-program breakdown. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SourceInventory'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
     };
   };
   getSolrOverview: {

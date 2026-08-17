@@ -6,8 +6,16 @@ import {
   inject,
 } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
 import { EvidenceActions } from '../state/evidence/evidence.actions';
+import { PipelineActions } from '../state/pipeline/pipeline.actions';
+import {
+  selectPipelineError,
+  selectPipelineLoading,
+  selectPipelineStages,
+  selectSourceProgramRows,
+} from '../state/pipeline/pipeline.selectors';
 import {
   selectAutomatedCheckCounts,
   selectAutomatedEvidence,
@@ -31,7 +39,7 @@ import {
 @Component({
   selector: 'app-evidence-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, DatePipe, MatProgressSpinnerModule],
+  imports: [AsyncPipe, DatePipe, MatProgressSpinnerModule, MatTabsModule],
   templateUrl: './evidence-page.html',
 })
 export class EvidencePage implements OnInit {
@@ -42,8 +50,16 @@ export class EvidencePage implements OnInit {
   );
   protected readonly manualEntries$ = this.store.select(selectManualEvidence);
   protected readonly loading$ = this.store.select(selectEvidenceLoading);
+  protected readonly stages$ = this.store.select(selectPipelineStages);
+  protected readonly programRows$ = this.store.select(selectSourceProgramRows);
+  protected readonly pipelineLoading$ = this.store.select(
+    selectPipelineLoading,
+  );
+  protected readonly pipelineError$ = this.store.select(selectPipelineError);
   protected readonly error$ = this.store.select(selectEvidenceError);
-  protected readonly checkCounts$ = this.store.select(selectAutomatedCheckCounts);
+  protected readonly checkCounts$ = this.store.select(
+    selectAutomatedCheckCounts,
+  );
   protected readonly latestCapturedAt$ = this.store.select(
     selectLatestCapturedAt,
   );
@@ -63,6 +79,28 @@ export class EvidencePage implements OnInit {
 
   ngOnInit(): void {
     this.store.dispatch(EvidenceActions.loadRequested());
+    this.store.dispatch(PipelineActions.loadRequested());
+  }
+
+  /**
+   * Binary units, because these are file sizes as the publishing host reports them.
+   *
+   * Rounded to one decimal past a kibibyte: the exact byte count is in the API response for anyone
+   * who needs it, and "1.7 GiB" is what a reader actually takes away.
+   */
+  protected formatBytes(bytes: number): string {
+    if (!bytes) {
+      return '0 B';
+    }
+
+    const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
+    const exponent = Math.min(
+      Math.floor(Math.log(bytes) / Math.log(1024)),
+      units.length - 1,
+    );
+    const value = bytes / 1024 ** exponent;
+
+    return `${exponent === 0 ? value : value.toFixed(1)} ${units[exponent]}`;
   }
 
   protected manualChecklistStatus(

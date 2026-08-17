@@ -390,6 +390,24 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /admin/sources/inventory:
+    get:
+      tags: [Admin]
+      operationId: getSourceInventory
+      summary: How much source data the repository is subscribed to, as last measured.
+      description: >-
+        Aggregate size of the publisher files every research object points at, measured by asking
+        each host for the file length. Sizes change when an agency reissues a file, so the response
+        carries the date it was taken rather than implying it is live.
+      responses:
+        '200':
+          description: Source inventory totals and per-program breakdown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceInventory'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /admin/solr/overview:
     get:
       tags: [Admin]
@@ -860,6 +878,81 @@ components:
         uuid:
           type: string
           format: uuid
+    SourceInventoryProgram:
+      type: object
+      required:
+        [
+          program,
+          objectCount,
+          fileCount,
+          measuredFileCount,
+          unreachableFileCount,
+          totalBytes,
+        ]
+      properties:
+        program:
+          $ref: '#/components/schemas/ResearchProgram'
+        objectCount:
+          type: integer
+          format: int32
+          description: Research objects in this program.
+        fileCount:
+          type: integer
+          format: int32
+          description: Distinct source files referenced by those objects.
+        measuredFileCount:
+          type: integer
+          format: int32
+          description: Files whose length the publisher reported. The rest are counted but not sized.
+        unreachableFileCount:
+          type: integer
+          format: int32
+          description: Files whose host did not answer when last measured.
+        totalBytes:
+          type: integer
+          format: int64
+          description: Sum of the measured file lengths.
+    SourceInventory:
+      type: object
+      required:
+        - checkedAt
+        - objectCount
+        - programCount
+        - distinctFileCount
+        - measuredFileCount
+        - unreachableFileCount
+        - totalBytes
+        - byProgram
+      properties:
+        checkedAt:
+          type: string
+          format: date-time
+          description: When the sizes were measured. A byte total without this is not a fact about now.
+        objectCount:
+          type: integer
+          format: int32
+        programCount:
+          type: integer
+          format: int32
+        distinctFileCount:
+          type: integer
+          format: int32
+          description: >-
+            Counted once per URL. Several objects legitimately reference the same national file, and
+            counting it once per reference would inflate the total.
+        measuredFileCount:
+          type: integer
+          format: int32
+        unreachableFileCount:
+          type: integer
+          format: int32
+        totalBytes:
+          type: integer
+          format: int64
+        byProgram:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceInventoryProgram'
     DspaceOverview:
       type: object
       required: [reachable, readEnabled, writeEnabled]

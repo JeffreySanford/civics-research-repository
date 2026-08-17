@@ -345,6 +345,47 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     });
   });
 
+  await page.route(`**/api/admin/sources/inventory`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        checkedAt: '2026-08-17T19:36:20.535Z',
+        objectCount: 176,
+        programCount: 3,
+        distinctFileCount: 191,
+        measuredFileCount: 167,
+        unreachableFileCount: 8,
+        totalBytes: 1848988848,
+        byProgram: [
+          {
+            program: 'ACS',
+            objectCount: 56,
+            fileCount: 57,
+            measuredFileCount: 52,
+            unreachableFileCount: 5,
+            totalBytes: 612000000,
+          },
+          {
+            program: 'TIGER_LINE',
+            objectCount: 56,
+            fileCount: 58,
+            measuredFileCount: 57,
+            unreachableFileCount: 1,
+            totalBytes: 429000000,
+          },
+          {
+            program: 'LODES',
+            objectCount: 53,
+            fileCount: 54,
+            measuredFileCount: 50,
+            unreachableFileCount: 2,
+            totalBytes: 54000000,
+          },
+        ],
+      },
+    });
+  });
+
   await page.route(`**/api/admin/dspace/overview`, async (route) => {
     await route.fulfill({
       contentType: 'application/json',

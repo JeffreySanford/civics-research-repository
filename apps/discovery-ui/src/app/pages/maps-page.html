@@ -238,7 +238,20 @@
         data-testid="map-debug-panel"
         aria-label="Map debug diagnostics"
       >
-        <h2>Map debug</h2>
+        <!-- Close sits in the panel's own sticky header, so dismissing it never depends on
+             finding the floating toggle behind a tall panel. -->
+        <div class="map-debug-header">
+          <h2>Map debug</h2>
+          <button
+            type="button"
+            class="map-debug-close"
+            data-testid="map-debug-close"
+            aria-label="Hide map debug"
+            (click)="toggleMapDebugPanel()"
+          >
+            Close
+          </button>
+        </div>
         <dl>
           <div>
             <dt>Style ready</dt>

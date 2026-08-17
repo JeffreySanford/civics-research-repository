@@ -258,7 +258,11 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Define DSpace collection for the first visual geospatial source.
 - [x] Create seed metadata for one TIGER/Line or LODES North Dakota item.
 - [x] Attach source URLs and documentation URLs.
-- [ ] Store small-to-medium mirrored demo artifacts where useful.
+- [x] Report how much source data the repository subscribes to. `pnpm run sources:inventory`
+      measures every source URL and commits the totals with an as-of date; the evidence page's
+      Data pipeline tab shows subscribed, curated, and indexed side by side.
+- [ ] Store small-to-medium mirrored demo artifacts where useful. The inventory now says what
+      that would cost: 1.72 GiB subscribed in total, against an assetstore currently holding 7 KB.
 - [x] Confirm item appears through DSpace REST.
 - [x] Confirm item is indexed into Solr discovery.
 

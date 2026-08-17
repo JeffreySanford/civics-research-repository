@@ -28,6 +28,9 @@ class AdminOverviewControllerTest {
     @MockitoBean
     private AdminOverviewService adminOverviewService;
 
+    @MockitoBean
+    private SourceInventoryService sourceInventoryService;
+
     @Test
     void returnsDspaceOverview() throws Exception {
         given(adminOverviewService.dspaceOverview())

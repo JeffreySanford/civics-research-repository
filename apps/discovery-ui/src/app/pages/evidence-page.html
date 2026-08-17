@@ -39,133 +39,301 @@
     }
   </section>
 
-  @if (automatedEntries$ | async; as automatedEntries) {
-  <section aria-labelledby="automated-evidence-heading" class="content-panel">
-    <h2 id="automated-evidence-heading">Automated test summary</h2>
-    <p>
-      Console reports from <code>pnpm run wcag:report</code>,
-      <code>pnpm run section508:report</code>, and
-      <code>pnpm run storyboard</code>. Transient Playwright output lands in
-      <code>playwright-report/</code> and <code>test-results/</code> locally.
-    </p>
+  <mat-tab-group class="evidence-tabs" data-testid="evidence-tabs">
+    <mat-tab label="WCAG and Section 508">
+      <div class="evidence-tab-panel">
+        @if (automatedEntries$ | async; as automatedEntries) {
+        <section
+          aria-labelledby="automated-evidence-heading"
+          class="content-panel"
+        >
+          <h2 id="automated-evidence-heading">Automated test summary</h2>
+          <p>
+            Console reports from <code>pnpm run wcag:report</code>,
+            <code>pnpm run section508:report</code>, and
+            <code>pnpm run storyboard</code>. Transient Playwright output lands
+            in <code>playwright-report/</code> and
+            <code>test-results/</code> locally.
+          </p>
 
-    @if (automatedEntries.length > 0) {
-    <table class="evidence-table">
-      <caption class="visually-hidden">
-        Automated accessibility evidence workflows
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Workflow</th>
-          <th scope="col">Standard</th>
-          <th scope="col">Status</th>
-          <th scope="col">Captured</th>
-          <th scope="col">Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (entry of automatedEntries; track entry.id) {
-        <tr>
-          <th scope="row">{{ entry.workflow }}</th>
-          <td>{{ standardLabel(entry.standard) }}</td>
-          <td>{{ evidenceStatusLabel(entry.status) }}</td>
-          <td>{{ entry.capturedAt | date: 'mediumDate' }}</td>
-          <td>
-            {{ entry.notes }} @if (extractArtifactPath(entry.notes); as
-            artifactPath) {
-            <span class="artifact-path">Artifact: {{ artifactPath }}</span>
+          @if (automatedEntries.length > 0) {
+          <table class="evidence-table">
+            <caption class="visually-hidden">
+              Automated accessibility evidence workflows
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Workflow</th>
+                <th scope="col">Standard</th>
+                <th scope="col">Status</th>
+                <th scope="col">Captured</th>
+                <th scope="col">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of automatedEntries; track entry.id) {
+              <tr>
+                <th scope="row">{{ entry.workflow }}</th>
+                <td>{{ standardLabel(entry.standard) }}</td>
+                <td>{{ evidenceStatusLabel(entry.status) }}</td>
+                <td>{{ entry.capturedAt | date: 'mediumDate' }}</td>
+                <td>
+                  {{ entry.notes }} @if (extractArtifactPath(entry.notes); as
+                  artifactPath) {
+                  <span class="artifact-path"
+                    >Artifact: {{ artifactPath }}</span
+                  >
+                  }
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+          } @else { @if ((loading$ | async) === false) {
+          <p>No automated evidence entries are available.</p>
+          } }
+        </section>
+        }
+
+        <section
+          aria-labelledby="manual-evidence-heading"
+          class="content-panel"
+        >
+          <h2 id="manual-evidence-heading">Manual checklist status</h2>
+          <p>
+            Executable checklists live in
+            <code>documentation/accessibility-manual-evidence.md</code>. Record
+            completed runs under
+            <code>documentation/accessibility-evidence/release-checklists/</code
+            >.
+          </p>
+
+          @if (manualEntries$ | async; as manualEntries) {
+          <table class="evidence-table">
+            <caption class="visually-hidden">
+              Manual accessibility checklist completion status
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Checklist</th>
+                <th scope="col">Items</th>
+                <th scope="col">Status</th>
+                <th scope="col">Priority note</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (checklist of manualChecklists; track checklist.id) {
+              <tr>
+                <th scope="row">
+                  {{ checklist.name }}
+                  <span class="checklist-ref"
+                    >({{ checklist.wcagReference }})</span
+                  >
+                </th>
+                <td>{{ checklist.itemCount }}</td>
+                <td>
+                  {{ manualChecklistStatus( indexEvidenceById(manualEntries),
+                  checklist.id ) }}
+                </td>
+                <td>
+                  {{ checklist.priorityNote ??
+                  (indexEvidenceById(manualEntries).get(checklist.id)?.notes ??
+                  'Not recorded') }}
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+          }
+        </section>
+
+        <section aria-labelledby="wcag-criteria-heading" class="content-panel">
+          <h2 id="wcag-criteria-heading">
+            WCAG criteria with automated coverage
+          </h2>
+          <p>
+            These criteria have machine-checkable preconditions in the
+            Playwright suites. They do not replace assistive-technology
+            verification.
+          </p>
+          <ul class="criteria-list">
+            @for (criterion of wcagCriteria; track criterion) {
+            <li>{{ criterion }}</li>
             }
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-    } @else { @if ((loading$ | async) === false) {
-    <p>No automated evidence entries are available.</p>
-    } }
-  </section>
-  }
+          </ul>
+        </section>
 
-  <section aria-labelledby="manual-evidence-heading" class="content-panel">
-    <h2 id="manual-evidence-heading">Manual checklist status</h2>
-    <p>
-      Executable checklists live in
-      <code>documentation/accessibility-manual-evidence.md</code>. Record
-      completed runs under
-      <code>documentation/accessibility-evidence/release-checklists/</code>.
-    </p>
+        <section aria-labelledby="artifacts-heading" class="content-panel">
+          <h2 id="artifacts-heading">Report artifacts</h2>
+          <ul class="artifact-list">
+            @for (artifact of reportArtifacts; track artifact.path) {
+            <li>
+              <strong>{{ artifact.label }}</strong>
+              <span>{{ artifact.path }}</span>
+            </li>
+            }
+          </ul>
+        </section>
 
-    @if (manualEntries$ | async; as manualEntries) {
-    <table class="evidence-table">
-      <caption class="visually-hidden">
-        Manual accessibility checklist completion status
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Checklist</th>
-          <th scope="col">Items</th>
-          <th scope="col">Status</th>
-          <th scope="col">Priority note</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (checklist of manualChecklists; track checklist.id) {
-        <tr>
-          <th scope="row">
-            {{ checklist.name }}
-            <span class="checklist-ref">({{ checklist.wcagReference }})</span>
-          </th>
-          <td>{{ checklist.itemCount }}</td>
-          <td>
-            {{ manualChecklistStatus( indexEvidenceById(manualEntries),
-            checklist.id ) }}
-          </td>
-          <td>
-            {{ checklist.priorityNote ??
-            (indexEvidenceById(manualEntries).get(checklist.id)?.notes ?? 'Not
-            recorded') }}
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-    }
-  </section>
+        <section aria-labelledby="gaps-heading" class="content-panel">
+          <h2 id="gaps-heading">Known gaps and honest limits</h2>
+          <ul class="gap-list">
+            @for (gap of knownGaps; track gap.title) {
+            <li>
+              <strong>{{ gap.title }}</strong>
+              <span>{{ gap.detail }}</span>
+            </li>
+            }
+          </ul>
+        </section>
+      </div>
+    </mat-tab>
 
-  <section aria-labelledby="wcag-criteria-heading" class="content-panel">
-    <h2 id="wcag-criteria-heading">WCAG criteria with automated coverage</h2>
-    <p>
-      These criteria have machine-checkable preconditions in the Playwright
-      suites. They do not replace assistive-technology verification.
-    </p>
-    <ul class="criteria-list">
-      @for (criterion of wcagCriteria; track criterion) {
-      <li>{{ criterion }}</li>
-      }
-    </ul>
-  </section>
+    <mat-tab label="Data pipeline">
+      <div class="evidence-tab-panel">
+        @if (pipelineLoading$ | async) {
+        <div class="inline-status" role="status">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>Loading data pipeline figures</span>
+        </div>
+        } @if (pipelineError$ | async; as pipelineError) {
+        <p class="error-message" role="alert">{{ pipelineError }}</p>
+        } @if (stages$ | async; as stages) {
+        <section
+          aria-labelledby="pipeline-stages-heading"
+          class="content-panel"
+        >
+          <h2 id="pipeline-stages-heading">Subscribed, curated, indexed</h2>
+          <p>
+            The repository points at public files rather than copying them.
+            These three numbers describe that: what the publishers hold, what
+            has been curated into DSpace as research objects, and what Solr is
+            serving to discovery.
+          </p>
 
-  <section aria-labelledby="artifacts-heading" class="content-panel">
-    <h2 id="artifacts-heading">Report artifacts</h2>
-    <ul class="artifact-list">
-      @for (artifact of reportArtifacts; track artifact.path) {
-      <li>
-        <strong>{{ artifact.label }}</strong>
-        <span>{{ artifact.path }}</span>
-      </li>
-      }
-    </ul>
-  </section>
+          <!-- Hero numbers, not a chart: three unrelated totals with different units. A chart
+               would imply a comparison between them that does not exist. -->
+          <dl class="pipeline-stats">
+            <div class="pipeline-stat">
+              <dt>Subscribed at the source</dt>
+              <dd class="pipeline-stat-value">
+                {{ formatBytes(stages.subscribedBytes) }}
+              </dd>
+              <dd class="pipeline-stat-note">
+                {{ stages.subscribedFiles }} distinct files across {{
+                stages.subscribedObjects }} research objects. {{
+                stages.measuredFiles }} reported a length.
+              </dd>
+            </div>
+            <div class="pipeline-stat">
+              <dt>Stored in the repository</dt>
+              <dd class="pipeline-stat-value">
+                {{ stages.curatedItems }} items
+              </dd>
+              <dd class="pipeline-stat-note">
+                Metadata and links in {{ stages.curatedCollections }} DSpace
+                collection(s). The assetstore holds none of the source bytes.
+              </dd>
+            </div>
+            <div class="pipeline-stat">
+              <dt>Indexed for discovery</dt>
+              <dd class="pipeline-stat-value">
+                {{ stages.indexedDocuments }} documents
+              </dd>
+              <dd class="pipeline-stat-note">
+                Solr projection, source {{ stages.indexedSource ?? 'unknown' }}.
+              </dd>
+            </div>
+          </dl>
 
-  <section aria-labelledby="gaps-heading" class="content-panel">
-    <h2 id="gaps-heading">Known gaps and honest limits</h2>
-    <ul class="gap-list">
-      @for (gap of knownGaps; track gap.title) {
-      <li>
-        <strong>{{ gap.title }}</strong>
-        <span>{{ gap.detail }}</span>
-      </li>
-      }
-    </ul>
-  </section>
+          <ul class="pipeline-timestamps">
+            <li>
+              Sizes measured @if (stages.measuredAt) {
+              <strong>{{ stages.measuredAt | date: 'medium' }}</strong>
+              } @else { <strong>never</strong> }. Publishers reissue files, so
+              this is an as-of figure rather than a live one.
+            </li>
+            <li>
+              Repository last synchronized @if (stages.lastSyncAt) {
+              <strong>{{ stages.lastSyncAt | date: 'medium' }}</strong>
+              ({{ stages.lastSyncStatus }}) } @else {
+              <strong>never</strong>
+              }.
+            </li>
+            <li>
+              Discovery index last rebuilt @if (stages.indexedAt) {
+              <strong>{{ stages.indexedAt | date: 'medium' }}</strong>
+              } @else { <strong>never</strong> }.
+            </li>
+            @if (stages.unreachableFiles > 0) {
+            <li class="warning-message">
+              {{ stages.unreachableFiles }} source file(s) did not answer when
+              last measured, so their bytes are not counted above.
+            </li>
+            }
+          </ul>
+        </section>
+        } @if (programRows$ | async; as programRows) { @if (programRows.length >
+        0) {
+        <section
+          aria-labelledby="pipeline-programs-heading"
+          class="content-panel"
+        >
+          <h2 id="pipeline-programs-heading">Subscribed data by program</h2>
+          <p>
+            Measured file size per program, largest first. Bars are drawn
+            relative to the largest program, not to the total, so the smaller
+            programs stay legible.
+          </p>
+
+          <!-- One series, one hue: this is magnitude, not identity, so no legend and no
+               categorical palette. The table below carries the same numbers for anyone the
+               bars do not serve. -->
+          <ul class="program-bars" aria-hidden="true">
+            @for (row of programRows; track row.program) {
+            <li class="program-bar-row">
+              <span class="program-bar-label">{{ row.program }}</span>
+              <span class="program-bar-track">
+                <span
+                  class="program-bar-fill"
+                  [style.width.%]="row.barPercent"
+                ></span>
+              </span>
+              <span class="program-bar-value"
+                >{{ formatBytes(row.totalBytes) }}</span
+              >
+            </li>
+            }
+          </ul>
+
+          <table class="evidence-table">
+            <caption>
+              Subscribed source data by program, as last measured.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Program</th>
+                <th scope="col">Research objects</th>
+                <th scope="col">Distinct files</th>
+                <th scope="col">Files with a reported size</th>
+                <th scope="col">Measured size</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of programRows; track row.program) {
+              <tr>
+                <th scope="row">{{ row.program }}</th>
+                <td>{{ row.objectCount }}</td>
+                <td>{{ row.fileCount }}</td>
+                <td>{{ row.measuredFileCount }}</td>
+                <td>{{ formatBytes(row.totalBytes) }}</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+        } }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>

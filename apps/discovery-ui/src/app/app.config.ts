@@ -24,6 +24,11 @@ import { searchFeatureKey, searchReducer } from './state/search/search.reducer';
 import { SyncEffects } from './state/sync/sync.effects';
 import { syncFeatureKey, syncReducer } from './state/sync/sync.reducer';
 import { EvidenceEffects } from './state/evidence/evidence.effects';
+import { PipelineEffects } from './state/pipeline/pipeline.effects';
+import {
+  pipelineFeatureKey,
+  pipelineReducer,
+} from './state/pipeline/pipeline.reducer';
 import {
   evidenceFeatureKey,
   evidenceReducer,
@@ -53,10 +58,12 @@ export const appConfig: ApplicationConfig = {
     provideState(searchFeatureKey, searchReducer),
     provideState(syncFeatureKey, syncReducer),
     provideState(evidenceFeatureKey, evidenceReducer),
+    provideState(pipelineFeatureKey, pipelineReducer),
     provideEffects([
       DatasetsEffects,
       ErrorNotificationEffects,
       EvidenceEffects,
+      PipelineEffects,
       MapsEffects,
       SearchEffects,
       SyncEffects,

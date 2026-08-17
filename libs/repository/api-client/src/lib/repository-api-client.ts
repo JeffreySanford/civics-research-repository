@@ -15,6 +15,9 @@ export type SyncSource = components['schemas']['SyncSource'];
 export type SyncRequest = components['schemas']['SyncRequest'];
 export type SyncJob = components['schemas']['SyncJob'];
 export type SyncAction = components['schemas']['SyncAction'];
+export type SourceInventory = components['schemas']['SourceInventory'];
+export type SourceInventoryProgram =
+  components['schemas']['SourceInventoryProgram'];
 export type MapLayer = components['schemas']['MapLayer'];
 export type CensusAreaBoundary = components['schemas']['CensusAreaBoundary'];
 export type UsgsEarthquakeOverlay =
@@ -95,6 +98,13 @@ export class RepositoryAdminApi {
 
   getSolrOverview(): Observable<SolrOverview> {
     return this.http.get<SolrOverview>(`${this.baseUrl}/admin/solr/overview`);
+  }
+
+  /** How much source data the repository is subscribed to, as last measured. */
+  getSourceInventory(): Observable<SourceInventory> {
+    return this.http.get<SourceInventory>(
+      `${this.baseUrl}/admin/sources/inventory`,
+    );
   }
 }
 

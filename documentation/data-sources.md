@@ -159,6 +159,24 @@ An unreachable publisher is an expected condition, not an error. The probe retur
 
 Still curated, and worth being plain about: the catalog is not discovered from the Census and USGS APIs. Harvesting _which_ datasets exist is a larger piece of work; `verify:sources` is the interim guard that what the catalog claims still resolves.
 
+### How much data this is, and where it lives
+
+The repository subscribes to public files rather than copying them. `pnpm run sources:inventory` asks every distinct source URL for its length, aggregates by program, and writes `apps/repository-api/src/main/resources/source-inventory.json` with the date it was taken. The API serves that at `GET /admin/sources/inventory`, and the evidence page's **Data pipeline** tab shows it beside the DSpace and Solr figures.
+
+Measured on 2026-08-17: **1.72 GiB across 191 distinct files and 176 research objects**, of which 167 files reported a length and 8 did not answer. Files are counted once per URL — several objects reference the same national file, and counting it per reference would inflate the total into fiction.
+
+Three numbers, three different things:
+
+| Stage      | What it counts                                                  | Order of magnitude                      |
+| ---------- | --------------------------------------------------------------- | --------------------------------------- |
+| Subscribed | Bytes held by the publishers, at the URLs the catalog points at | ~1.7 GiB                                |
+| Stored     | The DSpace assetstore                                           | ~7 KB — it holds no source bytes at all |
+| Indexed    | Documents Solr serves to discovery                              | 183 documents                           |
+
+The gap between the first two is the design, not an omission: DSpace holds metadata, links, and file manifests. The container footprint people notice (several GB) is images and `node_modules`, not research data — `postgres-data` is ~48 MB and `dspace-postgres-data` ~72 MB.
+
+Sizes are an as-of figure. Agencies reissue files, so the inventory is a measurement with a date rather than a live number, and the UI shows the date next to the total. Like `verify:sources`, it is deliberately outside `quality:all`: it depends on federal hosts being reachable, and an agency outage must not read as a broken build.
+
 ### Areas a program does not cover
 
 LODES is published for 49 of the 52 areas, not all of them:

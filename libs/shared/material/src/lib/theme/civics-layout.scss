@@ -547,13 +547,34 @@ code {
 }
 
 /* Opaque, because translucent would let the scrolled content show through the heading. */
-.map-debug h2 {
+/* Opaque, because translucent would let the scrolled content show through the header. */
+.map-debug-header {
   position: sticky;
   top: -0.85rem;
   z-index: 1;
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
   margin: -0.85rem -1rem 0;
   background: #fff;
   padding: 0.85rem 1rem 0.35rem;
+}
+
+.map-debug h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.map-debug-close {
+  border: 1px solid var(--civics-border-strong);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+  padding: 0.15rem 0.6rem;
+  color: var(--civics-text-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 
 .map-debug {
@@ -588,10 +609,6 @@ code {
   padding: 0.85rem 1rem;
   box-shadow: 0 0.75rem 1.5rem rgb(15 23 42 / 12%);
   font-size: 0.8125rem;
-}
-
-.map-debug h2 {
-  font-size: 0.95rem;
 }
 
 .map-debug dl {
@@ -868,4 +885,108 @@ input:focus-visible {
   display: block;
   overflow-x: auto;
   max-width: 100%;
+}
+
+/* Evidence: data pipeline tab. */
+.evidence-tabs {
+  min-width: 0;
+}
+
+.evidence-tab-panel {
+  display: grid;
+  gap: 1.5rem;
+  padding-top: 1.25rem;
+}
+
+/*
+ * Three unrelated totals with different units, so hero numbers rather than a chart: bars side by
+ * side would invite a comparison between gibibytes, items, and documents that means nothing.
+ */
+.pipeline-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+}
+
+.pipeline-stat {
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-md);
+  background: var(--civics-surface-panel);
+  padding: 0.9rem 1rem;
+}
+
+.pipeline-stat dt {
+  color: var(--civics-text-muted);
+  font-size: 0.8125rem;
+}
+
+.pipeline-stat-value {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.pipeline-stat-note {
+  margin: 0.35rem 0 0;
+  color: var(--civics-text-muted);
+  font-size: 0.8125rem;
+}
+
+.pipeline-timestamps {
+  display: grid;
+  gap: 0.35rem;
+  margin: 1rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--civics-text-secondary, var(--civics-text-muted));
+  font-size: 0.875rem;
+}
+
+/*
+ * One series, one hue. This is magnitude, not identity, so there is no legend and no categorical
+ * palette; the bar length carries the value and the number beside it states it exactly.
+ * aria-hidden on the list, because the table below is the same data in a form a screen reader can
+ * actually navigate.
+ */
+.program-bars {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.program-bar-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) minmax(4.5rem, auto);
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.program-bar-label {
+  color: var(--civics-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.program-bar-track {
+  border-radius: 999px;
+  background: var(--civics-surface-muted, #e4ecf6);
+  height: 0.75rem;
+}
+
+/* 4px rounded data-end, anchored to the baseline at the left. */
+.program-bar-fill {
+  display: block;
+  border-radius: 0 4px 4px 0;
+  background: var(--civics-accent, #1b4f9c);
+  height: 100%;
+  min-width: 2px;
+}
+
+.program-bar-value {
+  color: var(--civics-text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
