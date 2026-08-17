@@ -2,46 +2,52 @@
   <section aria-labelledby="evidence-heading" class="content-panel">
     <p class="eyebrow">Accessibility evidence</p>
     <h1 id="evidence-heading">WCAG and Section 508 status</h1>
-    <p>
-      Repeatable automated scans run through Playwright and axe-core on every
-      release gate. Manual keyboard, screen-reader, and map-equivalence
-      checklists exist but are not yet recorded with assistive technology.
-    </p>
-
-    @if (loading$ | async) {
-    <div class="inline-status" role="status">
-      <mat-spinner diameter="24"></mat-spinner>
-      <span>Loading accessibility evidence</span>
-    </div>
-    } @if (error$ | async; as error) {
-    <p class="error-message" role="alert">{{ error }}</p>
-    } @if (overallAutomatedStatus$ | async; as overallStatus) {
-    <div class="evidence-summary" role="status">
-      <p>
-        <strong>Latest automated baseline:</strong>
-        {{ evidenceStatusLabel(overallStatus) }} @if (latestCapturedAt$ | async;
-        as capturedAt) {
-        <span>({{ capturedAt | date: 'mediumDate' }})</span>
-        }
-      </p>
-      @if (checkCounts$ | async; as counts) { @if (counts.total > 0) {
-      <p>
-        Approximately {{ counts.total }} automated checks recorded across axe,
-        structural, reflow, and storyboard suites.
-      </p>
-      } }
-      <p class="warning-message">
-        Passing automated scans is necessary, not sufficient, for Section 508 —
-        especially for the map workspace where the accessible feature list is
-        the conformance path.
-      </p>
-    </div>
-    }
   </section>
 
   <mat-tab-group class="evidence-tabs" data-testid="evidence-tabs">
     <mat-tab label="WCAG and Section 508">
       <div class="evidence-tab-panel">
+        <!-- No aria-labelledby: the page heading above the tabs already names this, and two
+             regions claiming the same name is worse than one unnamed container. -->
+        <section class="content-panel">
+          <p>
+            Repeatable automated scans run through Playwright and axe-core on
+            every release gate. Manual keyboard, screen-reader, and
+            map-equivalence checklists exist but are not yet recorded with
+            assistive technology.
+          </p>
+
+          @if (loading$ | async) {
+          <div class="inline-status" role="status">
+            <mat-spinner diameter="24"></mat-spinner>
+            <span>Loading accessibility evidence</span>
+          </div>
+          } @if (error$ | async; as error) {
+          <p class="error-message" role="alert">{{ error }}</p>
+          } @if (overallAutomatedStatus$ | async; as overallStatus) {
+          <div class="evidence-summary" role="status">
+            <p>
+              <strong>Latest automated baseline:</strong>
+              {{ evidenceStatusLabel(overallStatus) }} @if (latestCapturedAt$ |
+              async; as capturedAt) {
+              <span>({{ capturedAt | date: 'mediumDate' }})</span>
+              }
+            </p>
+            @if (checkCounts$ | async; as counts) { @if (counts.total > 0) {
+            <p>
+              Approximately {{ counts.total }} automated checks recorded across
+              axe, structural, reflow, and storyboard suites.
+            </p>
+            } }
+            <p class="warning-message">
+              Passing automated scans is necessary, not sufficient, for Section
+              508 — especially for the map workspace where the accessible
+              feature list is the conformance path.
+            </p>
+          </div>
+          }
+        </section>
+
         @if (automatedEntries$ | async; as automatedEntries) {
         <section
           aria-labelledby="automated-evidence-heading"
