@@ -55,7 +55,18 @@ discovered from Census and USGS APIs. Per-file facts such as size and release da
 live HEAD requests where reachable; catalog discovery is the larger open ingestion piece. Tracked as
 the open item under P1 in [TODO.md](TODO.md#current-priorities).
 
-### 4. Generalise sync to research objects
+### 4. Persistent repository identity
+
+A DSpace UUID is resolved per operation and discarded, so nothing records that a source identifier
+became a particular repository item. Every subsystem re-interprets the string
+`tiger-line-north-dakota-2025` independently. Persisting the UUID, the publisher's freshness, and the
+indexing timestamp closes the chain — source identifier to DSpace UUID to Solr document to route —
+and is what makes relationships, versions and citations resolvable later rather than re-derived.
+
+This is the last structural gap in the sync subsystem and the one an outside reader notices.
+Tracked as P15 in [TODO.md](TODO.md).
+
+### 5. Generalise sync to research objects
 
 The catalog and SAF path model the full research-object vocabulary. Live sync does not:
 `PublicDatasetMetadata` carries no resource type, access level, license, DOI, researchers or
@@ -63,7 +74,7 @@ relations, so a harvested object cannot express what a seeded one can. Renaming 
 `ResearchObjectMetadata` and widening the DSpace payload mapper closes the loop. Deliberately behind
 the user-facing work — this rebuilds a pipeline that currently functions.
 
-### 5. Finish manual accessibility evidence
+### 6. Finish manual accessibility evidence
 
 Checklists are **delivered** in
 [accessibility-manual-evidence.md](../documentation/accessibility-manual-evidence.md). Map-to-list
@@ -72,12 +83,12 @@ cannot be asserted automatically. What remains is executing a run with NVDA and 
 This is the difference between "the automated scans pass" and "here is how Section 508 evidence is
 produced".
 
-### 6. Optional IaC for the documented AWS target
+### 7. Optional IaC for the documented AWS target
 
 C4 diagrams and the modernization narrative exist. Terraform or CDK for the documented target is still
 open (P4 / PI 6.1).
 
-### 7. Dependency, contract and platform cleanup
+### 8. Dependency, contract and platform cleanup
 
 Move NgRx to stable 22 when published, revisit generated controller interfaces when Spring 7 support
 lands, cover `JdbcSyncJobStore` with Testcontainers, and add typed API error responses where the
@@ -96,6 +107,10 @@ with the current direct-to-main workflow and is a governance choice rather than 
   [open-science-research-objects.md](../documentation/open-science-research-objects.md).
 - **Continuous integration.** The repository had no `.github` directory; every gate ran only where
   someone typed the command. Tracked as P13.
+- **Live commuting flows.** Aggregated from the published LODES origin-destination file rather than a
+  stored sample, which understated the largest North Dakota flow by 16x. Tracked as P14.
+- **Planning reconciled.** Eight TODO items and two acceptance criteria described work that was
+  already delivered — including the TIGER/Line adapter the first sync slice runs on.
 
 ## Implementation Strategy
 

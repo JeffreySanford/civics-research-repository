@@ -15,7 +15,7 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] Item metadata includes title, abstract, publisher, program, geography, vintage year, source URL, documentation URL, file list, and citation.
 - [x] Large source files are represented by file manifests and source URLs unless intentionally mirrored.
 - [x] Small-to-medium mirrored demo artifacts persist in Docker storage when useful for local demo reliability. _(76 files, 1.00 GiB in the DSpace assetstore, bounded by a per-file cap and a total budget.)_
-- [ ] Sync state records source identifier, source URL, DSpace item ID, last sync status, and source freshness. _(Mode, source, status, and timing are recorded; DSpace item ID and source freshness are not.)_
+- [ ] Sync state records source identifier, source URL, DSpace item ID, last sync status, and source freshness. _(Mode, source, status, and timing are recorded in `sync_jobs`. The DSpace UUID is resolved per operation and discarded, so the repository has no persistent identity linking a source identifier to the item it became. This is the last structural gap in the sync subsystem; see P15.)_
 - [x] Startup sync creates or updates required seed repository objects after Docker startup.
 - [x] DSpace community and collection exist for Census public research data.
 - [x] The item is available through DSpace REST.
@@ -74,4 +74,6 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] Docker Compose starts persistent local services and the app can be demoed after restart.
 - [x] `pnpm run test:all` passes.
 - [x] `pnpm run quality:all` passes.
-- [ ] Demo script explains the architecture, dataset flow, map overlay, and accessibility evidence.
+- [x] Continuous integration runs the quality gates on every push and pull request: formatting, OpenAPI lint, contract and fixture drift, lint, unit tests, the Angular build, and the Spring service's Gradle test and runtime image. [ci.yml](../.github/workflows/ci.yml).
+- [ ] `main` is protected with required status checks. _(Interacts with the current direct-to-main workflow; a deliberate choice rather than an oversight.)_
+- [x] Demo script explains the architecture, dataset flow, map overlay, and accessibility evidence. [demo-script.md](../documentation/demo/demo-script.md), with separate ingestion, mapping, and accessibility-evidence walkthroughs and a recorded tradeoffs list.

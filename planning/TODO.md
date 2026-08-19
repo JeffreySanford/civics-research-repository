@@ -170,6 +170,19 @@ The repository now holds objects the default discovery view hides, and 181 objec
 - [x] Index the new metadata into discovery: subjects, authors, citation, DOI, via a `DiscoveryDocument` that carries searchable text without widening `SearchResult`. Queries that previously returned nothing now resolve: "Card" finds the paper by author, "disclosure avoidance" finds the methodology report, "Title 13 restricted" finds the restricted microdata.
 - [x] Fallback semantics brought in line: tokenized matching with the same two-thirds minimum-match rule instead of requiring the whole query as one substring, and the vintage facet reversed to newest-first. A Java test caught the second one — losing Solr would have flipped the year order. The fallback still cannot match subjects, authors or citations, which are indexed for Solr and not carried on `SearchResult`.
 
+### P15 - Persistent repository identity
+
+The last structural gap in the sync subsystem, and the one an external review keeps landing on.
+
+A DSpace UUID is resolved per operation and discarded. Every subsystem independently re-interprets
+the string `tiger-line-north-dakota-2025`: sync looks it up by discovery search, the projection keys
+on it, the UI routes on it. Nothing records that this source identifier became that repository item.
+
+- [ ] Persist the DSpace UUID on the sync job alongside the source identifier, so a source and the item it became are linked rather than re-derived.
+- [ ] Record source freshness per item (publisher last-modified and the time it was checked) so drift is visible without re-probing.
+- [ ] Record the discovery indexing timestamp, closing the identity chain: source identifier -> DSpace UUID -> Solr document -> route.
+- [ ] Decide whether `/datasets/:id` should resolve a UUID as well as a source identifier, once identity is persistent.
+
 ### P14 - Discovery to map
 
 Search and the map were two demonstrations that happened to share a stack.
@@ -321,8 +334,7 @@ Goal: run the repository stack locally with a typed Java API, DSpace, PostgreSQL
 - [x] Report how much source data the repository subscribes to. `pnpm run sources:inventory`
       measures every source URL and commits the totals with an as-of date; the evidence page's
       Data pipeline tab shows subscribed, curated, and indexed side by side.
-- [ ] Store small-to-medium mirrored demo artifacts where useful. The inventory now says what
-      that would cost: 1.72 GiB subscribed in total, against an assetstore currently holding 7 KB.
+- [x] Store small-to-medium mirrored demo artifacts where useful. 76 files, 1.00 GiB in the DSpace assetstore, bounded by a per-file cap and a total budget; see P10.
 - [x] Confirm item appears through DSpace REST.
 - [x] Confirm item is indexed into Solr discovery.
 
@@ -351,16 +363,16 @@ Goal: ingest public metadata from Census and USGS sources into repository-ready 
 
 ### Sprint 2.2 - Additional Census Sources
 
-- [ ] Add SIPP metadata adapter.
-- [ ] Add CPS metadata adapter.
-- [ ] Add LODES metadata adapter.
-- [ ] Add TIGER/Line metadata adapter.
-- [ ] Add source-specific documentation links.
-- [ ] Add source freshness notes.
+- [x] Add SIPP metadata adapter. `SippMetadataAdapter`.
+- [x] Add CPS metadata adapter. `CpsMetadataAdapter`.
+- [x] Add LODES metadata adapter. `LodesMetadataAdapter`.
+- [x] Add TIGER/Line metadata adapter. `TigerLineMetadataAdapter`, and the first sync slice runs on it.
+- [x] Add source-specific documentation links. All 181 research objects carry a `documentationUrl`.
+- [x] Add source freshness notes. `SourceFileFacts` carries size and last-modified from live HEAD probes, and `source-inventory.json` records when the sweep ran.
 
 ### Sprint 2.3 - USGS Overlay Sources
 
-- [ ] Add USGS earthquake feed adapter.
+- [x] Add USGS earthquake feed adapter. `UsgsEarthquakesMetadataAdapter`, with the live overlay and its stale/error states.
 - [x] Evaluate USGS National Map layer options.
 - [x] Document overlay attribution requirements.
 - [x] Normalize USGS overlay metadata.
