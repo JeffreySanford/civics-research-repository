@@ -299,7 +299,7 @@ test.describe('accessibility structure', () => {
     // still failing if a toggle loses its name.
     const layerNames = [
       'TIGER/Line boundary',
-      'LODES workplace flow sample',
+      'LODES commuting flows',
       'SAIPE county poverty',
       'USGS 3HP hydrography',
       'USGS earthquake overlay',

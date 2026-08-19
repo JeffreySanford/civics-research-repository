@@ -40,7 +40,7 @@ test.describe('map layer controls', () => {
       name: 'Map layer controls',
     });
     const lodes = layerControls.getByRole('checkbox', {
-      name: 'LODES workplace flow sample',
+      name: 'LODES commuting flows',
     });
     const tiger = layerControls.getByRole('checkbox', {
       name: 'TIGER/Line boundary',
@@ -49,11 +49,11 @@ test.describe('map layer controls', () => {
     await lodes.check();
     await tiger.check();
 
-    await expect(page.getByText('2023 LODES workplace flow')).toBeVisible();
+    await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();
     await expect(page.getByText('2025 TIGER/Line Census area')).toBeVisible();
 
     await lodes.uncheck();
-    await expect(page.getByText('2023 LODES workplace flow')).toHaveCount(0);
+    await expect(page.getByText('2023 LODES commuting flows')).toHaveCount(0);
     // Only the LODES layer goes: a toggle must not take its neighbours with it.
     await expect(page.getByText('2025 TIGER/Line Census area')).toBeVisible();
 
@@ -61,19 +61,19 @@ test.describe('map layer controls', () => {
     await expect(page.getByText('2025 TIGER/Line Census area')).toHaveCount(0);
 
     await lodes.check();
-    await expect(page.getByText('2023 LODES workplace flow')).toBeVisible();
+    await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();
   });
 
   /** The toggle is shareable state: a copied URL has to reopen the same map. */
   test('the LODES toggle survives a reload @maps', async ({ page }) => {
     await page
       .getByRole('group', { name: 'Map layer controls' })
-      .getByRole('checkbox', { name: 'LODES workplace flow sample' })
+      .getByRole('checkbox', { name: 'LODES commuting flows' })
       .check();
 
     await page
       .getByRole('group', { name: 'Map layer controls' })
-      .getByRole('checkbox', { name: 'LODES workplace flow sample' })
+      .getByRole('checkbox', { name: 'LODES commuting flows' })
       .uncheck();
 
     await expect(page).toHaveURL(/lodes=off/);
@@ -83,9 +83,9 @@ test.describe('map layer controls', () => {
     await expect(
       page
         .getByRole('group', { name: 'Map layer controls' })
-        .getByRole('checkbox', { name: 'LODES workplace flow sample' }),
+        .getByRole('checkbox', { name: 'LODES commuting flows' }),
     ).not.toBeChecked();
-    await expect(page.getByText('2023 LODES workplace flow')).toHaveCount(0);
+    await expect(page.getByText('2023 LODES commuting flows')).toHaveCount(0);
   });
 
   test('selecting a Census area loads that area layers @maps', async ({
@@ -99,7 +99,7 @@ test.describe('map layer controls', () => {
       .getByRole('checkbox', { name: 'TIGER/Line boundary' })
       .check();
     await layerControls
-      .getByRole('checkbox', { name: 'LODES workplace flow sample' })
+      .getByRole('checkbox', { name: 'LODES commuting flows' })
       .check();
 
     await expect(
@@ -114,7 +114,7 @@ test.describe('map layer controls', () => {
       page.getByText('2025 TIGER/Line Census area preview - California'),
     ).toBeVisible();
     await expect(
-      page.getByText('2023 LODES workplace flow sample - California'),
+      page.getByText('2023 LODES commuting flows - California'),
     ).toBeVisible();
     await expect(
       page.getByText('2025 TIGER/Line Census area preview - North Dakota'),
@@ -185,7 +185,7 @@ test.describe('map layer controls', () => {
     });
     for (const name of [
       'TIGER/Line boundary',
-      'LODES workplace flow sample',
+      'LODES commuting flows',
       'SAIPE county poverty',
       'USGS 3HP hydrography',
       'USGS earthquake overlay',

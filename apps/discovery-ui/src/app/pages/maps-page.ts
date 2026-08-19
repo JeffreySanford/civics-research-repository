@@ -167,7 +167,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     tiger:
       'Shows the Census TIGER/Line state or area boundary for the selected geography. Helps anchor discovery results to official Census boundaries.',
     lodes:
-      'Displays a sample workplace flow from LEHD LODES data—where workers live versus where they work. Demo uses a small API-backed sample for the selected area.',
+      'Commuting flows from LEHD LODES origin-destination data—where workers live versus where they work. Aggregated from the published block-level file to the largest county-to-county flows for the selected area. States whose published file is too large to derive within a request fall back to a stored sample, which the legend names.',
     saipe:
       'Colors counties by SAIPE poverty rate for the selected state. The county value table below lists the same statistics shown on the map.',
     hydrography:

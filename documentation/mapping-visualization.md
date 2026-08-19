@@ -122,11 +122,47 @@ Each selection has its own named live region — `Map feature selection` and `Co
 selection`. They are independent, and sharing one status would have each overwrite the other's
 announcement.
 
-### Known limit
+### Where the flows come from
 
-The North Dakota commuting flows are a small stored sample derived from the 2023 LODES
-origin-destination product, not a live extract. Deriving them reproducibly from the LODES WAC and OD
-files is tracked in [planning/TODO.md](../planning/TODO.md).
+Derived from the published LODES origin-destination file at request time, not stored:
+
+```
+{st}_od_main_JT00_2023.csv.gz
+   -> block GEOID truncated to 5 characters = county FIPS
+   -> summed by (home county, work county)
+   -> intra-county pairs dropped
+   -> largest 8 kept
+   -> county names and centroids joined from the Census Gazetteer
+```
+
+Intra-county pairs are dropped because they are the largest numbers in the file and draw nothing: a
+line from a county to itself is a dot. Cass County to Cass County is 87,272 jobs and says only that
+most people work where they live.
+
+**2023 is the newest vintage.** There is no LODES9 series and no 2024 OD or WAC file; verified
+against the publisher. That is the ceiling for everyone, not a limit of this repository.
+
+**Why this replaced the stored sample.** The committed sample put Morton to Burleigh at 520 workers.
+The real 2023 figure is 8,615, and the sample ranked a different flow first. It was labelled a
+sample and it was still misleading by an order of magnitude.
+
+#### Three tiers, and the flag that says which
+
+| Tier                                 | When                                                    | `fallback` |
+| ------------------------------------ | ------------------------------------------------------- | ---------- |
+| Derived from the published file      | the file is reachable and within budget                 | `false`    |
+| Committed sample                     | derivation declined or failed, and a stored file exists | `true`     |
+| Generated from the area bounding box | neither of the above                                    | `true`     |
+
+The published files run from 1.2 MB for Wyoming to 97 MB for California, and the large ones carry
+tens of millions of block pairs. A HEAD request checks the size first, and anything above
+`civics.maps.lodes.max-download-mb` (default 30) is declined rather than attempted: a stored
+fallback that arrives beats live data that never renders. Alaska returns 404 for every vintage
+because it does not participate in LEHD, which the catalog already records.
+
+Results are cached per state for the process lifetime. The vintage is an annual publication, so
+there is nothing to invalidate within a run. Set `civics.maps.lodes.live-enabled=false` to run the
+demo entirely offline.
 
 ## Visualization Scenarios
 

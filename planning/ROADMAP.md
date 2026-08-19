@@ -39,11 +39,14 @@ the workforce layers on and the reference layers off, states its research contex
 the search that led there. The area comes from the search response's geography facet, so the map is
 told where to look rather than reading it out of the rendered cards.
 
-What is left is the data behind it. The North Dakota flows are a small stored sample derived from
-the 2023 LODES origin-destination product, honestly labelled as a sample. Deriving them reproducibly
-from the LODES WAC and OD files is the larger follow-on, and it is real data engineering rather than
-navigation work. Two-way selection between the accessible flow table and the map is the other open
-piece. Tracked as P14 in [TODO.md](TODO.md).
+The data behind it is live too. Commuting flows are aggregated from the published LODES
+origin-destination file at request time, with county names and centroids from the Census Gazetteer;
+states whose file is too large to derive within a map request fall back to a stored sample and say
+so. Two-way selection between the accessible flow table and the map is done.
+
+What is left for the workforce view is the WAC side: a workplace-employment layer shading geographies
+by job counts, which would pair with the commuting lines to answer "where are the jobs" as well as
+"who travels to them". Tracked as P14 in [TODO.md](TODO.md).
 
 ### 3. Harvest the catalog from live publishers
 

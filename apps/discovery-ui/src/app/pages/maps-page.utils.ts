@@ -120,7 +120,7 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
   },
   {
     id: 'lodes',
-    label: 'LODES workplace flow sample',
+    label: 'LODES commuting flows',
     sourceId: 'lodes-workplace-flow',
     layerIds: [
       'lodes-workplace-flow-line',

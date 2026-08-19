@@ -31,10 +31,12 @@ public class LodesFlowService {
             "https://lehd.ces.census.gov/data/lodes/LODES8/%s/od/%s_od_main_JT00_%d.csv.gz";
 
     private final CensusAreaBoundaryService censusAreaBoundaryService;
+    private final LodesOdFlowClient lodesOdFlowClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public LodesFlowService(CensusAreaBoundaryService censusAreaBoundaryService) {
+    public LodesFlowService(CensusAreaBoundaryService censusAreaBoundaryService, LodesOdFlowClient lodesOdFlowClient) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
+        this.lodesOdFlowClient = lodesOdFlowClient;
     }
 
     public LodesFlowOverlay findFlowSample(String geography) {
@@ -75,24 +77,47 @@ public class LodesFlowService {
         }
 
         String sourceUrl = SOURCE_URL_TEMPLATE.formatted(abbreviation, abbreviation, VINTAGE);
+        boolean fallback = flows.stream().anyMatch(FlowSample::fallback);
+
+        // The label says which it is. "Sample" was accurate when the numbers were always stored;
+        // it now understates derived flows and would let a stored one pass for a measurement.
+        String source = (fallback
+                        ? "LEHD LODES %d stored sample - %s"
+                        : "LEHD LODES %d origin-destination, aggregated to counties - %s")
+                .formatted(VINTAGE, boundary.getGeography());
+
         return new LodesFlowOverlay(
-                "LEHD LODES " + VINTAGE + " main OD sample - " + boundary.getGeography(),
+                source,
                 URI.create(sourceUrl),
                 ATTRIBUTION,
                 boundary.getGeography(),
                 VINTAGE,
-                flows.stream().anyMatch(FlowSample::fallback),
+                fallback,
                 objectMapper.convertValue(geoJson, java.util.Map.class),
                 summaries);
     }
 
+    /**
+     * Real flows first, committed sample second, generated geometry last.
+     *
+     * <p>Each step down is a step further from the published data, and the overlay's {@code
+     * fallback} flag says which one answered so the UI never presents a generated shape as a
+     * measurement.
+     */
     private List<FlowSample> loadFlows(String slug, CensusAreaBoundary boundary) {
+        List<FlowSample> derived = deriveLiveFlows(slug);
+        if (!derived.isEmpty()) {
+            return derived;
+        }
+
         try (InputStream input = getClass().getResourceAsStream("/maps/lodes-flow/" + slug + ".json")) {
             if (input != null) {
                 JsonNode root = objectMapper.readTree(input);
                 List<FlowSample> flows = new ArrayList<>();
                 for (JsonNode node : root.path("flows")) {
-                    flows.add(parseFlow(node, false));
+                    // true: reaching this means the published file did not answer, and the reader
+                    // is looking at a stored approximation rather than the current data.
+                    flows.add(parseFlow(node, true));
                 }
                 if (!flows.isEmpty()) {
                     return flows;
@@ -103,6 +128,32 @@ public class LodesFlowService {
         }
 
         return generatedFlows(boundary);
+    }
+
+    /** Aggregated from the published LODES origin-destination file, when it can be reached. */
+    private List<FlowSample> deriveLiveFlows(String slug) {
+        String abbreviation = abbreviationFor(slug);
+        if (abbreviation.isBlank()) {
+            return List.of();
+        }
+
+        return lodesOdFlowClient
+                .findTopFlows(abbreviation)
+                .map(flows -> flows.stream()
+                        .map(flow -> new FlowSample(
+                                flow.id(),
+                                flow.originCountyName() + " County",
+                                flow.destinationCountyName() + " County",
+                                flow.workerCount(),
+                                flow.originCountyName(),
+                                flow.destinationCountyName(),
+                                flow.originLongitude(),
+                                flow.originLatitude(),
+                                flow.destinationLongitude(),
+                                flow.destinationLatitude(),
+                                false))
+                        .toList())
+                .orElse(List.of());
     }
 
     private FlowSample parseFlow(JsonNode node, boolean fallback) {

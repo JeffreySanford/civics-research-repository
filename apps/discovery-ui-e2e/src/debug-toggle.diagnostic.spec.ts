@@ -15,7 +15,7 @@ test.describe('debug toggle placement diagnostic', () => {
     const controls = page.getByRole('group', { name: 'Map layer controls' });
     for (const name of [
       'TIGER/Line boundary',
-      'LODES workplace flow sample',
+      'LODES commuting flows',
       'SAIPE county poverty',
       'USGS 3HP hydrography',
       'USGS earthquake overlay',

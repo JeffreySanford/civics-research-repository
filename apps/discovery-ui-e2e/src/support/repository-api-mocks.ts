@@ -94,7 +94,7 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         },
         {
           id: 'lodes-workplace-flow-sample',
-          label: `2023 LODES workplace flow sample - ${geography}`,
+          label: `2023 LODES commuting flows - ${geography}`,
           layerType: 'CENSUS_DATA',
           sourceUrl: 'https://lehd.ces.census.gov/data/',
           attribution:

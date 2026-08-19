@@ -149,9 +149,7 @@ test.describe('demo storyboard checks', () => {
     await expect(page.getByText('Current')).toBeVisible();
 
     await page.getByRole('tab', { name: 'Map Layers' }).click();
-    await expect(
-      page.getByText('2023 LODES workplace flow sample'),
-    ).toBeVisible();
+    await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();
     await expect(page.getByText('USGS earthquake overlay')).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Open map workspace' }),
@@ -218,7 +216,7 @@ test.describe('demo storyboard checks', () => {
    */
   const MAP_LAYERS = [
     { id: 'tiger', param: 'tiger', legend: /TIGER\/Line preview/ },
-    { id: 'lodes', param: 'lodes', legend: /LODES workplace flow sample/ },
+    { id: 'lodes', param: 'lodes', legend: /LODES commuting flows/ },
     { id: 'saipe', param: 'saipe', legend: /SAIPE county poverty/ },
     {
       id: 'hydrography',
@@ -345,7 +343,7 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText(/LODES workplace flow sample/),
+        .getByText(/LODES commuting flows/),
     ).toBeVisible();
     await expect(page.getByText('3 loaded')).toBeVisible();
 
@@ -353,9 +351,7 @@ test.describe('demo storyboard checks', () => {
 
     await expect(page.getByLabel('Census area')).toHaveValue('Texas');
     await expect(page.getByText('Texas TIGER/Line preview')).toBeVisible();
-    await expect(
-      page.getByText('2023 LODES workplace flow sample'),
-    ).toBeVisible();
+    await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();
     await expect(page).toHaveURL(/area=Texas/);
     await expect(page.locator('.maplibregl-canvas')).toHaveCount(1);
   });
@@ -375,7 +371,7 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText(/LODES workplace flow sample/),
+        .getByText(/LODES commuting flows/),
     ).toBeVisible();
 
     await page.getByTestId('map-layer-tiger').uncheck();
@@ -444,7 +440,7 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText(/LODES workplace flow sample/),
+        .getByText(/LODES commuting flows/),
     ).toBeVisible();
     await expect(page.getByText('Stale', { exact: true })).toBeVisible();
 
@@ -459,7 +455,7 @@ test.describe('demo storyboard checks', () => {
     await expect(
       page
         .getByLabel('Visible map layer legend')
-        .getByText(/LODES workplace flow sample/),
+        .getByText(/LODES commuting flows/),
     ).toBeVisible();
     await expect(page.getByText('unavailable', { exact: true })).toBeVisible();
   });

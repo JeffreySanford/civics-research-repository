@@ -998,7 +998,7 @@ input:focus-visible {
 /**
  * A layer toggle and its info button stay on one line, but the pair must still fit.
  *
- * The row is inline-flex, so at 320px a long label such as "LODES workplace flow sample" plus the
+ * The row is inline-flex, so at 320px a long label such as "USGS 3HP hydrography reference" plus the
  * icon button measured 363px and scrolled the whole page sideways. Capping the row at the
  * container width and letting the label wrap keeps the control intact and the page reflowed.
  *
@@ -1034,7 +1034,7 @@ input:focus-visible {
  * The toggle label wraps at 320px.
  *
  * `white-space: nowrap` keeps each label on one line at comfortable widths, which is what it is
- * for, but at 320px "LODES workplace flow sample" plus its info button ran ten pixels past the
+ * for, but at 320px "USGS 3HP hydrography reference" plus its info button ran ten pixels past the
  * right edge and scrolled the page. Below the narrow breakpoint the label wraps instead.
  */
 @media (max-width: 26rem) {

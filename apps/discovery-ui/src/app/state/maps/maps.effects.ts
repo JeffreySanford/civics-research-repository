@@ -101,7 +101,7 @@ export class MapsEffects {
               MapsActions.lodesFlowOverlayFailed({
                 error: parseRepositoryError(
                   error,
-                  `LODES flow sample for ${geography} failed to load.`,
+                  `LODES commuting flows for ${geography} failed to load.`,
                 ),
               }),
             ),

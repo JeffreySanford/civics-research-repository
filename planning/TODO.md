@@ -178,8 +178,10 @@ Search and the map were two demonstrations that happened to share a stack.
 - [x] Open the map focused, with TIGER, LODES and SAIPE on and hydrography and earthquakes off, because reference layers have nothing to say about workforce.
 - [x] Research context panel on the map: area, the discovery query that led there, active data, and a link back to those results.
 - [x] Name the workspace for the research question in that mode, rather than for the library drawing it.
-- [ ] Replace the stored North Dakota flow sample with a reproducibly derived extract from the LODES WAC and OD products. The current sample is labelled as one; a derived extract is the larger follow-on.
+- [x] Replace the stored North Dakota flow sample with a live extract from the published LODES OD file, aggregated block pairs -> county pairs, joined to Census Gazetteer county names and centroids. The stored sample understated the largest real flow by 16x (Morton to Burleigh: 520 stored, 8,615 actual) and ranked the wrong flow first. Files above a configurable size budget are declined by a HEAD check rather than blocking the map; those states fall back and say so. 2023 is the newest vintage published — no LODES9, no 2024 OD or WAC.
 - [x] Two-way selection between the accessible flow table and the map. The flow list is now a real table (Origin / Destination / Workers); selecting a row highlights that flow on the map and fits the viewport to it, and clicking the flow on the map selects the row and moves focus to it. Selection lives in NgRx as `selectedLodesFlowId`, so neither view writes to the other — both read the store. It is dropped when the LODES layer is hidden and when a geography change loads an overlay that does not contain it.
+
+- [ ] Workplace employment layer from the LODES WAC product, shading geographies by job count, to pair with the commuting lines.
 
 ### P13 - Continuous integration
 

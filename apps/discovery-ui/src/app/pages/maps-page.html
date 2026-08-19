@@ -65,7 +65,7 @@
               [checked]="lodesVisible$ | async"
               (change)="toggleLodesLayer($any($event.target).checked)"
             />
-            <span class="layer-toggle-label">LODES workplace flow sample</span>
+            <span class="layer-toggle-label">LODES commuting flows</span>
           </label>
           <button
             type="button"
@@ -74,7 +74,7 @@
             data-testid="map-layer-lodes-info"
             [matTooltip]="layerTooltips.lodes"
             matTooltipPosition="above"
-            aria-label="About LODES workplace flow layer"
+            aria-label="About LODES commuting flows layer"
           >
             <mat-icon aria-hidden="true">info_outline</mat-icon>
           </button>
@@ -195,7 +195,7 @@
     </p>
     } @if (lodesFlowError$ | async; as lodesError) {
     <p class="warning-message" role="status">
-      LODES workplace flow sample unavailable: {{ lodesError }}
+      LODES commuting flows unavailable: {{ lodesError }}
     </p>
     } @if (saipeChoroplethError$ | async; as saipeError) {
     <p class="warning-message" role="status">
@@ -229,7 +229,12 @@
           lodesOverlay) {
           <li>
             <span class="swatch lodes"></span>
-            LODES workplace flow sample ({{ lodesOverlay.flows.length }} flows)
+            <!-- Derived or stored, named. The overlay's fallback flag is the only thing that
+                 knows which, and a reader comparing numbers against Census deserves to be told. -->
+            @if (lodesOverlay.fallback) { LODES commuting flows, stored sample
+            ({{ lodesOverlay.flows.length }} flows) } @else { LODES commuting
+            flows, {{ lodesOverlay.vintage }} origin-destination ({{
+            lodesOverlay.flows.length }} flows) }
           </li>
           } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as
           saipe) {
@@ -497,7 +502,7 @@
       </li>
       } @else { @if (lodesFlowError$ | async) {
       <li>
-        <strong>LODES workplace flow sample unavailable</strong>
+        <strong>LODES commuting flows unavailable</strong>
         <span>Other map layers remain available.</span>
       </li>
       } } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as

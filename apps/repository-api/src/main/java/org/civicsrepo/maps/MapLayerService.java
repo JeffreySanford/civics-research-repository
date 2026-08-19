@@ -41,7 +41,7 @@ public class MapLayerService {
                         .visibleByDefault(true),
                 new MapLayer(
                                 "lodes-workplace-flow-" + slug,
-                                "2023 LODES workplace flow sample - " + geography,
+                                "2023 LODES commuting flows - " + geography,
                                 MapLayerType.CENSUS_DATA,
                                 URI.create("https://lehd.ces.census.gov/data/"),
                                 "U.S. Census Bureau LEHD Origin-Destination Employment Statistics")
