@@ -2,6 +2,8 @@ import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  ViewChild,
   OnInit,
   inject,
 } from '@angular/core';
@@ -20,6 +22,7 @@ import {
   selectSearchError,
   selectSearchFacets,
   selectSearchLoading,
+  selectSearchPagination,
   selectSearchResultSource,
   selectSearchResults,
   selectSearchTotalResults,
@@ -75,6 +78,12 @@ export class DiscoveryPage implements OnInit {
   /** Empty means every type. One value at a time: the contract takes a single content type. */
   protected selectedContentType: ResearchObjectType | '' = '';
 
+  /** Zero-based, matching the contract. Rendered one-based, matching how people count. */
+  protected page = 0;
+
+  @ViewChild('resultsHeading')
+  private readonly resultsHeading?: ElementRef<HTMLElement>;
+
   protected readonly geographyControl = new FormControl('', {
     nonNullable: true,
   });
@@ -87,6 +96,7 @@ export class DiscoveryPage implements OnInit {
   protected readonly totalResults$ = this.store.select(
     selectSearchTotalResults,
   );
+  protected readonly pagination$ = this.store.select(selectSearchPagination);
   protected readonly loading$ = this.store.select(selectSearchLoading);
   protected readonly error$ = this.store.select(selectSearchError);
 
@@ -99,19 +109,41 @@ export class DiscoveryPage implements OnInit {
     this.selectedContentType = (params.get('type') ?? '') as
       | ResearchObjectType
       | '';
+    this.page = this.toPage(params.get('page'));
 
-    this.submitSearch();
-  }
-
-  protected submitSearch(): void {
+    // Not submitSearch(): that resets to the first page, which is right when a filter changes and
+    // wrong on load. A deep link to ?page=1 must open on page 2, not silently on page 1.
     this.updateSearchUrl();
     this.dispatchSearch();
+  }
+
+  /**
+   * Submits a search, returning to the first page.
+   *
+   * Every filter change resets the page. Staying on page 4 after narrowing 181 results to 12 shows
+   * an empty list, which reads as "no results" rather than "you are past the end".
+   */
+  protected submitSearch(): void {
+    this.page = 0;
+    this.updateSearchUrl();
+    this.dispatchSearch();
+  }
+
+  /** Moves to another page, keeping every filter as it is. */
+  protected goToPage(page: number): void {
+    this.page = Math.max(0, page);
+    this.updateSearchUrl();
+    this.dispatchSearch();
+
+    // Paging replaces the whole list. Without moving focus, a keyboard or screen-reader user is
+    // left on a button whose surrounding content silently changed underneath them.
+    this.resultsHeading?.nativeElement.focus();
   }
 
   private dispatchSearch(): void {
     const baseQuery: SearchQuery = {
       q: this.searchControl.value,
-      page: 0,
+      page: this.page,
       pageSize: PAGE_SIZE,
     };
     const query = {
@@ -219,6 +251,9 @@ export class DiscoveryPage implements OnInit {
           : null,
         geography: this.geographyControl.value || null,
         type: this.selectedContentType || null,
+        // Page 1 is the default, so it stays out of the URL: a shared link to the first page of
+        // results should look like a link to the results.
+        page: this.page > 0 ? this.page : null,
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,
@@ -233,6 +268,12 @@ export class DiscoveryPage implements OnInit {
    * "Clear filters" undoable only by reloading, and it meant a shared link could not express
    * "everything".
    */
+  /** An unparseable or negative page is the first page, not an error the reader has to fix. */
+  private toPage(value: string | null): number {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+  }
+
   private toResearchPrograms(values: readonly string[]): ResearchProgram[] {
     return values
       .map((value) => this.toResearchProgram(value))

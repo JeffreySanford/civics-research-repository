@@ -97,9 +97,17 @@
       <div class="results-heading">
         <div>
           <p class="eyebrow">Results</p>
-          <h2 id="discovery-results-heading">
+          <!-- tabindex="-1" so paging can move focus here: the list below is replaced wholesale,
+               and leaving focus on the pager button strands a keyboard user in changed content. -->
+          <h2 id="discovery-results-heading" #resultsHeading tabindex="-1">
             {{ totalResults$ | async }} research objects
           </h2>
+          @if (pagination$ | async; as pagination) { @if (pagination.visible) {
+          <p class="results-range">
+            Showing {{ pagination.firstResult }}-{{ pagination.lastResult }} of
+            {{ pagination.totalResults }}
+          </p>
+          } }
         </div>
 
         @if (loading$ | async) {
@@ -154,7 +162,35 @@
         </li>
         }
       </ol>
-      } @else if ((loading$ | async) === false) {
+      @if (pagination$ | async; as pagination) { @if (pagination.visible) {
+      <!-- A nav landmark with its own name: a screen-reader user listing landmarks should be able
+           to tell this pager apart from the primary site navigation. -->
+      <nav class="pager" aria-label="Search results pages">
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!pagination.hasPrevious"
+          (click)="goToPage(pagination.page - 1)"
+        >
+          Previous
+        </button>
+
+        <!-- aria-current="page" is what tells assistive technology which page this is; the
+             visible text says the same thing for everyone else. -->
+        <span class="pager-position" aria-current="page">
+          Page {{ pagination.page + 1 }} of {{ pagination.pageCount }}
+        </span>
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!pagination.hasNext"
+          (click)="goToPage(pagination.page + 1)"
+        >
+          Next
+        </button>
+      </nav>
+      } } } @else if ((loading$ | async) === false) {
       <p class="empty-state">No research objects matched this search.</p>
       } }
     </div>

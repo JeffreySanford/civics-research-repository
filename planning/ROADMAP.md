@@ -17,11 +17,14 @@ experiences, and closing a few seams behind it. In priority order:
 so the research package is visible in the default view: 181 objects across 15 programs. The three
 remain a labelled shortcut.
 
-What is left: 181 objects are paged 25 at a time with no controls and no count, `vintageYear_i` is
-indexed but never faceted, and `qf` weights every field equally so relevance is flat.
+**Pagination is done.** 181 objects across 8 pages, with a stated range, URL state, and focus moved
+to the results heading on each page change.
 
-Order: pagination, vintage facet, relevance tuning, then index the new metadata (subjects, authors,
-citation, DOI) so discovery can search what the repository already knows. Tracked as P12 in
+What is left: `vintageYear_i` is indexed but never returned as a facet, and `qf` weights every field
+equally so relevance is flat.
+
+Order: vintage facet, relevance tuning, then index the new metadata (subjects, authors, citation,
+DOI) so discovery can search what the repository already knows. Tracked as P12 in
 [TODO.md](TODO.md).
 
 ### 2. Connect discovery to the map

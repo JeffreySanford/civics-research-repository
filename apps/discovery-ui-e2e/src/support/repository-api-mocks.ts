@@ -66,6 +66,8 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         'REPOSITORY',
         url.searchParams.getAll('program'),
         url.searchParams.get('contentType') ?? '',
+        Number(url.searchParams.get('page') ?? 0),
+        Number(url.searchParams.get('pageSize') ?? 25),
       ),
     });
   });
@@ -744,6 +746,8 @@ function searchResponse(
   resultSource: 'REPOSITORY' | 'FIXTURE' = 'REPOSITORY',
   selectedPrograms: readonly string[] = [],
   selectedContentType = '',
+  page = 0,
+  pageSize = 25,
 ): unknown {
   // The research package is national, so it survives a geography filter the way the API's does.
   const packageResults = [
@@ -796,14 +800,33 @@ function searchResponse(
     accessLevel: 'PUBLIC',
   }));
 
-  const results = [...datasetResults, ...packageResults];
+  const allResults = [...datasetResults, ...packageResults];
+
+  // Padded to more than one page so the pager has something to page through. Real repository
+  // breadth is 181 objects; the storyboard needs enough to prove the arithmetic, not all of it.
+  const filler = Array.from({ length: 30 }, (_, index) => ({
+    id: `filler-${index}`,
+    title: `Additional research object ${index + 1} - ${geography}`,
+    contentType: 'DATASET',
+    program: 'TIGER_LINE',
+    publisher: 'U.S. Census Bureau',
+    summary: `Placeholder record ${index + 1} for pagination coverage.`,
+    geography,
+    vintageYear: 2025,
+    sourceUrl: 'https://www.census.gov/',
+    accessLevel: 'PUBLIC',
+  })).filter(() => !selectedContentType || selectedContentType === 'DATASET');
+
+  const combined = [...allResults, ...filler];
+  const start = page * pageSize;
+  const results = combined.slice(start, start + pageSize);
 
   return {
     resultSource,
     query: geography,
-    page: 0,
-    pageSize: 25,
-    totalResults: results.length,
+    page,
+    pageSize,
+    totalResults: combined.length,
     results,
     facets: [
       {

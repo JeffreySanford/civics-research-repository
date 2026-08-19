@@ -785,6 +785,95 @@ test.describe('research package', () => {
   });
 });
 
+/**
+ * Pagination. 181 objects at 25 a page means most of the repository was previously unreachable
+ * from the UI: the count said 181 and the list stopped at 25 with nothing to click.
+ */
+test.describe('result pagination', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/discovery');
+  });
+
+  test('the result range and page position are stated @storyboard', async ({
+    page,
+  }) => {
+    await expect(page.getByText(/Showing 1-25 of \d+/)).toBeVisible();
+    await expect(page.getByText(/Page 1 of \d+/)).toBeVisible();
+  });
+
+  test('Previous is disabled on the first page @storyboard', async ({
+    page,
+  }) => {
+    const pager = page.getByRole('navigation', {
+      name: 'Search results pages',
+    });
+
+    await expect(
+      pager.getByRole('button', { name: 'Previous' }),
+    ).toBeDisabled();
+    await expect(pager.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
+
+  test('paging forward changes the results and the URL @storyboard', async ({
+    page,
+  }) => {
+    const firstTitle = await page
+      .locator('.result-list h3')
+      .first()
+      .innerText();
+
+    await page
+      .getByRole('navigation', { name: 'Search results pages' })
+      .getByRole('button', { name: 'Next' })
+      .click();
+
+    await expect(page).toHaveURL(/page=1/);
+    await expect(page.getByText(/Page 2 of/)).toBeVisible();
+    await expect(page.getByText(/Showing 26-/)).toBeVisible();
+    await expect(page.locator('.result-list h3').first()).not.toHaveText(
+      firstTitle,
+    );
+  });
+
+  test('a deep link opens on the requested page @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery?page=1');
+
+    await expect(page.getByText(/Page 2 of/)).toBeVisible();
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Search results pages' })
+        .getByRole('button', { name: 'Previous' }),
+    ).toBeEnabled();
+  });
+
+  /** Narrowing the results while on page 2 would otherwise strand the reader on an empty list. */
+  test('changing a filter returns to the first page @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery?page=1');
+    await expect(page.getByText(/Page 2 of/)).toBeVisible();
+
+    await page.getByRole('button', { name: /^PUBLICATION \(/ }).click();
+
+    await expect(page).not.toHaveURL(/page=1/);
+  });
+
+  /** Paging replaces the whole list, so focus moves to the heading that describes it. */
+  test('paging moves focus to the results heading @storyboard', async ({
+    page,
+  }) => {
+    await page
+      .getByRole('navigation', { name: 'Search results pages' })
+      .getByRole('button', { name: 'Next' })
+      .click();
+
+    await expect(page.locator('#discovery-results-heading')).toBeFocused();
+  });
+});
+
 test.describe('program facet selection', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);

@@ -399,6 +399,32 @@ code {
   color: var(--civics-warn-text);
 }
 
+.results-range {
+  margin: 0.25rem 0 0;
+  color: var(--civics-text-secondary);
+  font-weight: 700;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.pager-position {
+  font-weight: 800;
+  color: var(--civics-text-primary);
+}
+
+/* The heading takes focus on page change; it is a move target, not an interactive control. */
+#discovery-results-heading:focus-visible {
+  outline: 3px solid var(--civics-focus);
+  outline-offset: 4px;
+}
+
 .dataset-authors {
   color: var(--civics-text-secondary);
   font-weight: 700;

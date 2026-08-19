@@ -164,7 +164,7 @@ The data model knew about research objects; the populated repository held only d
 The repository now holds objects the default discovery view hides, and 181 objects paged 25 at a time with no controls.
 
 - [x] Default to all programs. An absent `program` parameter meant TIGER/Line, LODES and ACS, which filtered the LEHD research package out of the first thing a visitor saw. The three are now a labelled shortcut button rather than an implicit filter, and an absent parameter means what the API already meant by it. Default discovery: 181 objects across 15 programs.
-- [ ] Pagination: controls, `?page=` URL state, and a "Showing 1-25 of N" count.
+- [x] Pagination: Previous/Next controls in a named nav landmark, `?page=` URL state, and a "Showing 1-25 of 181" range. Filter changes return to the first page; paging moves focus to the results heading, because the list below it is replaced wholesale. Fixed a deep-link bug found by the new specs: `ngOnInit` read the page parameter and then reset it to zero, so `?page=1` always opened on page 1.
 - [ ] Vintage facet. `vintageYear_i` is indexed and used as a filter but never returned as a facet.
 - [ ] Relevance tuning: field boosts, phrase boosts and a minimum-match rule. `qf` currently weights title, summary, publisher, program and geography equally.
 - [ ] Index the new metadata into discovery: subjects, authors, citation, DOI.
