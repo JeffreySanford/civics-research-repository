@@ -387,6 +387,68 @@ code {
   font-weight: 800;
 }
 
+/**
+ * A restricted object is marked, not hidden.
+ *
+ * Colour alone would not carry this: the badge reads RESTRICTED or METADATA_ONLY in text, and the
+ * warn palette only reinforces what the word already says.
+ */
+.result-meta .result-access {
+  border-color: var(--civics-warn-border);
+  background: var(--civics-warn-bg);
+  color: var(--civics-warn-text);
+}
+
+.dataset-authors {
+  color: var(--civics-text-secondary);
+  font-weight: 700;
+}
+
+.relation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.relation-list li {
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+  padding: 0.75rem 1rem;
+}
+
+.relation-verb {
+  margin: 0 0 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--civics-text-secondary);
+}
+
+.relation-type,
+.relation-access {
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  padding: 0.15rem 0.4rem;
+  margin-inline-start: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.relation-access {
+  border-color: var(--civics-warn-border);
+  background: var(--civics-warn-bg);
+  color: var(--civics-warn-text);
+}
+
+.relation-note {
+  margin: 0.5rem 0 0;
+  color: var(--civics-text-secondary);
+}
+
 .source-link {
   color: var(--civics-link);
   font-weight: 800;

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.civicsrepo.repository.FixtureCatalog;
 import org.civicsrepo.repository.RepositoryCatalog;
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetVersion;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.slf4j.Logger;
@@ -39,9 +39,9 @@ public class DatasetService {
      * generated fallback carries {@link RepositorySource#FIXTURE} so the UI can disclose it. The
      * fallback exists so the demo survives a DSpace outage, not so it can stand in silently.
      */
-    public DatasetDetail getDataset(String datasetId) {
+    public ResearchObjectDetail getDataset(String datasetId) {
         if (repositoryCatalog != null) {
-            Optional<DatasetDetail> repositoryDataset = repositoryCatalog.findDataset(datasetId);
+            Optional<ResearchObjectDetail> repositoryDataset = repositoryCatalog.findDataset(datasetId);
             if (repositoryDataset.isPresent()) {
                 return repositoryDataset.orElseThrow();
             }
@@ -52,7 +52,7 @@ public class DatasetService {
     }
 
     public List<DatasetVersion> getDatasetVersions(String datasetId) {
-        DatasetDetail detail = getDataset(datasetId);
+        ResearchObjectDetail detail = getDataset(datasetId);
         int currentYear = detail.getVintageYear() == null ? 2026 : detail.getVintageYear();
 
         return List.of(

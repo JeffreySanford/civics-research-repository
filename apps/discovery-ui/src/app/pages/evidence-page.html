@@ -1,7 +1,12 @@
 <div class="page-stack">
   <section aria-labelledby="evidence-heading" class="content-panel">
-    <p class="eyebrow">Accessibility evidence</p>
-    <h1 id="evidence-heading">WCAG and Section 508 status</h1>
+    <!-- The banner names the page, and the page is no longer only about accessibility: the tabs
+         below it cover conformance and data provenance. A heading that named one of them would
+         mislabel the other. -->
+    <p class="eyebrow">Civics Research Repository</p>
+    <h1 id="evidence-heading">
+      Platform evidence: conformance and data provenance
+    </h1>
   </section>
 
   <mat-tab-group class="evidence-tabs" data-testid="evidence-tabs">
@@ -209,16 +214,18 @@
           aria-labelledby="pipeline-stages-heading"
           class="content-panel"
         >
-          <h2 id="pipeline-stages-heading">Subscribed, curated, indexed</h2>
+          <h2 id="pipeline-stages-heading">
+            Subscribed, mirrored, curated, indexed
+          </h2>
           <p>
-            The repository points at public files rather than copying them.
-            These three numbers describe that: what the publishers hold, what
-            has been curated into DSpace as research objects, and what Solr is
-            serving to discovery.
+            The repository subscribes to far more than it stores. These four
+            numbers describe that: what the publishers hold, how much of it the
+            assetstore preserves as bitstreams, what has been curated into
+            DSpace as research objects, and what Solr is serving to discovery.
           </p>
 
-          <!-- Hero numbers, not a chart: three unrelated totals with different units. A chart
-               would imply a comparison between them that does not exist. -->
+          <!-- Hero numbers, not a chart: four totals in three different units. A chart would
+               imply a comparison across them that only holds between the first two. -->
           <dl class="pipeline-stats">
             <div class="pipeline-stat">
               <dt>Subscribed at the source</dt>
@@ -232,13 +239,24 @@
               </dd>
             </div>
             <div class="pipeline-stat">
-              <dt>Stored in the repository</dt>
+              <dt>Mirrored into the assetstore</dt>
+              <dd class="pipeline-stat-value">
+                {{ formatBytes(stages.mirroredBytes) }}
+              </dd>
+              <dd class="pipeline-stat-note">
+                {{ stages.mirroredFiles }} bitstreams, {{ stages.mirroredPercent
+                }}% of the subscribed bytes. Mirroring is capped per file and
+                budgeted overall; everything else stays a link.
+              </dd>
+            </div>
+            <div class="pipeline-stat">
+              <dt>Curated as research objects</dt>
               <dd class="pipeline-stat-value">
                 {{ stages.curatedItems }} items
               </dd>
               <dd class="pipeline-stat-note">
-                Metadata and links in {{ stages.curatedCollections }} DSpace
-                collection(s). The assetstore holds none of the source bytes.
+                Described and preserved in {{ stages.curatedCollections }}
+                DSpace collection(s), each with a handle and checksums.
               </dd>
             </div>
             <div class="pipeline-stat">
@@ -271,10 +289,23 @@
               <strong>{{ stages.indexedAt | date: 'medium' }}</strong>
               } @else { <strong>never</strong> }.
             </li>
+            <!-- Both caveats, not just the alarming one. The subscribed total omits the bytes of
+                 every file it could not measure, and the files that answered without a length are
+                 usually the larger group. Naming only the failures would make the total look more
+                 complete than it is. -->
             @if (stages.unreachableFiles > 0) {
             <li class="warning-message">
-              {{ stages.unreachableFiles }} source file(s) did not answer when
-              last measured, so their bytes are not counted above.
+              {{ stages.unreachableFiles }} source file(s) answered with an
+              error and are not counted above. These are program and area
+              combinations the publisher does not offer, so re-measuring will
+              not clear them.
+            </li>
+            } @if (stages.unmeasuredFiles > 0) {
+            <li>
+              {{ stages.unmeasuredFiles }} more answered without reporting a
+              length, mostly documentation pages and streaming endpoints. They
+              exist, but their bytes are absent from the subscribed total, which
+              is therefore a floor rather than an exact figure.
             </li>
             }
           </ul>

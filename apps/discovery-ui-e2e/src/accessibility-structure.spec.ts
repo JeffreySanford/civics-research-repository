@@ -33,8 +33,8 @@ const ROUTES = [
   { path: '/admin/sync', title: 'Repository Sync', heading: 'Repository sync' },
   {
     path: '/evidence',
-    title: 'Accessibility Evidence',
-    heading: 'WCAG and Section 508 status',
+    title: 'Platform Evidence',
+    heading: 'Platform evidence: conformance and data provenance',
   },
 ];
 

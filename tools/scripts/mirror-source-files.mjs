@@ -5,7 +5,8 @@ import {
   readFileSync,
   statSync,
   copyFileSync,
-  appendFileSync,
+  writeFileSync,
+  readdirSync,
 } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -156,6 +157,23 @@ if (dryRun) {
 
 mkdirSync(cacheRoot, { recursive: true });
 
+/**
+ * SAF packages are grouped by target collection, so an item's directory is one level deeper than
+ * its identifier suggests and which group it is in depends on its type.
+ */
+function findItemDirectory(itemId) {
+  for (const collection of readdirSync(safRoot, { withFileTypes: true })) {
+    if (!collection.isDirectory()) {
+      continue;
+    }
+    const candidate = join(safRoot, collection.name, itemId);
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 /** A cached file of the right size is taken as good; anything else is downloaded again. */
 function cachedPath(entry) {
   const name = basename(new URL(entry.url).pathname) || 'download.bin';
@@ -188,9 +206,9 @@ for (const entry of selected) {
   try {
     const { target, cached } = await download(entry);
     const name = basename(target).replace(`${entry.itemId}__`, '');
-    const itemDirectory = join(safRoot, entry.itemId);
+    const itemDirectory = findItemDirectory(entry.itemId);
 
-    if (!existsSync(itemDirectory)) {
+    if (!itemDirectory) {
       failed.push({
         ...entry,
         reason: 'no SAF package; run dspace:saf:generate',
@@ -199,11 +217,22 @@ for (const entry of selected) {
     }
 
     copyFileSync(target, join(itemDirectory, name));
-    // SAF `contents`: one line per bitstream, with the bundle named explicitly.
-    appendFileSync(
-      join(itemDirectory, 'contents'),
-      `${name}\tbundle:ORIGINAL\n`,
-    );
+
+    // SAF `contents`: one line per bitstream, with the bundle named explicitly. Rewritten rather
+    // than appended, so a blank or stale first line cannot survive at the top, where DSpace reads
+    // it as a malformed entry and imports no bitstreams at all.
+    const contentsPath = join(itemDirectory, 'contents');
+    const lines = existsSync(contentsPath)
+      ? readFileSync(contentsPath, 'utf8')
+          .split('\n')
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+      : [];
+    const line = `${name}\tbundle:ORIGINAL`;
+    if (!lines.includes(line)) {
+      lines.push(line);
+    }
+    writeFileSync(contentsPath, `${lines.join('\n')}\n`, 'utf8');
 
     mirrored.push({ ...entry, fileName: name });
     downloadedBytes += entry.bytes;

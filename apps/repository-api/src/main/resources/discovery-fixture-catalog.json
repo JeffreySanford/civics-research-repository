@@ -15,6 +15,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Alabama, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pal.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -43,6 +48,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Alaska, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pak.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -71,6 +81,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, American Samoa, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pas.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -99,6 +114,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Arizona, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_paz.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -127,6 +147,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Arkansas, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_par.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -155,6 +180,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, California, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pca.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -183,6 +213,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Colorado, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pco.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -211,6 +246,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Connecticut, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pct.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -239,6 +279,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Delaware, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pde.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -267,6 +312,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, District of Columbia, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pdc.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -295,6 +345,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Florida, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pfl.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -323,6 +378,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Georgia, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pga.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -351,6 +411,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Guam, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pgu.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -379,6 +444,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Hawaii, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_phi.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -407,6 +477,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Idaho, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pid.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -435,6 +510,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Illinois, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pil.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -463,6 +543,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Indiana, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pin.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -491,6 +576,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Iowa, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pia.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -519,6 +609,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Kansas, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pks.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -547,6 +642,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Kentucky, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pky.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -575,6 +675,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Louisiana, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pla.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -603,6 +708,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Maine, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pme.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -631,6 +741,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Maryland, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmd.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -659,6 +774,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Massachusetts, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pma.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -687,6 +807,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Michigan, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmi.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -715,6 +840,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Minnesota, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmn.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -743,6 +873,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Mississippi, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pms.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -771,6 +906,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Missouri, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmo.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -799,6 +939,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Montana, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmt.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -827,6 +972,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Nebraska, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pne.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -855,6 +1005,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Nevada, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pnv.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -883,6 +1038,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, New Hampshire, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pnh.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -911,6 +1071,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, New Jersey, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pnj.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -939,6 +1104,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, New Mexico, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pnm.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -967,6 +1137,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, New York, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pny.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -995,6 +1170,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, North Carolina, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pnc.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1023,6 +1203,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, North Dakota, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pnd.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1051,6 +1236,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Northern Mariana Islands, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pmp.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1079,6 +1269,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Ohio, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_poh.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1107,6 +1302,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Oklahoma, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pok.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1135,6 +1335,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Oregon, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_por.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1163,6 +1368,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Pennsylvania, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_ppa.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1191,6 +1401,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Puerto Rico, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_ppr.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1219,6 +1434,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Rhode Island, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pri.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1247,6 +1467,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, South Carolina, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_psc.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1275,6 +1500,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, South Dakota, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_psd.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1303,6 +1533,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Tennessee, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_ptn.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1331,6 +1566,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Texas, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_ptx.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1359,6 +1599,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, U.S. Virgin Islands, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pvi.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1387,6 +1632,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Utah, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_put.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1415,6 +1665,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Vermont, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pvt.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1443,6 +1698,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Virginia, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pva.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1471,6 +1731,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Washington, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pwa.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1499,6 +1764,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, West Virginia, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pwv.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1527,6 +1797,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Wisconsin, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pwi.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1555,6 +1830,11 @@
       "citation": "U.S. Census Bureau. American Community Survey Public Use Microdata Sample, Wyoming, 2024.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/acs/data/pums/2024/1-Year/csv_pwy.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/acs/microdata/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -1583,6 +1863,11 @@
       "citation": "U.S. Census Bureau. 2025 Building Permits Survey.",
       "sourceUrl": "https://www2.census.gov/econ/bps/County/co2025a.txt",
       "documentationUrl": "https://www.census.gov/construction/bps/methodology.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "survey-landing-page",
@@ -1611,6 +1896,11 @@
       "citation": "U.S. Census Bureau. 2023 Business Dynamics Statistics.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/bds/tables/time-series/2023/bds2023.csv",
       "documentationUrl": "https://www.census.gov/programs-surveys/bds/documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "data-page",
@@ -1627,6 +1917,207 @@
       ]
     },
     {
+      "id": "ces-spatial-mismatch-project",
+      "title": "Spatial mismatch and workplace location in US labor markets",
+      "program": "LEHD",
+      "publisher": "U.S. Census Bureau",
+      "summary": "A worked example of a complete research package: two Census working papers, the methodology report for the data product they rest on, the public LODES tables this repository holds, and the restricted microdata behind all of it. Assembled to show that the repository can describe a body of research rather than a shelf of files.",
+      "geography": "United States",
+      "geographyLevel": "National",
+      "vintageYear": 2025,
+      "releasedOn": "2025-08-01",
+      "citation": "U.S. Census Bureau Center for Economic Studies. Spatial mismatch and workplace location in US labor markets, 2025.",
+      "sourceUrl": "https://www.census.gov/programs-surveys/ces.html",
+      "documentationUrl": "https://www.census.gov/about/adrm/ces.html",
+      "contentType": "PROJECT",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [
+        {
+          "verb": "hasPart",
+          "target": "ces-wp-25-23-spatial-mismatch",
+          "note": "Publication."
+        },
+        {
+          "verb": "hasPart",
+          "target": "ces-wp-25-22-size-matters",
+          "note": "Publication."
+        },
+        {
+          "verb": "hasPart",
+          "target": "ces-wp-25-52-lodes-methodology",
+          "note": "Methodology for the data product."
+        },
+        {
+          "verb": "hasPart",
+          "target": "lodes-wac-north-dakota-2023",
+          "note": "The public dataset the package is built on."
+        },
+        {
+          "verb": "hasPart",
+          "target": "lehd-microdata-restricted",
+          "note": "The restricted source the published work rests on."
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": "ces-wp-25-22-size-matters",
+      "title": "Size Matters: Matching Externalities and the Advantages of Large Labor Markets",
+      "program": "LEHD",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Uses administrative data from the LEHD to compare the job search outcomes of workers originally in large and small markets who lost their jobs due to a firm closure, defining a labor market as the Commuting Zone by industry pair in the quarter before the closure.",
+      "geography": "United States",
+      "geographyLevel": "National",
+      "vintageYear": 2025,
+      "releasedOn": "2025-04-01",
+      "citation": "Enrico Moretti, Moises Yi. \"Size Matters: Matching Externalities and the Advantages of Large Labor Markets.\" U.S. Census Bureau Center for Economic Studies Working Paper CES-25-22, 2025.",
+      "sourceUrl": "https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-22.pdf",
+      "documentationUrl": "https://www.census.gov/library/working-papers/2025/adrm/CES-WP-25-22.html",
+      "contentType": "PUBLICATION",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [
+        {
+          "name": "Enrico Moretti"
+        },
+        {
+          "name": "Moises Yi"
+        }
+      ],
+      "relations": [
+        {
+          "verb": "uses",
+          "target": "lehd-microdata-restricted",
+          "note": "Job transitions are observed in LEHD microdata rather than in the public product."
+        }
+      ],
+      "files": [
+        {
+          "id": "working-paper",
+          "label": "CES-WP-25-22 (PDF)",
+          "format": "PDF",
+          "url": "https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-22.pdf"
+        },
+        {
+          "id": "abstract-page",
+          "label": "Abstract and citation record",
+          "format": "OTHER",
+          "url": "https://www.census.gov/library/working-papers/2025/adrm/CES-WP-25-22.html"
+        }
+      ]
+    },
+    {
+      "id": "ces-wp-25-23-spatial-mismatch",
+      "title": "Re-assessing the Spatial Mismatch Hypothesis",
+      "program": "LEHD",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Uses detailed location information from the Longitudinal Employer-Household Dynamics (LEHD) database to develop new evidence on the effects of spatial mismatch on the relative earnings of Black workers in large US cities, classifying workplaces by the size of the pay premiums they offer in a two-way fixed effects model.",
+      "geography": "United States",
+      "geographyLevel": "National",
+      "vintageYear": 2025,
+      "releasedOn": "2025-04-01",
+      "citation": "David Card, Jesse Rothstein, Moises Yi. \"Re-assessing the Spatial Mismatch Hypothesis.\" U.S. Census Bureau Center for Economic Studies Working Paper CES-25-23, 2025.",
+      "sourceUrl": "https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-23.pdf",
+      "documentationUrl": "https://www.census.gov/library/working-papers/2025/adrm/CES-WP-25-23.html",
+      "contentType": "PUBLICATION",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "doi": "10.3386/w32252",
+      "authors": [
+        {
+          "name": "David Card"
+        },
+        {
+          "name": "Jesse Rothstein"
+        },
+        {
+          "name": "Moises Yi"
+        }
+      ],
+      "relations": [
+        {
+          "verb": "uses",
+          "target": "lodes-wac-north-dakota-2023",
+          "note": "Workplace Area Characteristics describe the workplace locations this paper classifies."
+        },
+        {
+          "verb": "uses",
+          "target": "lehd-microdata-restricted",
+          "note": "The underlying job-level records are LEHD microdata, available only through an FSRDC."
+        }
+      ],
+      "files": [
+        {
+          "id": "working-paper",
+          "label": "CES-WP-25-23 (PDF)",
+          "format": "PDF",
+          "url": "https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-23.pdf"
+        },
+        {
+          "id": "abstract-page",
+          "label": "Abstract and citation record",
+          "format": "OTHER",
+          "url": "https://www.census.gov/library/working-papers/2025/adrm/CES-WP-25-23.html"
+        }
+      ]
+    },
+    {
+      "id": "ces-wp-25-52-lodes-methodology",
+      "title": "LODES Design and Methodology Report: Methodology Version 7",
+      "program": "LEHD",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Documents the important features of Version 7 of the LEHD Origin-Destination Employment Statistics (LODES) processing system, including data sources, processing methodology, confidentiality protection methodology, quality measures, and a description of the published data.",
+      "geography": "United States",
+      "geographyLevel": "National",
+      "vintageYear": 2025,
+      "releasedOn": "2025-08-01",
+      "citation": "Andrew D. Foote, Matthew R. Graham, Mark J. Kutzbach. \"LODES Design and Methodology Report: Methodology Version 7.\" U.S. Census Bureau Center for Economic Studies Working Paper CES-25-52, 2025.",
+      "sourceUrl": "https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-52.pdf",
+      "documentationUrl": "https://www.census.gov/library/working-papers/2025/adrm/CES-WP-25-52.html",
+      "contentType": "METHODOLOGY",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [
+        {
+          "name": "Andrew D. Foote"
+        },
+        {
+          "name": "Matthew R. Graham"
+        },
+        {
+          "name": "Mark J. Kutzbach"
+        }
+      ],
+      "relations": [
+        {
+          "verb": "documents",
+          "target": "lodes-wac-north-dakota-2023",
+          "note": "This report is the methodology for the LODES processing system that produced these files."
+        },
+        {
+          "verb": "documents",
+          "target": "lehd-microdata-restricted",
+          "note": "Describes how the public product is derived from the restricted microdata."
+        }
+      ],
+      "files": [
+        {
+          "id": "working-paper",
+          "label": "CES-WP-25-52 (PDF)",
+          "format": "PDF",
+          "url": "https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-52.pdf"
+        },
+        {
+          "id": "abstract-page",
+          "label": "Abstract and citation record",
+          "format": "OTHER",
+          "url": "https://www.census.gov/library/working-papers/2025/adrm/CES-WP-25-52.html"
+        }
+      ]
+    },
+    {
       "id": "county-business-patterns-2023",
       "title": "2023 County Business Patterns",
       "program": "COUNTY_BUSINESS_PATTERNS",
@@ -1639,6 +2130,11 @@
       "citation": "U.S. Census Bureau. 2023 County Business Patterns.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/cbp/datasets/2023/cbp23co.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/cbp/technical-documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "datasets-page",
@@ -1667,6 +2163,11 @@
       "citation": "U.S. Census Bureau. Current Population Survey Public Use Data, 2026.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/cps/datasets/2026/basic/jan26pub.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/cps/technical-documentation/complete.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-directory",
@@ -1695,6 +2196,11 @@
       "citation": "U.S. Census Bureau. 2022 Economic Census.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/economic-census/data/2022/sector00/ECNBASIC2022.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/economic-census/technical-documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "data-landing-page",
@@ -1711,6 +2217,33 @@
       ]
     },
     {
+      "id": "lehd-microdata-restricted",
+      "title": "LEHD Longitudinal Employer-Household Dynamics microdata",
+      "program": "LEHD",
+      "publisher": "U.S. Census Bureau",
+      "summary": "The job-level linked employer-household records underlying the LEHD program and its public products. These records are protected under Title 13 and are not published. They are described here so that research depending on them remains citable and traceable; the repository holds no files for this object and can hold none.",
+      "geography": "United States",
+      "geographyLevel": "National",
+      "vintageYear": 2025,
+      "releasedOn": "2025-01-01",
+      "citation": "U.S. Census Bureau. Longitudinal Employer-Household Dynamics microdata. Restricted use, accessed through a Federal Statistical Research Data Center.",
+      "sourceUrl": "https://www.census.gov/programs-surveys/ces/data/restricted-use-data.html",
+      "documentationUrl": "https://www.census.gov/about/adrm/fsrdc.html",
+      "contentType": "DATASET",
+      "accessLevel": "RESTRICTED",
+      "license": "Restricted under Title 13, U.S. Code. Not redistributable.",
+      "accessNote": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center. No confidential records are held by this repository.",
+      "authors": [],
+      "relations": [
+        {
+          "verb": "isDerivedFrom",
+          "target": "lodes-wac-north-dakota-2023",
+          "note": "LODES is the disclosure-protected public product derived from these records."
+        }
+      ],
+      "files": []
+    },
+    {
       "id": "lodes-wac-alabama-2023",
       "title": "2023 LODES Workplace Area Characteristics - Alabama",
       "program": "LODES",
@@ -1723,6 +2256,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Alabama, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/al/wac/al_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1751,6 +2289,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, American Samoa, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/as/wac/as_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1779,6 +2322,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Arizona, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/az/wac/az_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1807,6 +2355,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Arkansas, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ar/wac/ar_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1835,6 +2388,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, California, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ca/wac/ca_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1863,6 +2421,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Colorado, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/co/wac/co_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1891,6 +2454,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Connecticut, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ct/wac/ct_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1919,6 +2487,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Delaware, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/de/wac/de_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1947,6 +2520,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, District of Columbia, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/dc/wac/dc_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -1975,6 +2553,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Florida, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/fl/wac/fl_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2003,6 +2586,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Georgia, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ga/wac/ga_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2031,6 +2619,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Guam, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/gu/wac/gu_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2059,6 +2652,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Hawaii, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/hi/wac/hi_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2087,6 +2685,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Idaho, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/id/wac/id_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2115,6 +2718,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Illinois, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/il/wac/il_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2143,6 +2751,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Indiana, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/in/wac/in_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2171,6 +2784,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Iowa, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ia/wac/ia_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2199,6 +2817,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Kansas, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ks/wac/ks_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2227,6 +2850,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Kentucky, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ky/wac/ky_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2255,6 +2883,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Louisiana, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/la/wac/la_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2283,6 +2916,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Maine, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/me/wac/me_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2311,6 +2949,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Maryland, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/md/wac/md_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2339,6 +2982,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Massachusetts, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ma/wac/ma_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2367,6 +3015,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Minnesota, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/mn/wac/mn_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2395,6 +3048,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Mississippi, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ms/wac/ms_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2423,6 +3081,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Missouri, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/mo/wac/mo_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2451,6 +3114,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Montana, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/mt/wac/mt_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2479,6 +3147,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Nebraska, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ne/wac/ne_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2507,6 +3180,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Nevada, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/nv/wac/nv_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2535,6 +3213,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, New Hampshire, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/nh/wac/nh_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2563,6 +3246,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, New Jersey, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/nj/wac/nj_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2591,6 +3279,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, New Mexico, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/nm/wac/nm_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2619,6 +3312,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, New York, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ny/wac/ny_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2647,6 +3345,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, North Carolina, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/nc/wac/nc_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2675,6 +3378,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, North Dakota, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/nd/wac/nd_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2703,6 +3411,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Northern Mariana Islands, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/mp/wac/mp_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2731,6 +3444,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Ohio, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/oh/wac/oh_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2759,6 +3477,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Oklahoma, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ok/wac/ok_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2787,6 +3510,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Oregon, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/or/wac/or_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2815,6 +3543,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Pennsylvania, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/pa/wac/pa_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2843,6 +3576,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Rhode Island, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ri/wac/ri_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2871,6 +3609,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, South Carolina, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/sc/wac/sc_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2899,6 +3642,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, South Dakota, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/sd/wac/sd_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2927,6 +3675,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Tennessee, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/tn/wac/tn_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2955,6 +3708,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Texas, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/tx/wac/tx_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -2983,6 +3741,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, U.S. Virgin Islands, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/vi/wac/vi_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3011,6 +3774,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Utah, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/ut/wac/ut_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3039,6 +3807,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Vermont, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/vt/wac/vt_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3067,6 +3840,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Virginia, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/va/wac/va_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3095,6 +3873,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Washington, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/wa/wac/wa_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3123,6 +3906,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, West Virginia, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/wv/wac/wv_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3151,6 +3939,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Wisconsin, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/wi/wac/wi_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3179,6 +3972,11 @@
       "citation": "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, Wyoming, 2023.",
       "sourceUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/wy/wac/wy_wac_S000_JT00_2023.csv.gz",
       "documentationUrl": "https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.1.pdf",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-csv",
@@ -3207,6 +4005,11 @@
       "citation": "U.S. Census Bureau. 2025 Population Estimates Program.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/counties/totals/co-est2025-alldata.csv",
       "documentationUrl": "https://www.census.gov/programs-surveys/popest/technical-documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "datasets-page",
@@ -3235,6 +4038,11 @@
       "citation": "U.S. Census Bureau. 2024 Small Area Income and Poverty Estimates.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/saipe/datasets/2024/2024-state-and-county/est24all.txt",
       "documentationUrl": "https://www.census.gov/programs-surveys/saipe/technical-documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "datasets-page",
@@ -3263,6 +4071,11 @@
       "citation": "U.S. Census Bureau. Survey of Income and Program Participation Public Use Data, 2025.",
       "sourceUrl": "https://www2.census.gov/programs-surveys/sipp/data/datasets/2025/pu2025_csv.zip",
       "documentationUrl": "https://www.census.gov/programs-surveys/sipp/tech-documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-archive",
@@ -3291,6 +4104,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Alabama.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_01_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3325,6 +4143,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Alaska.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_02_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3359,6 +4182,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, American Samoa.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_60_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3393,6 +4221,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Arizona.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_04_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3427,6 +4260,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Arkansas.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_05_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3461,6 +4299,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, California.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_06_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3495,6 +4338,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Colorado.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_08_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3529,6 +4377,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Connecticut.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_09_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3563,6 +4416,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Delaware.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_10_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3597,6 +4455,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, District of Columbia.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_11_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3631,6 +4494,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Florida.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_12_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3665,6 +4533,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Georgia.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_13_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3699,6 +4572,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Guam.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_66_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3733,6 +4611,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Hawaii.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_15_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3767,6 +4650,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Idaho.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_16_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3801,6 +4689,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Illinois.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_17_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3835,6 +4728,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Indiana.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_18_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3869,6 +4767,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Iowa.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_19_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3903,6 +4806,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Kansas.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_20_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3937,6 +4845,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Kentucky.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_21_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -3971,6 +4884,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Louisiana.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_22_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4005,6 +4923,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Maine.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_23_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4039,6 +4962,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Maryland.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_24_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4073,6 +5001,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Massachusetts.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_25_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4107,6 +5040,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Michigan.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_26_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4141,6 +5079,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Minnesota.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_27_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4175,6 +5118,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Mississippi.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_28_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4209,6 +5157,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Missouri.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_29_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4243,6 +5196,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Montana.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_30_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4277,6 +5235,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Nebraska.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_31_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4311,6 +5274,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Nevada.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_32_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4345,6 +5313,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, New Hampshire.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_33_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4379,6 +5352,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, New Jersey.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_34_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4413,6 +5391,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, New Mexico.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_35_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4447,6 +5430,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, New York.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_36_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4481,6 +5469,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, North Carolina.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_37_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4515,6 +5508,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, North Dakota.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4549,6 +5547,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Northern Mariana Islands.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_69_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4583,6 +5586,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Ohio.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_39_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4617,6 +5625,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Oklahoma.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_40_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4651,6 +5664,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Oregon.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_41_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4685,6 +5703,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Pennsylvania.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_42_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4719,6 +5742,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Puerto Rico.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_72_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4753,6 +5781,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Rhode Island.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_44_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4787,6 +5820,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, South Carolina.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_45_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4821,6 +5859,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, South Dakota.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_46_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4855,6 +5898,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Tennessee.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_47_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4889,6 +5937,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Texas.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_48_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4923,6 +5976,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, U.S. Virgin Islands.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_78_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4957,6 +6015,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Utah.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_49_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -4991,6 +6054,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Vermont.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_50_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -5025,6 +6093,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Virginia.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_51_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -5059,6 +6132,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Washington.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_53_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -5093,6 +6171,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, West Virginia.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_54_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -5127,6 +6210,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Wisconsin.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_55_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -5161,6 +6249,11 @@
       "citation": "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, Wyoming.",
       "sourceUrl": "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_56_tract.zip",
       "documentationUrl": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "source-zip",
@@ -5195,6 +6288,11 @@
       "citation": "U.S. Geological Survey. 3D Elevation Program.",
       "sourceUrl": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n48w104/USGS_13_n48w104.tif",
       "documentationUrl": "https://apps.nationalmap.gov/3depdem/",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "program-page",
@@ -5223,6 +6321,11 @@
       "citation": "U.S. Geological Survey. 3D Hydrography Program.",
       "sourceUrl": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/Beta/GDB/NHDPLUS_H_1003_HU4_GDB.zip",
       "documentationUrl": "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/MapServer",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "program-page",
@@ -5251,6 +6354,11 @@
       "citation": "U.S. Geological Survey. Earthquake Catalog GeoJSON Feed.",
       "sourceUrl": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson",
       "documentationUrl": "https://earthquake.usgs.gov/fdsnws/event/1/",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "license": "Public domain. A work of the U.S. Government, 17 U.S.C. 105.",
+      "authors": [],
+      "relations": [],
       "files": [
         {
           "id": "geojson-feed",

@@ -313,6 +313,7 @@ export interface components {
       vintageYear?: number;
       /** Format: uri */
       sourceUrl: string;
+      accessLevel?: components['schemas']['AccessLevel'];
     };
     FacetGroup: {
       field: string;
@@ -325,7 +326,7 @@ export interface components {
       count: number;
       selected: boolean;
     };
-    DatasetDetail: {
+    ResearchObjectDetail: {
       source: components['schemas']['RepositorySource'];
       id: string;
       title: string;
@@ -342,6 +343,14 @@ export interface components {
       sourceUrl: string;
       accessibilityEvidenceStatus?: components['schemas']['EvidenceStatus'];
       relatedResearch: components['schemas']['SearchResult'][];
+      contentType?: components['schemas']['ResearchObjectType'];
+      accessLevel?: components['schemas']['AccessLevel'];
+      /** @description How a researcher legitimately obtains a restricted object. */
+      accessNote?: string;
+      license?: string;
+      doi?: string;
+      authors?: components['schemas']['ResearchAuthor'][];
+      relations?: components['schemas']['ResearchRelation'][];
     };
     DatasetFile: {
       id: string;
@@ -527,6 +536,13 @@ export interface components {
       itemCount?: number;
       communityCount?: number;
       collectionCount?: number;
+      /** @description Bitstreams held in the ORIGINAL bundles of discoverable items. The repository mirrors a bounded subset of the subscribed files rather than all of them, so this is smaller than the subscribed file count by design. */
+      storedBitstreamCount?: number;
+      /**
+       * Format: int64
+       * @description Total size of those bitstreams, as DSpace reports it.
+       */
+      storedBytes?: number;
       communities?: components['schemas']['DspaceContainerSummary'][];
       collections?: components['schemas']['DspaceContainerSummary'][];
       lastSyncStatus?: components['schemas']['SyncStatus'];
@@ -621,7 +637,27 @@ export interface components {
       | 'PUBLICATION'
       | 'CODE'
       | 'METHODOLOGY'
-      | 'SUPPORTING_MATERIAL';
+      | 'SUPPORTING_MATERIAL'
+      | 'PROJECT';
+    /** @enum {string} */
+    AccessLevel: 'PUBLIC' | 'RESTRICTED' | 'METADATA_ONLY' | 'EMBARGOED';
+    /** @description A typed, directional edge between two research objects. Asserted only where it is true of the objects themselves; relatedResearch keeps its geography heuristic for everything else. */
+    ResearchRelation: {
+      verb: components['schemas']['ResearchRelationVerb'];
+      targetId: string;
+      targetTitle: string;
+      targetType: components['schemas']['ResearchObjectType'];
+      targetAccessLevel?: components['schemas']['AccessLevel'];
+      /** @description Why this relationship holds, in the curator's words. */
+      note?: string;
+    };
+    /** @enum {string} */
+    ResearchRelationVerb: 'hasPart' | 'uses' | 'documents' | 'isDerivedFrom';
+    ResearchAuthor: {
+      name: string;
+      /** @description Absent rather than blank when the researcher has no public ORCID. An empty string would assert that none exists, which is a claim the repository cannot make. */
+      orcid?: string;
+    };
     /** @enum {string} */
     ResearchProgram:
       | 'ACS'
@@ -772,6 +808,8 @@ export interface components {
     /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
     Program: components['schemas']['ResearchProgram'][];
     Geography: string;
+    /** @description Restrict results to one research object type. */
+    ContentType: components['schemas']['ResearchObjectType'];
     VintageYear: number;
     Page: number;
     PageSize: number;
@@ -792,6 +830,8 @@ export interface operations {
         /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
         program?: components['parameters']['Program'];
         geography?: components['parameters']['Geography'];
+        /** @description Restrict results to one research object type. */
+        contentType?: components['parameters']['ContentType'];
         vintageYear?: components['parameters']['VintageYear'];
         page?: components['parameters']['Page'];
         pageSize?: components['parameters']['PageSize'];
@@ -833,7 +873,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['DatasetDetail'];
+          'application/json': components['schemas']['ResearchObjectDetail'];
         };
       };
       404: components['responses']['NotFound'];

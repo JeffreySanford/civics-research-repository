@@ -1,6 +1,6 @@
 import { DatasetsActions } from './datasets.actions';
 import { datasetsReducer, initialDatasetsState } from './datasets.reducer';
-import { selectDatasetDetail } from './datasets.selectors';
+import { selectResearchObjectDetail } from './datasets.selectors';
 
 describe('datasetsReducer', () => {
   const detail = {
@@ -45,7 +45,7 @@ describe('datasetsReducer', () => {
   });
 
   it('selects current dataset detail', () => {
-    const selected = selectDatasetDetail.projector({
+    const selected = selectResearchObjectDetail.projector({
       ...initialDatasetsState,
       detail,
     });

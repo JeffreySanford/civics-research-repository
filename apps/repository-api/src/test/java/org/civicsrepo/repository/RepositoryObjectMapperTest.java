@@ -1,6 +1,6 @@
 package org.civicsrepo.repository;
 
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
@@ -37,8 +37,8 @@ class RepositoryObjectMapperTest {
     }
 
     @Test
-    void mapsARepositoryItemIntoDatasetDetailMarkedAsRepositoryBacked() {
-        DatasetDetail detail = mapper.toDatasetDetail(
+    void mapsARepositoryItemIntoResearchObjectDetailMarkedAsRepositoryBacked() {
+        ResearchObjectDetail detail = mapper.toResearchObjectDetail(
                 RepositoryFixtures.seededItem(
                         "tiger-line-north-dakota-2025",
                         "2025 TIGER/Line - Census Tracts - North Dakota",
@@ -106,7 +106,7 @@ class RepositoryObjectMapperTest {
     void toleratesAYearOnlyIssuedDate() {
         JsonNode item = RepositoryFixtures.item("uuid", "Item", Map.of("dc.title", "Item", "dc.date.issued", "2019"));
 
-        assertThat(mapper.toDatasetDetail(item, List.of()).getReleasedOn()).isEqualTo(LocalDate.of(2019, 1, 1));
+        assertThat(mapper.toResearchObjectDetail(item, List.of()).getReleasedOn()).isEqualTo(LocalDate.of(2019, 1, 1));
     }
 
     @Test
@@ -114,14 +114,14 @@ class RepositoryObjectMapperTest {
         JsonNode item = RepositoryFixtures.item(
                 "uuid", "Item", Map.of("dc.title", "Item", "dc.date.issued", "sometime in 2019"));
 
-        assertThat(mapper.toDatasetDetail(item, List.of()).getReleasedOn()).isNull();
+        assertThat(mapper.toResearchObjectDetail(item, List.of()).getReleasedOn()).isNull();
     }
 
     @Test
     void producesNoFileManifestEntriesWhenTheItemCarriesNoUrls() {
         JsonNode item = RepositoryFixtures.item("uuid", "Item", Map.of("dc.title", "Item"));
 
-        assertThat(mapper.toDatasetDetail(item, List.of()).getFiles()).isEmpty();
+        assertThat(mapper.toResearchObjectDetail(item, List.of()).getFiles()).isEmpty();
     }
 
     @Test

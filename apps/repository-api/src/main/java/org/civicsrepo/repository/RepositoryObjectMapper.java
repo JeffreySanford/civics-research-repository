@@ -1,15 +1,18 @@
 package org.civicsrepo.repository;
 
 import java.net.URI;
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetFile;
 import org.civicsrepo.generated.dto.EvidenceStatus;
 import org.civicsrepo.generated.dto.FileFormat;
+import org.civicsrepo.generated.dto.AccessLevel;
+import org.civicsrepo.generated.dto.ResearchAuthor;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -17,6 +20,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.civicsrepo.dspace.DspaceFileManifest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,6 +37,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class RepositoryObjectMapper {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RepositoryObjectMapper.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String PUBLISHER_FALLBACK = "U.S. Census Bureau";
 
     public SearchResult toSearchResult(JsonNode item) {
@@ -40,17 +47,18 @@ public class RepositoryObjectMapper {
         return new SearchResult(
                 identifier(item),
                 title(item),
-                ResearchObjectType.DATASET,
+                contentType(item),
                 program(item),
                 firstValue(item, "dc.publisher").orElse(PUBLISHER_FALLBACK),
                 firstValue(item, "dc.description.abstract").orElse(""),
                         URI.create(sourceUrl(item)))
                         .geography(geography)
-                        .vintageYear(vintageYear(item).orElse(null));
+                        .vintageYear(vintageYear(item).orElse(null))
+                        .accessLevel(accessLevel(item));
     }
 
-    public DatasetDetail toDatasetDetail(JsonNode item, List<SearchResult> relatedResearch) {
-        return new DatasetDetail(
+    public ResearchObjectDetail toResearchObjectDetail(JsonNode item, List<SearchResult> relatedResearch) {
+        return new ResearchObjectDetail(
                 RepositorySource.REPOSITORY,
                 identifier(item),
                 title(item),
@@ -64,7 +72,89 @@ public class RepositoryObjectMapper {
                         .geography(firstValue(item, "dc.coverage.spatial").orElse("United States"))
                         .vintageYear(vintageYear(item).orElse(null))
                         .releasedOn(releasedOn(item).orElse(null))
+                        .contentType(contentType(item))
+                        .accessLevel(accessLevel(item))
+                        .accessNote(firstValue(item, "crr.rights.accessnote").orElse(null))
+                        .license(firstValue(item, "crr.rights.license").orElse(null))
+                        .doi(firstValue(item, "crr.identifier.doi").orElse(null))
+                        .authors(authors(item))
                         .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
+    }
+
+    /** The typed edges stored on the item, still unresolved: the mapper cannot see other items. */
+    public List<ResearchRelationResolver.RawEdge> edges(JsonNode item) {
+        // DSpace wraps every metadata value as {"value": ..., "language": ...}. The resolver reads
+        // the stored JSON, so it has to be handed the inner text rather than the wrapper.
+        List<JsonNode> values = new ArrayList<>();
+        for (JsonNode value : item.path("metadata").path("crr.relation.edge")) {
+            values.add(value.path("value"));
+        }
+        return ResearchRelationResolver.parse(values);
+    }
+
+    /**
+     * Type comes from {@code crr.resource.type}, defaulting to DATASET.
+     *
+     * <p>The default is a fact rather than a guess: every item seeded before research packages
+     * existed was a dataset, because the catalog held nothing else. An unreadable value is logged
+     * and treated the same way, so one bad item cannot fail a whole search response.
+     */
+    private ResearchObjectType contentType(JsonNode item) {
+        return firstValue(item, "crr.resource.type")
+                .map((value) -> {
+                    try {
+                        return ResearchObjectType.fromValue(value.trim());
+                    } catch (IllegalArgumentException exception) {
+                        LOGGER.warn("Unknown research object type {}; treating it as a dataset.", value);
+                        return ResearchObjectType.DATASET;
+                    }
+                })
+                .orElse(ResearchObjectType.DATASET);
+    }
+
+    /**
+     * Access level comes from {@code crr.rights.access}, defaulting to PUBLIC.
+     *
+     * <p>An unreadable value falls back to RESTRICTED, not PUBLIC. Getting this backwards would
+     * mean an item whose access metadata is corrupt renders as freely available.
+     */
+    private AccessLevel accessLevel(JsonNode item) {
+        return firstValue(item, "crr.rights.access")
+                .map((value) -> {
+                    try {
+                        return AccessLevel.fromValue(value.trim());
+                    } catch (IllegalArgumentException exception) {
+                        LOGGER.warn("Unknown access level {}; treating it as restricted.", value);
+                        return AccessLevel.RESTRICTED;
+                    }
+                })
+                .orElse(AccessLevel.PUBLIC);
+    }
+
+    private List<ResearchAuthor> authors(JsonNode item) {
+        List<ResearchAuthor> authors = new ArrayList<>();
+        for (JsonNode value : item.path("metadata").path("crr.contributor.researcher")) {
+            String text = value.path("value").asText("").trim();
+            if (text.isEmpty()) {
+                continue;
+            }
+            try {
+                JsonNode researcher = OBJECT_MAPPER.readTree(text);
+                String name = researcher.path("name").asText("");
+                if (name.isBlank()) {
+                    continue;
+                }
+                ResearchAuthor author = new ResearchAuthor(name);
+                String orcid = researcher.path("orcid").asText("");
+                if (!orcid.isBlank()) {
+                    author.setOrcid(orcid);
+                }
+                authors.add(author);
+            } catch (Exception exception) {
+                LOGGER.warn("Ignoring unparseable researcher value on {}.", identifier(item));
+            }
+        }
+        return List.copyOf(authors);
     }
 
     /**
@@ -154,6 +244,14 @@ public class RepositoryObjectMapper {
         List<DatasetFile> manifestFiles = manifestFiles(item);
         if (!manifestFiles.isEmpty()) {
             return manifestFiles;
+        }
+
+        // The fallback below turns an item's landing-page URLs into file entries so that a
+        // sparsely described dataset is still usable. For a restricted object that is actively
+        // misleading: it has no files by definition, and listing two would offer downloads for
+        // records that cannot be released.
+        if (accessLevel(item) != AccessLevel.PUBLIC) {
+            return List.of();
         }
 
         List<DatasetFile> files = new ArrayList<>();

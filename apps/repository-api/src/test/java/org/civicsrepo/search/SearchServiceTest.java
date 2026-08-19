@@ -14,7 +14,7 @@ class SearchServiceTest {
 
     @Test
     void keywordSearchFindsNorthDakotaResearchObjects() {
-        SearchResponse response = searchService.search("North Dakota", List.of(), null, null, 0, 25);
+        SearchResponse response = searchService.search("North Dakota", List.of(), null, null, null, 0, 25);
 
         assertThat(response.getQuery()).isEqualTo("North Dakota");
         assertThat(response.getTotalResults()).isGreaterThanOrEqualTo(3);
@@ -28,7 +28,7 @@ class SearchServiceTest {
 
     @Test
     void keywordSearchFindsOtherCensusAreas() {
-        SearchResponse response = searchService.search("California", List.of(), null, null, 0, 25);
+        SearchResponse response = searchService.search("California", List.of(), null, null, null, 0, 25);
 
         assertThat(response.getTotalResults()).isGreaterThanOrEqualTo(3);
         assertThat(response.getResults())
@@ -38,7 +38,7 @@ class SearchServiceTest {
 
     @Test
     void geographyFilterSupportsAnySeededCensusArea() {
-        SearchResponse response = searchService.search("", List.of(), "Texas", null, 0, 25);
+        SearchResponse response = searchService.search("", List.of(), "Texas", null, null, 0, 25);
 
         assertThat(response.getTotalResults()).isGreaterThanOrEqualTo(3);
         assertThat(response.getResults())
@@ -48,7 +48,7 @@ class SearchServiceTest {
 
     @Test
     void programFilterReturnsSelectedFacet() {
-        SearchResponse response = searchService.search("", List.of(ResearchProgram.USGS), null, null, 0, 25);
+        SearchResponse response = searchService.search("", List.of(ResearchProgram.USGS), null, null, null, 0, 25);
 
         assertThat(response.getResults()).singleElement().extracting(SearchResult::getProgram).isEqualTo(ResearchProgram.USGS);
         assertThat(response.getFacets())
@@ -66,7 +66,7 @@ class SearchServiceTest {
     @Test
     void severalProgramsReturnTheUnionOfTheirResults() {
         SearchResponse response = searchService.search(
-                "", List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES), "Texas", null, 0, 25);
+                "", List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES), "Texas", null, null, 0, 25);
 
         assertThat(response.getResults())
                 .extracting(SearchResult::getProgram)
@@ -77,7 +77,7 @@ class SearchServiceTest {
     @Test
     void programFacetCountsIgnoreTheProgramFilter() {
         SearchResponse response =
-                searchService.search("", List.of(ResearchProgram.USGS), null, null, 0, 25);
+                searchService.search("", List.of(ResearchProgram.USGS), null, null, null, 0, 25);
 
         assertThat(response.getFacets())
                 .filteredOn((facet) -> facet.getField().equals("program"))

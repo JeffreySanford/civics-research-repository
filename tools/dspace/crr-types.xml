@@ -57,4 +57,52 @@
     <qualifier>manifest</qualifier>
     <scope_note>One JSON entry per source file: id, bundle, format, url, and size where known. Public datasets are represented by manifests and links rather than mirrored bitstreams, so this field is where the file list lives.</scope_note>
   </dc-type>
+  <dc-type>
+    <schema>crr</schema>
+    <element>resource</element>
+    <qualifier>type</qualifier>
+    <scope_note>Research object type: DATASET, PUBLICATION, CODE, METHODOLOGY, SUPPORTING_MATERIAL, or PROJECT. Absent means DATASET, which is what every item seeded before research packages existed is.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>relation</element>
+    <qualifier>edge</qualifier>
+    <scope_note>One JSON entry per typed relationship: verb and target source identifier. Verbs are directional and asserted only where they are true of the objects themselves, never inferred from shared geography.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>rights</element>
+    <qualifier>access</qualifier>
+    <scope_note>Access level: PUBLIC, RESTRICTED, METADATA_ONLY, or EMBARGOED. A restricted object still carries citation, provenance, and instructions for legitimate access; it carries no files.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>rights</element>
+    <qualifier>license</qualifier>
+    <scope_note>Reuse terms for the object, stated rather than assumed.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>rights</element>
+    <qualifier>accessnote</qualifier>
+    <scope_note>How a researcher legitimately obtains a restricted object. Present only where access is not PUBLIC.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>identifier</element>
+    <qualifier>doi</qualifier>
+    <scope_note>Persistent scholarly identifier, where one exists. Omitted rather than invented when it does not.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>contributor</element>
+    <qualifier>researcher</qualifier>
+    <scope_note>One JSON entry per author: name, and ORCID where the researcher has a public one. The ORCID key is absent rather than blank when unknown.</scope_note>
+  </dc-type>
 </dspace-dc-types>

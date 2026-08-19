@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One community, four collections, one per kind of research object.
+
+  The type is also carried as crr.resource.type, which is what discovery facets on. The collections
+  are not a second copy of that fact for its own sake: DSpace's own interfaces, its OAI-PMH sets and
+  its administrative tools organise by collection, so a repository whose only notion of type lives
+  in a project-specific metadata field looks structureless to everything except this application.
+-->
 <import_structure>
   <community>
     <name>Census Public Research Data</name>
@@ -9,6 +17,24 @@
       <description>Geospatial boundary and feature metadata for Census TIGER/Line visual discovery workflows.</description>
       <intro>Seed collection for TIGER/Line map visualization metadata and source-file manifests.</intro>
       <license>Public data source links remain authoritative; mirrored demo artifacts are stored only when useful for local reliability.</license>
+    </collection>
+    <collection>
+      <name>Research Publications</name>
+      <description>Peer-reviewed and working-paper outputs deposited alongside the scientific data supporting them.</description>
+      <intro>Census Center for Economic Studies working papers and related published research.</intro>
+      <license>Works of the U.S. Government are in the public domain in the United States.</license>
+    </collection>
+    <collection>
+      <name>Methodology and Code</name>
+      <description>Methodology reports, statistical code, and replication materials describing how a data product was produced.</description>
+      <intro>Documentation of process rather than of results: how the published data came to be.</intro>
+      <license>Works of the U.S. Government are in the public domain in the United States.</license>
+    </collection>
+    <collection>
+      <name>Research Projects</name>
+      <description>Research packages that tie a body of work together: publications, the data they rest on, methodology, and supporting material.</description>
+      <intro>A project is an object in its own right, so a body of research can be cited and resolved the way its parts are.</intro>
+      <license>Works of the U.S. Government are in the public domain in the United States.</license>
     </collection>
   </community>
 </import_structure>

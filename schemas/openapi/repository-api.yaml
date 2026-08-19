@@ -31,6 +31,7 @@ paths:
         - $ref: '#/components/parameters/SearchQuery'
         - $ref: '#/components/parameters/Program'
         - $ref: '#/components/parameters/Geography'
+        - $ref: '#/components/parameters/ContentType'
         - $ref: '#/components/parameters/VintageYear'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -60,7 +61,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DatasetDetail'
+                $ref: '#/components/schemas/ResearchObjectDetail'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -452,6 +453,12 @@ components:
       schema:
         type: string
         maxLength: 80
+    ContentType:
+      name: contentType
+      in: query
+      description: Restrict results to one research object type.
+      schema:
+        $ref: '#/components/schemas/ResearchObjectType'
     VintageYear:
       name: vintageYear
       in: query
@@ -567,6 +574,8 @@ components:
         sourceUrl:
           type: string
           format: uri
+        accessLevel:
+          $ref: '#/components/schemas/AccessLevel'
     FacetGroup:
       type: object
       required: [field, label, values]
@@ -591,7 +600,7 @@ components:
           type: integer
         selected:
           type: boolean
-    DatasetDetail:
+    ResearchObjectDetail:
       type: object
       required:
         [
@@ -641,6 +650,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SearchResult'
+        contentType:
+          $ref: '#/components/schemas/ResearchObjectType'
+        accessLevel:
+          $ref: '#/components/schemas/AccessLevel'
+        accessNote:
+          type: string
+          description: How a researcher legitimately obtains a restricted object.
+        license:
+          type: string
+        doi:
+          type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchAuthor'
+        relations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchRelation'
     DatasetFile:
       type: object
       required: [id, label, format, url]
@@ -979,6 +1007,18 @@ components:
         collectionCount:
           type: integer
           minimum: 0
+        storedBitstreamCount:
+          type: integer
+          minimum: 0
+          description: >-
+            Bitstreams held in the ORIGINAL bundles of discoverable items. The repository mirrors a
+            bounded subset of the subscribed files rather than all of them, so this is smaller than
+            the subscribed file count by design.
+        storedBytes:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Total size of those bitstreams, as DSpace reports it.
         communities:
           type: array
           items:
@@ -1140,7 +1180,54 @@ components:
           type: string
     ResearchObjectType:
       type: string
-      enum: [DATASET, PUBLICATION, CODE, METHODOLOGY, SUPPORTING_MATERIAL]
+      # PROJECT is the research package itself: an object whose value is the edges it declares
+      # rather than the files it holds. It is a repository item with its own handle, so that a
+      # body of work can be cited and resolved the same way its parts are.
+      enum:
+        [DATASET, PUBLICATION, CODE, METHODOLOGY, SUPPORTING_MATERIAL, PROJECT]
+    AccessLevel:
+      type: string
+      # Open Science at a statistical agency is not "everything is public". Title 13 protects the
+      # microdata behind most Census research, so a repository that can only say PUBLIC cannot
+      # describe its own holdings. A RESTRICTED object still carries citation, provenance and
+      # instructions for legitimate access; it carries no files.
+      enum: [PUBLIC, RESTRICTED, METADATA_ONLY, EMBARGOED]
+    ResearchRelation:
+      type: object
+      required: [verb, targetId, targetTitle, targetType]
+      description: >-
+        A typed, directional edge between two research objects. Asserted only where it is true of
+        the objects themselves; relatedResearch keeps its geography heuristic for everything else.
+      properties:
+        verb:
+          $ref: '#/components/schemas/ResearchRelationVerb'
+        targetId:
+          type: string
+        targetTitle:
+          type: string
+        targetType:
+          $ref: '#/components/schemas/ResearchObjectType'
+        targetAccessLevel:
+          $ref: '#/components/schemas/AccessLevel'
+        note:
+          type: string
+          description: Why this relationship holds, in the curator's words.
+    ResearchRelationVerb:
+      type: string
+      # hasPart: a project to its members. uses: research to the data it ran on. documents:
+      # methodology to what it describes. isDerivedFrom: a public product to its restricted source.
+      enum: [hasPart, uses, documents, isDerivedFrom]
+    ResearchAuthor:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        orcid:
+          type: string
+          description: >-
+            Absent rather than blank when the researcher has no public ORCID. An empty string
+            would assert that none exists, which is a claim the repository cannot make.
     ResearchProgram:
       type: string
       # OTHER covers repository items that carry no crr.program value. Guessing a Census

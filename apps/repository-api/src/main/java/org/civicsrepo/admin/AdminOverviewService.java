@@ -89,6 +89,9 @@ public class AdminOverviewService {
                 .collections(collections.stream().map(this::toContainerSummary).toList());
 
         dspaceRestClient.countDiscoverableItems().ifPresent(overview::itemCount);
+        dspaceRestClient.summarizeStoredBitstreams().ifPresent((stored) -> overview
+                .storedBitstreamCount(stored.fileCount())
+                .storedBytes(stored.totalBytes()));
 
         Optional<SyncJob> latestJob = recentJobs.stream().findFirst();
         latestJob.ifPresent((job) -> overview

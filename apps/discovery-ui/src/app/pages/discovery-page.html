@@ -47,6 +47,12 @@
             Select any number of programs. TIGER/Line, LODES, and ACS are
             selected by default.
           </p>
+          } @if (facet.field === 'type') {
+          <p class="facet-hint">
+            One type at a time. Selecting the type already chosen clears it.
+            Most of the repository is datasets; publications, methodology, and
+            the research project that ties them together are the rest.
+          </p>
           }
           <div class="facet-values">
             @for (value of facet.values; track value.value) {
@@ -55,7 +61,11 @@
               type="button"
               [class.selected]="value.selected"
               [attr.aria-pressed]="value.selected"
-              [disabled]="facet.field !== 'program' && facet.field !== 'geography'"
+              [disabled]="
+                facet.field !== 'program' &&
+                facet.field !== 'geography' &&
+                facet.field !== 'type'
+              "
               (click)="selectFacet(facet.field, value.value)"
             >
               {{ value.label }} ({{ value.count }})
@@ -112,7 +122,11 @@
             <div class="result-meta">
               <span>{{ result.program }}</span>
               <span>{{ result.contentType }}</span>
-              @if (result.geography) {
+              <!-- Only when it is not public. A RESTRICTED badge means something precisely
+                   because most objects do not carry one. -->
+              @if (result.accessLevel && result.accessLevel !== 'PUBLIC') {
+              <span class="result-access">{{ result.accessLevel }}</span>
+              } @if (result.geography) {
               <span>{{ result.geography }}</span>
               } @if (result.vintageYear) {
               <span>{{ result.vintageYear }}</span>
@@ -121,7 +135,7 @@
             <h3>{{ result.title }}</h3>
             <p>{{ result.summary }}</p>
             <a class="source-link" [routerLink]="['/datasets', result.id]">
-              Dataset detail
+              Research object detail
             </a>
             <a
               class="source-link"

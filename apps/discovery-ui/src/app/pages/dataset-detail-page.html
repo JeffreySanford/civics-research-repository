@@ -14,9 +14,39 @@
   } @if (detail$ | async; as detail) {
   <section aria-labelledby="dataset-title" class="dataset-hero">
     <div>
-      <p class="eyebrow">Dataset detail</p>
+      <!-- The eyebrow names what this object actually is. A working paper under the words
+           "Dataset detail" is the drift this rename was meant to end. -->
+      <p class="eyebrow">{{ typeLabel(detail.contentType) }}</p>
       <h1 id="dataset-title">{{ detail.title }}</h1>
+
+      @if (detail.authors?.length) {
+      <p class="dataset-authors">
+        @for (author of detail.authors; track author.name; let last = $last) {
+        <span>
+          {{ author.name }}
+          <!-- Linked only where the researcher has a public ORCID. Absent is absent: an empty
+               identifier would claim none exists. -->
+          @if (author.orcid) {
+          <a
+            class="source-link"
+            [href]="'https://orcid.org/' + author.orcid"
+            target="_blank"
+            rel="noreferrer"
+            >ORCID</a
+          >
+          } </span
+        >{{ last ? '' : ', ' }} }
+      </p>
+      }
+
       <p>{{ detail.abstractText }}</p>
+
+      @if (detail.accessLevel && detail.accessLevel !== 'PUBLIC') {
+      <p class="warning-message" role="note">
+        <strong>{{ detail.accessLevel }}.</strong>
+        {{ detail.accessNote }}
+      </p>
+      }
     </div>
 
     <dl class="details-list">
@@ -44,6 +74,28 @@
         <dt>Evidence</dt>
         <dd>{{ detail.accessibilityEvidenceStatus ?? 'NOT_STARTED' }}</dd>
       </div>
+      <div>
+        <dt>Access</dt>
+        <dd>{{ detail.accessLevel ?? 'PUBLIC' }}</dd>
+      </div>
+      <div>
+        <dt>Reuse</dt>
+        <dd>{{ detail.license ?? 'Not stated' }}</dd>
+      </div>
+      @if (detail.doi) {
+      <div>
+        <dt>DOI</dt>
+        <dd>
+          <a
+            class="source-link"
+            [href]="'https://doi.org/' + detail.doi"
+            target="_blank"
+            rel="noreferrer"
+            >{{ detail.doi }}</a
+          >
+        </dd>
+      </div>
+      }
     </dl>
   </section>
 
@@ -107,6 +159,9 @@
       </section>
     </mat-tab>
 
+    <!-- A working paper has no geometry. Rendering an empty map workspace under it would suggest
+         the repository failed to load something, rather than that there is nothing to draw. -->
+    @if (detail.contentType === 'DATASET' || !detail.contentType) {
     <mat-tab label="Map Layers">
       <section class="tab-panel" aria-labelledby="map-layers-heading">
         <h2 id="map-layers-heading">Map Layers</h2>
@@ -160,6 +215,39 @@
       </section>
     </mat-tab>
 
+    } @if (detail.relations?.length) {
+    <mat-tab label="Research Package">
+      <section class="tab-panel" aria-labelledby="relations-heading">
+        <h2 id="relations-heading">Research package</h2>
+        <p>
+          Typed relationships this object declares. Unlike Related Research
+          below, these are asserted about the objects themselves rather than
+          inferred from a shared geography.
+        </p>
+        <ul class="relation-list">
+          @for (relation of detail.relations; track relation.targetId) {
+          <li>
+            <p class="relation-verb">{{ relationLabel(relation.verb) }}</p>
+            <a
+              class="source-link"
+              [routerLink]="['/datasets', relation.targetId]"
+              >{{ relation.targetTitle }}</a
+            >
+            <span class="relation-type">{{ relation.targetType }}</span>
+            @if (relation.targetAccessLevel && relation.targetAccessLevel !==
+            'PUBLIC') {
+            <span class="relation-access"
+              >{{ relation.targetAccessLevel }}</span
+            >
+            } @if (relation.note) {
+            <p class="relation-note">{{ relation.note }}</p>
+            }
+          </li>
+          }
+        </ul>
+      </section>
+    </mat-tab>
+    }
     <mat-tab label="Related Research">
       <section class="tab-panel" aria-labelledby="related-heading">
         <h2 id="related-heading">Related Research</h2>

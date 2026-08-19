@@ -46,7 +46,9 @@ test.describe('demo storyboard checks', () => {
       .getByRole('link', { name: 'Evidence' })
       .click();
     await expect(
-      page.getByRole('heading', { name: 'WCAG and Section 508 status' }),
+      page.getByRole('heading', {
+        name: 'Platform evidence: conformance and data provenance',
+      }),
     ).toBeVisible();
   });
 
@@ -109,7 +111,10 @@ test.describe('demo storyboard checks', () => {
     ).toHaveAttribute('aria-pressed', 'true');
     await expect(page).toHaveURL(/geography=California/);
 
-    await page.getByRole('link', { name: 'Dataset detail' }).first().focus();
+    await page
+      .getByRole('link', { name: 'Research object detail' })
+      .first()
+      .focus();
     await page.keyboard.press('Enter');
 
     await expect(
@@ -123,7 +128,10 @@ test.describe('demo storyboard checks', () => {
     page,
   }) => {
     await page.goto('/discovery');
-    await page.getByRole('link', { name: 'Dataset detail' }).first().click();
+    await page
+      .getByRole('link', { name: 'Research object detail' })
+      .first()
+      .click();
 
     await expect(
       page.getByRole('heading', {
@@ -598,7 +606,9 @@ test.describe('evidence data pipeline tab', () => {
     await mockRepositoryApi(page);
     await page.goto('/evidence');
     await expect(
-      page.getByRole('heading', { name: 'WCAG and Section 508 status' }),
+      page.getByRole('heading', {
+        name: 'Platform evidence: conformance and data provenance',
+      }),
     ).toBeVisible();
   });
 
@@ -613,7 +623,7 @@ test.describe('evidence data pipeline tab', () => {
     ).toHaveAttribute('aria-selected', 'false');
   });
 
-  test('the pipeline tab reports subscribed, curated, and indexed @storyboard', async ({
+  test('the pipeline tab reports subscribed, mirrored, curated, and indexed @storyboard', async ({
     page,
   }) => {
     await page.getByRole('tab', { name: 'Data pipeline' }).click();
@@ -622,18 +632,22 @@ test.describe('evidence data pipeline tab', () => {
     await expect(page.getByText('1.7 GiB')).toBeVisible();
     await expect(page.getByText('191 distinct files')).toBeVisible();
 
-    // Curated and indexed come from the live DSpace and Solr overviews. Asserted by their labels:
-    // the counts themselves depend on what the repository currently holds.
-    await expect(page.getByText('Stored in the repository')).toBeVisible();
+    // Mirrored, curated and indexed come from the live DSpace and Solr overviews. Asserted by
+    // their labels: the counts themselves depend on what the repository currently holds.
+    await expect(page.getByText('Mirrored into the assetstore')).toBeVisible();
+    await expect(page.getByText('Curated as research objects')).toBeVisible();
     await expect(page.getByText('Indexed for discovery')).toBeVisible();
-    await expect(
-      page.getByText('The assetstore holds none of the source bytes.'),
-    ).toBeVisible();
+    await expect(page.getByText(/% of the subscribed bytes/)).toBeVisible();
 
     // An as-of date, because a byte total without one is a number pretending to be current.
     await expect(page.getByText(/Sizes measured/)).toBeVisible();
+    // Both caveats on the subscribed total, not only the failures. 191 distinct files, 167
+    // measured, 8 in error leaves 16 that answered without a length.
     await expect(
-      page.getByText(/8 source file\(s\) did not answer/),
+      page.getByText(/8 source file\(s\) answered with an error/),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/16 more answered without reporting a length/),
     ).toBeVisible();
   });
 
@@ -665,7 +679,108 @@ test.describe('evidence data pipeline tab', () => {
     ).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(
-      page.getByRole('heading', { name: 'Subscribed, curated, indexed' }),
+      page.getByRole('heading', {
+        name: 'Subscribed, mirrored, curated, indexed',
+      }),
+    ).toBeVisible();
+  });
+});
+
+/**
+ * The open-science slice: types, typed edges, and restricted-data handling.
+ *
+ * Asserted through the UI rather than the API because the point of the slice is that a reader can
+ * see a publication is a publication, and that a restricted object says so before they click.
+ */
+test.describe('research package', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/discovery');
+  });
+
+  test('discovery lists more than datasets @storyboard', async ({ page }) => {
+    await expect(
+      page.getByRole('heading', {
+        name: 'Re-assessing the Spatial Mismatch Hypothesis',
+      }),
+    ).toBeVisible();
+
+    // The type is on the card, so the reader never has to open an object to learn what it is.
+    await expect(page.getByText('PUBLICATION').first()).toBeVisible();
+  });
+
+  test('a restricted object is marked in the result list @storyboard', async ({
+    page,
+  }) => {
+    await expect(page.locator('.result-access')).toHaveText('RESTRICTED');
+  });
+
+  test('the type facet filters and can be cleared @storyboard', async ({
+    page,
+  }) => {
+    const publication = page.getByRole('button', { name: /^PUBLICATION \(/ });
+    await publication.click();
+
+    await expect(page).toHaveURL(/type=PUBLICATION/);
+    await expect(
+      page.getByRole('heading', {
+        name: 'Re-assessing the Spatial Mismatch Hypothesis',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - California',
+      }),
+    ).toHaveCount(0);
+
+    // Selecting the chosen type again clears it, rather than being a dead end.
+    await page.getByRole('button', { name: /^PUBLICATION \(/ }).click();
+    await expect(page).not.toHaveURL(/type=PUBLICATION/);
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - California',
+      }),
+    ).toBeVisible();
+  });
+
+  test('a publication shows its authors, DOI, and typed edges @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/datasets/ces-wp-25-23-spatial-mismatch');
+
+    await expect(page.getByText('Publication').first()).toBeVisible();
+    await expect(page.getByText('David Card')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: '10.3386/w32252' }),
+    ).toBeVisible();
+
+    // No map tabs on a paper: there is no geometry to draw.
+    await expect(page.getByRole('tab', { name: 'Map Layers' })).toHaveCount(0);
+
+    await page.getByRole('tab', { name: 'Research Package' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Research package' }),
+    ).toBeVisible();
+    // Scoped to the relation list: the abstract also opens with the word "Uses".
+    await expect(page.locator('.relation-verb')).toHaveText('Uses');
+    await expect(
+      page.getByRole('link', {
+        name: 'LEHD Longitudinal Employer-Household Dynamics microdata',
+      }),
+    ).toBeVisible();
+  });
+
+  test('a restricted object states how to obtain it and offers no files @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/datasets/lehd-microdata-restricted');
+
+    await expect(page.getByText('RESTRICTED').first()).toBeVisible();
+    await expect(
+      page.getByText(/Special Sworn Status through a Federal Statistical/),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Restricted under Title 13, U.S. Code.'),
     ).toBeVisible();
   });
 });

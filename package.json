@@ -81,6 +81,8 @@
     "section508:report": "pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts --grep @section508 --reporter=list",
     "e2e:reports": "node tools/scripts/e2e-reports.mjs",
     "fixture:check": "node tools/scripts/check-fixture-catalog.mjs",
+    "dspace:mirror": "node tools/scripts/mirror-source-files.mjs",
+    "dspace:seed:mirrored": "node tools/scripts/generate-saf.mjs && node tools/scripts/mirror-source-files.mjs && docker compose --profile dspace run --rm dspace-seed",
     "sources:inventory": "node tools/scripts/build-source-inventory.mjs",
     "verify:sources": "node tools/scripts/verify-source-urls.mjs",
     "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",

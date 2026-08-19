@@ -95,6 +95,66 @@ public class DspaceRestClient {
         }
     }
 
+    /**
+     * Counts and measures the bitstreams the assetstore actually holds.
+     *
+     * Asked of DSpace rather than of the mirror manifest on purpose: the manifest records what the
+     * seed intended to stage, and for a long while that differed from what was imported. Only
+     * DSpace knows what is in the assetstore, so only DSpace is allowed to report it.
+     *
+     * Discovery embeds the bundles, so this is one request per hundred items rather than one per
+     * item. ORIGINAL only — the license and text-extraction bundles are DSpace's own bookkeeping,
+     * not subscribed source bytes.
+     */
+    public Optional<StoredBitstreams> summarizeStoredBitstreams() {
+        if (!isReadEnabled()) {
+            return Optional.empty();
+        }
+
+        try {
+            int fileCount = 0;
+            long totalBytes = 0;
+            int pageSize = 100;
+
+            for (int page = 0; ; page++) {
+                URI uri = URI.create(allItemsUri(page, pageSize) + "&embed=bundles/bitstreams");
+                HttpResponse<String> response =
+                        send(HttpRequest.newBuilder(uri).timeout(REQUEST_TIMEOUT).GET());
+                if (response.statusCode() >= 300) {
+                    return Optional.empty();
+                }
+
+                List<JsonNode> pageItems = toDiscoverableItems(response.body());
+                for (JsonNode item : pageItems) {
+                    for (JsonNode bundle :
+                            item.path("_embedded").path("bundles").path("_embedded").path("bundles")) {
+                        if (!"ORIGINAL".equals(bundle.path("name").asText(""))) {
+                            continue;
+                        }
+                        for (JsonNode bitstream : bundle.path("_embedded")
+                                .path("bitstreams")
+                                .path("_embedded")
+                                .path("bitstreams")) {
+                            fileCount++;
+                            totalBytes += Math.max(0L, bitstream.path("sizeBytes").asLong(0L));
+                        }
+                    }
+                }
+
+                if (pageItems.size() < pageSize) {
+                    break;
+                }
+            }
+
+            return Optional.of(new StoredBitstreams(fileCount, totalBytes));
+        } catch (DspaceUnavailableException exception) {
+            return Optional.empty();
+        }
+    }
+
+    /** Bitstreams held in ORIGINAL bundles, and their total size as DSpace reports it. */
+    public record StoredBitstreams(int fileCount, long totalBytes) {}
+
     /** Top-level communities from the core API, when reads are enabled. */
     public List<ContainerSummary> listCommunities() {
         return listContainers("/api/core/communities", "communities");

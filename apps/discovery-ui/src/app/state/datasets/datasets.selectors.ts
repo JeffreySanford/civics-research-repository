@@ -4,7 +4,7 @@ import { datasetsFeatureKey, type DatasetsState } from './datasets.reducer';
 export const selectDatasetsState =
   createFeatureSelector<DatasetsState>(datasetsFeatureKey);
 
-export const selectDatasetDetail = createSelector(
+export const selectResearchObjectDetail = createSelector(
   selectDatasetsState,
   (state) => state.detail,
 );
@@ -31,6 +31,6 @@ export const selectDatasetError = createSelector(
 
 /** Whether the open dataset came from DSpace or from the fixture catalog. */
 export const selectDatasetSource = createSelector(
-  selectDatasetDetail,
+  selectResearchObjectDetail,
   (detail) => detail?.source ?? null,
 );

@@ -4,7 +4,7 @@ import { firstValueFrom, of, throwError, type Observable } from 'rxjs';
 import {
   RepositoryDatasetsApi,
   RepositoryMapsApi,
-  type DatasetDetail,
+  type ResearchObjectDetail,
   type DatasetVersion,
   type MapLayer,
 } from 'repository-api-client';
@@ -25,7 +25,7 @@ const detail = {
   sourceUrl: 'https://www2.census.gov/geo/tiger/TIGER2025/',
   accessibilityEvidenceStatus: 'AUTOMATED_PASS',
   relatedResearch: [],
-} as unknown as DatasetDetail;
+} as unknown as ResearchObjectDetail;
 
 const versions: DatasetVersion[] = [
   {

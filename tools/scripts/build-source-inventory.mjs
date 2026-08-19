@@ -171,9 +171,16 @@ console.log(
   `\n${inventory.objectCount} objects, ${inventory.programCount} programs, ` +
     `${inventory.distinctFileCount} distinct files.`,
 );
+// The three tallies must partition the distinct files, or the line invites the reader to add
+// them up and get more files than exist. A URL that did not answer is already missing from
+// measuredFileCount, so subtracting it once more is what leaves "no length" honest.
+const noLengthCount =
+  inventory.distinctFileCount -
+  inventory.measuredFileCount -
+  inventory.unreachableFileCount;
 console.log(
   `Measured ${inventory.measuredFileCount} of them: ${gigabytes} GiB. ` +
-    `${inventory.distinctFileCount - inventory.measuredFileCount} reported no length, ` +
+    `${noLengthCount} answered without a length, ` +
     `${inventory.unreachableFileCount} did not answer.`,
 );
 console.log(`\nWritten to ${outputPath}`);

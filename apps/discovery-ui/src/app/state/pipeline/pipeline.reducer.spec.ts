@@ -52,6 +52,8 @@ const dspace = {
   collectionCount: 1,
   lastSyncStartedAt: '2026-08-17T11:58:59.230638Z',
   lastSyncStatus: 'APPLIED',
+  storedBitstreamCount: 76,
+  storedBytes: 1_077_000_000,
 } as unknown as DspaceOverview;
 
 const solr = {
@@ -113,6 +115,51 @@ describe('pipeline selectors', () => {
     expect(stages.indexedDocuments).toBe(183);
     expect(stages.measuredAt).toBe('2026-08-17T19:36:20.535Z');
     expect(stages.unreachableFiles).toBe(8);
+  });
+
+  /**
+   * The three tallies partition the distinct files. If they ever stop doing so, the caveat under
+   * the subscribed total starts claiming more unmeasured files than the inventory contains.
+   */
+  it('derives the unmeasured files as the remainder of the partition', () => {
+    const stages = selectPipelineStages.projector(inventory, dspace, solr);
+
+    expect(stages.unmeasuredFiles).toBe(16);
+    expect(
+      stages.measuredFiles + stages.unmeasuredFiles + stages.unreachableFiles,
+    ).toBe(stages.subscribedFiles);
+  });
+
+  it('never reports a negative unmeasured count', () => {
+    const stages = selectPipelineStages.projector(
+      { ...inventory, distinctFileCount: 0 } as typeof inventory,
+      dspace,
+      solr,
+    );
+
+    expect(stages.unmeasuredFiles).toBe(0);
+  });
+
+  it('reports the mirrored bytes as a share of the subscribed bytes', () => {
+    const stages = selectPipelineStages.projector(inventory, dspace, solr);
+
+    expect(stages.mirroredBytes).toBe(1_077_000_000);
+    expect(stages.mirroredFiles).toBe(76);
+    expect(stages.mirroredPercent).toBe(58);
+  });
+
+  /**
+   * Before the mirror ran, DSpace held items and no bitstreams. That state must read as 0%, not as
+   * the 1% floor that keeps a real-but-small mirror visible.
+   */
+  it('reports no share when nothing has been mirrored', () => {
+    const stages = selectPipelineStages.projector(
+      inventory,
+      { ...dspace, storedBytes: 0, storedBitstreamCount: 0 },
+      solr,
+    );
+
+    expect(stages.mirroredPercent).toBe(0);
   });
 
   it('reports zeroes rather than throwing before anything has loaded', () => {

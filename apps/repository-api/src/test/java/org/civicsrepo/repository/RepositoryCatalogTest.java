@@ -1,6 +1,6 @@
 package org.civicsrepo.repository;
 
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +42,7 @@ class RepositoryCatalogTest {
 
     @Test
     void findsADatasetBySourceIdentifier() {
-        DatasetDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
+        ResearchObjectDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
         assertThat(detail.getSource()).isEqualTo(RepositorySource.REPOSITORY);
         assertThat(detail.getGeography()).isEqualTo("North Dakota");
@@ -65,7 +65,7 @@ class RepositoryCatalogTest {
      */
     @Test
     void relatesItemsSharingGeographyAndExcludesSameProgramFiller() {
-        DatasetDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
+        ResearchObjectDetail detail = catalog(ITEMS).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
         assertThat(detail.getRelatedResearch())
                 .extracting(SearchResult::getId)
@@ -81,7 +81,7 @@ class RepositoryCatalogTest {
                 RepositoryFixtures.seededItem("cps-b", "CPS B", "CPS", "United States", "2023"),
                 ITEMS.getFirst());
 
-        DatasetDetail detail = catalog(items).findDataset("cps-a").orElseThrow();
+        ResearchObjectDetail detail = catalog(items).findDataset("cps-a").orElseThrow();
 
         assertThat(detail.getRelatedResearch()).extracting(SearchResult::getId).containsExactly("cps-b");
     }
@@ -92,7 +92,7 @@ class RepositoryCatalogTest {
                 ITEMS.getFirst(),
                 RepositoryFixtures.seededItem("cps-public-use", "CPS Public Use Data", "CPS", "United States", "2024"));
 
-        DatasetDetail detail = catalog(items).findDataset("tiger-line-north-dakota-2025").orElseThrow();
+        ResearchObjectDetail detail = catalog(items).findDataset("tiger-line-north-dakota-2025").orElseThrow();
 
         assertThat(detail.getRelatedResearch()).isEmpty();
     }

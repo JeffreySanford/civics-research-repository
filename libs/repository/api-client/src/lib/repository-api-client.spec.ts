@@ -5,7 +5,7 @@ import {
   RepositoryEvidenceApi,
   RepositoryMapsApi,
   RepositorySearchApi,
-  type DatasetDetail,
+  type ResearchObjectDetail,
   type DatasetVersion,
   type MapLayer,
   type SearchResponse,
@@ -75,7 +75,7 @@ describe('RepositoryAdminApi', () => {
 
 describe('RepositoryDatasetsApi', () => {
   it('loads typed dataset details and versions', async () => {
-    const detail: DatasetDetail = {
+    const detail: ResearchObjectDetail = {
       id: 'tiger-line-north-dakota-2025',
       title: '2025 TIGER/Line - Census Tracts - North Dakota',
       program: 'TIGER_LINE',

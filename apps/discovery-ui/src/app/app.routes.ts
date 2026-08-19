@@ -20,7 +20,9 @@ export const appRoutes: Route[] = [
   {
     path: 'datasets/:datasetId',
     loadComponent: () =>
-      import('./pages/dataset-detail-page').then((m) => m.DatasetDetailPage),
+      import('./pages/dataset-detail-page').then(
+        (m) => m.ResearchObjectDetailPage,
+      ),
     title: 'Dataset Detail',
   },
   {
@@ -33,7 +35,7 @@ export const appRoutes: Route[] = [
     path: 'evidence',
     loadComponent: () =>
       import('./pages/evidence-page').then((m) => m.EvidencePage),
-    title: 'Accessibility Evidence',
+    title: 'Platform Evidence',
   },
   {
     path: 'maps',

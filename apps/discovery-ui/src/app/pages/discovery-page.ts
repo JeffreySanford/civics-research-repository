@@ -10,7 +10,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import type { ResearchProgram, SearchQuery } from 'repository-api-client';
+import type {
+  ResearchObjectType,
+  ResearchProgram,
+  SearchQuery,
+} from 'repository-api-client';
 import { SearchActions } from '../state/search/search.actions';
 import {
   selectSearchError,
@@ -62,6 +66,9 @@ export class DiscoveryPage implements OnInit {
     '',
     { nonNullable: true },
   );
+  /** Empty means every type. One value at a time: the contract takes a single content type. */
+  protected selectedContentType: ResearchObjectType | '' = '';
+
   protected readonly geographyControl = new FormControl('', {
     nonNullable: true,
   });
@@ -83,6 +90,9 @@ export class DiscoveryPage implements OnInit {
     this.selectedPrograms = this.toResearchPrograms(params.getAll('program'));
     this.programControl.setValue(this.selectedPrograms[0] ?? '');
     this.geographyControl.setValue(params.get('geography') ?? '');
+    this.selectedContentType = (params.get('type') ?? '') as
+      | ResearchObjectType
+      | '';
 
     this.submitSearch();
   }
@@ -105,6 +115,9 @@ export class DiscoveryPage implements OnInit {
         : {}),
       ...(this.geographyControl.value
         ? { geography: this.geographyControl.value }
+        : {}),
+      ...(this.selectedContentType
+        ? { contentType: this.selectedContentType }
         : {}),
     };
 
@@ -134,7 +147,27 @@ export class DiscoveryPage implements OnInit {
 
     if (field === 'geography') {
       this.selectGeography(value);
+      return;
     }
+
+    if (field === 'type') {
+      this.toggleContentType(value);
+    }
+  }
+
+  /**
+   * Selecting the type already selected clears it, rather than being a no-op.
+   *
+   * The type facet holds one value at a time, so without this a reader who filters to
+   * Publication has no way back to everything except Clear filters, which would also throw away
+   * their query and geography.
+   */
+  protected toggleContentType(contentType: string): void {
+    this.selectedContentType =
+      this.selectedContentType === contentType
+        ? ''
+        : (contentType as ResearchObjectType);
+    this.submitSearch();
   }
 
   protected resetPrograms(): void {
@@ -148,6 +181,7 @@ export class DiscoveryPage implements OnInit {
   }
 
   protected clearFilters(): void {
+    this.selectedContentType = '';
     this.selectedPrograms = [];
     this.programControl.setValue('');
     this.geographyControl.setValue('');
@@ -163,6 +197,7 @@ export class DiscoveryPage implements OnInit {
           ? [...this.selectedPrograms]
           : null,
         geography: this.geographyControl.value || null,
+        type: this.selectedContentType || null,
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,

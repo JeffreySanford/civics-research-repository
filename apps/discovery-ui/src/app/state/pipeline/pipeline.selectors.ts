@@ -56,11 +56,16 @@ export const selectSourceProgramRows = createSelector(
 );
 
 /**
- * The pipeline read as three stages.
+ * The pipeline read as four stages.
  *
- * `subscribed` is what the publishers hold, `curated` what DSpace has as items, `indexed` what
- * Solr serves. `mirrored` is deliberately absent: the repository stores metadata and links, so the
- * assetstore holds none of those bytes, and inventing a number for it would misdescribe the design.
+ * `subscribed` is what the publishers hold, `mirrored` what the assetstore has as bitstreams,
+ * `curated` what DSpace has as items, `indexed` what Solr serves. Mirroring is bounded — a per-file
+ * cap and a total budget — so `mirroredBytes` is a fraction of `subscribedBytes` by design, and the
+ * ratio is worth showing rather than hiding: it is the difference between a repository that
+ * preserves bytes and one that only points at them.
+ *
+ * Both figures come from the API, which asks DSpace. Neither is derived from the mirror manifest,
+ * which records what a seed run intended to stage rather than what was imported.
  */
 export const selectPipelineStages = createSelector(
   selectSourceInventory,
@@ -71,9 +76,34 @@ export const selectPipelineStages = createSelector(
     subscribedFiles: inventory?.distinctFileCount ?? 0,
     measuredFiles: inventory?.measuredFileCount ?? 0,
     unreachableFiles: inventory?.unreachableFileCount ?? 0,
+    /**
+     * Files that answered but sent no Content-Length, so their bytes are absent from the total.
+     *
+     * Derived rather than reported, because the three tallies partition the distinct files: what
+     * is neither measured nor unreachable answered without a length. Clamped at zero so a partial
+     * inventory cannot render a negative count.
+     */
+    unmeasuredFiles: Math.max(
+      0,
+      (inventory?.distinctFileCount ?? 0) -
+        (inventory?.measuredFileCount ?? 0) -
+        (inventory?.unreachableFileCount ?? 0),
+    ),
     subscribedObjects: inventory?.objectCount ?? 0,
     programCount: inventory?.programCount ?? 0,
     measuredAt: inventory?.checkedAt ?? null,
+    mirroredBytes: dspace?.storedBytes ?? 0,
+    mirroredFiles: dspace?.storedBitstreamCount ?? 0,
+    // Share of the subscribed bytes actually held, floored at 1% so a real mirror never reads 0%.
+    mirroredPercent:
+      (inventory?.totalBytes ?? 0) > 0 && (dspace?.storedBytes ?? 0) > 0
+        ? Math.max(
+            1,
+            Math.round(
+              ((dspace?.storedBytes ?? 0) / (inventory?.totalBytes ?? 1)) * 100,
+            ),
+          )
+        : 0,
     curatedItems: dspace?.itemCount ?? 0,
     curatedCollections: dspace?.collectionCount ?? 0,
     curatedReachable: dspace?.reachable ?? false,

@@ -1,6 +1,6 @@
 package org.civicsrepo.datasets;
 
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetVersion;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +18,7 @@ public class DatasetController {
     }
 
     @GetMapping("/{datasetId}")
-    public DatasetDetail getDataset(@PathVariable String datasetId) {
+    public ResearchObjectDetail getDataset(@PathVariable String datasetId) {
         return datasetService.getDataset(datasetId);
     }
 

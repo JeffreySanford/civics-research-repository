@@ -65,6 +65,7 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         selectedGeography,
         'REPOSITORY',
         url.searchParams.getAll('program'),
+        url.searchParams.get('contentType') ?? '',
       ),
     });
   });
@@ -397,6 +398,8 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         itemCount: 3,
         communityCount: 1,
         collectionCount: 1,
+        storedBitstreamCount: 76,
+        storedBytes: 1073739747,
         communities: [
           {
             name: 'Census Public Research Data',
@@ -578,7 +581,101 @@ function datasetTitle(datasetId: string): string {
   return '2025 TIGER/Line - Census Tracts - North Dakota';
 }
 
+/**
+ * Detail for the research package objects.
+ *
+ * Kept separate from the dataset shape rather than parameterised into it: a publication has
+ * authors, a DOI and typed edges and no map layers, and pretending one function describes both is
+ * how the UI ended up calling every object a dataset in the first place.
+ */
+function researchPackageDetail(datasetId: string): unknown | null {
+  if (datasetId === 'ces-wp-25-23-spatial-mismatch') {
+    return {
+      source: 'REPOSITORY',
+      id: datasetId,
+      title: 'Re-assessing the Spatial Mismatch Hypothesis',
+      contentType: 'PUBLICATION',
+      program: 'LEHD',
+      publisher: 'U.S. Census Bureau',
+      abstractText:
+        'Uses LEHD location information to develop new evidence on spatial mismatch and the relative earnings of Black workers in large US cities.',
+      geography: 'United States',
+      vintageYear: 2025,
+      releasedOn: '2025-04-01',
+      accessLevel: 'PUBLIC',
+      license: 'Public domain. A work of the U.S. Government, 17 U.S.C. 105.',
+      doi: '10.3386/w32252',
+      authors: [
+        { name: 'David Card' },
+        { name: 'Jesse Rothstein' },
+        { name: 'Moises Yi' },
+      ],
+      relations: [
+        {
+          verb: 'uses',
+          targetId: 'lehd-microdata-restricted',
+          targetTitle:
+            'LEHD Longitudinal Employer-Household Dynamics microdata',
+          targetType: 'DATASET',
+          targetAccessLevel: 'RESTRICTED',
+          note: 'The underlying job-level records are available only through an FSRDC.',
+        },
+      ],
+      files: [
+        {
+          id: 'working-paper',
+          label: 'CES-WP-25-23 (PDF)',
+          format: 'PDF',
+          url: 'https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-23.pdf',
+        },
+      ],
+      citation:
+        'David Card, Jesse Rothstein, Moises Yi. "Re-assessing the Spatial Mismatch Hypothesis." CES-25-23, 2025.',
+      sourceUrl:
+        'https://www2.census.gov/library/working-papers/2025/adrm/ces/CES-WP-25-23.pdf',
+      relatedResearch: [],
+      accessibilityEvidenceStatus: 'AUTOMATED_PASS',
+    };
+  }
+
+  if (datasetId === 'lehd-microdata-restricted') {
+    return {
+      source: 'REPOSITORY',
+      id: datasetId,
+      title: 'LEHD Longitudinal Employer-Household Dynamics microdata',
+      contentType: 'DATASET',
+      program: 'LEHD',
+      publisher: 'U.S. Census Bureau',
+      abstractText:
+        'Job-level linked employer-household records protected under Title 13. The repository holds no files for this object and can hold none.',
+      geography: 'United States',
+      vintageYear: 2025,
+      releasedOn: '2025-01-01',
+      accessLevel: 'RESTRICTED',
+      accessNote:
+        'Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.',
+      license: 'Restricted under Title 13, U.S. Code. Not redistributable.',
+      authors: [],
+      relations: [],
+      files: [],
+      citation:
+        'U.S. Census Bureau. Longitudinal Employer-Household Dynamics microdata. Restricted use.',
+      sourceUrl:
+        'https://www.census.gov/programs-surveys/ces/data/restricted-use-data.html',
+      relatedResearch: [],
+      accessibilityEvidenceStatus: 'AUTOMATED_PASS',
+    };
+  }
+
+  return null;
+}
+
 function datasetDetail(datasetId: string): unknown {
+  const researchPackage = researchPackageDetail(datasetId);
+  if (researchPackage) {
+    return researchPackage;
+  }
+
   const geography = datasetId.includes('california')
     ? 'California'
     : datasetId.includes('texas')
@@ -646,27 +743,68 @@ function searchResponse(
   geography: string,
   resultSource: 'REPOSITORY' | 'FIXTURE' = 'REPOSITORY',
   selectedPrograms: readonly string[] = [],
+  selectedContentType = '',
 ): unknown {
+  // The research package is national, so it survives a geography filter the way the API's does.
+  const packageResults = [
+    {
+      id: 'ces-wp-25-23-spatial-mismatch',
+      title: 'Re-assessing the Spatial Mismatch Hypothesis',
+      contentType: 'PUBLICATION',
+      program: 'LEHD',
+      publisher: 'U.S. Census Bureau',
+      summary: 'Working paper on spatial mismatch and workplace pay premiums.',
+      geography: 'United States',
+      vintageYear: 2025,
+      sourceUrl: 'https://www2.census.gov/',
+      accessLevel: 'PUBLIC',
+    },
+    {
+      id: 'lehd-microdata-restricted',
+      title: 'LEHD Longitudinal Employer-Household Dynamics microdata',
+      contentType: 'DATASET',
+      program: 'LEHD',
+      publisher: 'U.S. Census Bureau',
+      summary: 'Title 13 protected records behind the public LODES product.',
+      geography: 'United States',
+      vintageYear: 2025,
+      sourceUrl: 'https://www.census.gov/',
+      accessLevel: 'RESTRICTED',
+    },
+  ].filter(
+    (result) =>
+      !selectedContentType || result.contentType === selectedContentType,
+  );
+
+  const datasetResults = (
+    selectedContentType && selectedContentType !== 'DATASET'
+      ? []
+      : ['TIGER_LINE', 'LODES', 'ACS']
+  ).map((program) => ({
+    id: `${program.toLowerCase()}-${geography.toLowerCase().replaceAll(' ', '-')}`,
+    title:
+      program === 'TIGER_LINE'
+        ? `2025 TIGER/Line - Census Tracts - ${geography}`
+        : `${program} public data - ${geography}`,
+    contentType: 'DATASET',
+    program,
+    publisher: 'U.S. Census Bureau',
+    summary: `${program} metadata for ${geography}.`,
+    geography,
+    vintageYear: program === 'LODES' ? 2023 : 2025,
+    sourceUrl: 'https://www.census.gov/',
+    accessLevel: 'PUBLIC',
+  }));
+
+  const results = [...datasetResults, ...packageResults];
+
   return {
     resultSource,
     query: geography,
     page: 0,
     pageSize: 25,
-    totalResults: 3,
-    results: ['TIGER_LINE', 'LODES', 'ACS'].map((program) => ({
-      id: `${program.toLowerCase()}-${geography.toLowerCase().replaceAll(' ', '-')}`,
-      title:
-        program === 'TIGER_LINE'
-          ? `2025 TIGER/Line - Census Tracts - ${geography}`
-          : `${program} public data - ${geography}`,
-      contentType: 'DATASET',
-      program,
-      publisher: 'U.S. Census Bureau',
-      summary: `${program} metadata for ${geography}.`,
-      geography,
-      vintageYear: program === 'LODES' ? 2023 : 2025,
-      sourceUrl: 'https://www.census.gov/',
-    })),
+    totalResults: results.length,
+    results,
     facets: [
       {
         field: 'program',
@@ -697,6 +835,36 @@ function searchResponse(
             label: 'SAIPE',
             count: 1,
             selected: selectedPrograms.includes('SAIPE'),
+          },
+        ],
+      },
+      {
+        field: 'type',
+        label: 'Type',
+        values: [
+          {
+            value: 'DATASET',
+            label: 'DATASET',
+            count: 4,
+            selected: selectedContentType === 'DATASET',
+          },
+          {
+            value: 'PUBLICATION',
+            label: 'PUBLICATION',
+            count: 1,
+            selected: selectedContentType === 'PUBLICATION',
+          },
+          {
+            value: 'METHODOLOGY',
+            label: 'METHODOLOGY',
+            count: 1,
+            selected: selectedContentType === 'METHODOLOGY',
+          },
+          {
+            value: 'PROJECT',
+            label: 'PROJECT',
+            count: 1,
+            selected: selectedContentType === 'PROJECT',
           },
         ],
       },

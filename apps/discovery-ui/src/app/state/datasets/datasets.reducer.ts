@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import type {
-  DatasetDetail,
+  ResearchObjectDetail,
   DatasetVersion,
   MapLayer,
 } from 'repository-api-client';
@@ -10,7 +10,7 @@ export const datasetsFeatureKey = 'datasets';
 
 export interface DatasetsState {
   readonly selectedDatasetId: string | null;
-  readonly detail: DatasetDetail | null;
+  readonly detail: ResearchObjectDetail | null;
   readonly versions: readonly DatasetVersion[];
   readonly mapLayers: readonly MapLayer[];
   readonly loading: boolean;

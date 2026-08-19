@@ -1,4 +1,7 @@
-import type { AccessibilityEvidence, EvidenceStatus } from 'repository-api-client';
+import type {
+  AccessibilityEvidence,
+  EvidenceStatus,
+} from 'repository-api-client';
 
 export interface ManualChecklistSummary {
   readonly id: string;

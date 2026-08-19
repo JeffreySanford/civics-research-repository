@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.FacetValue;
 import org.civicsrepo.generated.dto.ResearchObjectType;
@@ -162,11 +163,12 @@ public class SolrSearchClient {
             String query,
             List<ResearchProgram> programs,
             String geography,
+            ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(selectUri(query, programs, geography, vintageYear, page, pageSize))
+            HttpRequest request = HttpRequest.newBuilder(selectUri(query, programs, geography, contentType, vintageYear, page, pageSize))
                     .timeout(REQUEST_TIMEOUT)
                     .GET()
                     .build();
@@ -176,7 +178,7 @@ public class SolrSearchClient {
                 throw new IllegalStateException("Solr search failed with HTTP " + response.statusCode());
             }
 
-            return toSearchResponse(query, page, pageSize, programs, geography, response.body());
+            return toSearchResponse(query, page, pageSize, programs, geography, contentType, response.body());
         } catch (IOException exception) {
             throw new IllegalStateException("Solr search request failed.", exception);
         } catch (InterruptedException exception) {
@@ -201,6 +203,8 @@ public class SolrSearchClient {
         document.put("geography_txt", result.getGeography());
         document.put("geography_s", result.getGeography());
         document.put("vintageYear_i", result.getVintageYear());
+        document.put("accessLevel_s",
+                (result.getAccessLevel() == null ? AccessLevel.PUBLIC : result.getAccessLevel()).getValue());
         document.put("sourceUrl_s", result.getSourceUrl());
         document.put("repositorySeed_b", true);
         return document;
@@ -212,6 +216,7 @@ public class SolrSearchClient {
             int pageSize,
             List<ResearchProgram> selectedPrograms,
             String selectedGeography,
+            ResearchObjectType selectedContentType,
             String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
@@ -222,13 +227,17 @@ public class SolrSearchClient {
                 results.add(new SearchResult(
                         text(document, "id"),
                         text(document, "title_s"),
-                        ResearchObjectType.valueOf(text(document, "contentType_s")),
-                        ResearchProgram.valueOf(text(document, "program_s")),
+                        // fromValue, not valueOf, for the same reason the indexing side uses
+                        // getValue(): the constant name and the contract value differ wherever the
+                        // generator had to rename one, and valueOf would throw on the way back in.
+                        ResearchObjectType.fromValue(text(document, "contentType_s")),
+                        ResearchProgram.fromValue(text(document, "program_s")),
                         text(document, "publisher_s"),
                         text(document, "summary_txt"),
                         URI.create(text(document, "sourceUrl_s")))
                         .geography(text(document, "geography_s"))
-                        .vintageYear(integer(document, "vintageYear_i")));
+                        .vintageYear(integer(document, "vintageYear_i"))
+                        .accessLevel(accessLevel(document)));
             }
 
             // Conservative default. The client cannot know what was projected into the core, so
@@ -255,9 +264,29 @@ public class SolrSearchClient {
                                     root.path("facet_counts").path("facet_fields").path("geography_s"),
                                     normalize(selectedGeography).isBlank()
                                             ? Set.of()
-                                            : Set.of(normalize(selectedGeography)))));
+                                            : Set.of(normalize(selectedGeography))),
+                            facetGroup(
+                                    "type",
+                                    "Type",
+                                    root.path("facet_counts").path("facet_fields").path("contentType_s"),
+                                    selectedContentType == null
+                                            ? Set.of()
+                                            : Set.of(normalize(selectedContentType.getValue())))));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Solr search response could not be parsed.", exception);
+        }
+    }
+
+    /** Unreadable access metadata reads as restricted, never as public. */
+    private AccessLevel accessLevel(JsonNode document) {
+        String value = text(document, "accessLevel_s");
+        if (value == null || value.isBlank()) {
+            return AccessLevel.PUBLIC;
+        }
+        try {
+            return AccessLevel.fromValue(value);
+        } catch (IllegalArgumentException exception) {
+            return AccessLevel.RESTRICTED;
         }
     }
 
@@ -288,6 +317,7 @@ public class SolrSearchClient {
             String query,
             List<ResearchProgram> programs,
             String geography,
+            ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
@@ -308,6 +338,7 @@ public class SolrSearchClient {
         // matching facet keeps every option visible with its unfiltered count.
         params.add("facet.field=" + encode("{!ex=programFilter}program_s"));
         params.add("facet.field=" + encode("{!ex=geographyFilter}geography_s"));
+        params.add("facet.field=" + encode("{!ex=typeFilter}contentType_s"));
 
         if (!programs.isEmpty()) {
             // One fq with an OR clause, not one fq per program: separate filter queries are ANDed,
@@ -325,6 +356,13 @@ public class SolrSearchClient {
 
         if (vintageYear != null) {
             params.add("fq=" + encode("vintageYear_i:" + vintageYear));
+        }
+
+        // Tagged and excluded from its own facet, like program and geography: selecting
+        // "Publication" must not collapse the type list to the one value already chosen.
+        if (contentType != null) {
+            params.add("fq="
+                    + encode("{!tag=typeFilter}contentType_s:\"" + escapeQueryValue(contentType.getValue()) + "\""));
         }
 
         return URI.create(baseUrl + "/" + encode(core) + "/select?" + String.join("&", params));

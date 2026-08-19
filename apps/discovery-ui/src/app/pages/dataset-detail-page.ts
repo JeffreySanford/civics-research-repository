@@ -11,9 +11,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
 import { filter, map } from 'rxjs';
+import type {
+  ResearchObjectType,
+  ResearchRelation,
+} from 'repository-api-client';
 import { DatasetsActions } from '../state/datasets/datasets.actions';
 import {
-  selectDatasetDetail,
+  selectResearchObjectDetail,
   selectDatasetSource,
   selectDatasetError,
   selectDatasetLoading,
@@ -28,12 +32,12 @@ import {
   templateUrl: './dataset-detail-page.html',
   styleUrl: './dataset-detail-page.scss',
 })
-export class DatasetDetailPage implements OnInit {
+export class ResearchObjectDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(Store);
 
-  protected readonly detail$ = this.store.select(selectDatasetDetail);
+  protected readonly detail$ = this.store.select(selectResearchObjectDetail);
   protected readonly datasetSource$ = this.store.select(selectDatasetSource);
   protected readonly versions$ = this.store.select(selectDatasetVersions);
   protected readonly mapLayers$ = this.store.select(selectDatasetMapLayers);
@@ -50,5 +54,34 @@ export class DatasetDetailPage implements OnInit {
       .subscribe((datasetId) => {
         this.store.dispatch(DatasetsActions.datasetOpened({ datasetId }));
       });
+  }
+
+  /**
+   * Human wording for the contract's SCREAMING_CASE type.
+   *
+   * The badge on a result card can afford to show the raw value beside four others like it; a
+   * page heading cannot, and SUPPORTING_MATERIAL as an eyebrow reads like a database dump.
+   */
+  protected typeLabel(contentType: ResearchObjectType | undefined): string {
+    const labels: Record<ResearchObjectType, string> = {
+      DATASET: 'Dataset',
+      PUBLICATION: 'Publication',
+      CODE: 'Code',
+      METHODOLOGY: 'Methodology',
+      SUPPORTING_MATERIAL: 'Supporting material',
+      PROJECT: 'Research project',
+    };
+    return contentType ? labels[contentType] : 'Dataset';
+  }
+
+  /** Verbs read as sentences about this object, so the relation list needs no legend. */
+  protected relationLabel(verb: ResearchRelation['verb']): string {
+    const labels: Record<ResearchRelation['verb'], string> = {
+      hasPart: 'Includes',
+      uses: 'Uses',
+      documents: 'Documents',
+      isDerivedFrom: 'Public product derived from',
+    };
+    return labels[verb];
   }
 }

@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.util.List;
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetFile;
 import org.civicsrepo.generated.dto.DatasetVersion;
 import org.civicsrepo.generated.dto.EvidenceStatus;
@@ -33,7 +33,7 @@ class DatasetControllerTest {
     private DatasetService datasetService;
 
     @Test
-    void serializesDatasetDetail() throws Exception {
+    void serializesResearchObjectDetail() throws Exception {
         given(datasetService.getDataset("tiger-line-north-dakota-2025")).willReturn(detail());
 
         mockMvc.perform(get("/datasets/tiger-line-north-dakota-2025"))
@@ -71,8 +71,8 @@ class DatasetControllerTest {
                 .andExpect(jsonPath("$[1].current").value(false));
     }
 
-    private DatasetDetail detail() {
-        return new DatasetDetail(
+    private ResearchObjectDetail detail() {
+        return new ResearchObjectDetail(
                 RepositorySource.REPOSITORY,
                 "tiger-line-north-dakota-2025",
                 "2025 TIGER/Line - Census Tracts - North Dakota",

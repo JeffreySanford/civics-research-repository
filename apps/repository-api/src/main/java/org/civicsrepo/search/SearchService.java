@@ -57,6 +57,7 @@ public class SearchService {
             String query,
             List<ResearchProgram> programs,
             String geography,
+            ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
@@ -66,7 +67,7 @@ public class SearchService {
         if (solrSearchClient != null && solrSearchClient.isEnabled()) {
             try {
                 return solrSearchClient
-                        .search(query, programs, geography, vintageYear, page, pageSize)
+                        .search(query, programs, geography, contentType, vintageYear, page, pageSize)
                         // The generated model is mutable, and this response was just built by the
                         // client for this call, so relabelling it in place is safe.
                         .resultSource(indexedSource());
@@ -84,6 +85,7 @@ public class SearchService {
                     query,
                     programs,
                     geography,
+                    contentType,
                     vintageYear,
                     page,
                     pageSize);
@@ -95,6 +97,7 @@ public class SearchService {
                 query,
                 programs,
                 geography,
+                contentType,
                 vintageYear,
                 page,
                 pageSize);
@@ -117,6 +120,7 @@ public class SearchService {
             String query,
             List<ResearchProgram> programs,
             String geography,
+            ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
@@ -129,6 +133,7 @@ public class SearchService {
                 .filter((result) ->
                         normalizedGeography.isBlank() || normalize(result.getGeography()).contains(normalizedGeography))
                 .filter((result) -> vintageYear == null || vintageYear.equals(result.getVintageYear()))
+                .filter((result) -> contentType == null || contentType == typeOf(result))
                 .sorted(Comparator.comparing(SearchResult::getTitle))
                 .toList();
 
@@ -159,7 +164,21 @@ public class SearchService {
                                         .toList(),
                                 (result) -> result.getProgram().getValue(),
                                 programs),
-                        facetGroup("geography", "Geography", filtered, SearchResult::getGeography, geography == null ? "" : geography)));
+                        facetGroup("geography", "Geography", filtered, SearchResult::getGeography, geography == null ? "" : geography),
+                        // Type last, because it is the newest axis and the narrowest: most of the
+                        // catalog is datasets, so leading with it would show one value at 177 and
+                        // three in single figures.
+                        facetGroup(
+                                "type",
+                                "Type",
+                                filtered,
+                                (result) -> typeOf(result).getValue(),
+                                contentType == null ? "" : contentType.getValue())));
+    }
+
+    /** Untyped results are datasets, which is what every item seeded before packages existed is. */
+    private ResearchObjectType typeOf(SearchResult result) {
+        return result.getContentType() == null ? ResearchObjectType.DATASET : result.getContentType();
     }
 
     private boolean matchesQuery(SearchResult result, String normalizedQuery) {

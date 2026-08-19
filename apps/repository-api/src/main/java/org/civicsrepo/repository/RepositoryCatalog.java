@@ -1,12 +1,14 @@
 package org.civicsrepo.repository;
 
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.SearchResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.dspace.DspaceRestClient;
@@ -67,7 +69,7 @@ public class RepositoryCatalog {
                 .toList();
     }
 
-    public Optional<DatasetDetail> findDataset(String datasetId) {
+    public Optional<ResearchObjectDetail> findDataset(String datasetId) {
         List<JsonNode> items = readItems();
 
         Optional<JsonNode> match = items.stream()
@@ -78,7 +80,20 @@ public class RepositoryCatalog {
         }
 
         SearchResult self = repositoryObjectMapper.toSearchResult(match.orElseThrow());
-        return Optional.of(repositoryObjectMapper.toDatasetDetail(match.orElseThrow(), relatedResearch(items, self)));
+        ResearchObjectDetail detail =
+                repositoryObjectMapper.toResearchObjectDetail(match.orElseThrow(), relatedResearch(items, self));
+
+        // Typed edges are resolved against every item, because an edge stores only its target's
+        // identifier; the title and type it renders belong to the target and are read from it.
+        Map<String, SearchResult> byId = new LinkedHashMap<>();
+        for (JsonNode item : items) {
+            SearchResult result = repositoryObjectMapper.toSearchResult(item);
+            byId.put(result.getId(), result);
+        }
+        detail.setRelations(ResearchRelationResolver.resolve(
+                repositoryObjectMapper.edges(match.orElseThrow()), byId));
+
+        return Optional.of(detail);
     }
 
     /**

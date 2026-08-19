@@ -40,12 +40,12 @@ class SearchControllerTest {
     @Test
     void bindsAProgramTheGeneratorRenamedByItsContractValue() throws Exception {
         given(searchService.search(
-                        any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), anyInt(), anyInt()))
+                        any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), any(), anyInt(), anyInt()))
                 .willReturn(response());
 
         mockMvc.perform(get("/search").param("program", "USGS_3HP")).andExpect(status().isOk());
 
-        verify(searchService).search(any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), anyInt(), anyInt());
+        verify(searchService).search(any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), any(), anyInt(), anyInt());
     }
 
     @Test
@@ -55,7 +55,7 @@ class SearchControllerTest {
 
     @Test
     void appliesPagingDefaultsWhenNoParametersAreSupplied() throws Exception {
-        given(searchService.search(any(), anyList(), any(), any(), eq(0), eq(25))).willReturn(response());
+        given(searchService.search(any(), anyList(), any(), any(), any(), eq(0), eq(25))).willReturn(response());
 
         mockMvc.perform(get("/search"))
                 .andExpect(status().isOk())
@@ -63,7 +63,7 @@ class SearchControllerTest {
                 .andExpect(jsonPath("$.totalResults").value(1))
                 .andExpect(jsonPath("$.results[0].id").value("tiger-line-north-dakota-2025"));
 
-        verify(searchService).search(null, List.of(), null, null, 0, 25);
+        verify(searchService).search(null, List.of(), null, null, null, 0, 25);
     }
 
     @Test
@@ -71,7 +71,7 @@ class SearchControllerTest {
         given(searchService.search(
                         eq("tracts"),
                         eq(List.of(ResearchProgram.TIGER_LINE)),
-                        eq("North Dakota"),
+                        eq("North Dakota"),any(),
                         eq(2025),
                         eq(2),
                         eq(10)))
@@ -87,7 +87,7 @@ class SearchControllerTest {
                 .andExpect(status().isOk());
 
         verify(searchService)
-                .search("tracts", List.of(ResearchProgram.TIGER_LINE), "North Dakota", 2025, 2, 10);
+                .search("tracts", List.of(ResearchProgram.TIGER_LINE), "North Dakota", null, 2025, 2, 10);
     }
 
     /** Repeating the parameter selects several programs; results match any of them. */
@@ -96,7 +96,7 @@ class SearchControllerTest {
         given(searchService.search(
                         any(),
                         eq(List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES, ResearchProgram.ACS)),
-                        any(),
+                        any(),any(),
                         any(),
                         anyInt(),
                         anyInt()))
@@ -112,7 +112,7 @@ class SearchControllerTest {
                 .search(
                         null,
                         List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES, ResearchProgram.ACS),
-                        null,
+                        null,null,
                         null,
                         0,
                         25);
@@ -123,7 +123,7 @@ class SearchControllerTest {
         mockMvc.perform(get("/search").param("program", "NOT_A_PROGRAM"))
                 .andExpect(status().isBadRequest());
 
-        verify(searchService, never()).search(any(), anyList(), any(), any(), anyInt(), anyInt());
+        verify(searchService, never()).search(any(), anyList(), any(), any(), any(), anyInt(), anyInt());
     }
 
     @Test
@@ -138,13 +138,13 @@ class SearchControllerTest {
      */
     @Test
     void passesQuotedGeographyValuesThroughUnchanged() throws Exception {
-        given(searchService.search(any(), anyList(), eq("North \"Dakota\""), any(), anyInt(), anyInt()))
+        given(searchService.search(any(), anyList(), eq("North \"Dakota\""), any(), any(), anyInt(), anyInt()))
                 .willReturn(response());
 
         mockMvc.perform(get("/search").param("geography", "North \"Dakota\""))
                 .andExpect(status().isOk());
 
-        verify(searchService).search(null, List.of(), "North \"Dakota\"", null, 0, 25);
+        verify(searchService).search(null, List.of(), "North \"Dakota\"", null, null, 0, 25);
     }
 
     private SearchResponse response() {

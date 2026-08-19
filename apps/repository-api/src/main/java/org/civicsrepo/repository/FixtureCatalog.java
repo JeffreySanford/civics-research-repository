@@ -14,11 +14,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetFile;
 import org.civicsrepo.generated.dto.EvidenceStatus;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.AccessLevel;
+import org.civicsrepo.generated.dto.ResearchAuthor;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -47,7 +49,7 @@ public class FixtureCatalog {
     private static final int MAX_RELATED_RESEARCH = 3;
 
     private final List<SearchResult> searchResults;
-    private final Map<String, DatasetDetail> datasetsById;
+    private final Map<String, ResearchObjectDetail> datasetsById;
 
     public FixtureCatalog() {
         this(RESOURCE);
@@ -55,12 +57,14 @@ public class FixtureCatalog {
 
     FixtureCatalog(String resource) {
         List<SearchResult> results = new ArrayList<>();
-        Map<String, DatasetDetail> datasets = new LinkedHashMap<>();
+        Map<String, ResearchObjectDetail> datasets = new LinkedHashMap<>();
+        Map<String, List<ResearchRelationResolver.RawEdge>> edgesById = new LinkedHashMap<>();
 
         for (JsonNode item : readItems(resource)) {
             SearchResult result = toSearchResult(item);
             results.add(result);
-            datasets.put(result.getId(), toDatasetDetail(item, result));
+            datasets.put(result.getId(), toResearchObjectDetail(item, result));
+            edgesById.put(result.getId(), ResearchRelationResolver.parse(item.path("relations")));
         }
 
         this.searchResults = List.copyOf(results);
@@ -68,8 +72,15 @@ public class FixtureCatalog {
         // Related research needs the whole set, so it is filled in a second pass and stored. The
         // generated models are mutable, so computing it on each read would mutate the shared
         // instance a caller is holding.
-        for (DatasetDetail dataset : datasets.values()) {
+        Map<String, SearchResult> byId = new LinkedHashMap<>();
+        for (SearchResult result : results) {
+            byId.put(result.getId(), result);
+        }
+
+        for (ResearchObjectDetail dataset : datasets.values()) {
             dataset.setRelatedResearch(relatedResearch(dataset, results));
+            dataset.setRelations(
+                    ResearchRelationResolver.resolve(edgesById.get(dataset.getId()), byId));
         }
         this.datasetsById = Map.copyOf(datasets);
         LOGGER.info("Fixture catalog loaded with {} research objects.", searchResults.size());
@@ -79,7 +90,7 @@ public class FixtureCatalog {
         return searchResults;
     }
 
-    public Optional<DatasetDetail> findDataset(String datasetId) {
+    public Optional<ResearchObjectDetail> findDataset(String datasetId) {
         return Optional.ofNullable(datasetsById.get(datasetId));
     }
 
@@ -88,7 +99,7 @@ public class FixtureCatalog {
      * first, falling back to same program for national objects. Not baked into the generated file,
      * which would repeat every item's neighbours inside every item.
      */
-    private List<SearchResult> relatedResearch(DatasetDetail self, List<SearchResult> all) {
+    private List<SearchResult> relatedResearch(ResearchObjectDetail self, List<SearchResult> all) {
         List<SearchResult> others = all.stream()
                 .filter((result) -> !result.getId().equals(self.getId()))
                 .toList();
@@ -110,7 +121,7 @@ public class FixtureCatalog {
                 .toList();
     }
 
-    private boolean sharesGeography(SearchResult candidate, DatasetDetail self) {
+    private boolean sharesGeography(SearchResult candidate, ResearchObjectDetail self) {
         return candidate.getGeography() != null
                 && self.getGeography() != null
                 && candidate.getGeography().equalsIgnoreCase(self.getGeography());
@@ -132,17 +143,18 @@ public class FixtureCatalog {
         return new SearchResult(
                         item.path("id").asText(),
                         item.path("title").asText(),
-                        ResearchObjectType.DATASET,
+                        contentType(item),
                         program(item.path("program").asText()),
                         item.path("publisher").asText(),
                         item.path("summary").asText(),
                         URI.create(item.path("sourceUrl").asText()))
                 .geography(item.path("geography").asText())
-                .vintageYear(item.path("vintageYear").asInt());
+                .vintageYear(item.path("vintageYear").asInt())
+                .accessLevel(accessLevel(item));
     }
 
-    private DatasetDetail toDatasetDetail(JsonNode item, SearchResult result) {
-        return new DatasetDetail(
+    private ResearchObjectDetail toResearchObjectDetail(JsonNode item, SearchResult result) {
+        return new ResearchObjectDetail(
                         RepositorySource.FIXTURE,
                         result.getId(),
                         result.getTitle(),
@@ -156,8 +168,69 @@ public class FixtureCatalog {
                 .geography(result.getGeography())
                 .vintageYear(result.getVintageYear())
                 .releasedOn(releasedOn(item))
+                .contentType(result.getContentType())
+                .accessLevel(result.getAccessLevel())
+                .accessNote(textOrNull(item, "accessNote"))
+                .license(textOrNull(item, "license"))
+                .doi(textOrNull(item, "doi"))
+                .authors(authors(item))
                 // The fixture path has no accessibility evidence of its own to report.
                 .accessibilityEvidenceStatus(EvidenceStatus.NOT_STARTED);
+    }
+
+    /**
+     * Absent, not empty. Every item seeded before research packages existed carries no type, and
+     * defaulting those to DATASET is a statement of fact rather than a guess: the catalog held
+     * nothing else.
+     */
+    private ResearchObjectType contentType(JsonNode item) {
+        String value = item.path("contentType").asText("");
+        if (value.isBlank()) {
+            return ResearchObjectType.DATASET;
+        }
+        try {
+            return ResearchObjectType.fromValue(value);
+        } catch (IllegalArgumentException exception) {
+            LOGGER.warn("Unknown research object type {}; treating it as a dataset.", value);
+            return ResearchObjectType.DATASET;
+        }
+    }
+
+    private AccessLevel accessLevel(JsonNode item) {
+        String value = item.path("accessLevel").asText("");
+        if (value.isBlank()) {
+            return AccessLevel.PUBLIC;
+        }
+        try {
+            return AccessLevel.fromValue(value);
+        } catch (IllegalArgumentException exception) {
+            // Never silently fall back to PUBLIC on an unreadable value: the safe default for an
+            // access level is the restrictive one.
+            LOGGER.warn("Unknown access level {}; treating it as restricted.", value);
+            return AccessLevel.RESTRICTED;
+        }
+    }
+
+    private List<ResearchAuthor> authors(JsonNode item) {
+        List<ResearchAuthor> authors = new ArrayList<>();
+        for (JsonNode author : item.path("authors")) {
+            String name = author.path("name").asText("");
+            if (name.isBlank()) {
+                continue;
+            }
+            ResearchAuthor researcher = new ResearchAuthor(name);
+            String orcid = author.path("orcid").asText("");
+            if (!orcid.isBlank()) {
+                researcher.setOrcid(orcid);
+            }
+            authors.add(researcher);
+        }
+        return List.copyOf(authors);
+    }
+
+    private String textOrNull(JsonNode item, String field) {
+        String value = item.path(field).asText("");
+        return value.isBlank() ? null : value;
     }
 
     private List<DatasetFile> files(JsonNode item) {

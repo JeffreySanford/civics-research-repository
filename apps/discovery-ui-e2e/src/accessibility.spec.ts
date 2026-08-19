@@ -19,7 +19,10 @@ test.describe('accessibility evidence', () => {
     },
     { path: '/maps', heading: 'MapLibre geospatial workspace' },
     { path: '/admin/sync', heading: 'Repository sync' },
-    { path: '/evidence', heading: 'WCAG and Section 508 status' },
+    {
+      path: '/evidence',
+      heading: 'Platform evidence: conformance and data provenance',
+    },
   ]) {
     test(`${route.path} has no detectable axe violations @wcag @section508`, async ({
       page,

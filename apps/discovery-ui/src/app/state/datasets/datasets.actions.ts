@@ -1,6 +1,6 @@
 import { createActionGroup, props } from '@ngrx/store';
 import type {
-  DatasetDetail,
+  ResearchObjectDetail,
   DatasetVersion,
   MapLayer,
   RepositoryError,
@@ -11,7 +11,7 @@ export const DatasetsActions = createActionGroup({
   events: {
     'Dataset Opened': props<{ datasetId: string }>(),
     'Dataset Loaded': props<{
-      detail: DatasetDetail;
+      detail: ResearchObjectDetail;
       versions: DatasetVersion[];
       mapLayers: MapLayer[];
     }>(),

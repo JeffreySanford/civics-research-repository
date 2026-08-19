@@ -12,7 +12,10 @@ const routes = [
   },
   { path: '/maps', heading: 'MapLibre geospatial workspace' },
   { path: '/admin/sync', heading: 'Repository sync' },
-  { path: '/evidence', heading: 'WCAG and Section 508 status' },
+  {
+    path: '/evidence',
+    heading: 'Platform evidence: conformance and data provenance',
+  },
 ];
 
 test.describe('WCAG reflow and contrast evidence', () => {

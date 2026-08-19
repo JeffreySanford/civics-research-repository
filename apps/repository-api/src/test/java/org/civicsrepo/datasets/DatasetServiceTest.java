@@ -1,6 +1,6 @@
 package org.civicsrepo.datasets;
 
-import org.civicsrepo.generated.dto.DatasetDetail;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetFile;
 import org.civicsrepo.generated.dto.DatasetVersion;
 import org.civicsrepo.generated.dto.FileFormat;
@@ -16,7 +16,7 @@ class DatasetServiceTest {
 
     @Test
     void loadsTigerLineDetailForAnySeededCensusArea() {
-        DatasetDetail detail = datasetService.getDataset("tiger-line-california-2025");
+        ResearchObjectDetail detail = datasetService.getDataset("tiger-line-california-2025");
 
         assertThat(detail.getTitle()).isEqualTo("2025 TIGER/Line - Census Tracts - California");
         assertThat(detail.getProgram()).isEqualTo(ResearchProgram.TIGER_LINE);

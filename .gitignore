@@ -51,3 +51,7 @@ Thumbs.db
 __screenshots__/
 
 vitest.config.*.timestamp*
+
+# Downloaded source files, cached outside the SAF tree so regenerating packages does not force a
+# re-download. Committed source of truth stays tools/dspace/catalog.json.
+tools/dspace/mirror-cache/

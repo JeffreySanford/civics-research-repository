@@ -1,7 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, mergeMap, of } from 'rxjs';
-import { parseRepositoryError, RepositoryEvidenceApi } from 'repository-api-client';
+import {
+  parseRepositoryError,
+  RepositoryEvidenceApi,
+} from 'repository-api-client';
 import { EvidenceActions } from './evidence.actions';
 
 @Injectable()

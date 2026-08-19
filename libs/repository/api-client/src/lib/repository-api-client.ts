@@ -34,7 +34,12 @@ export type SearchResult = components['schemas']['SearchResult'];
 export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
 export type ResearchProgram = components['schemas']['ResearchProgram'];
-export type DatasetDetail = components['schemas']['DatasetDetail'];
+export type ResearchObjectType = components['schemas']['ResearchObjectType'];
+export type AccessLevel = components['schemas']['AccessLevel'];
+export type ResearchRelation = components['schemas']['ResearchRelation'];
+export type ResearchAuthor = components['schemas']['ResearchAuthor'];
+export type ResearchObjectDetail =
+  components['schemas']['ResearchObjectDetail'];
 export type DatasetFile = components['schemas']['DatasetFile'];
 export type DatasetVersion = components['schemas']['DatasetVersion'];
 export type DiscoveryProjectionState =
@@ -53,6 +58,8 @@ export interface SearchQuery {
   /** Repeatable. Results match any selected program; empty means every program. */
   readonly programs?: readonly ResearchProgram[];
   readonly geography?: string;
+  /** One research object type, or absent for every type. */
+  readonly contentType?: ResearchObjectType;
   readonly vintageYear?: number;
   readonly page?: number;
   readonly pageSize?: number;
@@ -170,8 +177,8 @@ export class RepositoryDatasetsApi {
     @Inject(REPOSITORY_API_BASE_URL) private readonly baseUrl: string,
   ) {}
 
-  getDataset(datasetId: string): Observable<DatasetDetail> {
-    return this.http.get<DatasetDetail>(
+  getDataset(datasetId: string): Observable<ResearchObjectDetail> {
+    return this.http.get<ResearchObjectDetail>(
       `${this.baseUrl}/datasets/${datasetId}`,
     );
   }
@@ -218,6 +225,10 @@ export class RepositorySearchApi {
 
     if (query.geography) {
       params['geography'] = query.geography;
+    }
+
+    if (query.contentType) {
+      params['contentType'] = query.contentType;
     }
 
     if (query.vintageYear !== undefined) {
