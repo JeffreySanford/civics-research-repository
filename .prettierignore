@@ -4,3 +4,10 @@
 /.nx/cache
 /.nx/workspace-data
 .angular
+
+# pnpm owns the lockfile's format and rewrites it on every install, so reformatting it here
+# guarantees a diff on the next `pnpm install` and a format:check failure either way.
+pnpm-lock.yaml
+
+# Per-machine Claude Code settings, not project source.
+.claude/settings.local.json

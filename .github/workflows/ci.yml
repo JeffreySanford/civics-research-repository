@@ -1,0 +1,87 @@
+# Continuous integration for the Civics Research Repository.
+#
+# Two jobs, because they need different toolchains and fail for different reasons. `gates` is the
+# fast Node workspace: formatting, contract drift, lint, unit tests, and the production bundle.
+# `api` builds and tests the Spring Boot service, which runs inside a Gradle container rather than
+# on the runner, so it does not need a JDK installed here.
+#
+# The drift gates are the reason this workflow earns its minutes. `openapi:check` and
+# `fixture:check` regenerate their outputs and fail if the committed copies differ, which is a
+# class of mistake that is invisible locally the moment someone forgets to stage a regenerated
+# file. The e2e suite is deliberately not here: it needs browsers and a dev server, and belongs in
+# a separate workflow if it is ever wanted.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch cancels the first: the older run's result is about code nobody
+# is looking at any more.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Workspace gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      # Reads the version from package.json's packageManager field, so CI and developers cannot
+      # drift onto different pnpm majors.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm exec nx format:check --all
+
+      - name: Lint the OpenAPI contract
+        run: pnpm run openapi:lint
+
+      # Regenerates from the contract and fails if the committed types differ. Runs before lint and
+      # tests: a stale generated file makes everything after it fail for the wrong reason.
+      - name: Check generated API types are current
+        run: pnpm run openapi:check
+
+      - name: Check the fixture catalog is current
+        run: pnpm run fixture:check
+
+      - name: Lint
+        run: pnpm exec nx run-many -t lint --all
+
+      # repository-api is excluded on purpose: its test target is a Docker build, and it runs in
+      # the api job below where the container is already being built.
+      - name: Unit tests
+        run: pnpm exec nx run-many -t test --exclude repository-api
+
+      - name: Build the discovery UI
+        run: pnpm exec nx build discovery-ui
+
+  api:
+    name: Repository API
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      # Both targets are `docker build` against apps/repository-api/Dockerfile: the test stage runs
+      # the Gradle suite, the runtime stage produces the image the compose stack serves.
+      - name: Test
+        run: docker build -f apps/repository-api/Dockerfile --target test .
+
+      - name: Build the runtime image
+        run: docker build -f apps/repository-api/Dockerfile --target runtime -t civics-repository-api:ci .

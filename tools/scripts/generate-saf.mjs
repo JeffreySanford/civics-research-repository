@@ -115,9 +115,17 @@ function buildItem(program, area) {
  * instead. Everything downstream treats them identically to a generated dataset.
  */
 function buildResearchObject(entry) {
-  for (const required of ['id', 'resourceType', 'title', 'abstract', 'sourceUrl']) {
+  for (const required of [
+    'id',
+    'resourceType',
+    'title',
+    'abstract',
+    'sourceUrl',
+  ]) {
     if (!entry[required]) {
-      throw new Error(`Research object ${entry.id ?? '(no id)'} is missing ${required}.`);
+      throw new Error(
+        `Research object ${entry.id ?? '(no id)'} is missing ${required}.`,
+      );
     }
   }
 
@@ -172,7 +180,9 @@ const COLLECTION_DIRECTORY = {
 function writeItem(item) {
   const collectionDirectory = COLLECTION_DIRECTORY[item.resourceType];
   if (!collectionDirectory) {
-    throw new Error(`${item.id} has no collection for type ${item.resourceType}.`);
+    throw new Error(
+      `${item.id} has no collection for type ${item.resourceType}.`,
+    );
   }
   const directory = join(outputRoot, collectionDirectory, item.id);
   mkdirSync(directory, { recursive: true });
