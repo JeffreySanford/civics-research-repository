@@ -32,17 +32,18 @@ are indexed for Solr and are not carried on `SearchResult`.
 
 Tracked as P12 in [TODO.md](TODO.md).
 
-### 2. Connect discovery to the map
+### 2. Connect discovery to the map — navigation delivered
 
-Search and Maps currently read as two separate demonstrations. A workforce query should offer
-"Explore workforce on map" and open the map already focused, with TIGER and LODES active and USGS
-off, plus a context panel naming the query that got the reader there.
+Discovery now offers "Explore ‹area› workforce on the map", which opens the workspace focused with
+the workforce layers on and the reference layers off, states its research context, and links back to
+the search that led there. The area comes from the search response's geography facet, so the map is
+told where to look rather than reading it out of the rendered cards.
 
-The map should receive context through the route rather than scraping whatever result cards happen to
-be on screen: Solr discovers the object, DSpace says what it represents, the Maps API supplies the
-geometry. The North Dakota flows are currently five static entries; deriving them reproducibly from
-the LODES WAC and OD products is the larger follow-on and is worth separating from the navigation
-work.
+What is left is the data behind it. The North Dakota flows are a small stored sample derived from
+the 2023 LODES origin-destination product, honestly labelled as a sample. Deriving them reproducibly
+from the LODES WAC and OD files is the larger follow-on, and it is real data engineering rather than
+navigation work. Two-way selection between the accessible flow table and the map is the other open
+piece. Tracked as P14 in [TODO.md](TODO.md).
 
 ### 3. Harvest the catalog from live publishers
 

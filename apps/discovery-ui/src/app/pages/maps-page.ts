@@ -19,7 +19,7 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -122,6 +122,7 @@ type GeoJsonFeatureCollection = {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    RouterLink,
   ],
   templateUrl: './maps-page.html',
 })
@@ -276,6 +277,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   );
 
   ngOnInit(): void {
+    this.bindResearchContext();
     this.bindUrlState();
     this.store.dispatch(MapsActions.mapOpened());
 
@@ -514,6 +516,32 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected toggleMapDebugPanel(): void {
     this.mapDebugPanelOpen.update((open) => !open);
     this.refreshMapDebugSnapshot();
+  }
+
+  /**
+   * Research context carried in from discovery.
+   *
+   * The map does not re-run the search and does not read anything out of it: this is only enough
+   * to say why the reader is looking at this extent, and to offer a way back. The overlay data
+   * still comes from the Maps API, which is the part that has to be authoritative.
+   */
+  protected readonly workforceView = signal(false);
+  protected readonly researchQuery = signal<string | null>(null);
+
+  private bindResearchContext(): void {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        this.workforceView.set(params.get('view') === 'workforce');
+        const query = params.get('q');
+        this.researchQuery.set(query && query.trim() ? query.trim() : null);
+      });
+  }
+
+  /** Query parameters that reconstruct the discovery search this map was opened from. */
+  protected backToSearchParams(): Record<string, string> {
+    const query = this.researchQuery();
+    return query ? { q: query } : {};
   }
 
   private bindUrlState(): void {

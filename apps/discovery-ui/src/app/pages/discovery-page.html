@@ -108,7 +108,18 @@
           <h2 id="discovery-results-heading" #resultsHeading tabindex="-1">
             {{ totalResults$ | async }} research objects
           </h2>
-          @if (pagination$ | async; as pagination) { @if (pagination.visible) {
+          @if (exploreGeography$ | async; as exploreGeography) {
+          <!-- Names the area it will open, so the reader is never guessing where the map goes. -->
+          <a
+            class="explore-map-link"
+            mat-stroked-button
+            [routerLink]="['/maps']"
+            [queryParams]="exploreMapParams(exploreGeography)"
+          >
+            Explore {{ exploreGeography }} workforce on the map
+          </a>
+          } @if (pagination$ | async; as pagination) { @if (pagination.visible)
+          {
           <p class="results-range">
             Showing {{ pagination.firstResult }}-{{ pagination.lastResult }} of
             {{ pagination.totalResults }}

@@ -790,6 +790,91 @@ test.describe('research package', () => {
  * from the UI: the count said 181 and the list stopped at 25 with nothing to click.
  */
 /** Vintage was indexed and filterable long before it was offered; now a reader can reach it. */
+/**
+ * Discovery to map, as one journey rather than two demonstrations.
+ *
+ * The map is told where to look; it does not read its focus out of the rendered result cards,
+ * which would change meaning when the reader pages.
+ */
+test.describe('explore workforce on the map', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/discovery');
+  });
+
+  test('the action names the area it will open @storyboard', async ({
+    page,
+  }) => {
+    await expect(
+      page.getByRole('link', {
+        name: /Explore California workforce on the map/,
+      }),
+    ).toBeVisible();
+  });
+
+  test('it opens the map focused, with workforce layers on and reference layers off @storyboard', async ({
+    page,
+  }) => {
+    await page
+      .getByRole('link', { name: /Explore California workforce on the map/ })
+      .click();
+
+    await expect(page).toHaveURL(/area=California/);
+    await expect(page).toHaveURL(/view=workforce/);
+
+    // Chosen for the research question: geography, workers, socioeconomic context.
+    await expect(page.getByTestId('map-layer-tiger')).toBeChecked();
+    await expect(page.getByTestId('map-layer-lodes')).toBeChecked();
+    await expect(page.getByTestId('map-layer-saipe')).toBeChecked();
+
+    // Reference layers have nothing to say about workforce.
+    await expect(page.getByTestId('map-layer-hydrography')).not.toBeChecked();
+    await expect(page.getByTestId('map-layer-earthquake')).not.toBeChecked();
+  });
+
+  test('the map says why the reader is there @storyboard', async ({ page }) => {
+    await page.goto(
+      '/maps?area=North%20Dakota&view=workforce&tiger=on&lodes=on&saipe=on&q=North%20Dakota%20workforce',
+    );
+
+    await expect(
+      page.getByRole('heading', { name: 'North Dakota Workforce Explorer' }),
+    ).toBeVisible();
+
+    const context = page.getByRole('region', { name: 'Research context' });
+    await expect(context).toContainText('North Dakota');
+    await expect(context).toContainText('North Dakota workforce');
+    await expect(context).toContainText('LODES workplace flows');
+  });
+
+  test('back to search results restores the query @storyboard', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/maps?area=North%20Dakota&view=workforce&q=North%20Dakota%20workforce',
+    );
+
+    await page.getByRole('link', { name: 'Back to search results' }).click();
+
+    await expect(page).toHaveURL(/\/discovery/);
+    await expect(page.getByLabel('Search terms')).toHaveValue(
+      'North Dakota workforce',
+    );
+  });
+
+  /** Without the workforce context the workspace keeps its generic identity. */
+  test('a plain map visit is unchanged @storyboard', async ({ page }) => {
+    await page.goto('/maps');
+
+    await expect(
+      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Research context' }),
+    ).toHaveCount(0);
+  });
+});
+
 test.describe('vintage facet', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);

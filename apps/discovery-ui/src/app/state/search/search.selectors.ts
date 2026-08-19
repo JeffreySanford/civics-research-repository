@@ -83,3 +83,37 @@ export const selectSearchPagination = createSelector(
     };
   },
 );
+
+/**
+ * The Census area a workforce map would open on, or null when the search does not name one.
+ *
+ * Derived from the search response's own geography facet rather than from whatever result cards
+ * happen to be rendered. Discovery decides what the query is about; the map is then told, and
+ * fetches its own authoritative overlay data. A map that read its focus out of the visible list
+ * would change meaning when the reader paged.
+ *
+ * A selected geography wins outright, because the reader said it. Otherwise the largest facet
+ * value is used, which is how "North Dakota workforce" resolves to North Dakota without anyone
+ * having touched a filter. "United States" is excluded: national objects are not a map extent, and
+ * opening the workspace zoomed to the whole country teaches the reader nothing.
+ */
+export const selectMapExploreGeography = createSelector(
+  selectSearchFacets,
+  (facets) => {
+    const geography = facets.find((facet) => facet.field === 'geography');
+    if (!geography || geography.values.length === 0) {
+      return null;
+    }
+
+    const selected = geography.values.find((value) => value.selected);
+    if (selected) {
+      return selected.value === 'United States' ? null : selected.value;
+    }
+
+    const largest = [...geography.values]
+      .filter((value) => value.value !== 'United States')
+      .sort((left, right) => right.count - left.count)[0];
+
+    return largest?.value ?? null;
+  },
+);

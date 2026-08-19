@@ -399,6 +399,44 @@ code {
   color: var(--civics-warn-text);
 }
 
+.research-context {
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.research-context h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.research-context-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.research-context-list dt {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--civics-text-secondary);
+}
+
+.research-context-list dd {
+  margin: 0.15rem 0 0;
+  font-weight: 700;
+}
+
+.explore-map-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
 .results-range {
   margin: 0.25rem 0 0;
   color: var(--civics-text-secondary);

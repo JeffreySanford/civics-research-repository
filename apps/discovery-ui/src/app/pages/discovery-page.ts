@@ -21,6 +21,7 @@ import { SearchActions } from '../state/search/search.actions';
 import {
   selectSearchError,
   selectSearchFacets,
+  selectMapExploreGeography,
   selectSearchLoading,
   selectSearchPagination,
   selectSearchResultSource,
@@ -100,6 +101,9 @@ export class DiscoveryPage implements OnInit {
     selectSearchTotalResults,
   );
   protected readonly pagination$ = this.store.select(selectSearchPagination);
+  protected readonly exploreGeography$ = this.store.select(
+    selectMapExploreGeography,
+  );
   protected readonly loading$ = this.store.select(selectSearchLoading);
   protected readonly error$ = this.store.select(selectSearchError);
 
@@ -292,6 +296,30 @@ export class DiscoveryPage implements OnInit {
    * "Clear filters" undoable only by reloading, and it meant a shared link could not express
    * "everything".
    */
+  /**
+   * Query parameters for the workforce map, built here so the link is a real href.
+   *
+   * The layers are chosen for the research question rather than turned on wholesale: TIGER gives
+   * the geography, LODES the workers, SAIPE the socioeconomic context. Hydrography and earthquakes
+   * are explicitly off — they are reference layers with nothing to say about workforce, and
+   * carrying them in would make the workspace a GIS sampler again.
+   *
+   * The query is passed along so the map can say what search the reader arrived from and offer a
+   * way back, not so the map can re-run it.
+   */
+  protected exploreMapParams(geography: string): Record<string, string> {
+    return {
+      area: geography,
+      view: 'workforce',
+      tiger: 'on',
+      lodes: 'on',
+      saipe: 'on',
+      hydrography: 'off',
+      earthquakes: 'off',
+      ...(this.searchControl.value ? { q: this.searchControl.value } : {}),
+    };
+  }
+
   /** An unparseable year means no year filter, rather than a search that returns nothing. */
   private toVintageYear(value: string | null): number | null {
     const parsed = Number(value);

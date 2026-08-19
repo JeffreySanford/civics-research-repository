@@ -170,6 +170,17 @@ The repository now holds objects the default discovery view hides, and 181 objec
 - [x] Index the new metadata into discovery: subjects, authors, citation, DOI, via a `DiscoveryDocument` that carries searchable text without widening `SearchResult`. Queries that previously returned nothing now resolve: "Card" finds the paper by author, "disclosure avoidance" finds the methodology report, "Title 13 restricted" finds the restricted microdata.
 - [x] Fallback semantics brought in line: tokenized matching with the same two-thirds minimum-match rule instead of requiring the whole query as one substring, and the vintage facet reversed to newest-first. A Java test caught the second one — losing Solr would have flipped the year order. The fallback still cannot match subjects, authors or citations, which are indexed for Solr and not carried on `SearchResult`.
 
+### P14 - Discovery to map
+
+Search and the map were two demonstrations that happened to share a stack.
+
+- [x] "Explore <area> workforce on the map" from discovery, with the area derived from the search response's geography facet rather than from the rendered result cards.
+- [x] Open the map focused, with TIGER, LODES and SAIPE on and hydrography and earthquakes off, because reference layers have nothing to say about workforce.
+- [x] Research context panel on the map: area, the discovery query that led there, active data, and a link back to those results.
+- [x] Name the workspace for the research question in that mode, rather than for the library drawing it.
+- [ ] Replace the stored North Dakota flow sample with a reproducibly derived extract from the LODES WAC and OD products. The current sample is labelled as one; a derived extract is the larger follow-on.
+- [ ] Two-way selection between the accessible flow table and the map, so selecting a row highlights the flow and selecting a flow focuses the row.
+
 ### P13 - Continuous integration
 
 - [x] Add a CI workflow. The repository had no `.github` directory: every gate ran only where someone typed the command.

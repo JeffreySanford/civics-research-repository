@@ -54,6 +54,49 @@ References:
 - [USGS Copyrights and Credits](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits)
 - [Acknowledging or Crediting USGS](https://www.usgs.gov/information-policies-and-instructions/acknowledging-or-crediting-usgs)
 
+## Workforce View
+
+Search and the map used to be two demonstrations sitting next to each other. A discovery search that
+names a Census area now offers **Explore ‹area› workforce on the map**, which opens the workspace
+already focused, with the layers the research question needs and the ones it does not turned off:
+
+```
+Discovery: "North Dakota workforce"
+      |
+      | geography facet -> North Dakota
+      v
+/maps?area=North Dakota&view=workforce&tiger=on&lodes=on&saipe=on
+      &hydrography=off&earthquakes=off&q=North Dakota workforce
+      |
+      v
+North Dakota Workforce Explorer
+  TIGER/Line  geography
+  LODES       workers and commuting
+  SAIPE       socioeconomic context
+```
+
+Three decisions worth recording:
+
+- **The area comes from the search response's geography facet, not from the rendered result cards.**
+  Discovery decides what the query is about and tells the map; the map then fetches its own overlay
+  data from the Maps API. A map that read its focus out of the visible list would change meaning
+  when the reader paged. `United States` is excluded, because a national object is not a map extent.
+- **The link names the area it will open.** "Explore North Dakota workforce on the map" leaves no
+  question about where the reader is about to land.
+- **Hydrography and earthquakes are explicitly off.** They are reference layers with nothing to say
+  about workforce, and carrying them in would make the workspace a GIS sampler again.
+
+The workspace also states its research context — area, the discovery query that led here, and which
+data is active — with a link back to those search results. Without it the map opens with three
+layers already on and no explanation, which reads as a default rather than a decision. A plain visit
+to `/maps` is unchanged and keeps its generic identity.
+
+### Known limit
+
+The North Dakota commuting flows are a small stored sample derived from the 2023 LODES
+origin-destination product, not a live extract. Deriving them reproducibly from the LODES WAC and OD
+files is tracked in [planning/TODO.md](../planning/TODO.md).
+
 ## Visualization Scenarios
 
 ### LODES Employment With USGS Context

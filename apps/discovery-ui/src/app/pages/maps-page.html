@@ -2,8 +2,18 @@
   <section aria-labelledby="maps-heading" class="map-workspace">
     <div class="map-toolbar">
       <div>
+        <!-- Named for the research question when the reader arrived with one. "MapLibre
+             geospatial workspace" describes the library; it does not describe what the reader
+             came here to find out. -->
+        @if (workforceView()) {
+        <p class="eyebrow">Geospatial research workspace</p>
+        <h1 id="maps-heading">
+          {{ (selectedGeography$ | async) ?? 'Census' }} Workforce Explorer
+        </h1>
+        } @else {
         <p class="eyebrow">Map preview</p>
         <h1 id="maps-heading">MapLibre geospatial workspace</h1>
+        }
       </div>
 
       <label class="area-select">
@@ -138,7 +148,40 @@
       </fieldset>
     </div>
 
-    @if (loading$ | async) {
+    <!-- Why this extent, these layers, and this data. Without it the workspace opens with three
+         layers already on and no explanation, which reads as a default rather than a decision. -->
+    @if (workforceView()) {
+    <section
+      class="research-context"
+      aria-labelledby="research-context-heading"
+    >
+      <h2 id="research-context-heading">Research context</h2>
+      <dl class="research-context-list">
+        <div>
+          <dt>Area</dt>
+          <dd>{{ (selectedGeography$ | async) ?? 'Not selected' }}</dd>
+        </div>
+        @if (researchQuery(); as query) {
+        <div>
+          <dt>Discovery query</dt>
+          <dd>"{{ query }}"</dd>
+        </div>
+        }
+        <div>
+          <dt>Active data</dt>
+          <dd>
+            LODES workplace flows, TIGER/Line geography, SAIPE county context
+          </dd>
+        </div>
+      </dl>
+      <a
+        class="source-link"
+        [routerLink]="['/discovery']"
+        [queryParams]="backToSearchParams()"
+        >Back to search results</a
+      >
+    </section>
+    } @if (loading$ | async) {
     <p class="inline-status" role="status">Loading map data from the API</p>
     }
     <p class="area-sync-announcement" role="status" aria-live="polite">
