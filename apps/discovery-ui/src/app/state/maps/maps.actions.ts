@@ -36,6 +36,9 @@ export const MapsActions = createActionGroup({
     'Hydrography Layer Toggled': props<{ visible: boolean }>(),
     'Saipe Layer Toggled': props<{ visible: boolean }>(),
     'Map Feature Selected': props<{ featureId: string }>(),
+    /** A commuting flow, chosen from either the map or the accessible table. */
+    'Lodes Flow Selected': props<{ flowId: string }>(),
+    'Lodes Flow Selection Cleared': emptyProps(),
     'Map Feature Selection Cleared': emptyProps(),
   },
 });

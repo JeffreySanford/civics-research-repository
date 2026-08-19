@@ -875,6 +875,90 @@ test.describe('explore workforce on the map', () => {
   });
 });
 
+/**
+ * Map-equivalence for the commuting flows: the table is not a description of the map, it is the
+ * same selection surfaced two ways. Either view can originate a change and both reflect it.
+ */
+test.describe('commuting flow selection', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/maps?area=North%20Dakota&lodes=on&view=workforce');
+  });
+
+  test('the flows are a table, not a list of sentences @wcag @section508', async ({
+    page,
+  }) => {
+    const table = page.getByRole('table', { name: /Commuting flows/ });
+
+    await expect(table).toBeVisible();
+    await expect(
+      table.getByRole('columnheader', { name: 'Origin' }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole('columnheader', { name: 'Destination' }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole('columnheader', { name: 'Workers' }),
+    ).toBeVisible();
+  });
+
+  test('selecting a row marks it and announces it @wcag @section508', async ({
+    page,
+  }) => {
+    const firstRowButton = page.locator('.flow-select').first();
+    await firstRowButton.click();
+
+    await expect(firstRowButton).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText(/Selected .* workers\./)).toBeVisible();
+  });
+
+  /** Selection is state, not a one-way door: the same control releases it. */
+  test('reselecting the same row clears the selection @wcag @section508', async ({
+    page,
+  }) => {
+    const firstRowButton = page.locator('.flow-select').first();
+
+    await firstRowButton.click();
+    await expect(firstRowButton).toHaveAttribute('aria-pressed', 'true');
+
+    await firstRowButton.click();
+    await expect(firstRowButton).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByText('No commuting flow selected.')).toBeVisible();
+  });
+
+  test('the clear control releases the selection @wcag @section508', async ({
+    page,
+  }) => {
+    await page.locator('.flow-select').first().click();
+
+    await page.getByRole('button', { name: 'Clear flow selection' }).click();
+
+    await expect(page.getByText('No commuting flow selected.')).toBeVisible();
+  });
+
+  /** A selection that outlived its layer would announce a highlight nobody can see. */
+  test('hiding the LODES layer drops the selection @wcag @section508', async ({
+    page,
+  }) => {
+    await page.locator('.flow-select').first().click();
+    await expect(page.getByText(/Selected .* workers\./)).toBeVisible();
+
+    await page.getByTestId('map-layer-lodes').uncheck();
+
+    await expect(page.getByText('No commuting flow selected.')).toBeVisible();
+  });
+
+  test('the flow selection is independent of the earthquake selection @wcag @section508', async ({
+    page,
+  }) => {
+    await page.locator('.flow-select').first().click();
+
+    // Both live regions are present and say different things about different selections.
+    await expect(page.getByText('No map feature selected.')).toBeVisible();
+    await expect(page.getByText(/Selected .* workers\./)).toBeVisible();
+  });
+});
+
 test.describe('vintage facet', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);

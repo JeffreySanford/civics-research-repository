@@ -343,3 +343,107 @@ describe('mapsReducer feature selection', () => {
     ).toBeNull();
   });
 });
+
+/**
+ * Flow selection lives in one place and both views read it, so the invariants that matter are
+ * about what happens to a selection when the thing it names goes away.
+ */
+describe('lodes flow selection', () => {
+  const overlay = (flowIds: readonly string[]) =>
+    ({
+      source: 'LODES',
+      sourceUrl: 'https://lehd.ces.census.gov/data/',
+      attribution: 'U.S. Census Bureau LEHD',
+      geography: 'North Dakota',
+      vintage: 2023,
+      fallback: false,
+      geoJson: {},
+      flows: flowIds.map((id) => ({
+        id,
+        originLabel: `${id} origin`,
+        destinationLabel: `${id} destination`,
+        workerCount: 100,
+        originCounty: 'Burleigh',
+        destinationCounty: 'Cass',
+      })),
+    }) as never;
+
+  const withFlows = (flowIds: readonly string[]) =>
+    mapsReducer(
+      { ...initialMapsState, lodesVisible: true },
+      MapsActions.lodesFlowOverlayLoaded({
+        lodesFlowOverlay: overlay(flowIds),
+      }),
+    );
+
+  it('records a selection made from either view', () => {
+    const state = mapsReducer(
+      withFlows(['nd-1', 'nd-2']),
+      MapsActions.lodesFlowSelected({ flowId: 'nd-1' }),
+    );
+
+    expect(state.selectedLodesFlowId).toBe('nd-1');
+  });
+
+  it('clears the selection explicitly', () => {
+    const selected = mapsReducer(
+      withFlows(['nd-1']),
+      MapsActions.lodesFlowSelected({ flowId: 'nd-1' }),
+    );
+
+    const cleared = mapsReducer(
+      selected,
+      MapsActions.lodesFlowSelectionCleared(),
+    );
+
+    expect(cleared.selectedLodesFlowId).toBeNull();
+  });
+
+  /** A selection outliving its layer leaves the table announcing a highlight nobody can see. */
+  it('drops the selection when the LODES layer is hidden', () => {
+    const selected = mapsReducer(
+      withFlows(['nd-1']),
+      MapsActions.lodesFlowSelected({ flowId: 'nd-1' }),
+    );
+
+    const hidden = mapsReducer(
+      selected,
+      MapsActions.lodesLayerToggled({ visible: false }),
+    );
+
+    expect(hidden.selectedLodesFlowId).toBeNull();
+  });
+
+  /** Flows are per-geography: switching states replaces the whole set. */
+  it('drops a selection the newly loaded overlay does not contain', () => {
+    const selected = mapsReducer(
+      withFlows(['nd-1']),
+      MapsActions.lodesFlowSelected({ flowId: 'nd-1' }),
+    );
+
+    const reloaded = mapsReducer(
+      selected,
+      MapsActions.lodesFlowOverlayLoaded({
+        lodesFlowOverlay: overlay(['tx-1', 'tx-2']),
+      }),
+    );
+
+    expect(reloaded.selectedLodesFlowId).toBeNull();
+  });
+
+  it('keeps a selection the newly loaded overlay still contains', () => {
+    const selected = mapsReducer(
+      withFlows(['nd-1', 'nd-2']),
+      MapsActions.lodesFlowSelected({ flowId: 'nd-2' }),
+    );
+
+    const reloaded = mapsReducer(
+      selected,
+      MapsActions.lodesFlowOverlayLoaded({
+        lodesFlowOverlay: overlay(['nd-1', 'nd-2']),
+      }),
+    );
+
+    expect(reloaded.selectedLodesFlowId).toBe('nd-2');
+  });
+});

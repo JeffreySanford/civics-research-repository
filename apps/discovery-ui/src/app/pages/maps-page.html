@@ -386,13 +386,39 @@
       moves focus here.
     </p>
 
-    <p class="feature-announcement" role="status">
+    <p
+      class="feature-announcement"
+      role="status"
+      aria-label="Map feature selection"
+      data-testid="feature-announcement"
+    >
       @if (selectedFeature$ | async; as selected) { Selected {{ selected.place
       }}, magnitude {{ selected.magnitude }}. } @else { No map feature selected.
       }
     </p>
 
-    @if (selectedFeature$ | async) {
+    <!-- Its own live region: a flow selection and an earthquake selection are independent, and
+         sharing one status would have each overwrite the other's announcement. -->
+    <p
+      class="feature-announcement"
+      role="status"
+      aria-label="Commuting flow selection"
+      data-testid="flow-announcement"
+    >
+      @if (selectedLodesFlow$ | async; as flow) { Selected {{ flow.originCounty
+      }} to {{ flow.destinationCounty }}, {{ flow.workerCount }} workers. }
+      @else { No commuting flow selected. }
+    </p>
+
+    @if (selectedLodesFlow$ | async) {
+    <button
+      type="button"
+      class="feature-clear"
+      (click)="clearLodesFlowSelection()"
+    >
+      Clear flow selection
+    </button>
+    } @if (selectedFeature$ | async) {
     <button
       type="button"
       class="feature-clear"
@@ -427,15 +453,49 @@
         >
         }
       </li>
-      @for (flow of lodesOverlay.flows; track flow.id) {
       <li>
-        <strong>{{ flow.originLabel }} → {{ flow.destinationLabel }}</strong>
-        <span>
-          {{ flow.workerCount }} workers from {{ flow.originCounty }} to {{
-          flow.destinationCounty }}
-        </span>
+        <!-- A table, not a list of sentences: origin, destination and worker count are three
+             columns of the same shape, and a screen-reader user navigating by column learns the
+             structure once instead of parsing every row. -->
+        <table class="flow-table">
+          <caption>
+            Commuting flows for {{ lodesOverlay.geography }}. Selecting a row
+            highlights that flow on the map.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Origin</th>
+              <th scope="col">Destination</th>
+              <th scope="col">Workers</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (flow of lodesOverlay.flows; track flow.id) {
+            <tr
+              [class.selected]="(selectedLodesFlowId$ | async) === flow.id"
+              [attr.aria-selected]="(selectedLodesFlowId$ | async) === flow.id"
+            >
+              <th scope="row">
+                <button
+                  type="button"
+                  class="flow-select"
+                  [id]="flowRowId(flow.id)"
+                  [attr.aria-pressed]="
+                    (selectedLodesFlowId$ | async) === flow.id
+                  "
+                  (click)="selectLodesFlow(flow.id)"
+                >
+                  {{ flow.originCounty }}
+                </button>
+              </th>
+              <td>{{ flow.destinationCounty }}</td>
+              <td>{{ flow.workerCount }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
       </li>
-      } } @else { @if (lodesFlowError$ | async) {
+      } @else { @if (lodesFlowError$ | async) {
       <li>
         <strong>LODES workplace flow sample unavailable</strong>
         <span>Other map layers remain available.</span>

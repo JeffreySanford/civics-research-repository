@@ -382,7 +382,9 @@ test.describe('accessibility structure', () => {
   }) => {
     await page.goto('/maps?earthquakes=on');
 
-    const announcement = page.locator('p.feature-announcement');
+    // Named, because the workspace now has two independent selections and an unnamed status
+    // region is ambiguous to anyone listing them.
+    const announcement = page.getByTestId('feature-announcement');
     await expect(announcement).toHaveAttribute('role', 'status');
     await expect(announcement).toContainText('No map feature selected.');
 

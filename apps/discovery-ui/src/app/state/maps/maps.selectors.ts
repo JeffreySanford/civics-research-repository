@@ -109,3 +109,23 @@ export const selectSelectedEarthquakeFeature = createSelector(
       (feature) => feature.id === state.selectedFeatureId,
     ) ?? null,
 );
+
+export const selectSelectedLodesFlowId = createSelector(
+  selectMapsState,
+  (state) => state.selectedLodesFlowId,
+);
+
+/**
+ * The selected commuting flow itself, resolved against the loaded overlay.
+ *
+ * Resolved rather than stored, for the same reason the earthquake feature is: the id is the
+ * selection, and the flow it names belongs to whichever overlay is currently loaded. Storing the
+ * whole flow would let the two disagree after a geography change.
+ */
+export const selectSelectedLodesFlow = createSelector(
+  selectMapsState,
+  (state) =>
+    state.lodesFlowOverlay?.flows.find(
+      (flow) => flow.id === state.selectedLodesFlowId,
+    ) ?? null,
+);

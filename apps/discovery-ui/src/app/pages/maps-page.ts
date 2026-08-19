@@ -25,6 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Store } from '@ngrx/store';
 import { combineLatest, distinctUntilChanged, map } from 'rxjs';
+import { LngLatBounds } from 'maplibre-gl';
 import type {
   GeoJSONSource,
   Map as MapLibreMap,
@@ -59,6 +60,8 @@ import {
   selectSelectedEarthquakeFeature,
   selectSelectedFeatureId,
   selectSelectedGeography,
+  selectSelectedLodesFlow,
+  selectSelectedLodesFlowId,
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
 import {
@@ -151,6 +154,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private hydrographyVisible = false;
   private saipeVisible = false;
   private selectedFeatureId: string | null = null;
+  private selectedLodesFlowId: string | null = null;
   private censusAreaBoundaries: readonly CensusAreaBoundary[] = [];
   private selectedGeography = 'North Dakota';
   /** Skips pan-driven area sync while fitBounds runs after a dropdown change. */
@@ -272,6 +276,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly selectedFeatureId$ = this.store.select(
     selectSelectedFeatureId,
   );
+  protected readonly selectedLodesFlowId$ = this.store.select(
+    selectSelectedLodesFlowId,
+  );
+  protected readonly selectedLodesFlow$ = this.store.select(
+    selectSelectedLodesFlow,
+  );
+
   protected readonly selectedFeature$ = this.store.select(
     selectSelectedEarthquakeFeature,
   );
@@ -348,6 +359,19 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
+    // The same contract as the earthquake selection above: the store is the single place a
+    // selection lives, and both the table and the map read from it. Neither writes to the other.
+    this.selectedLodesFlow$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((flow) => {
+        this.selectedLodesFlowId = flow?.id ?? null;
+        this.applyLodesSelectionHighlight();
+
+        if (flow) {
+          this.fitSelectedLodesFlow();
+        }
+      });
+
     combineLatest([
       this.tigerVisible$,
       this.earthquakeVisible$,
@@ -415,6 +439,24 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** Called when a feature-list entry is activated or focused. */
+  /** Selecting the flow already selected clears it, so a row toggles rather than sticking. */
+  protected selectLodesFlow(flowId: string): void {
+    if (this.selectedLodesFlowId === flowId) {
+      this.store.dispatch(MapsActions.lodesFlowSelectionCleared());
+      return;
+    }
+
+    this.store.dispatch(MapsActions.lodesFlowSelected({ flowId }));
+  }
+
+  protected clearLodesFlowSelection(): void {
+    this.store.dispatch(MapsActions.lodesFlowSelectionCleared());
+  }
+
+  protected flowRowId(flowId: string): string {
+    return `lodes-flow-${flowId}`;
+  }
+
   protected selectFeature(featureId: string): void {
     if (this.selectedFeatureId === featureId) {
       return;
@@ -733,6 +775,30 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.focusFeatureButton(featureId);
     });
 
+    // The other half of the two-way selection: clicking a flow line selects it and moves focus to
+    // its row, so a sighted mouse user and a keyboard user end up in the same place.
+    this.map.on('click', 'lodes-workplace-flow-line', (event) => {
+      const flowId = event.features?.[0]?.properties?.['id'];
+      if (typeof flowId !== 'string') {
+        return;
+      }
+
+      this.selectLodesFlow(flowId);
+      this.focusFlowRow(flowId);
+    });
+
+    this.map.on('mouseenter', 'lodes-workplace-flow-line', () => {
+      if (this.map) {
+        this.map.getCanvas().style.cursor = 'pointer';
+      }
+    });
+
+    this.map.on('mouseleave', 'lodes-workplace-flow-line', () => {
+      if (this.map) {
+        this.map.getCanvas().style.cursor = '';
+      }
+    });
+
     this.map.on('mouseenter', 'usgs-earthquake-points', () => {
       if (this.map) {
         this.map.getCanvas().style.cursor = 'pointer';
@@ -952,6 +1018,77 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     ]);
   }
 
+  /**
+   * Draws the selected flow with a heavier line, rather than hiding the others.
+   *
+   * A filter that showed only the selection would answer "where is this flow" by removing the
+   * context that makes it meaningful. The highlight layer sits above the base line layer and
+   * matches nothing when there is no selection.
+   */
+  private applyLodesSelectionHighlight(): void {
+    if (!this.map || !this.map.getLayer('lodes-workplace-flow-selected')) {
+      return;
+    }
+
+    this.map.setFilter('lodes-workplace-flow-selected', [
+      'all',
+      ['==', ['geometry-type'], 'LineString'],
+      ['==', ['get', 'id'], this.selectedLodesFlowId ?? ''],
+    ]);
+  }
+
+  /**
+   * Brings the selected flow into view, from the geometry the map source already holds.
+   *
+   * The flow summary carries labels and a worker count, not coordinates, and widening the contract
+   * so the client could pan would put geometry in a field that exists to be read aloud. The line
+   * is already in the source; its bounds come from there.
+   */
+  private fitSelectedLodesFlow(): void {
+    if (
+      !this.map ||
+      !this.selectedLodesFlowId ||
+      !this.map.getSource('lodes-workplace-flow')
+    ) {
+      return;
+    }
+
+    const feature = this.map
+      .querySourceFeatures('lodes-workplace-flow')
+      .find(
+        (candidate) =>
+          candidate.properties?.['id'] === this.selectedLodesFlowId &&
+          candidate.geometry?.type === 'LineString',
+      );
+
+    const coordinates = (
+      feature?.geometry as { coordinates?: [number, number][] } | undefined
+    )?.coordinates;
+    if (!coordinates || coordinates.length === 0) {
+      return;
+    }
+
+    const bounds = coordinates.reduce(
+      (accumulated, coordinate) => accumulated.extend(coordinate),
+      new LngLatBounds(coordinates[0], coordinates[0]),
+    );
+
+    // fitBounds, not a focus change: moving the viewport must not move focus away from the row
+    // the reader is operating.
+    this.skipPanAreaSync = true;
+    this.map.fitBounds(bounds, { padding: 80, duration: 400, maxZoom: 9 });
+  }
+
+  private focusFlowRow(flowId: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    setTimeout(() => {
+      document.getElementById(this.flowRowId(flowId))?.focus();
+    });
+  }
+
   private focusFeatureButton(featureId: string): void {
     if (!isPlatformBrowser(this.platformId)) {
       return;
@@ -1000,6 +1137,27 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       },
     });
 
+    // Above the base line layer, filtered to the selection. Added even when nothing is selected,
+    // so the filter has something to update rather than the layer having to be created lazily.
+    this.map.addLayer({
+      id: 'lodes-workplace-flow-selected',
+      type: 'line',
+      source: 'lodes-workplace-flow',
+      filter: [
+        'all',
+        ['==', ['geometry-type'], 'LineString'],
+        ['==', ['get', 'id'], this.selectedLodesFlowId ?? ''],
+      ],
+      layout: {
+        visibility: this.lodesVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'line-color': '#f59e0b',
+        'line-width': 9,
+        'line-opacity': 1,
+      },
+    });
+
     this.map.addLayer({
       id: 'lodes-workplace-flow-points',
       type: 'circle',
@@ -1017,6 +1175,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.applyLayerVisibility();
+    // The layers were just recreated, so the highlight filter has to be reapplied: a selection
+    // made before a geography change would otherwise survive in state and vanish from the map.
+    this.applyLodesSelectionHighlight();
   }
 
   private renderSaipeChoropleth(): void {

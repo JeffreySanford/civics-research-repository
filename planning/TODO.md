@@ -179,7 +179,7 @@ Search and the map were two demonstrations that happened to share a stack.
 - [x] Research context panel on the map: area, the discovery query that led there, active data, and a link back to those results.
 - [x] Name the workspace for the research question in that mode, rather than for the library drawing it.
 - [ ] Replace the stored North Dakota flow sample with a reproducibly derived extract from the LODES WAC and OD products. The current sample is labelled as one; a derived extract is the larger follow-on.
-- [ ] Two-way selection between the accessible flow table and the map, so selecting a row highlights the flow and selecting a flow focuses the row.
+- [x] Two-way selection between the accessible flow table and the map. The flow list is now a real table (Origin / Destination / Workers); selecting a row highlights that flow on the map and fits the viewport to it, and clicking the flow on the map selects the row and moves focus to it. Selection lives in NgRx as `selectedLodesFlowId`, so neither view writes to the other — both read the store. It is dropped when the LODES layer is hidden and when a geography change loads an overlay that does not contain it.
 
 ### P13 - Continuous integration
 

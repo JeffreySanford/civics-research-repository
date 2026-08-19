@@ -130,8 +130,10 @@ describe('readMapDebugSnapshot', () => {
       },
     );
 
+    // Three layers: the flow lines, the selection highlight drawn over them, and the endpoints.
     const lodes = snapshot?.groups.find((group) => group.id === 'lodes');
     expect(lodes?.layers.map((layer) => layer.visibility)).toEqual([
+      'none',
       'none',
       'none',
     ]);

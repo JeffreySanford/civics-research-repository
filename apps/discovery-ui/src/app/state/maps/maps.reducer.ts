@@ -27,6 +27,8 @@ export interface MapsState {
   readonly saipeVisible: boolean;
   /** Feature shared by the map and the accessible list; either view can set it. */
   readonly selectedFeatureId: string | null;
+  /** Commuting flow shared by the map and the accessible table; either view can set it. */
+  readonly selectedLodesFlowId: string | null;
   readonly loading: boolean;
   readonly error: string | null;
 }
@@ -47,6 +49,7 @@ export const initialMapsState: MapsState = {
   hydrographyVisible: false,
   saipeVisible: false,
   selectedFeatureId: null,
+  selectedLodesFlowId: null,
   loading: false,
   error: null,
 };
@@ -84,6 +87,13 @@ export const mapsReducer = createReducer(
     ...state,
     lodesFlowOverlay,
     lodesFlowError: null,
+    // Flows are per-geography. Switching from North Dakota to Texas replaces the whole set, and a
+    // selection carried across would name a flow the new overlay does not contain.
+    selectedLodesFlowId: lodesFlowOverlay.flows.some(
+      (flow) => flow.id === state.selectedLodesFlowId,
+    )
+      ? state.selectedLodesFlowId
+      : null,
   })),
   on(MapsActions.lodesFlowOverlayFailed, (state, { error }) => ({
     ...state,
@@ -123,6 +133,17 @@ export const mapsReducer = createReducer(
   on(MapsActions.lodesLayerToggled, (state, { visible }) => ({
     ...state,
     lodesVisible: visible,
+    // A selection that survives its layer being hidden leaves the table announcing a highlight
+    // nobody can see, and the map holding one it is no longer drawing.
+    selectedLodesFlowId: visible ? state.selectedLodesFlowId : null,
+  })),
+  on(MapsActions.lodesFlowSelected, (state, { flowId }) => ({
+    ...state,
+    selectedLodesFlowId: flowId,
+  })),
+  on(MapsActions.lodesFlowSelectionCleared, (state) => ({
+    ...state,
+    selectedLodesFlowId: null,
   })),
   on(MapsActions.hydrographyLayerToggled, (state, { visible }) => ({
     ...state,

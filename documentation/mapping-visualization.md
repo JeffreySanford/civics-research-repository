@@ -91,6 +91,37 @@ data is active — with a link back to those search results. Without it the map 
 layers already on and no explanation, which reads as a default rather than a decision. A plain visit
 to `/maps` is unchanged and keeps its generic identity.
 
+### Two-way flow selection
+
+The commuting flows are an accessible table, not a description of the map:
+
+| Origin   | Destination | Workers |
+| -------- | ----------- | ------- |
+| Burleigh | Cass        | 1,240   |
+
+Selecting a row highlights that flow on the map and fits the viewport to it. Clicking the flow on
+the map selects the row and moves focus to it. Neither view writes to the other: the selection is a
+single `selectedLodesFlowId` in the NgRx maps feature, and both the table and the map read it
+through store selectors. The map applies it by subscribing to `selectSelectedLodesFlow` with
+`takeUntilDestroyed`, the same contract the earthquake selection already used.
+
+Three rules the reducer enforces, each of which would otherwise leave the two views disagreeing:
+
+- **Reselecting the same row clears it.** Selection is state, not a one-way door.
+- **Hiding the LODES layer drops the selection.** Otherwise the table announces a highlight nobody
+  can see and the map holds one it is no longer drawing.
+- **Loading a new overlay drops a selection it does not contain.** Flows are per-geography, so
+  switching from North Dakota to Texas replaces the whole set.
+
+The highlight is drawn as a heavier line above the base layer rather than by filtering the others
+out: answering "where is this flow" by deleting its context is not an answer. The selected row is
+marked with `aria-selected`, a background, and an inset border that survives forced-colors mode, so
+the selection is never carried by colour alone.
+
+Each selection has its own named live region — `Map feature selection` and `Commuting flow
+selection`. They are independent, and sharing one status would have each overwrite the other's
+announcement.
+
 ### Known limit
 
 The North Dakota commuting flows are a small stored sample derived from the 2023 LODES

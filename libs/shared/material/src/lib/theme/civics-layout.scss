@@ -399,6 +399,50 @@ code {
   color: var(--civics-warn-text);
 }
 
+.flow-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.flow-table caption {
+  text-align: start;
+  color: var(--civics-text-secondary);
+  padding-bottom: 0.5rem;
+}
+
+.flow-table th,
+.flow-table td {
+  border-bottom: 1px solid var(--civics-border);
+  padding: 0.5rem;
+  text-align: start;
+}
+
+.flow-table thead th {
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--civics-text-secondary);
+}
+
+/* The selected row is marked by more than colour: aria-selected carries it to assistive
+   technology, and the heavier left border survives forced-colors mode. */
+.flow-table tr.selected {
+  background: var(--civics-surface-muted);
+  box-shadow: inset 4px 0 0 0 var(--civics-focus);
+}
+
+.flow-select {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 800;
+  color: var(--civics-link);
+  cursor: pointer;
+  text-align: start;
+}
+
 .research-context {
   border: 1px solid var(--civics-border);
   border-radius: var(--civics-radius-sm);
