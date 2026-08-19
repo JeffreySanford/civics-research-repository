@@ -78,6 +78,9 @@ export class DiscoveryPage implements OnInit {
   /** Empty means every type. One value at a time: the contract takes a single content type. */
   protected selectedContentType: ResearchObjectType | '' = '';
 
+  /** Empty means every vintage. One at a time: the contract takes a single year. */
+  protected selectedVintageYear: number | null = null;
+
   /** Zero-based, matching the contract. Rendered one-based, matching how people count. */
   protected page = 0;
 
@@ -109,6 +112,7 @@ export class DiscoveryPage implements OnInit {
     this.selectedContentType = (params.get('type') ?? '') as
       | ResearchObjectType
       | '';
+    this.selectedVintageYear = this.toVintageYear(params.get('vintageYear'));
     this.page = this.toPage(params.get('page'));
 
     // Not submitSearch(): that resets to the first page, which is right when a filter changes and
@@ -157,6 +161,9 @@ export class DiscoveryPage implements OnInit {
       ...(this.selectedContentType
         ? { contentType: this.selectedContentType }
         : {}),
+      ...(this.selectedVintageYear !== null
+        ? { vintageYear: this.selectedVintageYear }
+        : {}),
     };
 
     this.store.dispatch(SearchActions.searchSubmitted({ query }));
@@ -190,7 +197,22 @@ export class DiscoveryPage implements OnInit {
 
     if (field === 'type') {
       this.toggleContentType(value);
+      return;
     }
+
+    if (field === 'vintageYear') {
+      this.toggleVintageYear(value);
+    }
+  }
+
+  /** Reselecting the chosen year clears it, the same way the type facet behaves. */
+  protected toggleVintageYear(vintageYear: string): void {
+    const parsed = Number(vintageYear);
+    this.selectedVintageYear =
+      this.selectedVintageYear === parsed || !Number.isInteger(parsed)
+        ? null
+        : parsed;
+    this.submitSearch();
   }
 
   /**
@@ -235,6 +257,7 @@ export class DiscoveryPage implements OnInit {
 
   protected clearFilters(): void {
     this.selectedContentType = '';
+    this.selectedVintageYear = null;
     this.selectedPrograms = [];
     this.programControl.setValue('');
     this.geographyControl.setValue('');
@@ -251,6 +274,7 @@ export class DiscoveryPage implements OnInit {
           : null,
         geography: this.geographyControl.value || null,
         type: this.selectedContentType || null,
+        vintageYear: this.selectedVintageYear ?? null,
         // Page 1 is the default, so it stays out of the URL: a shared link to the first page of
         // results should look like a link to the results.
         page: this.page > 0 ? this.page : null,
@@ -268,6 +292,12 @@ export class DiscoveryPage implements OnInit {
    * "Clear filters" undoable only by reloading, and it meant a shared link could not express
    * "everything".
    */
+  /** An unparseable year means no year filter, rather than a search that returns nothing. */
+  private toVintageYear(value: string | null): number | null {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+
   /** An unparseable or negative page is the first page, not an error the reader has to fix. */
   private toPage(value: string | null): number {
     const parsed = Number(value);

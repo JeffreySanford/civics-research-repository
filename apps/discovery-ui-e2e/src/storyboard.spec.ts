@@ -789,6 +789,61 @@ test.describe('research package', () => {
  * Pagination. 181 objects at 25 a page means most of the repository was previously unreachable
  * from the UI: the count said 181 and the list stopped at 25 with nothing to click.
  */
+/** Vintage was indexed and filterable long before it was offered; now a reader can reach it. */
+test.describe('vintage facet', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/discovery');
+  });
+
+  test('years are offered newest first @storyboard', async ({ page }) => {
+    const years = page.locator(
+      'section[aria-labelledby="facet-vintageYear"] button',
+    );
+
+    await expect(years.first()).toHaveText(/2025/);
+    await expect(years.nth(1)).toHaveText(/2023/);
+  });
+
+  test('selecting a year filters and round-trips through the URL @storyboard', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /^2023 \(/ }).click();
+
+    await expect(page).toHaveURL(/vintageYear=2023/);
+    await expect(
+      page.getByRole('button', { name: /^2023 \(/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    // Only the 2023 records survive; the 2025 filler is gone.
+    await expect(
+      page.getByRole('heading', { name: /Additional research object/ }),
+    ).toHaveCount(0);
+  });
+
+  /** Selecting a year must not hide the others, or the choice becomes a one-way door. */
+  test('other years stay selectable once one is chosen @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery?vintageYear=2023');
+
+    await expect(page.getByRole('button', { name: /^2025 \(/ })).toBeEnabled();
+    await expect(
+      page.getByRole('button', { name: /^2025 \(/ }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('reselecting the chosen year clears it @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery?vintageYear=2023');
+
+    await page.getByRole('button', { name: /^2023 \(/ }).click();
+
+    await expect(page).not.toHaveURL(/vintageYear=/);
+  });
+});
+
 test.describe('result pagination', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);

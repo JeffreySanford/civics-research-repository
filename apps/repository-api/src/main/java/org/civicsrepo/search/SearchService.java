@@ -173,7 +173,24 @@ public class SearchService {
                                 "Type",
                                 filtered,
                                 (result) -> typeOf(result).getValue(),
-                                contentType == null ? "" : contentType.getValue())));
+                                contentType == null ? "" : contentType.getValue()),
+                        // Counted before the vintage filter is applied, like every other facet, so
+                        // selecting a year does not hide the others and make the choice a one-way door.
+                        facetGroup(
+                                "vintageYear",
+                                "Year",
+                                catalog.stream()
+                                        .filter((result) -> matchesQuery(result, normalizedQuery))
+                                        .filter((result) -> programs.isEmpty()
+                                                || programs.contains(result.getProgram()))
+                                        .filter((result) -> normalizedGeography.isBlank()
+                                                || normalize(result.getGeography()).contains(normalizedGeography))
+                                        .filter((result) -> contentType == null || contentType == typeOf(result))
+                                        .filter((result) -> result.getVintageYear() != null)
+                                        .sorted(Comparator.comparing(SearchResult::getVintageYear).reversed())
+                                        .toList(),
+                                (result) -> String.valueOf(result.getVintageYear()),
+                                vintageYear == null ? "" : String.valueOf(vintageYear))));
     }
 
     /** Untyped results are datasets, which is what every item seeded before packages existed is. */

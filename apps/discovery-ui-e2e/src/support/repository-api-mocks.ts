@@ -68,6 +68,7 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
         url.searchParams.get('contentType') ?? '',
         Number(url.searchParams.get('page') ?? 0),
         Number(url.searchParams.get('pageSize') ?? 25),
+        url.searchParams.get('vintageYear') ?? '',
       ),
     });
   });
@@ -748,6 +749,7 @@ function searchResponse(
   selectedContentType = '',
   page = 0,
   pageSize = 25,
+  selectedVintageYear = '',
 ): unknown {
   // The research package is national, so it survives a geography filter the way the API's does.
   const packageResults = [
@@ -817,7 +819,11 @@ function searchResponse(
     accessLevel: 'PUBLIC',
   })).filter(() => !selectedContentType || selectedContentType === 'DATASET');
 
-  const combined = [...allResults, ...filler];
+  const combined = [...allResults, ...filler].filter(
+    (result) =>
+      !selectedVintageYear ||
+      String(result.vintageYear) === selectedVintageYear,
+  );
   const start = page * pageSize;
   const results = combined.slice(start, start + pageSize);
 
@@ -888,6 +894,24 @@ function searchResponse(
             label: 'PROJECT',
             count: 1,
             selected: selectedContentType === 'PROJECT',
+          },
+        ],
+      },
+      {
+        field: 'vintageYear',
+        label: 'Year',
+        values: [
+          {
+            value: '2025',
+            label: '2025',
+            count: 32,
+            selected: selectedVintageYear === '2025',
+          },
+          {
+            value: '2023',
+            label: '2023',
+            count: 3,
+            selected: selectedVintageYear === '2023',
           },
         ],
       },

@@ -46,6 +46,11 @@
           <p class="facet-hint">
             Select any number of programs. No selection means every program.
           </p>
+          } @if (facet.field === 'vintageYear') {
+          <p class="facet-hint">
+            One year at a time, newest first. Selecting the year already chosen
+            clears it.
+          </p>
           } @if (facet.field === 'type') {
           <p class="facet-hint">
             One type at a time. Selecting the type already chosen clears it.
@@ -63,7 +68,8 @@
               [disabled]="
                 facet.field !== 'program' &&
                 facet.field !== 'geography' &&
-                facet.field !== 'type'
+                facet.field !== 'type' &&
+                facet.field !== 'vintageYear'
               "
               (click)="selectFacet(facet.field, value.value)"
             >

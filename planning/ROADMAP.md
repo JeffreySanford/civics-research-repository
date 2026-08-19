@@ -20,12 +20,14 @@ remain a labelled shortcut.
 **Pagination is done.** 181 objects across 8 pages, with a stated range, URL state, and focus moved
 to the results heading on each page change.
 
-What is left: `vintageYear_i` is indexed but never returned as a facet, and `qf` weights every field
-equally so relevance is flat.
+**The vintage facet is done.** Program, Geography, Type and Year are all offered, all excluded from
+their own filters.
 
-Order: vintage facet, relevance tuning, then index the new metadata (subjects, authors, citation,
-DOI) so discovery can search what the repository already knows. Tracked as P12 in
-[TODO.md](TODO.md).
+What is left: `qf` weights every field equally, so a publisher match ranks with a title match and
+"North Dakota workforce" behaves more broadly than a researcher expects.
+
+Order: relevance tuning, then index the new metadata (subjects, authors, citation, DOI) so discovery
+can search what the repository already knows. Tracked as P12 in [TODO.md](TODO.md).
 
 ### 2. Connect discovery to the map
 

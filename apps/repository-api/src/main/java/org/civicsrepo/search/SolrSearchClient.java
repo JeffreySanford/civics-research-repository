@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,7 +179,7 @@ public class SolrSearchClient {
                 throw new IllegalStateException("Solr search failed with HTTP " + response.statusCode());
             }
 
-            return toSearchResponse(query, page, pageSize, programs, geography, contentType, response.body());
+            return toSearchResponse(query, page, pageSize, programs, geography, contentType, vintageYear, response.body());
         } catch (IOException exception) {
             throw new IllegalStateException("Solr search request failed.", exception);
         } catch (InterruptedException exception) {
@@ -217,6 +218,7 @@ public class SolrSearchClient {
             List<ResearchProgram> selectedPrograms,
             String selectedGeography,
             ResearchObjectType selectedContentType,
+            Integer selectedVintageYear,
             String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
@@ -271,7 +273,14 @@ public class SolrSearchClient {
                                     root.path("facet_counts").path("facet_fields").path("contentType_s"),
                                     selectedContentType == null
                                             ? Set.of()
-                                            : Set.of(normalize(selectedContentType.getValue())))));
+                                            : Set.of(normalize(selectedContentType.getValue()))),
+                            descending(facetGroup(
+                                    "vintageYear",
+                                    "Year",
+                                    root.path("facet_counts").path("facet_fields").path("vintageYear_i"),
+                                    selectedVintageYear == null
+                                            ? Set.of()
+                                            : Set.of(normalize(String.valueOf(selectedVintageYear)))))));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Solr search response could not be parsed.", exception);
         }
@@ -288,6 +297,18 @@ public class SolrSearchClient {
         } catch (IllegalArgumentException exception) {
             return AccessLevel.RESTRICTED;
         }
+    }
+
+    /**
+     * Reverses a facet group's values.
+     *
+     * Solr sorts a numeric field's facets ascending by index, which is the wrong order for a
+     * vintage: a reader scanning years wants the most recent release first.
+     */
+    private FacetGroup descending(FacetGroup group) {
+        List<FacetValue> reversed = new ArrayList<>(group.getValues());
+        Collections.reverse(reversed);
+        return new FacetGroup(group.getField(), group.getLabel(), reversed);
     }
 
     private FacetGroup facetGroup(String field, String label, JsonNode values, Set<String> normalizedSelected) {
@@ -339,6 +360,10 @@ public class SolrSearchClient {
         params.add("facet.field=" + encode("{!ex=programFilter}program_s"));
         params.add("facet.field=" + encode("{!ex=geographyFilter}geography_s"));
         params.add("facet.field=" + encode("{!ex=typeFilter}contentType_s"));
+        // Newest first. A vintage list is read as a timeline, and Solr's default index order
+        // would put 2022 above 2025.
+        params.add("facet.field=" + encode("{!ex=vintageFilter}vintageYear_i"));
+        params.add("f.vintageYear_i.facet.sort=" + encode("index"));
 
         if (!programs.isEmpty()) {
             // One fq with an OR clause, not one fq per program: separate filter queries are ANDed,
@@ -355,7 +380,7 @@ public class SolrSearchClient {
         }
 
         if (vintageYear != null) {
-            params.add("fq=" + encode("vintageYear_i:" + vintageYear));
+            params.add("fq=" + encode("{!tag=vintageFilter}vintageYear_i:" + vintageYear));
         }
 
         // Tagged and excluded from its own facet, like program and geography: selecting
