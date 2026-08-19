@@ -39,7 +39,7 @@ Ordered walkthrough for a Census Bureau / technical interview demo. Assumes a co
 
 **URL:** http://localhost:4200/datasets/tiger-line-north-dakota-2025
 
-**Show:** metadata summary, file manifest with source URLs (not mirrored bitstreams), citation copy, versions tab, related research scoped by shared geography, Map tab link.
+**Show:** metadata summary, file manifest with source URLs, citation copy, versions tab, related research scoped by shared geography, Map tab link. Files that were mirrored also exist as real bitstreams in the assetstore; the manifest names the publisher source either way.
 
 **Say:** This item is the geospatial vertical slice: TIGER/Line tract boundaries for North Dakota. Large Census archives stay at census.gov; the repository stores metadata, manifests, and provenance links per the no-bitstream-mirroring policy. Related research is computed from the repository catalog, not hard-coded filler.
 

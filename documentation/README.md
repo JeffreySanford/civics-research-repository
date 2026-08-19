@@ -8,6 +8,7 @@ This directory captures the product, architecture, data, accessibility, and plat
 - [Architecture Diagrams](architecture-diagrams.md): C4 context and container views, ingestion/search/map sequences, and the known seams between the architecture and the implementation.
 - [Data Sources](data-sources.md): public Census and USGS source candidates, ingestion assumptions, and metadata model.
 - [Data Storage and Sync](data-storage-sync.md): storage boundaries, source sync model, cache policy, and expansion order.
+- [Open Science Research Objects](open-science-research-objects.md): the research-object model — types, typed relationships, access levels, license, DOI and researcher identity — and the worked Census research package.
 - [Mapping Visualization](mapping-visualization.md): geospatial UX, map layers, USGS overlays, and accessibility requirements.
 - [USGS National Map Evaluation](usgs-national-map-evaluation.md): follow-on National Map reference overlay options.
 - [508/WCAG Accessibility](accessibility-508-wcag.md): accessibility standards, automated checks, and manual validation direction.

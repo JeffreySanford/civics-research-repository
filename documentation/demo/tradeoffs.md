@@ -14,7 +14,7 @@ Honest answers for interview Q&A. Each item states what we chose, why, and what 
 
 ## Seed breadth vs sync adapters
 
-**Decision:** `catalog.json` seeds **164 items across 14 programs and 52 geographies**. Startup sync adapters currently cover **live metadata reconciliation for the first visual slice** (TIGER/Line North Dakota) plus publisher file facts (size, last-modified) where implemented.
+**Decision:** `catalog.json` seeds **181 items across 15 programs and 52 geographies**, of which 177 are datasets and 4 are the publications, methodology report, and project of one research package. Startup sync adapters currently cover **live metadata reconciliation for the first visual slice** (TIGER/Line North Dakota) plus publisher file facts (size, last-modified) where implemented.
 
 **Why:** Breadth proves paging, facets, and related research at realistic scale without implementing fourteen full harvest pipelines on day one. Sync adapters are added per source where drift matters most.
 
@@ -32,15 +32,15 @@ Honest answers for interview Q&A. Each item states what we chose, why, and what 
 
 **Deferred:** None—the disclosure requirement is implemented. Manual accessibility evidence still needs recording against the repository-backed path.
 
-## No bitstream mirroring policy
+## Bounded bitstream mirroring
 
-**Decision:** Large Census ZIP and CSV archives are represented by **source URLs and file manifests**, not mirrored bitstreams in DSpace or git.
+**Decision:** Source files are mirrored into the DSpace assetstore up to a per-file cap (120 MB) and a total budget (1 GiB), largest eligible first. Everything else is represented by **source URLs and file manifests**. The assetstore currently holds 76 files, 1.00 GiB — about 58% of the 1.73 GiB subscribed. Nothing is mirrored into git.
 
-**Why:** Multi-gigabyte public-use files do not belong in version control or default Docker volumes. Provenance links to census.gov are the authoritative download path.
+**Why:** A repository that holds no bytes has no preservation story, no checksums and no downloads. A repository that holds every byte would put multi-gigabyte public-use files into Docker volumes for no additional information. The budget buys the demonstrable half of that: real bitstreams with real checksums, without pretending to be a warehouse.
 
-**Tradeoff:** Offline demo cannot download full microdata without network access to publishers.
+**Tradeoff:** The mirrored set is a preservation sample, not a complete copy. Which files it contains depends on the cap and budget at the time it ran, recorded in `tools/dspace/mirror-manifest.json`.
 
-**Deferred:** Optional small-to-medium mirrored demo artifacts for selected files (acceptance criteria still open).
+**Why the manifest survives mirroring:** The manifest describes the authoritative publisher source, which stays true whether or not a local copy exists. A mirrored file is a preservation copy, not a new system of record.
 
 ## Java API vs separate harvester
 

@@ -790,10 +790,74 @@ test.describe('program facet selection', () => {
     await mockRepositoryApi(page);
   });
 
-  test('the three demo programs are selected by default @storyboard', async ({
+  /**
+   * No program is applied unless the reader asks for one.
+   *
+   * Three programs used to be selected implicitly whenever the URL carried no `program` parameter,
+   * which quietly excluded every LEHD object -- the publications, the methodology report and the
+   * research project -- from the first page a visitor sees.
+   */
+  test('no program is selected by default @storyboard', async ({ page }) => {
+    await page.goto('/discovery');
+
+    for (const program of [
+      'TIGER LINE (1)',
+      'LODES (1)',
+      'ACS (1)',
+      'SAIPE (1)',
+    ]) {
+      await expect(page.getByRole('button', { name: program })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
+    }
+
+    await expect(page).not.toHaveURL(/program=/);
+  });
+
+  test('a program can be added to and removed from the selection @storyboard', async ({
     page,
   }) => {
     await page.goto('/discovery');
+    const lodes = page.getByRole('button', { name: 'LODES (1)' });
+
+    await lodes.click();
+    await expect(lodes).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/program=LODES/);
+
+    await lodes.click();
+    await expect(lodes).toHaveAttribute('aria-pressed', 'false');
+    await expect(page).not.toHaveURL(/program=/);
+  });
+
+  /** Unselected programs stay visible with their unfiltered counts, so another can always be added. */
+  test('a second program can be added to an existing selection @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery?program=LODES');
+
+    await page.getByRole('button', { name: 'SAIPE (1)' }).click();
+
+    await expect(
+      page.getByRole('button', { name: 'SAIPE (1)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.getByRole('button', { name: 'LODES (1)' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/program=LODES/);
+    await expect(page).toHaveURL(/program=SAIPE/);
+  });
+
+  /** The geospatial trio is a shortcut the reader chooses, not a filter applied on their behalf. */
+  test('the geospatial shortcut selects the three programs and clears them again @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery');
+
+    const shortcut = page.getByRole('button', {
+      name: /the three geospatial programs/,
+    });
+    await shortcut.click();
 
     for (const program of ['TIGER LINE (1)', 'LODES (1)', 'ACS (1)']) {
       await expect(page.getByRole('button', { name: program })).toHaveAttribute(
@@ -801,57 +865,16 @@ test.describe('program facet selection', () => {
         'true',
       );
     }
-
     await expect(
       page.getByRole('button', { name: 'SAIPE (1)' }),
     ).toHaveAttribute('aria-pressed', 'false');
-  });
-
-  test('a program can be removed from and added back to the selection @storyboard', async ({
-    page,
-  }) => {
-    await page.goto('/discovery');
-    const lodes = page.getByRole('button', { name: 'LODES (1)' });
-
-    await lodes.click();
-    await expect(lodes).toHaveAttribute('aria-pressed', 'false');
-
-    await lodes.click();
-    await expect(lodes).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  /** Unselected programs stay visible, so a fourth can always be added. */
-  test('an unselected program can be added to the defaults @storyboard', async ({
-    page,
-  }) => {
-    await page.goto('/discovery');
-
-    await page.getByRole('button', { name: 'SAIPE (1)' }).click();
-
-    await expect(
-      page.getByRole('button', { name: 'SAIPE (1)' }),
-    ).toHaveAttribute('aria-pressed', 'true');
-    await expect(page).toHaveURL(/program=SAIPE/);
-  });
-
-  test('reset restores the default program selection @storyboard', async ({
-    page,
-  }) => {
-    await page.goto('/discovery?program=SAIPE');
-
-    await expect(
-      page.getByRole('button', { name: 'SAIPE (1)' }),
-    ).toHaveAttribute('aria-pressed', 'true');
 
     await page
-      .getByRole('button', { name: 'Reset to default programs' })
+      .getByRole('button', { name: /the three geospatial programs/ })
       .click();
 
     await expect(
       page.getByRole('button', { name: 'TIGER LINE (1)' }),
-    ).toHaveAttribute('aria-pressed', 'true');
-    await expect(
-      page.getByRole('button', { name: 'SAIPE (1)' }),
     ).toHaveAttribute('aria-pressed', 'false');
   });
 });

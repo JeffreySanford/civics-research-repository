@@ -44,8 +44,7 @@
           <h3 [id]="'facet-' + facet.field">{{ facet.label }}</h3>
           @if (facet.field === 'program') {
           <p class="facet-hint">
-            Select any number of programs. TIGER/Line, LODES, and ACS are
-            selected by default.
+            Select any number of programs. No selection means every program.
           </p>
           } @if (facet.field === 'type') {
           <p class="facet-hint">
@@ -73,8 +72,14 @@
             }
           </div>
           @if (facet.field === 'program') {
-          <button type="button" class="facet-reset" (click)="resetPrograms()">
-            Reset to default programs
+          <button
+            type="button"
+            class="facet-reset"
+            [attr.aria-pressed]="featuredProgramsSelected"
+            (click)="selectFeaturedPrograms()"
+          >
+            {{ featuredProgramsSelected ? 'Clear' : 'Select' }} the three
+            geospatial programs
           </button>
           }
         </section>

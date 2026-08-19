@@ -136,7 +136,7 @@ pnpm run verify:sources:all
 
 It is deliberately not part of `quality:all`. It depends on federal hosts being reachable, and a Census outage must not read as a broken build.
 
-Last full run on 2026-08-12: 328 URLs across 164 items, all resolving. It found five broken links that had been in the catalog unnoticed — three dead Census documentation pages, and a SIPP source template pointing at `pu{vintage}.csv.gz` when the published file is `pu{vintage}_csv.zip`. The two USGS documentation pages answer 403 to a default user agent while serving a browser normally, so the checker sends a browser user agent; without that it reports live pages as broken.
+Last full run on 2026-08-12: 328 URLs across 181 items, all resolving. It found five broken links that had been in the catalog unnoticed — three dead Census documentation pages, and a SIPP source template pointing at `pu{vintage}.csv.gz` when the published file is `pu{vintage}_csv.zip`. The two USGS documentation pages answer 403 to a default user agent while serving a browser normally, so the checker sends a browser user agent; without that it reports live pages as broken.
 
 ### What is harvested and what is curated
 
@@ -163,7 +163,7 @@ Still curated, and worth being plain about: the catalog is not discovered from t
 
 The repository subscribes to public files rather than copying them. `pnpm run sources:inventory` asks every distinct source URL for its length, aggregates by program, and writes `apps/repository-api/src/main/resources/source-inventory.json` with the date it was taken. The API serves that at `GET /admin/sources/inventory`, and the evidence page's **Data pipeline** tab shows it beside the DSpace and Solr figures.
 
-Measured on 2026-08-17: **1.72 GiB across 191 distinct files and 176 research objects**, of which 167 files reported a length and 8 did not answer. Files are counted once per URL — several objects reference the same national file, and counting it per reference would inflate the total into fiction.
+Measured on 2026-08-17: **1.72 GiB across 191 distinct files and 181 research objects**, of which 167 files reported a length and 8 did not answer. Files are counted once per URL — several objects reference the same national file, and counting it per reference would inflate the total into fiction.
 
 Three numbers, three different things:
 

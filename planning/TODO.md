@@ -117,12 +117,12 @@ layers.
 
 ### P8 - Repository breadth
 
-Discovery reads from DSpace, which holds 164 research objects across 14 programs and 52 geographies. The generated fixture catalog is only a labelled fallback when the repository is unavailable.
+Discovery reads from DSpace, which holds 181 research objects across 15 programs and 52 geographies. The generated fixture catalog is only a labelled fallback when the repository is unavailable.
 
-- [x] Decide the target breadth: full 52-area parity, 159 items.
+- [x] Decide the target breadth: full 52-area parity.
 - [x] Generate SAF packages from `tools/dspace/catalog.json` rather than committing one directory per item. Generated packages are git-ignored; the table is the source of truth.
 - [x] Name SAF directories by source identifier so `--resume` stays correct when the program mix changes.
-- [x] Confirm paging and `civics.repository.max-items` hold at 159 items.
+- [x] Confirm paging and `civics.repository.max-items` hold at 181 items.
 - [x] Cache repository reads briefly, invalidated on reindex: dataset detail went from 1.1s to 5ms.
 - [x] Fix related research to require shared geography, since program alone produced alphabetical filler at 52 areas per program.
 - [x] Add a multi-select program facet with TIGER/Line, LODES, and ACS selected by default. `program` is now a repeatable query parameter in the contract.
@@ -130,6 +130,53 @@ Discovery reads from DSpace, which holds 164 research objects across 14 programs
 - [x] Add eight programs: Economic Census, County Business Patterns, Building Permits, Population Estimates, SAIPE, Business Dynamics, USGS 3DEP, USGS 3HP. 164 repository objects across 14 programs, after excluding three LODES areas the publisher does not cover.
 - [x] Replace the landing-page source URLs on the eight new programs with verified file-level URLs. Every program now has one, checked by `pnpm run verify:sources:all`: 328 URLs across 164 items, all resolving on 2026-08-12. The check also found five links that were already broken, and three LODES areas the publisher does not cover, which are now skipped with a recorded reason rather than seeded.
 - [ ] Add NOAA Climate Data Online and NASA POWER as cross-agency federation candidates.
+
+### P10 - Preservation: mirrored bitstreams
+
+The assetstore held 6.7 kB against 1.73 GiB subscribed. Metadata-and-links is a defensible design, but it left the demo weaker than the software: no checksums, no downloads, no preservation story.
+
+- [x] Mirror eligible source files into the SAF packages, bounded by a per-file cap and a total budget, largest eligible first. 76 files, 1.00 GiB.
+- [x] Cache downloads outside the SAF tree, which `generate-saf.mjs` wipes on every run.
+- [x] Fix the two silent ingest failures: the seed ran with `--exclude-bitstreams`, and `contents` began with a blank line that DSpace reads as a malformed first entry. Neither produced an error.
+- [x] Report stored bytes from DSpace rather than from the mirror manifest, which records what a seed intended to stage. `storedBitstreamCount` and `storedBytes` on the DSpace overview.
+- [x] Surface subscribed / mirrored / curated / indexed as four measured figures on the Evidence page.
+- [ ] Re-run the mirror against a larger budget once the demo machine has the disk for it.
+
+### P11 - Open Science research objects
+
+The data model knew about research objects; the populated repository held only datasets. See [open-science-research-objects.md](../documentation/open-science-research-objects.md).
+
+- [x] Source `contentType` from `crr.resource.type` instead of hardcoding `DATASET` in two places.
+- [x] Add `PROJECT` to the type enum, plus `AccessLevel`, `ResearchRelation`, `ResearchAuthor` to the contract.
+- [x] Seed one research package of real Census material: CES-WP-25-23, CES-WP-25-22, CES-WP-25-52, the public LODES tables, and the restricted LEHD microdata.
+- [x] Typed relationships authored in the catalog and resolved against the objects present, with the generator refusing to emit an edge whose target is not a catalog object.
+- [x] Access level, access note, license, DOI and researcher identity, with ORCID absent rather than blank when none exists.
+- [x] Four DSpace collections, one per kind of object, each seeded from its own SAF group and mapfile.
+- [x] Type facet in discovery, filterable, clearable by reselecting.
+- [x] Type-aware detail: authors, DOI, Research Package tab, and no map tabs on a publication.
+- [x] Rename `DatasetDetail` to `ResearchObjectDetail`.
+- [ ] Rename the remaining dataset-shaped UI copy: "Loading dataset detail", "Dataset supporting information", "Open related dataset".
+- [ ] Alias the route `/research/:id` alongside `/datasets/:id`.
+- [ ] Generalise `PublicDatasetMetadata` to `ResearchObjectMetadata` so live sync carries type, access, license, DOI, researchers and relations. Behind the discovery work.
+
+### P12 - Discovery experience
+
+The repository now holds objects the default discovery view hides, and 181 objects paged 25 at a time with no controls.
+
+- [x] Default to all programs. An absent `program` parameter meant TIGER/Line, LODES and ACS, which filtered the LEHD research package out of the first thing a visitor saw. The three are now a labelled shortcut button rather than an implicit filter, and an absent parameter means what the API already meant by it. Default discovery: 181 objects across 15 programs.
+- [ ] Pagination: controls, `?page=` URL state, and a "Showing 1-25 of N" count.
+- [ ] Vintage facet. `vintageYear_i` is indexed and used as a filter but never returned as a facet.
+- [ ] Relevance tuning: field boosts, phrase boosts and a minimum-match rule. `qf` currently weights title, summary, publisher, program and geography equally.
+- [ ] Index the new metadata into discovery: subjects, authors, citation, DOI.
+- [ ] Make the in-memory fallback's facet and query semantics match Solr's closely enough that losing Solr does not change what the demo shows.
+
+### P13 - Continuous integration
+
+- [x] Add a CI workflow. The repository had no `.github` directory: every gate ran only where someone typed the command.
+- [x] Two jobs split by toolchain: the Node workspace, and the Spring service in its Gradle container.
+- [x] Include the drift gates, which catch a regenerated file that was never staged.
+- [ ] Decide whether the e2e suite gets its own workflow or a nightly schedule. 384 tests across three browsers roughly quadruples the run.
+- [ ] Branch protection on `main`, if the repository is meant to tell a federal-delivery story. Interacts with the current direct-to-main workflow.
 
 ### P9 - Security patch pass
 

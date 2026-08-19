@@ -2,29 +2,88 @@
 
 ## Near-Term Order
 
-Phases 0 through 4 are delivered. The vertical slice runs end to end: DSpace is the system of record for writes and reads, discovery is projected into Solr, and `pnpm run start:all` (alias `demo:up`) starts the full stack with seed and reindex.
+Phases 0 through 4 are delivered. The vertical slice runs end to end: DSpace is the system of record
+for writes and reads, discovery is projected into Solr, and `pnpm run start:all` (alias `demo:up`)
+starts the full stack with seed and reindex. The repository holds 181 research objects across 15
+programs, preserves 1.00 GiB of source bytes as real bitstreams, and models publications,
+methodology, projects, typed relationships and access restrictions alongside datasets.
 
-What remains is not more UI scaffolding — it is harvesting breadth, demo explainability, and a few contract and platform gaps. In priority order:
+What remains is not architecture. The architecture works. What remains is what a researcher actually
+experiences, and closing a few seams behind it. In priority order:
 
-### 1. Harvest the catalog from live publishers
+### 1. Discovery experience
 
-Which files exist, and for which vintages, is still curated in `tools/dspace/catalog.json` rather than discovered from Census and USGS APIs. Per-file facts such as size and release date already come from live HEAD requests where reachable; catalog discovery is the larger open ingestion piece. Tracked as the open item under P1 in [TODO.md](TODO.md#current-priorities).
+**Defaults are fixed.** Discovery no longer applies TIGER/Line, LODES and ACS on the reader's behalf,
+so the research package is visible in the default view: 181 objects across 15 programs. The three
+remain a labelled shortcut.
 
-### 2. Interview demo package
+What is left: 181 objects are paged 25 at a time with no controls and no count, `vintageYear_i` is
+indexed but never faceted, and `qf` weights every field equally so relevance is flat.
 
-Architecture diagrams and AWS modernization documentation are **delivered**. What is still missing is the spoken walkthrough material: demo script, ingestion walkthrough, accessibility evidence walkthrough, mapping/USGS overlay walkthrough, and known tradeoffs. Tracked as PI 6.2 in [TODO.md](TODO.md#pi-6---aws-modernization-documentation).
+Order: pagination, vintage facet, relevance tuning, then index the new metadata (subjects, authors,
+citation, DOI) so discovery can search what the repository already knows. Tracked as P12 in
+[TODO.md](TODO.md).
 
-### 3. Finish manual accessibility evidence
+### 2. Connect discovery to the map
 
-Checklists are **delivered** in [accessibility-manual-evidence.md](../documentation/accessibility-manual-evidence.md). Map-to-list selection is implemented; Checklist 4 item M12 still needs a human click because WebGL hit tests cannot be asserted automatically. What remains is executing a run and recording it.
+Search and Maps currently read as two separate demonstrations. A workforce query should offer
+"Explore workforce on map" and open the map already focused, with TIGER and LODES active and USGS
+off, plus a context panel naming the query that got the reader there.
 
-### 4. Optional IaC for the documented AWS target
+The map should receive context through the route rather than scraping whatever result cards happen to
+be on screen: Solr discovers the object, DSpace says what it represents, the Maps API supplies the
+geometry. The North Dakota flows are currently five static entries; deriving them reproducibly from
+the LODES WAC and OD products is the larger follow-on and is worth separating from the navigation
+work.
 
-C4 diagrams and the modernization narrative exist. Terraform or CDK for the documented target is still open (P4 / PI 6.1).
+### 3. Harvest the catalog from live publishers
 
-### 5. Dependency and contract cleanup
+Which files exist, and for which vintages, is still curated in `tools/dspace/catalog.json` rather than
+discovered from Census and USGS APIs. Per-file facts such as size and release date already come from
+live HEAD requests where reachable; catalog discovery is the larger open ingestion piece. Tracked as
+the open item under P1 in [TODO.md](TODO.md#current-priorities).
 
-Move NgRx to stable 22 when published, revisit generated controller interfaces when Spring 7 support lands, cover `JdbcSyncJobStore` with Testcontainers, and add typed API error responses where the contract still returns generic failures.
+### 4. Generalise sync to research objects
+
+The catalog and SAF path model the full research-object vocabulary. Live sync does not:
+`PublicDatasetMetadata` carries no resource type, access level, license, DOI, researchers or
+relations, so a harvested object cannot express what a seeded one can. Renaming it
+`ResearchObjectMetadata` and widening the DSpace payload mapper closes the loop. Deliberately behind
+the user-facing work — this rebuilds a pipeline that currently functions.
+
+### 5. Finish manual accessibility evidence
+
+Checklists are **delivered** in
+[accessibility-manual-evidence.md](../documentation/accessibility-manual-evidence.md). Map-to-list
+selection is implemented; Checklist 4 item M12 still needs a human click because WebGL hit tests
+cannot be asserted automatically. What remains is executing a run with NVDA and JAWS and recording it.
+This is the difference between "the automated scans pass" and "here is how Section 508 evidence is
+produced".
+
+### 6. Optional IaC for the documented AWS target
+
+C4 diagrams and the modernization narrative exist. Terraform or CDK for the documented target is still
+open (P4 / PI 6.1).
+
+### 7. Dependency, contract and platform cleanup
+
+Move NgRx to stable 22 when published, revisit generated controller interfaces when Spring 7 support
+lands, cover `JdbcSyncJobStore` with Testcontainers, and add typed API error responses where the
+contract still returns generic failures. On the platform side: decide whether the e2e suite gets its
+own workflow or a nightly schedule, and whether `main` gets branch protection — the latter interacts
+with the current direct-to-main workflow and is a governance choice rather than a fix.
+
+### Delivered since this list was last written
+
+- **Interview demo package.** Demo script, ingestion, accessibility-evidence and mapping walkthroughs,
+  and a tradeoffs record all exist under [documentation/demo](../documentation/demo).
+- **Preservation.** 76 mirrored files, 1.00 GiB, and four measured pipeline figures on the Evidence
+  page. Tracked as P10.
+- **Open Science research objects.** Types, typed relations, access levels, license, DOI, researcher
+  identity, four DSpace collections, and one worked research package. Tracked as P11 and described in
+  [open-science-research-objects.md](../documentation/open-science-research-objects.md).
+- **Continuous integration.** The repository had no `.github` directory; every gate ran only where
+  someone typed the command. Tracked as P13.
 
 ## Implementation Strategy
 

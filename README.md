@@ -117,9 +117,21 @@ Discovery, facets, dataset detail, and related research all read from DSpace. Th
 
 ### Repository breadth
 
-The repository holds 159 research objects: TIGER/Line, LODES, and ACS PUMS for all 52 states and territories, plus national SIPP, CPS, and USGS objects. Discovery reads all of them from DSpace, so facet counts are real rather than generated.
+The repository holds **181 research objects across 15 programs**: TIGER/Line, LODES, and ACS PUMS for all 52 states and territories, eleven national program objects, and one complete research package. Discovery reads all of them from DSpace, so facet counts are real rather than generated.
 
-Breadth is a property of [tools/dspace/catalog.json](tools/dspace/catalog.json), which `tools/scripts/generate-saf.mjs` expands into SAF packages at seed time. Adding a geography or a program is a change to that table. The generated packages are git-ignored, because committing 159 near-identical directories would bury the source of truth.
+By type: 177 datasets, 2 publications, 1 methodology report, 1 project.
+
+Breadth is a property of [tools/dspace/catalog.json](tools/dspace/catalog.json), which `tools/scripts/generate-saf.mjs` expands into SAF packages at seed time. Adding a geography or a program is a change to that table. The generated packages are git-ignored, because committing 181 near-identical directories would bury the source of truth.
+
+### Research objects, not only datasets
+
+The repository models publications, methodology and projects alongside datasets, with typed relationships, access levels, licenses, DOIs and researcher identity. The worked example is a real Census research package: two CES working papers, the LODES methodology report that documents the data product they rest on, the public LODES tables, and the Title 13 restricted LEHD microdata behind all of it — described so the research stays citable, holding no files and able to hold none.
+
+Discovery facets on type, result cards carry an access badge when access is not public, and a publication's detail page shows its authors, DOI and typed edges rather than map layers. See [open-science-research-objects.md](documentation/open-science-research-objects.md).
+
+### Preservation
+
+The DSpace assetstore holds **76 mirrored source files, 1.00 GiB**, about 58% of the 1.73 GiB the repository subscribes to. Mirroring is bounded by a per-file cap and a total budget; everything else stays an authoritative link. The Evidence page's Data pipeline tab reports subscribed, mirrored, curated and indexed as four separate figures, each measured rather than asserted.
 
 Remaining gaps are listed in [Known Seams](documentation/architecture-diagrams.md#known-seams); the ordered plan is in [planning/ROADMAP.md](planning/ROADMAP.md#near-term-order).
 

@@ -71,7 +71,7 @@ Three distinct operations often conflated in conversation:
 
 | Operation      | What it does                                                                                               | When it runs                    | Entry point                                   |
 | -------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------- | --------------------------------------------- |
-| **Seed**       | Imports SAF packages from `tools/dspace/catalog.json` into DSpace (164 items, 14 programs, 52 geographies) | First run or after volume reset | `pnpm run start:all` → `dspace-seed`          |
+| **Seed**       | Imports SAF packages from `tools/dspace/catalog.json` into DSpace (181 items, 14 programs, 52 geographies) | First run or after volume reset | `pnpm run start:all` → `dspace-seed`          |
 | **Sync**       | Reconciles live publisher metadata against DSpace items (TIGER/Line adapter today)                         | API startup and admin UI        | `StartupSyncRunner`, `/admin/sync`            |
 | **Projection** | Rebuilds the `discovery` Solr core from current DSpace items                                               | After seed, sync, or on demand  | `POST /api/admin/reindex`, `pnpm run reindex` |
 
@@ -121,4 +121,4 @@ USGS overlays follow the same pattern at a smaller scale: live GeoJSON when the 
 - **Breadth vs live sync:** 164 seeded objects prove paging and facets; startup sync reconciles TIGER/Line North Dakota today.
 - **Honest fallback:** Fixture data keeps CI and disaster demos running, with explicit disclosure in the contract and UI.
 
-For Q&A on specific decisions—no bitstream mirroring, unauthenticated admin routes, Java vs Node harvest boundaries—see [tradeoffs.md](tradeoffs.md).
+For Q&A on specific decisions—bounded bitstream mirroring, unauthenticated admin routes, Java vs Node harvest boundaries—see [tradeoffs.md](tradeoffs.md).

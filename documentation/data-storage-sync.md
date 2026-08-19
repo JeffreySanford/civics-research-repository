@@ -156,7 +156,9 @@ Set `CIVICS_SYNC_MODE=DRY_RUN` in `.env` to restore planning-only startup behavi
 
 ### File Manifest Reconciliation
 
-Public datasets are represented by links and manifests, never by mirrored copies, so the repository item carries no bitstreams for them. That left the file manifest with nowhere to live in DSpace, and it is the reason `sync:diff` could never report `SKIP_ITEM`: the source payload always described files the repository had no way to hold.
+Every research object carries a file manifest describing its authoritative source files. Some of those files are also mirrored into the assetstore as real bitstreams; most are not. The manifest is the record either way, which is what makes the two cases interchangeable to everything downstream.
+
+The manifest predates mirroring. It exists because the item originally carried no bitstreams at all, and it is the reason `sync:diff` could never report `SKIP_ITEM` before it: the source payload always described files the repository had no way to hold.
 
 The manifest is now reconciled as repeatable `crr.file.manifest` metadata, one compact JSON entry per source file recording id, label, bundle, format, URL, and size where known. JSON rather than a delimited string because a source URL may contain any delimiter worth choosing. The field is registered in `tools/dspace/crr-types.xml` and written by the same idempotent apply path as every other managed field.
 
@@ -165,17 +167,33 @@ Two consequences worth knowing:
 - `sync:diff` compares only the fields synchronization owns, listed in `DspaceManagedFields`. DSpace's own bookkeeping metadata is left alone. Comparing whole items against fields DSpace maintains is why the diff previously always reported `UPDATE_ITEM`.
 - Dataset detail builds its file list from the manifest, falling back to the item's source and documentation URLs for items seeded without one.
 
-If mirroring small artifacts ever becomes worthwhile, real bitstreams should be appended alongside the manifest rather than replacing it: the manifest describes the authoritative source, which remains true whether or not a copy exists locally.
+### Mirrored Bitstreams
+
+The assetstore holds **76 files, 1.00 GiB**, mirrored from the publishers by `tools/scripts/mirror-source-files.mjs`. That is about 58% of the 1.73 GiB the repository subscribes to.
+
+Mirroring is bounded on purpose, by a per-file cap (`--max-file-mb`, default 120) and a total budget (`--budget-mb`, default 1024), taking the largest eligible files first so the preserved set is representative rather than a pile of documentation PDFs. Everything above the cap or beyond the budget stays a link. Downloads are cached in `tools/dspace/mirror-cache/`, outside the SAF tree, because `generate-saf.mjs` deletes and rewrites that tree on every run.
+
+Bitstreams are appended alongside the manifest rather than replacing it. The manifest describes the authoritative source, which remains true whether or not a copy exists locally — a mirrored file is a preservation copy, not a new system of record.
+
+Two failures are worth recording, because both were silent:
+
+- The seed ran with `--exclude-bitstreams`, correct while every `contents` file was empty and catastrophic afterwards. Items imported cleanly, handles looked right, and the assetstore stayed at 6.7 kB.
+- `contents` began with a blank line, which DSpace reads as a malformed first entry and stops on.
+
+Neither produced an error. The check that catches them is the assetstore size, which the API now reports as `storedBitstreamCount` and `storedBytes` on the DSpace overview, and the Evidence page shows on its Data pipeline tab.
 
 ### Seeding Breadth
 
 The repository is seeded from [tools/dspace/catalog.json](../tools/dspace/catalog.json), a data table of geographies and programs. `tools/scripts/generate-saf.mjs` expands it into DSpace SAF packages, which `pnpm run dspace:seed` regenerates before importing.
 
-The current table produces 159 research objects: TIGER/Line, LODES, and ACS PUMS for all 52 states and territories, plus national SIPP, CPS, and USGS objects. Changing breadth or program mix is a change to the table, not to the repository tree. Set `enabled: false` on a program to drop it, or pass `--areas N` for a faster local loop.
+The current table produces **181 research objects across 15 programs**: TIGER/Line, LODES, and ACS PUMS per state and territory, eleven national program objects, and the five objects of the research package described in [open-science-research-objects.md](open-science-research-objects.md). Changing breadth or program mix is a change to the table, not to the repository tree. Set `enabled: false` on a program to drop it, or pass `--areas N` for a faster local loop.
+
+By type: 177 datasets, 2 publications, 1 methodology report, 1 project.
 
 Three details worth knowing:
 
-- **Generated packages are git-ignored.** Committing 159 directories whose only differences are a state name and a FIPS code would bury the actual source of truth.
+- **Generated packages are git-ignored.** Committing 181 directories whose only differences are a state name and a FIPS code would bury the actual source of truth.
+- **Packages are grouped by target collection.** `dspace import` takes one collection per run, so the generator writes `saf/<collection>/<item-id>` and the seed walks the groups, each with its own mapfile. A shared mapfile would make the second group's `--resume` believe the first group's items were its own and skip everything.
 - **Directories are named by source identifier, not position.** The seed mapfile records `<directory> <handle>` and `--resume` skips directories already imported, so positional names would shift whenever the program mix changed and re-import existing items under new handles.
 - **The generator writes `crr.file.manifest` in the same encoding the Java side uses.** A freshly seeded item therefore already matches the normalized source payload, and `sync:diff` reports `SKIP_ITEM` without needing an apply first.
 
@@ -183,7 +201,7 @@ Seeding is a bootstrap, not the ingestion strategy. It exists so a cold `demo:up
 
 ### Repository Read Caching
 
-Dataset detail needs the whole item set to compute related research, which at 159 items meant paging through all of DSpace discovery on every page view, around a second per request. `RepositoryCatalog` now caches the item list for a short window (`civics.repository.cache-ttl-seconds`, default 60) and drops it outright whenever the discovery projection is rebuilt, so staleness is bounded and never survives a synchronization. Dataset detail serves in roughly 5ms once warm.
+Dataset detail needs the whole item set to compute related research, which at 181 items means paging through all of DSpace discovery on every page view, around a second per request. `RepositoryCatalog` now caches the item list for a short window (`civics.repository.cache-ttl-seconds`, default 60) and drops it outright whenever the discovery projection is rebuilt, so staleness is bounded and never survives a synchronization. Dataset detail serves in roughly 5ms once warm.
 
 This is a cache of repository reads, not a second source of truth: nothing is written to it, and it is discarded rather than reconciled.
 

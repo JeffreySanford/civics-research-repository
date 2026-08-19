@@ -133,7 +133,7 @@ Two properties this sequence is designed to guarantee:
 - **It never guesses which item to write to.** Discovery is relevance-ranked, so an unqualified first result is not a safe write target. Ambiguity fails the job.
 - **A second identical apply performs no write.** Metadata is compared as unordered value/language pairs, because DSpace orders repeated values by `place` and that order need not match adapter order.
 
-The file manifest is reconciled as `crr.file.manifest` metadata, one JSON entry per source file. Public datasets are represented by links rather than mirrored copies, so the manifest is where the file list lives; the item carries no bitstreams for them. With the manifest comparable, `sync:diff` reports `SKIP_ITEM` once apply has run.
+The file manifest is reconciled as `crr.file.manifest` metadata, one JSON entry per source file. It describes the authoritative source whether or not a copy exists locally, which is what lets a mirrored and an unmirrored object be compared the same way. With the manifest comparable, `sync:diff` reports `SKIP_ITEM` once apply has run.
 
 The diff compares only the fields synchronization owns (`DspaceManagedFields`). DSpace's own bookkeeping — `dc.date.accessioned`, `dc.description.provenance`, handles — is deliberately left alone, and comparing whole items against it is why the diff previously could never settle.
 
@@ -216,7 +216,8 @@ The two effects are deliberately independent: a USGS outage degrades the overlay
 Places where the implementation is narrower than the architecture. Each is tracked in [planning/TODO.md](../planning/TODO.md).
 
 1. **Catalog contents are curated, not harvested.** `tools/dspace/catalog.json` lists which files exist and for which vintages. Per-file facts such as size and release date come from live HEAD requests where reachable; discovering the catalog itself from Census and USGS APIs is open (P1).
-2. **No bitstreams are uploaded.** By policy, public source files are linked and manifested rather than mirrored, so the repository holds no copies of them. If mirroring small artifacts becomes worthwhile, real bitstreams would be appended to the manifest rather than replacing it.
-3. **Live sync reconciliation covers TIGER/Line only.** One hundred sixty-four research objects are seeded from the catalog and read back through discovery, but startup/admin sync adapters reconcile metadata for the TIGER/Line source only. Other programs rely on the seed until additional adapters exist.
+2. **Mirroring is partial, by budget.** The assetstore holds 76 files, 1.00 GiB, about 58% of the subscribed bytes. Files above the per-file cap or beyond the total budget remain links. See [data-storage-sync.md](data-storage-sync.md#mirrored-bitstreams).
+3. **Live sync reconciliation covers TIGER/Line only.** One hundred eighty-one research objects are seeded from the catalog and read back through discovery, but startup/admin sync adapters reconcile metadata for the TIGER/Line source only. Other programs rely on the seed until additional adapters exist.
+4. **Live sync is dataset-shaped.** `PublicDatasetMetadata` carries no resource type, access level, license, DOI, researchers or relations, so the research-object model described in [open-science-research-objects.md](open-science-research-objects.md) reaches DSpace through the catalog and SAF path only (P2).
 
 Closed: discovery and dataset detail are served from DSpace. The fixture catalog remains only as a labelled fallback when the repository is unavailable.

@@ -48,19 +48,25 @@ export class DiscoveryPage implements OnInit {
     nonNullable: true,
   });
   /**
-   * Programs selected by default.
+   * The three programs of the geospatial map story, offered as a shortcut.
    *
-   * The repository holds many programs; these three are the geospatial demo story. Sent explicitly
-   * rather than relying on an omitted parameter, because omitting it means "every program" and the
-   * facet must show what is actually applied.
+   * These used to be the implicit default, applied whenever the URL carried no `program`
+   * parameter. That was right when the repository was three Census datasets and a map. It stopped
+   * being right when the repository gained publications, methodology and a research project, all
+   * under LEHD: the first thing a visitor saw silently excluded the newest and most interesting
+   * objects in the catalog, and nothing on the page said so.
+   *
+   * They remain a labelled convenience button, which is honest — a filter the reader chooses is
+   * not the same as a filter applied on their behalf.
    */
-  protected readonly defaultPrograms: readonly ResearchProgram[] = [
+  protected readonly featuredPrograms: readonly ResearchProgram[] = [
     'TIGER_LINE',
     'LODES',
     'ACS',
   ];
 
-  protected selectedPrograms: ResearchProgram[] = [...this.defaultPrograms];
+  /** Empty means every program, matching what an absent `program` parameter means to the API. */
+  protected selectedPrograms: ResearchProgram[] = [];
 
   protected readonly programControl = new FormControl<ResearchProgram | ''>(
     '',
@@ -170,10 +176,25 @@ export class DiscoveryPage implements OnInit {
     this.submitSearch();
   }
 
-  protected resetPrograms(): void {
-    this.selectedPrograms = [...this.defaultPrograms];
+  /** Selects the three geospatial programs, or clears them if they are already the selection. */
+  protected selectFeaturedPrograms(): void {
+    const featured = [...this.featuredPrograms];
+    const alreadyFeatured =
+      this.selectedPrograms.length === featured.length &&
+      featured.every((program) => this.selectedPrograms.includes(program));
+
+    this.selectedPrograms = alreadyFeatured ? [] : featured;
     this.programControl.setValue(this.selectedPrograms[0] ?? '');
     this.submitSearch();
+  }
+
+  protected get featuredProgramsSelected(): boolean {
+    return (
+      this.selectedPrograms.length === this.featuredPrograms.length &&
+      this.featuredPrograms.every((program) =>
+        this.selectedPrograms.includes(program),
+      )
+    );
   }
 
   protected isProgramSelected(program: string): boolean {
@@ -204,15 +225,18 @@ export class DiscoveryPage implements OnInit {
     });
   }
 
+  /**
+   * An absent `program` parameter means every program, which is what the API already means by it.
+   *
+   * The page previously substituted three defaults here, so an absent parameter and an explicit
+   * empty selection produced different results even though the URL was identical. That made
+   * "Clear filters" undoable only by reloading, and it meant a shared link could not express
+   * "everything".
+   */
   private toResearchPrograms(values: readonly string[]): ResearchProgram[] {
-    const parsed = values
+    return values
       .map((value) => this.toResearchProgram(value))
       .filter((value): value is ResearchProgram => value !== '');
-
-    // No program parameter at all means the first visit, which starts from the defaults. An
-    // explicit empty selection is only reachable through Clear filters, which sets no parameter
-    // either, so defaults are the honest reading of an absent parameter.
-    return parsed.length > 0 ? parsed : [...this.defaultPrograms];
   }
 
   /**
