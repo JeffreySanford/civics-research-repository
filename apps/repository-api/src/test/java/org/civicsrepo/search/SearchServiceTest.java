@@ -84,4 +84,59 @@ class SearchServiceTest {
                 .singleElement()
                 .satisfies((facet) -> assertThat(facet.getValues().size()).isGreaterThan(1));
     }
+
+    /**
+     * The fallback used to require the whole query as one substring, so it and Solr disagreed
+     * about what a search means: Solr found North Dakota objects for this query and the fallback
+     * found none, because no title contains the phrase verbatim.
+     */
+    @Test
+    void multiWordQueryMatchesWithoutTheExactPhrase() {
+        SearchResponse response = searchService.search("North Dakota workforce", List.of(), null, null, null, 0, 25);
+
+        assertThat(response.getResults())
+                .extracting(SearchResult::getId)
+                .contains("lodes-wac-north-dakota-2023");
+    }
+
+    /** Two thirds of the terms, matching the Solr minimum-match rule, not one term out of four. */
+    @Test
+    void unrelatedTermsDoNotMatchOnASingleWord() {
+        SearchResponse response = searchService.search("Wyoming hydrography earthquake census", List.of(), null, null, null, 0, 25);
+
+        assertThat(response.getResults())
+                .extracting(SearchResult::getGeography)
+                .doesNotContain("California");
+    }
+
+    /** A single-word query still has to match that word. */
+    @Test
+    void singleTermQueryStillRequiresTheTerm() {
+        SearchResponse response = searchService.search("Wyoming", List.of(), null, null, null, 0, 25);
+
+        assertThat(response.getResults()).isNotEmpty();
+        assertThat(response.getResults()).allSatisfy((result) -> assertThat(
+                        (result.getTitle() + " " + result.getGeography()).toLowerCase())
+                .contains("wyoming"));
+    }
+
+    @Test
+    void vintageFacetIsOfferedNewestFirst() {
+        SearchResponse response = searchService.search(null, List.of(), null, null, null, 0, 25);
+
+        assertThat(response.getFacets())
+                .extracting(org.civicsrepo.generated.dto.FacetGroup::getField)
+                .contains("vintageYear");
+
+        List<String> years = response.getFacets().stream()
+                .filter((facet) -> "vintageYear".equals(facet.getField()))
+                .findFirst()
+                .orElseThrow()
+                .getValues()
+                .stream()
+                .map(FacetValue::getValue)
+                .toList();
+
+        assertThat(years).isSortedAccordingTo((left, right) -> right.compareTo(left));
+    }
 }

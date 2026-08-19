@@ -31,7 +31,7 @@ public class ReindexController {
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ProjectionState reindex() {
-        return discoveryProjectionService.reindex(searchService.fixtureResults());
+        return discoveryProjectionService.reindex(searchService.fixtureDocuments());
     }
 
     /** What the discovery index currently holds, without rebuilding it. */

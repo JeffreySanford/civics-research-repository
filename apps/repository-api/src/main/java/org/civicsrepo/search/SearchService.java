@@ -1,6 +1,9 @@
 package org.civicsrepo.search;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +54,11 @@ public class SearchService {
      */
     public List<SearchResult> fixtureResults() {
         return fixtureCatalog.searchResults();
+    }
+
+    /** The fixture catalog as discovery documents, for the projection to index when DSpace is empty. */
+    public List<DiscoveryDocument> fixtureDocuments() {
+        return fixtureCatalog.discoveryDocuments();
     }
 
     public SearchResponse search(
@@ -176,7 +184,7 @@ public class SearchService {
                                 contentType == null ? "" : contentType.getValue()),
                         // Counted before the vintage filter is applied, like every other facet, so
                         // selecting a year does not hide the others and make the choice a one-way door.
-                        facetGroup(
+                        descending(facetGroup(
                                 "vintageYear",
                                 "Year",
                                 catalog.stream()
@@ -187,10 +195,9 @@ public class SearchService {
                                                 || normalize(result.getGeography()).contains(normalizedGeography))
                                         .filter((result) -> contentType == null || contentType == typeOf(result))
                                         .filter((result) -> result.getVintageYear() != null)
-                                        .sorted(Comparator.comparing(SearchResult::getVintageYear).reversed())
                                         .toList(),
                                 (result) -> String.valueOf(result.getVintageYear()),
-                                vintageYear == null ? "" : String.valueOf(vintageYear))));
+                                vintageYear == null ? "" : String.valueOf(vintageYear)))));
     }
 
     /** Untyped results are datasets, which is what every item seeded before packages existed is. */
@@ -198,15 +205,41 @@ public class SearchService {
         return result.getContentType() == null ? ResearchObjectType.DATASET : result.getContentType();
     }
 
+    /**
+     * Tokenized matching, so losing Solr changes the ranking rather than the result set.
+     *
+     * <p>This used to require the whole normalized query as a single substring, which meant Solr
+     * and the fallback disagreed about what a search even means: Solr returned Census objects for
+     * "North Dakota workforce" while the fallback returned nothing, because no title contains that
+     * phrase verbatim. A demo that falls back to a different search is a demo with two behaviours.
+     *
+     * <p>Two thirds of the terms must appear somewhere in the object's text, which is the rule the
+     * Solr query uses (mm=2&lt;67%). The fallback still cannot see subjects, authors or citations:
+     * those are indexed for Solr and are not carried on {@code SearchResult}.
+     */
     private boolean matchesQuery(SearchResult result, String normalizedQuery) {
         if (normalizedQuery.isBlank()) {
             return true;
         }
 
-        return normalize(result.getTitle()).contains(normalizedQuery)
-                || normalize(result.getSummary()).contains(normalizedQuery)
-                || normalize(result.getPublisher()).contains(normalizedQuery)
-                || normalize(result.getProgram().getValue()).contains(normalizedQuery);
+        String haystack = String.join(
+                " ",
+                normalize(result.getTitle()),
+                normalize(result.getSummary()),
+                normalize(result.getPublisher()),
+                normalize(result.getGeography()),
+                normalize(result.getProgram().getValue()));
+
+        List<String> terms =
+                Arrays.stream(normalizedQuery.split("\s+")).filter((term) -> !term.isBlank()).toList();
+        if (terms.isEmpty()) {
+            return true;
+        }
+
+        long matched = terms.stream().filter(haystack::contains).count();
+        // One or two terms must all match; three or more need two thirds, rounded up.
+        long required = terms.size() <= 2 ? terms.size() : (long) Math.ceil(terms.size() * 2.0 / 3.0);
+        return matched >= required;
     }
 
     private FacetGroup facetGroup(
@@ -237,6 +270,19 @@ public class SearchService {
                 selectedPrograms.stream()
                         .map((program) -> normalize(program.getValue()))
                         .collect(Collectors.toSet()));
+    }
+
+    /**
+     * Reverses a facet group's values.
+     *
+     * Facet values are grouped and sorted ascending by key, which is right for a program or a
+     * geography and wrong for a year: a reader scanning vintages wants the most recent first. The
+     * Solr path reverses the same group for the same reason.
+     */
+    private FacetGroup descending(FacetGroup group) {
+        List<FacetValue> reversed = new ArrayList<>(group.getValues());
+        Collections.reverse(reversed);
+        return new FacetGroup(group.getField(), group.getLabel(), reversed);
     }
 
     private FacetGroup facetGroup(

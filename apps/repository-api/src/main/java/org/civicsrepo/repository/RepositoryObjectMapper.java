@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.civicsrepo.dspace.DspaceFileManifest;
+import org.civicsrepo.search.DiscoveryDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -79,6 +80,16 @@ public class RepositoryObjectMapper {
                         .doi(firstValue(item, "crr.identifier.doi").orElse(null))
                         .authors(authors(item))
                         .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
+    }
+
+    /** The search result plus the text worth matching on but not worth returning. */
+    public DiscoveryDocument toDiscoveryDocument(JsonNode item) {
+        return new DiscoveryDocument(
+                toSearchResult(item),
+                allValues(item, "dc.subject"),
+                authors(item).stream().map(ResearchAuthor::getName).toList(),
+                firstValue(item, "dc.identifier.citation").orElse(null),
+                firstValue(item, "crr.identifier.doi").orElse(null));
     }
 
     /** The typed edges stored on the item, still unresolved: the mapper cannot see other items. */
@@ -300,6 +311,17 @@ public class RepositoryObjectMapper {
             return FileFormat.GEOJSON;
         }
         return FileFormat.OTHER;
+    }
+
+    private List<String> allValues(JsonNode item, String field) {
+        List<String> values = new ArrayList<>();
+        for (JsonNode value : item.path("metadata").path(field)) {
+            String text = value.path("value").asText("").trim();
+            if (!text.isEmpty()) {
+                values.add(text);
+            }
+        }
+        return List.copyOf(values);
     }
 
     private Optional<String> firstValue(JsonNode item, String field) {

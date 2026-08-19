@@ -130,13 +130,13 @@ public class SolrSearchClient {
         }
     }
 
-    public void indexResearchObjects(List<SearchResult> results) {
+    public void indexResearchObjects(List<DiscoveryDocument> objects) {
         if (!isEnabled()) {
             return;
         }
 
         try {
-            List<Map<String, Object>> documents = results.stream().map(this::toSolrDocument).toList();
+            List<Map<String, Object>> documents = objects.stream().map(this::toSolrDocument).toList();
             sendUpdate(Map.of("delete", Map.of("query", "repositorySeed_b:true")));
             sendUpdate(documents);
         } catch (IOException exception) {
@@ -188,7 +188,8 @@ public class SolrSearchClient {
         }
     }
 
-    private Map<String, Object> toSolrDocument(SearchResult result) {
+    private Map<String, Object> toSolrDocument(DiscoveryDocument object) {
+        SearchResult result = object.result();
         Map<String, Object> document = new LinkedHashMap<>();
         document.put("id", result.getId());
         document.put("title_txt", result.getTitle());
@@ -208,6 +209,23 @@ public class SolrSearchClient {
                 (result.getAccessLevel() == null ? AccessLevel.PUBLIC : result.getAccessLevel()).getValue());
         document.put("sourceUrl_s", result.getSourceUrl());
         document.put("repositorySeed_b", true);
+
+        // Indexed, never returned. These are reasons a researcher types something into a search
+        // box -- an author's surname, a subject, a working paper number inside a citation -- and
+        // until now Solr could not see any of them.
+        if (!object.subjects().isEmpty()) {
+            document.put("subjects_txt", object.subjects());
+        }
+        if (!object.authors().isEmpty()) {
+            document.put("authors_txt", object.authors());
+        }
+        if (object.citation() != null && !object.citation().isBlank()) {
+            document.put("citation_txt", object.citation());
+        }
+        if (object.doi() != null && !object.doi().isBlank()) {
+            document.put("doi_s", object.doi());
+        }
+
         return document;
     }
 
@@ -347,7 +365,23 @@ public class SolrSearchClient {
         List<String> params = new ArrayList<>();
         params.add("wt=json");
         params.add("defType=edismax");
-        params.add("qf=" + encode("title_txt summary_txt publisher_txt program_s geography_txt"));
+        // Weighted, not flat. Every one of the 181 objects is published by "U.S. Census Bureau",
+        // so an unweighted publisher field contributed the same score to every query -- noise with
+        // a tie-breaking effect. Title and geography are what a researcher is usually naming;
+        // summary is where a term appears incidentally.
+        params.add("qf="
+                + encode("title_txt^5 geography_txt^4 subjects_txt^3 program_s^3 "
+                        + "authors_txt^3 summary_txt^2 citation_txt^1 publisher_txt^0.5"));
+
+        // Phrase boost: "North Dakota" as a phrase should outrank a document that merely contains
+        // both words somewhere. pf2 covers the two-word case, which is most Census geographies.
+        params.add("pf=" + encode("title_txt^8 geography_txt^6 summary_txt^2"));
+        params.add("pf2=" + encode("title_txt^4 geography_txt^4"));
+
+        // Two-thirds of the terms must match. Pure OR made "North Dakota workforce" return
+        // everything containing "North"; requiring all three would return nothing, because no
+        // object's text carries all of them.
+        params.add("mm=" + encode("2<67%"));
         params.add("q=" + encode(normalize(query).isBlank() ? "*:*" : query));
         params.add("start=" + encode(Integer.toString(safePage * safePageSize)));
         params.add("rows=" + encode(Integer.toString(safePageSize)));

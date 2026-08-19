@@ -41,6 +41,6 @@ public class SearchIndexStartupRunner implements CommandLineRunner {
             return;
         }
 
-        discoveryProjectionService.reindex(searchService.fixtureResults());
+        discoveryProjectionService.reindex(searchService.fixtureDocuments());
     }
 }

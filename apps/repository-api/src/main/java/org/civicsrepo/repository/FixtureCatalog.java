@@ -24,6 +24,7 @@ import org.civicsrepo.generated.dto.ResearchAuthor;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.search.DiscoveryDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -49,6 +50,7 @@ public class FixtureCatalog {
     private static final int MAX_RELATED_RESEARCH = 3;
 
     private final List<SearchResult> searchResults;
+    private final List<DiscoveryDocument> discoveryDocuments;
     private final Map<String, ResearchObjectDetail> datasetsById;
 
     public FixtureCatalog() {
@@ -59,15 +61,23 @@ public class FixtureCatalog {
         List<SearchResult> results = new ArrayList<>();
         Map<String, ResearchObjectDetail> datasets = new LinkedHashMap<>();
         Map<String, List<ResearchRelationResolver.RawEdge>> edgesById = new LinkedHashMap<>();
+        List<DiscoveryDocument> documents = new ArrayList<>();
 
         for (JsonNode item : readItems(resource)) {
             SearchResult result = toSearchResult(item);
             results.add(result);
             datasets.put(result.getId(), toResearchObjectDetail(item, result));
             edgesById.put(result.getId(), ResearchRelationResolver.parse(item.path("relations")));
+            documents.add(new DiscoveryDocument(
+                    result,
+                    textList(item.path("subjects")),
+                    authors(item).stream().map(ResearchAuthor::getName).toList(),
+                    textOrNull(item, "citation"),
+                    textOrNull(item, "doi")));
         }
 
         this.searchResults = List.copyOf(results);
+        this.discoveryDocuments = List.copyOf(documents);
 
         // Related research needs the whole set, so it is filled in a second pass and stored. The
         // generated models are mutable, so computing it on each read would mutate the shared
@@ -88,6 +98,10 @@ public class FixtureCatalog {
 
     public List<SearchResult> searchResults() {
         return searchResults;
+    }
+
+    public List<DiscoveryDocument> discoveryDocuments() {
+        return discoveryDocuments;
     }
 
     public Optional<ResearchObjectDetail> findDataset(String datasetId) {
@@ -226,6 +240,17 @@ public class FixtureCatalog {
             authors.add(researcher);
         }
         return List.copyOf(authors);
+    }
+
+    private List<String> textList(JsonNode values) {
+        List<String> texts = new ArrayList<>();
+        for (JsonNode value : values) {
+            String text = value.asText("").trim();
+            if (!text.isEmpty()) {
+                texts.add(text);
+            }
+        }
+        return List.copyOf(texts);
     }
 
     private String textOrNull(JsonNode item, String field) {

@@ -11,7 +11,7 @@ methodology, projects, typed relationships and access restrictions alongside dat
 What remains is not architecture. The architecture works. What remains is what a researcher actually
 experiences, and closing a few seams behind it. In priority order:
 
-### 1. Discovery experience
+### 1. Discovery experience — delivered
 
 **Defaults are fixed.** Discovery no longer applies TIGER/Line, LODES and ACS on the reader's behalf,
 so the research package is visible in the default view: 181 objects across 15 programs. The three
@@ -20,14 +20,17 @@ remain a labelled shortcut.
 **Pagination is done.** 181 objects across 8 pages, with a stated range, URL state, and focus moved
 to the results heading on each page change.
 
-**The vintage facet is done.** Program, Geography, Type and Year are all offered, all excluded from
-their own filters.
+**Done.** Defaults, pagination, the Program/Geography/Type/Year facets, weighted relevance, and the
+repository's own metadata indexed for search. A reader can now find the spatial-mismatch paper by
+its author, the methodology report by "disclosure avoidance", and the restricted microdata by
+"Title 13" — none of which matched anything before, because Solr could not see subjects, authors or
+citations.
 
-What is left: `qf` weights every field equally, so a publisher match ranks with a title match and
-"North Dakota workforce" behaves more broadly than a researcher expects.
+The in-memory fallback matches on tokens with the same minimum-match rule, so losing Solr changes
+the ranking rather than the result set. It still cannot see subjects, authors or citations: those
+are indexed for Solr and are not carried on `SearchResult`.
 
-Order: relevance tuning, then index the new metadata (subjects, authors, citation, DOI) so discovery
-can search what the repository already knows. Tracked as P12 in [TODO.md](TODO.md).
+Tracked as P12 in [TODO.md](TODO.md).
 
 ### 2. Connect discovery to the map
 

@@ -1,6 +1,7 @@
 package org.civicsrepo.repository;
 
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.search.DiscoveryDocument;
 import org.civicsrepo.generated.dto.RepositorySource;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -50,12 +51,12 @@ public class DiscoveryProjectionService {
      *
      * @param fixtureFallback catalog to index when the repository yields nothing
      */
-    public ProjectionState reindex(List<SearchResult> fixtureFallback) {
+    public ProjectionState reindex(List<DiscoveryDocument> fixtureFallback) {
         // A rebuild is the point at which a stale repository read must not survive.
         repositoryCatalog.invalidate();
-        List<SearchResult> repositoryObjects = repositoryCatalog.findAllResearchObjects();
+        List<DiscoveryDocument> repositoryObjects = repositoryCatalog.findAllDiscoveryDocuments();
         boolean repositoryBacked = !repositoryObjects.isEmpty();
-        List<SearchResult> results = repositoryBacked ? repositoryObjects : fixtureFallback;
+        List<DiscoveryDocument> results = repositoryBacked ? repositoryObjects : fixtureFallback;
         RepositorySource source = repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
 
         if (solrSearchClient.isEnabled()) {

@@ -2,6 +2,7 @@ package org.civicsrepo.repository;
 
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.search.DiscoveryDocument;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
 import java.time.Instant;
@@ -67,6 +68,11 @@ public class RepositoryCatalog {
                 .map(repositoryObjectMapper::toSearchResult)
                 .sorted(Comparator.comparing(SearchResult::getTitle))
                 .toList();
+    }
+
+    /** Every repository item as a discovery document, or empty when DSpace cannot be read. */
+    public List<DiscoveryDocument> findAllDiscoveryDocuments() {
+        return readItems().stream().map(repositoryObjectMapper::toDiscoveryDocument).toList();
     }
 
     public Optional<ResearchObjectDetail> findDataset(String datasetId) {
