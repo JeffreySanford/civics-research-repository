@@ -37,6 +37,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Apply formatting for diagnostic run
+        run: pnpm exec nx format:write --all
+
+      - name: Show formatting changes
+        run: git diff --no-ext-diff --unified=3
+
       - name: Check formatting
         run: pnpm exec nx format:check --all
 
