@@ -45,6 +45,14 @@ pnpm run evidence:check
 
 The checked-in `automated-scans/latest.json` initially migrates the 2026-08-12 baseline. Run `pnpm run evidence:refresh` on the current commit to replace it with fresh evidence for today's platform.
 
+## Safari keyboard evidence
+
+The Playwright WebKit project intentionally does **not** treat raw `Tab` / `Shift+Tab` traversal as automated Safari evidence. Safari keyboard traversal depends on the macOS/Safari Full Keyboard Access ("Press Tab to highlight each item") preference, and Playwright WebKit cannot reliably reproduce that user setting.
+
+WebKit still runs the browser-semantic coverage that is deterministic: accessible-name and description assertions, axe scans, structure, contrast, reflow, and supported interactions. Raw K1/K2 traversal remains a manual Safari check. When recording a Safari keyboard run, record the macOS version, Safari version, and whether Full Keyboard Access / Tab highlighting was enabled so another reviewer can reproduce the result.
+
+A Chromium or Firefox Tab pass must never be used as a proxy for Safari keyboard evidence.
+
 ## Manual evidence remains required
 
 Automated evidence is reproducible and useful, but it does not establish screen-reader usability or complete Section 508 conformance. Before presenting a release as evidence-backed, record the applicable keyboard, NVDA/JAWS, and map-equivalence checks described in `documentation/accessibility-manual-evidence.md`.
