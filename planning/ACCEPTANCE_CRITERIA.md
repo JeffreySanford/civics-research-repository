@@ -14,7 +14,7 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] ACS PUMS remains documented as a follow-on metadata-rich repository dataset.
 - [x] Item metadata includes title, abstract, publisher, program, geography, vintage year, source URL, documentation URL, file list, and citation.
 - [x] Large source files are represented by file manifests and source URLs unless intentionally mirrored.
-- [x] Small-to-medium mirrored demo artifacts persist in Docker storage when useful for local demo reliability. _(76 files, 1.00 GiB in the DSpace assetstore, bounded by a per-file cap and a total budget.)_
+- [x] Mirrored publisher artifacts persist in Docker storage when useful for local demo reliability. _(The current committed snapshot is 76 files / 1.00 GiB from the earlier bounded run. The active policy now uses a 5 GiB total mirror budget with no independent per-file cap; the snapshot changes after the next mirror/seed run.)_
 - [x] Sync state records source identifier, source URL, DSpace item ID, last sync status, and source freshness. _(`sync_jobs` holds mode, source, status and timing; `repository_objects` holds the source identifier, its DSpace UUID, the source URL, when the source was last consulted, and when discovery last indexed it. Exposed at `/admin/repository/identity`.)_
 - [x] Startup sync creates or updates required seed repository objects after Docker startup.
 - [x] DSpace community and collection exist for Census public research data.
