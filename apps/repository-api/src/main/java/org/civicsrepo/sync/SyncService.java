@@ -306,15 +306,16 @@ public class SyncService {
                 .collect(Collectors.joining(", "));
     }
 
+    /**
+     * A name for the placeholder plan, used only when a source has no adapter.
+     *
+     * <p>This was a hand-maintained table of item titles, which is a third copy of what the catalog
+     * already states and would have needed a new line for each of the nine adapters just added. It
+     * only ever runs when nothing can harvest the source, and in that case the honest answer is the
+     * source's own name rather than a title invented for an object nobody has looked at.
+     */
     private String firstSliceItemTitle(SyncSource source) {
-        return switch (source) {
-            case TIGER_LINE -> "2025 TIGER/Line - Census Tracts - North Dakota";
-            case LODES -> "2023 LODES - North Dakota Workplace Area Characteristics";
-            case ACS_PUMS -> "2024 ACS 1-Year PUMS - North Dakota";
-            case SIPP -> "SIPP Public Use Data";
-            case CPS -> "Current Population Survey Public Use Data";
-            case USGS_EARTHQUAKES -> "USGS Earthquake Overlay";
-        };
+        return source.getValue();
     }
 
     private String failureDetail(RuntimeException exception) {

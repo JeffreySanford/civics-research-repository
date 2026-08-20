@@ -1521,7 +1521,27 @@ components:
       enum: [DRY_RUN, DIFF, APPLY]
     SyncSource:
       type: string
-      enum: [TIGER_LINE, LODES, ACS_PUMS, SIPP, CPS, USGS_EARTHQUAKES]
+      # One value per program a harvest adapter can reconcile. Kept in step with ResearchProgram,
+      # but deliberately a separate enum: a program is what an object belongs to, a sync source is
+      # something that can be harvested, and the eight national programs below only became the
+      # latter when adapters existed for them.
+      enum:
+        [
+          TIGER_LINE,
+          LODES,
+          ACS_PUMS,
+          SIPP,
+          CPS,
+          USGS_EARTHQUAKES,
+          ECONOMIC_CENSUS,
+          COUNTY_BUSINESS_PATTERNS,
+          BUILDING_PERMITS,
+          POPULATION_ESTIMATES,
+          SAIPE,
+          BUSINESS_DYNAMICS,
+          USGS_3DEP,
+          USGS_3HP,
+        ]
     SyncStatus:
       type: string
       enum: [QUEUED, RUNNING, DIFF_COMPLETE, DRY_RUN_COMPLETE, APPLIED, FAILED]

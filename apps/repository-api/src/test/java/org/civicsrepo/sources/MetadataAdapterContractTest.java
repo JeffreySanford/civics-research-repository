@@ -26,7 +26,16 @@ class MetadataAdapterContractTest {
             new LodesMetadataAdapter(new OfflineSourceFileProbe(), catalogMetadataReader),
             new CpsMetadataAdapter(new OfflineSourceFileProbe()),
             new SippMetadataAdapter(new OfflineSourceFileProbe()),
-            new UsgsEarthquakesMetadataAdapter(new OfflineSourceFileProbe()));
+            new UsgsEarthquakesMetadataAdapter(new OfflineSourceFileProbe()),
+            new AcsPumsMetadataAdapter(catalogMetadataReader),
+            new EconomicCensusMetadataAdapter(catalogMetadataReader),
+            new CountyBusinessPatternsMetadataAdapter(catalogMetadataReader),
+            new BuildingPermitsMetadataAdapter(catalogMetadataReader),
+            new PopulationEstimatesMetadataAdapter(catalogMetadataReader),
+            new SaipeMetadataAdapter(catalogMetadataReader),
+            new BusinessDynamicsMetadataAdapter(catalogMetadataReader),
+            new Usgs3depMetadataAdapter(catalogMetadataReader),
+            new Usgs3hpMetadataAdapter(catalogMetadataReader));
 
     /**
      * The check that would have caught the CPS drift.

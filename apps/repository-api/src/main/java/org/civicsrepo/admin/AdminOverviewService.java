@@ -182,6 +182,14 @@ public class AdminOverviewService {
             case SIPP -> ResearchProgram.SIPP;
             case CPS -> ResearchProgram.CPS;
             case USGS_EARTHQUAKES -> ResearchProgram.USGS;
+            case ECONOMIC_CENSUS -> ResearchProgram.ECONOMIC_CENSUS;
+            case COUNTY_BUSINESS_PATTERNS -> ResearchProgram.COUNTY_BUSINESS_PATTERNS;
+            case BUILDING_PERMITS -> ResearchProgram.BUILDING_PERMITS;
+            case POPULATION_ESTIMATES -> ResearchProgram.POPULATION_ESTIMATES;
+            case SAIPE -> ResearchProgram.SAIPE;
+            case BUSINESS_DYNAMICS -> ResearchProgram.BUSINESS_DYNAMICS;
+            case USGS_3_DEP -> ResearchProgram.USGS_3_DEP;
+            case USGS_3_HP -> ResearchProgram.USGS_3_HP;
         };
     }
 

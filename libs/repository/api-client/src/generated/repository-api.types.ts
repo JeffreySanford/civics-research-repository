@@ -840,7 +840,15 @@ export interface components {
       | 'ACS_PUMS'
       | 'SIPP'
       | 'CPS'
-      | 'USGS_EARTHQUAKES';
+      | 'USGS_EARTHQUAKES'
+      | 'ECONOMIC_CENSUS'
+      | 'COUNTY_BUSINESS_PATTERNS'
+      | 'BUILDING_PERMITS'
+      | 'POPULATION_ESTIMATES'
+      | 'SAIPE'
+      | 'BUSINESS_DYNAMICS'
+      | 'USGS_3DEP'
+      | 'USGS_3HP';
     /** @enum {string} */
     SyncStatus:
       | 'QUEUED'
