@@ -1,233 +1,196 @@
 # Architecture Diagrams
 
-C4 context and container views plus the three sequences that carry the demo: public dataset ingestion, search and faceted discovery, and dataset map rendering.
+These diagrams describe the current implementation. Planned work is not drawn as if it exists; open seams are listed at the end. Volatile counts are generated in [platform-status.md](platform-status.md).
 
-These diagrams describe **what runs today**. Fallback paths — fixture catalog when DSpace is down, bundled USGS fixture when the live feed fails — are drawn explicitly rather than implied. See [Known Seams](#known-seams) for remaining gaps and [planning/TODO.md](../planning/TODO.md) for the work that closes them.
-
-## C4 Level 1 - System Context
+## C4 Level 1 — System context
 
 ```mermaid
 flowchart TB
-    researcher["Public Researcher<br/><i>Person</i><br/>Finds and cites public<br/>federal research datasets"]
-    steward["Repository Steward<br/><i>Person</i><br/>Triggers and reviews<br/>metadata synchronization"]
+    researcher["Public researcher<br/>Finds, evaluates, cites and explores federal research"]
+    steward["Repository steward<br/>Reviews synchronization, repository state and evidence"]
 
-    crr["Civics Research Repository<br/><i>Software System</i><br/>Accessible discovery, dataset detail,<br/>geospatial visualization, and<br/>repository synchronization for<br/>public federal research data"]
+    crr["Civics Research Repository<br/>Federal Open Science reference platform<br/>repository, discovery, research relationships,<br/>accessible geospatial analysis and evidence"]
 
-    census["U.S. Census Bureau<br/><i>External System</i><br/>TIGER/Line, LODES, ACS PUMS,<br/>SIPP, CPS public data and<br/>documentation"]
-    usgs["U.S. Geological Survey<br/><i>External System</i><br/>Earthquake Hazards Program<br/>GeoJSON feed and<br/>National Map services"]
+    census["U.S. Census Bureau / LEHD<br/>Public datasets, files, listings and documentation"]
+    usgs["U.S. Geological Survey<br/>Hydrography, elevation/reference and event services"]
 
-    researcher -->|"Searches, browses,<br/>views maps"| crr
-    steward -->|"Runs dry-run, diff,<br/>and apply sync"| crr
-    crr -->|"Reads public metadata<br/>and source links"| census
-    crr -->|"Reads live earthquake<br/>overlay data"| usgs
+    researcher -->|Search, browse, cite, compare, map| crr
+    steward -->|Dry-run, diff, apply, reindex, review evidence| crr
+    crr -->|Verify public source facts and retrieve public data| census
+    crr -->|Retrieve reference and event layers| usgs
 ```
 
-The system is unauthenticated in the local demo. Both people are roles rather than accounts; see [planning/DECISIONS.md](../planning/DECISIONS.md) under "Admin API Authentication" for what changes before deployment.
+The local demo is unauthenticated. Before deployment, steward actions require an authorization boundary; public discovery remains anonymous.
 
-## C4 Level 2 - Containers
+## C4 Level 2 — Containers
 
 ```mermaid
 flowchart TB
-    researcher["Public Researcher"]
-    steward["Repository Steward"]
+    researcher["Public researcher"]
+    steward["Repository steward"]
 
-    subgraph crr["Civics Research Repository"]
-        ui["discovery-ui<br/><i>Angular 22, NgRx, MapLibre GL</i><br/>Search, dataset detail, maps,<br/>admin sync, evidence<br/>:4200"]
-        api["repository-api<br/><i>Java 21, Spring Boot</i><br/>Search, datasets, maps, overlays,<br/>sync orchestration<br/>:8080/api"]
-        opsdb[("PostgreSQL<br/><i>civics_ops</i><br/>sync_jobs<br/>:5432")]
-        discovery[("Solr<br/><i>discovery core</i><br/>Public discovery projection<br/>:8983")]
+    subgraph app["Civics Research Repository"]
+        ui["discovery-ui<br/>Angular 22, Material, NgRx, MapLibre<br/>discovery, research objects, maps,<br/>admin workflows and evidence<br/>:4200"]
+        api["repository-api<br/>Java 21 / Spring Boot<br/>typed API, adapter registry, sync,<br/>projection, maps and evidence<br/>:8080/api"]
+        ops[("PostgreSQL civics_ops<br/>sync jobs and operational state<br/>:5432")]
+        index[("DiscoveryIndex<br/>Apache Solr discovery core<br/>rebuildable public projection<br/>:8983")]
     end
 
-    subgraph dspace["DSpace Platform ('dspace' Compose profile, started by start:all)"]
-        dsrest["DSpace REST<br/><i>DSpace 9.0</i><br/>Communities, collections, items,<br/>metadata, bitstreams<br/>:8081/server"]
-        dsdb[("PostgreSQL<br/><i>DSpace database</i><br/>Repository system of record<br/>:5433")]
-        dssolr[("Solr<br/><i>DSpace cores</i><br/>DSpace internal discovery<br/>:8984")]
+    subgraph dspace["DSpace 9 platform"]
+        rest["DSpace REST<br/>communities, collections, items,<br/>metadata, relations and bitstreams<br/>:8081/server"]
+        db[("DSpace PostgreSQL<br/>repository system of record<br/>:5433")]
+        internal[("DSpace Solr<br/>internal discovery and OAI cores<br/>:8984")]
     end
 
-    census["U.S. Census Bureau"]
-    usgs["U.S. Geological Survey"]
+    census["Census / LEHD public sources"]
+    usgs["USGS public services"]
 
     researcher -->|HTTPS| ui
     steward -->|HTTPS| ui
-    ui -->|"JSON/REST<br/>generated OpenAPI types"| api
-
-    api -->|"Reads/writes sync job state<br/>JDBC"| opsdb
-    api -->|"Queries and indexes<br/>research objects<br/>HTTP"| discovery
-    api -->|"Discovery search and<br/>item metadata PATCH<br/>REST + JSON Patch"| dsrest
-    api -->|"Live earthquake GeoJSON<br/>HTTPS, fixture fallback"| usgs
-
-    dsrest --> dsdb
-    dsrest --> dssolr
-
-    api -->|"Projects repository items<br/>into the discovery core"| discovery
-    api -.->|"planned: harvest live<br/>source metadata"| census
+    ui -->|Generated OpenAPI client| api
+    api -->|JDBC| ops
+    api -->|DiscoveryIndex operations| index
+    api -->|REST and JSON Patch| rest
+    api -->|HTTPS source verification and data retrieval| census
+    api -->|HTTPS reference/event retrieval| usgs
+    rest --> db
+    rest --> internal
 ```
 
-### Why two PostgreSQL instances and two Solr instances
-
-This is the most common question the diagram raises, and the current naming does not answer it well. The four datastores serve two different jobs:
-
-| Container                                                         | Role                                                                | Owner            |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------- |
-| Application PostgreSQL (`postgres`, :5432), database `civics_ops` | Application operational state — currently only `sync_jobs`          | `repository-api` |
-| DSpace PostgreSQL (`dspace-postgres`, :5433)                      | Repository system of record — items, metadata, bitstreams, workflow | DSpace           |
-| Discovery Solr (`solr`, core `discovery`, :8983)                  | Public discovery projection queried by the API                      | `repository-api` |
-| DSpace Solr (`dspace-solr`, :8984)                                | DSpace's own internal search and OAI cores                          | DSpace           |
-
-The application database is named `civics_ops` and the repository database is named `dspace`, so the split is legible from the connection string alone. Both were previously named `dspace`, which invited the reading that the application writes into DSpace's own schema.
-
-## Sequence - Public Dataset Ingestion
-
-`pnpm run sync:apply`, or `POST /api/admin/sync` with `mode: APPLY`. Dry-run and diff share this path and stop before the write.
+## Repository composition and reconciliation
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor steward as Repository Steward
+    actor steward as Repository steward
+    participant catalog as catalog.json
+    participant generator as generate-saf.mjs
+    participant dspace as DSpace
+    participant registry as Metadata adapter registry
+    participant publisher as Census / USGS publisher
+    participant sync as SyncService
+    participant ops as civics_ops
+
+    Note over catalog,dspace: Curated composition path
+    generator->>catalog: Read enabled programs and authored research objects
+    generator->>generator: Resolve templates, types, access, authors, relations and file manifests
+    generator->>dspace: Import idempotent SAF packages by collection
+
+    Note over registry,ops: Runtime reconciliation path
+    steward->>sync: DRY_RUN / DIFF / APPLY
+    sync->>registry: Select one adapter or all registered adapters
+    registry->>catalog: Read catalog-backed definitions
+    registry->>publisher: Verify reachable facts where supported
+    publisher-->>registry: Size, date, listing/vintage or public data response
+    registry-->>sync: Normalized ResearchObjectMetadata
+    sync->>dspace: Resolve recorded source identity and read current metadata
+    sync->>sync: Compare synchronization-owned fields only
+    alt APPLY and fields differ
+        sync->>dspace: JSON Patch owned metadata
+    else No difference
+        sync->>sync: SKIP_ITEM
+    end
+    sync->>ops: Persist job, action and outcome
+```
+
+The two paths are complementary. Publisher facts can be discovered; repository composition and typed research-package relationships remain curated.
+
+## Search and faceted discovery
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor researcher as Public researcher
+    participant ui as Angular discovery UI
+    participant effects as NgRx effects
     participant api as repository-api
-    participant adapter as TigerLineMetadataAdapter
-    participant mapper as DspaceItemPayloadMapper
-    participant client as DspaceRestClient
     participant dspace as DSpace REST
-    participant store as sync_jobs (PostgreSQL)
+    participant projection as DiscoveryProjectionService
+    participant index as DiscoveryIndex / Solr
 
-    steward->>api: POST /api/admin/sync {mode, source}
-    api->>store: Save job as RUNNING
-    api->>adapter: firstVisualSlice()
-    adapter-->>api: PublicDatasetMetadata (static source constants)
-    api->>mapper: toItemPayload(metadata)
-    mapper-->>api: DspaceItemPayload (dc.* and crr.* fields)
+    Note over dspace,index: Reindex path
+    projection->>dspace: Read repository research objects
+    dspace-->>projection: Metadata, types, access, authors, relations and files
+    projection->>index: Replace rebuildable public projection
 
-    Note over api,dspace: DIFF and APPLY read current DSpace state first
-
-    api->>client: findItem(sourceIdentifier, expectedTitle)
-    client->>dspace: GET /api/discover/search/objects?query=...
-    dspace-->>client: Relevance-ranked discovery results
-    client->>client: DspaceItemMatcher.selectTargetItem
-
-    alt Item claimed by matching dc.identifier.other
-        client-->>api: The one target item
-    else Unclaimed item with exact title match
-        client-->>api: Adoptable seed item
-    else Two or more plausible items
-        client-->>api: AmbiguousDspaceItemException
-        api->>store: Save job as FAILED
-    end
-
-    alt mode = APPLY and metadata differs
-        api->>client: patchItemMetadata(uuid, operations)
-        client->>dspace: POST /api/authn/login (admin from .env)
-        dspace-->>client: Bearer token + CSRF token
-        client->>dspace: PATCH /api/core/items/{uuid} (JSON Patch)
-        dspace-->>client: 200 OK
-    else Metadata already current
-        Note over api: No write. Apply is idempotent.
-    end
-
-    api->>store: Save job as APPLIED / DIFF_COMPLETE / DRY_RUN_COMPLETE
-    api-->>steward: SyncJob with planned and executed actions
+    Note over researcher,index: Query path
+    researcher->>ui: Search, facet or page
+    ui->>ui: Persist query state in URL
+    ui->>effects: searchSubmitted
+    effects->>api: GET /api/search
+    api->>index: eDisMax query, filters, facets and paging
+    index-->>api: Ranked documents and counts
+    api-->>effects: SearchResponse with resultSource
+    effects->>ui: searchLoaded
+    ui-->>researcher: Results, reversible facets, range and provenance notice
 ```
 
-Two properties this sequence is designed to guarantee:
+If the repository path is unavailable, fixture content may be used only with `resultSource: FIXTURE` and a visible notice.
 
-- **It never guesses which item to write to.** Discovery is relevance-ranked, so an unqualified first result is not a safe write target. Ambiguity fails the job.
-- **A second identical apply performs no write.** Metadata is compared as unordered value/language pairs, because DSpace orders repeated values by `place` and that order need not match adapter order.
-
-The file manifest is reconciled as `crr.file.manifest` metadata, one JSON entry per source file. It describes the authoritative source whether or not a copy exists locally, which is what lets a mirrored and an unmirrored object be compared the same way. With the manifest comparable, `sync:diff` reports `SKIP_ITEM` once apply has run.
-
-The diff compares only the fields synchronization owns (`DspaceManagedFields`). DSpace's own bookkeeping — `dc.date.accessioned`, `dc.description.provenance`, handles — is deliberately left alone, and comparing whole items against it is why the diff previously could never settle.
-
-## Sequence - Search and Faceted Discovery
+## Discovery to workforce map
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor researcher as Public Researcher
-    participant ui as discovery-ui
-    participant effects as SearchEffects (NgRx)
+    actor researcher as Public researcher
+    participant discovery as Discovery page
+    participant maps as Maps NgRx feature
     participant api as repository-api
-    participant service as SearchService
-    participant solr as Solr discovery core
+    participant census as Census / LEHD sources
+    participant usgs as USGS services
 
-    researcher->>ui: Enters terms / selects a facet
-    ui->>ui: Write query into URL parameters
-    ui->>effects: SearchActions.searchSubmitted({query})
-    effects->>api: GET /api/search?q&program&geography&vintageYear&page&pageSize
-    api->>service: search(...)
-
-    alt Solr configured and reachable
-        service->>solr: GET /solr/discovery/select (edismax, facet.field)
-        Note right of service: Filter values are escaped before<br/>interpolation into the fq phrase
-        solr-->>service: Documents + facet counts
-    else Solr disabled or failing
-        Note over service: Falls back to the in-memory seed list<br/>so the demo degrades instead of erroring
+    researcher->>discovery: Search for an area and workforce topic
+    discovery->>maps: Navigate with geography, research context and workforce layer state
+    par Geography and workforce data
+        maps->>api: Area boundaries and map-layer definitions
+        maps->>api: LODES WAC workplace employment
+        maps->>api: LODES OD commuting flows
+        api->>census: Retrieve/aggregate published data where feasible
+        census-->>api: Public source records
+    and Context layers
+        maps->>api: SAIPE and optional USGS layers
+        api->>usgs: Hydrography or earthquake requests
+        usgs-->>api: Reference/event data or explicit fallback/error state
     end
-
-    service-->>api: SearchResponse (results + facet groups)
-    api-->>effects: 200 JSON
-    effects->>ui: SearchActions.searchLoaded({response})
-    ui->>researcher: Results, facet counts, and loading/empty/error states
+    api-->>maps: Typed layer and feature payloads with provenance
+    maps->>maps: Render map and equivalent tables/lists from shared state
+    researcher->>maps: Select from map or table, toggle layer, change area
+    maps->>maps: Synchronize selection, URL, focus and live-region announcement
 ```
 
-The `discovery` core is populated by `DiscoveryProjectionService` from DSpace items, so both the Solr path and the in-memory path serve repository content. When the repository returns nothing — DSpace down, unseeded, or genuinely empty — the fixture catalog is indexed instead and every response carries `resultSource: FIXTURE`, which the UI displays as a placeholder-data notice. Rebuild the projection at any time with `pnpm run reindex`.
-
-## Sequence - Dataset Map Rendering with USGS Overlay
+## Accessibility evidence refresh
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor researcher as Public Researcher
-    participant ui as discovery-ui (MapLibre GL)
-    participant effects as MapsEffects (NgRx)
-    participant api as repository-api
-    participant usgs as USGS Earthquake Catalog
+    actor engineer as Engineer
+    participant refresh as evidence:refresh
+    participant component as Component accessibility suite
+    participant browser as Playwright report suites
+    participant record as automated-scans/latest.json
+    participant manifest as API evidence manifest
 
-    researcher->>ui: Opens /maps or a dataset Map tab
-    ui->>effects: MapsActions.mapOpened()
-
-    par Census layers and boundaries
-        effects->>api: GET /api/datasets/{id}/map-layers
-        effects->>api: GET /api/maps/census-areas
-        api-->>effects: Layer definitions + boundary extents
-        effects->>ui: mapDataLoaded({layers, censusAreaBoundaries})
-    and USGS overlay
-        effects->>api: GET /api/overlays/usgs/earthquakes?minMagnitude&days
-        api->>usgs: GET /fdsnws/event/1/query (bounded, max 25 features)
-        alt Live feed responds
-            usgs-->>api: GeoJSON features
-        else Timeout, error, or empty result
-            Note over api: Returns the bundled fixture with<br/>fallback = true and a stale-after timestamp
-        end
-        api-->>effects: UsgsEarthquakeOverlay
-        effects->>ui: earthquakeOverlayLoaded({earthquakeOverlay})
+    engineer->>refresh: pnpm run evidence:refresh
+    refresh->>component: Run state-specific axe checks
+    component-->>refresh: Pass or fail
+    refresh->>browser: Run storyboard, WCAG and Section 508 suites
+    browser-->>refresh: Pass or fail
+    alt Every automated suite passes
+        refresh->>record: Write commit- and date-bound evidence
+        refresh->>manifest: Regenerate API manifest
+    else Any suite fails
+        refresh-->>engineer: Fail without replacing known-good evidence
     end
-
-    ui->>ui: Render layers, legend, attribution, timestamp
-    ui->>ui: Render the accessible feature list from the same data
-    ui->>researcher: Map plus keyboard-operable layer toggles
-    researcher->>ui: Toggles a layer
-    ui->>ui: Reflect toggle state in the URL
 ```
 
-The two effects are deliberately independent: a USGS outage degrades the overlay to an error or stale state while the Census layers stay usable. Accessibility requirements carried by this sequence — the feature list rendered from the same data as the map, the non-color-only legend, visible attribution and update timestamp, and keyboard-operable toggles — are specified in [mapping-visualization.md](mapping-visualization.md) and verified in the storyboard and WCAG suites.
+Manual keyboard, NVDA, JAWS, map-equivalence and cognitive records remain outside this automated sequence.
 
-## Known Seams
+## Current seams
 
-The discovery projection is reached through a `DiscoveryIndex` interface rather than by its Solr
-implementation. Three services previously depended on `SolrSearchClient` by its concrete type, which
-made a deliberately rebuildable component look permanent: `pnpm run reindex` discards and rewrites
-the projection from DSpace, so the engine behind it is an implementation choice.
-
-Naming that boundary is also what makes a question like "could this run on Amazon OpenSearch"
-answerable with a scope instead of a guess: one implementation of a seven-method interface, with
-DSpace keeping its own Solr either way. See
-[aws-modernization.md](aws-modernization.md) for the trade-offs.
-
-Places where the implementation is narrower than the architecture. Each is tracked in [planning/TODO.md](../planning/TODO.md).
-
-1. **Catalog contents are curated, not harvested.** `tools/dspace/catalog.json` lists which files exist and for which vintages. Per-file facts such as size and release date come from live HEAD requests where reachable; discovering the catalog itself from Census and USGS APIs is open (P1).
-2. **Mirroring is partial, by budget.** The assetstore holds 76 files, 1.00 GiB, about 58% of the subscribed bytes. Files above the per-file cap or beyond the total budget remain links. See [data-storage-sync.md](data-storage-sync.md#mirrored-bitstreams).
-3. **Live sync reconciliation covers TIGER/Line only.** One hundred eighty-one research objects are seeded from the catalog and read back through discovery, but startup/admin sync adapters reconcile metadata for the TIGER/Line source only. Other programs rely on the seed until additional adapters exist.
-4. **Live sync is dataset-shaped.** `PublicDatasetMetadata` carries no resource type, access level, license, DOI, researchers or relations, so the research-object model described in [open-science-research-objects.md](open-science-research-objects.md) reaches DSpace through the catalog and SAF path only (P2).
-
-Closed: discovery and dataset detail are served from DSpace. The fixture catalog remains only as a labelled fallback when the repository is unavailable.
+- The catalog is curated; publisher listing and vintage checks support it but do not automatically redefine repository composition.
+- Bitstream mirroring is bounded by budget rather than complete.
+- Curated research-package objects intentionally do not pretend to have publisher-derived adapter identities.
+- Manual assistive-technology and trusted map-click evidence is not yet recorded.
+- The full browser-evidence matrix is not yet a required CI check.
+- AWS architecture is documented but not expressed as Terraform/CDK.
+- Some route names and residual UI copy remain dataset-shaped while the domain model is research-object-shaped.

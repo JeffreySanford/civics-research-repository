@@ -1,46 +1,23 @@
 # Planning
 
-This directory tracks the implementation plan for Civics Research Repository.
+This directory contains future decisions, risks and executable work. Delivered history has moved to [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md), and current volatile facts are generated in [documentation/platform-status.md](../documentation/platform-status.md).
 
-## Current Planning Answer
+## Planning documents
 
-The first vertical slice is connected end to end. DSpace drives discovery and dataset detail, the datastore roles are named and documented, `pnpm run start:all` (alias `demo:up`) starts the full stack, Java DTOs are generated from OpenAPI, and architecture diagrams plus AWS modernization documentation are delivered.
+- [ROADMAP.md](ROADMAP.md): future outcomes and sequencing only.
+- [TODO.md](TODO.md): open tasks only.
+- [DECISIONS.md](DECISIONS.md): accepted and pending architectural decisions.
+- [RISKS.md](RISKS.md): active and closed delivery risks.
+- [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md): reference/demo acceptance criteria.
 
-What remains is breadth and explainability rather than scaffolding: live catalog harvesting in place of curated tables, the interview demo package, optional IaC for the documented AWS target, and recorded manual accessibility evidence.
+## Current planning priorities
 
-The near-term order, with rationale, is in [ROADMAP.md](ROADMAP.md#near-term-order) and tracked in [TODO.md](TODO.md#current-priorities):
+1. Record manual keyboard, NVDA, JAWS, map-equivalence and cognitive evidence.
+2. Add a dedicated browser-evidence CI workflow and decide merge/branch-protection policy.
+3. Harden source, sample/fallback and projection provenance.
+4. Finish research-object route and language cleanup.
+5. Expand publisher verification and optional federation carefully.
+6. Implement the documented AWS target as infrastructure-as-code.
+7. Continue dependency, contract and integration-test hardening.
 
-1. ~~Make DSpace drive one complete vertical slice.~~ **Delivered.**
-2. ~~Disambiguate the two PostgreSQL and two Solr systems.~~ **Delivered.**
-3. ~~Add a true one-command demo environment.~~ **Delivered** — `start:all` and `demo:up` share the same full-stack flow.
-4. ~~Diagrams and AWS modernization documentation.~~ **Delivered.**
-5. Manual accessibility evidence checklists **delivered**; a recorded run is outstanding.
-6. Catalog harvesting, demo walkthrough scripts, and Terraform/CDK for the documented AWS target.
-
-## Planning Documents
-
-- [TODO.md](TODO.md) - PI and sprint backlog.
-- [ROADMAP.md](ROADMAP.md) - implementation sequence and dependencies.
-- [DECISIONS.md](DECISIONS.md) - accepted and pending architecture decisions.
-- [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md) - first vertical-slice demo criteria.
-- [RISKS.md](RISKS.md) - delivery risks and mitigations.
-
-## Current Baseline
-
-- Repository exists on GitHub as `civics-research-repository`.
-- Nx workspace with Angular 22, Angular Material 22, Playwright, axe-core, NgRx, and generated libraries.
-- OpenAPI is the API source of truth; frontend TypeScript DTOs are generated from `schemas/openapi/repository-api.yaml` with a drift check.
-- `apps/repository-api` runs on Java 21 and Spring Boot, built with Gradle inside a container image.
-- DSpace 9.0, two PostgreSQL instances, and two Solr instances run under Docker Compose. `pnpm run start:all` activates the DSpace profile, seeds from `tools/dspace/catalog.json`, and reindexes before printing URLs.
-- Sync supports dry-run, diff, and idempotent apply against DSpace for Dublin Core and `crr.*` metadata.
-- Discovery, dataset detail, maps with USGS overlays, admin sync, and an evidence route are implemented in Angular.
-- `quality:all` covers formatting, OpenAPI lint and drift, lint, unit tests, build, storyboard, WCAG, and Section 508.
-
-## Remaining Decision Gates
-
-Only two are open:
-
-- Nx Java integration plugin — adopt only if project-graph awareness of Java sources becomes worth the dependency.
-- Generated Spring controller interfaces — deferred until the OpenAPI Generator supports Spring 7 conventions; model DTOs are already generated on every build.
-
-Everything else is recorded in [DECISIONS.md](DECISIONS.md).
+The architecture itself is delivered and documented. New work should close evidence, provenance, deployment and product-language seams rather than reopen settled boundaries such as DSpace ownership, the rebuildable discovery projection, or Java-owned integration orchestration.
