@@ -19,7 +19,7 @@ import org.civicsrepo.generated.dto.SyncJob;
 import org.civicsrepo.generated.dto.SyncSource;
 import org.civicsrepo.repository.DiscoveryProjectionService;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
-import org.civicsrepo.search.SolrSearchClient;
+import org.civicsrepo.search.DiscoveryIndex;
 import org.civicsrepo.sync.SyncService;
 import org.springframework.stereotype.Service;
 
@@ -36,17 +36,17 @@ public class AdminOverviewService {
             "crr.sourceUrl");
 
     private final DspaceRestClient dspaceRestClient;
-    private final SolrSearchClient solrSearchClient;
+    private final DiscoveryIndex discoveryIndex;
     private final DiscoveryProjectionService discoveryProjectionService;
     private final SyncService syncService;
 
     public AdminOverviewService(
             DspaceRestClient dspaceRestClient,
-            SolrSearchClient solrSearchClient,
+            DiscoveryIndex discoveryIndex,
             DiscoveryProjectionService discoveryProjectionService,
             SyncService syncService) {
         this.dspaceRestClient = dspaceRestClient;
-        this.solrSearchClient = solrSearchClient;
+        this.discoveryIndex = discoveryIndex;
         this.discoveryProjectionService = discoveryProjectionService;
         this.syncService = syncService;
     }
@@ -106,21 +106,21 @@ public class AdminOverviewService {
 
     public SolrOverview solrOverview() {
         SolrOverview overview =
-                new SolrOverview(solrSearchClient.isEnabled(), solrSearchClient.isReachable());
+                new SolrOverview(discoveryIndex.isEnabled(), discoveryIndex.isReachable());
 
-        if (!solrSearchClient.isEnabled()) {
+        if (!discoveryIndex.isEnabled()) {
             return overview.statusMessage(
                     "Discovery Solr is disabled. Set CIVICS_SOLR_BASE_URL to enable indexed document counts.");
         }
 
-        if (!solrSearchClient.baseUrl().isBlank()) {
-            overview.baseUrl(solrSearchClient.baseUrl());
+        if (!discoveryIndex.baseUrl().isBlank()) {
+            overview.baseUrl(discoveryIndex.baseUrl());
         }
-        if (!solrSearchClient.coreName().isBlank()) {
-            overview.core(solrSearchClient.coreName());
+        if (!discoveryIndex.indexName().isBlank()) {
+            overview.core(discoveryIndex.indexName());
         }
 
-        Optional<Integer> indexedCount = solrSearchClient.documentCount();
+        Optional<Integer> indexedCount = discoveryIndex.documentCount();
         indexedCount.ifPresent(overview::indexedDocumentCount);
 
         ProjectionState projection = discoveryProjectionService.state();
@@ -151,7 +151,7 @@ public class AdminOverviewService {
     }
 
     private List<ProgramCount> resolveProgramCounts(List<SyncJob> recentJobs) {
-        Map<ResearchProgram, Integer> solrCounts = solrSearchClient.programFacetCounts();
+        Map<ResearchProgram, Integer> solrCounts = discoveryIndex.programFacetCounts();
         if (!solrCounts.isEmpty()) {
             return solrCounts.entrySet().stream()
                     .sorted(Comparator.comparing((entry) -> entry.getKey().getValue()))

@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SolrSearchClient {
+public class SolrSearchClient implements DiscoveryIndex {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final String PHRASE_SYNTAX_CHARACTERS = "\\\"";
 
@@ -49,24 +49,29 @@ public class SolrSearchClient {
         this.core = core;
     }
 
+    @Override
     public boolean isEnabled() {
         return !baseUrl.isBlank() && !core.isBlank();
     }
 
+    @Override
     public String baseUrl() {
         return baseUrl;
     }
 
-    public String coreName() {
+    @Override
+    public String indexName() {
         return core;
     }
 
     /** Cheap liveness probe against the configured discovery core. */
+    @Override
     public boolean isReachable() {
         return documentCount().isPresent();
     }
 
     /** Document count in the configured core, when Solr is enabled and answering. */
+    @Override
     public Optional<Integer> documentCount() {
         if (!isEnabled()) {
             return Optional.empty();
@@ -92,6 +97,7 @@ public class SolrSearchClient {
     }
 
     /** Program facet counts from the discovery core, when Solr is reachable. */
+    @Override
     public Map<ResearchProgram, Integer> programFacetCounts() {
         if (!isEnabled()) {
             return Map.of();
@@ -130,6 +136,7 @@ public class SolrSearchClient {
         }
     }
 
+    @Override
     public void indexResearchObjects(List<DiscoveryDocument> objects) {
         if (!isEnabled()) {
             return;
@@ -160,6 +167,7 @@ public class SolrSearchClient {
         }
     }
 
+    @Override
     public SearchResponse search(
             String query,
             List<ResearchProgram> programs,

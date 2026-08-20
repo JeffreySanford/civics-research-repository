@@ -6,7 +6,7 @@ import org.civicsrepo.generated.dto.RepositorySource;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import org.civicsrepo.search.SolrSearchClient;
+import org.civicsrepo.search.DiscoveryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,14 +28,14 @@ public class DiscoveryProjectionService {
 
     private final RepositoryCatalog repositoryCatalog;
     private final RepositoryIdentityStore repositoryIdentityStore;
-    private final SolrSearchClient solrSearchClient;
+    private final DiscoveryIndex discoveryIndex;
     private final AtomicReference<ProjectionState> state =
             new AtomicReference<>(new ProjectionState(RepositorySource.FIXTURE, 0, null));
 
-    public DiscoveryProjectionService(RepositoryCatalog repositoryCatalog, SolrSearchClient solrSearchClient, RepositoryIdentityStore repositoryIdentityStore) {
+    public DiscoveryProjectionService(RepositoryCatalog repositoryCatalog, DiscoveryIndex discoveryIndex, RepositoryIdentityStore repositoryIdentityStore) {
         this.repositoryIdentityStore = repositoryIdentityStore;
         this.repositoryCatalog = repositoryCatalog;
-        this.solrSearchClient = solrSearchClient;
+        this.discoveryIndex = discoveryIndex;
     }
 
     /** What the discovery index currently holds. */
@@ -61,9 +61,9 @@ public class DiscoveryProjectionService {
         List<DiscoveryDocument> results = repositoryBacked ? repositoryObjects : fixtureFallback;
         RepositorySource source = repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
 
-        if (solrSearchClient.isEnabled()) {
+        if (discoveryIndex.isEnabled()) {
             try {
-                solrSearchClient.indexResearchObjects(results);
+                discoveryIndex.indexResearchObjects(results);
             } catch (RuntimeException exception) {
                 LOGGER.warn(
                         "Discovery indexing failed; in-memory search remains available: {}", exception.getMessage());

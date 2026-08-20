@@ -213,6 +213,16 @@ The two effects are deliberately independent: a USGS outage degrades the overlay
 
 ## Known Seams
 
+The discovery projection is reached through a `DiscoveryIndex` interface rather than by its Solr
+implementation. Three services previously depended on `SolrSearchClient` by its concrete type, which
+made a deliberately rebuildable component look permanent: `pnpm run reindex` discards and rewrites
+the projection from DSpace, so the engine behind it is an implementation choice.
+
+Naming that boundary is also what makes a question like "could this run on Amazon OpenSearch"
+answerable with a scope instead of a guess: one implementation of a seven-method interface, with
+DSpace keeping its own Solr either way. See
+[aws-modernization.md](aws-modernization.md) for the trade-offs.
+
 Places where the implementation is narrower than the architecture. Each is tracked in [planning/TODO.md](../planning/TODO.md).
 
 1. **Catalog contents are curated, not harvested.** `tools/dspace/catalog.json` lists which files exist and for which vintages. Per-file facts such as size and release date come from live HEAD requests where reachable; discovering the catalog itself from Census and USGS APIs is open (P1).

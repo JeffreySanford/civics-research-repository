@@ -13,7 +13,7 @@ import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.evidence.AccessibilityEvidenceController;
 import org.civicsrepo.maps.MapsController;
 import org.civicsrepo.search.SearchController;
-import org.civicsrepo.search.SolrSearchClient;
+import org.civicsrepo.search.DiscoveryIndex;
 import org.civicsrepo.sync.SyncController;
 import org.civicsrepo.sync.SyncJobStore;
 import org.civicsrepo.sync.SyncProperties;
@@ -80,7 +80,10 @@ class RepositoryApiApplicationContextTest {
 
         assertThat(dspaceRestClient.isReadEnabled()).isFalse();
         assertThat(dspaceRestClient.isWriteEnabled()).isFalse();
-        assertThat(applicationContext.getBean(SolrSearchClient.class).isEnabled()).isFalse();
+        // Resolved through the interface: that is what proves exactly one discovery index is
+        // wired, and it is the assertion that would fail first if a second implementation
+        // were added without a qualifier.
+        assertThat(applicationContext.getBean(DiscoveryIndex.class).isEnabled()).isFalse();
     }
 
     @Test

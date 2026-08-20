@@ -18,7 +18,7 @@ import org.civicsrepo.generated.dto.SyncSource;
 import org.civicsrepo.generated.dto.SyncStatus;
 import org.civicsrepo.repository.DiscoveryProjectionService;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
-import org.civicsrepo.search.SolrSearchClient;
+import org.civicsrepo.search.DiscoveryIndex;
 import org.civicsrepo.sync.SyncService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +34,7 @@ class AdminOverviewServiceTest {
     private DspaceRestClient dspaceRestClient;
 
     @Mock
-    private SolrSearchClient solrSearchClient;
+    private DiscoveryIndex discoveryIndex;
 
     @Mock
     private DiscoveryProjectionService discoveryProjectionService;
@@ -67,7 +67,7 @@ class AdminOverviewServiceTest {
                 .willReturn(List.of(new DspaceRestClient.ContainerSummary(
                         "22222222-2222-4222-8222-222222222222", "TIGER/Line Geospatial Files")));
         given(dspaceRestClient.countDiscoverableItems()).willReturn(Optional.of(2));
-        given(solrSearchClient.programFacetCounts())
+        given(discoveryIndex.programFacetCounts())
                 .willReturn(Map.of(ResearchProgram.TIGER_LINE, 2));
 
         var overview = adminOverviewService.dspaceOverview();
@@ -101,11 +101,11 @@ class AdminOverviewServiceTest {
 
     @Test
     void buildsSolrOverviewWithProjectionMetadata() {
-        given(solrSearchClient.isEnabled()).willReturn(true);
-        given(solrSearchClient.isReachable()).willReturn(true);
-        given(solrSearchClient.baseUrl()).willReturn("http://localhost:8983/solr");
-        given(solrSearchClient.coreName()).willReturn("discovery");
-        given(solrSearchClient.documentCount()).willReturn(Optional.of(4));
+        given(discoveryIndex.isEnabled()).willReturn(true);
+        given(discoveryIndex.isReachable()).willReturn(true);
+        given(discoveryIndex.baseUrl()).willReturn("http://localhost:8983/solr");
+        given(discoveryIndex.indexName()).willReturn("discovery");
+        given(discoveryIndex.documentCount()).willReturn(Optional.of(4));
         given(discoveryProjectionService.state())
                 .willReturn(new ProjectionState(
                         RepositorySource.REPOSITORY, 4, OffsetDateTime.parse("2026-08-11T19:00:05Z")));

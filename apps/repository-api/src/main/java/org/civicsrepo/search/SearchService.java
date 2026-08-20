@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SearchService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchService.class);
-    private final SolrSearchClient solrSearchClient;
+    private final DiscoveryIndex discoveryIndex;
     private final RepositoryCatalog repositoryCatalog;
     private final FixtureCatalog fixtureCatalog;
 
@@ -39,8 +39,8 @@ public class SearchService {
 
     @Autowired
     public SearchService(
-            SolrSearchClient solrSearchClient, RepositoryCatalog repositoryCatalog, FixtureCatalog fixtureCatalog) {
-        this.solrSearchClient = solrSearchClient;
+            DiscoveryIndex discoveryIndex, RepositoryCatalog repositoryCatalog, FixtureCatalog fixtureCatalog) {
+        this.discoveryIndex = discoveryIndex;
         this.repositoryCatalog = repositoryCatalog;
         this.fixtureCatalog = fixtureCatalog;
     }
@@ -72,9 +72,9 @@ public class SearchService {
         // Solr holds the projection built by DiscoveryProjectionService, so it is the fast path for
         // both repository-backed and fixture-backed content. Its source label comes from what was
         // last projected, not from the query.
-        if (solrSearchClient != null && solrSearchClient.isEnabled()) {
+        if (discoveryIndex != null && discoveryIndex.isEnabled()) {
             try {
-                return solrSearchClient
+                return discoveryIndex
                         .search(query, programs, geography, contentType, vintageYear, page, pageSize)
                         // The generated model is mutable, and this response was just built by the
                         // client for this call, so relabelling it in place is safe.
