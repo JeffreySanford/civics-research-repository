@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-12T00:00:00Z",
-  "commit": "unknown",
+  "capturedAt": "2026-08-20T17:34:15.635Z",
+  "commit": "c94310c711ba42e87ee0c6566e3d387d97268306",
   "capabilities": {
-    "componentAccessibility": false,
-    "forcedColors": false
+    "componentAccessibility": true,
+    "forcedColors": true
   },
   "componentAccessibility": {
     "status": "AUTOMATED_PASS",

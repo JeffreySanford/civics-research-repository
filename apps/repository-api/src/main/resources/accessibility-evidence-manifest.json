@@ -1,43 +1,59 @@
 [
   {
-    "id": "axe-wcag-2026-08-12",
+    "id": "component-a11y-2026-08-20",
+    "workflow": "Component-state axe scans",
+    "status": "AUTOMATED_PASS",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-20T17:34:15.635Z",
+    "notes": "Loading, failure, empty, publication, restricted, and other component states passed structural axe checks. Command: pnpm run a11y:components. Commit: c94310c7."
+  },
+  {
+    "id": "axe-wcag-2026-08-20",
     "workflow": "Browser WCAG accessibility suite",
     "status": "AUTOMATED_PASS",
     "standard": "WCAG_2_1_AA",
-    "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "Automated browser evidence passed. Command: pnpm run e2e:reports. Commit: unknown. Covers axe WCAG 2.0/2.1 A/AA tags plus the repository's WCAG-tagged structural, reflow, contrast, and interaction assertions."
+    "capturedAt": "2026-08-20T17:34:15.635Z",
+    "notes": "Automated browser evidence passed. Command: pnpm run e2e:reports. Commit: c94310c7. Covers axe WCAG 2.0/2.1 A/AA tags plus the repository's WCAG-tagged structural, reflow, contrast, and interaction assertions."
   },
   {
-    "id": "section508-2026-08-12",
+    "id": "section508-2026-08-20",
     "workflow": "Section 508 tagged browser evidence",
     "status": "AUTOMATED_PASS",
     "standard": "SECTION_508",
-    "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "Automated browser evidence passed. Command: pnpm run e2e:reports. Commit: unknown. This is automated web/ICT evidence; it does not replace the recorded keyboard, NVDA, JAWS, or map-equivalence review."
+    "capturedAt": "2026-08-20T17:34:15.635Z",
+    "notes": "Automated browser evidence passed. Command: pnpm run e2e:reports. Commit: c94310c7. This is automated web/ICT evidence; it does not replace the recorded keyboard, NVDA, JAWS, or map-equivalence review."
   },
   {
-    "id": "structural-2026-08-12",
+    "id": "structural-2026-08-20",
     "workflow": "Structural accessibility preconditions",
     "status": "AUTOMATED_PASS",
     "standard": "WCAG_2_1_AA",
-    "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "Titles, heading outline, landmarks, tab order, accessible names/descriptions, control state, live regions, alerts, and map-list preconditions passed on commit unknown."
+    "capturedAt": "2026-08-20T17:34:15.635Z",
+    "notes": "Titles, heading outline, landmarks, tab order, accessible names/descriptions, control state, live regions, alerts, and map-list preconditions passed on commit c94310c7."
   },
   {
-    "id": "reflow-contrast-2026-08-12",
+    "id": "reflow-contrast-2026-08-20",
     "workflow": "Reflow, resize text, and AA color contrast",
     "status": "AUTOMATED_PASS",
     "standard": "WCAG_2_1_AA",
-    "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "320px reflow, 200% zoom/resize operability, and isolated AA contrast checks passed on commit unknown."
+    "capturedAt": "2026-08-20T17:34:15.635Z",
+    "notes": "320px reflow, 200% zoom/resize operability, and isolated AA contrast checks passed on commit c94310c7."
   },
   {
-    "id": "storyboard-2026-08-12",
+    "id": "forced-colors-2026-08-20",
+    "workflow": "Forced-colors and dark-mode accessibility",
+    "status": "AUTOMATED_PASS",
+    "standard": "WCAG_2_1_AA",
+    "capturedAt": "2026-08-20T17:34:15.635Z",
+    "notes": "Chromium forced-colors assertions and dark-mode axe scans passed as part of the WCAG-tagged browser suite on commit c94310c7."
+  },
+  {
+    "id": "storyboard-2026-08-20",
     "workflow": "Demo storyboard workflows",
     "status": "AUTOMATED_PASS",
     "standard": "WCAG_2_1_AA",
-    "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "Primary discovery, research-object, map, admin-sync, and failure-state workflows passed as part of pnpm run e2e:reports on commit unknown."
+    "capturedAt": "2026-08-20T17:34:15.635Z",
+    "notes": "Primary discovery, research-object, map, admin-sync, and failure-state workflows passed as part of pnpm run e2e:reports on commit c94310c7."
   },
   {
     "id": "keyboard-checklist",
