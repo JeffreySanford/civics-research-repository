@@ -225,10 +225,12 @@
             Subscribed, mirrored, curated, indexed
           </h2>
           <p>
-            The repository subscribes to far more than it stores. These four
-            numbers describe that: what the publishers hold, how much of it the
+            The repository subscribes to more source material than it preserves
+            locally. These four measures show what the repository references at
+            publisher sources, how much of the measured source data the DSpace
             assetstore preserves as bitstreams, what has been curated into
-            DSpace as research objects, and what Solr is serving to discovery.
+            DSpace as research objects, and what the separate Solr projection is
+            serving for discovery.
           </p>
 
           <!-- Hero numbers, not a chart: four totals in three different units. A chart would
@@ -240,9 +242,9 @@
                 {{ formatBytes(stages.subscribedBytes) }}
               </dd>
               <dd class="pipeline-stat-note">
-                {{ stages.subscribedFiles }} distinct files across {{
+                {{ stages.subscribedFiles }} distinct referenced files across {{
                 stages.subscribedObjects }} research objects. {{
-                stages.measuredFiles }} reported a length.
+                stages.measuredFiles }} reported a measurable length.
               </dd>
             </div>
             <div class="pipeline-stat">
@@ -251,9 +253,10 @@
                 {{ formatBytes(stages.mirroredBytes) }}
               </dd>
               <dd class="pipeline-stat-note">
-                {{ stages.mirroredFiles }} bitstreams, {{ stages.mirroredPercent
-                }}% of the subscribed bytes. Mirroring is capped per file and
-                budgeted overall; everything else stays a link.
+                {{ stages.mirroredFiles }} DSpace bitstreams, about {{
+                stages.mirroredPercent }}% of the measured subscribed bytes.
+                Mirroring is capped per file and budgeted overall; other files
+                retain publisher URLs and manifests.
               </dd>
             </div>
             <div class="pipeline-stat">
@@ -262,8 +265,9 @@
                 {{ stages.curatedItems }} items
               </dd>
               <dd class="pipeline-stat-note">
-                Described and preserved in {{ stages.curatedCollections }}
-                DSpace collection(s), each with a handle and checksums.
+                Described in {{ stages.curatedCollections }} DSpace collection(s)
+                with repository identity and handles; preserved bitstreams carry
+                checksums where source files are mirrored.
               </dd>
             </div>
             <div class="pipeline-stat">
@@ -272,7 +276,8 @@
                 {{ stages.indexedDocuments }} documents
               </dd>
               <dd class="pipeline-stat-note">
-                Solr projection, source {{ stages.indexedSource ?? 'unknown' }}.
+                Rebuildable Solr discovery projection sourced from DSpace; source
+                {{ stages.indexedSource ?? 'unknown' }}.
               </dd>
             </div>
           </dl>
@@ -323,11 +328,14 @@
           aria-labelledby="pipeline-programs-heading"
           class="content-panel"
         >
-          <h2 id="pipeline-programs-heading">Subscribed data by program</h2>
+          <h2 id="pipeline-programs-heading">
+            Measured subscribed data by program
+          </h2>
           <p>
             Measured file size per program, largest first. Bars are drawn
             relative to the largest program, not to the total, so the smaller
-            programs stay legible.
+            programs stay legible. A 0 B row means no measurable content length
+            was reported; it does not mean the program contains no data.
           </p>
 
           <!-- One series, one hue: this is magnitude, not identity, so no legend and no
@@ -352,7 +360,7 @@
 
           <table class="evidence-table">
             <caption>
-              Subscribed source data by program, as last measured.
+              Measured subscribed source data by program, as last measured.
             </caption>
             <thead>
               <tr>
