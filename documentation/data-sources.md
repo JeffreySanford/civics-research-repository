@@ -12,6 +12,35 @@ Public resources should be selected when they support a repository-style researc
 - Program, subject, geography, and version metadata.
 - Reasonable public access terms.
 
+## Vintage Currency
+
+`pnpm run verify:vintages` reports where the catalog's vintage is behind what the publisher offers.
+
+This is the useful half of "harvest the catalog from live publishers", and it is worth being precise
+about which half is achievable:
+
+**Discoverable.** Census publishes bulk files on an autoindexed host, so which vintages exist can be
+read directly — `/geo/tiger/` lists TIGER2020 through TIGER2025, LEHD lists one file per year.
+Where a program's listing exists, the check reads it and compares.
+
+**Not discoverable.** `api.census.gov/data.json` catalogs the Census _Data API_, not the file server.
+All 1,798 datasets carry a `distribution` block, but its `accessURL` points at api.census.gov and
+`downloadURL` is absent throughout. So the file naming inside a vintage — `jan26pub.zip`,
+`tl_2025_38_tract.zip`, `csv_pnd.zip` — still has to be curated, and lives as a URL template in
+`catalog.json`.
+
+**The check reports; it does not rewrite.** A new vintage does not guarantee the file names carry
+over, and a script that bumped the year automatically would produce a catalog full of plausible URLs
+that 404 — precisely the failure this repository has spent its effort removing. A person reads the
+report and edits the template.
+
+Where a program has a `vintageIndex`, it sits beside the program in `catalog.json` rather than in
+the checking script. A second table is the drift this repository keeps deleting: the CPS adapter
+spent months pinned to a vintage the catalog never seeded, and nothing compared the two.
+
+Eight of the fourteen programs have no listing to check yet, and the report names them rather than
+passing over them silently.
+
 ## Census Collections
 
 ### American Community Survey PUMS

@@ -298,6 +298,10 @@
       "enabled": true,
       "scope": "area",
       "vintage": 2025,
+      "vintageIndex": {
+        "url": "https://www2.census.gov/geo/tiger/",
+        "pattern": "TIGER(20\\d{2})"
+      },
       "geographyLevel": "Census tract",
       "idTemplate": "tiger-line-{areaSlug}-{vintage}",
       "titleTemplate": "{vintage} TIGER/Line - Census Tracts - {area}",
@@ -334,6 +338,10 @@
       "enabled": true,
       "scope": "area",
       "vintage": 2023,
+      "vintageIndex": {
+        "url": "https://lehd.ces.census.gov/data/lodes/LODES8/nd/wac/",
+        "pattern": "_JT00_(20\\d{2})\\.csv\\.gz"
+      },
       "geographyLevel": "Census block",
       "idTemplate": "lodes-wac-{areaSlug}-{vintage}",
       "titleTemplate": "{vintage} LODES Workplace Area Characteristics - {area}",
@@ -370,6 +378,10 @@
       "enabled": true,
       "scope": "area",
       "vintage": 2024,
+      "vintageIndex": {
+        "url": "https://www2.census.gov/programs-surveys/acs/data/pums/",
+        "pattern": ">(20\\d{2})/"
+      },
       "geographyLevel": "Public use microdata area",
       "idTemplate": "acs-pums-{areaSlug}-{vintage}",
       "titleTemplate": "{vintage} ACS 1-Year PUMS - {area}",
@@ -400,6 +412,10 @@
       "enabled": true,
       "scope": "national",
       "vintage": 2025,
+      "vintageIndex": {
+        "url": "https://www2.census.gov/programs-surveys/sipp/data/datasets/",
+        "pattern": ">(20\\d{2})/"
+      },
       "geography": "United States",
       "geographyLevel": "National",
       "idTemplate": "sipp-public-use-{vintage}",
@@ -431,6 +447,10 @@
       "enabled": true,
       "scope": "national",
       "vintage": 2026,
+      "vintageIndex": {
+        "url": "https://www2.census.gov/programs-surveys/cps/datasets/",
+        "pattern": ">(20\\d{2})/"
+      },
       "geography": "United States",
       "geographyLevel": "National",
       "idTemplate": "cps-public-use-{vintage}",
@@ -641,6 +661,10 @@
       "enabled": true,
       "scope": "national",
       "vintage": 2024,
+      "vintageIndex": {
+        "url": "https://www2.census.gov/programs-surveys/saipe/datasets/",
+        "pattern": ">(20\\d{2})/"
+      },
       "geography": "United States",
       "geographyLevel": "County",
       "idTemplate": "saipe-{vintage}",

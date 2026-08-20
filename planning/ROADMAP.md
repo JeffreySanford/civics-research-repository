@@ -48,12 +48,21 @@ Both halves of the workforce question are now answered: proportional circles fro
 show where the jobs are, the commuting lines show who travels to them, and the view opens with both.
 Tracked as P14 in [TODO.md](TODO.md).
 
-### 3. Harvest the catalog from live publishers
+### 3. Harvest the catalog from live publishers — partially delivered
 
-Which files exist, and for which vintages, is still curated in `tools/dspace/catalog.json` rather than
-discovered from Census and USGS APIs. Per-file facts such as size and release date already come from
-live HEAD requests where reachable; catalog discovery is the larger open ingestion piece. Tracked as
-the open item under P1 in [TODO.md](TODO.md#current-priorities).
+**Vintage currency is done.** `pnpm run verify:vintages` reads each program's publisher listing and
+reports where the catalog is behind, with `--strict` for a gate. Six of fourteen programs have a
+listing defined; the rest are named as unchecked rather than passed over. Verified by rewinding CPS
+to the vintage that was actually broken, which the check reports as BEHIND and exits non-zero on.
+
+**File discovery is not, and the reason is worth recording.** `api.census.gov/data.json` catalogs
+the Census Data API rather than the file server: all 1,798 datasets carry a `distribution` block
+whose `accessURL` points at api.census.gov and whose `downloadURL` is absent. The bulk file names
+cannot be read from an API, so they stay curated as URL templates in `catalog.json`.
+
+What remains is adding listings for the eight programs that have none, and deciding whether a
+newer-vintage report should ever become an automatic edit. It probably should not: a new vintage
+frequently renames files, and an automatic bump would fill the catalog with plausible 404s.
 
 ### 4. Persistent repository identity
 
