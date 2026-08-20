@@ -80,6 +80,7 @@ export class EvidencePage implements OnInit {
   protected readonly evidenceStatusLabel = evidenceStatusLabel;
   protected readonly standardLabel = standardLabel;
   protected readonly extractArtifactPath = extractArtifactPath;
+  protected readonly buildReportArtifacts = buildReportArtifacts;
   protected readonly indexEvidenceById = indexEvidenceById;
 
   constructor() {
