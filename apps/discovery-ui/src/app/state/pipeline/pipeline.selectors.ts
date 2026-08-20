@@ -59,10 +59,10 @@ export const selectSourceProgramRows = createSelector(
  * The pipeline read as four stages.
  *
  * `subscribed` is what the publishers hold, `mirrored` what the assetstore has as bitstreams,
- * `curated` what DSpace has as items, `indexed` what Solr serves. Mirroring is bounded — a per-file
- * cap and a total budget — so `mirroredBytes` is a fraction of `subscribedBytes` by design, and the
- * ratio is worth showing rather than hiding: it is the difference between a repository that
- * preserves bytes and one that only points at them.
+ * `curated` what DSpace has as items, `indexed` what Solr serves. Mirroring is bounded by a total
+ * preservation budget rather than an independent per-file cap, so `mirroredBytes` can remain a
+ * fraction of `subscribedBytes` by design. The ratio is worth showing rather than hiding: it is the
+ * difference between a repository that preserves bytes and one that only points at them.
  *
  * Both figures come from the API, which asks DSpace. Neither is derived from the mirror manifest,
  * which records what a seed run intended to stage rather than what was imported.
