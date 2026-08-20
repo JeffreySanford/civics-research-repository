@@ -53,14 +53,36 @@ function gitSha() {
 }
 
 function run(command, args) {
-  const executable =
-    process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command;
   console.log(`\n> ${command} ${args.join(' ')}\n`);
-  const result = spawnSync(executable, args, {
+
+  let executable = command;
+  let commandArgs = args;
+
+  // Windows cannot execute pnpm.cmd reliably through spawnSync with shell:false.
+  // When this script was itself started by pnpm, reuse pnpm's JS entry point through
+  // the current Node executable. This avoids cmd.exe quoting issues entirely.
+  if (command === 'pnpm' && process.env.npm_execpath) {
+    executable = process.execPath;
+    commandArgs = [process.env.npm_execpath, ...args];
+  } else if (process.platform === 'win32' && command === 'pnpm') {
+    // Direct `node tools/scripts/accessibility-evidence.mjs --refresh` does not
+    // necessarily have npm_execpath. In that case invoke pnpm through cmd.exe.
+    executable = process.env.ComSpec || 'cmd.exe';
+    commandArgs = ['/d', '/s', '/c', `pnpm ${args.join(' ')}`];
+  }
+
+  const result = spawnSync(executable, commandArgs, {
     cwd: ROOT,
     stdio: 'inherit',
     shell: false,
   });
+
+  if (result.error) {
+    throw new Error(
+      `Could not launch ${command} ${args.join(' ')}: ${result.error.message}`,
+      { cause: result.error },
+    );
+  }
 
   if (result.status !== 0) {
     throw new Error(
