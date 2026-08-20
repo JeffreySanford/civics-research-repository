@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import prettier from 'prettier';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const root = join(scriptDir, '..', '..');
@@ -183,7 +184,9 @@ Automated coverage includes template linting, component-state axe scans, browser
 \`pnpm run evidence:refresh\` records a new accessibility baseline only after all automated suites pass.
 `;
 
-const normalized = `${markdown.trim()}\n`;
+const normalized = await prettier.format(`${markdown.trim()}\n`, {
+  parser: 'markdown',
+});
 if (checkOnly) {
   const current = readFileSync(outputPath, 'utf8');
   if (current !== normalized) {
