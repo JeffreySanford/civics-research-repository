@@ -17,6 +17,9 @@ import java.util.List;
 public final class DspaceManagedFields {
     public static final String SOURCE_IDENTIFIER_FIELD = DspaceItemMatcher.SOURCE_IDENTIFIER_FIELD;
 
+    /** Publisher URL, named so the identity store and this field list cannot drift apart. */
+    public static final String SOURCE_URL_FIELD = "crr.source.url";
+
     public static final List<String> ALL = List.of(
             "dc.title",
             "dc.contributor.author",

@@ -17,6 +17,7 @@ import org.civicsrepo.generated.dto.SyncStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.civicsrepo.repository.RepositoryIdentityStore;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,6 +28,9 @@ class AdminOverviewControllerTest {
 
     @MockitoBean
     private AdminOverviewService adminOverviewService;
+
+    @MockitoBean
+    private RepositoryIdentityStore repositoryIdentityStore;
 
     @MockitoBean
     private SourceInventoryService sourceInventoryService;

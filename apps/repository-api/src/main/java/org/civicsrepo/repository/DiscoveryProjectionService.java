@@ -27,11 +27,13 @@ public class DiscoveryProjectionService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryProjectionService.class);
 
     private final RepositoryCatalog repositoryCatalog;
+    private final RepositoryIdentityStore repositoryIdentityStore;
     private final SolrSearchClient solrSearchClient;
     private final AtomicReference<ProjectionState> state =
             new AtomicReference<>(new ProjectionState(RepositorySource.FIXTURE, 0, null));
 
-    public DiscoveryProjectionService(RepositoryCatalog repositoryCatalog, SolrSearchClient solrSearchClient) {
+    public DiscoveryProjectionService(RepositoryCatalog repositoryCatalog, SolrSearchClient solrSearchClient, RepositoryIdentityStore repositoryIdentityStore) {
+        this.repositoryIdentityStore = repositoryIdentityStore;
         this.repositoryCatalog = repositoryCatalog;
         this.solrSearchClient = solrSearchClient;
     }
@@ -69,6 +71,10 @@ public class DiscoveryProjectionService {
         } else {
             LOGGER.info("Solr is disabled; discovery will answer from in-memory results.");
         }
+
+        // Stamped after indexing, not before: an object is "indexed" once discovery could return it.
+        repositoryIdentityStore.recordIndexed(
+                results.stream().map((document) -> document.result().getId()).toList());
 
         ProjectionState projected = new ProjectionState(source, results.size(), OffsetDateTime.now());
         state.set(projected);

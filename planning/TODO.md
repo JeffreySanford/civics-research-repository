@@ -178,9 +178,9 @@ A DSpace UUID is resolved per operation and discarded. Every subsystem independe
 the string `tiger-line-north-dakota-2025`: sync looks it up by discovery search, the projection keys
 on it, the UI routes on it. Nothing records that this source identifier became that repository item.
 
-- [ ] Persist the DSpace UUID on the sync job alongside the source identifier, so a source and the item it became are linked rather than re-derived.
-- [ ] Record source freshness per item (publisher last-modified and the time it was checked) so drift is visible without re-probing.
-- [ ] Record the discovery indexing timestamp, closing the identity chain: source identifier -> DSpace UUID -> Solr document -> route.
+- [x] Persist the DSpace UUID. Recorded in a `repository_objects` table keyed by source identifier, written when the gateway resolves the item — before deciding whether a patch is needed, so an already-current object still gets an identity.
+- [ ] Record source freshness per item. The column exists and is stamped when the gateway resolves an item; the publisher's own last-modified is still only read during inventory sweeps rather than stored per object.
+- [x] Record the discovery indexing timestamp. Stamped by the projection after indexing. Live: 181 identifiers known, 181 indexed, 1 with a DSpace UUID — the last number is sync adapter coverage, which the table now makes visible instead of leaving implicit.
 - [ ] Decide whether `/datasets/:id` should resolve a UUID as well as a source identifier, once identity is persistent.
 
 ### P14 - Discovery to map

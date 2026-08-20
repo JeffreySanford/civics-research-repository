@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.civicsrepo.repository.RepositoryIdentityStore;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,9 +14,12 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
     private static final List<String> WRITABLE_METADATA_FIELDS = DspaceManagedFields.ALL;
 
     private final DspaceRestClient dspaceRestClient;
+    private final RepositoryIdentityStore repositoryIdentityStore;
 
-    public DspaceRestItemWriteGateway(DspaceRestClient dspaceRestClient) {
+    public DspaceRestItemWriteGateway(
+            DspaceRestClient dspaceRestClient, RepositoryIdentityStore repositoryIdentityStore) {
         this.dspaceRestClient = dspaceRestClient;
+        this.repositoryIdentityStore = repositoryIdentityStore;
     }
 
     @Override
@@ -31,13 +35,26 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
                 .orElseThrow(() -> new IllegalStateException("DSpace item was not found for " + sourceIdentifier
                         + ". Run pnpm run dspace:seed to create the seed repository objects."));
 
+        String itemUuid = item.path("uuid").asText();
+
+        // Recorded before deciding whether to write. Resolving the item is what establishes the
+        // identity; whether its metadata happened to need patching is a separate question, and
+        // recording only on write would leave every already-current object without one.
+        repositoryIdentityStore.recordDspaceItem(sourceIdentifier, itemUuid, sourceUrlOf(sourcePayload));
+
         List<Map<String, Object>> patchOperations = metadataPatchOperations(item, sourceIdentifier, sourcePayload);
         if (patchOperations.isEmpty()) {
             return false;
         }
 
-        dspaceRestClient.patchItemMetadata(item.path("uuid").asText(), patchOperations);
+        dspaceRestClient.patchItemMetadata(itemUuid, patchOperations);
         return true;
+    }
+
+    /** The publisher URL from the payload's own metadata, so the identity row records provenance. */
+    private String sourceUrlOf(DspaceItemPayload sourcePayload) {
+        List<DspaceMetadataValue> values = sourcePayload.metadata().get(DspaceManagedFields.SOURCE_URL_FIELD);
+        return values == null || values.isEmpty() ? null : values.getFirst().value();
     }
 
     List<Map<String, Object>> metadataPatchOperations(

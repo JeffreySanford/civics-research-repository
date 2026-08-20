@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.civicsrepo.sources.OfflineSourceFileProbe;
+import org.civicsrepo.repository.RecordingRepositoryIdentityStore;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -63,7 +64,7 @@ class DspaceUnavailableTest {
     @Test
     void applyFailsWithAnActionableMessage() {
         DspaceRestItemWriteGateway gateway =
-                new DspaceRestItemWriteGateway(new DspaceRestClient(UNREACHABLE, "admin@civics.local", "secret"));
+                new DspaceRestItemWriteGateway(new DspaceRestClient(UNREACHABLE, "admin@civics.local", "secret"), new RecordingRepositoryIdentityStore());
 
         assertThatThrownBy(() -> gateway.ensureItemMetadata(SOURCE_IDENTIFIER, sourcePayload))
                 .isInstanceOf(DspaceUnavailableException.class)
@@ -89,7 +90,7 @@ class DspaceUnavailableTest {
     @Test
     void patchIsNeverAttemptedWithoutCredentials() {
         DspaceRestItemWriteGateway gateway =
-                new DspaceRestItemWriteGateway(new DspaceRestClient(UNREACHABLE, "", ""));
+                new DspaceRestItemWriteGateway(new DspaceRestClient(UNREACHABLE, "", ""), new RecordingRepositoryIdentityStore());
 
         assertThat(gateway.ensureItemMetadata(SOURCE_IDENTIFIER, sourcePayload)).isFalse();
     }
@@ -97,7 +98,7 @@ class DspaceUnavailableTest {
     @Test
     void metadataPatchOperationsRemainPureAndOffline() {
         DspaceRestClient client = new DspaceRestClient(UNREACHABLE, "", "");
-        DspaceRestItemWriteGateway gateway = new DspaceRestItemWriteGateway(client);
+        DspaceRestItemWriteGateway gateway = new DspaceRestItemWriteGateway(client, new RecordingRepositoryIdentityStore());
         var item = client
                 .toDiscoverableItems(DspaceDiscoveryFixtures.discoveryResponse(
                         DspaceDiscoveryFixtures.item("uuid", sourcePayload.name(), SOURCE_IDENTIFIER)))

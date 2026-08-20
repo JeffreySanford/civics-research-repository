@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.Map;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.civicsrepo.sources.OfflineSourceFileProbe;
+import org.civicsrepo.repository.RecordingRepositoryIdentityStore;
 import org.junit.jupiter.api.Test;
 
 class DspaceRestItemWriteGatewayTest {
     private static final String SOURCE_IDENTIFIER = "tiger-line-north-dakota-2025";
 
     private final DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
-    private final DspaceRestItemWriteGateway gateway = new DspaceRestItemWriteGateway(client);
+    private final DspaceRestItemWriteGateway gateway = new DspaceRestItemWriteGateway(client, new RecordingRepositoryIdentityStore());
     private final DspaceItemPayload sourcePayload =
             new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
 

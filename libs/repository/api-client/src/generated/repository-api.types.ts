@@ -267,6 +267,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/repository/identity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Report how many research objects have a recorded repository identity.
+     * @description A source identifier is only an identity once something records what it became. This reports how far that chain reaches: identifiers known, DSpace UUIDs recorded, and objects the discovery projection has stamped.
+     */
+    get: operations['getRepositoryIdentitySummary'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/sources/inventory': {
     parameters: {
       query?: never;
@@ -726,6 +746,22 @@ export interface components {
         [key: string]: unknown;
       };
       flows: components['schemas']['LodesFlowSummary'][];
+    };
+    RepositoryIdentitySummary: {
+      /** @description Source identifiers the repository has recorded anything about. */
+      knownIdentifiers: number;
+      /** @description How many resolved to a DSpace item. Lower than the total while live sync adapters cover only some sources, which is a fact about sync coverage rather than about the objects. */
+      withDspaceUuid: number;
+      /** @description How many the discovery projection has stamped. */
+      indexed: number;
+      examples?: components['schemas']['RepositoryIdentityRecord'][];
+    };
+    RepositoryIdentityRecord: {
+      sourceIdentifier: string;
+      dspaceUuid?: string;
+      sourceUrl?: string;
+      /** Format: date-time */
+      indexedAt?: string;
     };
     LodesWorkplaceOverlay: {
       source: string;
@@ -1296,6 +1332,28 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['DspaceOverview'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getRepositoryIdentitySummary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Repository identity summary. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RepositoryIdentitySummary'];
         };
       };
       500: components['responses']['InternalServerError'];

@@ -417,6 +417,26 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /admin/repository/identity:
+    get:
+      tags: [Admin]
+      operationId: getRepositoryIdentitySummary
+      summary: Report how many research objects have a recorded repository identity.
+      description: >-
+        A source identifier is only an identity once something records what it became. This reports
+        how far that chain reaches: identifiers known, DSpace UUIDs recorded, and objects the
+        discovery projection has stamped.
+      responses:
+        '200':
+          description: Repository identity summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepositoryIdentitySummary'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /admin/sources/inventory:
     get:
       tags: [Admin]
@@ -1324,6 +1344,41 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LodesFlowSummary'
+    RepositoryIdentitySummary:
+      type: object
+      required: [knownIdentifiers, withDspaceUuid, indexed]
+      properties:
+        knownIdentifiers:
+          type: integer
+          minimum: 0
+          description: Source identifiers the repository has recorded anything about.
+        withDspaceUuid:
+          type: integer
+          minimum: 0
+          description: >-
+            How many resolved to a DSpace item. Lower than the total while live sync adapters cover
+            only some sources, which is a fact about sync coverage rather than about the objects.
+        indexed:
+          type: integer
+          minimum: 0
+          description: How many the discovery projection has stamped.
+        examples:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepositoryIdentityRecord'
+    RepositoryIdentityRecord:
+      type: object
+      required: [sourceIdentifier]
+      properties:
+        sourceIdentifier:
+          type: string
+        dspaceUuid:
+          type: string
+        sourceUrl:
+          type: string
+        indexedAt:
+          type: string
+          format: date-time
     LodesWorkplaceOverlay:
       type: object
       required:
