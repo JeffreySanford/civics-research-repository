@@ -28,8 +28,8 @@ import {
 import {
   KNOWN_GAPS,
   MANUAL_CHECKLISTS,
-  REPORT_ARTIFACTS,
   WCAG_CRITERIA_COVERED,
+  buildReportArtifacts,
   evidenceStatusLabel,
   extractArtifactPath,
   indexEvidenceById,
@@ -70,11 +70,11 @@ export class EvidencePage implements OnInit {
   protected readonly manualChecklists = MANUAL_CHECKLISTS;
   protected readonly wcagCriteria = WCAG_CRITERIA_COVERED;
   protected readonly knownGaps = KNOWN_GAPS;
-  protected readonly reportArtifacts = REPORT_ARTIFACTS;
 
   protected readonly evidenceStatusLabel = evidenceStatusLabel;
   protected readonly standardLabel = standardLabel;
   protected readonly extractArtifactPath = extractArtifactPath;
+  protected readonly buildReportArtifacts = buildReportArtifacts;
   protected readonly indexEvidenceById = indexEvidenceById;
 
   ngOnInit(): void {
