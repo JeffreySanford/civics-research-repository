@@ -1,19 +1,19 @@
 [
   {
     "id": "axe-wcag-2026-08-12",
-    "workflow": "axe-core scans (6 routes)",
+    "workflow": "Browser WCAG accessibility suite",
     "status": "AUTOMATED_PASS",
     "standard": "WCAG_2_1_AA",
     "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "57 checks passed. Command: pnpm run wcag:report. Artifact: documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md"
+    "notes": "Automated browser evidence passed. Command: pnpm run e2e:reports. Commit: unknown. Covers axe WCAG 2.0/2.1 A/AA tags plus the repository's WCAG-tagged structural, reflow, contrast, and interaction assertions."
   },
   {
     "id": "section508-2026-08-12",
-    "workflow": "Section 508 tagged scans",
+    "workflow": "Section 508 tagged browser evidence",
     "status": "AUTOMATED_PASS",
     "standard": "SECTION_508",
     "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "57 checks passed (same axe suite, @section508 tag). Command: pnpm run section508:report. Artifact: documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md"
+    "notes": "Automated browser evidence passed. Command: pnpm run e2e:reports. Commit: unknown. This is automated web/ICT evidence; it does not replace the recorded keyboard, NVDA, JAWS, or map-equivalence review."
   },
   {
     "id": "structural-2026-08-12",
@@ -21,15 +21,15 @@
     "status": "AUTOMATED_PASS",
     "standard": "WCAG_2_1_AA",
     "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "39 machine-checkable preconditions per route (titles, landmarks, tab order, accessible names, live regions). Included in wcag:report."
+    "notes": "Titles, heading outline, landmarks, tab order, accessible names/descriptions, control state, live regions, alerts, and map-list preconditions passed on commit unknown."
   },
   {
     "id": "reflow-contrast-2026-08-12",
-    "workflow": "Reflow and color contrast",
+    "workflow": "Reflow, resize text, and AA color contrast",
     "status": "AUTOMATED_PASS",
-    "standard": "WCAG_2_2_AA",
+    "standard": "WCAG_2_1_AA",
     "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "320px reflow, 200% zoom operability, AA contrast per route. Included in wcag:report."
+    "notes": "320px reflow, 200% zoom/resize operability, and isolated AA contrast checks passed on commit unknown."
   },
   {
     "id": "storyboard-2026-08-12",
@@ -37,7 +37,7 @@
     "status": "AUTOMATED_PASS",
     "standard": "WCAG_2_1_AA",
     "capturedAt": "2026-08-12T00:00:00Z",
-    "notes": "72 end-to-end workflow checks across discovery, maps, admin sync, and failure states. Command: pnpm run storyboard."
+    "notes": "Primary discovery, research-object, map, admin-sync, and failure-state workflows passed as part of pnpm run e2e:reports on commit unknown."
   },
   {
     "id": "keyboard-checklist",

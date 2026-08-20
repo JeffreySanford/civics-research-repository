@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-12T00:00:00Z",
+  "commit": "unknown",
+  "capabilities": {
+    "componentAccessibility": false,
+    "forcedColors": false
+  },
+  "componentAccessibility": {
+    "status": "AUTOMATED_PASS",
+    "command": "pnpm run a11y:components"
+  },
+  "e2eEvidence": {
+    "status": "AUTOMATED_PASS",
+    "command": "pnpm run e2e:reports"
+  }
+}
