@@ -7,8 +7,9 @@ import {
   copyFileSync,
   writeFileSync,
   readdirSync,
+  rmSync,
 } from 'node:fs';
-import { Readable } from 'node:stream';
+import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,20 +18,21 @@ import { PROBE_HEADERS } from './lib/url-probe.mjs';
 /**
  * Downloads eligible source files into the SAF packages, so DSpace holds real bitstreams.
  *
- * Until now the repository stored metadata and links only: every `contents` file was empty, and the
- * assetstore held 7 KB against 1.7 GiB subscribed. That is a defensible design, but it makes the
- * demo weaker than the software — no checksums, no downloads, no preservation story.
+ * The repository preserves selected publisher files as bitstreams while retaining authoritative
+ * source URLs and manifests for every research object. Mirroring is bounded by a total preservation
+ * budget rather than an arbitrary per-file ceiling: a large legitimate research artifact should be
+ * eligible whenever it fits inside the remaining run budget.
  *
- * Selection is bounded on purpose. Each file must be under a per-file cap, and the run stops at a
- * total budget, largest-eligible first so the mirrored set is representative rather than a pile of
- * documentation PDFs. Everything not mirrored stays a link, exactly as before.
+ * Only sources that report a positive Content-Length are candidates. The downloader also verifies
+ * the streamed byte count against that declared length and aborts/removes partial output if a source
+ * sends more bytes than declared, so a misreporting endpoint cannot silently exceed the budget.
  *
  * Downloads are cached outside the SAF tree, because `generate-saf.mjs` deletes and rewrites that
  * tree on every run and re-downloading gigabytes each time would make regeneration unusable.
  *
  * Usage:
  *   node tools/scripts/mirror-source-files.mjs
- *   node tools/scripts/mirror-source-files.mjs --budget-mb 2048 --max-file-mb 120
+ *   node tools/scripts/mirror-source-files.mjs --budget-mb 5120
  *   node tools/scripts/mirror-source-files.mjs --dry-run
  */
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -54,8 +56,12 @@ const numberArg = (flag, fallback) => {
   return index === -1 ? fallback : Number(args[index + 1]);
 };
 
-const budgetBytes = numberArg('--budget-mb', 1024) * 1024 * 1024;
-const maxFileBytes = numberArg('--max-file-mb', 120) * 1024 * 1024;
+// The budget is the only size ceiling. There is deliberately no independent per-file cap.
+const budgetBytes = numberArg('--budget-mb', 5120) * 1024 * 1024;
+
+if (!Number.isFinite(budgetBytes) || budgetBytes <= 0) {
+  throw new Error('--budget-mb must be a positive number.');
+}
 
 const items = JSON.parse(readFileSync(catalogPath, 'utf8')).items ?? [];
 
@@ -80,8 +86,7 @@ for (const item of items) {
 }
 
 console.log(
-  `Considering ${candidates.size} distinct files. Per-file cap ` +
-    `${(maxFileBytes / 1024 ** 2).toFixed(0)} MiB, total budget ` +
+  `Considering ${candidates.size} distinct files. No per-file cap; total mirror budget ` +
     `${(budgetBytes / 1024 ** 2).toFixed(0)} MiB.\n`,
 );
 
@@ -120,10 +125,9 @@ async function sizeWorker() {
 await Promise.all(Array.from({ length: 6 }, sizeWorker));
 process.stdout.write('\n\n');
 
-// Largest first, so the budget buys the most representative files rather than a pile of PDFs.
-const eligible = sized
-  .filter((candidate) => candidate.bytes <= maxFileBytes)
-  .sort((left, right) => right.bytes - left.bytes);
+// Largest first. Large research artifacts are not excluded merely because of their individual size;
+// they are selected whenever they fit inside the total preservation budget.
+const eligible = sized.sort((left, right) => right.bytes - left.bytes);
 
 const selected = [];
 let selectedBytes = 0;
@@ -135,9 +139,7 @@ for (const candidate of eligible) {
   selectedBytes += candidate.bytes;
 }
 
-console.log(
-  `${sized.length} files reported a size; ${eligible.length} are under the per-file cap.`,
-);
+console.log(`${sized.length} files reported a measurable size.`);
 console.log(
   `Selected ${selected.length} totalling ${(selectedBytes / 1024 ** 3).toFixed(2)} GiB.\n`,
 );
@@ -174,7 +176,7 @@ function findItemDirectory(itemId) {
   return null;
 }
 
-/** A cached file of the right size is taken as good; anything else is downloaded again. */
+/** A cached file of the currently declared size is taken as good; anything else is downloaded again. */
 function cachedPath(entry) {
   const name = basename(new URL(entry.url).pathname) || 'download.bin';
   return join(cacheRoot, `${entry.itemId}__${name}`);
@@ -183,7 +185,7 @@ function cachedPath(entry) {
 async function download(entry) {
   const target = cachedPath(entry);
   if (existsSync(target) && statSync(target).size === entry.bytes) {
-    return { target, cached: true };
+    return { target, cached: true, actualBytes: entry.bytes };
   }
 
   const response = await fetch(entry.url, {
@@ -194,8 +196,42 @@ async function download(entry) {
     throw new Error(`${response.status} for ${entry.url}`);
   }
 
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(target));
-  return { target, cached: false };
+  let streamedBytes = 0;
+  const declaredLengthGuard = new Transform({
+    transform(chunk, encoding, callback) {
+      streamedBytes += chunk.length;
+      if (streamedBytes > entry.bytes) {
+        callback(
+          new Error(
+            `source exceeded declared Content-Length (${entry.bytes} bytes): ${entry.url}`,
+          ),
+        );
+        return;
+      }
+      callback(null, chunk);
+    },
+  });
+
+  try {
+    await pipeline(
+      Readable.fromWeb(response.body),
+      declaredLengthGuard,
+      createWriteStream(target),
+    );
+  } catch (error) {
+    rmSync(target, { force: true });
+    throw error;
+  }
+
+  const actualBytes = statSync(target).size;
+  if (actualBytes !== entry.bytes) {
+    rmSync(target, { force: true });
+    throw new Error(
+      `source byte count changed: HEAD reported ${entry.bytes}, download produced ${actualBytes}: ${entry.url}`,
+    );
+  }
+
+  return { target, cached: false, actualBytes };
 }
 
 const mirrored = [];
@@ -204,7 +240,13 @@ let downloadedBytes = 0;
 
 for (const entry of selected) {
   try {
-    const { target, cached } = await download(entry);
+    // Selection guarantees the declared bytes fit. The download verifies that the source actually
+    // sends exactly that many bytes before anything is staged into SAF.
+    if (downloadedBytes + entry.bytes > budgetBytes) {
+      continue;
+    }
+
+    const { target, cached, actualBytes } = await download(entry);
     const name = basename(target).replace(`${entry.itemId}__`, '');
     const itemDirectory = findItemDirectory(entry.itemId);
 
@@ -234,8 +276,8 @@ for (const entry of selected) {
     }
     writeFileSync(contentsPath, `${lines.join('\n')}\n`, 'utf8');
 
-    mirrored.push({ ...entry, fileName: name });
-    downloadedBytes += entry.bytes;
+    mirrored.push({ ...entry, bytes: actualBytes, fileName: name });
+    downloadedBytes += actualBytes;
     process.stdout.write(cached ? 'c' : '+');
   } catch (error) {
     failed.push({ ...entry, reason: error.message });
@@ -249,7 +291,7 @@ const manifest = {
     'Generated by tools/scripts/mirror-source-files.mjs. Records which source files were copied into the SAF packages.',
   mirroredAt: new Date().toISOString(),
   budgetBytes,
-  maxFileBytes,
+  perFileCapBytes: null,
   mirroredFileCount: mirrored.length,
   mirroredBytes: downloadedBytes,
   failedCount: failed.length,
