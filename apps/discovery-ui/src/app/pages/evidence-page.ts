@@ -1,10 +1,13 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
+  DestroyRef,
   OnInit,
   inject,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
@@ -44,6 +47,8 @@ import {
 })
 export class EvidencePage implements OnInit {
   private readonly store = inject(Store);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
   protected readonly automatedEntries$ = this.store.select(
     selectAutomatedEvidence,
@@ -70,12 +75,21 @@ export class EvidencePage implements OnInit {
   protected readonly manualChecklists = MANUAL_CHECKLISTS;
   protected readonly wcagCriteria = WCAG_CRITERIA_COVERED;
   protected readonly knownGaps = KNOWN_GAPS;
+  protected reportArtifacts = buildReportArtifacts([]);
 
   protected readonly evidenceStatusLabel = evidenceStatusLabel;
   protected readonly standardLabel = standardLabel;
   protected readonly extractArtifactPath = extractArtifactPath;
-  protected readonly buildReportArtifacts = buildReportArtifacts;
   protected readonly indexEvidenceById = indexEvidenceById;
+
+  constructor() {
+    this.automatedEntries$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((entries) => {
+        this.reportArtifacts = buildReportArtifacts(entries);
+        this.changeDetectorRef.markForCheck();
+      });
+  }
 
   ngOnInit(): void {
     this.store.dispatch(EvidenceActions.loadRequested());
