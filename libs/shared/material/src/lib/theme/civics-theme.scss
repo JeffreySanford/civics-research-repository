@@ -49,3 +49,16 @@ html {
     )
   );
 }
+
+// The admin Dry Run action is normal-size text, so keep its filled-button token comfortably above
+// WCAG AA's 4.5:1 threshold instead of relying on the default azure role that measured 4.21:1 in
+// Firefox. Scope the component token to the sync action row so the broader application palette does
+// not move just to fix one primary action.
+.admin-page .button-row {
+  @include mat.button-overrides(
+    (
+      filled-container-color: #1b5fa6,
+      filled-label-text-color: #ffffff,
+    )
+  );
+}
