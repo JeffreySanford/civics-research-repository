@@ -54,6 +54,19 @@ async function publishedVintages(index) {
 
 const rows = [];
 for (const program of programs) {
+  if (program.notVintaged) {
+    // A live service, not a vintaged release. Its catalog vintage is a label rather than an
+    // edition, so there is nothing to compare, and calling it "not checkable" would imply a gap
+    // that does not exist.
+    rows.push({
+      program: program.id,
+      catalog: program.vintage,
+      status: `not vintaged - ${program.notVintaged}`,
+      notVintaged: true,
+    });
+    continue;
+  }
+
   if (!program.vintageIndex) {
     // Named rather than skipped silently. A program with no index is one nobody can check, which
     // is a fact about this tool's coverage and belongs in its output.
@@ -120,10 +133,16 @@ for (const row of rows) {
 }
 
 const behind = rows.filter((row) => row.behind);
-const unchecked = rows.filter((row) => !row.latest && !row.behind);
+const notVintaged = rows.filter((row) => row.notVintaged);
+const unchecked = rows.filter(
+  (row) => !row.latest && !row.behind && !row.notVintaged,
+);
+const current =
+  rows.length - behind.length - unchecked.length - notVintaged.length;
 
 console.log(
-  `\n${rows.length - behind.length - unchecked.length} current, ${behind.length} out of step, ${unchecked.length} not checkable.`,
+  `
+${current} current, ${behind.length} out of step, ${notVintaged.length} not vintaged, ${unchecked.length} not checkable.`,
 );
 
 if (behind.length > 0) {
