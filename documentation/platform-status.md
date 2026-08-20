@@ -69,11 +69,11 @@ The workforce journey connects discovery results to an area-focused view that co
 
 | Measure | Current value |
 | --- | --- |
-| Latest recorded automated evidence | 2026-08-12T00:00:00Z |
-| Recorded commit | unknown |
+| Latest recorded automated evidence | 2026-08-20T17:41:51.884Z |
+| Recorded commit | dfc9416675b31d1b35d9fa88f979e497cbb7bb3a |
 | Component accessibility status | AUTOMATED_PASS |
 | Browser evidence status | AUTOMATED_PASS |
-| Forced-colors capability recorded | No |
+| Forced-colors capability recorded | Yes |
 
 Automated coverage includes template linting, component-state axe scans, browser axe scans, structural semantics, keyboard preconditions, reflow, zoom, contrast, forced colors, dark mode, and equivalent nonvisual map data. Manual keyboard, NVDA, JAWS, map-equivalence, and cognitive evidence remain separate and must not be inferred from automated passes.
 
