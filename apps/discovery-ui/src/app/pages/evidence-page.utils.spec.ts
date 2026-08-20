@@ -1,4 +1,5 @@
 import {
+  buildReportArtifacts,
   countAutomatedChecks,
   evidenceStatusLabel,
   extractArtifactPath,
@@ -24,6 +25,46 @@ describe('evidence-page.utils', () => {
       ),
     ).toBe(
       'documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md',
+    );
+  });
+
+  it('derives the current automated release record from the live evidence date and commit', () => {
+    const artifacts = buildReportArtifacts([
+      {
+        id: 'axe-wcag-2026-08-20',
+        workflow: 'Browser WCAG accessibility suite',
+        status: 'AUTOMATED_PASS',
+        standard: 'WCAG_2_1_AA',
+        capturedAt: '2026-08-20T17:41:51.884Z',
+        notes:
+          'Automated browser evidence passed. Command: pnpm run e2e:reports. Commit: dfc94166.',
+      },
+    ]);
+
+    expect(artifacts[0]).toEqual({
+      label: 'Current automated release record (2026-08-20)',
+      path: 'documentation/accessibility-evidence/release-checklists/2026-08-20-dfc94166-automated.md',
+    });
+    expect(artifacts[1]).toEqual({
+      label: 'Historical automated baseline (2026-08-12)',
+      path: 'documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md',
+    });
+  });
+
+  it('keeps the historical baseline when the old migrated evidence has no tested commit', () => {
+    const artifacts = buildReportArtifacts([
+      {
+        id: 'axe-wcag-2026-08-12',
+        workflow: 'Browser WCAG accessibility suite',
+        status: 'AUTOMATED_PASS',
+        standard: 'WCAG_2_1_AA',
+        capturedAt: '2026-08-12T00:00:00Z',
+        notes: 'Automated browser evidence passed. Commit: unknown.',
+      },
+    ]);
+
+    expect(artifacts[0].label).toBe(
+      'Historical automated baseline (2026-08-12)',
     );
   });
 
