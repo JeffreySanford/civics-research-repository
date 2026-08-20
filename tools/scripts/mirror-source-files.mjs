@@ -23,9 +23,10 @@ import { PROBE_HEADERS } from './lib/url-probe.mjs';
  * budget rather than an arbitrary per-file ceiling: a large legitimate research artifact should be
  * eligible whenever it fits inside the remaining run budget.
  *
- * Only sources that report a positive Content-Length are candidates. The downloader also verifies
- * the streamed byte count against that declared length and aborts/removes partial output if a source
- * sends more bytes than declared, so a misreporting endpoint cannot silently exceed the budget.
+ * Only sources that report a positive Content-Length are candidates. The declared size is used for
+ * selection, but the downloader also counts actual streamed bytes and aborts/removes partial output
+ * if a response crosses the remaining run budget. A misreporting endpoint therefore cannot silently
+ * exceed the configured storage boundary.
  *
  * Downloads are cached outside the SAF tree, because `generate-saf.mjs` deletes and rewrites that
  * tree on every run and re-downloading gigabytes each time would make regeneration unusable.
@@ -126,7 +127,7 @@ await Promise.all(Array.from({ length: 6 }, sizeWorker));
 process.stdout.write('\n\n');
 
 // Largest first. Large research artifacts are not excluded merely because of their individual size;
-// they are selected whenever they fit inside the total preservation budget.
+// they are selected whenever their declared size fits inside the total preservation budget.
 const eligible = sized.sort((left, right) => right.bytes - left.bytes);
 
 const selected = [];
@@ -141,7 +142,7 @@ for (const candidate of eligible) {
 
 console.log(`${sized.length} files reported a measurable size.`);
 console.log(
-  `Selected ${selected.length} totalling ${(selectedBytes / 1024 ** 3).toFixed(2)} GiB.\n`,
+  `Selected ${selected.length} totalling ${(selectedBytes / 1024 ** 3).toFixed(2)} GiB by declared size.\n`,
 );
 
 if (dryRun) {
@@ -182,7 +183,7 @@ function cachedPath(entry) {
   return join(cacheRoot, `${entry.itemId}__${name}`);
 }
 
-async function download(entry) {
+async function download(entry, remainingBudgetBytes) {
   const target = cachedPath(entry);
   if (existsSync(target) && statSync(target).size === entry.bytes) {
     return { target, cached: true, actualBytes: entry.bytes };
@@ -197,13 +198,14 @@ async function download(entry) {
   }
 
   let streamedBytes = 0;
-  const declaredLengthGuard = new Transform({
+  const totalBudgetGuard = new Transform({
     transform(chunk, encoding, callback) {
+      void encoding;
       streamedBytes += chunk.length;
-      if (streamedBytes > entry.bytes) {
+      if (streamedBytes > remainingBudgetBytes) {
         callback(
           new Error(
-            `source exceeded declared Content-Length (${entry.bytes} bytes): ${entry.url}`,
+            `download exceeded remaining mirror budget (${remainingBudgetBytes} bytes): ${entry.url}`,
           ),
         );
         return;
@@ -215,7 +217,7 @@ async function download(entry) {
   try {
     await pipeline(
       Readable.fromWeb(response.body),
-      declaredLengthGuard,
+      totalBudgetGuard,
       createWriteStream(target),
     );
   } catch (error) {
@@ -223,15 +225,7 @@ async function download(entry) {
     throw error;
   }
 
-  const actualBytes = statSync(target).size;
-  if (actualBytes !== entry.bytes) {
-    rmSync(target, { force: true });
-    throw new Error(
-      `source byte count changed: HEAD reported ${entry.bytes}, download produced ${actualBytes}: ${entry.url}`,
-    );
-  }
-
-  return { target, cached: false, actualBytes };
+  return { target, cached: false, actualBytes: statSync(target).size };
 }
 
 const mirrored = [];
@@ -240,13 +234,15 @@ let downloadedBytes = 0;
 
 for (const entry of selected) {
   try {
-    // Selection guarantees the declared bytes fit. The download verifies that the source actually
-    // sends exactly that many bytes before anything is staged into SAF.
-    if (downloadedBytes + entry.bytes > budgetBytes) {
+    const remainingBudgetBytes = budgetBytes - downloadedBytes;
+    if (remainingBudgetBytes <= 0 || entry.bytes > remainingBudgetBytes) {
       continue;
     }
 
-    const { target, cached, actualBytes } = await download(entry);
+    const { target, cached, actualBytes } = await download(
+      entry,
+      remainingBudgetBytes,
+    );
     const name = basename(target).replace(`${entry.itemId}__`, '');
     const itemDirectory = findItemDirectory(entry.itemId);
 
