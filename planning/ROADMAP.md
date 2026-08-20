@@ -80,15 +80,14 @@ objects have a recorded DSpace UUID instead of one. Wiring it surfaced a real dr
 adapter and the catalog disagreed about which vintage the repository holds, so apply had been
 failing for that source unnoticed.
 
-Five is the ceiling for adapter _wiring_, not for adapters: each one harvests a single
-representative object through `firstVisualSlice()`. The five already cover programs worth 112
-objects between them, so the largest remaining win is changing that method to enumerate rather than
-writing anything new. After that it is nine more adapters — ACS plus eight single-object national
-programs — to reach 176, and a decision about whether the five curated research-package objects
-should be harvested at all.
+**Done: 176 of 181 objects carry a DSpace UUID**, reconciled by fourteen adapters at startup. The
+five without one are the curated research package — two working papers, a methodology report, a
+project and the restricted microdata — and that is the right answer rather than a shortfall: "this
+project has these parts" is a curatorial assertion, not something a publisher endpoint reports.
 
-Adapters are per program, not per object. This is also distinct from catalog harvesting (item 3),
-which is about discovering which files and vintages exist rather than how many objects reconcile.
+This is distinct from catalog harvesting (item 3), which is about discovering which files and
+vintages exist rather than how many objects reconcile. The adapters now read the catalog; nothing
+yet builds the catalog from live publisher APIs.
 
 ### 6. Finish manual accessibility evidence
 
