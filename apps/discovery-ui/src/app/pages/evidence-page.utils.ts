@@ -16,6 +16,11 @@ export interface KnownGap {
   readonly detail: string;
 }
 
+export interface ReportArtifact {
+  readonly label: string;
+  readonly path: string;
+}
+
 export const AUTOMATED_STATUSES: readonly EvidenceStatus[] = [
   'AUTOMATED_PASS',
   'AUTOMATED_FAIL',
@@ -70,7 +75,7 @@ export const WCAG_CRITERIA_COVERED: readonly string[] = [
   '2.4.3 Focus order (no positive tabindex)',
   '2.4.4 Link purpose (accessible names, not raw URLs)',
   '2.4.6 Headings and labels (one h1, unbroken outline)',
-  '2.4.7 Focus visible (contrast checks on primary routes)',
+  '2.4.7 Focus visible (partial automated preconditions; manual visual verification still required)',
   '3.3.1 Error identification (sync failure alert)',
   '3.3.2 Labels or instructions (search and form labels)',
   '4.1.2 Name, role, value (tabs, facets, map checkboxes)',
@@ -99,17 +104,23 @@ export const KNOWN_GAPS: readonly KnownGap[] = [
       'Implemented but not automatically assertable. Checklist 4 item M12 needs a trusted pointer click.',
   },
   {
-    title: 'Forced-colors mode',
+    title: 'Focus-visible verification',
     detail:
-      'High-contrast Windows mode smoke tests are planned but not implemented.',
+      'Automated suites exercise keyboard focus and route contrast, but they do not visually assert every rendered focus indicator. Complete Checklist 1 item K3 manually.',
+  },
+  {
+    title: 'Forced-colors coverage boundary',
+    detail:
+      'Chromium forced-colors emulation is automated and passing. Firefox and WebKit do not provide equivalent Playwright emulation, so Windows High Contrast remains part of manual platform validation.',
   },
 ];
 
-export const REPORT_ARTIFACTS: readonly { label: string; path: string }[] = [
-  {
-    label: '2026-08-12 automated baseline',
-    path: 'documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md',
-  },
+const HISTORICAL_AUTOMATED_BASELINE: ReportArtifact = {
+  label: 'Historical automated baseline (2026-08-12)',
+  path: 'documentation/accessibility-evidence/release-checklists/2026-08-12-automated-baseline.md',
+};
+
+const SUPPORTING_REPORT_ARTIFACTS: readonly ReportArtifact[] = [
   {
     label: 'Manual checklists',
     path: 'documentation/accessibility-manual-evidence.md',
@@ -167,6 +178,48 @@ export function extractArtifactPath(notes?: string): string | null {
 
   const match = notes.match(/Artifact:\s*(\S+)/);
   return match?.[1] ?? null;
+}
+
+function deriveAutomatedReleaseArtifact(
+  entries: readonly AccessibilityEvidence[],
+): ReportArtifact | null {
+  const latest = [...entries]
+    .filter((entry) => isAutomatedEvidence(entry.status))
+    .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt))[0];
+
+  if (!latest) {
+    return null;
+  }
+
+  const explicitPath = extractArtifactPath(latest.notes);
+  const date = latest.capturedAt.slice(0, 10);
+  if (explicitPath) {
+    return {
+      label: `Current automated release record (${date})`,
+      path: explicitPath,
+    };
+  }
+
+  const commit = latest.notes?.match(/\bCommit:\s*([0-9a-f]{8})\b/i)?.[1];
+  if (!commit) {
+    return null;
+  }
+
+  return {
+    label: `Current automated release record (${date})`,
+    path: `documentation/accessibility-evidence/release-checklists/${date}-${commit}-automated.md`,
+  };
+}
+
+export function buildReportArtifacts(
+  entries: readonly AccessibilityEvidence[],
+): readonly ReportArtifact[] {
+  const current = deriveAutomatedReleaseArtifact(entries);
+  return [
+    ...(current ? [current] : []),
+    HISTORICAL_AUTOMATED_BASELINE,
+    ...SUPPORTING_REPORT_ARTIFACTS,
+  ];
 }
 
 export function indexEvidenceById(
