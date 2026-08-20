@@ -84,6 +84,8 @@
     "evidence:generate": "node tools/scripts/accessibility-evidence.mjs",
     "evidence:refresh": "node tools/scripts/accessibility-evidence.mjs --refresh",
     "evidence:check": "node tools/scripts/accessibility-evidence.mjs --check",
+    "docs:status": "node tools/scripts/platform-status.mjs",
+    "docs:check": "node tools/scripts/platform-status.mjs --check",
     "fixture:check": "node tools/scripts/check-fixture-catalog.mjs",
     "verify:vintages": "node tools/scripts/check-catalog-vintages.mjs",
     "dspace:mirror": "node tools/scripts/mirror-source-files.mjs",
@@ -92,7 +94,7 @@
     "verify:sources": "node tools/scripts/verify-source-urls.mjs",
     "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",
     "catalog:harvest": "node tools/scripts/harvest-catalog.mjs",
-    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run evidence:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
+    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run evidence:check && pnpm run docs:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
   },
   "dependencies": {
     "@angular/animations": "22.1.1",

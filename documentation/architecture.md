@@ -1,104 +1,192 @@
 # Architecture
 
-C4 context and container views, plus ingestion, search, and map sequences, are in [architecture-diagrams.md](architecture-diagrams.md). This document covers the model and the reasoning; the diagrams cover the shape.
+This document describes the architecture that runs today. Planned work is kept in [planning/ROADMAP.md](../planning/ROADMAP.md); historical delivery detail is kept in [history/platform-evolution.md](history/platform-evolution.md). Current volatile counts live in the generated [platform status](platform-status.md).
 
-## Reference Architecture
+## System purpose
+
+Civics Research Repository is a federal Open Science reference platform. It preserves and relates research objects in DSpace, projects them into a public discovery index, and exposes accessible search, repository workflows, and geospatial research views through a single typed API.
+
+The platform is intentionally broader than an open-data catalog. It models:
+
+- datasets,
+- publications,
+- methodology and supporting material,
+- projects,
+- researchers and DOI metadata,
+- access restrictions and access instructions,
+- typed relationships between research objects,
+- source files, manifests, provenance, versions, and mirrored bitstreams.
+
+## Current container architecture
 
 ```text
-Public User / Repository Steward
-  |
-  v
-Angular Discovery UI (:4200)
-  - Search, facets, dataset detail
-  - Versions, files, citations
-  - Mapping visualizations
-  - Admin sync workflow
-  - 508/WCAG evidence views
-  |
-  | REST / JSON, types generated from OpenAPI
-  v
-Java repository-api (:8080/api)
-  - Search, dataset, map-layer, and overlay endpoints
-  - Sync orchestration: dry-run, diff, apply
-  - Owns every outbound integration
-  |
-  +--> Application PostgreSQL (:5432)
-  |      - Sync job state
-  |
-  +--> Discovery Solr, `discovery` core (:8983)
-  |      - Public discovery projection
-  |      - Full-text search, facets, relevance
-  |
-  +--> DSpace REST (:8081) -- system of record
-  |      - Communities, collections, items
-  |      - Metadata, bitstreams, relationships
-  |      |
-  |      +--> DSpace PostgreSQL (:5433)
-  |      +--> DSpace Solr cores (:8984)
-  |
-  +--> USGS Earthquake Catalog
-         - Live GeoJSON, bundled fixture fallback
+Public researcher / repository steward
+                  |
+                  v
+Angular discovery-ui (:4200)
+  - search, facets, paging and research-object detail
+  - workforce and reference mapping
+  - admin synchronization and repository/index views
+  - accessibility and pipeline evidence
+                  |
+                  | REST/JSON, generated OpenAPI types
+                  v
+Spring Boot repository-api (:8080/api)
+  - owns every browser-facing integration
+  - catalog-backed metadata adapters
+  - dry-run / diff / apply synchronization
+  - DSpace identity and repository projection
+  - search, maps, overlays and evidence endpoints
+        |                 |                    |
+        v                 v                    v
+Application          DiscoveryIndex         DSpace REST (:8081)
+PostgreSQL            Solr implementation    repository system of record
+(:5432)               (:8983)                communities, collections,
+sync jobs             rebuildable            items, metadata, relations,
+                                            versions and bitstreams
+                                                 |              |
+                                                 v              v
+                                        DSpace PostgreSQL   DSpace Solr
+                                        (:5433)             (:8984)
 ```
 
-The Angular UI never calls DSpace, Solr, or USGS directly. Every integration is owned by the Java API, which keeps the browser contract to a single typed OpenAPI surface and keeps credentials server-side.
+The Angular application never calls DSpace, Solr, Census, or USGS directly. The Java API owns those integrations, keeps credentials server-side, and presents one generated contract to the browser.
 
-## Core Architectural Principle
+## Four datastore roles
 
-DSpace remains the system of record. Solr is not the source of truth and should not become a warehouse for raw public-use microdata records. Solr indexes repository-level research objects: titles, abstracts, subjects, geography, program, vintage, file formats, citations, identifiers, documentation text, and relationship metadata.
+| Datastore | Role | Owner |
+| --- | --- | --- |
+| Application PostgreSQL `civics_ops` | Sync jobs and application operational state | `repository-api` |
+| DSpace PostgreSQL | Repository system of record | DSpace |
+| Discovery Solr `discovery` core | Public, rebuildable research-object projection | `repository-api` through `DiscoveryIndex` |
+| DSpace Solr | DSpace internal discovery, authority and OAI cores | DSpace |
 
-Stated as a rule: **the `discovery` Solr core is a projection of DSpace and must always be rebuildable from it.** Anything that exists only in Solr is a bug, because it cannot survive a reindex.
+The duplication is an ownership boundary, not accidental redundancy. DSpace controls its own schema, migrations, search configuration, and upgrade lifecycle. The application-owned projection can be discarded and rebuilt without treating DSpace's internal Solr as a public API.
 
-The implementation satisfies this rule. `DiscoveryProjectionService` is the only writer of the `discovery` core and builds it entirely from DSpace items, and `pnpm run reindex` rebuilds it on demand. When the repository yields nothing the fixture catalog is indexed instead, and that substitution is reported through the API as `resultSource: FIXTURE` rather than passed off as repository content.
+## Architectural rules
 
-## Datastore Roles
+### DSpace is authoritative
 
-Four datastores across two systems, which is easy to misread. Each has one job:
+Repository metadata, access statements, relationships, versions, files, and bitstreams belong in DSpace. The public discovery index is derived state.
 
-| Datastore                                   | Role                                             | Owner            |
-| ------------------------------------------- | ------------------------------------------------ | ---------------- |
-| Application PostgreSQL `civics_ops` (:5432) | Application operational state — sync job history | `repository-api` |
-| DSpace PostgreSQL (:5433)                   | Repository system of record                      | DSpace           |
-| Discovery Solr, `discovery` core (:8983)    | Public discovery projection, rebuildable         | `repository-api` |
-| DSpace Solr (:8984)                         | DSpace internal search and OAI cores             | DSpace           |
+### The public index is replaceable
 
-The application database is named `civics_ops` and owned by the `civics` role, so the split is legible at a glance: `civics_ops` is application state, `dspace` is the repository. See [planning/DECISIONS.md](../planning/DECISIONS.md) under "Datastore Roles and Naming".
+Application services depend on `DiscoveryIndex`, not directly on a Solr client. Apache Solr is the current implementation; an alternate engine would replace that implementation without changing DSpace's own Solr or the repository model.
 
-## Major Bounded Contexts
+### Browser integrations are typed and centralized
 
-### Discovery UI
+OpenAPI is the contract source of truth. TypeScript API types and Java wire DTOs are generated from the same schema. Browser code receives repository/source provenance explicitly instead of guessing whether a result is live or fixture-backed.
 
-Angular application for public search, filtering, dataset details, version browsing, download affordances, citation copy, and geospatial previews.
+### Accessibility is part of the architecture
 
-### Repository
+The accessible table/list representation is generated from the same state as the map. Selection, URL state, announcements, layer visibility, and errors flow through NgRx rather than through direct map-to-DOM coupling.
 
-DSpace manages communities, collections, items, metadata, relationships, bitstreams, and repository workflow states.
+## Repository population and synchronization
 
-### Search
+There are two complementary paths.
 
-Solr powers keyword search, faceted navigation, relevance ranking, documentation indexing, and result counts.
+### Curated repository composition
 
-### Ingestion
+`tools/dspace/catalog.json` declares which research objects belong in the reference repository. `generate-saf.mjs` resolves program templates and authored research objects into DSpace SAF packages. This path creates the broad catalog and the curated Open Science research package.
 
-Harvester process imports public metadata and file references from Census and USGS resources. Early implementation should ingest metadata and source links before attempting full file mirroring.
+The catalog is deliberately curated. Publisher APIs and listings can verify file existence, dates, sizes, and vintages, but they cannot determine all curatorial relationships or decide that a publication, methodology report, project, public dataset, and restricted microdata form one research package.
 
-### Mapping
+### Runtime reconciliation
 
-Mapping layer renders TIGER/Line, LODES, and other geospatial datasets with USGS contextual overlays where useful.
+Registered Spring metadata adapters read catalog-backed definitions, verify publisher facts where available, normalize them as `ResearchObjectMetadata`, and reconcile fields owned by synchronization into DSpace. Startup, the admin UI, and command-line sync use the same `SyncService` path.
 
-## Initial Vertical Slice
+The current adapter registry covers the publisher-backed objects. A small curated research package intentionally remains outside adapter identity coverage because its relationships are repository curation, not publisher-discovered facts. See [platform-status.md](platform-status.md) for the current counts.
 
-The first visual slice targets TIGER/Line Census Tracts for North Dakota, with ACS PUMS kept as the follow-on metadata-rich example.
+Synchronization guarantees:
 
-1. ~~Create a DSpace community and collection.~~ Done.
-2. ~~Create one DSpace item with metadata, source links, and documentation references.~~ Done, via the SAF seed package and `crr.*` schema.
-3. ~~Synchronize normalized source metadata into that item.~~ Done, idempotently, for Dublin Core and `crr.*` fields.
-4. ~~Make DSpace metadata drive discovery and dataset detail.~~ Done. Search, facets, dataset detail, and related research are read from DSpace; fixtures remain only as a labelled fallback.
-5. ~~Build Angular search results and dataset detail pages.~~ Done.
-6. ~~Add a map preview and one USGS overlay.~~ Done.
-7. ~~Capture automated accessibility evidence.~~ Done. Manual evidence checklists exist; no run has been recorded.
+- dry-run and diff do not write,
+- apply is idempotent,
+- only synchronization-owned fields are compared and changed,
+- ambiguous DSpace matches fail instead of writing to the first search result,
+- source identifier to DSpace identity is recorded where reconciliation applies,
+- file manifests describe authoritative publisher files whether or not a bitstream is mirrored.
 
-Remaining: live source harvesting in place of static adapter constants. The file manifest is reconciled as `crr.file.manifest` metadata, so `sync:diff` now reaches `SKIP_ITEM`.
+## Discovery flow
 
-## Deployment Direction
+```text
+DSpace research objects
+        |
+        v
+DiscoveryProjectionService
+        |
+        v
+DiscoveryIndex
+  Apache Solr implementation
+        |
+        v
+SearchService / typed API
+        |
+        v
+NgRx search state and Angular views
+```
 
-Local development runs on Docker Compose. The AWS target — EKS as the recommendation, ECS/Fargate as the alternate, RDS PostgreSQL, the Solr persistence tradeoff, CloudFront for the frontend, and the observability and backup posture — is documented in [aws-modernization.md](aws-modernization.md). Nothing is deployed; the document is the artifact.
+Search uses eDisMax relevance, field and phrase boosts, facets, paging, URL state, and repository metadata such as subjects, authors, citation, DOI, geography, type, access level, and vintage. A fixture catalog is available only as a labelled degradation path when repository content cannot be obtained.
+
+## Geospatial and research-to-impact flow
+
+The map workspace is a consumer of repository and public-source services, not the repository itself.
+
+Current layers include:
+
+- TIGER/Line boundaries,
+- LODES workplace employment,
+- LODES origin-destination commuting flows,
+- SAIPE socioeconomic context,
+- USGS 3D Hydrography Program reference data,
+- USGS earthquake events.
+
+The workforce journey begins in discovery, carries the selected geography into the map, opens with workforce layers visible, and links back to the originating research context. Map marks and accessible tables share selection state; hiding a layer clears incompatible selection; live regions announce meaningful changes.
+
+## Preservation model
+
+The repository uses bounded mirroring rather than either extreme of mirroring nothing or downloading every public archive.
+
+- Metadata, authoritative source URLs, documentation, access statements, and file manifests are always represented.
+- Eligible source files are mirrored into DSpace as real bitstreams within a per-file and total-byte budget.
+- Large or budget-exceeding artifacts remain authoritative links.
+- The Evidence page reports subscribed, mirrored, curated, and indexed as distinct measures.
+
+## Accessibility evidence architecture
+
+```text
+Angular template lint
+        +
+component-state axe tests
+        +
+real-browser WCAG/508 suites
+        +
+forced-colors / dark mode / reflow / contrast
+        +
+map-equivalence and keyboard preconditions
+        |
+        v
+generated automated evidence record
+        |
+        v
+API evidence manifest and Evidence page
+        |
+        v
+manual keyboard / NVDA / JAWS / map / cognitive records
+```
+
+An automated pass is not presented as full Section 508 conformance. Manual evidence remains a separate, recorded step.
+
+## Deployment direction
+
+Docker Compose is the implemented platform and demo environment. The documented AWS target uses EKS as the preferred orchestration model, with ECS/Fargate as an alternate, RDS PostgreSQL, a persistent search-engine decision, CloudFront for the frontend, and explicit backup/observability posture. Infrastructure-as-code is not yet implemented.
+
+## Current seams
+
+The remaining seams are deliberately narrow:
+
+1. Complete and record the manual keyboard, NVDA, JAWS, and map-equivalence evidence.
+2. Add a dedicated browser-evidence CI workflow or schedule and decide branch-protection policy.
+3. Implement Terraform or CDK for the documented AWS target.
+4. Finish research-object language and add a `/research/:id` route alias while preserving existing links.
+5. Expand publisher listing/vintage coverage and optional cross-agency federation without turning catalog curation into unsafe automatic edits.
+6. Continue provenance hardening: source freshness, indexing timestamps, and precise fallback provenance where a derived map can use either live aggregation or a stored sample.
