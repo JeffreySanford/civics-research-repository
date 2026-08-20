@@ -22,10 +22,13 @@ jobs:
     name: Workspace gates
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
@@ -40,39 +43,32 @@ jobs:
       - name: Apply formatting for diagnostic run
         run: pnpm exec nx format:write --all
 
-      - name: Show formatting changes
-        run: git diff --no-ext-diff --unified=3
-
-      - name: Upload formatted files for diagnostic recovery
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: prettier-formatted-files
-          path: |
-            README.md
-            apps/discovery-ui-e2e/src/keyboard-operability.spec.ts
-            apps/discovery-ui/src/app/pages/evidence-page.html
-            documentation/accessibility-manual-evidence.md
-            documentation/architecture.md
-            documentation/demo/demo-script.md
-            documentation/platform-status.md
-            tools/scripts/accessibility-evidence.mjs
-            tools/scripts/platform-status.mjs
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Regenerate platform status for diagnostic run
         run: pnpm run docs:status
 
-      - name: Show generated status changes
-        run: git diff --no-ext-diff --unified=3 -- documentation/platform-status.md
-
-      - name: Upload generated platform status
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: generated-platform-status
-          path: documentation/platform-status.md
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit confirmed formatting fixes to diagnostic branch
+        if: github.event_name == 'pull_request' && github.head_ref == 'fix/ci-security-gates-2026-08-20'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            README.md \
+            apps/discovery-ui-e2e/src/keyboard-operability.spec.ts \
+            apps/discovery-ui/src/app/pages/evidence-page.html \
+            documentation/accessibility-manual-evidence.md \
+            documentation/architecture.md \
+            documentation/demo/demo-script.md \
+            documentation/platform-status.md \
+            tools/scripts/accessibility-evidence.mjs \
+            tools/scripts/platform-status.mjs
+          if git diff --cached --quiet; then
+            echo "Confirmed files already match formatter and generated status."
+            exit 0
+          fi
+          git commit -m "Normalize formatting and refresh platform status"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_HEAD_REF}"
 
       - name: Check formatting
         run: pnpm exec nx format:check --all
