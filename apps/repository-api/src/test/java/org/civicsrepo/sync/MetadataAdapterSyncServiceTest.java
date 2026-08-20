@@ -35,7 +35,7 @@ class MetadataAdapterSyncServiceTest {
     @Test
     void dryRunPlansRepositoryActionsForEachRegisteredAdapter() {
         assertDryRunCompletes(SyncSource.LODES, "lodes-wac-north-dakota-2023");
-        assertDryRunCompletes(SyncSource.CPS, "cps-public-use-2025");
+        assertDryRunCompletes(SyncSource.CPS, "cps-public-use-2026");
         assertDryRunCompletes(SyncSource.SIPP, "sipp-public-use-2025");
         assertDryRunCompletes(SyncSource.USGS_EARTHQUAKES, "usgs-earthquakes-overlay");
     }

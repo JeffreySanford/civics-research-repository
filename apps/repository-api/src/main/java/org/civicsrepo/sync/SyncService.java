@@ -8,6 +8,7 @@ import org.civicsrepo.generated.dto.SyncSource;
 import org.civicsrepo.generated.dto.SyncStatus;
 import java.util.ArrayList;
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +58,19 @@ public class SyncService {
         this.dspaceItemDiffPlanner = dspaceItemDiffPlanner;
         this.metadataAdapters =
                 metadataAdapters.stream().collect(Collectors.toUnmodifiableMap(PublicMetadataAdapter::source, Function.identity()));
+    }
+
+    /**
+     * Sources that have a metadata adapter, in a stable order.
+     *
+     * <p>Derived from the registered adapters rather than from the {@code SyncSource} enum: the enum
+     * names every source the contract knows about, and several of those have no adapter yet.
+     * Iterating the enum would plan work for sources nothing can harvest.
+     */
+    public List<SyncSource> availableSources() {
+        return metadataAdapters.keySet().stream()
+                .sorted(Comparator.comparing(SyncSource::getValue))
+                .toList();
     }
 
     public SyncJob runSync(SyncRequest request) {

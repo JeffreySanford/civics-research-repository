@@ -11,12 +11,15 @@ import org.springframework.stereotype.Component;
 /** Current Population Survey public-use metadata for the repository sync slice. */
 @Component
 public class CpsMetadataAdapter implements PublicMetadataAdapter {
-    private static final int VINTAGE_YEAR = 2025;
+    // 2026, matching tools/dspace/catalog.json. The adapter was pinned to 2025 while the catalog
+    // seeded 2026, so apply looked for cps-public-use-2025, found nothing, and failed the job.
+    // The catalog is the source of truth for what the repository holds; the adapter follows it.
+    private static final int VINTAGE_YEAR = 2026;
     private static final String SOURCE_URL =
-            "https://www2.census.gov/programs-surveys/cps/datasets/2025/basic/jan25pub.zip";
+            "https://www2.census.gov/programs-surveys/cps/datasets/2026/basic/jan26pub.zip";
     private static final String DOCUMENTATION_URL =
             "https://www.census.gov/programs-surveys/cps/technical-documentation/complete.html";
-    private static final LocalDate FALLBACK_RELEASED_ON = LocalDate.of(2025, 9, 1);
+    private static final LocalDate FALLBACK_RELEASED_ON = LocalDate.of(2026, 1, 1);
 
     private final SourceFileProbe sourceFileProbe;
 
@@ -35,8 +38,8 @@ public class CpsMetadataAdapter implements PublicMetadataAdapter {
         Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(DOCUMENTATION_URL);
 
         return ResearchObjectMetadata.dataset(
-                "cps-public-use-2025",
-                "2025 Current Population Survey Public Use Data",
+                "cps-public-use-2026",
+                "2026 Current Population Survey Public Use Data",
                 ResearchProgram.CPS,
                 "U.S. Census Bureau",
                 "Current Population Survey public-use metadata for labor force, employment, and demographic research.",
@@ -46,7 +49,7 @@ public class CpsMetadataAdapter implements PublicMetadataAdapter {
                 releasedOn(sourceFacts),
                 SOURCE_URL,
                 DOCUMENTATION_URL,
-                "U.S. Census Bureau. Current Population Survey Public Use Data, 2025.",
+                "U.S. Census Bureau. Current Population Survey Public Use Data, 2026.",
                 List.of(
                         new ResearchObjectFile(
                                 "source-directory",

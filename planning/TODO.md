@@ -170,6 +170,14 @@ The repository now holds objects the default discovery view hides, and 181 objec
 - [x] Index the new metadata into discovery: subjects, authors, citation, DOI, via a `DiscoveryDocument` that carries searchable text without widening `SearchResult`. Queries that previously returned nothing now resolve: "Card" finds the paper by author, "disclosure avoidance" finds the methodology report, "Title 13 restricted" finds the restricted microdata.
 - [x] Fallback semantics brought in line: tokenized matching with the same two-thirds minimum-match rule instead of requiring the whole query as one substring, and the vintage facet reversed to newest-first. A Java test caught the second one — losing Solr would have flipped the year order. The fallback still cannot match subjects, authors or citations, which are indexed for Solr and not carried on `SearchResult`.
 
+### P16 - Sync adapter coverage
+
+- [x] Startup sync runs every registered adapter rather than the single `civics.sync.source`. That property still selects the source for the admin and CLI paths, where picking one is the point.
+- [x] One source failing no longer stops the rest: a publisher being unreachable is a fact about that publisher.
+- [x] Fixed a real drift the change surfaced: the CPS adapter was pinned to `cps-public-use-2025` while the catalog seeded `cps-public-use-2026`, so apply looked for an item that does not exist and failed. Both files are published; the adapter now follows the catalog, which is the source of truth for what the repository holds.
+- [x] Objects with a recorded DSpace identity: 1 -> 5, one per adapter.
+- [ ] Adapters harvest one representative object each (`firstVisualSlice`). Reaching all 181 means enumerating every area per program, which is catalog harvesting rather than adapter wiring — tracked under P1.
+
 ### P15 - Persistent repository identity
 
 The last structural gap in the sync subsystem, and the one an external review keeps landing on.

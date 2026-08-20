@@ -75,9 +75,14 @@ it rather than writing it empty — so widening the model cannot clear metadata 
 
 Verified idempotent against the live repository: apply, then diff reports `SKIP_ITEM`.
 
-What remains is adapter coverage rather than model capability. Only TIGER/Line reconciles live, so
-one object of 181 has a recorded DSpace UUID. The other adapters exist and produce metadata; they
-are simply not wired into startup sync yet.
+Adapter coverage followed: startup sync now runs every registered adapter rather than one, so five
+objects have a recorded DSpace UUID instead of one. Wiring it surfaced a real drift — the CPS
+adapter and the catalog disagreed about which vintage the repository holds, so apply had been
+failing for that source unnoticed.
+
+Five is the ceiling for adapter wiring, not a shortfall in it: each adapter harvests one
+representative object. Reaching all 181 means enumerating every area per program, which is catalog
+harvesting (item 3) rather than more adapters.
 
 ### 6. Finish manual accessibility evidence
 
