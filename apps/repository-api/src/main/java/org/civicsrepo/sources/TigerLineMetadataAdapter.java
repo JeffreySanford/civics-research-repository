@@ -45,12 +45,12 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
     }
 
     @Override
-    public PublicDatasetMetadata firstVisualSlice() {
+    public ResearchObjectMetadata firstVisualSlice() {
         String sourceUrl = TIGER_BASE_URL + "tl_" + VINTAGE_YEAR + "_" + STATE_FIPS + "_tract.zip";
         Optional<SourceFileFacts> sourceFacts = sourceFileProbe.probe(sourceUrl);
         Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(TECHNICAL_DOCUMENTATION_URL);
 
-        return new PublicDatasetMetadata(
+        return ResearchObjectMetadata.dataset(
                 "tiger-line-north-dakota-2025",
                 "2025 TIGER/Line - Census Tracts - North Dakota",
                 ResearchProgram.TIGER_LINE,
@@ -64,19 +64,19 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
                 DOCUMENTATION_URL,
                 "U.S. Census Bureau. 2025 TIGER/Line Shapefiles: Census Tracts, North Dakota.",
                 List.of(
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "source-zip",
                                 "North Dakota census tract TIGER/Line shapefile archive",
                                 FileFormat.ZIP,
                                 sourceUrl,
                                 sizeBytes(sourceFacts)),
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "technical-documentation",
                                 "2025 TIGER/Line technical documentation",
                                 FileFormat.PDF,
                                 TECHNICAL_DOCUMENTATION_URL,
                                 sizeBytes(documentationFacts)),
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "source-landing-page",
                                 "TIGER/Line shapefile source landing page",
                                 FileFormat.OTHER,

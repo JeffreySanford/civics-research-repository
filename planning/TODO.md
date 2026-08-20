@@ -157,7 +157,7 @@ The data model knew about research objects; the populated repository held only d
 - [x] Rename `DatasetDetail` to `ResearchObjectDetail`.
 - [ ] Rename the remaining dataset-shaped UI copy: "Loading dataset detail", "Dataset supporting information", "Open related dataset".
 - [ ] Alias the route `/research/:id` alongside `/datasets/:id`.
-- [ ] Generalise `PublicDatasetMetadata` to `ResearchObjectMetadata` so live sync carries type, access, license, DOI, researchers and relations. Behind the discovery work.
+- [x] Generalise `PublicDatasetMetadata` to `ResearchObjectMetadata` (and `PublicDatasetFile` to `ResearchObjectFile`) so live sync carries type, access, license, DOI, researchers and relations. The seven new fields join `DspaceManagedFields`, so they are reconciled like any other. Verified idempotent against the live repository: apply then diff reports `SKIP_ITEM`, and the harvested TIGER/Line item now carries `crr.resource.type=DATASET` and `crr.rights.access=PUBLIC`. Researcher and relation JSON is encoded by `ResearchObjectJson` to match `generate-saf.mjs` exactly — a key-order difference would make the diff report a change on every run without ever settling.
 
 ### P12 - Discovery experience
 

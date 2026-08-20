@@ -31,11 +31,11 @@ public class LodesMetadataAdapter implements PublicMetadataAdapter {
     }
 
     @Override
-    public PublicDatasetMetadata firstVisualSlice() {
+    public ResearchObjectMetadata firstVisualSlice() {
         Optional<SourceFileFacts> sourceFacts = sourceFileProbe.probe(SOURCE_URL);
         Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(DOCUMENTATION_URL);
 
-        return new PublicDatasetMetadata(
+        return ResearchObjectMetadata.dataset(
                 "lodes-wac-north-dakota-2023",
                 "2023 LODES Workplace Area Characteristics - North Dakota",
                 ResearchProgram.LODES,
@@ -49,13 +49,13 @@ public class LodesMetadataAdapter implements PublicMetadataAdapter {
                 DOCUMENTATION_URL,
                 "U.S. Census Bureau. LEHD Origin-Destination Employment Statistics, Workplace Area Characteristics, North Dakota, 2023.",
                 List.of(
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "source-csv",
                                 "LODES workplace area characteristics CSV",
                                 FileFormat.CSV,
                                 SOURCE_URL,
                                 sizeBytes(sourceFacts)),
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "technical-documentation",
                                 "LODES technical documentation",
                                 FileFormat.PDF,

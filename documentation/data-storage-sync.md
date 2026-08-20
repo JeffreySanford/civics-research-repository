@@ -182,6 +182,31 @@ Two failures are worth recording, because both were silent:
 
 Neither produced an error. The check that catches them is the assetstore size, which the API now reports as `storedBitstreamCount` and `storedBytes` on the DSpace overview, and the Evidence page shows on its Data pipeline tab.
 
+### Research Objects Through Sync
+
+The harvest path used to be dataset-shaped. `PublicDatasetMetadata` carried a title, a program, a
+geography and a file list, and nothing else — so a harvested object was structurally poorer than a
+seeded one, and the two paths described different repositories.
+
+`ResearchObjectMetadata` closes that. It adds resource type, access level, access note, licence,
+DOI, researchers and typed relations, and all seven are reconciled through `DspaceManagedFields`
+like any other managed field.
+
+Two properties make widening it safe:
+
+- **A missing source value is "no opinion", not "clear it".** The reconciliation skips fields the
+  payload does not supply, so a dataset adapter that knows nothing about DOIs cannot erase one a
+  seeded item carries.
+- **The JSON encoding is shared.** `ResearchObjectJson` writes researcher and relation values in the
+  exact shape `generate-saf.mjs` writes them, including omitting an absent ORCID rather than
+  emitting null. A key-order difference would make `sync:diff` report a change on every run and
+  never settle — the failure the file manifest had before its encoding was shared.
+
+Verified against the live repository: apply, then diff reports `SKIP_ITEM`, and the harvested
+TIGER/Line item carries `crr.resource.type=DATASET` and `crr.rights.access=PUBLIC`.
+
+What remains is adapter coverage rather than model capability: only TIGER/Line reconciles live.
+
 ### Seeding Breadth
 
 The repository is seeded from [tools/dspace/catalog.json](../tools/dspace/catalog.json), a data table of geographies and programs. `tools/scripts/generate-saf.mjs` expands it into DSpace SAF packages, which `pnpm run dspace:seed` regenerates before importing.

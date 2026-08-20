@@ -13,7 +13,7 @@ class SippMetadataAdapterTest {
     void normalizesSippPublicUseMetadata() {
         SippMetadataAdapter adapter = new SippMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(adapter.source()).isEqualTo(SyncSource.SIPP);
         assertThat(metadata.id()).isEqualTo("sipp-public-use-2025");
@@ -21,7 +21,7 @@ class SippMetadataAdapterTest {
         assertThat(metadata.geography()).isEqualTo("United States");
         assertThat(metadata.vintageYear()).isEqualTo(2025);
         assertThat(metadata.files())
-                .extracting(PublicDatasetFile::format)
+                .extracting(ResearchObjectFile::format)
                 .containsExactly(FileFormat.CSV, FileFormat.OTHER);
     }
 
@@ -29,9 +29,9 @@ class SippMetadataAdapterTest {
     void fallsBackToCompiledMetadataWhenThePublisherCannotBeReached() {
         SippMetadataAdapter adapter = new SippMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2025, 9, 1));
-        assertThat(metadata.files()).extracting(PublicDatasetFile::sizeBytes).containsOnlyNulls();
+        assertThat(metadata.files()).extracting(ResearchObjectFile::sizeBytes).containsOnlyNulls();
     }
 }

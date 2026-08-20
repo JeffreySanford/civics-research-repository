@@ -30,11 +30,11 @@ public class CpsMetadataAdapter implements PublicMetadataAdapter {
     }
 
     @Override
-    public PublicDatasetMetadata firstVisualSlice() {
+    public ResearchObjectMetadata firstVisualSlice() {
         Optional<SourceFileFacts> sourceFacts = sourceFileProbe.probe(SOURCE_URL);
         Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(DOCUMENTATION_URL);
 
-        return new PublicDatasetMetadata(
+        return ResearchObjectMetadata.dataset(
                 "cps-public-use-2025",
                 "2025 Current Population Survey Public Use Data",
                 ResearchProgram.CPS,
@@ -48,13 +48,13 @@ public class CpsMetadataAdapter implements PublicMetadataAdapter {
                 DOCUMENTATION_URL,
                 "U.S. Census Bureau. Current Population Survey Public Use Data, 2025.",
                 List.of(
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "source-directory",
                                 "CPS basic monthly data directory",
                                 FileFormat.OTHER,
                                 SOURCE_URL,
                                 sizeBytes(sourceFacts)),
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "technical-documentation",
                                 "CPS technical documentation",
                                 FileFormat.OTHER,

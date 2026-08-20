@@ -14,7 +14,7 @@ class UsgsEarthquakesMetadataAdapterTest {
         UsgsEarthquakesMetadataAdapter adapter =
                 new UsgsEarthquakesMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(adapter.source()).isEqualTo(SyncSource.USGS_EARTHQUAKES);
         assertThat(metadata.id()).isEqualTo("usgs-earthquakes-overlay");
@@ -23,7 +23,7 @@ class UsgsEarthquakesMetadataAdapterTest {
         assertThat(metadata.sourceUrl())
                 .isEqualTo("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson");
         assertThat(metadata.files())
-                .extracting(PublicDatasetFile::format)
+                .extracting(ResearchObjectFile::format)
                 .containsExactly(FileFormat.GEOJSON, FileFormat.OTHER);
     }
 
@@ -32,9 +32,9 @@ class UsgsEarthquakesMetadataAdapterTest {
         UsgsEarthquakesMetadataAdapter adapter =
                 new UsgsEarthquakesMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2026, 1, 1));
-        assertThat(metadata.files()).extracting(PublicDatasetFile::sizeBytes).containsOnlyNulls();
+        assertThat(metadata.files()).extracting(ResearchObjectFile::sizeBytes).containsOnlyNulls();
     }
 }

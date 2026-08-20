@@ -13,7 +13,7 @@ class CpsMetadataAdapterTest {
     void normalizesCurrentPopulationSurveyMetadata() {
         CpsMetadataAdapter adapter = new CpsMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(adapter.source()).isEqualTo(SyncSource.CPS);
         assertThat(metadata.id()).isEqualTo("cps-public-use-2025");
@@ -21,7 +21,7 @@ class CpsMetadataAdapterTest {
         assertThat(metadata.geography()).isEqualTo("United States");
         assertThat(metadata.vintageYear()).isEqualTo(2025);
         assertThat(metadata.files())
-                .extracting(PublicDatasetFile::format)
+                .extracting(ResearchObjectFile::format)
                 .containsExactly(FileFormat.OTHER, FileFormat.OTHER);
     }
 
@@ -29,9 +29,9 @@ class CpsMetadataAdapterTest {
     void fallsBackToCompiledMetadataWhenThePublisherCannotBeReached() {
         CpsMetadataAdapter adapter = new CpsMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2025, 9, 1));
-        assertThat(metadata.files()).extracting(PublicDatasetFile::sizeBytes).containsOnlyNulls();
+        assertThat(metadata.files()).extracting(ResearchObjectFile::sizeBytes).containsOnlyNulls();
     }
 }

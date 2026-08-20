@@ -13,7 +13,7 @@ class LodesMetadataAdapterTest {
     void normalizesNorthDakotaWacMetadata() {
         LodesMetadataAdapter adapter = new LodesMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(adapter.source()).isEqualTo(SyncSource.LODES);
         assertThat(metadata.id()).isEqualTo("lodes-wac-north-dakota-2023");
@@ -24,7 +24,7 @@ class LodesMetadataAdapterTest {
                 .isEqualTo(
                         "https://lehd.ces.census.gov/data/lodes/LODES8/nd/wac/nd_wac_S000_JT00_2023.csv.gz");
         assertThat(metadata.files())
-                .extracting(PublicDatasetFile::format)
+                .extracting(ResearchObjectFile::format)
                 .containsExactly(FileFormat.CSV, FileFormat.PDF);
     }
 
@@ -32,9 +32,9 @@ class LodesMetadataAdapterTest {
     void fallsBackToCompiledMetadataWhenThePublisherCannotBeReached() {
         LodesMetadataAdapter adapter = new LodesMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2023, 6, 1));
-        assertThat(metadata.files()).extracting(PublicDatasetFile::sizeBytes).containsOnlyNulls();
+        assertThat(metadata.files()).extracting(ResearchObjectFile::sizeBytes).containsOnlyNulls();
     }
 }

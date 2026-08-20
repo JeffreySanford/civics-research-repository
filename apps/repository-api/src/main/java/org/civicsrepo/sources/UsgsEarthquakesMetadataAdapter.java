@@ -29,11 +29,11 @@ public class UsgsEarthquakesMetadataAdapter implements PublicMetadataAdapter {
     }
 
     @Override
-    public PublicDatasetMetadata firstVisualSlice() {
+    public ResearchObjectMetadata firstVisualSlice() {
         Optional<SourceFileFacts> sourceFacts = sourceFileProbe.probe(SOURCE_URL);
         Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(DOCUMENTATION_URL);
 
-        return new PublicDatasetMetadata(
+        return ResearchObjectMetadata.dataset(
                 "usgs-earthquakes-overlay",
                 "USGS Earthquake Overlay",
                 ResearchProgram.USGS,
@@ -47,13 +47,13 @@ public class UsgsEarthquakesMetadataAdapter implements PublicMetadataAdapter {
                 DOCUMENTATION_URL,
                 "U.S. Geological Survey. Earthquake Catalog GeoJSON Feed.",
                 List.of(
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "geojson-feed",
                                 "USGS earthquake GeoJSON feed",
                                 FileFormat.GEOJSON,
                                 SOURCE_URL,
                                 sizeBytes(sourceFacts)),
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "api-documentation",
                                 "USGS FDSN event API documentation",
                                 FileFormat.OTHER,

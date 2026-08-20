@@ -30,11 +30,11 @@ public class SippMetadataAdapter implements PublicMetadataAdapter {
     }
 
     @Override
-    public PublicDatasetMetadata firstVisualSlice() {
+    public ResearchObjectMetadata firstVisualSlice() {
         Optional<SourceFileFacts> sourceFacts = sourceFileProbe.probe(SOURCE_URL);
         Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(DOCUMENTATION_URL);
 
-        return new PublicDatasetMetadata(
+        return ResearchObjectMetadata.dataset(
                 "sipp-public-use-2025",
                 "2025 SIPP Public Use Data",
                 ResearchProgram.SIPP,
@@ -48,13 +48,13 @@ public class SippMetadataAdapter implements PublicMetadataAdapter {
                 DOCUMENTATION_URL,
                 "U.S. Census Bureau. Survey of Income and Program Participation Public Use Data, 2025.",
                 List.of(
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "source-archive",
                                 "SIPP public use archive",
                                 FileFormat.CSV,
                                 SOURCE_URL,
                                 sizeBytes(sourceFacts)),
-                        new PublicDatasetFile(
+                        new ResearchObjectFile(
                                 "technical-documentation",
                                 "SIPP technical documentation",
                                 FileFormat.OTHER,

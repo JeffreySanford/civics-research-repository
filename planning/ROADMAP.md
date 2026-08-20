@@ -66,13 +66,18 @@ and is what makes relationships, versions and citations resolvable later rather 
 This is the last structural gap in the sync subsystem and the one an outside reader notices.
 Tracked as P15 in [TODO.md](TODO.md).
 
-### 5. Generalise sync to research objects
+### 5. Generalise sync to research objects — delivered
 
-The catalog and SAF path model the full research-object vocabulary. Live sync does not:
-`PublicDatasetMetadata` carries no resource type, access level, license, DOI, researchers or
-relations, so a harvested object cannot express what a seeded one can. Renaming it
-`ResearchObjectMetadata` and widening the DSpace payload mapper closes the loop. Deliberately behind
-the user-facing work — this rebuilds a pipeline that currently functions.
+`ResearchObjectMetadata` replaces `PublicDatasetMetadata` and carries resource type, access level,
+access note, licence, DOI, researchers and typed relations. All seven are reconciled through
+`DspaceManagedFields` like any other managed field, and a harvest that says nothing about one skips
+it rather than writing it empty — so widening the model cannot clear metadata a seeded item holds.
+
+Verified idempotent against the live repository: apply, then diff reports `SKIP_ITEM`.
+
+What remains is adapter coverage rather than model capability. Only TIGER/Line reconciles live, so
+one object of 181 has a recorded DSpace UUID. The other adapters exist and produce metadata; they
+are simply not wired into startup sync yet.
 
 ### 6. Finish manual accessibility evidence
 

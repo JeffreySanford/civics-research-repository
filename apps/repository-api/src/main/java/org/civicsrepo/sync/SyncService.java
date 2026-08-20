@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 import org.civicsrepo.dspace.DspaceItemDiffPlanner;
 import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemPayloadMapper;
-import org.civicsrepo.sources.PublicDatasetFile;
-import org.civicsrepo.sources.PublicDatasetMetadata;
+import org.civicsrepo.sources.ResearchObjectFile;
+import org.civicsrepo.sources.ResearchObjectMetadata;
 import org.civicsrepo.sources.PublicMetadataAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +130,7 @@ public class SyncService {
             return fallbackPlanActions(request);
         }
 
-        PublicDatasetMetadata metadata = metadataAdapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = metadataAdapter.firstVisualSlice();
         DspaceItemPayload itemPayload = dspaceItemPayloadMapper.toItemPayload(metadata);
         if (request.getMode() == SyncMode.DIFF) {
             return diffPlanActions(metadata, itemPayload);
@@ -184,7 +184,7 @@ public class SyncService {
         };
     }
 
-    private List<SyncAction> diffPlanActions(PublicDatasetMetadata metadata, DspaceItemPayload itemPayload) {
+    private List<SyncAction> diffPlanActions(ResearchObjectMetadata metadata, DspaceItemPayload itemPayload) {
         return List.of(
                 new SyncAction(
                         SyncAction.ActionTypeEnum.VERIFY_COMMUNITY,
@@ -221,7 +221,7 @@ public class SyncService {
      * is what makes that visible in a dry run: a size means the source was reachable and answered,
      * and its absence means the entry rests on compiled metadata.
      */
-    private String fileManifestSummary(List<PublicDatasetFile> files) {
+    private String fileManifestSummary(List<ResearchObjectFile> files) {
         return files.stream()
                 .map((file) -> file.id() + "=" + file.format().getValue()
                         + (file.sizeBytes() == null ? "" : " (" + file.sizeBytes() + " bytes)"))

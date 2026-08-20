@@ -15,7 +15,7 @@ class TigerLineMetadataAdapterTest {
     void normalizesNorthDakotaTractMetadata() {
         TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(adapter.source()).isEqualTo(SyncSource.TIGER_LINE);
         assertThat(metadata.id()).isEqualTo("tiger-line-north-dakota-2025");
@@ -28,7 +28,7 @@ class TigerLineMetadataAdapterTest {
         assertThat(metadata.sourceUrl())
                 .isEqualTo("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip");
         assertThat(metadata.files())
-                .extracting(PublicDatasetFile::format)
+                .extracting(ResearchObjectFile::format)
                 .containsExactly(FileFormat.ZIP, FileFormat.PDF, FileFormat.OTHER);
     }
 
@@ -43,11 +43,11 @@ class TigerLineMetadataAdapterTest {
                 (url) -> Optional.of(new SourceFileFacts(url.endsWith(".zip") ? 91_234_567L : 4_096L,
                         LocalDate.of(2026, 3, 4))));
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2026, 3, 4));
         assertThat(metadata.files())
-                .extracting(PublicDatasetFile::id, PublicDatasetFile::sizeBytes)
+                .extracting(ResearchObjectFile::id, ResearchObjectFile::sizeBytes)
                 .containsExactly(
                         tuple("source-zip", 91_234_567L),
                         tuple("technical-documentation", 4_096L),
@@ -60,10 +60,10 @@ class TigerLineMetadataAdapterTest {
     void fallsBackToCompiledMetadataWhenThePublisherCannotBeReached() {
         TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe());
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2025, 9, 23));
-        assertThat(metadata.files()).extracting(PublicDatasetFile::sizeBytes).containsOnlyNulls();
+        assertThat(metadata.files()).extracting(ResearchObjectFile::sizeBytes).containsOnlyNulls();
     }
 
     /** A host that answers but sends no Last-Modified must not leave the release date empty. */
@@ -72,7 +72,7 @@ class TigerLineMetadataAdapterTest {
         TigerLineMetadataAdapter adapter =
                 new TigerLineMetadataAdapter((url) -> Optional.of(new SourceFileFacts(512L, null)));
 
-        PublicDatasetMetadata metadata = adapter.firstVisualSlice();
+        ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
         assertThat(metadata.releasedOn()).isEqualTo(LocalDate.of(2025, 9, 23));
         assertThat(metadata.files().getFirst().sizeBytes()).isEqualTo(512L);
