@@ -242,7 +242,9 @@ function generate(check = false) {
       process.exitCode = 1;
       return;
     }
-    console.log('Accessibility evidence manifest matches the latest recorded evidence.');
+    console.log(
+      'Accessibility evidence manifest matches the latest recorded evidence.',
+    );
     return;
   }
 
@@ -284,7 +286,9 @@ function refresh() {
   );
   console.log(`Manifest: ${MANIFEST_PATH}`);
   console.log(`Release record: ${checklist}`);
-  console.log('Manual NVDA/JAWS/keyboard/map statuses were preserved unchanged.');
+  console.log(
+    'Manual NVDA/JAWS/keyboard/map statuses were preserved unchanged.',
+  );
 }
 
 const flags = new Set(process.argv.slice(2));

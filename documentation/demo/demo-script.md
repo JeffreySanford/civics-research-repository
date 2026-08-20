@@ -14,13 +14,13 @@ Wait for the launcher to print the healthy service URLs. Before presenting repos
 
 Useful endpoints:
 
-| Service | URL |
-| --- | --- |
-| Discovery UI | `http://localhost:4200` |
-| Repository API | `http://localhost:8080/api` |
-| DSpace REST | `http://localhost:8081/server/api` |
-| Discovery Solr | `http://localhost:8983/solr` |
-| DSpace Solr | `http://localhost:8984/solr` |
+| Service        | URL                                |
+| -------------- | ---------------------------------- |
+| Discovery UI   | `http://localhost:4200`            |
+| Repository API | `http://localhost:8080/api`        |
+| DSpace REST    | `http://localhost:8081/server/api` |
+| Discovery Solr | `http://localhost:8983/solr`       |
+| DSpace Solr    | `http://localhost:8984/solr`       |
 
 The current generated counts and evidence date are in [../platform-status.md](../platform-status.md). Use that document instead of memorizing numbers from this script.
 

@@ -39,25 +39,30 @@ async function openRoute(page: Page, path: string): Promise<void> {
 }
 
 async function visibleControlCount(page: Page): Promise<number> {
-  return page.locator(INTERACTIVE).evaluateAll((nodes) =>
-    nodes.filter((node) => {
-      const element = node as HTMLElement;
-      const style = getComputedStyle(element);
-      const rect = element.getBoundingClientRect();
-      return (
-        style.display !== 'none' &&
-        style.visibility !== 'hidden' &&
-        rect.width > 0 &&
-        rect.height > 0
-      );
-    }).length,
+  return page.locator(INTERACTIVE).evaluateAll(
+    (nodes) =>
+      nodes.filter((node) => {
+        const element = node as HTMLElement;
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return (
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
+      }).length,
   );
 }
 
 async function focusedStamp(page: Page): Promise<string | null> {
   return page.evaluate(() => {
     const element = document.activeElement as HTMLElement | null;
-    if (!element || element === document.body || element === document.documentElement) {
+    if (
+      !element ||
+      element === document.body ||
+      element === document.documentElement
+    ) {
       return null;
     }
 
@@ -132,10 +137,14 @@ test.describe('keyboard operability', () => {
       const second = await focusedStamp(page);
 
       expect(first, `${route.name} focused a first control`).not.toBeNull();
-      expect(second, `${route.name} moved on to a second control`).not.toBe(first);
+      expect(second, `${route.name} moved on to a second control`).not.toBe(
+        first,
+      );
 
       await page.keyboard.press('Shift+Tab');
-      expect(await focusedStamp(page), `${route.name} can move backwards`).toBe(first);
+      expect(await focusedStamp(page), `${route.name} can move backwards`).toBe(
+        first,
+      );
     });
 
     /**
@@ -167,7 +176,9 @@ test.describe('keyboard operability', () => {
         }
       }
 
-      expect(unnamed, `${route.name} controls with no accessible name`).toEqual([]);
+      expect(unnamed, `${route.name} controls with no accessible name`).toEqual(
+        [],
+      );
     });
   }
 
@@ -205,7 +216,8 @@ test.describe('keyboard operability', () => {
         return false;
       }
       return Boolean(
-        search.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING,
+        search.compareDocumentPosition(submit) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
       );
     });
 
