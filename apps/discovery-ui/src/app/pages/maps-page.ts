@@ -170,6 +170,21 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private suppressBoundaryFit = false;
   private panAreaSyncTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly areaSyncAnnouncement = signal<string | null>(null);
+  /**
+   * How the map is built, on a control the reader has to ask.
+   *
+   * <p>Closed by default and reachable from one icon beside the heading: a reader who wants to
+   * compare these numbers against Census needs to know they are derived rather than published as
+   * shown, and a reader who does not should not have a paragraph of provenance in their way.
+   */
+  protected readonly methodologyTooltip =
+    'Boundaries are Census TIGER/Line. Commuting flows and workplace employment are aggregated ' +
+    'from the published LEHD LODES files for the selected area: block-level records summed to ' +
+    'counties, with names and interior points from the Census Gazetteer. Commuting lines drop ' +
+    'county-to-itself pairs and keep the largest few; circle area is proportional to the ' +
+    'county job count. 2023 is the newest LODES vintage the Census Bureau publishes. Where a ' +
+    'file is too large to derive within a request, the legend says the flows are a stored sample.';
+
   protected readonly layerTooltips = {
     tiger:
       'Shows the Census TIGER/Line state or area boundary for the selected geography. Helps anchor discovery results to official Census boundaries.',

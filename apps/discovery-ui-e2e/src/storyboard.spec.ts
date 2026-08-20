@@ -881,6 +881,71 @@ test.describe('explore workforce on the map', () => {
  * The commuting flows say who travels between counties. They cannot say how much work sits at
  * either end, so a line into a large county looks like a line into a small one.
  */
+/** Provenance available on request, not imposed: the map draws derived numbers. */
+test.describe('map methodology', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/maps?area=North%20Dakota');
+  });
+
+  /**
+   * Addressed by the tooltip's own class, not by role.
+   *
+   * Seven elements on this page carry role="tooltip" -- one per layer info button, created as
+   * aria-describedby targets whether or not anything is shown -- so the role alone matches the
+   * described text of controls nobody has touched. The class names the surface that is actually
+   * rendered.
+   */
+  const methodologyTooltip = (page: import('@playwright/test').Page) =>
+    page.locator('.methodology-tooltip');
+
+  test('the methodology is closed until asked for @storyboard', async ({
+    page,
+  }) => {
+    await expect(page.getByTestId('map-methodology-info')).toBeVisible();
+    await expect(methodologyTooltip(page)).toHaveCount(0);
+  });
+
+  test('the icon explains how the map is built @wcag @section508', async ({
+    page,
+  }) => {
+    await page
+      .getByRole('button', { name: 'About the map methodology' })
+      .hover();
+
+    const tooltip = methodologyTooltip(page);
+    await expect(tooltip).toContainText('TIGER/Line');
+    await expect(tooltip).toContainText('LODES');
+    await expect(tooltip).toContainText('Census Gazetteer');
+    await expect(tooltip).toContainText('2023');
+  });
+
+  /**
+   * The assertion that matters for assistive technology is the accessible description, not a
+   * rendered div.
+   *
+   * Material attaches the message as an aria-describedby target that exists whether or not anything
+   * is displayed, so a screen reader announces it on focus without a hover ever happening. An
+   * earlier version of this test called locator.focus() and expected the visual tooltip; Material
+   * distinguishes programmatic focus from keyboard focus and shows nothing for the former, so it
+   * was asserting a behaviour real keyboard users do not depend on.
+   */
+  test('the control carries its description for assistive technology @wcag @section508', async ({
+    page,
+  }) => {
+    const info = page.getByRole('button', {
+      name: 'About the map methodology',
+    });
+
+    await expect(info).toBeVisible();
+    await expect(info).toHaveAccessibleDescription(/TIGER\/Line/);
+    await expect(info).toHaveAccessibleDescription(/Census Gazetteer/);
+
+    await info.focus();
+    await expect(info).toBeFocused();
+  });
+});
+
 test.describe('workplace employment layer', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);

@@ -16,6 +16,22 @@
         }
       </div>
 
+      <!-- One icon, closed until asked. The map draws derived numbers, and a reader comparing them
+           against Census needs to be able to find out how they were derived without the page
+           explaining itself to everyone who did not ask. -->
+      <button
+        type="button"
+        class="layer-info-button map-methodology-info"
+        mat-icon-button
+        data-testid="map-methodology-info"
+        aria-label="About the map methodology"
+        [matTooltip]="methodologyTooltip"
+        matTooltipPosition="below"
+        matTooltipClass="methodology-tooltip"
+      >
+        <mat-icon aria-hidden="true">info_outline</mat-icon>
+      </button>
+
       <label class="area-select">
         Census area
         <select

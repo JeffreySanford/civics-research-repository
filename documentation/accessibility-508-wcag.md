@@ -4,6 +4,27 @@
 
 Automation provides repeatable release evidence, but it does not replace manual assistive-technology testing. The project should treat accessibility evidence as part of the engineering artifact, especially for search, facets, dataset detail pages, dialogs, forms, and maps.
 
+## Info Controls And Tooltips
+
+Seven controls on the map explain something: one for the map's methodology and one per layer. Each
+is an icon button with a tooltip, closed until asked for.
+
+An axe scan of `/maps` covers what it can see statically — each button has an accessible name,
+sufficient contrast, a valid role. What it cannot check is whether the _explanation_ reaches a
+screen reader, because Material attaches the tooltip text as an `aria-describedby` target rather
+than putting it in the button. Six of the seven carried an explanation with nothing asserting that
+it arrives.
+
+`accessibility-structure.spec.ts` now checks every one: an accessible name, and an accessible
+description matching what that control is supposed to explain. The description is the assertion that
+matters, and it holds without any interaction — a tooltip that only renders on hover gives a mouse
+user the explanation and leaves everyone else with the label.
+
+One finding worth keeping: an earlier version of the methodology test called `locator.focus()` and
+expected the visual tooltip to appear. Material distinguishes programmatic focus from keyboard focus
+and shows nothing for the former, so the test was asserting a behaviour real keyboard users do not
+depend on. The accessible description is both the correct contract and the stable one.
+
 ## Forced Colors And Dark Mode
 
 Windows High Contrast replaces the author's palette outright: background colours, box-shadows and

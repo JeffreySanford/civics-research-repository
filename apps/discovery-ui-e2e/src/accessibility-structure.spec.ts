@@ -417,4 +417,41 @@ test.describe('accessibility structure', () => {
         .filter({ hasText: 'Repository sync request failed' }),
     ).toBeVisible();
   });
+
+  /**
+   * Every info control, not only the one most recently added.
+   *
+   * <p>An axe scan of /maps sees these buttons and checks what it can see statically: that each has
+   * an accessible name, sufficient contrast, a valid role. What it cannot check is whether the
+   * explanation attached to the button ever reaches a screen reader, because the tooltip text lives
+   * in an aria-describedby target rather than in the button. Seven controls carried an explanation;
+   * one asserted that it arrives.
+   */
+  test('every map info control describes itself to assistive technology @wcag @section508', async ({
+    page,
+  }) => {
+    await page.goto('/maps?area=North%20Dakota');
+
+    const infoControls = [
+      { testId: 'map-methodology-info', describes: /LODES/ },
+      { testId: 'map-layer-tiger-info', describes: /TIGER\/Line/ },
+      { testId: 'map-layer-workplace-info', describes: /jobs/i },
+      { testId: 'map-layer-lodes-info', describes: /Commuting flows/ },
+      { testId: 'map-layer-saipe-info', describes: /poverty/i },
+      { testId: 'map-layer-hydrography-info', describes: /hydrography/i },
+      { testId: 'map-layer-earthquake-info', describes: /earthquake/i },
+    ];
+
+    for (const control of infoControls) {
+      const button = page.getByTestId(control.testId);
+
+      // A name says which control this is; a description says what it explains. A tooltip that
+      // only renders on hover gives a mouse user the second and leaves everyone else with the
+      // first.
+      await expect(button, control.testId).toHaveAccessibleName(/.+/);
+      await expect(button, control.testId).toHaveAccessibleDescription(
+        control.describes,
+      );
+    }
+  });
 });

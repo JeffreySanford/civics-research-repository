@@ -399,6 +399,17 @@ code {
   color: var(--civics-warn-text);
 }
 
+/* Sits with the heading rather than in the layer controls: it describes the whole map, not a layer. */
+.map-methodology-info {
+  align-self: start;
+}
+
+/* The methodology text is a paragraph, and Material's default tooltip width turns it into a ribbon. */
+.methodology-tooltip {
+  max-width: 34rem !important;
+  line-height: 1.45;
+}
+
 .swatch.workplace {
   background: #0ea5e9;
 }
