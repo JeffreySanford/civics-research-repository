@@ -490,7 +490,7 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 - [ ] Execute and record the first NVDA run.
 - [ ] Execute and record a JAWS run, or record N/A with the licensing reason.
 - [ ] Execute and record the first map-equivalence run.
-- [ ] Add forced-colors and high-contrast mode smoke tests.
+- [x] Add forced-colors and high-contrast mode smoke tests. `forced-colors.spec.ts`: selection markers, legend readability, the restricted badge, and axe scans under both forced-colors and dark mode. Found a real defect — the selected flow row and selected facets were marked with a background and a box-shadow, both of which forced-colors discards, so the state vanished while the markup still claimed it. Outlines added under `@media (forced-colors: active)`. Also found that `test.use({ forcedColors })` silently did not apply: the suite reported success with the emulation off. Uses `page.emulateMedia` instead.
 
 ## PI 6 - AWS Modernization Documentation
 

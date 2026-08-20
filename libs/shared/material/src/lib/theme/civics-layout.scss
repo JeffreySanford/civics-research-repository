@@ -429,11 +429,42 @@ code {
   color: var(--civics-text-secondary);
 }
 
-/* The selected row is marked by more than colour: aria-selected carries it to assistive
-   technology, and the heavier left border survives forced-colors mode. */
+/* Selection is carried three ways, because each one fails somewhere: aria-selected reaches
+   assistive technology but not a sighted user, the tint reaches a sighted user but not a screen
+   reader, and neither survives forced-colors. The outline below is the third. */
 .flow-table tr.selected {
   background: var(--civics-surface-muted);
   box-shadow: inset 4px 0 0 0 var(--civics-focus);
+}
+
+/**
+ * Windows High Contrast replaces the author's palette outright.
+ *
+ * Background colours and box-shadows are discarded, so a selection drawn with either simply stops
+ * being visible while the markup still claims it is selected. Outlines are preserved and recoloured
+ * by the user's theme, which makes them the only reliable way to say "this one".
+ *
+ * `Highlight` is a system colour keyword: it resolves to whatever the user picked for selection,
+ * rather than to a value chosen here that the mode would override anyway.
+ */
+@media (forced-colors: active) {
+  .flow-table tr.selected {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+
+  .facet-values button.selected,
+  .flow-select[aria-pressed='true'],
+  .feature-select[aria-pressed='true'] {
+    outline: 3px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  /* Legend swatches lose their fill entirely; a bare box reads as a rendering fault rather than as
+     a key, so it is removed and the entry's text carries the meaning on its own. */
+  .swatch {
+    display: none;
+  }
 }
 
 .flow-select {

@@ -4,6 +4,31 @@
 
 Automation provides repeatable release evidence, but it does not replace manual assistive-technology testing. The project should treat accessibility evidence as part of the engineering artifact, especially for search, facets, dataset detail pages, dialogs, forms, and maps.
 
+## Forced Colors And Dark Mode
+
+Windows High Contrast replaces the author's palette outright: background colours, box-shadows and
+border colours are discarded and replaced with the user's own. Outlines and border widths survive.
+
+That makes it a machine-checkable class of defect that neither a screen reader nor an ordinary axe
+scan finds. State carried by a background simply stops being visible, while the markup still says
+the element is selected. `forced-colors.spec.ts` asserts that selection markers survive, that the
+map legend reads without its swatches, that the restricted badge is a word rather than a colour, and
+that axe reports no violations under both forced-colors and a dark scheme.
+
+Two findings from writing it, both recorded because they are the kind of thing that recurs:
+
+- **The selected flow row and selected facets were marked with a background and a box-shadow.** Both
+  are discarded in forced-colors, so a high-contrast user saw no selection at all. They now also
+  carry an `outline` under `@media (forced-colors: active)`, using the `Highlight` system colour so
+  the mark matches whatever the user chose.
+- **`test.use({ forcedColors: 'active' })` did not apply.** `matchMedia('(forced-colors: active)')`
+  stayed false, so the suite would have passed against the ordinary palette while reporting that it
+  had checked high contrast. The spec uses `page.emulateMedia` instead, which was verified to flip
+  the media query.
+
+These run on Chromium only. Firefox and WebKit do not implement the emulation, and a test that
+passes because a feature is absent is worse than one that does not run.
+
 ## Baseline
 
 Federal Section 508 currently incorporates WCAG 2.0 Level A and AA. The project should target WCAG 2.1/2.2 AA practices where practical while documenting the required 508 baseline separately.
