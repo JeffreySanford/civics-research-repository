@@ -209,6 +209,20 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     });
   });
 
+  await page.route(
+    `**/api/overlays/census/lodes-workplace**`,
+    async (route) => {
+      const geography =
+        new URL(route.request().url()).searchParams.get('geography') ??
+        'North Dakota';
+
+      await route.fulfill({
+        contentType: 'application/json',
+        json: lodesWorkplaceOverlay(geography),
+      });
+    },
+  );
+
   await page.route(`**/api/overlays/census/saipe-counties**`, async (route) => {
     const geography =
       new URL(route.request().url()).searchParams.get('geography') ??
@@ -739,6 +753,53 @@ function datasetDetail(datasetId: string): unknown {
           'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson',
       },
     ],
+  };
+}
+
+/** Two counties of very different size, so the proportional circles have something to prove. */
+function lodesWorkplaceOverlay(geography: string): unknown {
+  const places = [
+    { id: 'wac-38017', countyName: 'Cass', jobCount: 131603, jobShare: 31.6 },
+    {
+      id: 'wac-38015',
+      countyName: 'Burleigh',
+      jobCount: 59122,
+      jobShare: 14.2,
+    },
+    {
+      id: 'wac-38035',
+      countyName: 'Grand Forks',
+      jobCount: 38188,
+      jobShare: 9.2,
+    },
+  ];
+
+  return {
+    source: `LEHD LODES 2023 workplace employment - ${geography}`,
+    sourceUrl:
+      'https://lehd.ces.census.gov/data/lodes/LODES8/nd/wac/nd_wac_S000_JT00_2023.csv.gz',
+    attribution: 'U.S. Census Bureau LEHD Workplace Area Characteristics',
+    geography,
+    vintage: 2023,
+    fallback: false,
+    maxJobCount: 131603,
+    places,
+    geoJson: {
+      type: 'FeatureCollection',
+      features: places.map((place, index) => ({
+        type: 'Feature',
+        properties: {
+          id: place.id,
+          countyName: place.countyName,
+          jobs: place.jobCount,
+          label: `${place.countyName}: ${place.jobCount} jobs`,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [-100.5 - index * 0.8, 46.8 + index * 0.4],
+        },
+      })),
+    },
   };
 }
 

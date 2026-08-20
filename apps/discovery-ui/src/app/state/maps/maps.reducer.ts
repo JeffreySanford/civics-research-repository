@@ -2,6 +2,7 @@ import { createReducer, on } from '@ngrx/store';
 import type {
   CensusAreaBoundary,
   LodesFlowOverlay,
+  LodesWorkplaceOverlay,
   MapLayer,
   SaipeCountyChoropleth,
   UsgsEarthquakeOverlay,
@@ -18,11 +19,14 @@ export interface MapsState {
   readonly earthquakeError: string | null;
   readonly lodesFlowOverlay: LodesFlowOverlay | null;
   readonly lodesFlowError: string | null;
+  readonly lodesWorkplaceOverlay: LodesWorkplaceOverlay | null;
+  readonly lodesWorkplaceError: string | null;
   readonly saipeChoropleth: SaipeCountyChoropleth | null;
   readonly saipeChoroplethError: string | null;
   readonly tigerVisible: boolean;
   readonly earthquakeVisible: boolean;
   readonly lodesVisible: boolean;
+  readonly workplaceVisible: boolean;
   readonly hydrographyVisible: boolean;
   readonly saipeVisible: boolean;
   /** Feature shared by the map and the accessible list; either view can set it. */
@@ -41,11 +45,14 @@ export const initialMapsState: MapsState = {
   earthquakeError: null,
   lodesFlowOverlay: null,
   lodesFlowError: null,
+  lodesWorkplaceOverlay: null,
+  lodesWorkplaceError: null,
   saipeChoropleth: null,
   saipeChoroplethError: null,
   tigerVisible: false,
   earthquakeVisible: false,
   lodesVisible: false,
+  workplaceVisible: false,
   hydrographyVisible: false,
   saipeVisible: false,
   selectedFeatureId: null,
@@ -82,6 +89,23 @@ export const mapsReducer = createReducer(
     ...state,
     earthquakeOverlay: null,
     earthquakeError: error.message,
+  })),
+  on(
+    MapsActions.lodesWorkplaceOverlayLoaded,
+    (state, { lodesWorkplaceOverlay }) => ({
+      ...state,
+      lodesWorkplaceOverlay,
+      lodesWorkplaceError: null,
+    }),
+  ),
+  on(MapsActions.lodesWorkplaceOverlayFailed, (state, { error }) => ({
+    ...state,
+    lodesWorkplaceOverlay: null,
+    lodesWorkplaceError: error.message,
+  })),
+  on(MapsActions.workplaceLayerToggled, (state, { visible }) => ({
+    ...state,
+    workplaceVisible: visible,
   })),
   on(MapsActions.lodesFlowOverlayLoaded, (state, { lodesFlowOverlay }) => ({
     ...state,

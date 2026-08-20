@@ -106,6 +106,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/overlays/census/lodes-workplace': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get LEHD LODES workplace employment by county for a Census area.
+     * @description Jobs counted at the workplace, aggregated from the published Workplace Area Characteristics file. Answers "where are the jobs", which the origin-destination flows do not: a commuting line says who travels, not how much work is at either end.
+     */
+    get: operations['getLodesWorkplaceOverlay'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/overlays/census/saipe-counties': {
     parameters: {
       query?: never;
@@ -707,6 +727,36 @@ export interface components {
       };
       flows: components['schemas']['LodesFlowSummary'][];
     };
+    LodesWorkplaceOverlay: {
+      source: string;
+      /** Format: uri */
+      sourceUrl: string;
+      attribution: string;
+      geography: string;
+      /** Format: int32 */
+      vintage: number;
+      fallback: boolean;
+      geoJson: {
+        [key: string]: unknown;
+      };
+      /**
+       * Format: int32
+       * @description Largest county job count in this overlay. The client scales symbol area against it, so the scale is stated by the response rather than guessed from the rendered features.
+       */
+      maxJobCount: number;
+      places: components['schemas']['LodesWorkplaceSummary'][];
+    };
+    LodesWorkplaceSummary: {
+      id: string;
+      countyName: string;
+      /** Format: int32 */
+      jobCount: number;
+      /**
+       * Format: double
+       * @description Percentage of the area's counted jobs, so a reader can rank without arithmetic.
+       */
+      jobShare: number;
+    };
     LodesFlowSummary: {
       id: string;
       originLabel: string;
@@ -972,6 +1022,32 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['LodesFlowOverlay'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getLodesWorkplaceOverlay: {
+    parameters: {
+      query?: {
+        geography?: components['parameters']['Geography'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description LODES workplace employment overlay. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LodesWorkplaceOverlay'];
         };
       };
       400: components['responses']['BadRequest'];

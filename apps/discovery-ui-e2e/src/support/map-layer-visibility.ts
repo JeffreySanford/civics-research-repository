@@ -38,9 +38,21 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
     urlOffPattern: /tiger=off/,
   },
   {
+    name: 'LODES workplace employment',
+    toggleTestId: 'map-layer-workplace',
+    mapLayerIds: ['lodes-workplace-jobs-circles'],
+    accessibleListText: 'Jobs by workplace county for North Dakota',
+    legendText: /LODES workplace employment/,
+    urlOffPattern: /workplace=off/,
+  },
+  {
     name: 'LODES commuting flows',
     toggleTestId: 'map-layer-lodes',
-    mapLayerIds: ['lodes-workplace-flow-line', 'lodes-workplace-flow-points'],
+    mapLayerIds: [
+      'lodes-workplace-flow-line',
+      'lodes-workplace-flow-selected',
+      'lodes-workplace-flow-points',
+    ],
     accessibleListText: 'LEHD LODES 2023 main OD sample - North Dakota',
     legendText: /LODES commuting flows/,
     urlOffPattern: /lodes=off/,

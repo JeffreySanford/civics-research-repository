@@ -87,6 +87,30 @@ export class MapsEffects {
     ),
   );
 
+  readonly loadLodesWorkplaceForSelectedArea$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.mapOpened, MapsActions.censusAreaSelected),
+      withLatestFrom(this.store.select(selectSelectedGeography)),
+      switchMap(([, geography]) =>
+        this.mapsApi.getLodesWorkplaceOverlay(geography).pipe(
+          map((lodesWorkplaceOverlay) =>
+            MapsActions.lodesWorkplaceOverlayLoaded({ lodesWorkplaceOverlay }),
+          ),
+          catchError((error: unknown) =>
+            of(
+              MapsActions.lodesWorkplaceOverlayFailed({
+                error: parseRepositoryError(
+                  error,
+                  `LODES workplace employment for ${geography} failed to load.`,
+                ),
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   readonly loadLodesFlowForSelectedArea$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MapsActions.mapOpened, MapsActions.censusAreaSelected),

@@ -313,6 +313,7 @@ export class DiscoveryPage implements OnInit {
       view: 'workforce',
       tiger: 'on',
       lodes: 'on',
+      workplace: 'on',
       saipe: 'on',
       hydrography: 'off',
       earthquakes: 'off',

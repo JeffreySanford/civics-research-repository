@@ -64,6 +64,7 @@ describe('readMapDebugSnapshot', () => {
     tiger: true,
     earthquake: true,
     lodes: true,
+    workplace: false,
     saipe: true,
     hydrography: true,
   };
@@ -107,6 +108,7 @@ describe('readMapDebugSnapshot', () => {
     const snapshot = readMapDebugSnapshot(fakeMap(), true, {
       ...allOn,
       lodes: false,
+      workplace: false,
     });
 
     const lodes = snapshot?.groups.find((group) => group.id === 'lodes');
@@ -125,6 +127,7 @@ describe('readMapDebugSnapshot', () => {
         tiger: false,
         earthquake: false,
         lodes: false,
+        workplace: false,
         saipe: false,
         hydrography: false,
       },

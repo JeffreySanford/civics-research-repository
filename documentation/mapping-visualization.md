@@ -91,6 +91,42 @@ data is active — with a link back to those search results. Without it the map 
 layers already on and no explanation, which reads as a default rather than a decision. A plain visit
 to `/maps` is unchanged and keeps its generic identity.
 
+### Workplace employment
+
+Where the jobs are, from the LODES Workplace Area Characteristics file, drawn as one circle per
+county:
+
+```
+{st}_wac_S000_JT00_2023.csv.gz
+   -> block GEOID truncated to 5 characters = county FIPS
+   -> C000 summed by county
+   -> names and centroids joined from the Census Gazetteer
+```
+
+**Circle area encodes the value, not circle radius.** The radius interpolates on the square root of
+the job count. A circle is read by its area, and area grows with the square of the radius, so
+scaling the radius linearly would draw Cass County's 131,603 jobs with several times the visual
+weight it should carry against Burleigh's 59,122. The upper bound comes from the overlay's own
+`maxJobCount`, so the circles compare counties within an area rather than implying a national scale.
+
+The circles are semi-transparent, so overlapping counties stay readable and the commuting lines
+underneath are not hidden by the layer that explains them.
+
+Unlike the origin-destination files, WAC can be derived live for every state: it carries one row per
+workplace block rather than one per block pair, so North Dakota is 249 KB and California is 6.3 MB
+against 97 MB. No size budget is needed.
+
+The accessible equivalent is a table of counties ranked by jobs, with each county's share of the
+area total so a reader can compare without doing arithmetic:
+
+| County   | Jobs    | Share |
+| -------- | ------- | ----- |
+| Cass     | 131,603 | 31.6% |
+| Burleigh | 59,122  | 14.2% |
+
+The workforce view opens with both halves on: workplace employment says where the work is, the
+commuting flows say who travels to it.
+
 ### Two-way flow selection
 
 The commuting flows are an accessible table, not a description of the map:

@@ -27,6 +27,7 @@ import { Store } from '@ngrx/store';
 import { combineLatest, distinctUntilChanged, map } from 'rxjs';
 import { LngLatBounds } from 'maplibre-gl';
 import type {
+  DataDrivenPropertyValueSpecification,
   GeoJSONSource,
   Map as MapLibreMap,
   StyleSpecification,
@@ -34,6 +35,7 @@ import type {
 import type {
   CensusAreaBoundary,
   LodesFlowOverlay,
+  LodesWorkplaceOverlay,
   MapLayer,
   SaipeCountyChoropleth,
   UsgsEarthquakeOverlay,
@@ -58,8 +60,11 @@ import {
   selectSaipeVisible,
   selectSelectedCensusAreaBoundary,
   selectSelectedEarthquakeFeature,
+  selectLodesWorkplaceError,
+  selectLodesWorkplaceOverlay,
   selectSelectedFeatureId,
   selectSelectedGeography,
+  selectWorkplaceVisible,
   selectSelectedLodesFlow,
   selectSelectedLodesFlowId,
   selectTigerVisible,
@@ -144,6 +149,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingBoundary: CensusAreaBoundary | null = null;
   private pendingEarthquakeOverlay: UsgsEarthquakeOverlay | null = null;
   private pendingLodesFlowOverlay: LodesFlowOverlay | null = null;
+  private pendingLodesWorkplaceOverlay: LodesWorkplaceOverlay | null = null;
   private pendingSaipeChoropleth: SaipeCountyChoropleth | null = null;
   private pendingHydrographyLayer: MapLayer | null = null;
   /** True once the MapLibre style is parsed; overlays must not wait for raster tiles. */
@@ -155,6 +161,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private saipeVisible = false;
   private selectedFeatureId: string | null = null;
   private selectedLodesFlowId: string | null = null;
+  private workplaceVisible = false;
   private censusAreaBoundaries: readonly CensusAreaBoundary[] = [];
   private selectedGeography = 'North Dakota';
   /** Skips pan-driven area sync while fitBounds runs after a dropdown change. */
@@ -168,6 +175,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       'Shows the Census TIGER/Line state or area boundary for the selected geography. Helps anchor discovery results to official Census boundaries.',
     lodes:
       'Commuting flows from LEHD LODES origin-destination data—where workers live versus where they work. Aggregated from the published block-level file to the largest county-to-county flows for the selected area. States whose published file is too large to derive within a request fall back to a stored sample, which the legend names.',
+    workplace:
+      'Jobs counted where they are worked, from LEHD LODES Workplace Area Characteristics. Circle area is proportional to the county job count, so a circle twice the area holds twice the jobs. Pairs with the commuting flows: one shows where the work is, the other who travels to it.',
     saipe:
       'Colors counties by SAIPE poverty rate for the selected state. The county value table below lists the same statistics shown on the map.',
     hydrography:
@@ -276,6 +285,16 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly selectedFeatureId$ = this.store.select(
     selectSelectedFeatureId,
   );
+  protected readonly lodesWorkplaceOverlay$ = this.store.select(
+    selectLodesWorkplaceOverlay,
+  );
+  protected readonly lodesWorkplaceError$ = this.store.select(
+    selectLodesWorkplaceError,
+  );
+  protected readonly workplaceVisible$ = this.store.select(
+    selectWorkplaceVisible,
+  );
+
   protected readonly selectedLodesFlowId$ = this.store.select(
     selectSelectedLodesFlowId,
   );
@@ -311,6 +330,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       .subscribe((overlay) => {
         this.pendingLodesFlowOverlay = overlay;
         this.renderLodesSampleLayer();
+      });
+
+    this.lodesWorkplaceOverlay$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((overlay) => {
+        this.pendingLodesWorkplaceOverlay = overlay;
+        this.renderWorkplaceLayer();
       });
 
     this.saipeChoropleth$
@@ -376,6 +402,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.tigerVisible$,
       this.earthquakeVisible$,
       this.lodesVisible$,
+      this.workplaceVisible$,
       this.hydrographyVisible$,
       this.saipeVisible$,
     ])
@@ -385,10 +412,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           tigerVisible,
           earthquakeVisible,
           lodesVisible,
+          workplaceVisible,
           hydrographyVisible,
           saipeVisible,
         ]) => {
           this.tigerVisible = tigerVisible;
+          this.workplaceVisible = workplaceVisible;
           this.earthquakeVisible = earthquakeVisible;
           this.lodesVisible = lodesVisible;
           this.hydrographyVisible = hydrographyVisible;
@@ -421,6 +450,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected toggleEarthquakeLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
     this.updateMapUrl({ earthquakeVisible: visible });
+  }
+
+  protected toggleWorkplaceLayer(visible: boolean): void {
+    this.store.dispatch(MapsActions.workplaceLayerToggled({ visible }));
+    this.updateMapUrl({ workplaceVisible: visible });
   }
 
   protected toggleLodesLayer(visible: boolean): void {
@@ -594,6 +628,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           tigerVisible: this.toVisibleState(params.get('tiger')),
           earthquakeVisible: this.toVisibleState(params.get('earthquakes')),
           lodesVisible: this.toVisibleState(params.get('lodes')),
+          workplaceVisible: this.toVisibleState(params.get('workplace')),
           hydrographyVisible: this.toVisibleState(params.get('hydrography')),
           saipeVisible: this.toVisibleState(params.get('saipe')),
           featureId: params.get('feature'),
@@ -604,6 +639,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             previous.tigerVisible === current.tigerVisible &&
             previous.earthquakeVisible === current.earthquakeVisible &&
             previous.lodesVisible === current.lodesVisible &&
+            previous.workplaceVisible === current.workplaceVisible &&
             previous.hydrographyVisible === current.hydrographyVisible &&
             previous.saipeVisible === current.saipeVisible &&
             previous.featureId === current.featureId,
@@ -616,6 +652,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           tigerVisible,
           earthquakeVisible,
           lodesVisible,
+          workplaceVisible,
           hydrographyVisible,
           saipeVisible,
           featureId,
@@ -637,6 +674,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
               MapsActions.earthquakeLayerToggled({
                 visible: earthquakeVisible,
               }),
+            );
+          }
+
+          if (workplaceVisible !== null) {
+            this.store.dispatch(
+              MapsActions.workplaceLayerToggled({ visible: workplaceVisible }),
             );
           }
 
@@ -672,6 +715,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     tigerVisible?: boolean;
     earthquakeVisible?: boolean;
     lodesVisible?: boolean;
+    workplaceVisible?: boolean;
     hydrographyVisible?: boolean;
     saipeVisible?: boolean;
     featureId?: string | null;
@@ -696,6 +740,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           options.lodesVisible === undefined
             ? undefined
             : this.toLayerParam(options.lodesVisible),
+        workplace:
+          options.workplaceVisible === undefined
+            ? undefined
+            : this.toLayerParam(options.workplaceVisible),
         hydrography:
           options.hydrographyVisible === undefined
             ? undefined
@@ -852,6 +900,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
     this.renderCensusBoundary();
     this.renderLodesSampleLayer();
+    this.renderWorkplaceLayer();
     this.renderSaipeChoropleth();
     this.renderHydrographyLayer();
     this.renderEarthquakeOverlay();
@@ -1098,6 +1147,94 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => {
       document.getElementById(this.featureButtonId(featureId))?.focus();
     });
+  }
+
+  /**
+   * Workplace employment as proportional circles.
+   *
+   * <p>Radius is interpolated on the square root of the job count, not on the count itself. A
+   * circle is read by its area, and area grows with the square of the radius: scaling radius
+   * linearly would draw Cass County's 131,603 jobs as something like five times the visual weight
+   * it should carry against Burleigh's 59,122. Square-rooting first makes area proportional to the
+   * value, which is what the eye is actually measuring.
+   *
+   * <p>The upper bound comes from the overlay's own `maxJobCount` rather than from a constant, so
+   * a state whose largest county holds 20,000 jobs uses the same visual range as one holding
+   * 130,000. The circles compare counties within an area; they are not a national scale.
+   */
+  private renderWorkplaceLayer(): void {
+    if (
+      !this.map ||
+      !this.mapStyleReady ||
+      !this.pendingLodesWorkplaceOverlay
+    ) {
+      return;
+    }
+
+    const overlay = this.pendingLodesWorkplaceOverlay;
+    const data = overlay.geoJson as GeoJsonFeatureCollection;
+    const existingSource = this.map.getSource(
+      'lodes-workplace-jobs',
+    ) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+      this.applyWorkplaceRadius(overlay.maxJobCount);
+      this.applyLayerVisibility();
+      return;
+    }
+
+    this.map.addSource('lodes-workplace-jobs', { type: 'geojson', data });
+
+    this.map.addLayer({
+      id: 'lodes-workplace-jobs-circles',
+      type: 'circle',
+      source: 'lodes-workplace-jobs',
+      layout: {
+        visibility: this.workplaceVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'circle-color': '#0ea5e9',
+        // Semi-transparent so overlapping counties stay readable and the commuting lines
+        // underneath are not hidden by the layer that explains them.
+        'circle-opacity': 0.55,
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1.5,
+        'circle-radius': this.workplaceRadiusExpression(overlay.maxJobCount),
+      },
+    });
+
+    this.applyLayerVisibility();
+  }
+
+  private applyWorkplaceRadius(maxJobCount: number): void {
+    if (!this.map?.getLayer('lodes-workplace-jobs-circles')) {
+      return;
+    }
+
+    this.map.setPaintProperty(
+      'lodes-workplace-jobs-circles',
+      'circle-radius',
+      this.workplaceRadiusExpression(maxJobCount),
+    );
+  }
+
+  /** Area-proportional radius: interpolate linearly on sqrt(jobs), never on jobs. */
+  private workplaceRadiusExpression(
+    maxJobCount: number,
+  ): DataDrivenPropertyValueSpecification<number> {
+    // A floor of 1 keeps the expression valid for an area whose counties all report zero jobs.
+    const largest = Math.sqrt(Math.max(1, maxJobCount));
+
+    return [
+      'interpolate',
+      ['linear'],
+      ['sqrt', ['to-number', ['get', 'jobs']]],
+      0,
+      3,
+      largest,
+      30,
+    ] as DataDrivenPropertyValueSpecification<number>;
   }
 
   private renderLodesSampleLayer(): void {
@@ -1429,6 +1566,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       tiger: this.tigerVisible,
       earthquake: this.earthquakeVisible,
       lodes: this.lodesVisible,
+      workplace: this.workplaceVisible,
       saipe: this.saipeVisible,
       hydrography: this.hydrographyVisible,
     };

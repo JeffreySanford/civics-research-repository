@@ -2,6 +2,7 @@ import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import type {
   CensusAreaBoundary,
   LodesFlowOverlay,
+  LodesWorkplaceOverlay,
   MapLayer,
   RepositoryError,
   SaipeCountyChoropleth,
@@ -25,6 +26,10 @@ export const MapsActions = createActionGroup({
       lodesFlowOverlay: LodesFlowOverlay;
     }>(),
     'Lodes Flow Overlay Failed': props<{ error: RepositoryError }>(),
+    'Lodes Workplace Overlay Loaded': props<{
+      lodesWorkplaceOverlay: LodesWorkplaceOverlay;
+    }>(),
+    'Lodes Workplace Overlay Failed': props<{ error: RepositoryError }>(),
     'Saipe Choropleth Loaded': props<{
       saipeChoropleth: SaipeCountyChoropleth;
     }>(),
@@ -33,6 +38,7 @@ export const MapsActions = createActionGroup({
     'Tiger Layer Toggled': props<{ visible: boolean }>(),
     'Earthquake Layer Toggled': props<{ visible: boolean }>(),
     'Lodes Layer Toggled': props<{ visible: boolean }>(),
+    'Workplace Layer Toggled': props<{ visible: boolean }>(),
     'Hydrography Layer Toggled': props<{ visible: boolean }>(),
     'Saipe Layer Toggled': props<{ visible: boolean }>(),
     'Map Feature Selected': props<{ featureId: string }>(),

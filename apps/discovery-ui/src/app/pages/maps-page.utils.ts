@@ -81,6 +81,7 @@ export type MapLayerGroupId =
   | 'tiger'
   | 'earthquake'
   | 'lodes'
+  | 'workplace'
   | 'saipe'
   | 'hydrography';
 
@@ -117,6 +118,12 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
       'usgs-earthquake-labels',
       'usgs-earthquake-selected',
     ],
+  },
+  {
+    id: 'workplace',
+    label: 'LODES workplace employment',
+    sourceId: 'lodes-workplace-jobs',
+    layerIds: ['lodes-workplace-jobs-circles'],
   },
   {
     id: 'lodes',

@@ -4,6 +4,7 @@ import java.util.List;
 import java.time.Duration;
 import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.civicsrepo.generated.dto.LodesFlowOverlay;
+import org.civicsrepo.generated.dto.LodesWorkplaceOverlay;
 import org.civicsrepo.generated.dto.MapLayer;
 import org.civicsrepo.generated.dto.SaipeCountyChoropleth;
 import org.civicsrepo.generated.dto.UsgsEarthquakeOverlay;
@@ -25,6 +26,7 @@ public class MapsController {
     private final MapLayerService mapLayerService;
     private final UsgsEarthquakeService usgsEarthquakeService;
     private final LodesFlowService lodesFlowService;
+    private final LodesWorkplaceService lodesWorkplaceService;
     private final SaipeCountyChoroplethService saipeCountyChoroplethService;
     private final UsgsHydrographyTileService usgsHydrographyTileService;
 
@@ -33,12 +35,14 @@ public class MapsController {
             MapLayerService mapLayerService,
             UsgsEarthquakeService usgsEarthquakeService,
             LodesFlowService lodesFlowService,
+            LodesWorkplaceService lodesWorkplaceService,
             SaipeCountyChoroplethService saipeCountyChoroplethService,
             UsgsHydrographyTileService usgsHydrographyTileService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.mapLayerService = mapLayerService;
         this.usgsEarthquakeService = usgsEarthquakeService;
         this.lodesFlowService = lodesFlowService;
+        this.lodesWorkplaceService = lodesWorkplaceService;
         this.saipeCountyChoroplethService = saipeCountyChoroplethService;
         this.usgsHydrographyTileService = usgsHydrographyTileService;
     }
@@ -71,6 +75,16 @@ public class MapsController {
                 .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic())
                 .contentType(MediaType.IMAGE_PNG)
                 .body(tile);
+    }
+
+    @GetMapping("/overlays/census/lodes-workplace")
+    public LodesWorkplaceOverlay getLodesWorkplaceOverlay(
+            @RequestParam(defaultValue = "North Dakota") String geography) {
+        try {
+            return lodesWorkplaceService.findWorkplaceEmployment(geography);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
     }
 
     @GetMapping("/overlays/census/lodes-flow")

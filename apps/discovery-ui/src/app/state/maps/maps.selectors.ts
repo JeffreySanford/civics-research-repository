@@ -129,3 +129,18 @@ export const selectSelectedLodesFlow = createSelector(
       (flow) => flow.id === state.selectedLodesFlowId,
     ) ?? null,
 );
+
+export const selectLodesWorkplaceOverlay = createSelector(
+  selectMapsState,
+  (state) => state.lodesWorkplaceOverlay,
+);
+
+export const selectLodesWorkplaceError = createSelector(
+  selectMapsState,
+  (state) => state.lodesWorkplaceError,
+);
+
+export const selectWorkplaceVisible = createSelector(
+  selectMapsState,
+  (state) => state.workplaceVisible,
+);

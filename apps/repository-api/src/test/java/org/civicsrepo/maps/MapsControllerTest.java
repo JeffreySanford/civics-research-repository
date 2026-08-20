@@ -40,6 +40,9 @@ class MapsControllerTest {
     private LodesFlowService lodesFlowService;
 
     @MockitoBean
+    private LodesWorkplaceService lodesWorkplaceService;
+
+    @MockitoBean
     private SaipeCountyChoroplethService saipeCountyChoroplethService;
 
     @MockitoBean

@@ -61,6 +61,28 @@
           <label class="layer-toggle">
             <input
               type="checkbox"
+              data-testid="map-layer-workplace"
+              [checked]="workplaceVisible$ | async"
+              (change)="toggleWorkplaceLayer($any($event.target).checked)"
+            />
+            <span class="layer-toggle-label">LODES workplace employment</span>
+          </label>
+          <button
+            type="button"
+            class="layer-info-button"
+            mat-icon-button
+            data-testid="map-layer-workplace-info"
+            [matTooltip]="layerTooltips.workplace"
+            matTooltipPosition="above"
+            aria-label="About LODES workplace employment layer"
+          >
+            <mat-icon aria-hidden="true">info_outline</mat-icon>
+          </button>
+        </span>
+        <span class="layer-toggle-row">
+          <label class="layer-toggle">
+            <input
+              type="checkbox"
               data-testid="map-layer-lodes"
               [checked]="lodesVisible$ | async"
               (change)="toggleLodesLayer($any($event.target).checked)"
@@ -225,7 +247,14 @@
             @if (selectedBoundary$ | async; as boundary) { {{ boundary.geography
             }} TIGER/Line preview } @else { TIGER/Line preview }
           </li>
-          } @if (lodesVisible$ | async) { @if (lodesFlowOverlay$ | async; as
+          } @if (workplaceVisible$ | async) { @if (lodesWorkplaceOverlay$ |
+          async; as workplaceOverlay) {
+          <li>
+            <span class="swatch workplace"></span>
+            LODES workplace employment, {{ workplaceOverlay.vintage }} ({{
+            workplaceOverlay.places.length }} counties)
+          </li>
+          } } @if (lodesVisible$ | async) { @if (lodesFlowOverlay$ | async; as
           lodesOverlay) {
           <li>
             <span class="swatch lodes"></span>
@@ -503,6 +532,40 @@
       } @else { @if (lodesFlowError$ | async) {
       <li>
         <strong>LODES commuting flows unavailable</strong>
+        <span>Other map layers remain available.</span>
+      </li>
+      } } } @if (workplaceVisible$ | async) { @if (lodesWorkplaceOverlay$ |
+      async; as workplaceOverlay) {
+      <li>
+        <!-- The circles encode magnitude; the table states it. A reader who cannot compare areas
+             gets the same ranking, with the share so nobody has to do arithmetic to use it. -->
+        <table class="flow-table">
+          <caption>
+            Jobs by workplace county for {{ workplaceOverlay.geography }}, {{
+            workplaceOverlay.vintage }}. The map draws each county as a circle
+            whose area is proportional to this count.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">County</th>
+              <th scope="col">Jobs</th>
+              <th scope="col">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (place of workplaceOverlay.places; track place.id) {
+            <tr>
+              <th scope="row">{{ place.countyName }}</th>
+              <td>{{ place.jobCount | number }}</td>
+              <td>{{ place.jobShare }}%</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </li>
+      } @else { @if (lodesWorkplaceError$ | async) {
+      <li>
+        <strong>LODES workplace employment unavailable</strong>
         <span>Other map layers remain available.</span>
       </li>
       } } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as

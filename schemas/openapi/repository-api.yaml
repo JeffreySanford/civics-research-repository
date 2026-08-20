@@ -154,6 +154,32 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /overlays/census/lodes-workplace:
+    get:
+      tags: [Maps]
+      operationId: getLodesWorkplaceOverlay
+      summary: Get LEHD LODES workplace employment by county for a Census area.
+      description: >-
+        Jobs counted at the workplace, aggregated from the published Workplace Area Characteristics
+        file. Answers "where are the jobs", which the origin-destination flows do not: a commuting
+        line says who travels, not how much work is at either end.
+      parameters:
+        - $ref: '#/components/parameters/Geography'
+      responses:
+        '200':
+          description: LODES workplace employment overlay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LodesWorkplaceOverlay'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /overlays/census/saipe-counties:
     get:
       tags: [Maps]
@@ -1298,6 +1324,61 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LodesFlowSummary'
+    LodesWorkplaceOverlay:
+      type: object
+      required:
+        - source
+        - sourceUrl
+        - attribution
+        - geography
+        - vintage
+        - fallback
+        - geoJson
+        - places
+        - maxJobCount
+      properties:
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        attribution:
+          type: string
+        geography:
+          type: string
+        vintage:
+          type: integer
+          format: int32
+        fallback:
+          type: boolean
+        geoJson:
+          type: object
+          additionalProperties: true
+        maxJobCount:
+          type: integer
+          format: int32
+          description: >-
+            Largest county job count in this overlay. The client scales symbol area against it, so
+            the scale is stated by the response rather than guessed from the rendered features.
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/LodesWorkplaceSummary'
+    LodesWorkplaceSummary:
+      type: object
+      required: [id, countyName, jobCount, jobShare]
+      properties:
+        id:
+          type: string
+        countyName:
+          type: string
+        jobCount:
+          type: integer
+          format: int32
+        jobShare:
+          type: number
+          format: double
+          description: Percentage of the area's counted jobs, so a reader can rank without arithmetic.
     LodesFlowSummary:
       type: object
       required:

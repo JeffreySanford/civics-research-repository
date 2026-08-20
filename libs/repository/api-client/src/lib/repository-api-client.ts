@@ -26,6 +26,10 @@ export type UsgsEarthquakeFeature =
   components['schemas']['UsgsEarthquakeFeature'];
 export type LodesFlowOverlay = components['schemas']['LodesFlowOverlay'];
 export type LodesFlowSummary = components['schemas']['LodesFlowSummary'];
+export type LodesWorkplaceOverlay =
+  components['schemas']['LodesWorkplaceOverlay'];
+export type LodesWorkplaceSummary =
+  components['schemas']['LodesWorkplaceSummary'];
 export type SaipeCountyChoropleth =
   components['schemas']['SaipeCountyChoropleth'];
 export type SaipeCountyValue = components['schemas']['SaipeCountyValue'];
@@ -146,6 +150,15 @@ export class RepositoryMapsApi {
           days,
         },
       },
+    );
+  }
+
+  getLodesWorkplaceOverlay(
+    geography: string,
+  ): Observable<LodesWorkplaceOverlay> {
+    return this.http.get<LodesWorkplaceOverlay>(
+      `${this.baseUrl}/overlays/census/lodes-workplace`,
+      { params: { geography } },
     );
   }
 

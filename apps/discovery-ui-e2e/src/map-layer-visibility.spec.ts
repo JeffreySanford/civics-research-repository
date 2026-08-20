@@ -59,9 +59,25 @@ test.describe('map layer MapLibre visibility', () => {
     await page.getByTestId('map-layer-lodes').uncheck();
     await expect(page.getByTestId('map-layer-lodes')).not.toBeChecked();
 
-    await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[0]);
-    await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[2]);
-    await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[4]);
-    await expectLayerEvidenceHidden(page, MAP_LAYER_VISIBILITY_GROUPS[1]);
+    // Addressed by toggle id, not by position. These used to be numeric indices, and adding a
+    // layer to the table silently repointed every one of them at its neighbour: the assertion
+    // still passed its own shape while checking the wrong layer.
+    const groupFor = (toggleTestId: string) => {
+      const group = MAP_LAYER_VISIBILITY_GROUPS.find(
+        (candidate) => candidate.toggleTestId === toggleTestId,
+      );
+      if (!group) {
+        throw new Error(`No layer visibility group for ${toggleTestId}`);
+      }
+      return group;
+    };
+
+    for (const toggleTestId of MAP_LAYER_VISIBILITY_GROUPS.map(
+      (group) => group.toggleTestId,
+    ).filter((toggleTestId) => toggleTestId !== 'map-layer-lodes')) {
+      await expectLayerEvidenceVisible(page, groupFor(toggleTestId));
+    }
+
+    await expectLayerEvidenceHidden(page, groupFor('map-layer-lodes'));
   });
 });

@@ -875,6 +875,75 @@ test.describe('explore workforce on the map', () => {
  * Map-equivalence for the commuting flows: the table is not a description of the map, it is the
  * same selection surfaced two ways. Either view can originate a change and both reflect it.
  */
+/**
+ * Workplace employment: where the jobs are, as circles sized by job count.
+ *
+ * The commuting flows say who travels between counties. They cannot say how much work sits at
+ * either end, so a line into a large county looks like a line into a small one.
+ */
+test.describe('workplace employment layer', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockRepositoryApi(page);
+    await page.goto('/maps?area=North%20Dakota&workplace=on');
+  });
+
+  test('the jobs are stated as a table, not only drawn @wcag @section508', async ({
+    page,
+  }) => {
+    const table = page.getByRole('table', {
+      name: /Jobs by workplace county/,
+    });
+
+    await expect(table).toBeVisible();
+    await expect(
+      table.getByRole('columnheader', { name: 'County' }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole('columnheader', { name: 'Jobs' }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole('columnheader', { name: 'Share' }),
+    ).toBeVisible();
+
+    // Ranked largest first, with the share so nobody has to divide to compare.
+    await expect(table.getByRole('rowheader').first()).toHaveText('Cass');
+    await expect(table).toContainText('131,603');
+    await expect(table).toContainText('31.6%');
+  });
+
+  test('the legend names the layer and its vintage @storyboard', async ({
+    page,
+  }) => {
+    await expect(
+      page.getByText(/LODES workplace employment, 2023/),
+    ).toBeVisible();
+  });
+
+  test('the layer toggles off and says so in the URL @storyboard', async ({
+    page,
+  }) => {
+    await page.getByTestId('map-layer-workplace').uncheck();
+
+    await expect(page).toHaveURL(/workplace=off/);
+    await expect(
+      page.getByRole('table', { name: /Jobs by workplace county/ }),
+    ).toHaveCount(0);
+  });
+
+  /** Both halves of the workforce question arrive together from discovery. */
+  test('the workforce view opens with jobs and flows together @storyboard', async ({
+    page,
+  }) => {
+    await page.goto('/discovery');
+    await page
+      .getByRole('link', { name: /Explore California workforce on the map/ })
+      .click();
+
+    await expect(page.getByTestId('map-layer-workplace')).toBeChecked();
+    await expect(page.getByTestId('map-layer-lodes')).toBeChecked();
+  });
+});
+
 test.describe('commuting flow selection', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);

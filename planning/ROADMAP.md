@@ -44,9 +44,9 @@ origin-destination file at request time, with county names and centroids from th
 states whose file is too large to derive within a map request fall back to a stored sample and say
 so. Two-way selection between the accessible flow table and the map is done.
 
-What is left for the workforce view is the WAC side: a workplace-employment layer shading geographies
-by job counts, which would pair with the commuting lines to answer "where are the jobs" as well as
-"who travels to them". Tracked as P14 in [TODO.md](TODO.md).
+Both halves of the workforce question are now answered: proportional circles from the WAC product
+show where the jobs are, the commuting lines show who travels to them, and the view opens with both.
+Tracked as P14 in [TODO.md](TODO.md).
 
 ### 3. Harvest the catalog from live publishers
 
