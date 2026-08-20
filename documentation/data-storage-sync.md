@@ -4,7 +4,7 @@
 
 This project should store and synchronize repository research objects, metadata, documentation links, file manifests, checksums where available, and small fixtures. It should not mirror large public datasets into git or treat Solr as a raw-data warehouse.
 
-DSpace remains the system of record for repository objects. Solr indexes searchable discovery fields. PostgreSQL stores DSpace repository state. External public data sources remain authoritative for large public-use files unless a later sprint explicitly chooses to mirror selected artifacts. Docker volumes provide local persistence for DSpace, PostgreSQL, Solr, and small-to-medium mirrored demo files.
+DSpace remains the system of record for repository objects. Solr indexes searchable discovery fields. PostgreSQL stores DSpace repository state. External public data sources remain authoritative for public-use files even when selected artifacts are preserved locally. Docker volumes provide local persistence for DSpace, PostgreSQL, Solr, and budgeted mirrored source files.
 
 ## Source Coverage
 
@@ -53,15 +53,15 @@ Store:
 - Version relationships.
 - Citations.
 - Source and documentation links.
-- Small bitstreams where useful for the demo.
-- Small-to-medium mirrored public files where they improve the local demo.
-- File manifests for large external files.
+- File manifests for authoritative external files.
+- Mirrored public source files selected under the configured total preservation budget.
+- Checksums/fixity metadata for preserved bitstreams.
 
 Possible later storage:
 
-- Mirrored small public files.
-- Selected documentation PDFs.
-- Checksums or fixity metadata for external files.
+- Additional preservation copies as the deployment storage tier grows.
+- Selected documentation PDFs not already represented by source manifests.
+- Additional fixity/provenance metadata for external files.
 
 ### PostgreSQL
 
@@ -169,9 +169,11 @@ Two consequences worth knowing:
 
 ### Mirrored Bitstreams
 
-The assetstore holds **76 files, 1.00 GiB**, mirrored from the publishers by `tools/scripts/mirror-source-files.mjs`. That is about 58% of the 1.73 GiB the repository subscribes to.
+The currently committed assetstore snapshot holds **76 files, 1.00 GiB**, mirrored from the publishers by `tools/scripts/mirror-source-files.mjs`. That snapshot was produced under the earlier 1 GiB total / 120 MiB per-file policy.
 
-Mirroring is bounded on purpose, by a per-file cap (`--max-file-mb`, default 120) and a total budget (`--budget-mb`, default 1024), taking the largest eligible files first so the preserved set is representative rather than a pile of documentation PDFs. Everything above the cap or beyond the budget stays a link. Downloads are cached in `tools/dspace/mirror-cache/`, outside the SAF tree, because `generate-saf.mjs` deletes and rewrites that tree on every run.
+The active policy now uses a **5 GiB total mirror budget with no independent per-file cap**. Any source file that reports a measurable size is eligible when its declared size fits inside the remaining total budget. Large legitimate geospatial or scientific artifacts are therefore not excluded merely because one file is hundreds of megabytes. Files that do not report a positive `Content-Length` remain external references rather than being downloaded blindly.
+
+Selection uses publisher-reported size, while the downloader counts actual streamed bytes and aborts/removes partial output if a response crosses the remaining run budget. That makes the total budget the hard safety boundary even if a publisher's size metadata is imperfect. Downloads are cached in `tools/dspace/mirror-cache/`, outside the SAF tree, because `generate-saf.mjs` deletes and rewrites that tree on every run.
 
 Bitstreams are appended alongside the manifest rather than replacing it. The manifest describes the authoritative source, which remains true whether or not a copy exists locally — a mirrored file is a preservation copy, not a new system of record.
 
@@ -290,7 +292,7 @@ or
 
 Current implementation starts with the 2025 TIGER/Line Census Tracts dataset for North Dakota. The Java API includes a typed metadata adapter that normalizes the repository ID, title, program, publisher, geography, geographic level, vintage, release date, source ZIP URL, Census documentation URL, citation, and file manifest entries.
 
-The normalized metadata is mapped into an internal DSpace item payload before sync actions are planned. The payload currently includes the DSpace object name/type, Dublin Core metadata fields, project-specific `crr.*` metadata fields for source tracking, and `ORIGINAL` bundle bitstream manifest entries that point back to source files instead of mirroring large archives.
+The normalized metadata is mapped into an internal DSpace item payload before sync actions are planned. The payload currently includes the DSpace object name/type, Dublin Core metadata fields, project-specific `crr.*` metadata fields for source tracking, and `ORIGINAL` bundle bitstream manifest entries that retain authoritative source URLs whether or not a preservation copy is mirrored into DSpace.
 
 The first sync should create:
 
@@ -316,7 +318,7 @@ The first sync should create:
 
 ## Operational Rules
 
-- Prefer source links and manifests over full mirroring in early sprints.
+- Keep mirroring budgeted; source links and manifests remain authoritative whether or not a local preservation copy exists.
 - Use checksums, ETags, or source update timestamps when available.
 - Keep sync jobs idempotent.
 - Never make Solr the source of truth.
