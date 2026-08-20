@@ -10,37 +10,37 @@ The platform is not affiliated with, endorsed by, or sponsored by the U.S. Censu
 
 ## Repository breadth
 
-| Measure | Current value |
-| --- | ---: |
-| Research objects | 181 |
-| Research programs | 15 |
-| Registered metadata adapters | 14 |
-| Objects with a recorded DSpace identity (runtime verified 2026-08-20) | 176 |
-| Curated research-package objects intentionally without adapter identity | 5 |
+| Measure                                                                 | Current value |
+| ----------------------------------------------------------------------- | ------------: |
+| Research objects                                                        |           181 |
+| Research programs                                                       |            15 |
+| Registered metadata adapters                                            |            14 |
+| Objects with a recorded DSpace identity (runtime verified 2026-08-20)   |           176 |
+| Curated research-package objects intentionally without adapter identity |             5 |
 
 ### Objects by type
 
-| Type | Count |
-| --- | ---: |
-| DATASET | 177 |
-| METHODOLOGY | 1 |
-| PROJECT | 1 |
-| PUBLICATION | 2 |
+| Type        | Count |
+| ----------- | ----: |
+| DATASET     |   177 |
+| METHODOLOGY |     1 |
+| PROJECT     |     1 |
+| PUBLICATION |     2 |
 
 The five curated objects are publications, methodology/project material, and restricted research metadata whose relationships are curatorial assertions rather than facts discovered from a publisher endpoint.
 
 ## Source and preservation snapshot
 
-| Measure | Current value |
-| --- | ---: |
-| Source inventory checked | 2026-08-19T20:57:42.503Z |
-| Distinct referenced files | 197 |
-| Measured files | 170 |
-| Unreachable files at inventory time | 8 |
-| Measured subscribed bytes | 1.73 GiB |
-| Mirrored files | 76 |
-| Mirrored bytes | 1.00 GiB |
-| Mirror snapshot captured | 2026-08-19T20:10:35.648Z |
+| Measure                             |            Current value |
+| ----------------------------------- | -----------------------: |
+| Source inventory checked            | 2026-08-19T20:57:42.503Z |
+| Distinct referenced files           |                      197 |
+| Measured files                      |                      170 |
+| Unreachable files at inventory time |                        8 |
+| Measured subscribed bytes           |                 1.73 GiB |
+| Mirrored files                      |                       76 |
+| Mirrored bytes                      |                 1.00 GiB |
+| Mirror snapshot captured            | 2026-08-19T20:10:35.648Z |
 
 Mirroring is deliberately bounded. DSpace holds real bitstreams for eligible files inside the configured budget; remaining objects retain authoritative publisher links and file manifests.
 
@@ -67,13 +67,13 @@ The workforce journey connects discovery results to an area-focused view that co
 
 ## Accessibility evidence
 
-| Measure | Current value |
-| --- | --- |
-| Latest recorded automated evidence | 2026-08-20T17:41:51.884Z |
-| Recorded commit | dfc9416675b31d1b35d9fa88f979e497cbb7bb3a |
-| Component accessibility status | AUTOMATED_PASS |
-| Browser evidence status | AUTOMATED_PASS |
-| Forced-colors capability recorded | Yes |
+| Measure                            | Current value                            |
+| ---------------------------------- | ---------------------------------------- |
+| Latest recorded automated evidence | 2026-08-20T18:06:07.037Z                 |
+| Recorded commit                    | acc811dbacc8e8507622604db4cc84ac43af2bfd |
+| Component accessibility status     | AUTOMATED_PASS                           |
+| Browser evidence status            | AUTOMATED_PASS                           |
+| Forced-colors capability recorded  | Yes                                      |
 
 Automated coverage includes template linting, component-state axe scans, browser axe scans, structural semantics, keyboard preconditions, reflow, zoom, contrast, forced colors, dark mode, and equivalent nonvisual map data. Manual keyboard, NVDA, JAWS, map-equivalence, and cognitive evidence remain separate and must not be inferred from automated passes.
 

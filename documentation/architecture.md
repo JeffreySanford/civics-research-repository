@@ -54,12 +54,12 @@ The Angular application never calls DSpace, Solr, Census, or USGS directly. The 
 
 ## Four datastore roles
 
-| Datastore | Role | Owner |
-| --- | --- | --- |
-| Application PostgreSQL `civics_ops` | Sync jobs and application operational state | `repository-api` |
-| DSpace PostgreSQL | Repository system of record | DSpace |
-| Discovery Solr `discovery` core | Public, rebuildable research-object projection | `repository-api` through `DiscoveryIndex` |
-| DSpace Solr | DSpace internal discovery, authority and OAI cores | DSpace |
+| Datastore                           | Role                                               | Owner                                     |
+| ----------------------------------- | -------------------------------------------------- | ----------------------------------------- |
+| Application PostgreSQL `civics_ops` | Sync jobs and application operational state        | `repository-api`                          |
+| DSpace PostgreSQL                   | Repository system of record                        | DSpace                                    |
+| Discovery Solr `discovery` core     | Public, rebuildable research-object projection     | `repository-api` through `DiscoveryIndex` |
+| DSpace Solr                         | DSpace internal discovery, authority and OAI cores | DSpace                                    |
 
 The duplication is an ownership boundary, not accidental redundancy. DSpace controls its own schema, migrations, search configuration, and upgrade lifecycle. The application-owned projection can be discarded and rebuilt without treating DSpace's internal Solr as a public API.
 
