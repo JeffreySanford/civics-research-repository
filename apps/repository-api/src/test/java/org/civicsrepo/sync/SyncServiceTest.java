@@ -22,6 +22,7 @@ import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.dspace.DspaceItemStateReader;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -68,7 +69,8 @@ class SyncServiceTest {
                 },
                 new DspaceItemPayloadMapper(),
                 new DspaceItemDiffPlanner((sourceIdentifier) -> Optional.empty()),
-                List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe())));
+                List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader())),
+            25);
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE));
 
@@ -119,7 +121,7 @@ class SyncServiceTest {
     @Test
     void diffModePlansSkipWhenRepositoryItemMatchesSourcePayload() {
         DspaceItemPayload sourcePayload =
-                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
+                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
         SyncService syncService = newSyncService(new TestSyncJobStore(), (sourceIdentifier) -> Optional.of(sourcePayload));
 
         SyncJob job = syncService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
@@ -131,7 +133,7 @@ class SyncServiceTest {
     @Test
     void diffModePlansUpdateWhenRepositoryItemDiffersFromSourcePayload() {
         DspaceItemPayload sourcePayload =
-                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
+                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
         java.util.Map<String, List<org.civicsrepo.dspace.DspaceMetadataValue>> changedMetadata =
                 new java.util.LinkedHashMap<>(sourcePayload.metadata());
         changedMetadata.put(
@@ -187,7 +189,8 @@ class SyncServiceTest {
                 (request, actions, sourcePayload) -> {},
                 new DspaceItemPayloadMapper(),
                 new DspaceItemDiffPlanner(itemStateReader),
-                List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe())));
+                List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader())),
+            25);
     }
 
     private static final class TestSyncJobStore implements SyncJobStore {

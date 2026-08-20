@@ -34,14 +34,30 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
             "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf";
 
     private final SourceFileProbe sourceFileProbe;
+    private final CatalogMetadataReader catalogMetadataReader;
 
-    public TigerLineMetadataAdapter(SourceFileProbe sourceFileProbe) {
+    public TigerLineMetadataAdapter(SourceFileProbe sourceFileProbe, CatalogMetadataReader catalogMetadataReader) {
+        this.catalogMetadataReader = catalogMetadataReader;
         this.sourceFileProbe = sourceFileProbe;
     }
 
     @Override
     public SyncSource source() {
         return SyncSource.TIGER_LINE;
+    }
+
+    /**
+     * Every area this program publishes, from the catalog.
+     *
+     * <p>TIGER_LINE accounts for a large share of the repository on its own, and reconciling a single
+     * area left the rest with no recorded repository identity at all. Sizes and release dates still
+     * come from the publisher; which objects exist comes from the catalog, so an adapter and the
+     * seeded repository cannot disagree about that.
+     */
+    @Override
+    public List<ResearchObjectMetadata> harvest() {
+        List<ResearchObjectMetadata> objects = catalogMetadataReader.forProgram(ResearchProgram.TIGER_LINE);
+        return objects.isEmpty() ? List.of(firstVisualSlice()) : objects;
     }
 
     @Override

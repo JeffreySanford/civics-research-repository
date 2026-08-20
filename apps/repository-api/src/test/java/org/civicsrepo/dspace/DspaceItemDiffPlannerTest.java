@@ -9,11 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class DspaceItemDiffPlannerTest {
     private final DspaceItemPayload sourcePayload =
-            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
+            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
 
     @Test
     void createsItemWhenNoExistingRepositoryPayloadIsFound() {

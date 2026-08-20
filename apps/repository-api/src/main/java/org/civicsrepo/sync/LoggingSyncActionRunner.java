@@ -4,7 +4,6 @@ import org.civicsrepo.generated.dto.SyncAction;
 import org.civicsrepo.generated.dto.SyncMode;
 import org.civicsrepo.generated.dto.SyncRequest;
 import java.util.List;
-import java.util.Optional;
 import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemWriteGateway;
 import org.slf4j.Logger;
@@ -22,9 +21,9 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
     }
 
     @Override
-    public void run(SyncRequest request, List<SyncAction> actions, Optional<DspaceItemPayload> sourcePayload) {
+    public void run(SyncRequest request, List<SyncAction> actions, List<SourceObject> sourceObjects) {
         if (request.getMode() == SyncMode.APPLY) {
-            applyDspaceMetadata(actions, sourcePayload);
+            applyDspaceMetadata(sourceObjects);
         }
 
         for (SyncAction action : actions) {
@@ -38,29 +37,33 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
         }
     }
 
-    private void applyDspaceMetadata(List<SyncAction> actions, Optional<DspaceItemPayload> sourcePayload) {
-        String sourceIdentifier = actionTarget(actions, SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST);
-        if (sourceIdentifier.isBlank() || sourcePayload.isEmpty()) {
-            return;
+    /**
+     * Reconciles every harvested object, not the first one.
+     *
+     * <p>The source identifier used to be read back out of the planned actions, which worked only
+     * because there was exactly one item in the plan. Carrying the identifier alongside its payload
+     * is both simpler and correct for a source that publishes fifty-six of them.
+     */
+    private void applyDspaceMetadata(List<SourceObject> sourceObjects) {
+        int updated = 0;
+        int current = 0;
+
+        for (SourceObject sourceObject : sourceObjects) {
+            boolean changed =
+                    dspaceItemWriteGateway.ensureItemMetadata(sourceObject.sourceIdentifier(), sourceObject.payload());
+            if (changed) {
+                updated++;
+            } else {
+                current++;
+            }
         }
 
-        boolean changed = dspaceItemWriteGateway.ensureItemMetadata(sourceIdentifier, sourcePayload.orElseThrow());
+        // One line per source rather than per object: fifty-six "found current metadata" lines say
+        // less than one line stating that fifty-six were current.
         LOGGER.info(
-                "DSpace Dublin Core metadata reconciliation {} for {}.",
-                changed ? "updated metadata" : "found current metadata",
-                sourceIdentifier);
-    }
-
-    /**
-     * Typed as the enum, not as a String. The action type used to be a free-form String, and an
-     * enum compared against a String literal compiles and is silently always false -- this lookup
-     * would quietly stop matching and the metadata write would be skipped rather than fail.
-     */
-    private String actionTarget(List<SyncAction> actions, SyncAction.ActionTypeEnum actionType) {
-        return actions.stream()
-                .filter((action) -> action.getActionType() == actionType)
-                .map(SyncAction::getTarget)
-                .findFirst()
-                .orElse("");
+                "DSpace metadata reconciliation: {} updated, {} already current, {} objects total.",
+                updated,
+                current,
+                sourceObjects.size());
     }
 }

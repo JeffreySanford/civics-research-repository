@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class DspaceFileManifestTest {
@@ -82,7 +83,7 @@ class DspaceFileManifestTest {
     @Test
     void mapsEveryAdapterFileIntoTheManifestField() {
         DspaceItemPayload payload =
-                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
+                new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
 
         List<DspaceMetadataValue> manifest = payload.metadata().get(DspaceFileManifest.FIELD);
 

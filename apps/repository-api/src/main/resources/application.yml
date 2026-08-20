@@ -12,6 +12,10 @@ civics:
     # run finds the metadata current and writes nothing.
     mode: ${CIVICS_SYNC_MODE:APPLY}
     source: ${CIVICS_SYNC_SOURCE:TIGER_LINE}
+    # Objects reconciled per source per run. TIGER/Line publishes 56 and LODES 53, at roughly
+    # 0.15s each, so the full set costs about seventeen seconds of startup. Measured rather
+    # than guessed; raise or lower it and the tradeoff is linear.
+    max-objects-per-source: ${CIVICS_SYNC_MAX_OBJECTS_PER_SOURCE:200}
   dspace:
     base-url: ${CIVICS_DSPACE_BASE_URL:http://dspace-rest:8080/server}
     # No default credentials. Blank credentials disable DSpace writes instead of failing the sync

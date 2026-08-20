@@ -20,14 +20,30 @@ public class LodesMetadataAdapter implements PublicMetadataAdapter {
     private static final LocalDate FALLBACK_RELEASED_ON = LocalDate.of(2023, 6, 1);
 
     private final SourceFileProbe sourceFileProbe;
+    private final CatalogMetadataReader catalogMetadataReader;
 
-    public LodesMetadataAdapter(SourceFileProbe sourceFileProbe) {
+    public LodesMetadataAdapter(SourceFileProbe sourceFileProbe, CatalogMetadataReader catalogMetadataReader) {
+        this.catalogMetadataReader = catalogMetadataReader;
         this.sourceFileProbe = sourceFileProbe;
     }
 
     @Override
     public SyncSource source() {
         return SyncSource.LODES;
+    }
+
+    /**
+     * Every area this program publishes, from the catalog.
+     *
+     * <p>LODES accounts for a large share of the repository on its own, and reconciling a single
+     * area left the rest with no recorded repository identity at all. Sizes and release dates still
+     * come from the publisher; which objects exist comes from the catalog, so an adapter and the
+     * seeded repository cannot disagree about that.
+     */
+    @Override
+    public List<ResearchObjectMetadata> harvest() {
+        List<ResearchObjectMetadata> objects = catalogMetadataReader.forProgram(ResearchProgram.LODES);
+        return objects.isEmpty() ? List.of(firstVisualSlice()) : objects;
     }
 
     @Override

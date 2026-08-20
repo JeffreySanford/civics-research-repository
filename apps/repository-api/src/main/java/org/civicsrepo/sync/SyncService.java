@@ -9,6 +9,7 @@ import org.civicsrepo.generated.dto.SyncStatus;
 import java.util.ArrayList;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,13 +46,16 @@ public class SyncService {
     private final DspaceItemPayloadMapper dspaceItemPayloadMapper;
     private final DspaceItemDiffPlanner dspaceItemDiffPlanner;
     private final Map<SyncSource, PublicMetadataAdapter> metadataAdapters;
+    private final int maxObjectsPerSource;
 
     public SyncService(
             SyncJobStore syncJobStore,
             SyncActionRunner syncActionRunner,
             DspaceItemPayloadMapper dspaceItemPayloadMapper,
             DspaceItemDiffPlanner dspaceItemDiffPlanner,
-            List<PublicMetadataAdapter> metadataAdapters) {
+            List<PublicMetadataAdapter> metadataAdapters,
+            @Value("${civics.sync.max-objects-per-source:25}") int maxObjectsPerSource) {
+        this.maxObjectsPerSource = maxObjectsPerSource;
         this.syncJobStore = syncJobStore;
         this.syncActionRunner = syncActionRunner;
         this.dspaceItemPayloadMapper = dspaceItemPayloadMapper;
@@ -93,7 +97,7 @@ public class SyncService {
                     request.getSource(),
                     plannedActions.size());
 
-            syncActionRunner.run(request, plannedActions, sourcePayload(request));
+            syncActionRunner.run(request, plannedActions, sourceObjects(request));
             SyncStatus status = completedStatus(request.getMode());
             SyncJob completedJob =
                     new SyncJob(jobId, request.getMode(), request.getSource(), status, startedAt, plannedActions)
@@ -138,26 +142,76 @@ public class SyncService {
         return syncJobStore.findRecent(25);
     }
 
+    /**
+     * Every object the source publishes, capped.
+     *
+     * <p>TIGER/Line alone publishes fifty-six, and each one costs a discovery lookup and possibly a
+     * patch. Reconciling all of them at every startup would add most of a minute to `demo:up` for
+     * work that is idempotent and could as easily run from the admin route, so the cap keeps startup
+     * quick while `civics.sync.max-objects-per-source` raises it for a full reconciliation.
+     */
+    private List<ResearchObjectMetadata> harvest(PublicMetadataAdapter metadataAdapter) {
+        ResearchObjectMetadata representative = metadataAdapter.firstVisualSlice();
+
+        // The representative object leads, then everything else in catalog order. Without this the
+        // cap is decided by alphabetical accident: LODES starts at Alabama, so North Dakota -- the
+        // object the whole demo is built around -- fell outside the first twenty-five and went
+        // unreconciled. What an adapter names as its representative should never be the thing a
+        // cap drops.
+        List<ResearchObjectMetadata> ordered = new ArrayList<>();
+        ordered.add(representative);
+        for (ResearchObjectMetadata object : metadataAdapter.harvest()) {
+            if (!object.id().equals(representative.id())) {
+                ordered.add(object);
+            }
+        }
+
+        return ordered.size() <= maxObjectsPerSource ? List.copyOf(ordered) : List.copyOf(ordered.subList(0, maxObjectsPerSource));
+    }
+
     private List<SyncAction> planActions(SyncRequest request) {
         PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.getSource());
         if (metadataAdapter == null) {
             return fallbackPlanActions(request);
         }
 
-        ResearchObjectMetadata metadata = metadataAdapter.firstVisualSlice();
-        DspaceItemPayload itemPayload = dspaceItemPayloadMapper.toItemPayload(metadata);
-        if (request.getMode() == SyncMode.DIFF) {
-            return diffPlanActions(metadata, itemPayload);
+        List<ResearchObjectMetadata> harvested = harvest(metadataAdapter);
+        if (harvested.isEmpty()) {
+            return fallbackPlanActions(request);
         }
 
+        if (request.getMode() == SyncMode.DIFF) {
+            // Diff reports on the adapter's representative object, not on all of them. A diff over
+            // fifty-six items is a report nobody reads, and its question -- "would apply change
+            // anything" -- is answered by one object once apply is idempotent.
+            ResearchObjectMetadata representative = metadataAdapter.firstVisualSlice();
+            return diffPlanActions(representative, dspaceItemPayloadMapper.toItemPayload(representative));
+        }
+
+        List<SyncAction> actions = new ArrayList<>();
+        ResearchObjectMetadata metadata = harvested.getFirst();
+        actions.add(new SyncAction(
+                SyncAction.ActionTypeEnum.UPSERT_COMMUNITY, COMMUNITY_NAME, "Ensure root DSpace community exists."));
+        actions.add(new SyncAction(
+                SyncAction.ActionTypeEnum.UPSERT_COLLECTION,
+                COLLECTION_NAME,
+                "Ensure collection exists for " + metadata.program().getValue() + " " + metadata.geographicLevel()
+                        + " metadata."));
+
+        for (ResearchObjectMetadata object : harvested) {
+            actions.addAll(itemActions(object, dspaceItemPayloadMapper.toItemPayload(object)));
+        }
+
+        actions.add(new SyncAction(
+                SyncAction.ActionTypeEnum.VERIFY_INDEX,
+                "Solr discovery",
+                "Confirm " + harvested.size() + " item(s) are available for discovery indexing."));
+        return List.copyOf(actions);
+    }
+
+    /** The per-object half of a plan, repeated once for every harvested object. */
+    private List<SyncAction> itemActions(ResearchObjectMetadata metadata, DspaceItemPayload itemPayload) {
         return List.of(
-                new SyncAction(
-                        SyncAction.ActionTypeEnum.UPSERT_COMMUNITY, COMMUNITY_NAME, "Ensure root DSpace community exists."),
-                new SyncAction(
-                        SyncAction.ActionTypeEnum.UPSERT_COLLECTION,
-                        COLLECTION_NAME,
-                        "Ensure collection exists for " + metadata.program().getValue() + " "
-                                + metadata.geographicLevel() + " metadata."),
                 new SyncAction(
                         SyncAction.ActionTypeEnum.UPSERT_ITEM,
                         itemPayload.name(),
@@ -177,9 +231,19 @@ public class SyncService {
                 new SyncAction(
                         SyncAction.ActionTypeEnum.UPSERT_MAP_LAYER,
                         metadata.geography() + " " + metadata.geographicLevel() + " map preview",
-                        "Ensure map layer metadata exists for " + metadata.sourceUrl() + "."),
-                new SyncAction(
-                        SyncAction.ActionTypeEnum.VERIFY_INDEX, "Solr discovery", "Confirm item is available for discovery indexing."));
+                        "Ensure map layer metadata exists for " + metadata.sourceUrl() + "."));
+    }
+
+    /** Every harvested object paired with its payload, for the runner to reconcile. */
+    private List<SourceObject> sourceObjects(SyncRequest request) {
+        PublicMetadataAdapter metadataAdapter = metadataAdapters.get(request.getSource());
+        if (metadataAdapter == null) {
+            return List.of();
+        }
+
+        return harvest(metadataAdapter).stream()
+                .map((metadata) -> new SourceObject(metadata.id(), dspaceItemPayloadMapper.toItemPayload(metadata)))
+                .toList();
     }
 
     private Optional<DspaceItemPayload> sourcePayload(SyncRequest request) {

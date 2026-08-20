@@ -18,6 +18,7 @@ import org.civicsrepo.dspace.DspaceItemDiffPlanner;
 import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.dspace.DspaceRestClient;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -35,7 +36,8 @@ class StartupSyncRunnerTest {
             (request, actions, sourcePayload) -> {},
             new DspaceItemPayloadMapper(),
             new DspaceItemDiffPlanner((sourceIdentifier) -> Optional.empty()),
-            List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe())));
+            List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader())),
+            25);
 
     @Test
     void skipsWhenDspaceIsConfiguredButNotRunning() {
@@ -77,7 +79,8 @@ class StartupSyncRunnerTest {
                 new DspaceItemPayloadMapper(),
                 new DspaceItemDiffPlanner(
                         new DspaceDiscoveryItemStateReader(new DspaceRestClient(UNREACHABLE, "", ""))),
-                List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe())));
+                List.of(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader())),
+            25);
 
         SyncJob job = liveService.runSync(new SyncRequest(SyncMode.DIFF, SyncSource.TIGER_LINE));
 

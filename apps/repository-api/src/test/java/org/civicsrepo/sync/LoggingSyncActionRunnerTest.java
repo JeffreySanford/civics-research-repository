@@ -8,11 +8,11 @@ import org.civicsrepo.generated.dto.SyncSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Optional;
 import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.dspace.DspaceItemWriteGateway;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class LoggingSyncActionRunnerTest {
@@ -28,7 +28,7 @@ class LoggingSyncActionRunnerTest {
                         SyncAction.ActionTypeEnum.UPSERT_ITEM, "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
                         new SyncAction(
                         SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST, "tiger-line-north-dakota-2025", "Track files.")),
-                Optional.of(sourcePayload()));
+                List.of(new SourceObject("tiger-line-north-dakota-2025", sourcePayload())));
 
         assertThat(writeGateway.sourceIdentifier).isEqualTo("tiger-line-north-dakota-2025");
         assertThat(writeGateway.sourcePayload.name()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
@@ -46,14 +46,14 @@ class LoggingSyncActionRunnerTest {
                         SyncAction.ActionTypeEnum.UPSERT_ITEM, "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
                         new SyncAction(
                         SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST, "tiger-line-north-dakota-2025", "Track files.")),
-                Optional.of(sourcePayload()));
+                List.of(new SourceObject("tiger-line-north-dakota-2025", sourcePayload())));
 
         assertThat(writeGateway.sourceIdentifier).isNull();
         assertThat(writeGateway.sourcePayload).isNull();
     }
 
     private DspaceItemPayload sourcePayload() {
-        return new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
+        return new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
     }
 
     private static final class TestDspaceItemWriteGateway implements DspaceItemWriteGateway {

@@ -8,12 +8,13 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class TigerLineMetadataAdapterTest {
     @Test
     void normalizesNorthDakotaTractMetadata() {
-        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe());
+        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader());
 
         ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
@@ -41,7 +42,7 @@ class TigerLineMetadataAdapterTest {
     void takesSizeAndPublicationDateFromThePublisher() {
         TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(
                 (url) -> Optional.of(new SourceFileFacts(url.endsWith(".zip") ? 91_234_567L : 4_096L,
-                        LocalDate.of(2026, 3, 4))));
+                        LocalDate.of(2026, 3, 4))), new CatalogMetadataReader());
 
         ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
@@ -58,7 +59,7 @@ class TigerLineMetadataAdapterTest {
     /** An unreachable publisher must degrade to compiled metadata, not fail the sync. */
     @Test
     void fallsBackToCompiledMetadataWhenThePublisherCannotBeReached() {
-        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe());
+        TigerLineMetadataAdapter adapter = new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader());
 
         ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
@@ -70,7 +71,7 @@ class TigerLineMetadataAdapterTest {
     @Test
     void keepsTheCompiledDateWhenThePublisherSendsNoLastModified() {
         TigerLineMetadataAdapter adapter =
-                new TigerLineMetadataAdapter((url) -> Optional.of(new SourceFileFacts(512L, null)));
+                new TigerLineMetadataAdapter((url) -> Optional.of(new SourceFileFacts(512L, null)), new CatalogMetadataReader());
 
         ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 

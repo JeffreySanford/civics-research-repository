@@ -9,6 +9,7 @@ import java.util.Map;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.civicsrepo.sources.OfflineSourceFileProbe;
 import org.civicsrepo.repository.RecordingRepositoryIdentityStore;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class DspaceRestItemWriteGatewayTest {
@@ -17,7 +18,7 @@ class DspaceRestItemWriteGatewayTest {
     private final DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
     private final DspaceRestItemWriteGateway gateway = new DspaceRestItemWriteGateway(client, new RecordingRepositoryIdentityStore());
     private final DspaceItemPayload sourcePayload =
-            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
+            new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
 
     @Test
     void plansDublinCoreMetadataPatchOperationsForChangedFields() {

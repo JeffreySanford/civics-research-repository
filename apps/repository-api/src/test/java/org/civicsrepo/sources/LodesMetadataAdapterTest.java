@@ -6,12 +6,13 @@ import org.civicsrepo.generated.dto.SyncSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class LodesMetadataAdapterTest {
     @Test
     void normalizesNorthDakotaWacMetadata() {
-        LodesMetadataAdapter adapter = new LodesMetadataAdapter(new OfflineSourceFileProbe());
+        LodesMetadataAdapter adapter = new LodesMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader());
 
         ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 
@@ -30,7 +31,7 @@ class LodesMetadataAdapterTest {
 
     @Test
     void fallsBackToCompiledMetadataWhenThePublisherCannotBeReached() {
-        LodesMetadataAdapter adapter = new LodesMetadataAdapter(new OfflineSourceFileProbe());
+        LodesMetadataAdapter adapter = new LodesMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader());
 
         ResearchObjectMetadata metadata = adapter.firstVisualSlice();
 

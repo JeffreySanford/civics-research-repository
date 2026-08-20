@@ -10,6 +10,7 @@ import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.sources.ResearchObjectMetadata;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class DspaceItemPayloadMapperTest {
@@ -19,7 +20,7 @@ class DspaceItemPayloadMapperTest {
     void mapsResearchObjectMetadataToDspaceItemPayload() {
         DspaceItemPayloadMapper mapper = new DspaceItemPayloadMapper();
 
-        DspaceItemPayload payload = mapper.toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe()).firstVisualSlice());
+        DspaceItemPayload payload = mapper.toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
 
         assertThat(payload.name()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
         assertThat(payload.type()).isEqualTo("item");

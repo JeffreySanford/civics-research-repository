@@ -17,6 +17,7 @@ import org.civicsrepo.sources.OfflineSourceFileProbe;
 import org.civicsrepo.sources.SippMetadataAdapter;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.civicsrepo.sources.UsgsEarthquakesMetadataAdapter;
+import org.civicsrepo.sources.CatalogMetadataReader;
 import org.junit.jupiter.api.Test;
 
 class MetadataAdapterSyncServiceTest {
@@ -26,11 +27,12 @@ class MetadataAdapterSyncServiceTest {
             new DspaceItemPayloadMapper(),
             new DspaceItemDiffPlanner((sourceIdentifier) -> java.util.Optional.empty()),
             List.of(
-                    new TigerLineMetadataAdapter(new OfflineSourceFileProbe()),
-                    new LodesMetadataAdapter(new OfflineSourceFileProbe()),
+                    new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()),
+                    new LodesMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()),
                     new CpsMetadataAdapter(new OfflineSourceFileProbe()),
                     new SippMetadataAdapter(new OfflineSourceFileProbe()),
-                    new UsgsEarthquakesMetadataAdapter(new OfflineSourceFileProbe())));
+                    new UsgsEarthquakesMetadataAdapter(new OfflineSourceFileProbe())),
+            25);
 
     @Test
     void dryRunPlansRepositoryActionsForEachRegisteredAdapter() {
