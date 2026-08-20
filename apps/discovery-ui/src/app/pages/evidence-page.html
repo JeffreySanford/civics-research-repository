@@ -24,7 +24,10 @@
 
           @if (loading$ | async) {
           <div class="inline-status" role="status">
-            <mat-spinner diameter="24"></mat-spinner>
+            <mat-spinner
+              diameter="24"
+              aria-label="Loading accessibility evidence"
+            ></mat-spinner>
             <span>Loading accessibility evidence</span>
           </div>
           } @if (error$ | async; as error) {
@@ -204,7 +207,10 @@
       <div class="evidence-tab-panel">
         @if (pipelineLoading$ | async) {
         <div class="inline-status" role="status">
-          <mat-spinner diameter="24"></mat-spinner>
+          <mat-spinner
+            diameter="24"
+            aria-label="Loading data pipeline figures"
+          ></mat-spinner>
           <span>Loading data pipeline figures</span>
         </div>
         } @if (pipelineError$ | async; as pipelineError) {

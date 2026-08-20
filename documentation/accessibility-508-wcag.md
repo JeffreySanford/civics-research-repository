@@ -4,6 +4,36 @@
 
 Automation provides repeatable release evidence, but it does not replace manual assistive-technology testing. The project should treat accessibility evidence as part of the engineering artifact, especially for search, facets, dataset detail pages, dialogs, forms, and maps.
 
+## Component-Level Scans
+
+`pnpm run a11y:components` runs axe against rendered components in the unit-test DOM. It complements
+the browser scans rather than repeating them, and the split is worth stating because it decides what
+each can honestly claim.
+
+**jsdom has no layout engine.** Nothing has a position, a size, or a computed colour against a
+painted background, so every rule needing the page as rendered is disabled: colour contrast, target
+size, viewport. Those are checked by Playwright in a real browser, where they mean something. A
+component test reporting "no contrast violations" from jsdom would be reporting that the rule never
+ran.
+
+**What is left is the structural half**, and it is what regresses while refactoring a template: a
+control that loses its label, an ARIA attribute pointing at an id that no longer exists, a heading
+level skipped, a progressbar with no name.
+
+**State is the reason these exist.** The browser suite scans each route as it normally renders —
+loaded, populated, healthy. A reader meets the other states on a bad day: a spinner, a failed load,
+an empty table, a restricted object with no files. Each is a different tree with different
+labelling, awkward to drive through a running application and one store value apart here.
+
+The first run found a real defect. Every `mat-spinner` rendered as
+`<mat-spinner role="progressbar">` with **no accessible name** — WCAG 4.1.2. Five of them, across
+discovery, evidence and admin sync. The Playwright scans had never seen it because they wait for
+loading to finish, so the spinner is gone by the time axe runs. All five are labelled now.
+
+One environment note: jsdom implements no media queries, so a component asking about reduced motion
+throws rather than getting an answer. That is a gap in the test environment, not a defect in the
+component, and it is stubbed in tests rather than guarded against in production code.
+
 ## Info Controls And Tooltips
 
 Seven controls on the map explain something: one for the map's methodology and one per layer. Each

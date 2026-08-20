@@ -86,7 +86,10 @@
 
             @if (loading$ | async) {
             <div class="inline-status" role="status">
-              <mat-spinner diameter="24"></mat-spinner>
+              <mat-spinner
+                diameter="24"
+                aria-label="Loading sync status"
+              ></mat-spinner>
               <span>Sync request running through repository-api</span>
             </div>
             } @if (reindexing$ | async) {
@@ -95,7 +98,10 @@
                 class="admin-viz-reindex-pulse__dot"
                 aria-hidden="true"
               ></span>
-              <mat-spinner diameter="24"></mat-spinner>
+              <mat-spinner
+                diameter="24"
+                aria-label="Running sync request"
+              ></mat-spinner>
               <span>Discovery reindex running into Solr</span>
             </div>
             } @if (error$ | async; as error) {

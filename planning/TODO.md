@@ -496,6 +496,7 @@ Goal: make accessibility evidence visible, repeatable, and tied to release workf
 - [x] Add keyboard navigation tests for dataset detail tabs.
 - [x] Add keyboard navigation tests for map layer controls.
 - [x] Add storyboard checks across discovery, map, admin sync, and evidence routes.
+- [x] Component-level axe scans in Vitest (`pnpm run a11y:components`): 13 assertions over five page components in loading, failed, empty, publication and restricted states — the states the browser suite scans past. Found and fixed a real WCAG 4.1.2 defect on the first run: all five `mat-spinner` elements rendered as `role=progressbar` with no accessible name.
 - [ ] Add dialog focus tests if dialogs are introduced.
 - [x] Add responsive reflow checks.
 - [x] Add color contrast verification.
