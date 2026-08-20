@@ -32,13 +32,17 @@ Honest answers for interview Q&A. Each item states what we chose, why, and what 
 
 **Deferred:** None—the disclosure requirement is implemented. Manual accessibility evidence still needs recording against the repository-backed path.
 
-## Bounded bitstream mirroring
+## Budgeted bitstream mirroring
 
-**Decision:** Source files are mirrored into the DSpace assetstore up to a per-file cap (120 MB) and a total budget (1 GiB), largest eligible first. Everything else is represented by **source URLs and file manifests**. The assetstore currently holds 76 files, 1.00 GiB — about 58% of the 1.73 GiB subscribed. Nothing is mirrored into git.
+**Decision:** Source files with a measurable size are eligible for the DSpace assetstore under a **5 GiB total mirror budget with no independent per-file cap**. Large legitimate research artifacts are therefore not excluded simply because one file is hundreds of megabytes. Everything not mirrored remains represented by **source URLs and file manifests**. Nothing is mirrored into git.
 
-**Why:** A repository that holds no bytes has no preservation story, no checksums and no downloads. A repository that holds every byte would put multi-gigabyte public-use files into Docker volumes for no additional information. The budget buys the demonstrable half of that: real bitstreams with real checksums, without pretending to be a warehouse.
+The currently committed mirror snapshot still reflects the earlier 1 GiB / 120 MiB-cap run: 76 files totaling 1.00 GiB. The next mirror/seed run will refresh that snapshot under the new policy.
 
-**Tradeoff:** The mirrored set is a preservation sample, not a complete copy. Which files it contains depends on the cap and budget at the time it ran, recorded in `tools/dspace/mirror-manifest.json`.
+**Why:** A repository that holds no bytes has no preservation story, no checksums, and no downloads. An arbitrary per-file ceiling also weakens the story by excluding exactly the kind of large geospatial or scientific artifact DSpace is meant to preserve. The total budget is the operational safeguard: it bounds local Docker storage while allowing any individual measured file that fits inside the remaining run budget.
+
+**Safety boundary:** Files without a positive `Content-Length` are not mirrored automatically. For selected files, the downloader verifies the streamed byte count against the publisher's declared length and deletes partial output on a mismatch, so a misreporting endpoint cannot silently overrun the configured budget.
+
+**Tradeoff:** The mirrored set is still a bounded preservation copy, not a wholesale warehouse. Which files it contains depends on the total budget and measurable source inventory at the time it ran, recorded in `tools/dspace/mirror-manifest.json`.
 
 **Why the manifest survives mirroring:** The manifest describes the authoritative publisher source, which stays true whether or not a local copy exists. A mirrored file is a preservation copy, not a new system of record.
 
@@ -84,7 +88,7 @@ Honest answers for interview Q&A. Each item states what we chose, why, and what 
 
 - Terraform/CDK for the documented AWS target.
 - Full manual NVDA/JAWS/map-equivalence evidence runs.
-- Mirroring large publisher files into DSpace.
+- Unbounded wholesale mirroring of every publisher endpoint into DSpace.
 - Real-time multi-tenant stewardship workflows.
 
 See [aws-modernization.md](../aws-modernization.md) for the credible cloud path and [planning/TODO.md](../../planning/TODO.md) for the active backlog.
