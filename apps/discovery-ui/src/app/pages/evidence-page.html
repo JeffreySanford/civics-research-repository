@@ -107,6 +107,19 @@
           <p>No automated evidence entries are available.</p>
           } }
         </section>
+
+        <section aria-labelledby="artifacts-heading" class="content-panel">
+          <h2 id="artifacts-heading">Report artifacts</h2>
+          <ul class="artifact-list">
+            @for (artifact of buildReportArtifacts(automatedEntries); track
+            artifact.path) {
+            <li>
+              <strong>{{ artifact.label }}</strong>
+              <span>{{ artifact.path }}</span>
+            </li>
+            }
+          </ul>
+        </section>
         }
 
         <section
@@ -173,18 +186,6 @@
           <ul class="criteria-list">
             @for (criterion of wcagCriteria; track criterion) {
             <li>{{ criterion }}</li>
-            }
-          </ul>
-        </section>
-
-        <section aria-labelledby="artifacts-heading" class="content-panel">
-          <h2 id="artifacts-heading">Report artifacts</h2>
-          <ul class="artifact-list">
-            @for (artifact of reportArtifacts; track artifact.path) {
-            <li>
-              <strong>{{ artifact.label }}</strong>
-              <span>{{ artifact.path }}</span>
-            </li>
             }
           </ul>
         </section>
