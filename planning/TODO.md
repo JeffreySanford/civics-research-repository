@@ -183,7 +183,13 @@ The repository now holds objects the default discovery view hides, and 181 objec
 - [x] One source failing no longer stops the rest: a publisher being unreachable is a fact about that publisher.
 - [x] Fixed a real drift the change surfaced: the CPS adapter was pinned to `cps-public-use-2025` while the catalog seeded `cps-public-use-2026`, so apply looked for an item that does not exist and failed. Both files are published; the adapter now follows the catalog, which is the source of truth for what the repository holds.
 - [x] Objects with a recorded DSpace identity: 1 -> 5, one per adapter.
-- [ ] Adapters harvest one representative object each (`firstVisualSlice`). Reaching all 181 means enumerating every area per program, which is catalog harvesting rather than adapter wiring — tracked under P1.
+- [ ] **Make the existing adapters enumerate: 5 objects -> 112, with no new adapters.** `PublicMetadataAdapter.firstVisualSlice()` returns one object; the five registered adapters already cover programs worth 112 objects between them (TIGER/Line 56, LODES 53, SIPP 1, CPS 1, USGS 1). This is a signature change to return a list, plus per-adapter iteration over the areas the catalog already lists. Much the largest win, and it needs no new adapter.
+- [ ] **Nine more adapters: 112 -> 176.** ACS (56 objects), then the eight single-object national programs: Economic Census, County Business Patterns, Building Permits, Population Estimates, SAIPE, Business Dynamics, USGS 3DEP, USGS 3HP. The national eight are near-copies of the SIPP and CPS adapters.
+- [ ] **Decide whether the five LEHD research-package objects should be harvested at all.** Two working papers, a methodology report, a project and the restricted microdata. "This project has these parts" is a curatorial assertion, not something a publisher endpoint reports, so seed-only may be the right answer rather than a gap.
+
+Adapters are per program, not per object: reaching 181 is nine or so new adapters plus one interface
+change, not 176 of them. This is separate from catalog harvesting (P1), which is about discovering
+_which_ files and vintages exist rather than how many objects sync reconciles.
 
 ### P15 - Persistent repository identity
 
