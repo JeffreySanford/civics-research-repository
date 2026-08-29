@@ -19,6 +19,13 @@ Civics Research Repository is documented as a federal Open Science reference pla
 - [Search Performance Evidence](search-performance-evidence.md): warm-up/repeated-run protocol, API-versus-engine timing boundaries and interpretation guardrails.
 - [USGS National Map Evaluation](usgs-national-map-evaluation.md): reference-layer options and tradeoffs.
 
+## Federated metadata and data scale
+
+- [Federated Metadata Expansion](federation/README.md): PI-1 project boundary, authority model and handoff to the cloud project.
+- [Federated Metadata Architecture](federation/federated-metadata-architecture.md): repository/federated provenance, identity, dynamic taxonomy, bounded projection and UI implications.
+- [Federated Source Ingestion Plan](federation/source-ingestion-plan.md): Data.gov, OSTI, NASA CMR, PubMed and OpenAlex adapter sequence and harvesting rules.
+- [Million-Record Federated Metadata Corpus](federation/million-record-corpus.md): 10K/100K/1M+ corpus manifests, storage policy, semantic tests and standalone-first scale evidence.
+
 ## Accessibility
 
 - [Section 508 and WCAG Evidence](accessibility-508-wcag.md): implemented automated evidence, browser boundaries, evidence lifecycle and honest claim language.
@@ -28,15 +35,15 @@ Civics Research Repository is documented as a federal Open Science reference pla
 ## Platform and deployment
 
 - [Docker, DSpace, Solr, OpenSearch and PostgreSQL](docker-dspace-solr-postgres.md): local service responsibilities.
-- [Cloud and Scale Laboratory](cloud/README.md): local Kubernetes/SolrCloud/OpenSearch clustering and 1M+ metadata-corpus experiments.
+- [Local Cloud Search Laboratory](cloud/README.md): PI-2 infrastructure project and its relationship to the permanent Compose baseline.
 - [Local Kubernetes Search Cluster](cloud/local-kubernetes-search-cluster.md): kind topology, SolrCloud, multi-node OpenSearch, resilience and topology-aware benchmarking.
-- [Million-Record Open Science Corpus](cloud/million-record-corpus.md): DOE OSTI, Data.gov, PubMed, NASA CMR and optional OpenAlex scale-source strategy.
 - [AWS Modernization](aws-modernization.md): recommended target, alternate, persistence, observability, backup and migration direction.
 - [Backend Java API](backend-java-api.md): Spring Boot and OpenAPI implementation direction.
 - [Nx/Angular/WCAG](nx-angular-wcag.md): frontend workspace and testing conventions.
 
 ## Planning and history
 
+- [Program Increment Plan](../planning/PI_PLAN.md): PI-1 federated metadata expansion, PI-2 local Kubernetes search laboratory and the future AWS handoff.
 - [Future Roadmap](../planning/ROADMAP.md): future work only.
 - [Active Backlog](../planning/TODO.md): open executable tasks only.
 - [Decisions](../planning/DECISIONS.md)
