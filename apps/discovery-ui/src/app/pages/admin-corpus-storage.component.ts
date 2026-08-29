@@ -11,7 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import {
-  RepositoryAdminApi,
+  RepositoryCorpusStorageApi,
   type CorpusProfile,
   type CorpusProfileSummary,
   type CorpusStorageMeasurement,
@@ -47,10 +47,7 @@ interface CorpusStorageView {
     MatSelectModule,
   ],
   template: `
-    <section
-      class="corpus-storage"
-      aria-labelledby="corpus-storage-heading"
-    >
+    <section class="corpus-storage" aria-labelledby="corpus-storage-heading">
       <div class="corpus-storage__heading-row">
         <div>
           <p class="eyebrow">Corpus evidence</p>
@@ -160,7 +157,9 @@ interface CorpusStorageView {
             @if (view.viewedProfile.active) {
               <span class="corpus-storage__badge">Active</span>
             } @else {
-              <span class="corpus-storage__badge corpus-storage__badge--planned">
+              <span
+                class="corpus-storage__badge corpus-storage__badge--planned"
+              >
                 Planned
               </span>
             }
@@ -269,18 +268,27 @@ interface CorpusStorageView {
                   </tr>
                 </thead>
                 <tbody>
-                  @for (measurement of view.overview.history; track measurement.id) {
+                  @for (
+                    measurement of view.overview.history;
+                    track measurement.id
+                  ) {
                     <tr>
                       <td>{{ measurement.capturedAt | date: 'short' }}</td>
                       <td>{{ profileLabel(measurement.profile) }}</td>
                       <td>{{ topologyLabel(measurement.topology) }}</td>
                       <td>{{ measurement.activeProjectionCount | number }}</td>
                       <td>{{ measurement.retainedFederatedCount | number }}</td>
-                      <td>{{ formatBytes(measurement.applicationPostgresBytes) }}</td>
+                      <td>
+                        {{ formatBytes(measurement.applicationPostgresBytes) }}
+                      </td>
                       <td>{{ formatBytes(measurement.dspaceStoredBytes) }}</td>
                       <td>{{ formatBytes(measurement.solrIndexBytes) }}</td>
-                      <td>{{ formatBytes(measurement.openSearchIndexBytes) }}</td>
-                      <td>{{ formatBytes(measurement.totalMeasuredLocalBytes) }}</td>
+                      <td>
+                        {{ formatBytes(measurement.openSearchIndexBytes) }}
+                      </td>
+                      <td>
+                        {{ formatBytes(measurement.totalMeasuredLocalBytes) }}
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -294,7 +302,9 @@ interface CorpusStorageView {
         @if (loadError$ | async; as error) {
           <p class="warning-message" role="status">{{ error }}</p>
         } @else {
-          <p class="inline-status" role="status">Loading corpus storage evidence.</p>
+          <p class="inline-status" role="status">
+            Loading corpus storage evidence.
+          </p>
         }
       }
     </section>
@@ -453,7 +463,7 @@ interface CorpusStorageView {
   `,
 })
 export class AdminCorpusStorageComponent {
-  private readonly adminApi = inject(RepositoryAdminApi);
+  private readonly adminApi = inject(RepositoryCorpusStorageApi);
   private readonly destroyRef = inject(DestroyRef);
   private readonly refresh$ = new BehaviorSubject(0);
   private readonly selectedProfile$ = new BehaviorSubject<CorpusProfile | null>(
