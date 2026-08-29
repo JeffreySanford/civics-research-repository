@@ -63,9 +63,10 @@ function mergeProjectionEvidence(
         </h2>
         <p>
           DSpace remains the system of record. The repository API normalizes one
-          <code>DiscoveryDocument</code> set, fingerprints it, and projects that same
-          set into every configured search target. Solr remains the browser-facing
-          discovery implementation; OpenSearch is the comparison target.
+          <code>DiscoveryDocument</code> set, fingerprints it, and projects that
+          same set into every configured search target. Solr remains the
+          browser-facing discovery implementation; OpenSearch is the comparison
+          target.
         </p>
 
         @if (view.projection; as projection) {
@@ -124,16 +125,16 @@ function mergeProjectionEvidence(
       <section aria-labelledby="search-targets-heading" class="content-panel">
         <h2 id="search-targets-heading">Configured search targets</h2>
         <p>
-          This is an operational liveness and projection-parity probe. It does not
-          display request timing and is not a performance benchmark.
+          This is an operational liveness and projection-parity probe. It does
+          not display request timing and is not a performance benchmark.
         </p>
 
         @if (view.comparison; as comparison) {
           <p class="inline-status" role="status">
             Projection parity
             {{ comparison.sameProjection ? 'verified' : 'not verified' }}.
-            Verification requires the current deterministic projection identity and
-            expected document count, not count equality alone.
+            Verification requires the current deterministic projection identity
+            and expected document count, not count equality alone.
           </p>
 
           <div class="engine-grid">
@@ -156,7 +157,9 @@ function mergeProjectionEvidence(
                 <div>
                   <dt>Indexed documents</dt>
                   <dd>
-                    {{ comparison.solr.indexedDocumentCount ?? 'Unavailable' }}
+                    {{
+                      comparison.solr.indexedDocumentCount ?? 'Unavailable'
+                    }}
                   </dd>
                 </div>
                 <div>
@@ -201,7 +204,10 @@ function mergeProjectionEvidence(
                 <div>
                   <dt>Indexed documents</dt>
                   <dd>
-                    {{ comparison.openSearch.indexedDocumentCount ?? 'Unavailable' }}
+                    {{
+                      comparison.openSearch.indexedDocumentCount ??
+                        'Unavailable'
+                    }}
                   </dd>
                 </div>
                 <div>
@@ -247,7 +253,10 @@ function mergeProjectionEvidence(
 
       .engine-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+        grid-template-columns: repeat(
+          auto-fit,
+          minmax(min(100%, 20rem), 1fr)
+        );
         gap: 1rem;
         margin-top: 1rem;
       }
@@ -300,7 +309,8 @@ export class AdminSearchProjectionComponent {
       ),
   ]).pipe(
     map(([projectionResult, comparisonResult]): AdminSearchProjectionView => {
-      const comparisonProjection = comparisonResult.comparison?.projection ?? null;
+      const comparisonProjection =
+        comparisonResult.comparison?.projection ?? null;
       return {
         projection: mergeProjectionEvidence(
           projectionResult.projection,
