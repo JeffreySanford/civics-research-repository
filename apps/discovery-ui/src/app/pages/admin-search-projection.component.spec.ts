@@ -118,9 +118,9 @@ describe('AdminSearchProjectionComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Projection parity not verified');
     expect(text).toContain('Solr');
-    expect(text).toContain('Reachable Yes');
+    expect(text).toMatch(/Reachable\s+Yes/);
     expect(text).toContain('OpenSearch');
-    expect(text).toContain('Reachable No');
+    expect(text).toMatch(/Reachable\s+No/);
     expect(text).toContain('OpenSearch is not reachable.');
   });
 });
