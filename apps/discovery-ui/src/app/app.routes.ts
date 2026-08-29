@@ -18,6 +18,12 @@ export const appRoutes: Route[] = [
     title: 'Discovery',
   },
   {
+    path: 'search-lab',
+    loadComponent: () =>
+      import('./pages/search-lab-page').then((m) => m.SearchLabPage),
+    title: 'Search Engine Lab',
+  },
+  {
     path: 'datasets/:datasetId',
     loadComponent: () =>
       import('./pages/dataset-detail-page').then(
