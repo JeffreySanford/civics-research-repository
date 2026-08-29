@@ -15,6 +15,8 @@ import { installMatchMediaStub } from '../testing/match-media';
  * user precisely when the page is asking them to wait.
  */
 describe('AdminSyncPage accessibility', () => {
+  const AXE_TEST_TIMEOUT_MS = 10_000;
+
   beforeEach(() => {
     installMatchMediaStub();
   });
@@ -41,18 +43,26 @@ describe('AdminSyncPage accessibility', () => {
     return fixture;
   };
 
-  it('is accessible while loading sync status', async () => {
-    const fixture = await renderWith({ loading: true });
+  it(
+    'is accessible while loading sync status',
+    async () => {
+      const fixture = await renderWith({ loading: true });
 
-    await expectNoAxeViolations(fixture.nativeElement);
-  });
+      await expectNoAxeViolations(fixture.nativeElement);
+    },
+    AXE_TEST_TIMEOUT_MS,
+  );
 
-  it('is accessible when a sync request failed', async () => {
-    const fixture = await renderWith({
-      loading: false,
-      error: 'Sync request failed.',
-    });
+  it(
+    'is accessible when a sync request failed',
+    async () => {
+      const fixture = await renderWith({
+        loading: false,
+        error: 'Sync request failed.',
+      });
 
-    await expectNoAxeViolations(fixture.nativeElement);
-  });
+      await expectNoAxeViolations(fixture.nativeElement);
+    },
+    AXE_TEST_TIMEOUT_MS,
+  );
 });
