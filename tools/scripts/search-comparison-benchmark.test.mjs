@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   nearestRankPercentile,
+  parseArguments,
   runSearchComparisonBenchmark,
   summarizeTimingSamples,
 } from './search-comparison-benchmark.mjs';
@@ -78,6 +79,22 @@ test('nearest-rank percentiles and summary are deterministic', () => {
     maxMs: 50,
     meanMs: 30,
   });
+});
+
+test('CLI parser accepts a conventional standalone argument separator', () => {
+  const options = parseArguments([
+    '--',
+    '--warmups',
+    '5',
+    '--samples',
+    '100',
+    '--query',
+    'North Dakota workforce',
+  ]);
+
+  assert.equal(options.warmupRuns, 5);
+  assert.equal(options.measuredRuns, 100);
+  assert.equal(options.query, 'North Dakota workforce');
 });
 
 test('benchmark excludes warmups and reports measured distributions only', async () => {
