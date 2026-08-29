@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import {
   RepositorySearchComparisonApi,
-  type SearchComparisonRequest,
   type SearchComparisonResponse,
   type SearchComparisonScenario,
 } from 'repository-api-client';
@@ -34,7 +33,7 @@ const baseEngine = {
   returnedHits: 0,
   results: [],
   facets: [],
-} as const;
+};
 
 const SUCCESS_RESPONSE: SearchComparisonResponse = {
   scenario: 'FACETED_SEARCH',
@@ -83,7 +82,7 @@ describe('SearchLabPage', () => {
   ) => {
     const comparisonApi = {
       listScenarios: vi.fn(() => of(SCENARIOS)),
-      run: vi.fn((_request: SearchComparisonRequest) =>
+      run: vi.fn(() =>
         runResult instanceof Error
           ? throwError(() => runResult)
           : of(runResult),
