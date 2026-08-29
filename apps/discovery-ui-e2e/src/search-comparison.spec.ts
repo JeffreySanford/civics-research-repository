@@ -13,7 +13,9 @@ test.describe('Search Lab', () => {
     await mockApis(page);
   });
 
-  test('runs the same normalized query against both engines', async ({ page }) => {
+  test('runs the same normalized query against both engines', async ({
+    page,
+  }) => {
     await page.goto('/search-lab');
 
     await expect(
