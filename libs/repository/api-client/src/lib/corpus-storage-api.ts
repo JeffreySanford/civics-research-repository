@@ -8,7 +8,8 @@ export type CorpusProfile = components['schemas']['CorpusProfile'];
 export type DeploymentTopology = components['schemas']['DeploymentTopology'];
 export type CorpusStorageMeasurement =
   components['schemas']['CorpusStorageMeasurement'];
-export type CorpusProfileSummary = components['schemas']['CorpusProfileSummary'];
+export type CorpusProfileSummary =
+  components['schemas']['CorpusProfileSummary'];
 export type CorpusStorageOverview =
   components['schemas']['CorpusStorageOverview'];
 

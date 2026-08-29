@@ -70,7 +70,9 @@ test.describe('Admin Sync corpus storage evidence', () => {
       page.getByRole('heading', { name: 'Corpus scale & local storage' }),
     ).toBeVisible();
     await expect(page.getByText('Active search profile')).toBeVisible();
-    await expect(page.getByText('Curated demo', { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText('Curated demo', { exact: true }).first(),
+    ).toBeVisible();
 
     await page.getByLabel('View corpus profile').click();
     await page.getByRole('option', { name: 'Federated 1M' }).click();
