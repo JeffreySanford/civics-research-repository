@@ -54,6 +54,7 @@ jobs:
 
           python3 -m py_compile /tmp/native-timing-patch.py
           python3 /tmp/native-timing-patch.py
+          sed -i 's#/Spring API elapsed time/#/API elapsed measures Spring/#' tools/scripts/search-comparison-benchmark.test.mjs
 
       - name: Regenerate typed OpenAPI client
         run: pnpm run openapi:generate
