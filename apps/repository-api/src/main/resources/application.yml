@@ -24,7 +24,12 @@ civics:
     admin-email: ${CIVICS_DSPACE_ADMIN_EMAIL:}
     admin-password: ${CIVICS_DSPACE_ADMIN_PASSWORD:}
   solr:
-    base-url: http://solr:8983/solr
-    core: discovery
+    base-url: ${CIVICS_SOLR_BASE_URL:http://solr:8983/solr}
+    core: ${CIVICS_SOLR_CORE:discovery}
+  opensearch:
+    # Parallel application-owned projection for measured Solr/OpenSearch comparison. DSpace's own
+    # Solr remains separate and is never replaced by this setting.
+    base-url: ${CIVICS_OPENSEARCH_BASE_URL:http://opensearch:9200}
+    index: ${CIVICS_OPENSEARCH_INDEX:discovery-comparison}
   storage:
     artifacts-path: /var/lib/civics/artifacts
