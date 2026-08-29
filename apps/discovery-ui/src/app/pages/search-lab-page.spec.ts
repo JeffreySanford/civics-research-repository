@@ -63,7 +63,11 @@ const SUCCESS_RESPONSE: SearchComparisonResponse = {
 };
 
 interface SearchLabHarness {
-  readonly scenarioControl: { setValue(value: 'FACETED_SEARCH' | 'FULL_TEXT_RELEVANCE' | 'FILTERING'): void };
+  readonly scenarioControl: {
+    setValue(
+      value: 'FACETED_SEARCH' | 'FULL_TEXT_RELEVANCE' | 'FILTERING',
+    ): void;
+  };
   readonly queryControl: { setValue(value: string): void };
   readonly geographyControl: { setValue(value: string): void };
   readonly programControl: { setValue(value: 'LODES' | ''): void };
