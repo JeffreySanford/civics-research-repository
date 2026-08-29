@@ -157,9 +157,7 @@ function mergeProjectionEvidence(
                 <div>
                   <dt>Indexed documents</dt>
                   <dd>
-                    {{
-                      comparison.solr.indexedDocumentCount ?? 'Unavailable'
-                    }}
+                    {{ comparison.solr.indexedDocumentCount ?? 'Unavailable' }}
                   </dd>
                 </div>
                 <div>
@@ -253,10 +251,7 @@ function mergeProjectionEvidence(
 
       .engine-grid {
         display: grid;
-        grid-template-columns: repeat(
-          auto-fit,
-          minmax(min(100%, 20rem), 1fr)
-        );
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
         gap: 1rem;
         margin-top: 1rem;
       }
