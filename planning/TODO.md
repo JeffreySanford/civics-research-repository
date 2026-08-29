@@ -28,7 +28,7 @@ The repository follows a **testing-first rule** for new comparison work: define 
 
 ## P3 — Solr/OpenSearch comparison hardening
 
-The first vertical slice is implemented: OpenSearch runs beside Solr, both receive the same normalized discovery projection, the projection has a deterministic SHA-256 identity, the API exposes typed comparison scenarios, and `/search-lab` renders side-by-side results with explicit projection-parity evidence. Remaining work is test/evidence hardening and operational visibility, not a rewrite of repository ownership.
+The first vertical slice is implemented: OpenSearch runs beside Solr, both receive the same normalized discovery projection, the projection has a deterministic SHA-256 identity, the API exposes typed comparison scenarios, and `/search-lab` renders side-by-side results with explicit projection-parity evidence. Remaining work is semantic-difference explanation and future scenario breadth, not a rewrite of repository ownership.
 
 ### Testing first
 
@@ -41,7 +41,7 @@ The first vertical slice is implemented: OpenSearch runs beside Solr, both recei
 - [x] Add Search Lab to the automated axe WCAG/Section 508 route matrix.
 - [x] Add Search Lab to the end-to-end demo storyboard.
 - [x] Add a real-stack smoke test that proves the same request reaches live Solr and live OpenSearch through the Spring API.
-- [ ] Get the final branch head clean across format, OpenAPI drift, fixture/evidence/document drift, lint, unit tests, UI build, Java tests, runtime image and browser evidence.
+- [x] Get the final branch head clean across format, OpenAPI drift, fixture/evidence/document drift, lint, unit tests, UI build, Java tests, runtime image and browser evidence.
 
 ### Admin Sync operational visibility
 
@@ -99,14 +99,66 @@ The first vertical slice is implemented: OpenSearch runs beside Solr, both recei
 - [ ] Evaluate NOAA Climate Data Online as a federation candidate.
 - [ ] Evaluate NASA POWER as a federation candidate.
 
-## P7 — Infrastructure as code
+## P7 — Local Kubernetes and million-record scale laboratory
+
+Design documents:
+
+- [Local Kubernetes Search Cluster](../documentation/cloud/local-kubernetes-search-cluster.md)
+- [Million-Record Open Science Corpus](../documentation/cloud/million-record-corpus.md)
+
+### Kubernetes search topology
+
+- [ ] Add reproducible kind cluster configuration.
+- [ ] Add `k8s:create`, `k8s:build`, `k8s:deploy`, `k8s:reindex`, `k8s:benchmark` and `k8s:destroy` repository scripts or equivalent documented commands.
+- [ ] Keep Docker Compose as the default fast development path.
+- [ ] Deploy SolrCloud with the official Solr Operator and at least three Solr pods.
+- [ ] Deploy ZooKeeper required by the selected SolrCloud operator configuration.
+- [ ] Deploy a three-node OpenSearch cluster through the official operator or Helm chart.
+- [ ] Configure persistent storage and explicit pod CPU/memory/JVM limits for both engines.
+- [ ] Prove the same normalized projection ID and expected count reach clustered Solr and OpenSearch.
+- [ ] Run Search Lab against both clustered engines through Spring.
+- [ ] Record topology metadata with every benchmark: nodes, shards, replicas, resources, heap, storage and concurrency.
+- [ ] Compare standalone/clustered topology at the 181-record baseline without claiming distributed search must be faster.
+- [ ] Add a benchmark mode with alternating/randomized/separate engine order before comparative speed conclusions.
+- [ ] Automate or document a Solr pod-loss/recovery experiment.
+- [ ] Automate or document an OpenSearch pod-loss/recovery experiment.
+- [ ] Verify projection parity and persistent data after recovery/restart.
+
+### Large-corpus harvesting
+
+- [ ] Define a generic resumable scale-harvest interface with cursor/page checkpoints, bounded retry/backoff, rate-limit handling and progress metrics.
+- [ ] Implement DOE OSTI as the first 1M+ metadata source.
+- [ ] Add source-adapter tests and deterministic normalized fixtures for OSTI.
+- [ ] Produce a 10K OSTI normalized snapshot with source/date/count/hash manifest.
+- [ ] Produce a 100K OSTI normalized snapshot and validate projection parity.
+- [ ] Produce the first 1M normalized OSTI snapshot without committing the corpus to Git.
+- [ ] Keep full-text/binary downloads out of the first million-record experiment.
+- [ ] Add a benchmark-only search-scale snapshot mode that is explicitly distinguished from DSpace-backed evidence.
+- [ ] Evaluate DSpace-backed 10K and 100K ingestion before deciding whether 1M DSpace records is useful locally.
+- [ ] Add Data.gov as a federal hundreds-of-thousands breadth corpus.
+- [ ] Add NASA CMR as a controlled 1M+ geospatial/granule stress corpus after OSTI is stable.
+- [ ] Add PubMed as a second 1M+ bibliographic corpus so benchmark behavior is not overfit to OSTI metadata.
+- [ ] Keep OpenAlex optional until the federal-source scale path is established.
+
+### Scale benchmark matrix
+
+- [ ] Run 181/10K/100K/1M corpus checkpoints.
+- [ ] At 1M, measure concurrency 1/8/32 where the workstation remains stable.
+- [ ] Record indexing duration, accepted/rejected documents and errors.
+- [ ] Record API elapsed, Solr QTime, OpenSearch took and throughput/error distributions.
+- [ ] Add stable query classes for exact ID, rare phrase, common multi-term, publisher, type, year, high-cardinality facet, low-cardinality facet, empty and broad-result searches.
+- [ ] Add result-set/rank/facet-difference evidence at scale so faster-but-wrong behavior cannot pass as a successful benchmark.
+- [ ] Evaluate an optional 5M+ tier only after 1M is reproducible.
+
+## P8 — Infrastructure as code
 
 - [ ] Choose Terraform or CDK.
 - [ ] Implement the documented AWS target or alternate.
+- [ ] Reuse local Kubernetes/operator/Helm lessons where they transfer to EKS.
 - [ ] Add secrets, observability, backup/restore and persistent search storage.
-- [ ] Document deployment and rollback from the local Compose baseline.
+- [ ] Document deployment and rollback from the local Compose/kind baselines.
 
-## P8 — Platform hardening
+## P9 — Platform hardening
 
 - [ ] Move NgRx dependencies from release candidates to stable versions after validation.
 - [ ] Revisit generated Spring controller interfaces when Spring 7 support is ready.
