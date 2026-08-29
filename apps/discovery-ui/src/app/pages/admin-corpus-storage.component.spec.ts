@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import {
-  RepositoryAdminApi,
+  RepositoryCorpusStorageApi,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
 } from 'repository-api-client';
@@ -65,7 +65,7 @@ describe('AdminCorpusStorageComponent', () => {
       imports: [AdminCorpusStorageComponent],
       providers: [
         provideNoopAnimations(),
-        { provide: RepositoryAdminApi, useValue: api },
+        { provide: RepositoryCorpusStorageApi, useValue: api },
       ],
     }).compileComponents();
 
