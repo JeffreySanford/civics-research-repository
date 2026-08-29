@@ -64,13 +64,13 @@ SolrCloud: discovery
 
 Topology variants:
 
-| Variant | Solr pods | Shards | Replicas per shard | Purpose |
-| --- | ---: | ---: | ---: | --- |
-| S0 | 1 | 1 | 1 | Kubernetes overhead baseline |
-| S1 | 3 | 1 | 1 | node overhead without shard fan-out |
-| S2 | 3 | 2 | 1 | distributed query baseline |
-| S3 | 3 | 3 | 1 | more shard parallelism |
-| S4 | 3+ | 2-3 | 2 | availability/replica experiment |
+| Variant | Solr pods | Shards | Replicas per shard | Purpose                             |
+| ------- | --------: | -----: | -----------------: | ----------------------------------- |
+| S0      |         1 |      1 |                  1 | Kubernetes overhead baseline        |
+| S1      |         3 |      1 |                  1 | node overhead without shard fan-out |
+| S2      |         3 |      2 |                  1 | distributed query baseline          |
+| S3      |         3 |      3 |                  1 | more shard parallelism              |
+| S4      |        3+ |    2-3 |                  2 | availability/replica experiment     |
 
 A collection layout should never be changed mid-measurement without recording a new topology identity.
 
@@ -96,13 +96,13 @@ OpenSearch cluster
 
 Topology variants:
 
-| Variant | Nodes | Primaries | Replicas | Purpose |
-| --- | ---: | ---: | ---: | --- |
-| O0 | 1* | 1 | 0 | conceptual current baseline; operator may require 3 nodes |
-| O1 | 3 | 1 | 0 | cluster coordination overhead |
-| O2 | 3 | 2 | 0 | distributed query baseline |
-| O3 | 3 | 3 | 0 | more primary-shard parallelism |
-| O4 | 3+ | 2-3 | 1 | availability/replica experiment |
+| Variant | Nodes | Primaries | Replicas | Purpose                                                   |
+| ------- | ----: | --------: | -------: | --------------------------------------------------------- |
+| O0      |   1\* |         1 |        0 | conceptual current baseline; operator may require 3 nodes |
+| O1      |     3 |         1 |        0 | cluster coordination overhead                             |
+| O2      |     3 |         2 |        0 | distributed query baseline                                |
+| O3      |     3 |         3 |        0 | more primary-shard parallelism                            |
+| O4      |    3+ |       2-3 |        1 | availability/replica experiment                           |
 
 `O0` should remain the Docker Compose baseline if the selected Kubernetes deployment mechanism does not support a single-node operator topology.
 
