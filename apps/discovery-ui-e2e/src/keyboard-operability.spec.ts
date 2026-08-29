@@ -34,9 +34,10 @@ const INTERACTIVE = [
 
 async function openRoute(page: Page, path: string): Promise<void> {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
-  expect(response?.ok(), `${path} returned a successful document response`).toBe(
-    true,
-  );
+  expect(
+    response?.ok(),
+    `${path} returned a successful document response`,
+  ).toBe(true);
 
   // This is route boot/readiness, not the accessibility assertion itself. Under parallel Firefox
   // runs the Vite dev server may still be transforming the MapLibre route after DOMContentLoaded.
