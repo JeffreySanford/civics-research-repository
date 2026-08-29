@@ -119,6 +119,16 @@ jobs:
           --project=chromium
           --reporter=html,line
 
+      - name: Record repeated local search timing diagnostics
+        run: >-
+          pnpm run performance:benchmark --
+          --base-url http://localhost:8080/api
+          --warmups 3
+          --samples 15
+          --scenario FULL_TEXT_RELEVANCE
+          --query 'North Dakota workforce'
+          --output browser-evidence-artifacts/search-comparison-benchmark.json
+
       - name: Capture live-stack logs on failure
         if: failure()
         shell: bash

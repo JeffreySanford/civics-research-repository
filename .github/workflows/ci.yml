@@ -55,6 +55,9 @@ jobs:
       - name: Check the generated platform status is current
         run: pnpm run docs:check
 
+      - name: Test the performance-statistics harness
+        run: pnpm run performance:test
+
       - name: Lint
         run: pnpm exec nx run-many -t lint --all
 

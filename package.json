@@ -73,6 +73,8 @@
     "openapi:check": "node tools/scripts/check-openapi-generated.mjs",
     "test": "pnpm nx run discovery-ui:test",
     "test:all": "pnpm nx run-many -t test --all",
+    "performance:test": "node --test tools/scripts/search-comparison-benchmark.test.mjs",
+    "performance:benchmark": "node tools/scripts/search-comparison-benchmark.mjs",
     "e2e": "pnpm nx run discovery-ui-e2e:e2e",
     "storyboard": "pnpm nx run discovery-ui-e2e:storyboard",
     "accessibility": "pnpm nx run-many -t accessibility",
@@ -95,7 +97,7 @@
     "verify:sources": "node tools/scripts/verify-source-urls.mjs",
     "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",
     "catalog:harvest": "node tools/scripts/harvest-catalog.mjs",
-    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run evidence:check && pnpm run docs:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
+    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run evidence:check && pnpm run docs:check && pnpm run performance:test && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
   },
   "dependencies": {
     "@angular/animations": "22.1.1",

@@ -1,0 +1,161 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {
+  nearestRankPercentile,
+  runSearchComparisonBenchmark,
+  summarizeTimingSamples,
+} from './search-comparison-benchmark.mjs';
+
+const PROJECTION_ID = 'a'.repeat(64);
+
+function comparisonResponse(solrElapsedMs, openSearchElapsedMs, projectionId = PROJECTION_ID) {
+  return {
+    scenario: 'FULL_TEXT_RELEVANCE',
+    projection: {
+      projectionId,
+      source: 'REPOSITORY',
+      objectCount: 181,
+      rebuiltAt: '2026-08-29T20:00:00Z',
+    },
+    sameProjection: true,
+    solr: {
+      engine: 'SOLR',
+      enabled: true,
+      reachable: true,
+      indexName: 'discovery',
+      elapsedMs: solrElapsedMs,
+      returnedHits: 2,
+      results: [],
+      facets: [],
+    },
+    openSearch: {
+      engine: 'OPENSEARCH',
+      enabled: true,
+      reachable: true,
+      indexName: 'discovery-comparison',
+      elapsedMs: openSearchElapsedMs,
+      returnedHits: 2,
+      results: [],
+      facets: [],
+    },
+  };
+}
+
+function queuedFetch(responses, requests = []) {
+  let index = 0;
+  return async (url, init) => {
+    requests.push({ url, init });
+    const response = responses[index];
+    index += 1;
+    if (!response) {
+      throw new Error('Unexpected extra benchmark request.');
+    }
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return response;
+      },
+    };
+  };
+}
+
+test('nearest-rank percentiles and summary are deterministic', () => {
+  const values = [50, 10, 30, 20, 40];
+
+  assert.equal(nearestRankPercentile(values, 0.5), 30);
+  assert.equal(nearestRankPercentile(values, 0.95), 50);
+  assert.deepEqual(summarizeTimingSamples(values), {
+    sampleCount: 5,
+    minMs: 10,
+    p50Ms: 30,
+    p95Ms: 50,
+    p99Ms: 50,
+    maxMs: 50,
+    meanMs: 30,
+  });
+});
+
+test('benchmark excludes warmups and reports measured distributions only', async () => {
+  const requests = [];
+  const responses = [
+    comparisonResponse(900, 800),
+    comparisonResponse(700, 600),
+    comparisonResponse(10, 12),
+    comparisonResponse(20, 22),
+    comparisonResponse(30, 32),
+    comparisonResponse(40, 42),
+    comparisonResponse(50, 52),
+  ];
+
+  const result = await runSearchComparisonBenchmark({
+    fetchImpl: queuedFetch(responses, requests),
+    baseUrl: 'http://repository.test/api/',
+    warmupRuns: 2,
+    measuredRuns: 5,
+    now: () => new Date('2026-08-29T20:30:00Z'),
+  });
+
+  assert.equal(requests.length, 7);
+  assert.equal(requests[0].url, 'http://repository.test/api/search/comparison/run');
+  assert.equal(requests[0].init.method, 'POST');
+  assert.equal(result.projection.projectionId, PROJECTION_ID);
+  assert.equal(result.warmupRuns, 2);
+  assert.equal(result.measuredRuns, 5);
+  assert.equal(result.solr.elapsed.minMs, 10);
+  assert.equal(result.solr.elapsed.p50Ms, 30);
+  assert.equal(result.solr.elapsed.p95Ms, 50);
+  assert.equal(result.solr.elapsed.maxMs, 50);
+  assert.equal(result.openSearch.elapsed.minMs, 12);
+  assert.equal(result.openSearch.elapsed.p50Ms, 32);
+  assert.equal(result.openSearch.elapsed.p95Ms, 52);
+  assert.equal(result.openSearch.elapsed.maxMs, 52);
+  assert.equal(result.comparativeClaimAllowed, false);
+  assert.equal(result.executionOrder, 'SOLR_THEN_OPENSEARCH');
+  assert.match(result.measurementBoundary, /Spring API elapsed time/);
+  assert.match(result.caveat, /not as proof/);
+});
+
+test('benchmark refuses to mix samples from different projections', async () => {
+  const responses = [
+    comparisonResponse(10, 12),
+    comparisonResponse(11, 13, 'b'.repeat(64)),
+  ];
+
+  await assert.rejects(
+    runSearchComparisonBenchmark({
+      fetchImpl: queuedFetch(responses),
+      warmupRuns: 0,
+      measuredRuns: 2,
+    }),
+    /Projection changed while timing samples were being collected/,
+  );
+});
+
+test('benchmark refuses unavailable engines instead of publishing partial performance evidence', async () => {
+  const response = comparisonResponse(10, 12);
+  response.openSearch.reachable = false;
+
+  await assert.rejects(
+    runSearchComparisonBenchmark({
+      fetchImpl: queuedFetch([response]),
+      warmupRuns: 0,
+      measuredRuns: 1,
+    }),
+    /OpenSearch is not reachable/,
+  );
+});
+
+test('benchmark refuses projection mismatch even when both engine timings exist', async () => {
+  const response = comparisonResponse(10, 12);
+  response.sameProjection = false;
+
+  await assert.rejects(
+    runSearchComparisonBenchmark({
+      fetchImpl: queuedFetch([response]),
+      warmupRuns: 0,
+      measuredRuns: 1,
+    }),
+    /not on the same deterministic projection/,
+  );
+});
