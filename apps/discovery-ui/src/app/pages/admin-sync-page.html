@@ -34,9 +34,9 @@
             <h2 id="sync-workflow-heading">Sync workflow</h2>
             <p>
               Trigger the typed Java sync endpoint for a selected public
-              metadata source. Dry run shows planned DSpace and search-projection
-              actions; apply uses the same workflow and persists job history in
-              Postgres.
+              metadata source. Dry run shows planned DSpace and
+              search-projection actions; apply uses the same workflow and
+              persists job history in Postgres.
             </p>
 
             <mat-form-field appearance="outline">
@@ -111,8 +111,8 @@
             <p class="error-message" role="alert">{{ error }}</p>
             } @if (projection$ | async; as projection) {
             <p class="inline-status" role="status">
-              Search projections rebuilt from one normalized set:
-              {{ projection.objectCount }} objects from {{ projection.source }}.
+              Search projections rebuilt from one normalized set: {{
+              projection.objectCount }} objects from {{ projection.source }}.
             </p>
             }
           </div>
