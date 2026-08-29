@@ -9,7 +9,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -290,9 +289,17 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         Map<String, Object> scope = filters.isEmpty()
                 ? Map.of("match_all", Map.of())
                 : Map.of("bool", Map.of("filter", filters));
+        Map<String, Object> terms = new LinkedHashMap<>();
+        terms.put("field", "geography".equals(field) ? "geography.keyword" : field);
+        terms.put("size", size);
+        if ("vintageYear".equals(field)) {
+            // Solr presents vintages newest first. OpenSearch defaults to bucket count, which would
+            // make a year comparison look different for a reason unrelated to search semantics.
+            terms.put("order", Map.of("_key", "desc"));
+        }
         return Map.of(
                 "filter", scope,
-                "aggs", Map.of("values", Map.of("terms", Map.of("field", field, "size", size))));
+                "aggs", Map.of("values", Map.of("terms", terms)));
     }
 
     private SearchResponse toSearchResponse(
@@ -360,13 +367,13 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                 selectedContentType == null
                                         ? Set.of()
                                         : Set.of(normalize(selectedContentType.getValue()))),
-                        descending(facetGroup(
+                        facetGroup(
                                 "vintageYear",
                                 "Year",
                                 root.path("aggregations").path("vintageYear_scope").path("values").path("buckets"),
                                 selectedVintageYear == null
                                         ? Set.of()
-                                        : Set.of(normalize(String.valueOf(selectedVintageYear)))))));
+                                        : Set.of(normalize(String.valueOf(selectedVintageYear))))));
     }
 
     private FacetGroup facetGroup(String field, String label, JsonNode buckets, Set<String> selected) {
@@ -380,12 +387,6 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                     selected.contains(normalize(value))));
         }
         return new FacetGroup(field, label, values);
-    }
-
-    private FacetGroup descending(FacetGroup group) {
-        List<FacetValue> reversed = new ArrayList<>(group.getValues());
-        Collections.reverse(reversed);
-        return new FacetGroup(group.getField(), group.getLabel(), reversed);
     }
 
     private void deleteIndexIfPresent() throws IOException, InterruptedException {
