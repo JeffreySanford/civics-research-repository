@@ -13,7 +13,7 @@ test.describe('Search Lab', () => {
     await mockApis(page);
   });
 
-  test('runs the same normalized query against both engines', async ({
+  test('runs the same normalized query against both engines @comparison', async ({
     page,
   }) => {
     await page.goto('/search-lab');
@@ -41,7 +41,7 @@ test.describe('Search Lab', () => {
     ).toHaveCount(2);
   });
 
-  test('supports relevance and filtering scenarios without changing routes', async ({
+  test('supports relevance and filtering scenarios without changing routes @comparison', async ({
     page,
   }) => {
     await page.goto('/search-lab');
