@@ -18,18 +18,19 @@ The highest-priority gap is evidence quality, not UI breadth.
 
 Completion means dated, commit-bound artifacts exist under `documentation/accessibility-evidence/`; it does not mean changing a manually unverified status to pass.
 
-## 2. Make browser evidence enforceable
+## 2. Govern browser evidence as a merge policy
 
-The repository has a substantial browser evidence suite, but the normal CI workflow does not yet enforce the complete matrix.
+Dedicated Browser Evidence is implemented and scheduled. It runs deterministic
+Chromium/Firefox/WebKit comparison and accessibility evidence, preserves HTML reports and
+failure traces/screenshots, and includes a live Angular -> Spring -> Solr + OpenSearch
+smoke path. Mocked deterministic evidence and real-stack evidence are labelled separately.
 
-- Add a dedicated accessibility/browser workflow or scheduled full-matrix run.
-- Persist Playwright HTML reports, traces and screenshots on failure.
-- Run Search Lab comparison and axe scenarios there, not merely as source files that CI never invokes.
-- Add a real-stack smoke path that starts the application stack and proves browser -> Spring API -> live Solr + live OpenSearch.
-- Keep mocked browser scenarios because they are deterministic and useful for UI behavior; label them separately from real-stack evidence.
+Remaining governance decisions:
+
 - Decide which evidence jobs must block merges.
 - Decide whether `main` receives branch protection and required checks.
-- Keep the local `evidence:refresh` behavior: a failed run must never replace the prior known-good evidence.
+- Keep the local `evidence:refresh` behavior: a failed run must never replace the prior
+  known-good evidence.
 
 ## 3. Harden the Solr/OpenSearch comparison demo
 
@@ -37,56 +38,42 @@ The first side-by-side vertical slice now exists. DSpace remains the system of r
 
 The next phase is therefore **hardening, observability and explanation**, not simply adding more query types.
 
-### 3.1 Test the service boundaries first
+### 3.1 Keep the implemented test matrix as the expansion gate
 
-- Add focused `SearchComparisonService` use-case tests for dual-engine success, request normalization, one-engine-down behavior, one-engine exception isolation, warnings, projection parity and projection mismatch.
-- Add controller tests for scenario listing and comparison execution.
-- Add Angular Search Lab component tests and comparison API-client tests.
-- Keep HTTP-level OpenSearch request tests that inspect real JSON request semantics rather than only testing helper methods.
-- Run Playwright Search Lab scenarios and the Search Lab axe route in dedicated browser CI.
-- Add Search Lab to the demo storyboard.
-- Add a live-stack smoke test for the actual Solr/OpenSearch services.
+The comparison service/controller, Angular component/client, OpenSearch request semantics,
+deterministic Playwright scenarios, axe route, storyboard, and live-stack smoke are all
+implemented. Future comparison behavior must extend those layers rather than bypassing
+them.
 
-### 3.2 Make Admin Sync explain the projection model
+### 3.2 Keep Admin Sync as the operational projection view
 
-Admin Sync currently explains DSpace and Solr well, but the comparison architecture adds a broader operational concept: one normalized discovery projection can be rebuilt into multiple disposable search targets.
+Admin Sync now explains DSpace -> normalized `DiscoveryDocument` -> deterministic
+projection ID -> Solr + OpenSearch, including per-target liveness/parity and the distinction
+between public Solr discovery and the OpenSearch comparison target. Future work should
+extend this operational vocabulary rather than return to Solr-only language.
 
-The Admin Sync page should show:
+### 3.3 Keep Evidence explicit about verification boundaries
 
-- DSpace as the repository/system-of-record input,
-- normalized `DiscoveryDocument` count,
-- deterministic projection ID/fingerprint,
-- Solr target status and document count,
-- OpenSearch target status and document count,
-- whether each target was rebuilt from the current projection,
-- warnings/failures isolated per target,
-- an explicit statement that target indexes are rebuildable projections rather than authoritative repository storage.
+Evidence now includes live projection/parity state plus a Search Engine Comparison section
+that separates unit/use-case gates, deterministic mocked browser evidence, automated
+WCAG/Section 508-oriented evidence, real-stack smoke evidence, repeated performance
+diagnostics, and manual keyboard/screen-reader work that remains pending.
 
-The reindex action should communicate **normalize once, project many**. It should no longer visually imply that reindexing terminates only at the Solr discovery core.
+The runtime page does not synthesize current CI success. Exact commit validation remains a
+CI/PR artifact.
 
-### 3.3 Make Evidence explain what is verified
+### 3.4 Improve explanatory diagnostics before broader search features
 
-The Evidence page should expose comparison evidence without overstating what automation proves.
+Engine-native Solr `QTime` / OpenSearch `took` and repeated warm-up/p50/p95/p99 tooling are
+implemented separately from API elapsed timing. Remaining diagnostic work:
 
-Add a Search Engine Comparison evidence section that distinguishes:
-
-- projection identity/parity evidence,
-- unit/use-case coverage,
-- mocked deterministic browser coverage,
-- axe/WCAG automated coverage,
-- real-stack smoke coverage,
-- manual keyboard/screen-reader evidence,
-- timing observations and their environment/measurement boundary.
-
-A local API elapsed value such as 20 ms versus 46 ms is an observation from one run, not evidence that one engine is inherently faster. Evidence should show the projection ID and document count used for a comparison and should state whether the measurement is API elapsed time, engine-native time or a repeated benchmark distribution.
-
-### 3.4 Improve diagnostics before broader search features
-
-- Expose engine-native search timing separately from API elapsed time: Solr `responseHeader.QTime` and OpenSearch `took`.
-- Add warm-up and repeated-run tooling and report distributions (p50/p95/p99) rather than a single request.
-- Add result-set, rank-order and facet-bucket difference summaries so the UI explains semantic differences.
-- Record environment details when timing is captured: document count, index/shard configuration, JVM/container context and concurrency.
-- Keep the UI warning that local Docker timings are not production benchmarks.
+- Add result-set, rank-order and facet-bucket difference summaries so the UI explains
+  semantic differences.
+- Record richer environment details for scale testing: index/shard/replica configuration,
+  JVM/container context and concurrency.
+- Repeat at materially larger index sizes before drawing scaling conclusions.
+- Keep the UI warning that local/container timings are diagnostic evidence, not production
+  benchmarks.
 
 ### 3.5 Expand scenarios only after hardening
 

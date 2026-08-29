@@ -16,6 +16,7 @@ Civics Research Repository is documented as a federal Open Science reference pla
 - [Data Storage and Sync](data-storage-sync.md): storage boundaries, reconciliation and bounded mirroring.
 - [Mapping Visualization](mapping-visualization.md): geospatial research views, LODES/TIGER/SAIPE/USGS layers and equivalent nonvisual workflows.
 - [Solr and OpenSearch Comparison Demo](search-comparison-demo.md): side-by-side search scenarios, API shape, indexing parity and measurement boundaries.
+- [Search Performance Evidence](search-performance-evidence.md): warm-up/repeated-run protocol, API-versus-engine timing boundaries and interpretation guardrails.
 - [USGS National Map Evaluation](usgs-national-map-evaluation.md): reference-layer options and tradeoffs.
 
 ## Accessibility

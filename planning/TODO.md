@@ -17,14 +17,14 @@ The repository follows a **testing-first rule** for new comparison work: define 
 
 ## P2 — Browser evidence CI and governance
 
-- [ ] Add a dedicated or scheduled full Playwright evidence workflow.
-- [ ] Upload Playwright HTML reports, traces and screenshots when the evidence workflow fails.
-- [ ] Run the Search Lab comparison scenarios in the dedicated browser workflow.
-- [ ] Run the Search Lab WCAG/Section 508 axe route in the dedicated browser workflow.
-- [ ] Add a real-stack smoke path that exercises browser -> Spring API -> Solr + OpenSearch instead of only mocked API routes.
+- [x] Add a dedicated or scheduled full Playwright evidence workflow.
+- [x] Upload Playwright HTML reports, traces and screenshots when the evidence workflow fails.
+- [x] Run the Search Lab comparison scenarios in the dedicated browser workflow.
+- [x] Run the Search Lab WCAG/Section 508 axe route in the dedicated browser workflow.
+- [x] Add a real-stack smoke path that exercises browser -> Spring API -> Solr + OpenSearch instead of only mocked API routes.
 - [ ] Decide whether WCAG/Section 508-oriented jobs are required merge checks.
 - [ ] Decide whether `main` receives branch protection.
-- [ ] Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.
+- [x] Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.
 
 ## P3 — Solr/OpenSearch comparison hardening
 
@@ -32,34 +32,34 @@ The first vertical slice is implemented: OpenSearch runs beside Solr, both recei
 
 ### Testing first
 
-- [ ] Add `SearchComparisonServiceTest` covering successful dual-engine execution, one-engine-down behavior, one-engine exception isolation, request normalization, engine warnings, current-projection parity and projection mismatch.
-- [ ] Add `SearchComparisonController` tests for scenario listing and comparison-run delegation/serialization.
-- [ ] Add Angular Search Lab unit tests for initial state, scenario loading, request construction, successful comparison rendering, partial engine failure and API error handling.
-- [ ] Add `RepositorySearchComparisonApi` unit tests for scenario and comparison endpoints.
+- [x] Add `SearchComparisonServiceTest` covering successful dual-engine execution, one-engine-down behavior, one-engine exception isolation, request normalization, engine warnings, current-projection parity and projection mismatch.
+- [x] Add `SearchComparisonController` tests for scenario listing and comparison-run delegation/serialization.
+- [x] Add Angular Search Lab unit tests for initial state, scenario loading, request construction, successful comparison rendering, partial engine failure and API error handling.
+- [x] Add `RepositorySearchComparisonApi` unit tests for scenario and comparison endpoints.
 - [x] Add HTTP-level OpenSearch request semantics coverage for self-excluding aggregations, keyword geography and descending vintage-year buckets.
 - [x] Add Playwright comparison scenarios for faceting/aggregations, full-text relevance and filtering.
 - [x] Add Search Lab to the automated axe WCAG/Section 508 route matrix.
-- [ ] Add Search Lab to the end-to-end demo storyboard.
-- [ ] Add a real-stack smoke test that proves the same request reaches live Solr and live OpenSearch through the Spring API.
+- [x] Add Search Lab to the end-to-end demo storyboard.
+- [x] Add a real-stack smoke test that proves the same request reaches live Solr and live OpenSearch through the Spring API.
 - [ ] Get the final branch head clean across format, OpenAPI drift, fixture/evidence/document drift, lint, unit tests, UI build, Java tests, runtime image and browser evidence.
 
 ### Admin Sync operational visibility
 
-- [ ] Extend Admin Sync from a Solr-only discovery projection view to a **search projection** view that explains DSpace -> normalized `DiscoveryDocument` -> deterministic projection ID -> Solr + OpenSearch.
-- [ ] Show the current projection ID and expected object count.
-- [ ] Show per-engine enabled/reachable/projected state, index name, indexed document count, projection ID, parity status and last warning.
-- [ ] Make the reindex action describe that one normalized document set is projected to every configured target; do not imply that Solr is the only public projection target.
-- [ ] Preserve the distinction that Solr remains the browser-facing discovery implementation while OpenSearch is currently the comparison target.
-- [ ] Add unit/accessibility coverage for the new Admin Sync search-projection state.
+- [x] Extend Admin Sync from a Solr-only discovery projection view to a **search projection** view that explains DSpace -> normalized `DiscoveryDocument` -> deterministic projection ID -> Solr + OpenSearch.
+- [x] Show the current projection ID and expected object count.
+- [x] Show per-engine enabled/reachable/projected state, index name, indexed document count, projection ID, parity status and last warning.
+- [x] Make the reindex action describe that one normalized document set is projected to every configured target; do not imply that Solr is the only public projection target.
+- [x] Preserve the distinction that Solr remains the browser-facing discovery implementation while OpenSearch is currently the comparison target.
+- [x] Add unit/accessibility coverage for the new Admin Sync search-projection state.
 
 ### Evidence-page visibility
 
-- [ ] Add a Search Engine Comparison evidence section to `/evidence`.
-- [ ] Surface the deterministic projection ID, normalized object count and whether Solr/OpenSearch parity is verified.
-- [ ] Surface automated evidence for Search Lab unit/use-case tests, Playwright scenarios, axe coverage and real-stack smoke coverage once each is actually executed.
-- [ ] Clearly distinguish **automated pass**, **manual pending**, **fixture/mocked browser evidence**, and **real-stack evidence**.
-- [ ] Do not convert API elapsed time into a production benchmark claim; timing evidence must state the environment and measurement boundary.
-- [ ] Add evidence-page unit/accessibility coverage for the comparison evidence presentation.
+- [x] Add a Search Engine Comparison evidence section to `/evidence`.
+- [x] Surface the deterministic projection ID, normalized object count and whether Solr/OpenSearch parity is verified.
+- [x] Surface automated evidence for Search Lab unit/use-case tests, Playwright scenarios, axe coverage and real-stack smoke coverage once each is actually executed.
+- [x] Clearly distinguish **automated pass**, **manual pending**, **fixture/mocked browser evidence**, and **real-stack evidence**.
+- [x] Do not convert API elapsed time into a production benchmark claim; timing evidence must state the environment and measurement boundary.
+- [x] Add evidence-page unit/accessibility coverage for the comparison evidence presentation.
 
 ### Comparison behavior and documentation
 
@@ -71,9 +71,9 @@ The first vertical slice is implemented: OpenSearch runs beside Solr, both recei
 - [x] Add Java comparison services behind explicit Solr/OpenSearch boundaries.
 - [x] Add `/search-lab` with side-by-side engine results, facets/aggregations, object counts, local elapsed timing and projection parity.
 - [x] Implement initial scenarios for faceting/aggregations, weighted full-text relevance and filtering.
-- [ ] Update generated/admin projection state so the standard reindex response exposes the projection ID consistently.
-- [ ] Add engine-native timing diagnostics (`responseHeader.QTime` for Solr and `took` for OpenSearch) separately from API elapsed time.
-- [ ] Add warm-up and repeated-run measurements before making any performance comparison; report distributions such as p50/p95/p99 rather than a single request.
+- [x] Update generated/admin projection state so the standard reindex response exposes the projection ID consistently.
+- [x] Add engine-native timing diagnostics (`responseHeader.QTime` for Solr and `took` for OpenSearch) separately from API elapsed time.
+- [x] Add warm-up and repeated-run measurements before making any performance comparison; report distributions such as p50/p95/p99 rather than a single request.
 - [ ] Add rank/result-set/facet-difference summaries that explain _why_ engines differ rather than only showing two columns.
 - [ ] Add phrase search and highlighting after the current test matrix is green.
 - [ ] Add geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the basic comparison path is fully hardened.

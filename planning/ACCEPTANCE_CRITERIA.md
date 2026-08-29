@@ -82,23 +82,23 @@ Checking a box here means the behavior is implemented and covered by a test, not
 
 ### Testing and evidence gate
 
-- [ ] Java comparison service/use-case tests execute successfully for dual-engine success, one-engine-down behavior, failure isolation, normalization, and projection mismatch.
-- [ ] Comparison controller tests execute successfully.
-- [ ] Angular Search Lab component and typed API-client unit tests execute successfully.
-- [ ] Deterministic Playwright comparison scenarios execute successfully.
-- [ ] Search Lab axe/WCAG/Section 508-oriented route evidence executes successfully.
-- [ ] Search Lab is included in the executable demo storyboard.
-- [ ] A real-stack browser smoke test proves Angular -> Spring API -> live Solr + live OpenSearch without API route mocks.
-- [ ] Dedicated browser CI retains an HTML report and failure traces/screenshots and distinguishes deterministic mocked evidence from real-stack evidence.
+- [x] Java comparison service/use-case tests execute successfully for dual-engine success, one-engine-down behavior, failure isolation, normalization, and projection mismatch.
+- [x] Comparison controller tests execute successfully.
+- [x] Angular Search Lab component and typed API-client unit tests execute successfully.
+- [x] Deterministic Playwright comparison scenarios execute successfully.
+- [x] Search Lab axe/WCAG/Section 508-oriented route evidence executes successfully.
+- [x] Search Lab is included in the executable demo storyboard.
+- [x] A real-stack browser smoke test proves Angular -> Spring API -> live Solr + live OpenSearch without API route mocks.
+- [x] Dedicated browser CI retains an HTML report and failure traces/screenshots and distinguishes deterministic mocked evidence from real-stack evidence.
 - [ ] The final PR head is green across normal workspace/API CI and dedicated browser evidence.
 
 ### Operational/evidence follow-on
 
-- [ ] Admin Sync shows the normalized projection, current projection ID, and per-engine Solr/OpenSearch projection health instead of presenting reindexing as Solr-only.
-- [ ] Evidence contains a Search Engine Comparison section that distinguishes unit/use-case evidence, deterministic mocked browser evidence, live-stack evidence, automated accessibility evidence, and manual evidence.
-- [ ] Engine-native timing (`Solr QTime`, `OpenSearch took`) is exposed separately from API elapsed time before performance conclusions are made.
-- [ ] Repeated measurement uses warm-up and distributions such as p50/p95/p99 before any comparative performance claim.
-- [ ] Broader phrase/highlight/geo/suggest/synonym/vector/hybrid scenarios wait until the current comparison test matrix is green.
+- [x] Admin Sync shows the normalized projection, current projection ID, and per-engine Solr/OpenSearch projection health instead of presenting reindexing as Solr-only.
+- [x] Evidence contains a Search Engine Comparison section that distinguishes unit/use-case evidence, deterministic mocked browser evidence, live-stack evidence, automated accessibility evidence, and manual evidence.
+- [x] Engine-native timing (`Solr QTime`, `OpenSearch took`) is exposed separately from API elapsed time before performance conclusions are made.
+- [x] Repeated measurement uses warm-up and distributions such as p50/p95/p99 before any comparative performance claim.
+- [x] Broader phrase/highlight/geo/suggest/synonym/vector/hybrid scenarios wait until the current comparison test matrix is green.
 
 ## Accessibility Evidence
 

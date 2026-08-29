@@ -208,81 +208,31 @@ The response includes both engine blocks so one engine's failure does not mask u
 
 `DiscoveryProjectionState` also includes an optional projection ID in the canonical contract. The standard admin reindex controller should return that generated DTO consistently so Admin Sync and Search Lab can use the same projection identity vocabulary.
 
-## Admin Sync Integration Plan
+## Admin Sync Operational Evidence
 
-Admin Sync should evolve from a Solr-centric visualization into a **search projection operations** view.
+Admin Sync now presents search projection operations rather than a Solr-only terminal view.
+It shows DSpace as the system-of-record input, normalized object count, deterministic
+projection identity, Solr public-discovery target state, OpenSearch comparison-target state,
+document counts, parity, warnings and the multi-target rebuild model: **normalize once,
+project many**.
 
-It should continue to explain repository synchronization separately from public search projection. The page should make this pipeline visible:
+The operational probe intentionally omits request timing. Search Lab and the benchmark
+harness own query/performance diagnostics.
 
-```text
-Publisher adapters
-      |
-      v
-DSpace repository items
-      |
-      v
-normalized DiscoveryDocument projection
-      |
-      +--> projection ID
-      |
-      +--> Solr discovery
-      |
-      +--> OpenSearch comparison
-```
+## Evidence Page Integration
 
-Recommended operational fields per target:
+`/evidence` now contains a **Search comparison** tab. It combines live projection/parity
+state with an explicit evidence-classification table covering:
 
-- target name,
-- enabled,
-- reachable,
-- projected from current normalized set,
-- index/core name,
-- indexed document count,
-- projection ID,
-- current parity state,
-- last warning.
+- service/contract/component CI gates,
+- deterministic mocked browser evidence,
+- automated WCAG/Section 508-oriented evidence,
+- live Solr/OpenSearch smoke evidence,
+- repeated performance diagnostics,
+- manual keyboard/screen-reader evidence that remains pending.
 
-The existing reindex action should be described as a multi-target rebuild. The UI must preserve the important distinction that the application normally searches Solr while OpenSearch remains a comparison target.
-
-## Evidence Page Integration Plan
-
-The Evidence page should contain a dedicated **Search Engine Comparison Evidence** section.
-
-This section should answer separate questions rather than collapsing them into one generic "pass":
-
-### Projection evidence
-
-- What repository/projection source was used?
-- How many normalized objects were projected?
-- What is the deterministic projection ID?
-- Did Solr project the current ID successfully?
-- Did OpenSearch project the current ID successfully?
-- Do engine document counts match the expected count?
-
-### Functional test evidence
-
-- Java service/use-case tests,
-- Java controller tests,
-- OpenSearch HTTP request-semantics tests,
-- Angular Search Lab unit tests,
-- Angular comparison API-client tests.
-
-### Browser evidence
-
-- deterministic mocked Playwright scenarios,
-- Search Lab route axe/WCAG checks,
-- demo storyboard coverage,
-- real-stack smoke coverage.
-
-Mocked deterministic browser tests and real-stack tests should be labeled separately. A mocked Playwright pass proves UI/workflow behavior against a known contract response; it does not prove a live Solr/OpenSearch deployment.
-
-### Manual evidence
-
-- keyboard-only Search Lab flow,
-- screen-reader interpretation of status, parity and engine regions,
-- cognitive/workflow review.
-
-Automated axe results must not be represented as complete Section 508 conformance.
+The runtime page does not infer that the current commit is green. Exact pass/fail state is
+retained by CI and Browser Evidence.
 
 ## Testing-First Completion Rule
 
@@ -301,29 +251,33 @@ Search comparison changes should satisfy the following layers before broader cap
 
 The repository should not use the existence of a test file as evidence that the test is enforced. Dedicated browser CI must actually execute the Playwright/axe suites and retain useful failure artifacts.
 
-## Measurement: What the Current Numbers Mean
+## Measurement: API and Engine-Reported Boundaries
 
-The current UI measures **API-side elapsed time around the engine request**. It does not yet expose engine-native timing.
-
-A local run such as:
+Search comparison now exposes two different timing boundaries from the same execution:
 
 ```text
-Solr       20 ms
-OpenSearch 46 ms
+Solr
+API elapsed:       N ms
+Solr QTime:        N ms
+
+OpenSearch
+API elapsed:       N ms
+OpenSearch took:   N ms
 ```
 
-is an observation from that request only. With roughly 181 indexed documents, search-engine work is tiny and fixed costs can dominate:
+API elapsed measures the Spring-side round trip to the engine. `QTime` and `took` are parsed
+from the same engine response that supplied the results, so no second timing-only request is
+issued. The vendor metrics are labelled **engine reported** because their definitions are
+not identical.
 
-- HTTP request/response overhead,
-- Docker networking,
-- JVM scheduling,
-- JSON serialization/deserialization,
-- connection behavior,
-- container warm-up,
-- aggregation/query construction,
-- background host activity.
+Browser Evidence also runs a repeated benchmark with 5 discarded warm-ups and 100 measured
+requests, reporting min/mean/p50/p95/p99/max for API elapsed and engine-reported series.
+Projection identity must remain stable and both engines must remain reachable for a run to
+be accepted. Fixed Solr-then-OpenSearch execution order is recorded, so the artifact does
+not make a comparative winner claim.
 
-A single request cannot establish that Solr is generally faster or OpenSearch is generally slower.
+Detailed protocol and baseline numbers are documented in
+[Search Performance Evidence](search-performance-evidence.md).
 
 ## Scaling and Nodes
 
@@ -347,42 +301,16 @@ Therefore the comparison should evaluate multiple dimensions:
 
 "OpenSearch is faster" is not an architectural requirement and should not be treated as the expected outcome.
 
-## Next Timing Improvements
+## Remaining Timing Improvements
 
-Before making performance claims, expose two timing boundaries:
+The next performance work is about scale and experimental design rather than adding more
+stopwatch fields:
 
-```text
-Solr
-API elapsed:       N ms
-Solr QTime:        N ms
-
-OpenSearch
-API elapsed:       N ms
-OpenSearch took:   N ms
-```
-
-This separates engine execution from application/network overhead.
-
-Then add repeatable measurement:
-
-1. warm the engines,
-2. discard warm-up runs,
-3. execute a fixed scenario repeatedly,
-4. record p50/p95/p99 rather than a single value,
-5. record document count,
-6. record concurrency,
-7. record shard/replica/node topology,
-8. record host/container environment,
-9. repeat at materially larger index sizes.
-
-Useful scale checkpoints for synthetic or replicated test data could include:
-
-- current repository size,
-- 10,000 documents,
-- 100,000 documents,
-- 1,000,000 documents.
-
-Those measurements would demonstrate scaling behavior much more honestly than comparing one 181-document request.
+1. record shard/replica/node topology and concurrency with benchmark artifacts,
+2. balance or randomize engine execution order for comparative experiments,
+3. repeat at materially larger index sizes such as 10,000, 100,000 and 1,000,000 documents,
+4. add result/rank/facet difference summaries alongside timing,
+5. avoid production-speed claims until topology, data volume and concurrency are realistic.
 
 ## Why OpenSearch Can Still Be Strategically Interesting
 

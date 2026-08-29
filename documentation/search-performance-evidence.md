@@ -36,9 +36,9 @@ The benchmark rejects partial engine availability, projection mismatch, projecti
 
 Before engine-native timing was added, Browser Evidence captured a 100-sample API-boundary baseline on the 181-object local CI projection after five discarded warm-up runs:
 
-| Engine | Min | p50 | p95 | p99 | Max | Mean |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Solr API elapsed | 3 ms | 8 ms | 13 ms | 16 ms | 18 ms | 8.35 ms |
+| Engine                 |  Min |   p50 |   p95 |   p99 |   Max |     Mean |
+| ---------------------- | ---: | ----: | ----: | ----: | ----: | -------: |
+| Solr API elapsed       | 3 ms |  8 ms | 13 ms | 16 ms | 18 ms |  8.35 ms |
 | OpenSearch API elapsed | 7 ms | 13 ms | 20 ms | 23 ms | 23 ms | 13.90 ms |
 
 These values describe one GitHub Actions container topology and a fixed Solr-then-OpenSearch execution order. They do **not** establish that either product is inherently faster in production.
