@@ -60,7 +60,8 @@ test.describe('Search Lab real stack', () => {
 
     // The smoke test verifies the live infrastructure path, not relative performance.
     await expect(
-      page.getByText('not a production performance claim'),
+      page.getByText(/neither value is a production performance claim/i),
     ).toBeVisible();
+    await expect(page.getByText(/direct cross-engine verdict/i)).toBeVisible();
   });
 });
