@@ -8,13 +8,13 @@ The goal is **not** to ingest every record from every source simultaneously on d
 
 ## PI-1 source scope
 
-| Source | Adapter in PI-1 | First production-shaped tier | Larger tier | Primary value |
-| --- | --- | ---: | ---: | --- |
-| Data.gov | yes | 10K -> 100K | full catalog where practical | federal dataset breadth and heterogeneous agencies |
-| DOE OSTI.GOV | yes | 10K -> 100K | **1M+** | preferred federal research-object scale corpus |
-| NASA Earthdata CMR | yes | collections + 10K granules | 100K -> 1M controlled slices | geospatial/temporal and very high scale |
-| PubMed | yes | 10K -> 100K | 1M+ | bibliographic lexical/relevance scale |
-| OpenAlex | yes | 10K -> 100K | optional 1M+ | broad open-science/citation relationship stress corpus |
+| Source             | Adapter in PI-1 | First production-shaped tier |                  Larger tier | Primary value                                          |
+| ------------------ | --------------- | ---------------------------: | ---------------------------: | ------------------------------------------------------ |
+| Data.gov           | yes             |                  10K -> 100K | full catalog where practical | federal dataset breadth and heterogeneous agencies     |
+| DOE OSTI.GOV       | yes             |                  10K -> 100K |                      **1M+** | preferred federal research-object scale corpus         |
+| NASA Earthdata CMR | yes             |   collections + 10K granules | 100K -> 1M controlled slices | geospatial/temporal and very high scale                |
+| PubMed             | yes             |                  10K -> 100K |                          1M+ | bibliographic lexical/relevance scale                  |
+| OpenAlex           | yes             |                  10K -> 100K |                 optional 1M+ | broad open-science/citation relationship stress corpus |
 
 All five adapters belong in PI-1. Large local snapshots remain staged so disk, time and source limits do not force us to keep every corpus resident at maximum size simultaneously.
 
