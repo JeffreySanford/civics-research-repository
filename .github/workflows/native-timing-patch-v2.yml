@@ -42,8 +42,22 @@ jobs:
           from pathlib import Path
           path = Path('/tmp/native-timing-patch.py')
           text = path.read_text()
-          old = """              if count != 1:\n                  raise SystemExit(f'{path}: expected one literal match, found {count}')\n              p.write_text(text.replace(old, new))\n"""
-          new = """              if count != 1:\n                  targeted_completed_result = (\n                      path.endswith('SearchComparisonService.java')\n                      and old.startswith('        indexedCount.ifPresent(comparison::indexedDocumentCount);')\n                      and count == 2\n                  )\n                  if targeted_completed_result:\n                      p.write_text(text.replace(old, new, 1))\n                      return\n                  raise SystemExit(f'{path}: expected one literal match, found {count}')\n              p.write_text(text.replace(old, new))\n"""
+          old = """    if count != 1:
+        raise SystemExit(f'{path}: expected one literal match, found {count}')
+    p.write_text(text.replace(old, new))
+"""
+          new = """    if count != 1:
+        targeted_completed_result = (
+            path.endswith('SearchComparisonService.java')
+            and old.startswith('        indexedCount.ifPresent(comparison::indexedDocumentCount);')
+            and count == 2
+        )
+        if targeted_completed_result:
+            p.write_text(text.replace(old, new, 1))
+            return
+        raise SystemExit(f'{path}: expected one literal match, found {count}')
+    p.write_text(text.replace(old, new))
+"""
           if text.count(old) != 1:
               raise SystemExit('Could not locate replace_once safety block in extracted patch script.')
           path.write_text(text.replace(old, new))
@@ -84,7 +98,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/native-timing-patch.yml .github/workflows/native-timing-patch-v2.yml
+          git rm .github/workflows/native-timing-patch.yml .github/workflows/native-timing-patch-v2.yml .github/workflows/native-timing-patch-v3.yml
           git config user.name 'Jeffrey Sanford'
           git config user.email 'jeffrey_sanford@hotmail.com'
           git add \
