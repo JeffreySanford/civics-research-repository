@@ -59,3 +59,7 @@ Performance evidence should always retain the context required to interpret it:
 - no claim that OpenSearch or Solr is inherently faster based on this small local index.
 
 Future performance work should increase index size and vary concurrency/topology before making scaling conclusions. Useful checkpoints remain approximately 10,000, 100,000 and 1,000,000 documents, with the same projection and measurement discipline preserved at each scale.
+
+## Validation
+
+Exact commit pass/fail status is recorded in PR #2 and GitHub Actions.
