@@ -1,22 +1,22 @@
 package org.civicsrepo.repository;
 
-import org.civicsrepo.generated.dto.SearchResult;
-import org.civicsrepo.search.DiscoveryDocument;
-import org.civicsrepo.generated.dto.RepositorySource;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.search.DiscoveryDocument;
 import org.civicsrepo.search.DiscoveryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Builds the Solr discovery core from DSpace, and remembers what it built.
+ * Builds the public discovery projection from DSpace, and remembers what it built.
  *
- * <p>The discovery core is a projection: it must always be rebuildable from the repository, and
- * anything that exists only in Solr is a bug. This service is the only writer, so the answer to
- * "what is in the index right now" has exactly one owner.
+ * <p>The discovery index is a projection: it must always be rebuildable from the repository, and
+ * anything that exists only in a search engine is a bug. This service is the only writer, so the
+ * answer to "what is in the index right now" has exactly one owner.
  *
  * <p>When DSpace holds no items — unreachable, unseeded, or genuinely empty — the fixture catalog
  * is indexed instead so the demo still functions. That substitution is recorded and reported
@@ -31,8 +31,12 @@ public class DiscoveryProjectionService {
     private final DiscoveryIndex discoveryIndex;
     private final AtomicReference<ProjectionState> state =
             new AtomicReference<>(new ProjectionState(RepositorySource.FIXTURE, 0, null));
+    private final AtomicReference<String> projectionId = new AtomicReference<>();
 
-    public DiscoveryProjectionService(RepositoryCatalog repositoryCatalog, DiscoveryIndex discoveryIndex, RepositoryIdentityStore repositoryIdentityStore) {
+    public DiscoveryProjectionService(
+            RepositoryCatalog repositoryCatalog,
+            DiscoveryIndex discoveryIndex,
+            RepositoryIdentityStore repositoryIdentityStore) {
         this.repositoryIdentityStore = repositoryIdentityStore;
         this.repositoryCatalog = repositoryCatalog;
         this.discoveryIndex = discoveryIndex;
@@ -41,6 +45,17 @@ public class DiscoveryProjectionService {
     /** What the discovery index currently holds. */
     public ProjectionState state() {
         return state.get();
+    }
+
+    /**
+     * Identity of the normalized document set used for the most recent projection.
+     *
+     * <p>Kept internal until the search-comparison OpenAPI contract exists. The comparison service
+     * can use it to prove Solr and OpenSearch were given identical inputs rather than inferring
+     * parity from matching document counts.
+     */
+    public String currentProjectionId() {
+        return projectionId.get();
     }
 
     /** Source of the data currently searchable, used to label API responses. */
@@ -60,6 +75,7 @@ public class DiscoveryProjectionService {
         boolean repositoryBacked = !repositoryObjects.isEmpty();
         List<DiscoveryDocument> results = repositoryBacked ? repositoryObjects : fixtureFallback;
         RepositorySource source = repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
+        String projectedDocumentSetId = DiscoveryProjectionFingerprint.fingerprint(results);
 
         if (discoveryIndex.isEnabled()) {
             try {
@@ -69,7 +85,7 @@ public class DiscoveryProjectionService {
                         "Discovery indexing failed; in-memory search remains available: {}", exception.getMessage());
             }
         } else {
-            LOGGER.info("Solr is disabled; discovery will answer from in-memory results.");
+            LOGGER.info("Discovery index is disabled; discovery will answer from in-memory results.");
         }
 
         // Stamped after indexing, not before: an object is "indexed" once discovery could return it.
@@ -78,6 +94,7 @@ public class DiscoveryProjectionService {
 
         ProjectionState projected = new ProjectionState(source, results.size(), OffsetDateTime.now());
         state.set(projected);
+        projectionId.set(projectedDocumentSetId);
 
         if (repositoryBacked) {
             LOGGER.info("Discovery projection rebuilt from DSpace: {} repository research objects.", results.size());
@@ -91,7 +108,7 @@ public class DiscoveryProjectionService {
         return projected;
     }
 
-    /** Results currently searchable, so callers can answer without Solr when it is unavailable. */
+    /** Results currently searchable, so callers can answer without the configured index when it is unavailable. */
     public List<SearchResult> repositoryObjects() {
         return repositoryCatalog.findAllResearchObjects();
     }
