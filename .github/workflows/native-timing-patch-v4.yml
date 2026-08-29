@@ -74,7 +74,8 @@ jobs:
         run: |
           node --test tools/scripts/search-comparison-benchmark.test.mjs
           pnpm run openapi:lint
-          pnpm run openapi:check
+          pnpm run openapi:generate
+          git diff --exit-code -- libs/repository/api-client/src/generated/repository-api.types.ts
 
       - name: Run Search Lab unit tests
         run: pnpm exec nx test discovery-ui
