@@ -1,6 +1,7 @@
 package org.civicsrepo.federation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,7 +36,9 @@ class FederatedHarvestServiceTest {
         assertEquals(List.of("DATA_GOV:001", "DATA_GOV:002", "DATA_GOV:003"), catalog.records.stream()
                 .map(FederatedResearchRecord::id)
                 .toList());
-        assertEquals(List.of(null, "page-2"), harvester.seenCursors);
+        assertEquals(2, harvester.seenCursors.size());
+        assertNull(harvester.seenCursors.getFirst());
+        assertEquals("page-2", harvester.seenCursors.get(1));
     }
 
     @Test
