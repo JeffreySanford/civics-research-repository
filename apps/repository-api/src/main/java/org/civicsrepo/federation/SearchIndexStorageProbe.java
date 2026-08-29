@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.OptionalLong;
 import org.civicsrepo.search.OpenSearchProjectionClient;
 import org.civicsrepo.search.SolrSearchClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,6 +32,7 @@ public class SearchIndexStorageProbe {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public SearchIndexStorageProbe(SolrSearchClient solr, OpenSearchProjectionClient openSearch) {
         this(solr, openSearch, HttpClient.newBuilder().connectTimeout(REQUEST_TIMEOUT).build(), new ObjectMapper());
     }
