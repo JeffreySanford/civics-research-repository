@@ -1,8 +1,8 @@
 # Active Backlog
 
-This file contains open work only. Current status is generated in [documentation/platform-status.md](../documentation/platform-status.md); delivered history is in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md).
+This file contains open work only. Current status is generated in [documentation/platform-status.md](../documentation/platform-status.md); delivered history is in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md). The next two major increments are sequenced in [PI_PLAN.md](PI_PLAN.md).
 
-The repository follows a **testing-first rule** for new comparison work: define or extend unit, use-case, contract, browser, accessibility and real-stack evidence before expanding the feature surface. A feature is not considered complete merely because it works in the local UI.
+The repository follows a **testing-first rule** for new work: define or extend unit, use-case, contract, browser, accessibility and real-stack evidence before expanding the feature surface. A feature is not considered complete merely because it works in the local UI.
 
 ## P1 — Manual accessibility evidence
 
@@ -28,137 +28,205 @@ The repository follows a **testing-first rule** for new comparison work: define 
 
 ## P3 — Solr/OpenSearch comparison hardening
 
-The first vertical slice is implemented: OpenSearch runs beside Solr, both receive the same normalized discovery projection, the projection has a deterministic SHA-256 identity, the API exposes typed comparison scenarios, and `/search-lab` renders side-by-side results with explicit projection-parity evidence. Remaining work is semantic-difference explanation and future scenario breadth, not a rewrite of repository ownership.
+The first vertical slice is implemented. Remaining work is semantic-difference explanation and future scenario breadth.
 
-### Testing first
-
-- [x] Add `SearchComparisonServiceTest` covering successful dual-engine execution, one-engine-down behavior, one-engine exception isolation, request normalization, engine warnings, current-projection parity and projection mismatch.
-- [x] Add `SearchComparisonController` tests for scenario listing and comparison-run delegation/serialization.
-- [x] Add Angular Search Lab unit tests for initial state, scenario loading, request construction, successful comparison rendering, partial engine failure and API error handling.
-- [x] Add `RepositorySearchComparisonApi` unit tests for scenario and comparison endpoints.
-- [x] Add HTTP-level OpenSearch request semantics coverage for self-excluding aggregations, keyword geography and descending vintage-year buckets.
-- [x] Add Playwright comparison scenarios for faceting/aggregations, full-text relevance and filtering.
-- [x] Add Search Lab to the automated axe WCAG/Section 508 route matrix.
-- [x] Add Search Lab to the end-to-end demo storyboard.
-- [x] Add a real-stack smoke test that proves the same request reaches live Solr and live OpenSearch through the Spring API.
-- [x] Get the final branch head clean across format, OpenAPI drift, fixture/evidence/document drift, lint, unit tests, UI build, Java tests, runtime image and browser evidence.
-
-### Admin Sync operational visibility
-
-- [x] Extend Admin Sync from a Solr-only discovery projection view to a **search projection** view that explains DSpace -> normalized `DiscoveryDocument` -> deterministic projection ID -> Solr + OpenSearch.
-- [x] Show the current projection ID and expected object count.
-- [x] Show per-engine enabled/reachable/projected state, index name, indexed document count, projection ID, parity status and last warning.
-- [x] Make the reindex action describe that one normalized document set is projected to every configured target; do not imply that Solr is the only public projection target.
-- [x] Preserve the distinction that Solr remains the browser-facing discovery implementation while OpenSearch is currently the comparison target.
-- [x] Add unit/accessibility coverage for the new Admin Sync search-projection state.
-
-### Evidence-page visibility
-
-- [x] Add a Search Engine Comparison evidence section to `/evidence`.
-- [x] Surface the deterministic projection ID, normalized object count and whether Solr/OpenSearch parity is verified.
-- [x] Surface automated evidence for Search Lab unit/use-case tests, Playwright scenarios, axe coverage and real-stack smoke coverage once each is actually executed.
-- [x] Clearly distinguish **automated pass**, **manual pending**, **fixture/mocked browser evidence**, and **real-stack evidence**.
-- [x] Do not convert API elapsed time into a production benchmark claim; timing evidence must state the environment and measurement boundary.
-- [x] Add evidence-page unit/accessibility coverage for the comparison evidence presentation.
-
-### Comparison behavior and documentation
-
-- [x] Add OpenSearch to the default `start:all` Docker stack with persistent storage.
-- [x] Implement OpenSearch indexing from the same normalized DSpace research object projection used by Solr.
-- [x] Split projection targets from the browser-facing `DiscoveryIndex` contract.
-- [x] Add deterministic projection fingerprinting and per-engine projection target state.
-- [x] Add OpenAPI schemas and generated frontend types for comparison scenarios and responses.
-- [x] Add Java comparison services behind explicit Solr/OpenSearch boundaries.
-- [x] Add `/search-lab` with side-by-side engine results, facets/aggregations, object counts, local elapsed timing and projection parity.
-- [x] Implement initial scenarios for faceting/aggregations, weighted full-text relevance and filtering.
-- [x] Update generated/admin projection state so the standard reindex response exposes the projection ID consistently.
-- [x] Add engine-native timing diagnostics (`responseHeader.QTime` for Solr and `took` for OpenSearch) separately from API elapsed time.
-- [x] Add warm-up and repeated-run measurements before making any performance comparison; report distributions such as p50/p95/p99 rather than a single request.
 - [ ] Add rank/result-set/facet-difference summaries that explain _why_ engines differ rather than only showing two columns.
 - [ ] Add phrase search and highlighting after the current test matrix is green.
 - [ ] Add geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the basic comparison path is fully hardened.
 
 ## P4 — Provenance and identity
 
-- [ ] Add typed provenance values for live aggregation, stored sample, fixture, stale and unavailable data.
+PI-1 expands this from repository-only provenance to repository + federated provenance.
+
+- [ ] Add typed origin/provenance values for repository, federated, fixture, stored sample, stale and unavailable data.
+- [ ] Add controlled `sourceSystem` values for Census, USGS, Data.gov, OSTI, NASA CMR, PubMed and OpenAlex.
 - [ ] Record publisher freshness per research object where a reliable source date exists.
 - [ ] Record and expose discovery projection timestamps consistently across Admin Sync, Evidence and Search Lab.
 - [ ] Add regression coverage for LODES fallback provenance.
 - [ ] Review UUID/source-identifier route stability and relationship resolution.
+- [ ] Define cross-source identity/equivalence rules based on durable identifiers; never silently merge by title.
 
 ## P5 — Research-object product language
 
-- [ ] Add `/research/:id` as an alias for the existing detail route.
-- [ ] Replace remaining dataset-shaped copy where the object may be a publication, methodology or project.
+- [ ] Add `/research/:id` as the canonical detail route while preserving `/datasets/:id` compatibility.
+- [ ] Resolve detail from either DSpace or the federated metadata catalog.
+- [ ] Replace remaining dataset-shaped copy where the object may be a publication, report, software item, methodology, project or scientific granule.
 - [ ] Update examples and demo links to prefer research-object terminology.
+- [ ] Add unit/browser/accessibility coverage for federated detail states and outbound authoritative-source links.
 
-## P6 — Publisher verification and federation
+## P6 — Publisher verification
 
-- [ ] Add listing/vintage verification to remaining programs where publisher structure permits it.
+- [ ] Add listing/vintage verification to remaining curated programs where publisher structure permits it.
 - [ ] Keep catalog edits reviewable rather than automatically applying uncertain file-name changes.
-- [ ] Evaluate NOAA Climate Data Online as a federation candidate.
-- [ ] Evaluate NASA POWER as a federation candidate.
+- [ ] Keep NOAA Climate Data Online and NASA POWER as possible later adapters after the PI-1 source portfolio is stable.
 
-## P7 — Local Kubernetes and million-record scale laboratory
+## P7 — PI-1 Federated Metadata Expansion
 
 Design documents:
 
-- [Local Kubernetes Search Cluster](../documentation/cloud/local-kubernetes-search-cluster.md)
-- [Million-Record Open Science Corpus](../documentation/cloud/million-record-corpus.md)
+- [Federated Metadata Expansion](../documentation/federation/README.md)
+- [Federated Metadata Architecture](../documentation/federation/federated-metadata-architecture.md)
+- [Source Ingestion Plan](../documentation/federation/source-ingestion-plan.md)
+- [Million-Record Federated Metadata Corpus](../documentation/federation/million-record-corpus.md)
 
-### Kubernetes search topology
+### P7.1 Foundation before source breadth
+
+- [ ] Define OpenAPI/domain contract for `origin` and `sourceSystem`.
+- [ ] Replace fixed source-specific `ResearchProgram` assumptions with controlled source/content type plus data-driven publisher/program/subject facets.
+- [ ] Design and implement federated metadata persistence in the application data layer.
+- [ ] Add `harvest_runs`, resumable checkpoints, bounded error/quarantine state and source progress metrics.
+- [ ] Define namespaced source identity: `SOURCE_SYSTEM:source-id`.
+- [ ] Define explicit DOI/PMID/other-identifier reconciliation rules without title-based silent merging.
+- [ ] Introduce a combined discovery catalog over DSpace-backed and federated records.
+- [ ] Replace whole-corpus `List<DiscoveryDocument>` projection with bounded streaming/batched projection before 100K+ runs.
+- [ ] Make deterministic projection hashing independent of database page size and search bulk size.
+- [ ] Add batch indexing to Solr and OpenSearch; do not create one giant million-document update body.
+- [ ] Record accepted/rejected/skipped/indexed counts and progress for large projections.
+- [ ] Design opaque cursor pagination so million-record discovery does not depend on deep offsets.
+- [ ] Keep the current offset contract working until the cursor path is tested and ready.
+
+### P7.2 Shared harvester framework
+
+- [ ] Define `FederatedSourceAdapter` / shared harvesting interfaces.
+- [ ] Add cursor/page checkpoint persistence.
+- [ ] Add bounded retry, backoff/jitter and `Retry-After` awareness.
+- [ ] Add configurable per-source request concurrency and rate limits.
+- [ ] Add run cancellation/restart/resume behavior.
+- [ ] Add malformed-record quarantine without aborting an entire run.
+- [ ] Record source retrieval window/date, adapter version and run statistics.
+- [ ] Generate deterministic corpus manifests from completed bounded runs.
+- [ ] Add tiny committed source fixtures for normal CI rather than network-dependent tests.
+
+### P7.3 Data.gov adapter
+
+- [ ] Implement Data.gov source adapter.
+- [ ] Map dataset ID, title, description, agency/publisher, tags/themes, dates, distributions/resource links and landing page.
+- [ ] Add sparse/malformed/multiple-distribution fixture tests.
+- [ ] Prove 1K, then 10K, then 100K resumable harvests.
+- [ ] Verify new records appear automatically through discovery results, source/publisher/program facets and `/research/:id`.
+- [ ] Evaluate larger/full-catalog harvest only after the 100K path is stable.
+
+### P7.4 DOE OSTI adapter and first million
+
+- [ ] Implement OSTI adapter and normalization fixtures.
+- [ ] Map title/abstract/authors/research organization/sponsor/subjects/resource type/date/DOI/source links.
+- [ ] Prove 10K resumable harvest.
+- [ ] Prove 100K resumable harvest and standalone projection parity.
+- [ ] Produce the first deterministic 1M normalized corpus manifest.
+- [ ] Index the 1M corpus into standalone Solr and OpenSearch with matching count/projection identity.
+- [ ] Record indexing duration, accepted/rejected counts, disk growth and memory use.
+
+### P7.5 NASA CMR adapter
+
+- [ ] Implement CMR collection and granule metadata handling as distinct concepts.
+- [ ] Add collection fixtures/tests.
+- [ ] Add granule fixtures/tests including spatial/temporal metadata.
+- [ ] Prove 10K and 100K controlled granule slices.
+- [ ] Prove a 1M controlled granule slice only after the OSTI 1M path is stable.
+
+### P7.6 PubMed adapter
+
+- [ ] Implement PubMed adapter with PMID/title/abstract/authors/journal/date/type/identifier mapping.
+- [ ] Use API access for fixtures/bounded development samples.
+- [ ] Evaluate publisher bulk/baseline/update files for large reproducible ingestion instead of millions of individual API calls.
+- [ ] Prove 10K and 100K bounded corpora.
+- [ ] Prove a 1M bibliographic corpus after OSTI establishes the first million-record infrastructure.
+
+### P7.7 OpenAlex adapter
+
+- [ ] Implement OpenAlex adapter for works/authors/institutions/topics/funders/DOI/citation relationships.
+- [ ] Keep it last in PI-1 execution priority so the federal-source story remains primary.
+- [ ] Prove 10K and 100K controlled snapshots.
+- [ ] Evaluate an optional 1M+ slice without attempting to retain the whole source corpus locally.
+
+### P7.8 UI/search-scale completion
+
+- [ ] Add source-system facet to normal discovery.
+- [ ] Ensure publisher/program facet values are returned from index data rather than a fixed UI allowlist.
+- [ ] Clearly label `REPOSITORY` versus `FEDERATED` detail/provenance.
+- [ ] Keep authoritative source/resource links visible without claiming local file preservation.
+- [ ] Add stable large-corpus query set: identifier, rare phrase, common multi-term, author, publisher, source, type, date/year, high/low-cardinality facets, empty and broad queries.
+- [ ] Add result-set/top-N/rank/facet-difference evidence at scale.
+- [ ] Verify accessibility and keyboard behavior with large facet/result counts.
+
+### P7.9 Corpus and disk discipline
+
+- [ ] Keep large binaries/full text external by default.
+- [ ] Measure bytes/document in federated PostgreSQL, Solr and OpenSearch at 10K and 100K.
+- [ ] Estimate 1M disk requirements with 30-50% operational headroom before creating the corpus.
+- [ ] Keep 1M corpora out of Git and ordinary PR CI.
+- [ ] Make heavy snapshots regenerable so old corpora can be removed when disk pressure requires it.
+- [ ] Preserve the original small curated Compose demo profile.
+
+### P7.10 PI-1 handoff
+
+- [ ] All five source adapters implemented and fixture-tested.
+- [ ] Every source supports a reproducible bounded harvest.
+- [ ] Data.gov + OSTI + at least one additional source render together in the normal UI.
+- [ ] Standalone Solr/OpenSearch parity proven for a deterministic 1M-class corpus.
+- [ ] Versioned corpus manifest/query definitions are ready for PI-2 without changing record semantics.
+
+## P8 — PI-2 Local Kubernetes Search Laboratory
+
+Design documents:
+
+- [Local Cloud Search Laboratory](../documentation/cloud/README.md)
+- [Local Kubernetes Search Cluster](../documentation/cloud/local-kubernetes-search-cluster.md)
+
+### P8.1 Preserve the standalone control topology
+
+- [ ] Keep Docker Compose as the default fast development/demo path.
+- [ ] Add explicit corpus/profile commands so small demo, 10K, 100K and heavy 1M runs do not overwrite one another accidentally.
+- [ ] Record standalone baseline measurements for each PI-1 corpus before clustered comparison.
+
+### P8.2 Kubernetes substrate
 
 - [ ] Add reproducible kind cluster configuration.
-- [ ] Add `k8s:create`, `k8s:build`, `k8s:deploy`, `k8s:reindex`, `k8s:benchmark` and `k8s:destroy` repository scripts or equivalent documented commands.
-- [ ] Keep Docker Compose as the default fast development path.
+- [ ] Add `k8s:create`, `k8s:build`, `k8s:deploy`, `k8s:reindex`, `k8s:benchmark` and `k8s:destroy` scripts or equivalent documented commands.
+- [ ] Record Docker Desktop/kind host resources with benchmark artifacts.
+
+### P8.3 SolrCloud
+
 - [ ] Deploy SolrCloud with the official Solr Operator and at least three Solr pods.
-- [ ] Deploy ZooKeeper required by the selected SolrCloud operator configuration.
+- [ ] Deploy/configure ZooKeeper required by the selected SolrCloud topology.
+- [ ] Keep schema/config semantics aligned with standalone Solr.
+- [ ] Compare 1, 2 and 3 shard layouts before adding replica experiments.
+- [ ] Add replicas and deliberate node-loss/recovery only after baseline layouts are stable.
+
+### P8.4 Multi-node OpenSearch
+
 - [ ] Deploy a three-node OpenSearch cluster through the official operator or Helm chart.
-- [ ] Configure persistent storage and explicit pod CPU/memory/JVM limits for both engines.
-- [ ] Prove the same normalized projection ID and expected count reach clustered Solr and OpenSearch.
-- [ ] Run Search Lab against both clustered engines through Spring.
-- [ ] Record topology metadata with every benchmark: nodes, shards, replicas, resources, heap, storage and concurrency.
-- [ ] Compare standalone/clustered topology at the 181-record baseline without claiming distributed search must be faster.
-- [ ] Add a benchmark mode with alternating/randomized/separate engine order before comparative speed conclusions.
+- [ ] Keep mappings/analyzers aligned with standalone OpenSearch.
+- [ ] Compare 1, 2 and 3 primary-shard layouts.
+- [ ] Add replicas as a resilience experiment rather than assuming they improve latency.
+
+### P8.5 Cluster performance matrix
+
+- [ ] Prove the exact PI-1 10K corpus in both clustered engines.
+- [ ] Prove the exact PI-1 100K corpus in both clustered engines.
+- [ ] Run the PI-1 1M corpus where workstation resources permit.
+- [ ] Compare concurrency 1/8/32 using identical query definitions.
+- [ ] Record API elapsed, Solr QTime, OpenSearch took, throughput/errors/timeouts, shards/replicas/resources/heap/storage.
+- [ ] Add alternating/randomized/separate equivalent engine order before comparative speed conclusions.
+- [ ] Verify semantic result/facet behavior before interpreting performance differences.
+
+### P8.6 Resilience evidence
+
 - [ ] Automate or document a Solr pod-loss/recovery experiment.
 - [ ] Automate or document an OpenSearch pod-loss/recovery experiment.
-- [ ] Verify projection parity and persistent data after recovery/restart.
+- [ ] Record availability, latency/errors, pod recreation, shard recovery and projection parity.
+- [ ] Verify persistent data after pod restart/recreation.
+- [ ] Keep results labelled local clustered evidence, not cloud-capacity evidence.
 
-### Large-corpus harvesting
+## P9 — Infrastructure as code / AWS
 
-- [ ] Define a generic resumable scale-harvest interface with cursor/page checkpoints, bounded retry/backoff, rate-limit handling and progress metrics.
-- [ ] Implement DOE OSTI as the first 1M+ metadata source.
-- [ ] Add source-adapter tests and deterministic normalized fixtures for OSTI.
-- [ ] Produce a 10K OSTI normalized snapshot with source/date/count/hash manifest.
-- [ ] Produce a 100K OSTI normalized snapshot and validate projection parity.
-- [ ] Produce the first 1M normalized OSTI snapshot without committing the corpus to Git.
-- [ ] Keep full-text/binary downloads out of the first million-record experiment.
-- [ ] Add a benchmark-only search-scale snapshot mode that is explicitly distinguished from DSpace-backed evidence.
-- [ ] Evaluate DSpace-backed 10K and 100K ingestion before deciding whether 1M DSpace records is useful locally.
-- [ ] Add Data.gov as a federal hundreds-of-thousands breadth corpus.
-- [ ] Add NASA CMR as a controlled 1M+ geospatial/granule stress corpus after OSTI is stable.
-- [ ] Add PubMed as a second 1M+ bibliographic corpus so benchmark behavior is not overfit to OSTI metadata.
-- [ ] Keep OpenAlex optional until the federal-source scale path is established.
-
-### Scale benchmark matrix
-
-- [ ] Run 181/10K/100K/1M corpus checkpoints.
-- [ ] At 1M, measure concurrency 1/8/32 where the workstation remains stable.
-- [ ] Record indexing duration, accepted/rejected documents and errors.
-- [ ] Record API elapsed, Solr QTime, OpenSearch took and throughput/error distributions.
-- [ ] Add stable query classes for exact ID, rare phrase, common multi-term, publisher, type, year, high-cardinality facet, low-cardinality facet, empty and broad-result searches.
-- [ ] Add result-set/rank/facet-difference evidence at scale so faster-but-wrong behavior cannot pass as a successful benchmark.
-- [ ] Evaluate an optional 5M+ tier only after 1M is reproducible.
-
-## P8 — Infrastructure as code
-
-- [ ] Choose Terraform or CDK.
+- [ ] Choose Terraform or CDK after PI-2 provides topology/resource evidence.
 - [ ] Implement the documented AWS target or alternate.
 - [ ] Reuse local Kubernetes/operator/Helm lessons where they transfer to EKS.
 - [ ] Add secrets, observability, backup/restore and persistent search storage.
 - [ ] Document deployment and rollback from the local Compose/kind baselines.
 
-## P9 — Platform hardening
+## P10 — Platform hardening
 
 - [ ] Move NgRx dependencies from release candidates to stable versions after validation.
 - [ ] Revisit generated Spring controller interfaces when Spring 7 support is ready.
