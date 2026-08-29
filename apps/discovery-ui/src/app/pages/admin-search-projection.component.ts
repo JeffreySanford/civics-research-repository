@@ -4,6 +4,7 @@ import {
   RepositoryAdminApi,
   RepositorySearchComparisonApi,
   type DiscoveryProjectionState,
+  type SearchComparisonProjection,
   type SearchEngineComparison,
 } from 'repository-api-client';
 import { catchError, combineLatest, map, of, shareReplay } from 'rxjs';
@@ -17,6 +18,33 @@ interface AdminSearchProjectionView {
     readonly openSearch: SearchEngineComparison;
   } | null;
   readonly comparisonWarning: string | null;
+}
+
+function mergeProjectionEvidence(
+  adminProjection: DiscoveryProjectionState | null,
+  comparisonProjection: SearchComparisonProjection | null,
+): DiscoveryProjectionState | null {
+  if (!adminProjection) {
+    return comparisonProjection;
+  }
+  if (!comparisonProjection) {
+    return adminProjection;
+  }
+
+  const sameNormalizedSet =
+    adminProjection.source === comparisonProjection.source &&
+    adminProjection.objectCount === comparisonProjection.objectCount;
+
+  if (!sameNormalizedSet) {
+    return adminProjection;
+  }
+
+  return {
+    ...adminProjection,
+    projectionId:
+      adminProjection.projectionId ?? comparisonProjection.projectionId,
+    rebuiltAt: adminProjection.rebuiltAt ?? comparisonProjection.rebuiltAt,
+  };
 }
 
 @Component({
@@ -271,9 +299,13 @@ export class AdminSearchProjectionComponent {
         ),
       ),
   ]).pipe(
-    map(
-      ([projectionResult, comparisonResult]): AdminSearchProjectionView => ({
-        projection: projectionResult.projection,
+    map(([projectionResult, comparisonResult]): AdminSearchProjectionView => {
+      const comparisonProjection = comparisonResult.comparison?.projection ?? null;
+      return {
+        projection: mergeProjectionEvidence(
+          projectionResult.projection,
+          comparisonProjection,
+        ),
         projectionWarning: projectionResult.warning,
         comparison: comparisonResult.comparison
           ? {
@@ -283,8 +315,8 @@ export class AdminSearchProjectionComponent {
             }
           : null,
         comparisonWarning: comparisonResult.warning,
-      }),
-    ),
+      };
+    }),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
