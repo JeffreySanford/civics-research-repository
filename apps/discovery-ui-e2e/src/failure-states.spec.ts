@@ -22,7 +22,9 @@ test.describe('repository API failure states', () => {
     await page.goto('/discovery');
 
     await expect(
-      page.getByRole('alert').filter({ hasText: 'Search results failed' }),
+      page
+        .locator('.error-message[role="alert"]')
+        .filter({ hasText: 'Search results failed' }),
     ).toBeVisible();
     await expect(page.getByLabel('Search terms')).toBeVisible();
     await expect(
