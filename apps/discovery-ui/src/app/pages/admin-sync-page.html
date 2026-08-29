@@ -105,7 +105,7 @@
                 diameter="24"
                 aria-label="Running sync request"
               ></mat-spinner>
-              <span>Search projection reindex running into configured targets</span>
+              <span>Reindex running across configured search targets</span>
             </div>
             } @if (error$ | async; as error) {
             <p class="error-message" role="alert">{{ error }}</p>
@@ -113,8 +113,6 @@
             <p class="inline-status" role="status">
               Search projections rebuilt from one normalized set:
               {{ projection.objectCount }} objects from {{ projection.source }}.
-              @if (projection.projectionId) { Projection ID
-              <code>{{ projection.projectionId }}</code>. }
             </p>
             }
           </div>
