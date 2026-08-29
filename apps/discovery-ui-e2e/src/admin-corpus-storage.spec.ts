@@ -61,7 +61,7 @@ test.describe('Admin Sync corpus storage evidence', () => {
     });
   });
 
-  test('views planned corpus scale without pretending it is active @storyboard', async ({
+  test('views planned corpus scale without pretending it is active @storyboard @comparison', async ({
     page,
   }) => {
     await page.goto('/admin/sync');
