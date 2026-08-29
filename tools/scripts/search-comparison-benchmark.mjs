@@ -3,8 +3,8 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
-const DEFAULT_WARMUP_RUNS = 3;
-const DEFAULT_MEASURED_RUNS = 15;
+const DEFAULT_WARMUP_RUNS = 5;
+const DEFAULT_MEASURED_RUNS = 100;
 const MAX_WARMUP_RUNS = 20;
 const MAX_MEASURED_RUNS = 100;
 
@@ -183,7 +183,7 @@ export async function runSearchComparisonBenchmark({
   };
 }
 
-function parseArguments(argv) {
+export function parseArguments(argv) {
   const options = {
     baseUrl: DEFAULT_BASE_URL,
     warmupRuns: DEFAULT_WARMUP_RUNS,
@@ -197,6 +197,8 @@ function parseArguments(argv) {
     const argument = argv[index];
     const value = argv[index + 1];
     switch (argument) {
+      case '--':
+        break;
       case '--base-url':
         options.baseUrl = value;
         index += 1;
