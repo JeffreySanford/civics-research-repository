@@ -12,13 +12,13 @@ Full source binaries are out of scope. The unit of scale is searchable metadata 
 
 PI-1 plans adapters for all identified sources:
 
-| Source | Scale role | Primary metadata shape |
-| --- | --- | --- |
-| Data.gov | federal breadth to hundreds of thousands | datasets, agencies, tags, distributions |
-| DOE OSTI.GOV | preferred first 1M+ federal corpus | reports, publications, datasets, software, patents and research outputs |
-| NASA Earthdata CMR | controlled 1M+ scientific/geospatial slices | collections and granules |
-| PubMed | 1M+ bibliographic/relevance corpus | citations, abstracts, authors and publication metadata |
-| OpenAlex | optional broad 1M+ scholarly corpus | works, authors, institutions, topics and citations |
+| Source             | Scale role                                  | Primary metadata shape                                                  |
+| ------------------ | ------------------------------------------- | ----------------------------------------------------------------------- |
+| Data.gov           | federal breadth to hundreds of thousands    | datasets, agencies, tags, distributions                                 |
+| DOE OSTI.GOV       | preferred first 1M+ federal corpus          | reports, publications, datasets, software, patents and research outputs |
+| NASA Earthdata CMR | controlled 1M+ scientific/geospatial slices | collections and granules                                                |
+| PubMed             | 1M+ bibliographic/relevance corpus          | citations, abstracts, authors and publication metadata                  |
+| OpenAlex           | optional broad 1M+ scholarly corpus         | works, authors, institutions, topics and citations                      |
 
 Source-specific harvesting is defined in [Source Ingestion Plan](source-ingestion-plan.md).
 
@@ -215,7 +215,7 @@ Every query definition should have a stable ID and expected semantic intent.
 Preserve the existing benchmark discipline:
 
 - warm-ups excluded,
-- >=100 measured requests for distribution claims,
+- at least 100 measured requests for distribution claims,
 - API elapsed separate from Solr `QTime` / OpenSearch `took`,
 - p50/p95/p99/min/max/mean,
 - source corpus and projection ID,
