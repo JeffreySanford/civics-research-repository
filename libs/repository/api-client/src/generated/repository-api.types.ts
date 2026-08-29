@@ -344,6 +344,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/corpus/storage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Corpus profile definitions and historical measured local storage footprints. */
+    get: operations['getCorpusStorageOverview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/corpus/storage/capture': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Capture the current active corpus storage footprint as historical evidence. */
+    post: operations['captureCorpusStorage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/solr/overview': {
     parameters: {
       query?: never;
@@ -365,6 +399,81 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /**
+     * @description Stable local corpus profile. FEDERATED_10K/100K/1M describe target federated metadata counts in addition to the curated repository records; FULL has no fixed count.
+     * @enum {string}
+     */
+    CorpusProfile:
+      | 'CURATED_DEMO'
+      | 'FEDERATED_10K'
+      | 'FEDERATED_100K'
+      | 'FEDERATED_1M'
+      | 'FULL';
+    /**
+     * @description Runtime topology associated with a storage measurement.
+     * @enum {string}
+     */
+    DeploymentTopology: 'DOCKER_COMPOSE' | 'KIND_CLUSTER' | 'OTHER';
+    CorpusStorageMeasurement: {
+      id: string;
+      profile: components['schemas']['CorpusProfile'];
+      topology: components['schemas']['DeploymentTopology'];
+      /**
+       * Format: int64
+       * @description Documents in the active Solr/OpenSearch discovery projection at capture time.
+       */
+      activeProjectionCount: number;
+      /**
+       * Format: int64
+       * @description Federated metadata records retained locally whether or not they are active in search.
+       */
+      retainedFederatedCount: number;
+      projectionId?: string;
+      /**
+       * Format: int64
+       * @description PostgreSQL database size when the runtime supports an authoritative measurement.
+       */
+      applicationPostgresBytes?: number;
+      /**
+       * Format: int64
+       * @description DSpace ORIGINAL bitstream bytes reported by DSpace.
+       */
+      dspaceStoredBytes?: number;
+      /**
+       * Format: int64
+       * @description Public discovery Solr core index bytes reported by Solr CoreAdmin.
+       */
+      solrIndexBytes?: number;
+      /**
+       * Format: int64
+       * @description OpenSearch comparison index store bytes reported by index stats.
+       */
+      openSearchIndexBytes?: number;
+      /**
+       * Format: int64
+       * @description Sum of known measured components; absent components remain unknown, not zero evidence.
+       */
+      totalMeasuredLocalBytes: number;
+      /** Format: date-time */
+      capturedAt: string;
+    };
+    CorpusProfileSummary: {
+      profile: components['schemas']['CorpusProfile'];
+      label: string;
+      /** @description Whether this profile describes the currently active discovery projection. */
+      active: boolean;
+      /**
+       * Format: int64
+       * @description Fixed federated-record target when the profile has one.
+       */
+      targetFederatedRecordCount?: number;
+      latestMeasurement?: components['schemas']['CorpusStorageMeasurement'];
+    };
+    CorpusStorageOverview: {
+      activeProfile: components['schemas']['CorpusProfile'];
+      profiles: components['schemas']['CorpusProfileSummary'][];
+      history: components['schemas']['CorpusStorageMeasurement'][];
+    };
     /**
      * @description Where the response data came from. REPOSITORY means DSpace is the source of record for these records. FIXTURE means DSpace was unavailable or empty and the response is generated placeholder content, which must never be presented to a user as repository data.
      * @enum {string}
@@ -1535,6 +1644,48 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SourceInventory'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  getCorpusStorageOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Corpus profiles with recent storage history. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CorpusStorageOverview'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  captureCorpusStorage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Newly captured measured storage footprint. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CorpusStorageMeasurement'];
         };
       };
       500: components['responses']['InternalServerError'];
