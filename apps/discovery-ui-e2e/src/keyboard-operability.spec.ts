@@ -33,9 +33,20 @@ const INTERACTIVE = [
 ].join(', ');
 
 async function openRoute(page: Page, path: string): Promise<void> {
-  await page.goto(path);
-  await expect(page.getByRole('main')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
+  expect(
+    response?.ok(),
+    `${path} returned a successful document response`,
+  ).toBe(true);
+
+  // This is route boot/readiness, not the accessibility assertion itself. Under parallel Firefox
+  // runs the Vite dev server may still be transforming the MapLibre route after DOMContentLoaded.
+  // Give Angular's shell a bounded readiness window; the interaction/name assertions below retain
+  // their normal tighter timeouts and still fail if the application never renders.
+  await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 async function visibleControlCount(page: Page): Promise<number> {

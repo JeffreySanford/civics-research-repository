@@ -176,6 +176,18 @@ public class SolrSearchClient implements DiscoveryIndex {
             Integer vintageYear,
             int page,
             int pageSize) {
+        return searchWithDiagnostics(query, programs, geography, contentType, vintageYear, page, pageSize).response();
+    }
+
+    @Override
+    public SearchExecution searchWithDiagnostics(
+            String query,
+            List<ResearchProgram> programs,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
         try {
             HttpRequest request = HttpRequest.newBuilder(selectUri(query, programs, geography, contentType, vintageYear, page, pageSize))
                     .timeout(REQUEST_TIMEOUT)
@@ -187,7 +199,10 @@ public class SolrSearchClient implements DiscoveryIndex {
                 throw new IllegalStateException("Solr search failed with HTTP " + response.statusCode());
             }
 
-            return toSearchResponse(query, page, pageSize, programs, geography, contentType, vintageYear, response.body());
+            String responseBody = response.body();
+            return new SearchExecution(
+                    toSearchResponse(query, page, pageSize, programs, geography, contentType, vintageYear, responseBody),
+                    engineReportedMillis(responseBody));
         } catch (IOException exception) {
             throw new IllegalStateException("Solr search request failed.", exception);
         } catch (InterruptedException exception) {
@@ -309,6 +324,15 @@ public class SolrSearchClient implements DiscoveryIndex {
                                             : Set.of(normalize(String.valueOf(selectedVintageYear)))))));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Solr search response could not be parsed.", exception);
+        }
+    }
+
+    private Long engineReportedMillis(String responseBody) {
+        try {
+            JsonNode qTime = objectMapper.readTree(responseBody).path("responseHeader").path("QTime");
+            return qTime.isNumber() ? Math.max(0L, qTime.asLong()) : null;
+        } catch (JsonProcessingException exception) {
+            return null;
         }
     }
 

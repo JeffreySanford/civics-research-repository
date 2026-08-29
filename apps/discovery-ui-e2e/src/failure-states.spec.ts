@@ -22,7 +22,9 @@ test.describe('repository API failure states', () => {
     await page.goto('/discovery');
 
     await expect(
-      page.getByRole('alert').filter({ hasText: 'Search results failed' }),
+      page
+        .locator('.error-message[role="alert"]')
+        .filter({ hasText: 'Search results failed' }),
     ).toBeVisible();
     await expect(page.getByLabel('Search terms')).toBeVisible();
     await expect(
@@ -35,9 +37,12 @@ test.describe('repository API failure states', () => {
   }) => {
     await failRepositoryApi(page, '**/api/search**');
     await page.goto('/discovery');
-    await expect(
-      page.getByRole('alert').filter({ hasText: 'Search results failed' }),
-    ).toBeVisible();
+
+    const inlineSearchError = page
+      .locator('.error-message[role="alert"]')
+      .filter({ hasText: 'Search results failed' });
+
+    await expect(inlineSearchError).toBeVisible();
 
     await page.unrouteAll({ behavior: 'ignoreErrors' });
     await mockRepositoryApi(page);
@@ -49,11 +54,10 @@ test.describe('repository API failure states', () => {
         name: '2025 TIGER/Line - Census Tracts - Texas',
       }),
     ).toBeVisible();
-    // The search error specifically, not every alert on the page: the failed request also raised
-    // a snackbar, and whether that has faded yet is not what this test is about.
-    await expect(
-      page.getByRole('alert').filter({ hasText: 'Search results failed' }),
-    ).toHaveCount(0);
+    // The inline search error must clear when the successful response lands. The failed request
+    // also raises a transient snackbar with the same text; that notification may legitimately
+    // remain visible for a little longer and is not the recovery state this assertion verifies.
+    await expect(inlineSearchError).toHaveCount(0);
   });
 
   test('dataset detail reports an outage @storyboard', async ({ page }) => {

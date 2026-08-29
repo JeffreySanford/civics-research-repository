@@ -28,8 +28,10 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    // Evidence CI uploads test-results on every run. Retaining these only on failure keeps the
+    // artifacts useful without turning routine browser passes into a large screenshot archive.
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   /* Run your local dev server before starting the tests */
   webServer: {

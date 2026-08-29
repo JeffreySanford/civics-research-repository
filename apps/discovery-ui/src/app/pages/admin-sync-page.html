@@ -4,7 +4,8 @@
     <h1 id="admin-sync-heading">Repository sync</h1>
     <p>
       Operate the typed Java sync workflow, then inspect how DSpace stores
-      repository objects and how Solr projects them for public discovery.
+      repository objects and how one normalized document set is projected into
+      Solr and OpenSearch.
     </p>
   </header>
 
@@ -20,7 +21,8 @@
           <h2 id="sync-pipeline-heading">Sync and reindex pipeline</h2>
           <p>
             Dry run, diff, and apply flow through repository-api into DSpace and
-            Postgres; reindex rebuilds the discovery Solr projection.
+            Postgres; reindex normalizes once and rebuilds every configured
+            search projection target.
           </p>
           <app-admin-sync-pipeline
             [activeStage]="(pipelineStage$ | async) ?? 'idle'"
@@ -32,8 +34,9 @@
             <h2 id="sync-workflow-heading">Sync workflow</h2>
             <p>
               Trigger the typed Java sync endpoint for a selected public
-              metadata source. Dry run shows planned DSpace/Solr actions; apply
-              uses the same workflow and persists job history in Postgres.
+              metadata source. Dry run shows planned DSpace and
+              search-projection actions; apply uses the same workflow and
+              persists job history in Postgres.
             </p>
 
             <mat-form-field appearance="outline">
@@ -80,7 +83,7 @@
                 (click)="requestReindex()"
                 [disabled]="reindexing$ | async"
               >
-                Reindex discovery
+                Reindex search projections
               </button>
             </div>
 
@@ -102,14 +105,14 @@
                 diameter="24"
                 aria-label="Running sync request"
               ></mat-spinner>
-              <span>Discovery reindex running into Solr</span>
+              <span>Reindex running across configured search targets</span>
             </div>
             } @if (error$ | async; as error) {
             <p class="error-message" role="alert">{{ error }}</p>
             } @if (projection$ | async; as projection) {
             <p class="inline-status" role="status">
-              Discovery projection rebuilt: {{ projection.objectCount }} objects
-              from {{ projection.source }}.
+              Search projections rebuilt from one normalized set: {{
+              projection.objectCount }} objects from {{ projection.source }}.
             </p>
             }
           </div>
@@ -334,20 +337,23 @@
       </div>
     </mat-tab>
 
-    <mat-tab label="Solr overview">
+    <mat-tab label="Search projection">
       <div class="admin-tab-panel" @adminPanelEnter>
+        <app-admin-search-projection />
+
         @if (solrOverview$ | async; as overview) {
         <p class="visually-hidden" aria-live="polite" aria-atomic="true">
           {{ liveSolrSummary(overview) }}
         </p>
 
         <section aria-labelledby="solr-flow-heading" class="content-panel">
-          <p class="eyebrow">Projection flow</p>
-          <h2 id="solr-flow-heading">DSpace to discovery core</h2>
+          <p class="eyebrow">Public discovery detail</p>
+          <h2 id="solr-flow-heading">DSpace to Solr discovery core</h2>
           <p>
-            Solr is a rebuildable projection of DSpace. The
-            <code>discovery</code> core on port 8983 powers keyword search,
-            facets, and counts for the Angular UI.
+            Solr remains the browser-facing rebuildable projection of DSpace.
+            The <code>discovery</code> core on port 8983 powers keyword search,
+            facets, and counts for the Angular UI while OpenSearch is evaluated
+            beside it.
           </p>
           <app-admin-flow-diagram
             caption="DSpace items projected through DiscoveryProjectionService into Solr"
@@ -356,7 +362,7 @@
         </section>
 
         <section aria-labelledby="solr-stats-heading" class="content-panel">
-          <h2 id="solr-stats-heading">Live index stats</h2>
+          <h2 id="solr-stats-heading">Solr live index stats</h2>
           @if (overview.statusMessage) {
           <p class="warning-message" role="status">
             {{ overview.statusMessage }}

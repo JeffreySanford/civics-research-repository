@@ -52,6 +52,7 @@
     "dspace:reset:containers": "docker compose --profile dspace rm -sf dspace-rest dspace-db-init dspace-seed dspace-postgres dspace-solr dspace-solr-init",
     "dspace:verify": "curl -f http://localhost:8081/server/api",
     "dspace:verify:seed": "node tools/scripts/verify-dspace-seed.mjs",
+    "opensearch:verify": "curl -f http://localhost:9200/_cluster/health",
     "sync:dry-run": "pnpm nx run repository-api:sync",
     "sync:diff": "pnpm nx run repository-api:sync:diff",
     "sync:apply": "pnpm nx run repository-api:sync:apply",
@@ -67,11 +68,13 @@
     "build": "pnpm nx run discovery-ui:build",
     "build:all": "pnpm nx run-many -t build --all",
     "lint": "pnpm nx run-many -t lint --all",
-    "openapi:lint": "pnpm exec redocly lint schemas/openapi/repository-api.yaml",
+    "openapi:lint": "pnpm exec redocly lint --config=.redocly.yaml schemas/openapi/repository-api.yaml",
     "openapi:generate": "pnpm exec openapi-typescript schemas/openapi/repository-api.yaml -o libs/repository/api-client/src/generated/repository-api.types.ts && pnpm exec prettier --write libs/repository/api-client/src/generated/repository-api.types.ts",
     "openapi:check": "node tools/scripts/check-openapi-generated.mjs",
     "test": "pnpm nx run discovery-ui:test",
     "test:all": "pnpm nx run-many -t test --all",
+    "performance:test": "node --test tools/scripts/search-comparison-benchmark.test.mjs",
+    "performance:benchmark": "node tools/scripts/search-comparison-benchmark.mjs",
     "e2e": "pnpm nx run discovery-ui-e2e:e2e",
     "storyboard": "pnpm nx run discovery-ui-e2e:storyboard",
     "accessibility": "pnpm nx run-many -t accessibility",
@@ -94,7 +97,7 @@
     "verify:sources": "node tools/scripts/verify-source-urls.mjs",
     "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",
     "catalog:harvest": "node tools/scripts/harvest-catalog.mjs",
-    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run evidence:check && pnpm run docs:check && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
+    "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run evidence:check && pnpm run docs:check && pnpm run performance:test && pnpm run lint && pnpm run test:all && pnpm run build && pnpm run e2e:reports"
   },
   "dependencies": {
     "@angular/animations": "22.1.1",

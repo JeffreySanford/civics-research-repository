@@ -28,6 +28,7 @@ import {
   selectManualEvidence,
   selectOverallAutomatedStatus,
 } from '../state/evidence/evidence.selectors';
+import { AdminSearchProjectionComponent } from './admin-search-projection.component';
 import {
   KNOWN_GAPS,
   MANUAL_CHECKLISTS,
@@ -42,7 +43,13 @@ import {
 @Component({
   selector: 'app-evidence-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, DatePipe, MatProgressSpinnerModule, MatTabsModule],
+  imports: [
+    AsyncPipe,
+    DatePipe,
+    MatProgressSpinnerModule,
+    MatTabsModule,
+    AdminSearchProjectionComponent,
+  ],
   templateUrl: './evidence-page.html',
 })
 export class EvidencePage implements OnInit {

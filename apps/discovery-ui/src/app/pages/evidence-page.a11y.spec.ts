@@ -1,6 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { provideMockStore } from '@ngrx/store/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { of } from 'rxjs';
+import {
+  RepositoryAdminApi,
+  RepositorySearchComparisonApi,
+  type DiscoveryProjectionState,
+  type SearchComparisonResponse,
+} from 'repository-api-client';
 import { EvidencePage } from './evidence-page';
 import { expectNoAxeViolations } from '../testing/axe';
 import {
@@ -11,6 +18,50 @@ import {
   pipelineFeatureKey,
   initialPipelineState,
 } from '../state/pipeline/pipeline.reducer';
+
+const projection: DiscoveryProjectionState = {
+  source: 'REPOSITORY',
+  objectCount: 181,
+  projectionId: 'a'.repeat(64),
+  rebuiltAt: '2026-08-29T19:00:00Z',
+};
+
+const comparison: SearchComparisonResponse = {
+  scenario: 'FACETED_SEARCH',
+  projection: {
+    source: 'REPOSITORY',
+    objectCount: 181,
+    projectionId: projection.projectionId,
+    rebuiltAt: projection.rebuiltAt,
+  },
+  sameProjection: true,
+  solr: {
+    engine: 'SOLR',
+    enabled: true,
+    reachable: true,
+    indexName: 'discovery',
+    indexedDocumentCount: 181,
+    elapsedMs: 12,
+    engineReportedMs: 4,
+    totalHits: 181,
+    returnedHits: 1,
+    results: [],
+    facets: [],
+  },
+  openSearch: {
+    engine: 'OPENSEARCH',
+    enabled: true,
+    reachable: true,
+    indexName: 'discovery-comparison',
+    indexedDocumentCount: 181,
+    elapsedMs: 18,
+    engineReportedMs: 7,
+    totalHits: 181,
+    returnedHits: 1,
+    results: [],
+    facets: [],
+  },
+};
 
 /**
  * Accessibility of the evidence page in states a browser test cannot easily reach.
@@ -29,6 +80,14 @@ describe('EvidencePage accessibility', () => {
       imports: [EvidencePage],
       providers: [
         provideNoopAnimations(),
+        {
+          provide: RepositoryAdminApi,
+          useValue: { getDiscoveryProjectionState: () => of(projection) },
+        },
+        {
+          provide: RepositorySearchComparisonApi,
+          useValue: { run: () => of(comparison) },
+        },
         provideMockStore({
           initialState: {
             [evidenceFeatureKey]: { ...initialEvidenceState, ...evidence },
@@ -70,4 +129,30 @@ describe('EvidencePage accessibility', () => {
 
     await expectNoAxeViolations(fixture.nativeElement);
   });
+
+  it('is accessible while showing search comparison evidence', async () => {
+    const fixture = await renderWith(
+      { loading: false, entries: [] },
+      { loading: false, inventory: null, dspace: null, solr: null },
+    );
+
+    const tabs = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '[role="tab"]',
+      ) as NodeListOf<HTMLElement>,
+    );
+    const comparisonTab = tabs.find((tab) =>
+      tab.textContent?.includes('Search comparison'),
+    );
+    expect(comparisonTab).toBeTruthy();
+    comparisonTab?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Search comparison evidence classes',
+    );
+    await expectNoAxeViolations(fixture.nativeElement);
+  }, 10_000);
 });

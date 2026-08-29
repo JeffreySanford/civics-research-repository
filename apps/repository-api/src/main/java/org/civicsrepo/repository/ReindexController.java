@@ -1,5 +1,6 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.DiscoveryProjectionState;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.search.SearchService;
 import org.springframework.http.HttpStatus;
@@ -30,13 +31,25 @@ public class ReindexController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ProjectionState reindex() {
-        return discoveryProjectionService.reindex(searchService.fixtureDocuments());
+    public DiscoveryProjectionState reindex() {
+        return response(discoveryProjectionService.reindex(searchService.fixtureDocuments()));
     }
 
     /** What the discovery index currently holds, without rebuilding it. */
     @GetMapping
-    public ProjectionState projectionState() {
-        return discoveryProjectionService.state();
+    public DiscoveryProjectionState projectionState() {
+        return response(discoveryProjectionService.state());
+    }
+
+    private DiscoveryProjectionState response(ProjectionState state) {
+        DiscoveryProjectionState response = new DiscoveryProjectionState(state.source(), state.objectCount());
+        if (state.rebuiltAt() != null) {
+            response.rebuiltAt(state.rebuiltAt());
+        }
+        String projectionId = discoveryProjectionService.currentProjectionId();
+        if (projectionId != null && !projectionId.isBlank()) {
+            response.projectionId(projectionId);
+        }
+        return response;
     }
 }

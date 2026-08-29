@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockRepositoryApi } from './support/repository-api-mocks';
+import { mockSearchComparisonApi } from './support/search-comparison-mocks';
 import { waitForStablePage } from './support/wait-for-stable-page';
 
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
@@ -8,11 +9,16 @@ const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 test.describe('accessibility evidence', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);
+    await mockSearchComparisonApi(page);
   });
 
   for (const route of [
     { path: '/', heading: 'Census geospatial discovery with repository sync' },
     { path: '/discovery', heading: 'Find research objects' },
+    {
+      path: '/search-lab',
+      heading: 'Compare Solr and OpenSearch',
+    },
     {
       path: '/datasets/tiger-line-north-dakota-2025',
       heading: '2025 TIGER/Line - Census Tracts - North Dakota',

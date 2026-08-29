@@ -1,22 +1,25 @@
 package org.civicsrepo.repository;
 
+import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.search.DiscoveryDocument;
-import org.civicsrepo.generated.dto.RepositorySource;
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import org.civicsrepo.search.DiscoveryIndex;
+import org.civicsrepo.search.DiscoveryProjectionTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Builds the Solr discovery core from DSpace, and remembers what it built.
+ * Builds the public discovery projection from DSpace, and remembers what it built.
  *
- * <p>The discovery core is a projection: it must always be rebuildable from the repository, and
- * anything that exists only in Solr is a bug. This service is the only writer, so the answer to
- * "what is in the index right now" has exactly one owner.
+ * <p>The projection is derived state: it must always be rebuildable from the repository, and
+ * anything that exists only in a search engine is a bug. Every configured projection target gets
+ * the same normalized document list from this service. Solr remains the live public search engine;
+ * OpenSearch is a parallel comparison target until measured behavior justifies another decision.
  *
  * <p>When DSpace holds no items — unreachable, unseeded, or genuinely empty — the fixture catalog
  * is indexed instead so the demo still functions. That substitution is recorded and reported
@@ -28,19 +31,35 @@ public class DiscoveryProjectionService {
 
     private final RepositoryCatalog repositoryCatalog;
     private final RepositoryIdentityStore repositoryIdentityStore;
-    private final DiscoveryIndex discoveryIndex;
+    private final List<DiscoveryProjectionTarget> projectionTargets;
     private final AtomicReference<ProjectionState> state =
             new AtomicReference<>(new ProjectionState(RepositorySource.FIXTURE, 0, null));
+    private final AtomicReference<String> projectionId = new AtomicReference<>();
+    private final AtomicReference<Map<String, ProjectionTargetState>> targetStates =
+            new AtomicReference<>(Map.of());
 
-    public DiscoveryProjectionService(RepositoryCatalog repositoryCatalog, DiscoveryIndex discoveryIndex, RepositoryIdentityStore repositoryIdentityStore) {
+    public DiscoveryProjectionService(
+            RepositoryCatalog repositoryCatalog,
+            List<DiscoveryProjectionTarget> projectionTargets,
+            RepositoryIdentityStore repositoryIdentityStore) {
         this.repositoryIdentityStore = repositoryIdentityStore;
         this.repositoryCatalog = repositoryCatalog;
-        this.discoveryIndex = discoveryIndex;
+        this.projectionTargets = List.copyOf(projectionTargets);
     }
 
-    /** What the discovery index currently holds. */
+    /** What the discovery projection currently represents. */
     public ProjectionState state() {
         return state.get();
+    }
+
+    /** Identity of the normalized document set used for the most recent projection. */
+    public String currentProjectionId() {
+        return projectionId.get();
+    }
+
+    /** Per-target outcome of the most recent projection attempt. */
+    public ProjectionTargetState targetState(String indexName) {
+        return targetStates.get().get(indexName);
     }
 
     /** Source of the data currently searchable, used to label API responses. */
@@ -49,35 +68,58 @@ public class DiscoveryProjectionService {
     }
 
     /**
-     * Rebuilds the discovery index.
+     * Rebuilds every configured discovery projection target from one normalized document set.
      *
      * @param fixtureFallback catalog to index when the repository yields nothing
      */
     public ProjectionState reindex(List<DiscoveryDocument> fixtureFallback) {
-        // A rebuild is the point at which a stale repository read must not survive.
         repositoryCatalog.invalidate();
         List<DiscoveryDocument> repositoryObjects = repositoryCatalog.findAllDiscoveryDocuments();
         boolean repositoryBacked = !repositoryObjects.isEmpty();
         List<DiscoveryDocument> results = repositoryBacked ? repositoryObjects : fixtureFallback;
         RepositorySource source = repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
+        String projectedDocumentSetId = DiscoveryProjectionFingerprint.fingerprint(results);
+        Map<String, ProjectionTargetState> projectedTargets = new LinkedHashMap<>();
 
-        if (discoveryIndex.isEnabled()) {
-            try {
-                discoveryIndex.indexResearchObjects(results);
-            } catch (RuntimeException exception) {
-                LOGGER.warn(
-                        "Discovery indexing failed; in-memory search remains available: {}", exception.getMessage());
+        for (DiscoveryProjectionTarget target : projectionTargets) {
+            if (!target.isEnabled()) {
+                projectedTargets.put(
+                        target.indexName(),
+                        new ProjectionTargetState(target.indexName(), false, false, null, null, "Target is disabled."));
+                LOGGER.info("Discovery projection target {} is disabled.", target.indexName());
+                continue;
             }
-        } else {
-            LOGGER.info("Solr is disabled; discovery will answer from in-memory results.");
+
+            try {
+                target.indexResearchObjects(results);
+                Integer count = target.documentCount().orElse(null);
+                projectedTargets.put(
+                        target.indexName(),
+                        new ProjectionTargetState(
+                                target.indexName(), true, true, projectedDocumentSetId, count, null));
+                LOGGER.info(
+                        "Discovery projection target {} rebuilt with {} objects.",
+                        target.indexName(),
+                        results.size());
+            } catch (RuntimeException exception) {
+                projectedTargets.put(
+                        target.indexName(),
+                        new ProjectionTargetState(
+                                target.indexName(), true, false, null, target.documentCount().orElse(null), exception.getMessage()));
+                LOGGER.warn(
+                        "Discovery projection target {} failed; other targets and in-memory search remain available: {}",
+                        target.indexName(),
+                        exception.getMessage());
+            }
         }
 
-        // Stamped after indexing, not before: an object is "indexed" once discovery could return it.
         repositoryIdentityStore.recordIndexed(
                 results.stream().map((document) -> document.result().getId()).toList());
 
         ProjectionState projected = new ProjectionState(source, results.size(), OffsetDateTime.now());
         state.set(projected);
+        projectionId.set(projectedDocumentSetId);
+        targetStates.set(Map.copyOf(projectedTargets));
 
         if (repositoryBacked) {
             LOGGER.info("Discovery projection rebuilt from DSpace: {} repository research objects.", results.size());
@@ -91,10 +133,18 @@ public class DiscoveryProjectionService {
         return projected;
     }
 
-    /** Results currently searchable, so callers can answer without Solr when it is unavailable. */
+    /** Results currently searchable, so callers can answer without the configured index when it is unavailable. */
     public List<SearchResult> repositoryObjects() {
         return repositoryCatalog.findAllResearchObjects();
     }
 
     public record ProjectionState(RepositorySource source, int objectCount, OffsetDateTime rebuiltAt) {}
+
+    public record ProjectionTargetState(
+            String indexName,
+            boolean enabled,
+            boolean projected,
+            String projectionId,
+            Integer documentCount,
+            String warning) {}
 }

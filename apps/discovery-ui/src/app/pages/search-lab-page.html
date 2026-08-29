@@ -1,0 +1,367 @@
+<div class="page-stack">
+  <section aria-labelledby="search-lab-heading" class="search-panel">
+    <div>
+      <p class="eyebrow">Search engine lab</p>
+      <h1 id="search-lab-heading">Compare Solr and OpenSearch</h1>
+      <p>
+        Run the same normalized discovery request against two application-owned
+        projections built from DSpace. The timings shown here are local demo
+        measurements, not production benchmarks.
+      </p>
+      @if (scenarioDescription()) {
+      <p>{{ scenarioDescription() }}</p>
+      }
+    </div>
+
+    <form
+      class="search-lab-form"
+      aria-label="Search engine comparison"
+      (submit)="$event.preventDefault(); runComparison()"
+    >
+      <label for="comparison-scenario">Scenario</label>
+      <select id="comparison-scenario" [formControl]="scenarioControl">
+        @if (scenarios().length) { @for (scenario of scenarios(); track
+        scenario.id) {
+        <option [value]="scenario.id">{{ scenario.label }}</option>
+        } } @else {
+        <option value="FACETED_SEARCH">Facets vs aggregations</option>
+        <option value="FULL_TEXT_RELEVANCE">Full-text relevance</option>
+        <option value="FILTERING">Filtering</option>
+        }
+      </select>
+
+      <label for="comparison-query">Search terms</label>
+      <input
+        id="comparison-query"
+        type="search"
+        autocomplete="off"
+        [formControl]="queryControl"
+      />
+
+      <div class="search-lab-filter-grid">
+        <label>
+          <span>Geography</span>
+          <input
+            type="text"
+            autocomplete="off"
+            [formControl]="geographyControl"
+          />
+        </label>
+
+        <label>
+          <span>Program</span>
+          <select [formControl]="programControl">
+            <option value="">All programs</option>
+            @for (program of programs; track program) {
+            <option [value]="program">{{ program }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <span>Research object type</span>
+          <select [formControl]="contentTypeControl">
+            <option value="">All types</option>
+            @for (contentType of contentTypes; track contentType) {
+            <option [value]="contentType">{{ contentType }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <span>Vintage year</span>
+          <input
+            type="number"
+            min="1900"
+            max="2100"
+            inputmode="numeric"
+            [formControl]="vintageYearControl"
+          />
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button mat-flat-button type="submit" [disabled]="running()">
+          Run both engines
+        </button>
+        <button
+          mat-button
+          type="button"
+          [disabled]="running()"
+          (click)="clearFilters()"
+        >
+          Clear filters
+        </button>
+        @if (running()) {
+        <span class="inline-status" role="status">
+          <mat-spinner
+            diameter="22"
+            aria-label="Running comparison"
+          ></mat-spinner>
+          <span>Running comparison</span>
+        </span>
+        } @else if (loadingScenarios()) {
+        <span class="inline-status" role="status">Loading scenarios</span>
+        }
+      </div>
+    </form>
+  </section>
+
+  <p class="visually-hidden" aria-live="polite">
+    {{ completionAnnouncement() }}
+  </p>
+
+  @if (error(); as errorMessage) {
+  <p class="error-message" role="alert">{{ errorMessage }}</p>
+  } @if (result(); as comparison) {
+  <section class="content-panel" aria-labelledby="projection-heading">
+    <p class="eyebrow">Projection evidence</p>
+    <h2 id="projection-heading">Same input before engine differences</h2>
+
+    @if (comparison.sameProjection) {
+    <p class="search-parity-notice" role="status">
+      <strong>Projection parity verified.</strong> Both engines were rebuilt
+      from the current normalized document set and report the expected document
+      count.
+    </p>
+    } @else {
+    <p class="warning-message" role="alert">
+      <strong>Projection parity is not verified.</strong> Treat result
+      differences as diagnostic only until both engines have successfully
+      received the same current projection.
+    </p>
+    } @if (comparison.projection.source === 'FIXTURE') {
+    <p class="fixture-notice">
+      <strong>Fixture-backed projection.</strong> DSpace did not provide the
+      projected research objects, so this run is useful for engine behavior but
+      not as repository-backed evidence.
+    </p>
+    }
+
+    <dl class="search-lab-projection">
+      <div>
+        <dt>Source</dt>
+        <dd>{{ comparison.projection.source }}</dd>
+      </div>
+      <div>
+        <dt>Objects</dt>
+        <dd>{{ comparison.projection.objectCount }}</dd>
+      </div>
+      <div>
+        <dt>Rebuilt</dt>
+        <dd>
+          @if (comparison.projection.rebuiltAt) { {{
+          comparison.projection.rebuiltAt | date: 'medium' }} } @else { Not
+          recorded }
+        </dd>
+      </div>
+      <div class="projection-id">
+        <dt>Projection ID</dt>
+        <dd>
+          @if (comparison.projection.projectionId) {
+          <code>{{ comparison.projection.projectionId }}</code>
+          } @else { Not recorded }
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section aria-labelledby="engine-results-heading">
+    <div class="search-lab-results-heading">
+      <div>
+        <p class="eyebrow">Comparison</p>
+        <h2 id="engine-results-heading">Engine results</h2>
+      </div>
+      <p>
+        API elapsed time wraps the engine request from this local API process.
+        Engine-reported time comes from the same result response: Solr QTime or
+        OpenSearch took. Their vendor definitions differ, so neither value is a
+        production performance claim or a direct cross-engine verdict.
+      </p>
+    </div>
+
+    <div class="search-engine-grid">
+      <article class="content-panel" aria-labelledby="solr-result-heading">
+        <p class="eyebrow">Solr</p>
+        <h3 id="solr-result-heading">{{ engineLabel(comparison.solr) }}</h3>
+        <dl class="engine-metrics">
+          <div>
+            <dt>Status</dt>
+            <dd>
+              {{ comparison.solr.enabled ? comparison.solr.reachable ?
+              'Reachable' : 'Unavailable' : 'Disabled' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Index</dt>
+            <dd><code>{{ comparison.solr.indexName }}</code></dd>
+          </div>
+          <div>
+            <dt>Indexed documents</dt>
+            <dd>{{ comparison.solr.indexedDocumentCount ?? 'Unknown' }}</dd>
+          </div>
+          <div>
+            <dt>API elapsed</dt>
+            <dd>{{ comparison.solr.elapsedMs }} ms</dd>
+          </div>
+          @if (comparison.solr.engineReportedMs !== undefined) {
+          <div>
+            <dt>Engine reported (QTime)</dt>
+            <dd>{{ comparison.solr.engineReportedMs }} ms</dd>
+          </div>
+          }
+          <div>
+            <dt>Total hits</dt>
+            <dd>{{ comparison.solr.totalHits ?? 'Unavailable' }}</dd>
+          </div>
+          <div>
+            <dt>Returned</dt>
+            <dd>{{ comparison.solr.returnedHits }}</dd>
+          </div>
+        </dl>
+
+        @if (comparison.solr.warning) {
+        <p class="warning-message" role="status">
+          {{ comparison.solr.warning }}
+        </p>
+        }
+
+        <section aria-labelledby="solr-facets-heading">
+          <h4 id="solr-facets-heading">Facets</h4>
+          @if (comparison.solr.facets.length) {
+          <div class="facet-summary-grid">
+            @for (facet of comparison.solr.facets; track facet.field) {
+            <div>
+              <h5>{{ facet.label }}</h5>
+              <ul>
+                @for (value of facet.values; track value.value) {
+                <li>
+                  <span>{{ value.label }}</span>
+                  <span>{{ value.count }}</span>
+                  @if (value.selected) { <strong>Selected</strong> }
+                </li>
+                }
+              </ul>
+            </div>
+            }
+          </div>
+          } @else {
+          <p>No facet data returned.</p>
+          }
+        </section>
+
+        <section aria-labelledby="solr-hits-heading">
+          <h4 id="solr-hits-heading">Top results</h4>
+          @if (comparison.solr.results.length) {
+          <ol class="search-lab-hit-list">
+            @for (hit of comparison.solr.results; track hit.id) {
+            <li>
+              <strong>{{ hit.title }}</strong>
+              <span>{{ hit.program }} · {{ hit.contentType }}</span>
+              @if (hit.geography) { <span>{{ hit.geography }}</span> }
+            </li>
+            }
+          </ol>
+          } @else {
+          <p>No results returned.</p>
+          }
+        </section>
+      </article>
+
+      <article
+        class="content-panel"
+        aria-labelledby="opensearch-result-heading"
+      >
+        <p class="eyebrow">OpenSearch</p>
+        <h3 id="opensearch-result-heading">
+          {{ engineLabel(comparison.openSearch) }}
+        </h3>
+        <dl class="engine-metrics">
+          <div>
+            <dt>Status</dt>
+            <dd>
+              {{ comparison.openSearch.enabled ? comparison.openSearch.reachable
+              ? 'Reachable' : 'Unavailable' : 'Disabled' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Index</dt>
+            <dd><code>{{ comparison.openSearch.indexName }}</code></dd>
+          </div>
+          <div>
+            <dt>Indexed documents</dt>
+            <dd>
+              {{ comparison.openSearch.indexedDocumentCount ?? 'Unknown' }}
+            </dd>
+          </div>
+          <div>
+            <dt>API elapsed</dt>
+            <dd>{{ comparison.openSearch.elapsedMs }} ms</dd>
+          </div>
+          @if (comparison.openSearch.engineReportedMs !== undefined) {
+          <div>
+            <dt>Engine reported (took)</dt>
+            <dd>{{ comparison.openSearch.engineReportedMs }} ms</dd>
+          </div>
+          }
+          <div>
+            <dt>Total hits</dt>
+            <dd>{{ comparison.openSearch.totalHits ?? 'Unavailable' }}</dd>
+          </div>
+          <div>
+            <dt>Returned</dt>
+            <dd>{{ comparison.openSearch.returnedHits }}</dd>
+          </div>
+        </dl>
+
+        @if (comparison.openSearch.warning) {
+        <p class="warning-message" role="status">
+          {{ comparison.openSearch.warning }}
+        </p>
+        }
+
+        <section aria-labelledby="opensearch-facets-heading">
+          <h4 id="opensearch-facets-heading">Aggregations</h4>
+          @if (comparison.openSearch.facets.length) {
+          <div class="facet-summary-grid">
+            @for (facet of comparison.openSearch.facets; track facet.field) {
+            <div>
+              <h5>{{ facet.label }}</h5>
+              <ul>
+                @for (value of facet.values; track value.value) {
+                <li>
+                  <span>{{ value.label }}</span>
+                  <span>{{ value.count }}</span>
+                  @if (value.selected) { <strong>Selected</strong> }
+                </li>
+                }
+              </ul>
+            </div>
+            }
+          </div>
+          } @else {
+          <p>No aggregation data returned.</p>
+          }
+        </section>
+
+        <section aria-labelledby="opensearch-hits-heading">
+          <h4 id="opensearch-hits-heading">Top results</h4>
+          @if (comparison.openSearch.results.length) {
+          <ol class="search-lab-hit-list">
+            @for (hit of comparison.openSearch.results; track hit.id) {
+            <li>
+              <strong>{{ hit.title }}</strong>
+              <span>{{ hit.program }} · {{ hit.contentType }}</span>
+              @if (hit.geography) { <span>{{ hit.geography }}</span> }
+            </li>
+            }
+          </ol>
+          } @else {
+          <p>No results returned.</p>
+          }
+        </section>
+      </article>
+    </div>
+  </section>
+  }
+</div>

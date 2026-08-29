@@ -242,7 +242,7 @@
                 {{ formatBytes(stages.subscribedBytes) }}
               </dd>
               <dd class="pipeline-stat-note">
-                {{ stages.subscribedFiles }} distinct referenced files across {{
+                {{ stages.subscribedFiles }} distinct files across {{
                 stages.subscribedObjects }} research objects. {{
                 stages.measuredFiles }} reported a measurable length.
               </dd>
@@ -254,10 +254,10 @@
               </dd>
               <dd class="pipeline-stat-note">
                 {{ stages.mirroredFiles }} DSpace bitstreams, about {{
-                stages.mirroredPercent }}% of the measured subscribed bytes.
-                Mirroring is constrained by a total preservation budget rather
-                than a per-file cap; other files retain publisher URLs and
-                manifests.
+                stages.mirroredPercent }}% of the subscribed bytes with
+                measurable lengths. Mirroring is constrained by a total
+                preservation budget rather than a per-file cap; other files
+                retain publisher URLs and manifests.
               </dd>
             </div>
             <div class="pipeline-stat">
@@ -361,7 +361,7 @@
 
           <table class="evidence-table">
             <caption>
-              Measured subscribed source data by program, as last measured.
+              Subscribed source data by program, as last measured.
             </caption>
             <thead>
               <tr>
@@ -386,6 +386,106 @@
           </table>
         </section>
         } }
+      </div>
+    </mat-tab>
+    <mat-tab label="Search comparison">
+      <div class="evidence-tab-panel">
+        <app-admin-search-projection />
+
+        <section
+          aria-labelledby="search-comparison-evidence-heading"
+          class="content-panel"
+        >
+          <h2 id="search-comparison-evidence-heading">
+            Search comparison evidence classes
+          </h2>
+          <p>
+            Projection health above is live operational evidence. The table
+            below explains the verification layers enforced by the repository
+            and keeps deterministic fixture evidence, real-stack evidence,
+            performance diagnostics, and manual accessibility review distinct.
+          </p>
+
+          <table class="evidence-table">
+            <caption>
+              Search comparison evidence types and verification boundaries
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Evidence</th>
+                <th scope="col">Class</th>
+                <th scope="col">Status</th>
+                <th scope="col">What it proves</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Service, contract, and component tests</th>
+                <td>Automated CI gate</td>
+                <td>Enforced</td>
+                <td>
+                  Request normalization, projection parity decisions,
+                  partial-engine failure behavior, generated contracts, and UI
+                  state.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Mocked browser comparison</th>
+                <td>Deterministic browser evidence</td>
+                <td>Enforced</td>
+                <td>
+                  Known comparison scenarios and failure states across Chromium,
+                  Firefox, and WebKit against controlled API fixtures.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Search Lab accessibility</th>
+                <td>Automated WCAG / Section 508-oriented evidence</td>
+                <td>Enforced</td>
+                <td>
+                  Axe and structural accessibility preconditions. It does not
+                  replace a keyboard or screen-reader conformance run.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Live Solr/OpenSearch smoke</th>
+                <td>Real-stack evidence</td>
+                <td>Enforced</td>
+                <td>
+                  Angular -> Spring API -> live Solr + live OpenSearch with the
+                  current deterministic projection rather than mocked engine
+                  responses.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Performance distributions</th>
+                <td>Diagnostic evidence</td>
+                <td>5 warm-ups / 100 measured</td>
+                <td>
+                  API elapsed and engine-reported Solr QTime / OpenSearch took
+                  are recorded as separate distributions. Fixed-order local
+                  measurements are not a comparative winner claim.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Keyboard and screen-reader comparison flow</th>
+                <td>Manual evidence</td>
+                <td>Pending</td>
+                <td>
+                  Required before making a manual Search Lab conformance claim.
+                  Automated evidence is not substituted for assistive-technology
+                  review.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="warning-message">
+            Current commit pass/fail status is retained by CI and Browser
+            Evidence. This runtime page describes evidence boundaries and live
+            projection state; it does not synthesize a green build status.
+          </p>
+        </section>
       </div>
     </mat-tab>
   </mat-tab-group>

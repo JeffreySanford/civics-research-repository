@@ -21,6 +21,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/search/comparison/scenarios': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List supported Solr/OpenSearch comparison scenarios. */
+    get: operations['listSearchComparisonScenarios'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/search/comparison/run': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Run one normalized discovery query against Solr and OpenSearch.
+     * @description Both engines query projections built from the same normalized DSpace research-object set. Elapsed timings are local demo measurements and must not be presented as production benchmarks.
+     */
+    post: operations['runSearchComparison'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/datasets/{datasetId}': {
     parameters: {
       query?: never;
@@ -366,6 +403,70 @@ export interface components {
       count: number;
       selected: boolean;
     };
+    /** @enum {string} */
+    SearchComparisonScenarioId:
+      | 'FACETED_SEARCH'
+      | 'FULL_TEXT_RELEVANCE'
+      | 'FILTERING';
+    SearchComparisonScenario: {
+      id: components['schemas']['SearchComparisonScenarioId'];
+      label: string;
+      description: string;
+    };
+    SearchComparisonRequest: {
+      scenario: components['schemas']['SearchComparisonScenarioId'];
+      /** @default  */
+      query: string;
+      programs?: components['schemas']['ResearchProgram'][];
+      geography?: string;
+      contentType?: components['schemas']['ResearchObjectType'];
+      /** Format: int32 */
+      vintageYear?: number;
+      /** @default 0 */
+      page: number;
+      /** @default 10 */
+      pageSize: number;
+    };
+    SearchComparisonProjection: {
+      /** @description SHA-256 identity of the normalized DiscoveryDocument set supplied to the targets. */
+      projectionId?: string;
+      source: components['schemas']['RepositorySource'];
+      objectCount: number;
+      /** Format: date-time */
+      rebuiltAt?: string;
+    };
+    /** @enum {string} */
+    SearchComparisonEngine: 'SOLR' | 'OPENSEARCH';
+    SearchEngineComparison: {
+      engine: components['schemas']['SearchComparisonEngine'];
+      enabled: boolean;
+      reachable: boolean;
+      indexName: string;
+      indexedDocumentCount?: number;
+      /**
+       * Format: int64
+       * @description Local API elapsed time around the engine request, not a production benchmark.
+       */
+      elapsedMs: number;
+      /**
+       * Format: int64
+       * @description Timing reported by the engine in the same response that produced these results: Solr responseHeader.QTime or OpenSearch took. Vendor definitions differ, so these values are diagnostic and are not directly equivalent performance measures.
+       */
+      engineReportedMs?: number;
+      totalHits?: number;
+      returnedHits: number;
+      results: components['schemas']['SearchResult'][];
+      facets: components['schemas']['FacetGroup'][];
+      warning?: string;
+    };
+    SearchComparisonResponse: {
+      scenario: components['schemas']['SearchComparisonScenarioId'];
+      projection: components['schemas']['SearchComparisonProjection'];
+      /** @description True only when both enabled targets successfully received the current normalized projection and their document counts match it. */
+      sameProjection: boolean;
+      solr: components['schemas']['SearchEngineComparison'];
+      openSearch: components['schemas']['SearchEngineComparison'];
+    };
     ResearchObjectDetail: {
       source: components['schemas']['RepositorySource'];
       id: string;
@@ -501,6 +602,8 @@ export interface components {
     DiscoveryProjectionState: {
       source: components['schemas']['RepositorySource'];
       objectCount: number;
+      /** @description SHA-256 identity of the normalized document set used for the latest rebuild. */
+      projectionId?: string;
       /**
        * Format: date-time
        * @description When the projection was last rebuilt; absent before the first reindex.
@@ -943,6 +1046,54 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SearchResponse'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  listSearchComparisonScenarios: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Supported comparison scenarios. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchComparisonScenario'][];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  runSearchComparison: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SearchComparisonRequest'];
+      };
+    };
+    responses: {
+      /** @description Side-by-side engine results and projection parity evidence. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchComparisonResponse'];
         };
       };
       400: components['responses']['BadRequest'];
