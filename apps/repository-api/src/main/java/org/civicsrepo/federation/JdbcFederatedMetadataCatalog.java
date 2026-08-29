@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,7 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
     private final JdbcClient jdbcClient;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public JdbcFederatedMetadataCatalog(JdbcClient jdbcClient) {
         this(jdbcClient, new ObjectMapper());
     }
