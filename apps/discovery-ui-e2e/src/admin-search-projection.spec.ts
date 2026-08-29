@@ -19,7 +19,9 @@ test.describe('Admin Sync search projection evidence', () => {
       page.getByRole('heading', { name: 'Normalize once, project many' }),
     ).toBeVisible();
     await expect(page.getByText('Projection parity verified.')).toBeVisible();
-    await expect(page.getByText('aaaaaaaaaaaa…')).toBeVisible();
+    await expect(
+      page.getByText('aaaaaaaaaaaa…', { exact: true }),
+    ).toBeVisible();
 
     const targets = page.getByRole('region').filter({
       has: page.getByRole('heading', { name: 'Configured search targets' }),
