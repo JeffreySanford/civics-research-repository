@@ -52,6 +52,7 @@
     "dspace:reset:containers": "docker compose --profile dspace rm -sf dspace-rest dspace-db-init dspace-seed dspace-postgres dspace-solr dspace-solr-init",
     "dspace:verify": "curl -f http://localhost:8081/server/api",
     "dspace:verify:seed": "node tools/scripts/verify-dspace-seed.mjs",
+    "opensearch:verify": "curl -f http://localhost:9200/_cluster/health",
     "sync:dry-run": "pnpm nx run repository-api:sync",
     "sync:diff": "pnpm nx run repository-api:sync:diff",
     "sync:apply": "pnpm nx run repository-api:sync:apply",

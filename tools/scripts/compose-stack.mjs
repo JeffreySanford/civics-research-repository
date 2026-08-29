@@ -12,6 +12,7 @@ export const UI_URL = process.env.CIVICS_UI_URL ?? 'http://localhost:4200';
 export const STACK_SERVICES = [
   'postgres',
   'solr',
+  'opensearch',
   'repository-api',
   'discovery-ui',
 ];
@@ -464,6 +465,7 @@ The stack is running.
   Repository API    ${API_URL}
   DSpace REST       ${DSPACE_URL}/api
   Discovery Solr    http://localhost:8983/solr
+  OpenSearch        http://localhost:9200
   DSpace Solr       http://localhost:8984/solr
 
 Worth showing, in order:
@@ -474,6 +476,7 @@ Worth showing, in order:
   3. ${UI_URL}/maps               MapLibre with live USGS overlay and an accessible feature list
   4. ${UI_URL}/admin/sync         dry-run, diff, and apply against the live repository
   5. ${UI_URL}/evidence           WCAG and Section 508 status
+  6. ${UI_URL}/discovery          future Solr/OpenSearch comparison entry point
 
 Stop with: ${stopCommand}
 `);
@@ -528,7 +531,7 @@ export async function runFullStartup({
   docker(['compose', '--profile', 'dspace', 'run', '--rm', 'dspace-seed']);
 
   announce(
-    'Starting the application stack (PostgreSQL, Solr, Java API, Angular UI)',
+    'Starting the application stack (PostgreSQL, Solr, OpenSearch, Java API, Angular UI)',
   );
   const exitStatus = reconcileAndUp(STACK_SERVICES, {
     forceRecreate,

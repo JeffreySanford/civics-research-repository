@@ -20,7 +20,17 @@ This file contains open work only. Current status is generated in [documentation
 - [ ] Decide whether `main` receives branch protection.
 - [ ] Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.
 
-## P3 — Provenance and identity
+## P3 — Solr/OpenSearch comparison demo
+
+- [x] Add OpenSearch to the default `start:all` Docker stack with persistent storage.
+- [x] Document the side-by-side Discovery comparison, initial scenarios, API shape and measurement limits.
+- [ ] Add OpenAPI schemas and generated frontend types for search comparison scenarios and responses.
+- [ ] Implement OpenSearch indexing from the same normalized DSpace research object projection used by Solr.
+- [ ] Add Java search comparison services behind explicit Solr and OpenSearch boundaries.
+- [ ] Add a Discovery comparison view with `Run Solr`, `Run OpenSearch`, `Run Both`, timing, scope, highlights and technical details.
+- [ ] Add storyboard, WCAG and Section 508 coverage for the comparison view.
+
+## P4 — Provenance and identity
 
 - [ ] Add typed provenance values for live aggregation, stored sample, fixture, stale and unavailable data.
 - [ ] Record publisher freshness per research object where a reliable source date exists.
@@ -28,27 +38,27 @@ This file contains open work only. Current status is generated in [documentation
 - [ ] Add regression coverage for LODES fallback provenance.
 - [ ] Review UUID/source-identifier route stability and relationship resolution.
 
-## P4 — Research-object product language
+## P5 — Research-object product language
 
 - [ ] Add `/research/:id` as an alias for the existing detail route.
 - [ ] Replace remaining dataset-shaped copy where the object may be a publication, methodology or project.
 - [ ] Update examples and demo links to prefer research-object terminology.
 
-## P5 — Publisher verification and federation
+## P6 — Publisher verification and federation
 
 - [ ] Add listing/vintage verification to remaining programs where publisher structure permits it.
 - [ ] Keep catalog edits reviewable rather than automatically applying uncertain file-name changes.
 - [ ] Evaluate NOAA Climate Data Online as a federation candidate.
 - [ ] Evaluate NASA POWER as a federation candidate.
 
-## P6 — Infrastructure as code
+## P7 — Infrastructure as code
 
 - [ ] Choose Terraform or CDK.
 - [ ] Implement the documented AWS target or alternate.
 - [ ] Add secrets, observability, backup/restore and persistent search storage.
 - [ ] Document deployment and rollback from the local Compose baseline.
 
-## P7 — Platform hardening
+## P8 — Platform hardening
 
 - [ ] Move NgRx dependencies from release candidates to stable versions after validation.
 - [ ] Revisit generated Spring controller interfaces when Spring 7 support is ready.

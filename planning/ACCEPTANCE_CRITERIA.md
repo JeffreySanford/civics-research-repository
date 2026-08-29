@@ -58,6 +58,15 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] Mapped information is also available as an accessible table or feature list.
 - [x] Layer controls are keyboard reachable and have accessible names.
 
+## Search Comparison
+
+- [x] `pnpm run start:all` includes OpenSearch as a default local service with persistent Docker storage.
+- [x] The side-by-side Solr/OpenSearch demo plan defines scenarios, measurement limits, API shape and accessibility expectations.
+- [ ] Solr and OpenSearch index the same normalized DSpace research object projection.
+- [ ] Search comparison endpoints are described in OpenAPI and frontend TypeScript types are generated from the contract.
+- [ ] Discovery exposes a comparison view with individual engine run buttons, `Run Both`, timing, scope, facets or aggregations, highlights and technical details.
+- [ ] Storyboard, WCAG and Section 508 evidence cover the comparison workflow.
+
 ## Accessibility Evidence
 
 - [x] `pnpm run wcag:report` produces a console report.

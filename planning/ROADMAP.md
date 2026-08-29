@@ -25,7 +25,21 @@ The repository has a substantial browser evidence suite, but the normal CI workf
 - Decide whether `main` receives branch protection and required checks.
 - Keep the local `evidence:refresh` behavior: a failed run must never replace the prior known-good evidence.
 
-## 3. Harden provenance and repository identity
+## 3. Build the Solr/OpenSearch comparison demo
+
+OpenSearch should be a first-class local demo service, but it should not change the repository ownership model.
+
+- Keep OpenSearch in the default `start:all` Docker stack with persistent storage.
+- Index the same normalized DSpace research object projection into Solr and OpenSearch.
+- Add OpenAPI-first comparison endpoints with generated Angular types.
+- Build a Discovery comparison view with `Run Solr`, `Run OpenSearch`, `Run Both`, timing, scope, highlights and technical details.
+- Start with faceting/aggregations, weighted full-text relevance, phrase search, filtering, highlighting, and simple elapsed timing.
+- Add geo search, autocomplete/suggest, synonyms, nested/object search and vector/hybrid comparison only after the basic side-by-side path is stable.
+- Cover the comparison view with storyboard, WCAG and Section 508 checks.
+
+Completion means the demo can explain observable differences between the two search mechanisms using the same source data, not that local Docker timings are presented as production benchmarks.
+
+## 4. Harden provenance and repository identity
 
 Repository identity is recorded for publisher-backed objects; the next step is a more explicit chain from publisher state through DSpace and discovery.
 
@@ -35,7 +49,7 @@ Repository identity is recorded for publisher-backed objects; the next step is a
 - Review route handling so UUID-backed and source-identifier-backed research links remain stable.
 - Add regression tests for fallback provenance, especially LODES-derived map data.
 
-## 4. Finish research-object language
+## 5. Finish research-object language
 
 The domain model is research-object-shaped, but several routes and labels retain dataset-era wording.
 
@@ -44,7 +58,7 @@ The domain model is research-object-shaped, but several routes and labels retain
 - Update API/documentation examples to use “research object” where the type is not necessarily a dataset.
 - Keep type-specific language where it improves clarity: dataset files, publication authors, methodology, project, restricted microdata.
 
-## 5. Expand publisher verification and optional federation
+## 6. Expand publisher verification and optional federation
 
 The catalog should remain curated, but its claims should be increasingly verifiable.
 
@@ -53,7 +67,7 @@ The catalog should remain curated, but its claims should be increasingly verifia
 - Evaluate NOAA Climate Data Online and NASA POWER as federation examples after the Census/USGS path remains stable.
 - Preserve the distinction between publisher-discovered facts and repository-curated relationships.
 
-## 6. Implement the documented cloud target
+## 7. Implement the documented cloud target
 
 The AWS architecture is documented but not provisioned.
 
@@ -62,7 +76,7 @@ The AWS architecture is documented but not provisioned.
 - Include RDS, persistent search storage, frontend delivery, secrets, logs, metrics, backup and restore.
 - Document local-to-cloud migration and operational cost boundaries.
 
-## 7. Platform and test hardening
+## 8. Platform and test hardening
 
 - Move NgRx to stable 22 when available and validated.
 - Revisit generated Spring controller interfaces when tooling supports Spring 7 conventions.

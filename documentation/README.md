@@ -15,6 +15,7 @@ Civics Research Repository is documented as a federal Open Science reference pla
 - [Data Sources](data-sources.md): Census/USGS source assumptions and publisher verification.
 - [Data Storage and Sync](data-storage-sync.md): storage boundaries, reconciliation and bounded mirroring.
 - [Mapping Visualization](mapping-visualization.md): geospatial research views, LODES/TIGER/SAIPE/USGS layers and equivalent nonvisual workflows.
+- [Solr and OpenSearch Comparison Demo](search-comparison-demo.md): side-by-side search scenarios, API shape, indexing parity and measurement boundaries.
 - [USGS National Map Evaluation](usgs-national-map-evaluation.md): reference-layer options and tradeoffs.
 
 ## Accessibility
@@ -25,7 +26,7 @@ Civics Research Repository is documented as a federal Open Science reference pla
 
 ## Platform and deployment
 
-- [Docker, DSpace, Solr and PostgreSQL](docker-dspace-solr-postgres.md): local service responsibilities.
+- [Docker, DSpace, Solr, OpenSearch and PostgreSQL](docker-dspace-solr-postgres.md): local service responsibilities.
 - [AWS Modernization](aws-modernization.md): recommended target, alternate, persistence, observability, backup and migration direction.
 - [Backend Java API](backend-java-api.md): Spring Boot and OpenAPI implementation direction.
 - [Nx/Angular/WCAG](nx-angular-wcag.md): frontend workspace and testing conventions.

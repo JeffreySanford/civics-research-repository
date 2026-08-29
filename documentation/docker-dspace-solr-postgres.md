@@ -1,4 +1,4 @@
-# Docker, DSpace, Solr, and PostgreSQL
+# Docker, DSpace, Solr, OpenSearch, and PostgreSQL
 
 ## Local Platform Goal
 
@@ -16,7 +16,8 @@ Current default stack:
 - Java Repository API on `http://localhost:8080/api`.
 - PostgreSQL on `localhost:5432`.
 - Solr on `http://localhost:8983`.
-- Persistent Docker volumes for repository API artifacts, PostgreSQL, Solr, pnpm store, and container `node_modules`.
+- OpenSearch on `http://localhost:9200`.
+- Persistent Docker volumes for repository API artifacts, PostgreSQL, Solr, OpenSearch, pnpm store, and container `node_modules`.
 - DSpace REST profile on `http://localhost:8081/server/api`, started by `pnpm run start:all`.
 
 `pnpm run start:all` is the preferred development command. It starts the DSpace profile, seeds when needed, starts the application stack, reindexes, and prints URLs when every service is healthy. It reconciles containers in both stacks — recreating only broken ones — without deleting persistent volumes. See [Why the scoped commands exist](#why-the-scoped-commands-exist) below.
@@ -54,6 +55,10 @@ Persistent database used by DSpace.
 
 Discovery index for DSpace search, facets, full text, and relevance.
 
+### OpenSearch
+
+Parallel search engine reserved for the side-by-side Solr/OpenSearch comparison demo. OpenSearch is part of the default `start:all` application stack and persists to the `opensearch-data` Docker volume. The follow-on implementation will index the same normalized DSpace research object projection into OpenSearch that Solr receives today.
+
 ### Sync orchestration (Java API)
 
 Public metadata ingestion and DSpace reconciliation live in `apps/repository-api`. The API performs startup sync, exposes admin sync endpoints, and provides script entry points for dry-run, diff, and apply.
@@ -77,18 +82,23 @@ services:
   solr:
     role: DSpace discovery/search index
 
+  opensearch:
+    role: Parallel discovery/search comparison index
+
   repository-api:
-    role: Java API, sync orchestration, discovery projection
+    role: Java API, sync orchestration, discovery projections
     depends_on:
       - postgres
       - solr
+      - opensearch
 ```
 
 ## Implementation Notes
 
 - Start from DSpace-supported Docker patterns instead of inventing a custom DSpace runtime.
 - Keep Solr schema/configuration changes documented.
-- Use named Docker volumes for PostgreSQL and Solr persistence.
+- Keep OpenSearch mappings/analyzers documented alongside the comparison scenarios.
+- Use named Docker volumes for PostgreSQL, Solr, and OpenSearch persistence.
 - Use a named Docker volume for small-to-medium mirrored demo artifacts.
 - Provide seed metadata for a small first dataset.
 - Avoid checking large downloaded datasets into git.
@@ -118,15 +128,16 @@ Stops everything and keeps all data.
 pnpm run start:all
 pnpm run docker:ps
 pnpm run docker:logs
+pnpm run opensearch:verify
 pnpm run sync:dry-run
 pnpm run sync:diff
 pnpm run sync:apply
 pnpm run docker:down
 ```
 
-The API host port is `8080` for the local default. The Angular UI host port is `4200`, the discovery Solr is `8983`, and the application PostgreSQL is `5432`. Do not change these defaults for normal demo work.
+The API host port is `8080` for the local default. The Angular UI host port is `4200`, the discovery Solr is `8983`, OpenSearch is `9200`, and the application PostgreSQL is `5432`. Do not change these defaults for normal demo work.
 
-The application PostgreSQL holds the database `civics_ops` (role `civics`) and contains only application state — currently the `sync_jobs` table. It is not the repository. DSpace owns its own PostgreSQL on `5433` with the database `dspace`, and its own Solr on `8984`. The `discovery` core on `8983` is a projection of DSpace that can be rebuilt at any time with `pnpm run reindex`.
+The application PostgreSQL holds the database `civics_ops` (role `civics`) and contains only application state — currently the `sync_jobs` table. It is not the repository. DSpace owns its own PostgreSQL on `5433` with the database `dspace`, and its own Solr on `8984`. The `discovery` core on `8983` is a projection of DSpace that can be rebuilt at any time with `pnpm run reindex`; OpenSearch on `9200` is reserved for the planned comparison projection.
 
 ## Reset Commands
 
@@ -136,7 +147,7 @@ Use the smallest reset that solves the problem. Every command below except the l
 pnpm run docker:reset:containers
 ```
 
-Stops and removes the application-stack containers (`postgres`, `solr`, `repository-api`, `discovery-ui`). Named volumes survive. Does not stop the DSpace profile.
+Stops and removes the application-stack containers (`postgres`, `solr`, `opensearch`, `repository-api`, `discovery-ui`). Named volumes survive. Does not stop the DSpace profile.
 
 ```bash
 pnpm run start:all:recreate
@@ -154,7 +165,7 @@ Rebuilds the images first, then force-recreates the full stack. Use after changi
 pnpm run docker:reset:everything
 ```
 
-The only destructive command: takes down **every** container in the project, DSpace profile included, and deletes all named volumes. That erases the DSpace assetstore, both databases, and both Solr indexes, so the seed and sync must be run again from scratch. It is named `everything` rather than `volumes` precisely so it cannot be reached for casually.
+The only destructive command: takes down **every** container in the project, DSpace profile included, and deletes all named volumes. That erases the DSpace assetstore, both databases, both Solr indexes, and the OpenSearch comparison index, so the seed and sync must be run again from scratch. It is named `everything` rather than `volumes` precisely so it cannot be reached for casually.
 
 ### Why the scoped commands exist
 
@@ -247,7 +258,7 @@ CloudFront
   -> DSpace REST container
   -> Repository API container (sync orchestration)
   -> RDS PostgreSQL
-  -> Solr with persistent storage or managed search decision
+  -> Solr/OpenSearch with persistent storage or managed search decision
 ```
 
 The AWS path should document tradeoffs between ECS/Fargate and EKS/Kubernetes rather than assuming one is automatically correct.
