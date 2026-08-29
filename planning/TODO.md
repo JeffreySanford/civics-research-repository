@@ -74,7 +74,7 @@ The first vertical slice is implemented: OpenSearch runs beside Solr, both recei
 - [ ] Update generated/admin projection state so the standard reindex response exposes the projection ID consistently.
 - [ ] Add engine-native timing diagnostics (`responseHeader.QTime` for Solr and `took` for OpenSearch) separately from API elapsed time.
 - [ ] Add warm-up and repeated-run measurements before making any performance comparison; report distributions such as p50/p95/p99 rather than a single request.
-- [ ] Add rank/result-set/facet-difference summaries that explain *why* engines differ rather than only showing two columns.
+- [ ] Add rank/result-set/facet-difference summaries that explain _why_ engines differ rather than only showing two columns.
 - [ ] Add phrase search and highlighting after the current test matrix is green.
 - [ ] Add geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the basic comparison path is fully hardened.
 
