@@ -28,6 +28,9 @@ Civics Research Repository is documented as a federal Open Science reference pla
 ## Platform and deployment
 
 - [Docker, DSpace, Solr, OpenSearch and PostgreSQL](docker-dspace-solr-postgres.md): local service responsibilities.
+- [Cloud and Scale Laboratory](cloud/README.md): local Kubernetes/SolrCloud/OpenSearch clustering and 1M+ metadata-corpus experiments.
+- [Local Kubernetes Search Cluster](cloud/local-kubernetes-search-cluster.md): kind topology, SolrCloud, multi-node OpenSearch, resilience and topology-aware benchmarking.
+- [Million-Record Open Science Corpus](cloud/million-record-corpus.md): DOE OSTI, Data.gov, PubMed, NASA CMR and optional OpenAlex scale-source strategy.
 - [AWS Modernization](aws-modernization.md): recommended target, alternate, persistence, observability, backup and migration direction.
 - [Backend Java API](backend-java-api.md): Spring Boot and OpenAPI implementation direction.
 - [Nx/Angular/WCAG](nx-angular-wcag.md): frontend workspace and testing conventions.
