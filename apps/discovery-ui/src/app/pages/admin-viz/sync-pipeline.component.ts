@@ -69,7 +69,8 @@ export class AdminSyncPipelineComponent {
     {
       id: 'solr' as const,
       label: 'Search projections',
-      detail: 'One normalized document set is projected to Solr and OpenSearch.',
+      detail:
+        'One normalized document set is projected to Solr and OpenSearch.',
     },
     {
       id: 'postgres' as const,
