@@ -68,7 +68,7 @@
     "build": "pnpm nx run discovery-ui:build",
     "build:all": "pnpm nx run-many -t build --all",
     "lint": "pnpm nx run-many -t lint --all",
-    "openapi:lint": "pnpm exec redocly lint schemas/openapi/repository-api.yaml",
+    "openapi:lint": "pnpm exec redocly lint --config=.redocly.yaml schemas/openapi/repository-api.yaml",
     "openapi:generate": "pnpm exec openapi-typescript schemas/openapi/repository-api.yaml -o libs/repository/api-client/src/generated/repository-api.types.ts && pnpm exec prettier --write libs/repository/api-client/src/generated/repository-api.types.ts",
     "openapi:check": "node tools/scripts/check-openapi-generated.mjs",
     "test": "pnpm nx run discovery-ui:test",
