@@ -39,8 +39,9 @@ export type PipelineStage =
         }
       </ol>
       <figcaption class="visually-hidden">
-        Request path from Discovery UI through repository-api to DSpace, Solr,
-        and Postgres civics_ops. Active stage: {{ activeStageLabel() }}.
+        Request path from Discovery UI through repository-api to DSpace, the
+        configured search projections, and Postgres civics_ops. Active stage:
+        {{ activeStageLabel() }}.
       </figcaption>
     </figure>
   `,
@@ -67,8 +68,8 @@ export class AdminSyncPipelineComponent {
     },
     {
       id: 'solr' as const,
-      label: 'Discovery Solr',
-      detail: 'Rebuildable search projection on port 8983.',
+      label: 'Search projections',
+      detail: 'One normalized document set is projected to Solr and OpenSearch.',
     },
     {
       id: 'postgres' as const,
