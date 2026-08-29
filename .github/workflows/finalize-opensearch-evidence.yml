@@ -1,0 +1,525 @@
+name: Finalize OpenSearch Evidence
+
+on:
+  push:
+    branches: [codex/opensearch-comparison-demo]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.event.head_commit.message == 'Run final evidence closure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/opensearch-comparison-demo
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Add final comparison evidence and reconcile planning docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old[:80]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          def replace_section(path: str, start: str, end: str, replacement: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              start_index = text.find(start)
+              end_index = text.find(end, start_index + len(start))
+              if start_index < 0 or end_index < 0:
+                  raise SystemExit(f"{path}: unable to locate section {start!r} -> {end!r}")
+              p.write_text(text[:start_index] + replacement.rstrip() + "\n\n" + text[end_index:])
+
+          # Evidence page: reuse the already-tested operational projection component and add an
+          # evidence-classification table that is explicit about what automation can and cannot prove.
+          replace_once(
+              "apps/discovery-ui/src/app/pages/evidence-page.ts",
+              "import {\n  KNOWN_GAPS,",
+              "import { AdminSearchProjectionComponent } from './admin-search-projection.component';\nimport {\n  KNOWN_GAPS,",
+          )
+          replace_once(
+              "apps/discovery-ui/src/app/pages/evidence-page.ts",
+              "  imports: [AsyncPipe, DatePipe, MatProgressSpinnerModule, MatTabsModule],",
+              "  imports: [\n    AsyncPipe,\n    DatePipe,\n    MatProgressSpinnerModule,\n    MatTabsModule,\n    AdminSearchProjectionComponent,\n  ],",
+          )
+
+          evidence_tab = '''    <mat-tab label="Search comparison">
+              <div class="evidence-tab-panel">
+                <app-admin-search-projection />
+
+                <section
+                  aria-labelledby="search-comparison-evidence-heading"
+                  class="content-panel"
+                >
+                  <h2 id="search-comparison-evidence-heading">
+                    Search comparison evidence classes
+                  </h2>
+                  <p>
+                    Projection health above is live operational evidence. The table below explains
+                    the verification layers enforced by the repository and keeps deterministic
+                    fixture evidence, real-stack evidence, performance diagnostics, and manual
+                    accessibility review distinct.
+                  </p>
+
+                  <table class="evidence-table">
+                    <caption>
+                      Search comparison evidence types and verification boundaries
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Evidence</th>
+                        <th scope="col">Class</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">What it proves</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Service, contract, and component tests</th>
+                        <td>Automated CI gate</td>
+                        <td>Enforced</td>
+                        <td>
+                          Request normalization, projection parity decisions, partial-engine
+                          failure behavior, generated contracts, and UI state.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Mocked browser comparison</th>
+                        <td>Deterministic browser evidence</td>
+                        <td>Enforced</td>
+                        <td>
+                          Known comparison scenarios and failure states across Chromium, Firefox,
+                          and WebKit against controlled API fixtures.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Search Lab accessibility</th>
+                        <td>Automated WCAG / Section 508-oriented evidence</td>
+                        <td>Enforced</td>
+                        <td>
+                          Axe and structural accessibility preconditions. It does not replace a
+                          keyboard or screen-reader conformance run.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Live Solr/OpenSearch smoke</th>
+                        <td>Real-stack evidence</td>
+                        <td>Enforced</td>
+                        <td>
+                          Angular -> Spring API -> live Solr + live OpenSearch with the current
+                          deterministic projection rather than mocked engine responses.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Performance distributions</th>
+                        <td>Diagnostic evidence</td>
+                        <td>5 warm-ups / 100 measured</td>
+                        <td>
+                          API elapsed and engine-reported Solr QTime / OpenSearch took are recorded
+                          as separate distributions. Fixed-order local measurements are not a
+                          comparative winner claim.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Keyboard and screen-reader comparison flow</th>
+                        <td>Manual evidence</td>
+                        <td>Pending</td>
+                        <td>
+                          Required before making a manual Search Lab conformance claim. Automated
+                          evidence is not substituted for assistive-technology review.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <p class="warning-message">
+                    Current commit pass/fail status is retained by CI and Browser Evidence. This
+                    runtime page describes evidence boundaries and live projection state; it does
+                    not synthesize a green build status.
+                  </p>
+                </section>
+              </div>
+            </mat-tab>
+          '''
+          replace_once(
+              "apps/discovery-ui/src/app/pages/evidence-page.html",
+              "  </mat-tab-group>",
+              evidence_tab + "  </mat-tab-group>",
+          )
+
+          # The Evidence page now instantiates the projection child in tests, so provide the same
+          # coherent projection/comparison fixtures used by its dedicated component tests.
+          replace_once(
+              "apps/discovery-ui/src/app/pages/evidence-page.a11y.spec.ts",
+              "import { provideNoopAnimations } from '@angular/platform-browser/animations';\n",
+              "import { provideNoopAnimations } from '@angular/platform-browser/animations';\nimport { of } from 'rxjs';\nimport {\n  RepositoryAdminApi,\n  RepositorySearchComparisonApi,\n  type DiscoveryProjectionState,\n  type SearchComparisonResponse,\n} from 'repository-api-client';\n",
+          )
+          replace_once(
+              "apps/discovery-ui/src/app/pages/evidence-page.a11y.spec.ts",
+              "/**\n * Accessibility of the evidence page in states a browser test cannot easily reach.",
+              "const projection: DiscoveryProjectionState = {\n  source: 'REPOSITORY',\n  objectCount: 181,\n  projectionId: 'a'.repeat(64),\n  rebuiltAt: '2026-08-29T19:00:00Z',\n};\n\nconst comparison: SearchComparisonResponse = {\n  scenario: 'FACETED_SEARCH',\n  projection: {\n    source: 'REPOSITORY',\n    objectCount: 181,\n    projectionId: projection.projectionId,\n    rebuiltAt: projection.rebuiltAt,\n  },\n  sameProjection: true,\n  solr: {\n    engine: 'SOLR',\n    enabled: true,\n    reachable: true,\n    indexName: 'discovery',\n    indexedDocumentCount: 181,\n    elapsedMs: 12,\n    engineReportedMs: 4,\n    totalHits: 181,\n    returnedHits: 1,\n    results: [],\n    facets: [],\n  },\n  openSearch: {\n    engine: 'OPENSEARCH',\n    enabled: true,\n    reachable: true,\n    indexName: 'discovery-comparison',\n    indexedDocumentCount: 181,\n    elapsedMs: 18,\n    engineReportedMs: 7,\n    totalHits: 181,\n    returnedHits: 1,\n    results: [],\n    facets: [],\n  },\n};\n\n/**\n * Accessibility of the evidence page in states a browser test cannot easily reach.",
+          )
+          replace_once(
+              "apps/discovery-ui/src/app/pages/evidence-page.a11y.spec.ts",
+              "        provideNoopAnimations(),\n        provideMockStore({",
+              "        provideNoopAnimations(),\n        {\n          provide: RepositoryAdminApi,\n          useValue: { getDiscoveryProjectionState: () => of(projection) },\n        },\n        {\n          provide: RepositorySearchComparisonApi,\n          useValue: { run: () => of(comparison) },\n        },\n        provideMockStore({",
+          )
+          replace_once(
+              "apps/discovery-ui/src/app/pages/evidence-page.a11y.spec.ts",
+              "  it('is accessible with nothing to show', async () => {\n    const fixture = await renderWith(\n      { loading: false, entries: [] },\n      { loading: false, inventory: null, dspace: null, solr: null },\n    );\n\n    await expectNoAxeViolations(fixture.nativeElement);\n  });\n});",
+              "  it('is accessible with nothing to show', async () => {\n    const fixture = await renderWith(\n      { loading: false, entries: [] },\n      { loading: false, inventory: null, dspace: null, solr: null },\n    );\n\n    await expectNoAxeViolations(fixture.nativeElement);\n  });\n\n  it('is accessible while showing search comparison evidence', async () => {\n    const fixture = await renderWith(\n      { loading: false, entries: [] },\n      { loading: false, inventory: null, dspace: null, solr: null },\n    );\n\n    const tabs = Array.from(\n      fixture.nativeElement.querySelectorAll('[role=\"tab\"]') as NodeListOf<HTMLElement>,\n    );\n    const comparisonTab = tabs.find((tab) =>\n      tab.textContent?.includes('Search comparison'),\n    );\n    expect(comparisonTab).toBeTruthy();\n    comparisonTab?.click();\n    fixture.detectChanges();\n    await fixture.whenStable();\n    fixture.detectChanges();\n\n    expect(fixture.nativeElement.textContent).toContain(\n      'Search comparison evidence classes',\n    );\n    await expectNoAxeViolations(fixture.nativeElement);\n  }, 10_000);\n});",
+          )
+
+          Path("apps/discovery-ui-e2e/src/search-comparison-evidence.spec.ts").write_text('''import { expect, test } from '@playwright/test';
+          import { mockRepositoryApi } from './support/repository-api-mocks';
+          import { mockSearchComparisonApi } from './support/search-comparison-mocks';
+
+          test.describe('Evidence search comparison', () => {
+            test.beforeEach(async ({ page }) => {
+              await mockRepositoryApi(page);
+              await mockSearchComparisonApi(page);
+              await page.route('**/api/admin/reindex', async (route) => {
+                await route.fulfill({
+                  contentType: 'application/json',
+                  json: {
+                    source: 'REPOSITORY',
+                    objectCount: 181,
+                    rebuiltAt: '2026-08-29T17:00:00Z',
+                  },
+                });
+              });
+            });
+
+            test('separates deterministic, live, performance, and manual evidence @storyboard @comparison', async ({
+              page,
+            }) => {
+              await page.goto('/evidence');
+              await page.getByRole('tab', { name: 'Search comparison' }).click();
+
+              await expect(
+                page.getByRole('heading', { name: 'Normalize once, project many' }),
+              ).toBeVisible();
+              await expect(page.getByText('Projection parity verified.')).toBeVisible();
+
+              const table = page.getByRole('table', {
+                name: 'Search comparison evidence types and verification boundaries',
+              });
+              await expect(table).toBeVisible();
+              await expect(
+                table.getByRole('rowheader', { name: 'Mocked browser comparison' }),
+              ).toBeVisible();
+              await expect(
+                table.getByRole('rowheader', { name: 'Live Solr/OpenSearch smoke' }),
+              ).toBeVisible();
+              await expect(
+                table.getByRole('rowheader', { name: 'Performance distributions' }),
+              ).toBeVisible();
+              await expect(table.getByText('5 warm-ups / 100 measured')).toBeVisible();
+              await expect(table.getByText(/Solr QTime \/ OpenSearch took/)).toBeVisible();
+              await expect(
+                table.getByRole('rowheader', {
+                  name: 'Keyboard and screen-reader comparison flow',
+                }),
+              ).toBeVisible();
+              await expect(table.getByText('Pending', { exact: true })).toBeVisible();
+              await expect(page.getByText(/does not synthesize a green build status/)).toBeVisible();
+            });
+          });
+          ''')
+
+          # Active backlog: mark only work that is now implemented/enforced; keep manual evidence,
+          # merge-governance decisions, difference diagnostics, and broader scenarios open.
+          todo = Path("planning/TODO.md")
+          text = todo.read_text()
+          completed_todo = [
+              "Add a dedicated or scheduled full Playwright evidence workflow.",
+              "Upload Playwright HTML reports, traces and screenshots when the evidence workflow fails.",
+              "Run the Search Lab comparison scenarios in the dedicated browser workflow.",
+              "Run the Search Lab WCAG/Section 508 axe route in the dedicated browser workflow.",
+              "Add a real-stack smoke path that exercises browser -> Spring API -> Solr + OpenSearch instead of only mocked API routes.",
+              "Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.",
+              "Add `SearchComparisonServiceTest` covering successful dual-engine execution, one-engine-down behavior, one-engine exception isolation, request normalization, engine warnings, current-projection parity and projection mismatch.",
+              "Add `SearchComparisonController` tests for scenario listing and comparison-run delegation/serialization.",
+              "Add Angular Search Lab unit tests for initial state, scenario loading, request construction, successful comparison rendering, partial engine failure and API error handling.",
+              "Add `RepositorySearchComparisonApi` unit tests for scenario and comparison endpoints.",
+              "Add Search Lab to the end-to-end demo storyboard.",
+              "Add a real-stack smoke test that proves the same request reaches live Solr and live OpenSearch through the Spring API.",
+              "Extend Admin Sync from a Solr-only discovery projection view to a **search projection** view that explains DSpace -> normalized `DiscoveryDocument` -> deterministic projection ID -> Solr + OpenSearch.",
+              "Show the current projection ID and expected object count.",
+              "Show per-engine enabled/reachable/projected state, index name, indexed document count, projection ID, parity status and last warning.",
+              "Make the reindex action describe that one normalized document set is projected to every configured target; do not imply that Solr is the only public projection target.",
+              "Preserve the distinction that Solr remains the browser-facing discovery implementation while OpenSearch is currently the comparison target.",
+              "Add unit/accessibility coverage for the new Admin Sync search-projection state.",
+              "Add a Search Engine Comparison evidence section to `/evidence`.",
+              "Surface the deterministic projection ID, normalized object count and whether Solr/OpenSearch parity is verified.",
+              "Surface automated evidence for Search Lab unit/use-case tests, Playwright scenarios, axe coverage and real-stack smoke coverage once each is actually executed.",
+              "Clearly distinguish **automated pass**, **manual pending**, **fixture/mocked browser evidence**, and **real-stack evidence**.",
+              "Do not convert API elapsed time into a production benchmark claim; timing evidence must state the environment and measurement boundary.",
+              "Add evidence-page unit/accessibility coverage for the comparison evidence presentation.",
+              "Update generated/admin projection state so the standard reindex response exposes the projection ID consistently.",
+              "Add engine-native timing diagnostics (`responseHeader.QTime` for Solr and `took` for OpenSearch) separately from API elapsed time.",
+              "Add warm-up and repeated-run measurements before making any performance comparison; report distributions such as p50/p95/p99 rather than a single request.",
+          ]
+          for item in completed_todo:
+              old = f"- [ ] {item}"
+              new = f"- [x] {item}"
+              if old not in text:
+                  raise SystemExit(f"planning/TODO.md: missing checklist item: {item}")
+              text = text.replace(old, new, 1)
+          todo.write_text(text)
+
+          acceptance = Path("planning/ACCEPTANCE_CRITERIA.md")
+          text = acceptance.read_text()
+          completed_acceptance = [
+              "Java comparison service/use-case tests execute successfully for dual-engine success, one-engine-down behavior, failure isolation, normalization, and projection mismatch.",
+              "Comparison controller tests execute successfully.",
+              "Angular Search Lab component and typed API-client unit tests execute successfully.",
+              "Deterministic Playwright comparison scenarios execute successfully.",
+              "Search Lab axe/WCAG/Section 508-oriented route evidence executes successfully.",
+              "Search Lab is included in the executable demo storyboard.",
+              "A real-stack browser smoke test proves Angular -> Spring API -> live Solr + live OpenSearch without API route mocks.",
+              "Dedicated browser CI retains an HTML report and failure traces/screenshots and distinguishes deterministic mocked evidence from real-stack evidence.",
+              "Admin Sync shows the normalized projection, current projection ID, and per-engine Solr/OpenSearch projection health instead of presenting reindexing as Solr-only.",
+              "Evidence contains a Search Engine Comparison section that distinguishes unit/use-case evidence, deterministic mocked browser evidence, live-stack evidence, automated accessibility evidence, and manual evidence.",
+              "Engine-native timing (`Solr QTime`, `OpenSearch took`) is exposed separately from API elapsed time before performance conclusions are made.",
+              "Repeated measurement uses warm-up and distributions such as p50/p95/p99 before any comparative performance claim.",
+              "Broader phrase/highlight/geo/suggest/synonym/vector/hybrid scenarios wait until the current comparison test matrix is green.",
+          ]
+          for item in completed_acceptance:
+              old = f"- [ ] {item}"
+              new = f"- [x] {item}"
+              if old not in text:
+                  raise SystemExit(f"planning/ACCEPTANCE_CRITERIA.md: missing checklist item: {item}")
+              text = text.replace(old, new, 1)
+          acceptance.write_text(text)
+
+          # Roadmap contains future work only: collapse delivered browser/comparison slices into
+          # concise status and leave the actual follow-on decisions/tasks visible.
+          replace_section(
+              "planning/ROADMAP.md",
+              "## 2. Make browser evidence enforceable",
+              "## 3. Harden the Solr/OpenSearch comparison demo",
+              '''## 2. Govern browser evidence as a merge policy
+
+          Dedicated Browser Evidence is implemented and scheduled. It runs deterministic
+          Chromium/Firefox/WebKit comparison and accessibility evidence, preserves HTML reports and
+          failure traces/screenshots, and includes a live Angular -> Spring -> Solr + OpenSearch
+          smoke path. Mocked deterministic evidence and real-stack evidence are labelled separately.
+
+          Remaining governance decisions:
+
+          - Decide which evidence jobs must block merges.
+          - Decide whether `main` receives branch protection and required checks.
+          - Keep the local `evidence:refresh` behavior: a failed run must never replace the prior
+            known-good evidence.''',
+          )
+          replace_section(
+              "planning/ROADMAP.md",
+              "### 3.1 Test the service boundaries first",
+              "### 3.2 Make Admin Sync explain the projection model",
+              '''### 3.1 Keep the implemented test matrix as the expansion gate
+
+          The comparison service/controller, Angular component/client, OpenSearch request semantics,
+          deterministic Playwright scenarios, axe route, storyboard, and live-stack smoke are all
+          implemented. Future comparison behavior must extend those layers rather than bypassing
+          them.''',
+          )
+          replace_section(
+              "planning/ROADMAP.md",
+              "### 3.2 Make Admin Sync explain the projection model",
+              "### 3.3 Make Evidence explain what is verified",
+              '''### 3.2 Keep Admin Sync as the operational projection view
+
+          Admin Sync now explains DSpace -> normalized `DiscoveryDocument` -> deterministic
+          projection ID -> Solr + OpenSearch, including per-target liveness/parity and the distinction
+          between public Solr discovery and the OpenSearch comparison target. Future work should
+          extend this operational vocabulary rather than return to Solr-only language.''',
+          )
+          replace_section(
+              "planning/ROADMAP.md",
+              "### 3.3 Make Evidence explain what is verified",
+              "### 3.4 Improve diagnostics before broader search features",
+              '''### 3.3 Keep Evidence explicit about verification boundaries
+
+          Evidence now includes live projection/parity state plus a Search Engine Comparison section
+          that separates unit/use-case gates, deterministic mocked browser evidence, automated
+          WCAG/Section 508-oriented evidence, real-stack smoke evidence, repeated performance
+          diagnostics, and manual keyboard/screen-reader work that remains pending.
+
+          The runtime page does not synthesize current CI success. Exact commit validation remains a
+          CI/PR artifact.''',
+          )
+          replace_section(
+              "planning/ROADMAP.md",
+              "### 3.4 Improve diagnostics before broader search features",
+              "### 3.5 Expand scenarios only after hardening",
+              '''### 3.4 Improve explanatory diagnostics before broader search features
+
+          Engine-native Solr `QTime` / OpenSearch `took` and repeated warm-up/p50/p95/p99 tooling are
+          implemented separately from API elapsed timing. Remaining diagnostic work:
+
+          - Add result-set, rank-order and facet-bucket difference summaries so the UI explains
+            semantic differences.
+          - Record richer environment details for scale testing: index/shard/replica configuration,
+            JVM/container context and concurrency.
+          - Repeat at materially larger index sizes before drawing scaling conclusions.
+          - Keep the UI warning that local/container timings are diagnostic evidence, not production
+            benchmarks.''',
+          )
+
+          replace_section(
+              "documentation/search-comparison-demo.md",
+              "## Admin Sync Integration Plan",
+              "## Evidence Page Integration Plan",
+              '''## Admin Sync Operational Evidence
+
+          Admin Sync now presents search projection operations rather than a Solr-only terminal view.
+          It shows DSpace as the system-of-record input, normalized object count, deterministic
+          projection identity, Solr public-discovery target state, OpenSearch comparison-target state,
+          document counts, parity, warnings and the multi-target rebuild model: **normalize once,
+          project many**.
+
+          The operational probe intentionally omits request timing. Search Lab and the benchmark
+          harness own query/performance diagnostics.''',
+          )
+          replace_section(
+              "documentation/search-comparison-demo.md",
+              "## Evidence Page Integration Plan",
+              "## Testing-First Completion Rule",
+              '''## Evidence Page Integration
+
+          `/evidence` now contains a **Search comparison** tab. It combines live projection/parity
+          state with an explicit evidence-classification table covering:
+
+          - service/contract/component CI gates,
+          - deterministic mocked browser evidence,
+          - automated WCAG/Section 508-oriented evidence,
+          - live Solr/OpenSearch smoke evidence,
+          - repeated performance diagnostics,
+          - manual keyboard/screen-reader evidence that remains pending.
+
+          The runtime page does not infer that the current commit is green. Exact pass/fail state is
+          retained by CI and Browser Evidence.''',
+          )
+          replace_section(
+              "documentation/search-comparison-demo.md",
+              "## Measurement: What the Current Numbers Mean",
+              "## Scaling and Nodes",
+              '''## Measurement: API and Engine-Reported Boundaries
+
+          Search comparison now exposes two different timing boundaries from the same execution:
+
+          ```text
+          Solr
+          API elapsed:       N ms
+          Solr QTime:        N ms
+
+          OpenSearch
+          API elapsed:       N ms
+          OpenSearch took:   N ms
+          ```
+
+          API elapsed measures the Spring-side round trip to the engine. `QTime` and `took` are parsed
+          from the same engine response that supplied the results, so no second timing-only request is
+          issued. The vendor metrics are labelled **engine reported** because their definitions are
+          not identical.
+
+          Browser Evidence also runs a repeated benchmark with 5 discarded warm-ups and 100 measured
+          requests, reporting min/mean/p50/p95/p99/max for API elapsed and engine-reported series.
+          Projection identity must remain stable and both engines must remain reachable for a run to
+          be accepted. Fixed Solr-then-OpenSearch execution order is recorded, so the artifact does
+          not make a comparative winner claim.
+
+          Detailed protocol and baseline numbers are documented in
+          [Search Performance Evidence](search-performance-evidence.md).''',
+          )
+          replace_section(
+              "documentation/search-comparison-demo.md",
+              "## Next Timing Improvements",
+              "## Why OpenSearch Can Still Be Strategically Interesting",
+              '''## Remaining Timing Improvements
+
+          The next performance work is about scale and experimental design rather than adding more
+          stopwatch fields:
+
+          1. record shard/replica/node topology and concurrency with benchmark artifacts,
+          2. balance or randomize engine execution order for comparative experiments,
+          3. repeat at materially larger index sizes such as 10,000, 100,000 and 1,000,000 documents,
+          4. add result/rank/facet difference summaries alongside timing,
+          5. avoid production-speed claims until topology, data volume and concurrency are realistic.''',
+          )
+
+          replace_once(
+              "documentation/README.md",
+              "- [Solr and OpenSearch Comparison Demo](search-comparison-demo.md): side-by-side search scenarios, API shape, indexing parity and measurement boundaries.\n",
+              "- [Solr and OpenSearch Comparison Demo](search-comparison-demo.md): side-by-side search scenarios, API shape, indexing parity and measurement boundaries.\n- [Search Performance Evidence](search-performance-evidence.md): warm-up/repeated-run protocol, API-versus-engine timing boundaries and interpretation guardrails.\n",
+          )
+          PY
+
+      - name: Format closure files
+        run: >-
+          pnpm exec prettier --write
+          apps/discovery-ui/src/app/pages/evidence-page.ts
+          apps/discovery-ui/src/app/pages/evidence-page.html
+          apps/discovery-ui/src/app/pages/evidence-page.a11y.spec.ts
+          apps/discovery-ui-e2e/src/search-comparison-evidence.spec.ts
+          documentation/README.md
+          documentation/search-comparison-demo.md
+          documentation/search-performance-evidence.md
+          planning/TODO.md
+          planning/ROADMAP.md
+          planning/ACCEPTANCE_CRITERIA.md
+
+      - name: Validate focused closure gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec nx format:check --all
+          pnpm exec nx run discovery-ui:lint
+          pnpm exec nx run discovery-ui-e2e:lint
+          pnpm exec nx test discovery-ui
+          node --test tools/scripts/search-comparison-benchmark.test.mjs
+          git diff --check
+
+      - name: Commit final evidence closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/finalize-opensearch-evidence.yml
+          git config user.name 'Jeffrey Sanford'
+          git config user.email 'jeffrey_sanford@hotmail.com'
+          git add \
+            apps/discovery-ui/src/app/pages/evidence-page.ts \
+            apps/discovery-ui/src/app/pages/evidence-page.html \
+            apps/discovery-ui/src/app/pages/evidence-page.a11y.spec.ts \
+            apps/discovery-ui-e2e/src/search-comparison-evidence.spec.ts \
+            documentation/README.md \
+            documentation/search-comparison-demo.md \
+            documentation/search-performance-evidence.md \
+            planning/TODO.md \
+            planning/ROADMAP.md \
+            planning/ACCEPTANCE_CRITERIA.md
+          git commit -m 'Finish comparison evidence and branch closure'
+          git push origin HEAD:codex/opensearch-comparison-demo
