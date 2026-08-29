@@ -1,0 +1,35 @@
+name: Format Diagnostic
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  formatter-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Print formatter diff
+        shell: bash
+        run: |
+          pnpm exec nx format:write --all
+          git diff -- \
+            apps/discovery-ui/src/app/pages/admin-search-projection.component.a11y.spec.ts \
+            apps/discovery-ui/src/app/pages/admin-search-projection.component.ts \
+            apps/discovery-ui/src/app/pages/admin-sync-page.html
+          exit 1
