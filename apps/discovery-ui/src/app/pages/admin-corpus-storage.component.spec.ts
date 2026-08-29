@@ -84,8 +84,8 @@ describe('AdminCorpusStorageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Corpus scale & local storage',
     );
-    expect(fixture.nativeElement.textContent).toContain(
-      'Active search profile Curated demo',
+    expect(fixture.nativeElement.textContent).toMatch(
+      /Active search profile\s*Curated demo/,
     );
     expect(fixture.nativeElement.textContent).toContain('Known measured total');
 
