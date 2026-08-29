@@ -34,7 +34,9 @@ test.describe('Search Lab real stack', () => {
       name: 'Same input before engine differences',
     });
     await expect(projectionSection).toBeVisible();
-    await expect(page.locator('.projection-id code')).toHaveText(/[0-9a-f]{64}/);
+    await expect(page.locator('.projection-id code')).toHaveText(
+      /[0-9a-f]{64}/,
+    );
 
     const solrCard = page.locator('article').filter({
       has: page.getByRole('heading', { name: 'Solr', exact: true }),
