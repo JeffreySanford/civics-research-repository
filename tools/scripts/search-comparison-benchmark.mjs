@@ -10,14 +10,18 @@ const MAX_MEASURED_RUNS = 100;
 
 function requireBoundedInteger(value, label, minimum, maximum) {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
-    throw new Error(`${label} must be an integer from ${minimum} to ${maximum}.`);
+    throw new Error(
+      `${label} must be an integer from ${minimum} to ${maximum}.`,
+    );
   }
   return value;
 }
 
 function requireTiming(value, label) {
   if (!Number.isFinite(value) || value < 0) {
-    throw new Error(`${label} must be a finite, non-negative millisecond value.`);
+    throw new Error(
+      `${label} must be a finite, non-negative millisecond value.`,
+    );
   }
   return value;
 }
@@ -30,7 +34,9 @@ export function nearestRankPercentile(values, percentile) {
     throw new Error('Percentile must be greater than 0 and no greater than 1.');
   }
 
-  const sorted = values.map((value) => requireTiming(value, 'Timing sample')).sort((a, b) => a - b);
+  const sorted = values
+    .map((value) => requireTiming(value, 'Timing sample'))
+    .sort((a, b) => a - b);
   const rank = Math.max(1, Math.ceil(percentile * sorted.length));
   return sorted[rank - 1];
 }
@@ -40,7 +46,9 @@ export function summarizeTimingSamples(values) {
     throw new Error('At least one measured timing sample is required.');
   }
 
-  const sorted = values.map((value) => requireTiming(value, 'Timing sample')).sort((a, b) => a - b);
+  const sorted = values
+    .map((value) => requireTiming(value, 'Timing sample'))
+    .sort((a, b) => a - b);
   const total = sorted.reduce((sum, value) => sum + value, 0);
 
   return {
@@ -56,25 +64,38 @@ export function summarizeTimingSamples(values) {
 
 function validateEngine(engine, label) {
   if (!engine?.enabled) {
-    throw new Error(`${label} is disabled; refusing to record a comparison benchmark.`);
+    throw new Error(
+      `${label} is disabled; refusing to record a comparison benchmark.`,
+    );
   }
   if (!engine.reachable) {
-    throw new Error(`${label} is not reachable; refusing to record a comparison benchmark.`);
+    throw new Error(
+      `${label} is not reachable; refusing to record a comparison benchmark.`,
+    );
   }
   requireTiming(engine.elapsedMs, `${label} elapsedMs`);
 }
 
 function validateResponse(response, expectedProjectionId) {
   if (!response?.sameProjection) {
-    throw new Error('Solr and OpenSearch are not on the same deterministic projection.');
+    throw new Error(
+      'Solr and OpenSearch are not on the same deterministic projection.',
+    );
   }
 
   const projectionId = response?.projection?.projectionId;
-  if (typeof projectionId !== 'string' || !/^[0-9a-f]{64}$/.test(projectionId)) {
-    throw new Error('Comparison response does not contain a valid deterministic projection ID.');
+  if (
+    typeof projectionId !== 'string' ||
+    !/^[0-9a-f]{64}$/.test(projectionId)
+  ) {
+    throw new Error(
+      'Comparison response does not contain a valid deterministic projection ID.',
+    );
   }
   if (expectedProjectionId && projectionId !== expectedProjectionId) {
-    throw new Error('Projection changed while timing samples were being collected.');
+    throw new Error(
+      'Projection changed while timing samples were being collected.',
+    );
   }
 
   validateEngine(response.solr, 'Solr');
@@ -115,7 +136,9 @@ export async function runSearchComparisonBenchmark({
       body: JSON.stringify(request),
     });
     if (!httpResponse.ok) {
-      throw new Error(`Comparison request failed with HTTP ${httpResponse.status}.`);
+      throw new Error(
+        `Comparison request failed with HTTP ${httpResponse.status}.`,
+      );
     }
 
     const response = await httpResponse.json();
@@ -235,7 +258,10 @@ async function main() {
   console.log(result.caveat);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;

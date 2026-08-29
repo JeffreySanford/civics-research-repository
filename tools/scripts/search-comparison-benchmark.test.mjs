@@ -8,7 +8,11 @@ import {
 
 const PROJECTION_ID = 'a'.repeat(64);
 
-function comparisonResponse(solrElapsedMs, openSearchElapsedMs, projectionId = PROJECTION_ID) {
+function comparisonResponse(
+  solrElapsedMs,
+  openSearchElapsedMs,
+  projectionId = PROJECTION_ID,
+) {
   return {
     scenario: 'FULL_TEXT_RELEVANCE',
     projection: {
@@ -97,7 +101,10 @@ test('benchmark excludes warmups and reports measured distributions only', async
   });
 
   assert.equal(requests.length, 7);
-  assert.equal(requests[0].url, 'http://repository.test/api/search/comparison/run');
+  assert.equal(
+    requests[0].url,
+    'http://repository.test/api/search/comparison/run',
+  );
   assert.equal(requests[0].init.method, 'POST');
   assert.equal(result.projection.projectionId, PROJECTION_ID);
   assert.equal(result.warmupRuns, 2);
