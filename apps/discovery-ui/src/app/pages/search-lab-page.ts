@@ -142,7 +142,8 @@ export class SearchLabPage implements OnInit {
         },
         error: (error: unknown) => {
           this.error.set(
-            parseRepositoryError(error, 'Search comparison failed to run.'),
+            parseRepositoryError(error, 'Search comparison failed to run.')
+              .message,
           );
         },
       });
@@ -182,7 +183,7 @@ export class SearchLabPage implements OnInit {
             parseRepositoryError(
               error,
               'Search comparison scenarios failed to load.',
-            ),
+            ).message,
           ),
       });
   }
