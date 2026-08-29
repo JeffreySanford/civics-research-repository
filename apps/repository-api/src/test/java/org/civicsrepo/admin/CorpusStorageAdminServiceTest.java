@@ -40,7 +40,8 @@ class CorpusStorageAdminServiceTest {
         given(store.findRecentByProfile(CorpusProfile.FEDERATED_1M, 1)).willReturn(List.of());
         given(store.findRecentByProfile(CorpusProfile.FULL, 1)).willReturn(List.of());
 
-        CorpusStorageAdminService service = new CorpusStorageAdminService(store, captureService);
+        CorpusStorageAdminService service =
+                new CorpusStorageAdminService(store, captureService, "DOCKER_COMPOSE");
 
         var overview = service.overview();
 
@@ -67,7 +68,8 @@ class CorpusStorageAdminServiceTest {
         given(captureService.capture(CorpusProfile.CURATED_DEMO, DeploymentTopology.DOCKER_COMPOSE))
                 .willReturn(CURATED_MEASUREMENT);
 
-        CorpusStorageAdminService service = new CorpusStorageAdminService(store, captureService);
+        CorpusStorageAdminService service =
+                new CorpusStorageAdminService(store, captureService, "DOCKER_COMPOSE");
 
         var captured = service.captureCurrent();
 
