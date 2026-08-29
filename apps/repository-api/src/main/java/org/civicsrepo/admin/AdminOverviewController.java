@@ -1,19 +1,22 @@
 package org.civicsrepo.admin;
 
-import org.civicsrepo.generated.dto.DspaceOverview;
-import org.civicsrepo.generated.dto.SolrOverview;
-import org.civicsrepo.generated.dto.SourceInventory;
 import java.util.List;
+import org.civicsrepo.generated.dto.CorpusStorageMeasurement;
+import org.civicsrepo.generated.dto.CorpusStorageOverview;
+import org.civicsrepo.generated.dto.DspaceOverview;
 import org.civicsrepo.generated.dto.RepositoryIdentityRecord;
 import org.civicsrepo.generated.dto.RepositoryIdentitySummary;
+import org.civicsrepo.generated.dto.SolrOverview;
+import org.civicsrepo.generated.dto.SourceInventory;
 import org.civicsrepo.repository.RepositoryIdentity;
 import org.civicsrepo.repository.RepositoryIdentityStore;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Admin overview endpoints for DSpace and Solr education plus live stats.
+ * Admin overview endpoints for repository/search education plus live operational evidence.
  *
  * <p>Unauthenticated for the same deliberate local-demo reasons as sync endpoints; see
  * planning/DECISIONS.md under "Admin API Authentication".
@@ -22,19 +25,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin")
 public class AdminOverviewController {
     private final AdminOverviewService adminOverviewService;
+    private final CorpusStorageAdminService corpusStorageAdminService;
     private final RepositoryIdentityStore repositoryIdentityStore;
     private final SourceInventoryService sourceInventoryService;
 
     public AdminOverviewController(
-            AdminOverviewService adminOverviewService, SourceInventoryService sourceInventoryService, RepositoryIdentityStore repositoryIdentityStore) {
+            AdminOverviewService adminOverviewService,
+            CorpusStorageAdminService corpusStorageAdminService,
+            SourceInventoryService sourceInventoryService,
+            RepositoryIdentityStore repositoryIdentityStore) {
         this.repositoryIdentityStore = repositoryIdentityStore;
         this.adminOverviewService = adminOverviewService;
+        this.corpusStorageAdminService = corpusStorageAdminService;
         this.sourceInventoryService = sourceInventoryService;
     }
 
     @GetMapping("/dspace/overview")
     public DspaceOverview dspaceOverview() {
         return adminOverviewService.dspaceOverview();
+    }
+
+    @GetMapping("/corpus/storage")
+    public CorpusStorageOverview corpusStorageOverview() {
+        return corpusStorageAdminService.overview();
+    }
+
+    @PostMapping("/corpus/storage/capture")
+    public CorpusStorageMeasurement captureCorpusStorage() {
+        return corpusStorageAdminService.captureCurrent();
     }
 
     @GetMapping("/solr/overview")
