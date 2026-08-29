@@ -1,11 +1,11 @@
 import { firstValueFrom, of } from 'rxjs';
 import {
-  RepositoryAdminApi,
+  RepositoryCorpusStorageApi,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
-} from './repository-api-client';
+} from './corpus-storage-api';
 
-describe('RepositoryAdminApi corpus storage', () => {
+describe('RepositoryCorpusStorageApi', () => {
   const measurement: CorpusStorageMeasurement = {
     id: 'measurement-1',
     profile: 'CURATED_DEMO',
@@ -41,7 +41,10 @@ describe('RepositoryAdminApi corpus storage', () => {
 
   it('loads corpus profile and storage history', async () => {
     const http = { get: vi.fn(() => of(overview)) };
-    const api = new RepositoryAdminApi(http as never, 'http://api.test/api');
+    const api = new RepositoryCorpusStorageApi(
+      http as never,
+      'http://api.test/api',
+    );
 
     await expect(firstValueFrom(api.getCorpusStorageOverview())).resolves.toBe(
       overview,
@@ -53,7 +56,10 @@ describe('RepositoryAdminApi corpus storage', () => {
 
   it('captures the currently active corpus footprint without accepting a profile argument', async () => {
     const http = { post: vi.fn(() => of(measurement)) };
-    const api = new RepositoryAdminApi(http as never, 'http://api.test/api');
+    const api = new RepositoryCorpusStorageApi(
+      http as never,
+      'http://api.test/api',
+    );
 
     await expect(firstValueFrom(api.captureCorpusStorage())).resolves.toBe(
       measurement,
