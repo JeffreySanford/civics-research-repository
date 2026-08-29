@@ -53,6 +53,10 @@ test.describe('Search Lab real stack', () => {
     await expect(
       openSearchCard.getByText('discovery-comparison', { exact: true }),
     ).toBeVisible();
+    await expect(solrCard.getByText('Engine reported (QTime)')).toBeVisible();
+    await expect(
+      openSearchCard.getByText('Engine reported (took)'),
+    ).toBeVisible();
 
     // The smoke test verifies the live infrastructure path, not relative performance.
     await expect(

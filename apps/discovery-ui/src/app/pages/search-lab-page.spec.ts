@@ -50,6 +50,7 @@ const SUCCESS_RESPONSE: SearchComparisonResponse = {
     engine: 'SOLR',
     indexName: 'discovery',
     elapsedMs: 20,
+    engineReportedMs: 6,
     totalHits: 3,
   },
   openSearch: {
@@ -57,6 +58,7 @@ const SUCCESS_RESPONSE: SearchComparisonResponse = {
     engine: 'OPENSEARCH',
     indexName: 'discovery-comparison',
     elapsedMs: 46,
+    engineReportedMs: 11,
     totalHits: 3,
   },
 };
@@ -149,6 +151,14 @@ describe('SearchLabPage', () => {
     );
     expect(fixture.nativeElement.textContent).toContain('20 ms');
     expect(fixture.nativeElement.textContent).toContain('46 ms');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Engine reported (QTime)',
+    );
+    expect(fixture.nativeElement.textContent).toContain(
+      'Engine reported (took)',
+    );
+    expect(fixture.nativeElement.textContent).toContain('6 ms');
+    expect(fixture.nativeElement.textContent).toContain('11 ms');
   });
 
   it('keeps useful Solr evidence visible when OpenSearch is unavailable', async () => {

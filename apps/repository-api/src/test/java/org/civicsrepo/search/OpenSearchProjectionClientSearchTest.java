@@ -39,7 +39,7 @@ class OpenSearchProjectionClientSearchTest {
 
     @Test
     void searchUsesComparableSelfExcludingAggregations() throws Exception {
-        client.search(
+        SearchExecution execution = client.searchWithDiagnostics(
                 "North Dakota workforce",
                 List.of(ResearchProgram.LODES),
                 "North Dakota",
@@ -47,6 +47,8 @@ class OpenSearchProjectionClientSearchTest {
                 2023,
                 0,
                 10);
+
+        assertThat(execution.engineReportedMs()).isEqualTo(11L);
 
         JsonNode request = objectMapper.readTree(requestBody.get());
         JsonNode aggregations = request.path("aggs");
@@ -82,6 +84,7 @@ class OpenSearchProjectionClientSearchTest {
         requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
         byte[] response = """
                 {
+                  "took": 11,
                   "hits": {"total": {"value": 0}, "hits": []},
                   "aggregations": {
                     "program_scope": {"values": {"buckets": []}},

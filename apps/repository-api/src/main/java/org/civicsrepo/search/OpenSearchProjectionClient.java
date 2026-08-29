@@ -146,6 +146,17 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             Integer vintageYear,
             int page,
             int pageSize) {
+        return searchWithDiagnostics(query, programs, geography, contentType, vintageYear, page, pageSize).response();
+    }
+
+    public SearchExecution searchWithDiagnostics(
+            String query,
+            List<ResearchProgram> programs,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
         if (!isEnabled()) {
             throw new IllegalStateException("OpenSearch comparison is disabled.");
         }
@@ -165,15 +176,18 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             if (response.statusCode() >= 300) {
                 throw new IllegalStateException("OpenSearch search failed with HTTP " + response.statusCode());
             }
-            return toSearchResponse(
-                    query,
-                    programs,
-                    geography,
-                    contentType,
-                    vintageYear,
-                    safePage,
-                    safePageSize,
-                    response.body());
+            String responseBody = response.body();
+            return new SearchExecution(
+                    toSearchResponse(
+                            query,
+                            programs,
+                            geography,
+                            contentType,
+                            vintageYear,
+                            safePage,
+                            safePageSize,
+                            responseBody),
+                    engineReportedMillis(responseBody));
         } catch (IOException exception) {
             throw new IllegalStateException("OpenSearch search request failed.", exception);
         } catch (InterruptedException exception) {
@@ -374,6 +388,11 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                 selectedVintageYear == null
                                         ? Set.of()
                                         : Set.of(normalize(String.valueOf(selectedVintageYear))))));
+    }
+
+    private Long engineReportedMillis(String responseBody) throws IOException {
+        JsonNode took = objectMapper.readTree(responseBody).path("took");
+        return took.isNumber() ? Math.max(0L, took.asLong()) : null;
     }
 
     private FacetGroup facetGroup(String field, String label, JsonNode buckets, Set<String> selected) {

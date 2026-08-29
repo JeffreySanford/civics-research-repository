@@ -448,6 +448,11 @@ export interface components {
        * @description Local API elapsed time around the engine request, not a production benchmark.
        */
       elapsedMs: number;
+      /**
+       * Format: int64
+       * @description Timing reported by the engine in the same response that produced these results: Solr responseHeader.QTime or OpenSearch took. Vendor definitions differ, so these values are diagnostic and are not directly equivalent performance measures.
+       */
+      engineReportedMs?: number;
       totalHits?: number;
       returnedHits: number;
       results: components['schemas']['SearchResult'][];

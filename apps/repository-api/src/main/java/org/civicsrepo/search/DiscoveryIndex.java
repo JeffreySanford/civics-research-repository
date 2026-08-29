@@ -30,4 +30,19 @@ public interface DiscoveryIndex extends DiscoveryProjectionTarget {
             Integer vintageYear,
             int page,
             int pageSize);
+
+    /**
+     * Runs the same search while retaining engine-native timing when an implementation exposes it.
+     * The default preserves compatibility for alternate discovery-index implementations.
+     */
+    default SearchExecution searchWithDiagnostics(
+            String query,
+            List<ResearchProgram> programs,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
+        return new SearchExecution(search(query, programs, geography, contentType, vintageYear, page, pageSize), null);
+    }
 }

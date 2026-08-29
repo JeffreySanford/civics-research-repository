@@ -173,8 +173,10 @@
         <h2 id="engine-results-heading">Engine results</h2>
       </div>
       <p>
-        Elapsed time wraps the engine request from this local API process. It is
-        useful for this run only and is not a production performance claim.
+        API elapsed time wraps the engine request from this local API process.
+        Engine-reported time comes from the same result response: Solr QTime or
+        OpenSearch took. Their vendor definitions differ, so neither value is a
+        production performance claim or a direct cross-engine verdict.
       </p>
     </div>
 
@@ -199,9 +201,15 @@
             <dd>{{ comparison.solr.indexedDocumentCount ?? 'Unknown' }}</dd>
           </div>
           <div>
-            <dt>Elapsed</dt>
+            <dt>API elapsed</dt>
             <dd>{{ comparison.solr.elapsedMs }} ms</dd>
           </div>
+          @if (comparison.solr.engineReportedMs !== undefined) {
+          <div>
+            <dt>Engine reported (QTime)</dt>
+            <dd>{{ comparison.solr.engineReportedMs }} ms</dd>
+          </div>
+          }
           <div>
             <dt>Total hits</dt>
             <dd>{{ comparison.solr.totalHits ?? 'Unavailable' }}</dd>
@@ -287,9 +295,15 @@
             </dd>
           </div>
           <div>
-            <dt>Elapsed</dt>
+            <dt>API elapsed</dt>
             <dd>{{ comparison.openSearch.elapsedMs }} ms</dd>
           </div>
+          @if (comparison.openSearch.engineReportedMs !== undefined) {
+          <div>
+            <dt>Engine reported (took)</dt>
+            <dd>{{ comparison.openSearch.engineReportedMs }} ms</dd>
+          </div>
+          }
           <div>
             <dt>Total hits</dt>
             <dd>{{ comparison.openSearch.totalHits ?? 'Unavailable' }}</dd>

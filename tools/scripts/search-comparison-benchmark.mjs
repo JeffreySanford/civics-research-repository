@@ -74,6 +74,7 @@ function validateEngine(engine, label) {
     );
   }
   requireTiming(engine.elapsedMs, `${label} elapsedMs`);
+  requireTiming(engine.engineReportedMs, `${label} engineReportedMs`);
 }
 
 function validateResponse(response, expectedProjectionId) {
@@ -128,6 +129,8 @@ export async function runSearchComparisonBenchmark({
   let projection = null;
   const solrSamples = [];
   const openSearchSamples = [];
+  const solrEngineSamples = [];
+  const openSearchEngineSamples = [];
 
   const execute = async (recordSample) => {
     const httpResponse = await fetchImpl(endpoint, {
@@ -148,6 +151,8 @@ export async function runSearchComparisonBenchmark({
     if (recordSample) {
       solrSamples.push(response.solr.elapsedMs);
       openSearchSamples.push(response.openSearch.elapsedMs);
+      solrEngineSamples.push(response.solr.engineReportedMs);
+      openSearchEngineSamples.push(response.openSearch.engineReportedMs);
     }
   };
 
@@ -162,11 +167,11 @@ export async function runSearchComparisonBenchmark({
     kind: 'local-search-comparison-diagnostic',
     capturedAt: now().toISOString(),
     measurementBoundary:
-      'Spring API elapsed time around each engine HTTP request. It includes local HTTP serialization/transport plus engine work, and excludes browser-to-repository-API latency.',
+      'API elapsed measures Spring around each engine HTTP request. Engine-reported timing is captured from that same response (Solr QTime / OpenSearch took); vendor definitions differ and are not directly equivalent.',
     executionOrder: 'SOLR_THEN_OPENSEARCH',
     comparativeClaimAllowed: false,
     caveat:
-      'Warm-up runs are excluded, but engine order is fixed and this is a single local/container topology. Use these distributions as diagnostics, not as proof that either engine is inherently faster in production.',
+      'Warm-up runs are excluded, but engine order is fixed and this is a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Use these distributions as diagnostics, not as proof that either engine is inherently faster in production.',
     endpoint,
     request,
     projection,
@@ -175,10 +180,12 @@ export async function runSearchComparisonBenchmark({
     solr: {
       engine: 'SOLR',
       elapsed: summarizeTimingSamples(solrSamples),
+      engineReported: summarizeTimingSamples(solrEngineSamples),
     },
     openSearch: {
       engine: 'OPENSEARCH',
       elapsed: summarizeTimingSamples(openSearchSamples),
+      engineReported: summarizeTimingSamples(openSearchEngineSamples),
     },
   };
 }
@@ -256,6 +263,12 @@ async function main() {
   );
   console.log(
     `OpenSearch API elapsed p50/p95/p99: ${result.openSearch.elapsed.p50Ms}/${result.openSearch.elapsed.p95Ms}/${result.openSearch.elapsed.p99Ms} ms`,
+  );
+  console.log(
+    `Solr QTime p50/p95/p99: ${result.solr.engineReported.p50Ms}/${result.solr.engineReported.p95Ms}/${result.solr.engineReported.p99Ms} ms`,
+  );
+  console.log(
+    `OpenSearch took p50/p95/p99: ${result.openSearch.engineReported.p50Ms}/${result.openSearch.engineReported.p95Ms}/${result.openSearch.engineReported.p99Ms} ms`,
   );
   console.log(result.caveat);
 }

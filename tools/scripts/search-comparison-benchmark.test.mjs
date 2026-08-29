@@ -29,6 +29,7 @@ function comparisonResponse(
       reachable: true,
       indexName: 'discovery',
       elapsedMs: solrElapsedMs,
+      engineReportedMs: solrElapsedMs,
       returnedHits: 2,
       results: [],
       facets: [],
@@ -39,6 +40,7 @@ function comparisonResponse(
       reachable: true,
       indexName: 'discovery-comparison',
       elapsedMs: openSearchElapsedMs,
+      engineReportedMs: openSearchElapsedMs,
       returnedHits: 2,
       results: [],
       facets: [],
@@ -134,9 +136,12 @@ test('benchmark excludes warmups and reports measured distributions only', async
   assert.equal(result.openSearch.elapsed.p50Ms, 32);
   assert.equal(result.openSearch.elapsed.p95Ms, 52);
   assert.equal(result.openSearch.elapsed.maxMs, 52);
+  assert.equal(result.solr.engineReported.sampleCount, 5);
+  assert.equal(result.solr.engineReported.p50Ms, 30);
+  assert.equal(result.openSearch.engineReported.p95Ms, 52);
   assert.equal(result.comparativeClaimAllowed, false);
   assert.equal(result.executionOrder, 'SOLR_THEN_OPENSEARCH');
-  assert.match(result.measurementBoundary, /Spring API elapsed time/);
+  assert.match(result.measurementBoundary, /API elapsed measures Spring/);
   assert.match(result.caveat, /not as proof/);
 });
 

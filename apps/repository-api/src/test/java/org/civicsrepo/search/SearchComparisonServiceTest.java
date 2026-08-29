@@ -57,10 +57,10 @@ class SearchComparisonServiceTest {
     void runsBothEnginesAgainstTheSameNormalizedRequestAndVerifiesParity() {
         available(solr);
         available(openSearch);
-        when(solr.search("North Dakota workforce", List.of(ResearchProgram.LODES), "North Dakota", ResearchObjectType.DATASET, 2023, 0, 25))
-                .thenReturn(response(3));
-        when(openSearch.search("North Dakota workforce", List.of(ResearchProgram.LODES), "North Dakota", ResearchObjectType.DATASET, 2023, 0, 25))
-                .thenReturn(response(3));
+        when(solr.searchWithDiagnostics("North Dakota workforce", List.of(ResearchProgram.LODES), "North Dakota", ResearchObjectType.DATASET, 2023, 0, 25))
+                .thenReturn(execution(3, 6));
+        when(openSearch.searchWithDiagnostics("North Dakota workforce", List.of(ResearchProgram.LODES), "North Dakota", ResearchObjectType.DATASET, 2023, 0, 25))
+                .thenReturn(execution(3, 11));
 
         SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FACETED_SEARCH)
                 .query("North Dakota workforce")
@@ -81,6 +81,8 @@ class SearchComparisonServiceTest {
         assertThat(result.getOpenSearch().getEngine()).isEqualTo(SearchComparisonEngine.OPENSEARCH);
         assertThat(result.getSolr().getTotalHits()).isEqualTo(3);
         assertThat(result.getOpenSearch().getTotalHits()).isEqualTo(3);
+        assertThat(result.getSolr().getEngineReportedMs()).isEqualTo(6L);
+        assertThat(result.getOpenSearch().getEngineReportedMs()).isEqualTo(11L);
     }
 
     @Test
@@ -88,8 +90,8 @@ class SearchComparisonServiceTest {
         available(solr);
         when(openSearch.isEnabled()).thenReturn(true);
         when(openSearch.isReachable()).thenReturn(false);
-        when(solr.search(any(), anyList(), isNull(), isNull(), isNull(), eq(0), eq(10)))
-                .thenReturn(response(2));
+        when(solr.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), eq(0), eq(10)))
+                .thenReturn(execution(2, 5));
 
         var result = service.run(new SearchComparisonRequest(SearchComparisonScenarioId.FULL_TEXT_RELEVANCE)
                 .query("workforce")
@@ -107,10 +109,10 @@ class SearchComparisonServiceTest {
     void isolatesOneEngineSearchFailureAndStillRunsTheOtherEngine() {
         available(solr);
         available(openSearch);
-        when(solr.search(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+        when(solr.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
                 .thenThrow(new IllegalStateException("Solr request failed"));
-        when(openSearch.search(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
-                .thenReturn(response(4));
+        when(openSearch.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+                .thenReturn(execution(4, 5));
 
         var result = service.run(new SearchComparisonRequest(SearchComparisonScenarioId.FILTERING)
                 .query("jobs")
@@ -120,17 +122,17 @@ class SearchComparisonServiceTest {
         assertThat(result.getSolr().getWarning()).contains("Solr request failed");
         assertThat(result.getSolr().getReturnedHits()).isZero();
         assertThat(result.getOpenSearch().getTotalHits()).isEqualTo(4);
-        verify(openSearch).search("jobs", List.of(), null, null, null, 0, 10);
+        verify(openSearch).searchWithDiagnostics("jobs", List.of(), null, null, null, 0, 10);
     }
 
     @Test
     void reportsProjectionMismatchEvenWhenDocumentCountsMatch() {
         available(solr);
         available(openSearch);
-        when(solr.search(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
-                .thenReturn(response(1));
-        when(openSearch.search(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
-                .thenReturn(response(1));
+        when(solr.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+                .thenReturn(execution(1, 5));
+        when(openSearch.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+                .thenReturn(execution(1, 5));
         currentProjectionFor(
                 "discovery-comparison",
                 "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -148,17 +150,17 @@ class SearchComparisonServiceTest {
     void normalizesNullQueryAndOutOfRangePagingBeforeCallingEitherEngine() {
         available(solr);
         available(openSearch);
-        when(solr.search(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
-                .thenReturn(response(0));
-        when(openSearch.search(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
-                .thenReturn(response(0));
+        when(solr.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+                .thenReturn(execution(0, 5));
+        when(openSearch.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+                .thenReturn(execution(0, 5));
 
         service.run(new SearchComparisonRequest(SearchComparisonScenarioId.FILTERING)
                 .page(-9)
                 .pageSize(500));
 
-        verify(solr).search("", List.of(), null, null, null, 0, 100);
-        verify(openSearch).search("", List.of(), null, null, null, 0, 100);
+        verify(solr).searchWithDiagnostics("", List.of(), null, null, null, 0, 100);
+        verify(openSearch).searchWithDiagnostics("", List.of(), null, null, null, 0, 100);
     }
 
     @Test
@@ -178,6 +180,10 @@ class SearchComparisonServiceTest {
 
     private SearchResponse response(int total) {
         return new SearchResponse(RepositorySource.REPOSITORY, "", 0, 10, total, List.of(), List.of());
+    }
+
+    private SearchExecution execution(int total, long engineReportedMs) {
+        return new SearchExecution(response(total), engineReportedMs);
     }
 
     private void currentProjectionFor(String indexName, String projectionId, int documentCount, String warning) {

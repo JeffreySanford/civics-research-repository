@@ -121,14 +121,15 @@ public class SearchComparisonService {
 
         long started = System.nanoTime();
         try {
-            SearchResponse response =
-                    solr.search(query, programs, geography, contentType, vintageYear, page, pageSize);
+            SearchExecution execution =
+                    solr.searchWithDiagnostics(query, programs, geography, contentType, vintageYear, page, pageSize);
             return completed(
                     SearchComparisonEngine.SOLR,
                     solr.indexName(),
                     solr.documentCount(),
                     elapsedMillis(started),
-                    response,
+                    execution.response(),
+                    execution.engineReportedMs(),
                     targetWarning(solr.indexName()));
         } catch (RuntimeException exception) {
             return unavailable(
@@ -164,14 +165,15 @@ public class SearchComparisonService {
 
         long started = System.nanoTime();
         try {
-            SearchResponse response = openSearch.search(
+            SearchExecution execution = openSearch.searchWithDiagnostics(
                     query, programs, geography, contentType, vintageYear, page, pageSize);
             return completed(
                     SearchComparisonEngine.OPENSEARCH,
                     openSearch.indexName(),
                     openSearch.documentCount(),
                     elapsedMillis(started),
-                    response,
+                    execution.response(),
+                    execution.engineReportedMs(),
                     targetWarning(openSearch.indexName()));
         } catch (RuntimeException exception) {
             return unavailable(
@@ -191,6 +193,7 @@ public class SearchComparisonService {
             Optional<Integer> indexedCount,
             long elapsedMs,
             SearchResponse response,
+            Long engineReportedMs,
             String warning) {
         List<SearchResult> results = response.getResults() == null ? List.of() : response.getResults();
         List<FacetGroup> facets = response.getFacets() == null ? List.of() : response.getFacets();
@@ -205,6 +208,9 @@ public class SearchComparisonService {
                         facets)
                 .totalHits(response.getTotalResults());
         indexedCount.ifPresent(comparison::indexedDocumentCount);
+        if (engineReportedMs != null) {
+            comparison.engineReportedMs(engineReportedMs);
+        }
         if (warning != null && !warning.isBlank()) {
             comparison.warning(warning);
         }
