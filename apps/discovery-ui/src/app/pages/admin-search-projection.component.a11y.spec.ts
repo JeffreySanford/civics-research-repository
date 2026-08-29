@@ -55,36 +55,32 @@ const comparison: SearchComparisonResponse = {
 describe('AdminSearchProjectionComponent accessibility', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  it(
-    'is accessible while showing projection and engine parity evidence',
-    async () => {
-      await TestBed.configureTestingModule({
-        imports: [AdminSearchProjectionComponent],
-        providers: [
-          {
-            provide: RepositoryAdminApi,
-            useValue: {
-              getDiscoveryProjectionState: vi
-                .fn()
-                .mockReturnValue(of(projection)),
-            },
+  it('is accessible while showing projection and engine parity evidence', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AdminSearchProjectionComponent],
+      providers: [
+        {
+          provide: RepositoryAdminApi,
+          useValue: {
+            getDiscoveryProjectionState: vi
+              .fn()
+              .mockReturnValue(of(projection)),
           },
-          {
-            provide: RepositorySearchComparisonApi,
-            useValue: {
-              run: vi.fn().mockReturnValue(of(comparison)),
-            },
+        },
+        {
+          provide: RepositorySearchComparisonApi,
+          useValue: {
+            run: vi.fn().mockReturnValue(of(comparison)),
           },
-        ],
-      }).compileComponents();
+        },
+      ],
+    }).compileComponents();
 
-      const fixture = TestBed.createComponent(AdminSearchProjectionComponent);
-      fixture.detectChanges();
-      await fixture.whenStable();
-      fixture.detectChanges();
+    const fixture = TestBed.createComponent(AdminSearchProjectionComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
-      await expectNoAxeViolations(fixture.nativeElement);
-    },
-    10_000,
-  );
+    await expectNoAxeViolations(fixture.nativeElement);
+  }, 10_000);
 });
