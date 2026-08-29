@@ -35,6 +35,7 @@ import {
   selectSyncJobs,
   selectSyncLoading,
 } from '../state/sync/sync.selectors';
+import { AdminSearchProjectionComponent } from './admin-search-projection.component';
 import { AnimatedCounterComponent } from './admin-viz/animated-counter.component';
 import { AdminBarChartComponent } from './admin-viz/bar-chart.component';
 import { AdminDonutChartComponent } from './admin-viz/donut-chart.component';
@@ -90,6 +91,7 @@ const UNAVAILABLE_SOLR_OVERVIEW: SolrOverview = {
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTabsModule,
+    AdminSearchProjectionComponent,
     AnimatedCounterComponent,
     AdminBarChartComponent,
     AdminDonutChartComponent,
