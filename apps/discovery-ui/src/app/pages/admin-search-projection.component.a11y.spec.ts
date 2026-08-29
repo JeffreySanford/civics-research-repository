@@ -64,7 +64,9 @@ describe('AdminSearchProjectionComponent accessibility', () => {
           {
             provide: RepositoryAdminApi,
             useValue: {
-              getDiscoveryProjectionState: vi.fn().mockReturnValue(of(projection)),
+              getDiscoveryProjectionState: vi
+                .fn()
+                .mockReturnValue(of(projection)),
             },
           },
           {
