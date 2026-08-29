@@ -1,0 +1,8 @@
+extends:
+  - recommended
+
+rules:
+  # Several read-only/admin operations have no client-controlled input. Their documented failure
+  # modes are backend availability/internal errors, so requiring an invented 4XX response would
+  # make the contract less accurate rather than more complete.
+  operation-4xx-response: off
