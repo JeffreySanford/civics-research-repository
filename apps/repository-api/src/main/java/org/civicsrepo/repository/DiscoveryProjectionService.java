@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.search.DiscoveryDocument;
-import org.civicsrepo.search.DiscoveryIndex;
+import org.civicsrepo.search.DiscoveryProjectionTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,9 +14,10 @@ import org.springframework.stereotype.Service;
 /**
  * Builds the public discovery projection from DSpace, and remembers what it built.
  *
- * <p>The discovery index is a projection: it must always be rebuildable from the repository, and
- * anything that exists only in a search engine is a bug. This service is the only writer, so the
- * answer to "what is in the index right now" has exactly one owner.
+ * <p>The projection is derived state: it must always be rebuildable from the repository, and
+ * anything that exists only in a search engine is a bug. Every configured projection target gets
+ * the same normalized document list from this service. Solr remains the live public search engine;
+ * OpenSearch is a parallel comparison target until measured behavior justifies another decision.
  *
  * <p>When DSpace holds no items — unreachable, unseeded, or genuinely empty — the fixture catalog
  * is indexed instead so the demo still functions. That substitution is recorded and reported
@@ -28,21 +29,21 @@ public class DiscoveryProjectionService {
 
     private final RepositoryCatalog repositoryCatalog;
     private final RepositoryIdentityStore repositoryIdentityStore;
-    private final DiscoveryIndex discoveryIndex;
+    private final List<DiscoveryProjectionTarget> projectionTargets;
     private final AtomicReference<ProjectionState> state =
             new AtomicReference<>(new ProjectionState(RepositorySource.FIXTURE, 0, null));
     private final AtomicReference<String> projectionId = new AtomicReference<>();
 
     public DiscoveryProjectionService(
             RepositoryCatalog repositoryCatalog,
-            DiscoveryIndex discoveryIndex,
+            List<DiscoveryProjectionTarget> projectionTargets,
             RepositoryIdentityStore repositoryIdentityStore) {
         this.repositoryIdentityStore = repositoryIdentityStore;
         this.repositoryCatalog = repositoryCatalog;
-        this.discoveryIndex = discoveryIndex;
+        this.projectionTargets = List.copyOf(projectionTargets);
     }
 
-    /** What the discovery index currently holds. */
+    /** What the discovery projection currently represents. */
     public ProjectionState state() {
         return state.get();
     }
@@ -50,9 +51,8 @@ public class DiscoveryProjectionService {
     /**
      * Identity of the normalized document set used for the most recent projection.
      *
-     * <p>Kept internal until the search-comparison OpenAPI contract exists. The comparison service
-     * can use it to prove Solr and OpenSearch were given identical inputs rather than inferring
-     * parity from matching document counts.
+     * <p>The comparison API uses this to prove Solr and OpenSearch were handed identical normalized
+     * inputs rather than inferring parity from matching document counts.
      */
     public String currentProjectionId() {
         return projectionId.get();
@@ -64,7 +64,7 @@ public class DiscoveryProjectionService {
     }
 
     /**
-     * Rebuilds the discovery index.
+     * Rebuilds every configured discovery projection target from one normalized document set.
      *
      * @param fixtureFallback catalog to index when the repository yields nothing
      */
@@ -77,18 +77,29 @@ public class DiscoveryProjectionService {
         RepositorySource source = repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
         String projectedDocumentSetId = DiscoveryProjectionFingerprint.fingerprint(results);
 
-        if (discoveryIndex.isEnabled()) {
+        for (DiscoveryProjectionTarget target : projectionTargets) {
+            if (!target.isEnabled()) {
+                LOGGER.info("Discovery projection target {} is disabled.", target.indexName());
+                continue;
+            }
+
             try {
-                discoveryIndex.indexResearchObjects(results);
+                target.indexResearchObjects(results);
+                LOGGER.info(
+                        "Discovery projection target {} rebuilt with {} objects.",
+                        target.indexName(),
+                        results.size());
             } catch (RuntimeException exception) {
                 LOGGER.warn(
-                        "Discovery indexing failed; in-memory search remains available: {}", exception.getMessage());
+                        "Discovery projection target {} failed; other targets and in-memory search remain available: {}",
+                        target.indexName(),
+                        exception.getMessage());
             }
-        } else {
-            LOGGER.info("Discovery index is disabled; discovery will answer from in-memory results.");
         }
 
-        // Stamped after indexing, not before: an object is "indexed" once discovery could return it.
+        // Stamped after projection attempts, not before: an object is "indexed" once the public
+        // projection process has run. Per-engine comparison status separately reports failed or
+        // unavailable targets, so this identity record does not pretend every engine succeeded.
         repositoryIdentityStore.recordIndexed(
                 results.stream().map((document) -> document.result().getId()).toList());
 
