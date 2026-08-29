@@ -90,7 +90,7 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] Search Lab is included in the executable demo storyboard.
 - [x] A real-stack browser smoke test proves Angular -> Spring API -> live Solr + live OpenSearch without API route mocks.
 - [x] Dedicated browser CI retains an HTML report and failure traces/screenshots and distinguishes deterministic mocked evidence from real-stack evidence.
-- [ ] The final PR head is green across normal workspace/API CI and dedicated browser evidence.
+- [x] The final PR head is green across normal workspace/API CI and dedicated browser evidence.
 
 ### Operational/evidence follow-on
 
@@ -99,6 +99,43 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] Engine-native timing (`Solr QTime`, `OpenSearch took`) is exposed separately from API elapsed time before performance conclusions are made.
 - [x] Repeated measurement uses warm-up and distributions such as p50/p95/p99 before any comparative performance claim.
 - [x] Broader phrase/highlight/geo/suggest/synonym/vector/hybrid scenarios wait until the current comparison test matrix is green.
+
+## Cloud-Scale Search Laboratory
+
+Detailed designs:
+
+- [Local Kubernetes Search Cluster](../documentation/cloud/local-kubernetes-search-cluster.md)
+- [Million-Record Open Science Corpus](../documentation/cloud/million-record-corpus.md)
+
+### Kubernetes topology
+
+- [ ] A reproducible kind cluster can be created and destroyed from repository-owned configuration/scripts.
+- [ ] Docker Compose remains functional as the default fast development/demo path.
+- [ ] Solr runs as SolrCloud through the official Solr Operator with at least three Solr pods.
+- [ ] OpenSearch runs as a multi-node Kubernetes cluster through the official operator or Helm chart.
+- [ ] Persistent storage, readiness/liveness probes and explicit CPU/memory/JVM settings are defined for both search engines.
+- [ ] The same normalized projection reaches clustered Solr and OpenSearch with matching deterministic projection ID and expected count.
+- [ ] Search Lab can execute the live comparison through Spring against both clustered engines.
+- [ ] Benchmark artifacts record node/shard/replica/resource/heap/storage/concurrency context.
+- [ ] A deliberate Solr node-loss/recovery experiment is reproducible and records availability, recovery and parity.
+- [ ] A deliberate OpenSearch node-loss/recovery experiment is reproducible and records availability, recovery and parity.
+- [ ] Kubernetes results are described as local clustered evidence, never as proof that multiple pods on one workstation equal multiple physical/cloud nodes.
+
+### Million-record corpus
+
+- [ ] At least one public metadata source supports resumable harvesting with bounded retries, rate-limit handling and checkpoints.
+- [ ] DOE OSTI is implemented as the first preferred 1M+ federal research metadata source.
+- [ ] The scale harvester has unit/fixture coverage for normalization, identity, resume/checkpoint and malformed-record behavior.
+- [ ] Deterministic 10K and 100K normalized snapshots can be regenerated and carry source/date/count/hash manifests.
+- [ ] A deterministic 1M normalized snapshot can be produced without committing the corpus to Git.
+- [ ] The same 1M normalized snapshot is projected into Solr and OpenSearch with matching count and projection identity.
+- [ ] Repository-integrated scale is explicitly distinguished from benchmark-only search-scale snapshot mode.
+- [ ] Large public binaries/full text remain external during the metadata-scale experiment.
+- [ ] Indexing duration, accepted/rejected counts and failures are recorded.
+- [ ] Query evidence reports API elapsed plus Solr `QTime` / OpenSearch `took`, warm-ups and p50/p95/p99 distributions.
+- [ ] Concurrency 1/8/32 is measured at 1M where the workstation remains stable.
+- [ ] Result-set/rank/facet differences are checked so performance cannot pass while semantic quality silently degrades.
+- [ ] A second large metadata shape (NASA CMR or PubMed) is evaluated after OSTI so conclusions are not overfit to one corpus.
 
 ## Accessibility Evidence
 
@@ -118,7 +155,7 @@ Checking a box here means the behavior is implemented and covered by a test, not
 - [x] `pnpm run test:all` passes for the previously accepted baseline.
 - [x] `pnpm run quality:all` passes for the previously accepted baseline.
 - [x] Continuous integration runs the normal quality gates on pull requests: formatting, OpenAPI lint, contract and fixture drift, lint, unit tests, the Angular build, and the Spring service's Gradle test and runtime image. [ci.yml](../.github/workflows/ci.yml).
-- [ ] The new comparison test additions pass those normal CI gates on the final PR head.
-- [ ] Dedicated browser evidence runs Playwright, axe, storyboard, and the live Solr/OpenSearch smoke path successfully on the final PR head. [browser-evidence.yml](../.github/workflows/browser-evidence.yml).
+- [x] The comparison additions passed the normal CI gates on the final PR head before merge.
+- [x] Dedicated browser evidence passed Playwright, axe, storyboard, and the live Solr/OpenSearch smoke/performance path successfully on the final PR head. [browser-evidence.yml](../.github/workflows/browser-evidence.yml).
 - [ ] `main` is protected with required status checks. _(Interacts with the current direct-to-main workflow; a deliberate choice rather than an oversight.)_
 - [x] Demo script explains the architecture, dataset flow, map overlay, and accessibility evidence. [demo-script.md](../documentation/demo/demo-script.md), with separate ingestion, mapping, and accessibility-evidence walkthroughs and a recorded tradeoffs list.
