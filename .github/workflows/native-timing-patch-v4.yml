@@ -40,11 +40,18 @@ jobs:
 
           awk '
             $0 == "    if count != 1:" && !patched {
-              print "    if count != 1 and not ("
-              print "        count == 2"
-              print "        and path.endswith(\"SearchComparisonService.java\")"
-              print "        and old.startswith(\"        indexedCount.ifPresent(comparison::indexedDocumentCount);\")"
-              print "    ):"
+              print "    if count != 1:"
+              print "        targeted_completed_result = ("
+              print "            path.endswith(\"SearchComparisonService.java\")"
+              print "            and old.startswith(\"        indexedCount.ifPresent(comparison::indexedDocumentCount);\")"
+              print "            and count == 2"
+              print "        )"
+              print "        if targeted_completed_result:"
+              print "            p.write_text(text.replace(old, new, 1))"
+              print "            return"
+              print "        raise SystemExit(f\"{path}: expected one literal match, found {count}\")"
+              getline
+              getline
               patched=1
               next
             }
