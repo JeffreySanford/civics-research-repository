@@ -1,7 +1,9 @@
 package org.civicsrepo.repository;
 
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -33,6 +35,8 @@ public class DiscoveryProjectionService {
     private final AtomicReference<ProjectionState> state =
             new AtomicReference<>(new ProjectionState(RepositorySource.FIXTURE, 0, null));
     private final AtomicReference<String> projectionId = new AtomicReference<>();
+    private final AtomicReference<Map<String, ProjectionTargetState>> targetStates =
+            new AtomicReference<>(Map.of());
 
     public DiscoveryProjectionService(
             RepositoryCatalog repositoryCatalog,
@@ -48,14 +52,14 @@ public class DiscoveryProjectionService {
         return state.get();
     }
 
-    /**
-     * Identity of the normalized document set used for the most recent projection.
-     *
-     * <p>The comparison API uses this to prove Solr and OpenSearch were handed identical normalized
-     * inputs rather than inferring parity from matching document counts.
-     */
+    /** Identity of the normalized document set used for the most recent projection. */
     public String currentProjectionId() {
         return projectionId.get();
+    }
+
+    /** Per-target outcome of the most recent projection attempt. */
+    public ProjectionTargetState targetState(String indexName) {
+        return targetStates.get().get(indexName);
     }
 
     /** Source of the data currently searchable, used to label API responses. */
@@ -69,27 +73,39 @@ public class DiscoveryProjectionService {
      * @param fixtureFallback catalog to index when the repository yields nothing
      */
     public ProjectionState reindex(List<DiscoveryDocument> fixtureFallback) {
-        // A rebuild is the point at which a stale repository read must not survive.
         repositoryCatalog.invalidate();
         List<DiscoveryDocument> repositoryObjects = repositoryCatalog.findAllDiscoveryDocuments();
         boolean repositoryBacked = !repositoryObjects.isEmpty();
         List<DiscoveryDocument> results = repositoryBacked ? repositoryObjects : fixtureFallback;
         RepositorySource source = repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
         String projectedDocumentSetId = DiscoveryProjectionFingerprint.fingerprint(results);
+        Map<String, ProjectionTargetState> projectedTargets = new LinkedHashMap<>();
 
         for (DiscoveryProjectionTarget target : projectionTargets) {
             if (!target.isEnabled()) {
+                projectedTargets.put(
+                        target.indexName(),
+                        new ProjectionTargetState(target.indexName(), false, false, null, null, "Target is disabled."));
                 LOGGER.info("Discovery projection target {} is disabled.", target.indexName());
                 continue;
             }
 
             try {
                 target.indexResearchObjects(results);
+                Integer count = target.documentCount().orElse(null);
+                projectedTargets.put(
+                        target.indexName(),
+                        new ProjectionTargetState(
+                                target.indexName(), true, true, projectedDocumentSetId, count, null));
                 LOGGER.info(
                         "Discovery projection target {} rebuilt with {} objects.",
                         target.indexName(),
                         results.size());
             } catch (RuntimeException exception) {
+                projectedTargets.put(
+                        target.indexName(),
+                        new ProjectionTargetState(
+                                target.indexName(), true, false, null, target.documentCount().orElse(null), exception.getMessage()));
                 LOGGER.warn(
                         "Discovery projection target {} failed; other targets and in-memory search remain available: {}",
                         target.indexName(),
@@ -97,15 +113,13 @@ public class DiscoveryProjectionService {
             }
         }
 
-        // Stamped after projection attempts, not before: an object is "indexed" once the public
-        // projection process has run. Per-engine comparison status separately reports failed or
-        // unavailable targets, so this identity record does not pretend every engine succeeded.
         repositoryIdentityStore.recordIndexed(
                 results.stream().map((document) -> document.result().getId()).toList());
 
         ProjectionState projected = new ProjectionState(source, results.size(), OffsetDateTime.now());
         state.set(projected);
         projectionId.set(projectedDocumentSetId);
+        targetStates.set(Map.copyOf(projectedTargets));
 
         if (repositoryBacked) {
             LOGGER.info("Discovery projection rebuilt from DSpace: {} repository research objects.", results.size());
@@ -125,4 +139,12 @@ public class DiscoveryProjectionService {
     }
 
     public record ProjectionState(RepositorySource source, int objectCount, OffsetDateTime rebuiltAt) {}
+
+    public record ProjectionTargetState(
+            String indexName,
+            boolean enabled,
+            boolean projected,
+            String projectionId,
+            Integer documentCount,
+            String warning) {}
 }
