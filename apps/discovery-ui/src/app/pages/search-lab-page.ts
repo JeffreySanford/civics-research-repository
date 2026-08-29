@@ -40,7 +40,9 @@ export class SearchLabPage implements OnInit {
   private readonly comparisonApi = inject(RepositorySearchComparisonApi);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly scenarios = signal<readonly SearchComparisonScenario[]>([]);
+  protected readonly scenarios = signal<readonly SearchComparisonScenario[]>(
+    [],
+  );
   protected readonly loadingScenarios = signal(false);
   protected readonly running = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -57,9 +59,12 @@ export class SearchLabPage implements OnInit {
   protected readonly geographyControl = new FormControl('North Dakota', {
     nonNullable: true,
   });
-  protected readonly programControl = new FormControl<ResearchProgram | ''>('', {
-    nonNullable: true,
-  });
+  protected readonly programControl = new FormControl<ResearchProgram | ''>(
+    '',
+    {
+      nonNullable: true,
+    },
+  );
   protected readonly contentTypeControl = new FormControl<
     ResearchObjectType | ''
   >('', { nonNullable: true });

@@ -20,8 +20,8 @@
     >
       <label for="comparison-scenario">Scenario</label>
       <select id="comparison-scenario" [formControl]="scenarioControl">
-        @if (scenarios().length) { @for (scenario of scenarios(); track scenario.id)
-        {
+        @if (scenarios().length) { @for (scenario of scenarios(); track
+        scenario.id) {
         <option [value]="scenario.id">{{ scenario.label }}</option>
         } } @else {
         <option value="FACETED_SEARCH">Facets vs aggregations</option>
@@ -94,7 +94,10 @@
         </button>
         @if (running()) {
         <span class="inline-status" role="status">
-          <mat-spinner diameter="22" aria-label="Running comparison"></mat-spinner>
+          <mat-spinner
+            diameter="22"
+            aria-label="Running comparison"
+          ></mat-spinner>
           <span>Running comparison</span>
         </span>
         } @else if (loadingScenarios()) {
@@ -110,28 +113,24 @@
 
   @if (error(); as errorMessage) {
   <p class="error-message" role="alert">{{ errorMessage }}</p>
-  }
-
-  @if (result(); as comparison) {
+  } @if (result(); as comparison) {
   <section class="content-panel" aria-labelledby="projection-heading">
     <p class="eyebrow">Projection evidence</p>
     <h2 id="projection-heading">Same input before engine differences</h2>
 
     @if (comparison.sameProjection) {
     <p class="search-parity-notice" role="status">
-      <strong>Projection parity verified.</strong> Both engines were rebuilt from
-      the current normalized document set and report the expected document
+      <strong>Projection parity verified.</strong> Both engines were rebuilt
+      from the current normalized document set and report the expected document
       count.
     </p>
     } @else {
     <p class="warning-message" role="alert">
-      <strong>Projection parity is not verified.</strong> Treat result differences
-      as diagnostic only until both engines have successfully received the same
-      current projection.
+      <strong>Projection parity is not verified.</strong> Treat result
+      differences as diagnostic only until both engines have successfully
+      received the same current projection.
     </p>
-    }
-
-    @if (comparison.projection.source === 'FIXTURE') {
+    } @if (comparison.projection.source === 'FIXTURE') {
     <p class="fixture-notice">
       <strong>Fixture-backed projection.</strong> DSpace did not provide the
       projected research objects, so this run is useful for engine behavior but
@@ -151,9 +150,9 @@
       <div>
         <dt>Rebuilt</dt>
         <dd>
-          @if (comparison.projection.rebuiltAt) {
-          {{ comparison.projection.rebuiltAt | date: 'medium' }}
-          } @else { Not recorded }
+          @if (comparison.projection.rebuiltAt) { {{
+          comparison.projection.rebuiltAt | date: 'medium' }} } @else { Not
+          recorded }
         </dd>
       </div>
       <div class="projection-id">
@@ -187,13 +186,8 @@
           <div>
             <dt>Status</dt>
             <dd>
-              {{
-                comparison.solr.enabled
-                  ? comparison.solr.reachable
-                    ? 'Reachable'
-                    : 'Unavailable'
-                  : 'Disabled'
-              }}
+              {{ comparison.solr.enabled ? comparison.solr.reachable ?
+              'Reachable' : 'Unavailable' : 'Disabled' }}
             </dd>
           </div>
           <div>
@@ -219,7 +213,9 @@
         </dl>
 
         @if (comparison.solr.warning) {
-        <p class="warning-message" role="status">{{ comparison.solr.warning }}</p>
+        <p class="warning-message" role="status">
+          {{ comparison.solr.warning }}
+        </p>
         }
 
         <section aria-labelledby="solr-facets-heading">
@@ -264,7 +260,10 @@
         </section>
       </article>
 
-      <article class="content-panel" aria-labelledby="opensearch-result-heading">
+      <article
+        class="content-panel"
+        aria-labelledby="opensearch-result-heading"
+      >
         <p class="eyebrow">OpenSearch</p>
         <h3 id="opensearch-result-heading">
           {{ engineLabel(comparison.openSearch) }}
@@ -273,13 +272,8 @@
           <div>
             <dt>Status</dt>
             <dd>
-              {{
-                comparison.openSearch.enabled
-                  ? comparison.openSearch.reachable
-                    ? 'Reachable'
-                    : 'Unavailable'
-                  : 'Disabled'
-              }}
+              {{ comparison.openSearch.enabled ? comparison.openSearch.reachable
+              ? 'Reachable' : 'Unavailable' : 'Disabled' }}
             </dd>
           </div>
           <div>
@@ -288,7 +282,9 @@
           </div>
           <div>
             <dt>Indexed documents</dt>
-            <dd>{{ comparison.openSearch.indexedDocumentCount ?? 'Unknown' }}</dd>
+            <dd>
+              {{ comparison.openSearch.indexedDocumentCount ?? 'Unknown' }}
+            </dd>
           </div>
           <div>
             <dt>Elapsed</dt>

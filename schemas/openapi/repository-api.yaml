@@ -753,7 +753,17 @@ components:
       enum: [SOLR, OPENSEARCH]
     SearchEngineComparison:
       type: object
-      required: [engine, enabled, reachable, indexName, elapsedMs, returnedHits, results, facets]
+      required:
+        [
+          engine,
+          enabled,
+          reachable,
+          indexName,
+          elapsedMs,
+          returnedHits,
+          results,
+          facets,
+        ]
       properties:
         engine:
           $ref: '#/components/schemas/SearchComparisonEngine'
