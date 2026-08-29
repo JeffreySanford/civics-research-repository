@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
-import { RepositoryAdminApi } from 'repository-api-client';
+import { RepositoryCorpusStorageApi } from 'repository-api-client';
 import { expectNoAxeViolations } from '../testing/axe';
 import { AdminCorpusStorageComponent } from './admin-corpus-storage.component';
 
@@ -12,7 +12,7 @@ describe('AdminCorpusStorageComponent accessibility', () => {
       providers: [
         provideNoopAnimations(),
         {
-          provide: RepositoryAdminApi,
+          provide: RepositoryCorpusStorageApi,
           useValue: {
             getCorpusStorageOverview: () =>
               of({
