@@ -1,122 +1,166 @@
-# Cloud and Scale Laboratory
+# Local Cloud Search Laboratory
 
-This directory describes the next infrastructure and scale experiments for Civics Research Repository. The goal is not to replace the fast Docker Compose development path. The goal is to create a reproducible laboratory for answering two larger questions:
+This directory owns **PI-2**, the infrastructure/topology project for Civics Research Repository.
 
-1. How does the current standalone Solr/OpenSearch architecture behave when moved into a Kubernetes topology with SolrCloud and a multi-node OpenSearch cluster?
-2. At what corpus size and request concurrency does distributed search begin to justify its coordination and infrastructure overhead?
+It intentionally does **not** own source ingestion or corpus creation. Those belong to [`documentation/federation/`](../federation/), which produces the deterministic 10K/100K/1M-class corpus manifests and normalized data that PI-2 consumes.
 
-The work deliberately keeps **architecture experiments** separate from **performance claims**. More pods do not automatically mean lower latency, especially when every Kubernetes node still shares one workstation's CPU, memory, disk and Docker engine.
+## Project question
 
-## Documents
+PI-2 asks:
 
-- [Local Kubernetes Search Cluster](local-kubernetes-search-cluster.md) — kind-based local Kubernetes, SolrCloud, multi-node OpenSearch, topology experiments, resilience tests and the path toward EKS.
-- [Million-Record Corpus](million-record-corpus.md) — candidate federal/open-science metadata sources, staged corpus sizes, ingestion modes, provenance rules and 1M+ search-scale experiments.
-- [AWS Modernization](../aws-modernization.md) — existing production-cloud direction. The local Kubernetes laboratory should become a reproducible stepping stone toward that architecture rather than a separate technology demonstration.
-- [Search Performance Evidence](../search-performance-evidence.md) — current warm-up, percentile and API-versus-engine timing discipline that all scale experiments must preserve.
+> When the exact same normalized corpus and queries move from standalone Docker Compose search engines to SolrCloud and multi-node OpenSearch on local Kubernetes, what changes in latency, throughput, resilience, recovery and operational complexity?
 
-## Guiding architecture
+The question is not simply whether Kubernetes is faster.
 
-The current local baseline remains intentionally simple:
+## Permanent supported topologies
+
+### Topology A — Docker Compose standalone
 
 ```text
 Docker Compose
   DSpace
-  PostgreSQL
+  application PostgreSQL
   Spring API
   Solr standalone
   OpenSearch single node
   Angular UI
 ```
 
-The proposed scale laboratory adds a second, optional topology:
+This topology remains permanently supported because it is:
+
+- fastest to start,
+- easiest to demonstrate,
+- simplest for debugging,
+- cheapest in CPU/RAM,
+- the reference baseline for clustered experiments,
+- likely the better daily environment when one user is exploring a small corpus.
+
+Kubernetes does not replace it.
+
+### Topology B — local Kubernetes cluster
 
 ```text
-kind Kubernetes cluster
-  Spring API
+kind Kubernetes
   SolrCloud
-    3 Solr pods
+    Solr pods
     ZooKeeper
     sharded collection
-  OpenSearch
-    3 OpenSearch pods
+  multi-node OpenSearch
     sharded index
+  optional Spring API
   persistent volumes
-  Kubernetes Services
-  health/readiness probes
-  benchmark runner
+  Services
+  probes
+  benchmark/evidence runner
 ```
 
-Docker Compose remains the developer fast path. Kubernetes becomes the production-topology, resilience and scaling laboratory.
+This topology exists for:
 
-## Why this is worth doing even with one user
+- distributed search,
+- concurrency,
+- node-loss/recovery,
+- shard/replica experiments,
+- resource isolation,
+- persistence/restart behavior,
+- production-shaped operational rehearsal.
 
-At the current small corpus and low concurrency, Kubernetes is unlikely to reduce single-request latency. A standalone Lucene-backed search node has less coordination overhead than a distributed query that fans out across shards and merges responses.
+## PI dependency
 
-The experiment becomes valuable when one or more of these dimensions increase:
+PI-2 begins after PI-1 has produced at least stable 10K and 100K corpora and the 1M pipeline is either complete or far enough along to be repeatable.
 
-- corpus size,
-- number of shards,
-- replica count,
-- request concurrency,
-- indexing/reindexing load,
-- node loss and recovery,
-- resource limits,
-- persistence and restart behavior.
+```text
+PI-1 federation
+  -> corpus manifest + normalized source definition
+  -> standalone Solr/OpenSearch baseline
+  -> semantic query set
 
-The useful question is therefore not **"Is Kubernetes faster?"**. It is:
+PI-2 cloud
+  -> consume identical corpus/query definitions
+  -> cluster topology experiments
+```
 
-> At what corpus size and concurrency does distributed search begin paying for its coordination overhead, and what resilience or throughput benefits appear before or after that crossover?
+PI-2 must not create a separate ad hoc data generator merely because Kubernetes is easier to test with synthetic documents.
 
-## Required evidence discipline
+## Documents
 
-Every scale experiment should record enough context to reproduce and interpret the result:
+- [Local Kubernetes Search Cluster](local-kubernetes-search-cluster.md) — kind, SolrCloud, multi-node OpenSearch, topology variants, resilience tests and EKS portability.
+- [Federated Metadata Expansion](../federation/README.md) — PI-1 corpus/source project.
+- [Million-Record Federated Metadata Corpus](../federation/million-record-corpus.md) — corpus definitions consumed here.
+- [Program Increment Plan](../../planning/PI_PLAN.md) — dependency, exit criteria and cross-PI invariants.
+- [AWS Modernization](../aws-modernization.md) — later production-cloud direction.
+- [Search Performance Evidence](../search-performance-evidence.md) — measurement discipline that PI-2 must preserve.
 
-- source corpus and snapshot date,
-- normalized document count,
-- deterministic projection or snapshot identity,
-- topology name,
-- Solr shard/replica configuration,
-- OpenSearch primary/replica configuration,
-- pod CPU/memory requests and limits,
-- JVM heap settings,
-- persistence/storage class,
-- warm-up count,
-- measured sample count,
-- request concurrency,
-- API elapsed distribution,
-- Solr `QTime` distribution,
-- OpenSearch `took` distribution,
-- throughput where concurrency is greater than one,
-- fixed, balanced or randomized engine execution order,
-- errors/timeouts/retries,
-- machine and Docker/Kubernetes context.
+## Required comparison rule
 
-Do not infer production superiority from one workstation, one query or one topology.
+A clustered result has no meaning without its standalone control.
 
-## Planned checkpoints
+For every significant topology experiment, keep constant where possible:
 
-The initial scale matrix should use progressively larger normalized corpora:
+- corpus manifest/projection identity,
+- normalized fields,
+- query definitions,
+- relevance semantics,
+- analyzer/mapping/schema intent,
+- warm-up/sample methodology.
 
-| Checkpoint | Purpose |
-| ---: | --- |
-| 181 | preserve the current known baseline |
-| 10,000 | validate ingestion, projection and cluster mechanics |
-| 100,000 | expose indexing and memory behavior |
-| 1,000,000 | first meaningful large-corpus search comparison |
-| 5,000,000+ | optional stress tier after 1M is repeatable |
+Then vary topology explicitly:
 
-For each meaningful corpus size, compare at least concurrency `1`, `8` and `32` after the single-request path is stable.
+- node count,
+- shards,
+- replicas,
+- pod CPU/memory,
+- JVM heap,
+- storage,
+- request concurrency.
+
+## Evidence dimensions
+
+PI-2 should record:
+
+- API elapsed p50/p95/p99,
+- Solr `QTime`,
+- OpenSearch `took`,
+- throughput,
+- errors/timeouts,
+- indexing duration,
+- node/shard/replica state,
+- host/Docker/kind resources,
+- recovery times,
+- projection parity after recovery.
+
+Semantic correctness remains a gate: clustered results must not silently change search behavior just because deployment configuration changed.
+
+## Why this remains useful with one user
+
+With low concurrency, clustered search may be equal or slower because fan-out/coordination has overhead.
+
+PI-2 is still valuable because it can answer questions that standalone cannot:
+
+- Does throughput improve under concurrency?
+- What happens when a node disappears?
+- Do replicas preserve availability?
+- How long does recovery take?
+- How much memory/disk does resilience cost?
+- At what corpus size does shard parallelism begin to help?
+- Is the added complexity justified for this workload?
+
+A valid conclusion may be that standalone remains best for the local demo while Kubernetes provides a useful resilience/scaling laboratory.
+
+## Path to AWS
+
+The local lab should use concepts that transfer to EKS—operators/Helm, Services, probes, persistent volumes, resource requests/limits and versioned configuration—without claiming kind performance predicts cloud performance.
+
+AWS infrastructure remains a later project informed by the evidence produced here.
 
 ## Non-goals
 
-This laboratory does not imply that:
+PI-2 does not:
 
-- Kubernetes is inherently faster than Docker Compose,
-- OpenSearch scales horizontally while Solr does not,
-- a three-pod cluster on one workstation behaves like three physical nodes,
-- every harvested public record belongs permanently in DSpace,
-- full-text artifacts should be downloaded merely to inflate corpus size,
-- benchmark-only snapshots are equivalent to repository-backed Open Science evidence,
-- a local benchmark establishes production capacity or cost.
-
-The laboratory exists to make those distinctions measurable.
+- own or redesign source adapters,
+- redefine record provenance,
+- make Kubernetes mandatory for ordinary development,
+- delete the Compose topology,
+- assume replicas reduce latency,
+- assume more shards are always better,
+- equate kind workers with separate physical hosts,
+- claim local measurements are production capacity estimates.
