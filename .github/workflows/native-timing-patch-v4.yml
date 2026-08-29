@@ -50,6 +50,7 @@ jobs:
               print "            p.write_text(text.replace(old, new, 1))"
               print "            return"
               print "        raise SystemExit(f\"{path}: expected one literal match, found {count}\")"
+              print "    p.write_text(text.replace(old, new))"
               getline
               getline
               patched=1
