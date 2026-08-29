@@ -8,7 +8,7 @@ test.describe('Search Lab storyboard', () => {
     await mockSearchComparisonApi(page);
   });
 
-  test('shows projection parity and side-by-side engine evidence @storyboard', async ({
+  test('shows projection parity and side-by-side engine evidence @storyboard @comparison', async ({
     page,
   }) => {
     await page.goto('/');
@@ -37,7 +37,7 @@ test.describe('Search Lab storyboard', () => {
     await expect(page.getByText('local demo measurements')).toBeVisible();
   });
 
-  test('keeps relevance and filtering in the same comparison workflow @storyboard', async ({
+  test('keeps relevance and filtering in the same comparison workflow @storyboard @comparison', async ({
     page,
   }) => {
     await page.goto('/search-lab');
