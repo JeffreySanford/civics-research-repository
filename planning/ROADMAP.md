@@ -20,17 +20,13 @@ Completion means dated, commit-bound artifacts exist under `documentation/access
 
 ## 2. Govern browser evidence as a merge policy
 
-Dedicated Browser Evidence is implemented and scheduled. It runs deterministic
-Chromium/Firefox/WebKit comparison and accessibility evidence, preserves HTML reports and
-failure traces/screenshots, and includes a live Angular -> Spring -> Solr + OpenSearch
-smoke path. Mocked deterministic evidence and real-stack evidence are labelled separately.
+Dedicated Browser Evidence is implemented and scheduled. It runs deterministic Chromium/Firefox/WebKit comparison and accessibility evidence, preserves HTML reports and failure traces/screenshots, and includes a live Angular -> Spring -> Solr + OpenSearch smoke path. Mocked deterministic evidence and real-stack evidence are labelled separately.
 
 Remaining governance decisions:
 
 - Decide which evidence jobs must block merges.
 - Decide whether `main` receives branch protection and required checks.
-- Keep the local `evidence:refresh` behavior: a failed run must never replace the prior
-  known-good evidence.
+- Keep the local `evidence:refresh` behavior: a failed run must never replace the prior known-good evidence.
 
 ## 3. Harden the Solr/OpenSearch comparison demo
 
@@ -40,40 +36,26 @@ The next phase is therefore **hardening, observability and explanation**, not si
 
 ### 3.1 Keep the implemented test matrix as the expansion gate
 
-The comparison service/controller, Angular component/client, OpenSearch request semantics,
-deterministic Playwright scenarios, axe route, storyboard, and live-stack smoke are all
-implemented. Future comparison behavior must extend those layers rather than bypassing
-them.
+The comparison service/controller, Angular component/client, OpenSearch request semantics, deterministic Playwright scenarios, axe route, storyboard, and live-stack smoke are all implemented. Future comparison behavior must extend those layers rather than bypassing them.
 
 ### 3.2 Keep Admin Sync as the operational projection view
 
-Admin Sync now explains DSpace -> normalized `DiscoveryDocument` -> deterministic
-projection ID -> Solr + OpenSearch, including per-target liveness/parity and the distinction
-between public Solr discovery and the OpenSearch comparison target. Future work should
-extend this operational vocabulary rather than return to Solr-only language.
+Admin Sync now explains DSpace -> normalized `DiscoveryDocument` -> deterministic projection ID -> Solr + OpenSearch, including per-target liveness/parity and the distinction between public Solr discovery and the OpenSearch comparison target. Future work should extend this operational vocabulary rather than return to Solr-only language.
 
 ### 3.3 Keep Evidence explicit about verification boundaries
 
-Evidence now includes live projection/parity state plus a Search Engine Comparison section
-that separates unit/use-case gates, deterministic mocked browser evidence, automated
-WCAG/Section 508-oriented evidence, real-stack smoke evidence, repeated performance
-diagnostics, and manual keyboard/screen-reader work that remains pending.
+Evidence now includes live projection/parity state plus a Search Engine Comparison section that separates unit/use-case gates, deterministic mocked browser evidence, automated WCAG/Section 508-oriented evidence, real-stack smoke evidence, repeated performance diagnostics, and manual keyboard/screen-reader work that remains pending.
 
-The runtime page does not synthesize current CI success. Exact commit validation remains a
-CI/PR artifact.
+The runtime page does not synthesize current CI success. Exact commit validation remains a CI/PR artifact.
 
 ### 3.4 Improve explanatory diagnostics before broader search features
 
-Engine-native Solr `QTime` / OpenSearch `took` and repeated warm-up/p50/p95/p99 tooling are
-implemented separately from API elapsed timing. Remaining diagnostic work:
+Engine-native Solr `QTime` / OpenSearch `took` and repeated warm-up/p50/p95/p99 tooling are implemented separately from API elapsed timing. Remaining diagnostic work:
 
-- Add result-set, rank-order and facet-bucket difference summaries so the UI explains
-  semantic differences.
-- Record richer environment details for scale testing: index/shard/replica configuration,
-  JVM/container context and concurrency.
+- Add result-set, rank-order and facet-bucket difference summaries so the UI explains semantic differences.
+- Record richer environment details for scale testing: index/shard/replica configuration, JVM/container context and concurrency.
 - Repeat at materially larger index sizes before drawing scaling conclusions.
-- Keep the UI warning that local/container timings are diagnostic evidence, not production
-  benchmarks.
+- Keep the UI warning that local/container timings are diagnostic evidence, not production benchmarks.
 
 ### 3.5 Expand scenarios only after hardening
 
@@ -119,17 +101,133 @@ The catalog should remain curated, but its claims should be increasingly verifia
 - Evaluate NOAA Climate Data Online and NASA POWER as federation examples after the Census/USGS path remains stable.
 - Preserve the distinction between publisher-discovered facts and repository-curated relationships.
 
-## 7. Implement the documented cloud target
+## 7. Build a local cloud-scale search laboratory
 
-The AWS architecture is documented but not provisioned.
+The next infrastructure experiment should bridge the current Compose baseline to production-shaped Kubernetes without pretending that more pods automatically improve latency.
+
+Detailed design: [documentation/cloud/local-kubernetes-search-cluster.md](../documentation/cloud/local-kubernetes-search-cluster.md).
+
+### 7.1 Preserve Docker Compose as the fast path
+
+Compose remains the default development/demo environment. Kubernetes is an optional architecture, resilience and scale laboratory.
+
+### 7.2 Add kind as the local Kubernetes substrate
+
+- Create a reproducible kind cluster from repository configuration.
+- Prefer one control-plane plus multiple worker nodes so placement and node-loss experiments are visible.
+- Add repository scripts for create/build/deploy/reindex/benchmark/destroy.
+- Record Docker Desktop and Kubernetes resource allocation with every benchmark.
+
+### 7.3 Run real SolrCloud
+
+- Use the official Apache Solr Operator rather than merely running standalone Solr inside a pod.
+- Start with three Solr pods and ZooKeeper.
+- Compare 1, 2 and 3 shard layouts before adding replicas.
+- Add replica/failover experiments only after the baseline is reproducible.
+
+### 7.4 Run multi-node OpenSearch
+
+- Use the official OpenSearch Kubernetes Operator or Helm chart.
+- Start with a three-node cluster and explicit resource limits.
+- Compare 1, 2 and 3 primary-shard layouts.
+- Add replicas as a resilience experiment rather than assuming replicas improve single-query latency.
+
+### 7.5 Preserve measurement honesty
+
+At each topology, retain:
+
+- deterministic projection identity,
+- API elapsed distributions,
+- Solr `QTime`,
+- OpenSearch `took`,
+- warm-up and measured sample counts,
+- shard/replica counts,
+- JVM/pod resources,
+- concurrency,
+- throughput/error counts.
+
+Before any comparative speed claim, add a benchmark mode that alternates or randomizes engine order rather than always running Solr first.
+
+### 7.6 Test resilience, not only latency
+
+Deliberately remove Solr/OpenSearch pods and record:
+
+- search availability,
+- latency/error behavior during degradation,
+- Kubernetes recreation time,
+- shard/replica recovery,
+- projection parity after recovery,
+- persistent-volume behavior across restarts.
+
+Completion means the repository can reproduce a clustered local search topology, compare it honestly with Compose, and demonstrate at least one node-loss/recovery path.
+
+## 8. Build a million-record Open Science corpus
+
+The current 181-object corpus is excellent for functional evidence but too small to answer scaling questions. Add deterministic, metadata-first scale corpora without committing large generated datasets to Git.
+
+Detailed design: [documentation/cloud/million-record-corpus.md](../documentation/cloud/million-record-corpus.md).
+
+### 8.1 Use real public metadata before synthetic duplication
+
+Preferred source order:
+
+1. **DOE OSTI.GOV** — first 1M+ corpus because its multi-million-record DOE research metadata closely matches the research-object model.
+2. **Data.gov** — federal dataset breadth up to the hundreds-of-thousands tier.
+3. **NASA Earthdata CMR** — controlled granule slices for 1M+ geospatial/scientific stress tests.
+4. **PubMed** — 1M+ bibliographic/abstract scale after OSTI.
+5. **OpenAlex** — optional non-federal open-science scale corpus after the federal-source path is established.
+
+### 8.2 Separate repository scale from search-engine scale
+
+Two modes are required:
+
+- **Repository-integrated:** publisher -> adapter -> DSpace -> normalized projection -> Solr/OpenSearch.
+- **Search-scale snapshot:** publisher/snapshot -> normalized `DiscoveryDocument` corpus -> Solr/OpenSearch, explicitly labelled benchmark-only.
+
+Do not force one million objects through DSpace merely to benchmark Lucene search if DSpace persistence is not the question being tested.
+
+### 8.3 Use staged checkpoints
+
+Target:
+
+```text
+181 -> 10K -> 100K -> 1M -> optional 5M+
+```
+
+At 1M, measure at least concurrency `1`, `8` and `32` when the workstation remains stable.
+
+### 8.4 Make harvesting resumable and auditable
+
+Large-source harvesters need:
+
+- cursor/page checkpoints,
+- bounded retry/backoff,
+- rate-limit awareness,
+- idempotent namespaced source identifiers,
+- duplicate/error handling,
+- progress metrics,
+- source retrieval date,
+- deterministic corpus/projection identity,
+- accepted/rejected/skipped counts.
+
+### 8.5 Keep the corpus metadata-first
+
+Do not download a million PDFs, NASA granules or source ZIP files. Preserve metadata, identifiers, URLs and provenance first; large binaries remain external unless a separate preservation experiment budgets them.
+
+Completion means a reproducible 1M normalized metadata snapshot can be projected identically into both search engines, measured with the existing performance discipline and traced back to its public source/provenance.
+
+## 9. Implement the documented cloud target
+
+The AWS architecture is documented but not provisioned. The local Kubernetes and large-corpus work should inform this step rather than being treated as unrelated experiments.
 
 - Choose Terraform or CDK.
 - Implement a minimal environment matching the documented EKS recommendation or the ECS/Fargate alternate.
 - Include RDS, persistent search storage, frontend delivery, secrets, logs, metrics, backup and restore.
 - Treat Solr/OpenSearch deployment topology as an explicit architecture decision rather than assuming local single-node behavior predicts production behavior.
+- Reuse Kubernetes/operator/Helm configuration concepts where they transfer cleanly from kind to EKS.
 - Document local-to-cloud migration and operational cost boundaries.
 
-## 8. Platform and test hardening
+## 10. Platform and test hardening
 
 - Move NgRx to stable 22 when available and validated.
 - Revisit generated Spring controller interfaces when tooling supports Spring 7 conventions.
@@ -147,6 +245,9 @@ The roadmap does not include:
 - claiming OpenSearch is inherently faster than Solr from a single local request,
 - assuming horizontal scaling is unique to OpenSearch; SolrCloud also supports distributed search,
 - treating additional nodes as a guarantee of lower single-query latency,
+- treating a kind cluster on one workstation as equivalent to multiple physical/cloud nodes,
+- forcing every million-record benchmark document into DSpace when the experiment is explicitly search-engine isolation,
+- downloading millions of full-text/binary artifacts merely to inflate record count,
 - adding a separate Node harvester runtime,
 - replacing NgRx solely to reduce line count,
 - turning the repository into a municipal dashboard at the expense of its federal Open Science model,
