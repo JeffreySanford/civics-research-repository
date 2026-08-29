@@ -86,7 +86,8 @@ class AdminOverviewControllerTest {
                 List.of(
                         new CorpusProfileSummary(CorpusProfile.CURATED_DEMO, "Curated demo", true)
                                 .latestMeasurement(measurement),
-                        new CorpusProfileSummary(CorpusProfile.FEDERATED_1M, "Federated 1M", false)
+                        new CorpusProfileSummary(
+                                        CorpusProfile.fromValue("FEDERATED_1M"), "Federated 1M", false)
                                 .targetFederatedRecordCount(1_000_000L)),
                 List.of(measurement));
         given(corpusStorageAdminService.overview()).willReturn(overview);
