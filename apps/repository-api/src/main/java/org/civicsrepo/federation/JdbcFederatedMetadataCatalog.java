@@ -24,7 +24,11 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
     private final JdbcClient jdbcClient;
     private final ObjectMapper objectMapper;
 
-    public JdbcFederatedMetadataCatalog(JdbcClient jdbcClient, ObjectMapper objectMapper) {
+    public JdbcFederatedMetadataCatalog(JdbcClient jdbcClient) {
+        this(jdbcClient, new ObjectMapper());
+    }
+
+    JdbcFederatedMetadataCatalog(JdbcClient jdbcClient, ObjectMapper objectMapper) {
         this.jdbcClient = jdbcClient;
         this.objectMapper = objectMapper;
     }
