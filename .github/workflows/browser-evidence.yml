@@ -121,10 +121,10 @@ jobs:
 
       - name: Record repeated local search timing diagnostics
         run: >-
-          pnpm run performance:benchmark --
+          pnpm run performance:benchmark
           --base-url http://localhost:8080/api
-          --warmups 3
-          --samples 15
+          --warmups 5
+          --samples 100
           --scenario FULL_TEXT_RELEVANCE
           --query 'North Dakota workforce'
           --output browser-evidence-artifacts/search-comparison-benchmark.json
