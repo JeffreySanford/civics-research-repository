@@ -48,6 +48,50 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /search/comparison/scenarios:
+    get:
+      tags: [Search]
+      operationId: listSearchComparisonScenarios
+      summary: List supported Solr/OpenSearch comparison scenarios.
+      responses:
+        '200':
+          description: Supported comparison scenarios.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchComparisonScenario'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /search/comparison/run:
+    post:
+      tags: [Search]
+      operationId: runSearchComparison
+      summary: Run one normalized discovery query against Solr and OpenSearch.
+      description: >-
+        Both engines query projections built from the same normalized DSpace research-object set.
+        Elapsed timings are local demo measurements and must not be presented as production
+        benchmarks.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchComparisonRequest'
+      responses:
+        '200':
+          description: Side-by-side engine results and projection parity evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchComparisonResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /datasets/{datasetId}:
     get:
       tags: [Datasets]
@@ -646,6 +690,118 @@ components:
           type: integer
         selected:
           type: boolean
+    SearchComparisonScenarioId:
+      type: string
+      enum: [FACETED_SEARCH, FULL_TEXT_RELEVANCE, FILTERING]
+    SearchComparisonScenario:
+      type: object
+      required: [id, label, description]
+      properties:
+        id:
+          $ref: '#/components/schemas/SearchComparisonScenarioId'
+        label:
+          type: string
+        description:
+          type: string
+    SearchComparisonRequest:
+      type: object
+      required: [scenario]
+      properties:
+        scenario:
+          $ref: '#/components/schemas/SearchComparisonScenarioId'
+        query:
+          type: string
+          default: ''
+        programs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchProgram'
+        geography:
+          type: string
+        contentType:
+          $ref: '#/components/schemas/ResearchObjectType'
+        vintageYear:
+          type: integer
+          format: int32
+        page:
+          type: integer
+          minimum: 0
+          default: 0
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+    SearchComparisonProjection:
+      type: object
+      required: [source, objectCount]
+      properties:
+        projectionId:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: SHA-256 identity of the normalized DiscoveryDocument set supplied to the targets.
+        source:
+          $ref: '#/components/schemas/RepositorySource'
+        objectCount:
+          type: integer
+          minimum: 0
+        rebuiltAt:
+          type: string
+          format: date-time
+    SearchComparisonEngine:
+      type: string
+      enum: [SOLR, OPENSEARCH]
+    SearchEngineComparison:
+      type: object
+      required: [engine, enabled, reachable, indexName, elapsedMs, returnedHits, results, facets]
+      properties:
+        engine:
+          $ref: '#/components/schemas/SearchComparisonEngine'
+        enabled:
+          type: boolean
+        reachable:
+          type: boolean
+        indexName:
+          type: string
+        indexedDocumentCount:
+          type: integer
+          minimum: 0
+        elapsedMs:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Local API elapsed time around the engine request, not a production benchmark.
+        totalHits:
+          type: integer
+          minimum: 0
+        returnedHits:
+          type: integer
+          minimum: 0
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        facets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetGroup'
+        warning:
+          type: string
+    SearchComparisonResponse:
+      type: object
+      required: [scenario, projection, sameProjection, solr, openSearch]
+      properties:
+        scenario:
+          $ref: '#/components/schemas/SearchComparisonScenarioId'
+        projection:
+          $ref: '#/components/schemas/SearchComparisonProjection'
+        sameProjection:
+          type: boolean
+          description: True only when both enabled targets successfully received the current normalized projection and their document counts match it.
+        solr:
+          $ref: '#/components/schemas/SearchEngineComparison'
+        openSearch:
+          $ref: '#/components/schemas/SearchEngineComparison'
     ResearchObjectDetail:
       type: object
       required:
@@ -939,6 +1095,10 @@ components:
         objectCount:
           type: integer
           minimum: 0
+        projectionId:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: SHA-256 identity of the normalized document set used for the latest rebuild.
         rebuiltAt:
           type: string
           format: date-time
