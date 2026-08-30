@@ -108,17 +108,19 @@ F0 is merged. The 1K portion of F1 is complete end to end:
 
 The 10K harvest portion of F1 is also proven. The same durable Data.gov run `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131` resumed from 10 pages/1,000 accepted records for 90 additional pages and reached 100 pages/10,000 accepted with 0 rejected and 0 skipped.
 
-The 10K deterministic bounded snapshot is now captured and persisted as `DATA_GOV:dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`, with the same SHA-256 `dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`, 10,000 retained records, 100 pages, and the same durable run/cursor semantics.
+The 10K deterministic bounded snapshot is persisted as `DATA_GOV:dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`. The guarded projection operation linked that exact snapshot to projection `b292f98bb8b141dd477cfbcdc9149e44bd53559c153c431f772809f41836742e` with 10,181 projected objects = 181 curated + 10,000 federated. Projection-history evidence retained both the new 10K pair and the earlier 1K pair.
 
-F1 is **not yet complete**. Before PI-1 moves to the 100K F2 proof, the 10K checkpoint still requires:
+Normal public search after projection returned exactly 10,000 `DATA_GOV` records with `origin: FEDERATED` / `sourceSystem: DATA_GOV`; source facets reported `DATA_GOV = 10000`, `CENSUS = 178`, `USGS = 3`.
 
-- guarded snapshot/projection linkage,
-- persisted evidence-history verification,
-- normal public search and live `/research/:id` verification,
-- Solr/OpenSearch projection-count/identity parity,
-- storage growth and bytes/document measurements,
-- host/container/JVM resource context,
-- reusable duration evidence.
+The 10K storage transition was captured before and after projection while PostgreSQL already contained the 10K corpus. Adding 9,000 projected objects increased Solr by 4,342,637 bytes and OpenSearch by 4,365,807 bytes, approximately 482.5 and 485.1 bytes per newly projected object respectively. DSpace storage was unchanged. This pair isolates search-index growth, not 1K-to-10K PostgreSQL growth.
+
+F1 is **not yet complete**. Before PI-1 moves to the 100K F2 proof, the remaining 10K evidence is:
+
+- verify a live federated record through `/research/:id` and its authoritative publisher link,
+- record explicit live Solr/OpenSearch document-count/projection-identity parity from the comparison endpoint,
+- calculate application-PostgreSQL bytes per federated record from a comparable historical 1K/10K pair if available,
+- record host/container/JVM resource context,
+- record reusable harvest/projection duration evidence.
 
 The exact evidence checklist is maintained in [PI1_DATA_GOV_SCALE_EVIDENCE.md](PI1_DATA_GOV_SCALE_EVIDENCE.md).
 
@@ -285,7 +287,7 @@ PI-5 includes:
 
 ### Exit criteria
 
-PI-5 exits when deterministic browser evidence is reproducible, the real-stack smoke path remains independently visible, failures preserve actionable artifacts, failed refreshes cannot replace a prior known-good baseline, and merge-check/branch-protection decisions are documented.
+PI-5 exits when deterministic browser evidence is reproducible, the real-stack smoke path remains independently visible, failures preserve actionable artifacts, failed refreshes cannot replace the prior known-good baseline, and merge-check/branch-protection decisions are documented.
 
 ## PI-6 — Solr/OpenSearch Comparison Hardening
 
