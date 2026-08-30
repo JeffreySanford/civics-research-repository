@@ -36,6 +36,8 @@ describe('searchReducer', () => {
       geography: 'United States',
       vintageYear: 2026,
       sourceUrl: 'https://example.test/usgs',
+      origin: 'REPOSITORY' as const,
+      sourceSystem: 'USGS' as const,
     };
     const response = {
       query: 'USGS',
@@ -67,6 +69,8 @@ describe('searchReducer', () => {
       geography: 'North Dakota',
       vintageYear: 2024,
       sourceUrl: 'https://example.test/acs',
+      origin: 'REPOSITORY' as const,
+      sourceSystem: 'CENSUS' as const,
     };
 
     const selected = selectSearchResults.projector({
