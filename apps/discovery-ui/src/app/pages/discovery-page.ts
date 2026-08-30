@@ -76,9 +76,7 @@ export class DiscoveryPage implements OnInit {
    */
   protected selectedPrograms: string[] = [];
 
-  protected readonly programControl = new FormControl('', {
-    nonNullable: true,
-  });
+  protected readonly programControl = new FormControl('', { nonNullable: true });
   /** Empty means every type. One value at a time: the contract takes a single content type. */
   protected selectedContentType: ResearchObjectType | '' = '';
 
@@ -332,6 +330,8 @@ export class DiscoveryPage implements OnInit {
    * a shared URL instead of validating against the curated Census/USGS compatibility enum.
    */
   private toProgramNames(values: readonly string[]): string[] {
-    return values.map((value) => value.trim()).filter((value) => value.length > 0);
+    return values
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
   }
 }
