@@ -26,8 +26,7 @@ test.describe('accessibility evidence', () => {
             'Federated metadata retained locally for reproducible discovery.',
           files: [],
           citation: 'Workforce Example Metadata',
-          sourceUrl:
-            'https://catalog.data.gov/dataset/workforce-example',
+          sourceUrl: 'https://catalog.data.gov/dataset/workforce-example',
           relatedResearch: [],
           contentType: 'DATASET',
           origin: 'FEDERATED',

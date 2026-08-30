@@ -34,8 +34,7 @@
       <p class="dataset-authors">
         @for (author of detail.authors; track author.name; let last = $last) {
         <span>
-          {{ author.name }}
-          @if (author.orcid) {
+          {{ author.name }} @if (author.orcid) {
           <a
             class="source-link"
             [href]="'https://orcid.org/' + author.orcid"
@@ -81,24 +80,22 @@
       </div>
       <div>
         <dt>Released</dt>
-        <dd>{{ (detail.releasedOn | date: 'mediumDate') ?? 'Not specified' }}</dd>
+        <dd>
+          {{ (detail.releasedOn | date: 'mediumDate') ?? 'Not specified' }}
+        </dd>
       </div>
       <div>
         <dt>Evidence</dt>
         <dd>
-          {{
-            detail.accessibilityEvidenceStatus ??
-              (detail.source === 'FEDERATED' ? 'Not collected' : 'NOT_STARTED')
-          }}
+          {{ detail.accessibilityEvidenceStatus ?? (detail.source ===
+          'FEDERATED' ? 'Not collected' : 'NOT_STARTED') }}
         </dd>
       </div>
       <div>
         <dt>Access</dt>
         <dd>
-          {{
-            detail.accessLevel ??
-              (detail.source === 'FEDERATED' ? 'Not stated' : 'PUBLIC')
-          }}
+          {{ detail.accessLevel ?? (detail.source === 'FEDERATED' ? 'Not stated'
+          : 'PUBLIC') }}
         </dd>
       </div>
       <div>
@@ -191,12 +188,8 @@
         }
       </section>
     </mat-tab>
-    }
-
-    @if (
-      detail.source !== 'FEDERATED' &&
-      (detail.contentType === 'DATASET' || !detail.contentType)
-    ) {
+    } @if ( detail.source !== 'FEDERATED' && (detail.contentType === 'DATASET'
+    || !detail.contentType) ) {
     <mat-tab label="Map Layers">
       <section class="tab-panel" aria-labelledby="map-layers-heading">
         <h2 id="map-layers-heading">Map Layers</h2>
@@ -247,9 +240,7 @@
         </div>
       </section>
     </mat-tab>
-    }
-
-    @if (detail.relations?.length) {
+    } @if (detail.relations?.length) {
     <mat-tab label="Research Package">
       <section class="tab-panel" aria-labelledby="relations-heading">
         <h2 id="relations-heading">Research package</h2>
@@ -290,8 +281,8 @@
           <li>
             <strong>{{ related.title }}</strong>
             <span>
-              {{ related.programName ?? related.program }} -
-              {{ related.geography ?? 'Not specified' }}
+              {{ related.programName ?? related.program }} - {{
+              related.geography ?? 'Not specified' }}
             </span>
             <a
               class="source-link"
