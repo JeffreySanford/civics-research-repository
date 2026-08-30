@@ -13,6 +13,7 @@ Design documents:
 - [Federated Metadata Expansion](../documentation/federation/README.md)
 - [Federated Metadata Architecture](../documentation/federation/federated-metadata-architecture.md)
 - [Source Ingestion Plan](../documentation/federation/source-ingestion-plan.md)
+- [Runtime and Ownership Boundaries](../documentation/federation/runtime-boundaries.md)
 - [Million-Record Federated Metadata Corpus](../documentation/federation/million-record-corpus.md)
 
 ### PI-1.1 Foundation before source breadth
@@ -34,6 +35,7 @@ Design documents:
 
 ### PI-1.2 Shared harvester framework
 
+- [x] Keep production-shaped federated harvesting in the Spring Boot Java runtime; do not introduce a NestJS/Node harvester service.
 - [x] Define `FederatedSourceHarvester` / shared harvesting interfaces.
 - [x] Add cursor/page checkpoint persistence.
 - [ ] Add bounded retry, backoff/jitter and `Retry-After` awareness.
@@ -96,10 +98,12 @@ Design documents:
 - [ ] Add result-set/top-N/rank/facet-difference evidence at scale.
 - [ ] Verify accessibility and keyboard behavior with large facet/result counts.
 
-### PI-1.9 Corpus and disk discipline
+### PI-1.9 Corpus and local-resource discipline
 
 - [x] Keep large binaries/full text external by default.
+- [x] Keep DSpace-owned PostgreSQL/Solr isolated from application-owned PostgreSQL/public Solr; use profiles and lifecycle rather than collapsing ownership boundaries.
 - [ ] Measure bytes/document in federated PostgreSQL, Solr and OpenSearch at 10K and 100K.
+- [ ] Record host/container/JVM CPU and memory context for meaningful 10K/100K/1M runs.
 - [ ] Estimate 1M disk requirements with 30-50% operational headroom before creating the corpus.
 - [x] Keep 1M corpora out of Git and ordinary PR CI.
 - [ ] Make heavy snapshots regenerable so old corpora can be removed when disk pressure requires it.
@@ -185,6 +189,7 @@ Design documents:
 ## Cross-cutting — Platform hardening
 
 - [ ] Move NgRx dependencies from release candidates to stable versions after validation.
+- [x] Keep NgRx/RxJS for shared workflow state while allowing transient component state to remain local; do not migrate to Signals solely to reduce boilerplate.
 - [ ] Revisit generated Spring controller interfaces when Spring 7 support is ready.
 - [ ] Add Testcontainers coverage for `JdbcSyncJobStore` and critical repository paths.
 - [ ] Add typed API error responses where generic failures remain.
