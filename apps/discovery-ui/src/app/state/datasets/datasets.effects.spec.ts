@@ -93,6 +93,33 @@ describe('DatasetsEffects', () => {
     );
   });
 
+  it('loads canonical research detail without dataset-only enrichments', async () => {
+    const getResearchObject = vi.fn().mockReturnValue(of(detail));
+    const getDataset = vi.fn();
+    const getDatasetVersions = vi.fn();
+    const getDatasetMapLayers = vi.fn();
+    const researchId = 'REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg';
+    const effects = setup(
+      {
+        getResearchObject,
+        getDataset,
+        getDatasetVersions,
+      } as unknown as RepositoryDatasetsApi,
+      { getDatasetMapLayers } as unknown as RepositoryMapsApi,
+      of(DatasetsActions.researchOpened({ researchId })),
+    );
+
+    const emitted = await firstValueFrom(effects.openResearch$);
+
+    expect(getResearchObject).toHaveBeenCalledWith(researchId);
+    expect(getDataset).not.toHaveBeenCalled();
+    expect(getDatasetVersions).not.toHaveBeenCalled();
+    expect(getDatasetMapLayers).not.toHaveBeenCalled();
+    expect(emitted).toEqual(
+      DatasetsActions.datasetLoaded({ detail, versions: [], mapLayers: [] }),
+    );
+  });
+
   /** forkJoin fails as a unit: a single failing request must not leave a half-populated page. */
   it('fails the whole load when only the map layers request errors', async () => {
     const effects = setup(
