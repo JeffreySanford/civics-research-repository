@@ -22,6 +22,9 @@ services:
       # Blank by default: without .env the API runs diff-only and never authenticates to DSpace.
       CIVICS_DSPACE_ADMIN_EMAIL: '${CIVICS_DSPACE_ADMIN_EMAIL:-}'
       CIVICS_DSPACE_ADMIN_PASSWORD: '${CIVICS_DSPACE_ADMIN_PASSWORD:-}'
+      # Data.gov Catalog API v4 requires X-Api-Key. DEMO_KEY is intentionally sufficient only for
+      # bounded local exploration; use a personal api.data.gov key for 100K-scale harvest proofs.
+      CIVICS_FEDERATION_DATA_GOV_API_KEY: '${CIVICS_FEDERATION_DATA_GOV_API_KEY:-DEMO_KEY}'
       CIVICS_SOLR_BASE_URL: http://solr:8983/solr
       CIVICS_OPENSEARCH_BASE_URL: http://opensearch:9200
       CIVICS_STORAGE_ARTIFACTS_PATH: /var/lib/civics/artifacts
