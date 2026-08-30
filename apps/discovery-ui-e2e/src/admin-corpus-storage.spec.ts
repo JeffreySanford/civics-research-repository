@@ -129,7 +129,7 @@ test.describe('Admin Sync corpus storage evidence', () => {
     await page.getByLabel('View corpus profile').click();
     await page.getByRole('option', { name: 'Federated 1M' }).click();
 
-    await expect(page.getByText('1,000,000')).toBeVisible();
+    await expect(page.getByText('1,000,000', { exact: true })).toBeVisible();
     await expect(page.getByText('Not measured yet')).toBeVisible();
     await expect(
       page.getByText('Selecting a profile does not activate it'),
