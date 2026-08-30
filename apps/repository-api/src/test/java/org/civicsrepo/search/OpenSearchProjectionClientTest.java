@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class OpenSearchProjectionClientTest {
 
     @Test
-    void projectionUsesEngineNeutralFieldNames() {
+    void projectionUsesEngineNeutralFieldNamesAndPreservesProvenance() {
         OpenSearchProjectionClient client = new OpenSearchProjectionClient("", "discovery-comparison");
         DiscoveryDocument object = new FixtureCatalog().discoveryDocuments().getFirst();
 
@@ -25,9 +25,13 @@ class OpenSearchProjectionClientTest {
                         "publisher",
                         "summary",
                         "accessLevel",
-                        "sourceUrl")
+                        "sourceUrl",
+                        "origin",
+                        "sourceSystem")
                 .doesNotContainKeys("title_txt", "program_s", "vintageYear_i", "repositorySeed_b");
         assertThat(document.get("sourceUrl")).isInstanceOf(String.class);
+        assertThat(document.get("origin")).isEqualTo("FIXTURE");
+        assertThat(document.get("sourceSystem")).isIn("CENSUS", "USGS", "OTHER");
     }
 
     @Test
