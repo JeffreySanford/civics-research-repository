@@ -12,6 +12,8 @@ export type CorpusProfileSummary =
   components['schemas']['CorpusProfileSummary'];
 export type CorpusStorageOverview =
   components['schemas']['CorpusStorageOverview'];
+export type DiscoveryProjectionState =
+  components['schemas']['DiscoveryProjectionState'];
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryCorpusStorageApi {
@@ -23,6 +25,16 @@ export class RepositoryCorpusStorageApi {
   getCorpusStorageOverview(): Observable<CorpusStorageOverview> {
     return this.http.get<CorpusStorageOverview>(
       `${this.baseUrl}/admin/corpus/storage`,
+    );
+  }
+
+  activateCorpusProfile(
+    profile: CorpusProfile,
+  ): Observable<DiscoveryProjectionState> {
+    return this.http.post<DiscoveryProjectionState>(
+      `${this.baseUrl}/admin/reindex`,
+      null,
+      { params: { profile } },
     );
   }
 
