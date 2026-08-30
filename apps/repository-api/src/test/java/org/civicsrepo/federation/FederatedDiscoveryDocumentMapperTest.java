@@ -40,6 +40,7 @@ class FederatedDiscoveryDocumentMapperTest {
         assertEquals(ResearchObjectOrigin.FEDERATED, document.result().getOrigin());
         assertEquals(SourceSystem.DOE_OSTI, document.result().getSourceSystem());
         assertEquals(ResearchProgram.OTHER, document.result().getProgram());
+        assertEquals("Office of Science", document.result().getProgramName());
         assertEquals("Office of Science", document.programName());
         assertEquals("U.S. Department of Energy", document.result().getPublisher());
         assertEquals(List.of("Ada Researcher"), document.authors());
