@@ -16,6 +16,29 @@ export type CorpusProfileSummary =
 export type CorpusStorageOverview =
   components['schemas']['CorpusStorageOverview'];
 
+export type CorpusProfileActivationPhase =
+  | 'IDLE'
+  | 'PREPARING'
+  | 'PROJECTING'
+  | 'VERIFYING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export interface CorpusProfileActivationProgress {
+  readonly operationId?: string | null;
+  readonly profile?: CorpusProfile | null;
+  readonly phase: CorpusProfileActivationPhase;
+  readonly processedDocuments: number;
+  readonly totalDocuments?: number | null;
+  readonly percentComplete: number;
+  readonly startedAt?: string | null;
+  readonly updatedAt: string;
+  readonly completedAt?: string | null;
+  readonly elapsedMs: number;
+  readonly documentsPerSecond?: number | null;
+  readonly message?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RepositoryCorpusStorageApi {
   constructor(
@@ -36,6 +59,12 @@ export class RepositoryCorpusStorageApi {
       `${this.baseUrl}/admin/reindex`,
       null,
       { params: { profile } },
+    );
+  }
+
+  getCorpusProfileActivationProgress(): Observable<CorpusProfileActivationProgress> {
+    return this.http.get<CorpusProfileActivationProgress>(
+      `${this.baseUrl}/admin/reindex/progress`,
     );
   }
 
