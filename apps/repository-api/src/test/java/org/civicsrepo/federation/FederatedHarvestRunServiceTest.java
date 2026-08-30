@@ -86,7 +86,9 @@ class FederatedHarvestRunServiceTest {
         assertEquals(1, continued.pageCount());
         assertEquals(3, continued.acceptedCount());
         assertNull(continued.cursor());
-        assertEquals(List.of(null, "page-2"), harvester.seenCursors);
+        assertEquals(2, harvester.seenCursors.size());
+        assertNull(harvester.seenCursors.getFirst());
+        assertEquals("page-2", harvester.seenCursors.get(1));
     }
 
     @Test
@@ -108,7 +110,9 @@ class FederatedHarvestRunServiceTest {
         assertEquals(HarvestRunStatus.PAUSED, restarted.status());
         assertEquals(2, restarted.acceptedCount());
         assertEquals("page-2", restarted.cursor());
-        assertEquals(List.of(null, null), harvester.seenCursors);
+        assertEquals(2, harvester.seenCursors.size());
+        assertNull(harvester.seenCursors.getFirst());
+        assertNull(harvester.seenCursors.get(1));
         assertEquals("page-2", checkpoints.find(FederatedSourceSystem.DATA_GOV).orElseThrow().cursor());
     }
 
