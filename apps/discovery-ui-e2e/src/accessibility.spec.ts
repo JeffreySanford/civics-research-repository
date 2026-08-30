@@ -14,7 +14,9 @@ test.describe('accessibility evidence', () => {
     await mockRepositoryApi(page);
     await mockSearchComparisonApi(page);
     await page.route(`**/api/research/*`, async (route) => {
-      const token = new URL(route.request().url()).pathname.split('/research/')[1];
+      const token = new URL(route.request().url()).pathname.split(
+        '/research/',
+      )[1];
       if (token !== federatedResearchId) {
         await route.fallback();
         return;
