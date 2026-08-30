@@ -144,6 +144,12 @@ test.describe('Admin Sync corpus storage evidence', () => {
     await expect(
       page.getByRole('button', { name: 'Capture current footprint' }),
     ).toBeVisible();
+
+    await expect(page.getByLabel('Filter historical measurements')).toBeVisible();
+    await expect(
+      page.getByRole('columnheader', { name: /Captured/ }),
+    ).toBeVisible();
+    await expect(page.locator('mat-paginator')).toBeVisible();
   });
 
   test('explicitly activates an already-retained 10K projection with live progress and captures its footprint @storyboard @comparison', async ({
