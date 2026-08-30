@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -167,7 +168,8 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         String bureauCode = firstArrayText(dcat, "bureauCode");
         String programCode = firstArrayText(dcat, "programCode");
         String program = firstNonBlank(programCode, bureauCode, publisher);
-        OffsetDateTime sourceUpdatedAt = parseTimestamp(optionalText(dcat, "modified"));
+        String sourceModified = optionalText(dcat, "modified");
+        OffsetDateTime sourceUpdatedAt = parseTimestamp(sourceModified);
         List<Map<String, String>> resourceLinks = resources(dcat);
         int resourceCount = dcat.path("distribution").isArray() ? dcat.path("distribution").size() : 0;
 
@@ -177,6 +179,7 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         putIfPresent(sourceMetadata, "bureauCode", bureauCode);
         putIfPresent(sourceMetadata, "programCode", programCode);
         putIfPresent(sourceMetadata, "identifier", id);
+        putIfPresent(sourceMetadata, "modified", sourceModified);
         putIfPresent(sourceMetadata, "landingPage", optionalText(dcat, "landingPage"));
         putIfPresent(sourceMetadata, "license", optionalText(dcat, "license"));
         putIfPresent(sourceMetadata, "doi", optionalText(dcat, "doi"));
@@ -320,8 +323,12 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         } catch (DateTimeParseException ignored) {
             try {
                 return LocalDateTime.parse(value).atOffset(ZoneOffset.UTC);
-            } catch (DateTimeParseException invalid) {
-                throw FederatedHarvestException.permanent("Data.gov modified timestamp is not valid: " + value);
+            } catch (DateTimeParseException ignoredLocalDateTime) {
+                try {
+                    return LocalDate.parse(value).atStartOfDay().atOffset(ZoneOffset.UTC);
+                } catch (DateTimeParseException invalid) {
+                    throw FederatedHarvestException.permanent("Data.gov modified timestamp is not valid: " + value);
+                }
             }
         }
     }
