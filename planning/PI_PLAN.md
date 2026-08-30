@@ -1,6 +1,6 @@
 # Program Increment Plan
 
-This plan defines six named program increments. The program-increment numbers are stable workstream identities and the intended execution order is now numeric:
+This plan defines six named program increments. The program-increment numbers are stable workstream identities and the intended execution order is numeric:
 
 ```text
 PI-1 Federated Metadata Expansion
