@@ -22,11 +22,13 @@ import java.util.stream.Collectors;
 import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.FacetValue;
+import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
-import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -231,6 +233,8 @@ public class SolrSearchClient implements DiscoveryIndex {
         document.put("accessLevel_s",
                 (result.getAccessLevel() == null ? AccessLevel.PUBLIC : result.getAccessLevel()).getValue());
         document.put("sourceUrl_s", result.getSourceUrl());
+        document.put("origin_s", result.getOrigin().getValue());
+        document.put("sourceSystem_s", result.getSourceSystem().getValue());
         document.put("repositorySeed_b", true);
 
         // Indexed, never returned. These are reasons a researcher types something into a search
@@ -277,14 +281,17 @@ public class SolrSearchClient implements DiscoveryIndex {
                         ResearchProgram.fromValue(text(document, "program_s")),
                         text(document, "publisher_s"),
                         text(document, "summary_txt"),
-                        URI.create(text(document, "sourceUrl_s")))
+                        URI.create(text(document, "sourceUrl_s")),
+                        ResearchObjectOrigin.fromValue(text(document, "origin_s")),
+                        SourceSystem.fromValue(text(document, "sourceSystem_s")))
                         .geography(text(document, "geography_s"))
                         .vintageYear(integer(document, "vintageYear_i"))
                         .accessLevel(accessLevel(document)));
             }
 
             // Conservative default. The client cannot know what was projected into the core, so
-            // SearchService relabels via withResultSource; FIXTURE is the safe assumption if it does not.
+            // SearchService relabels the response-level compatibility field. Per-record origin and
+            // sourceSystem are read from the indexed document and remain authoritative for mixed pages.
             return new SearchResponse(
                     RepositorySource.FIXTURE,
                     query == null ? "" : query,
