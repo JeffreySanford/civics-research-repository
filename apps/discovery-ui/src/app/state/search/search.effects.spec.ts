@@ -26,6 +26,8 @@ const response: SearchResponse = {
       geography: 'North Dakota',
       vintageYear: 2025,
       sourceUrl: 'https://www2.census.gov/geo/tiger/TIGER2025/',
+      origin: 'REPOSITORY',
+      sourceSystem: 'CENSUS',
     },
   ],
   facets: [],
