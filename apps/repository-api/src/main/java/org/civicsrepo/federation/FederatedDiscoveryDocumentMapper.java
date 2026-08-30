@@ -15,15 +15,16 @@ public class FederatedDiscoveryDocumentMapper {
 
     public DiscoveryDocument toDiscoveryDocument(FederatedResearchRecord record) {
         SearchResult result = new SearchResult(
-                record.id(),
-                record.title(),
-                record.contentType(),
-                ResearchProgram.OTHER,
-                record.publisher(),
-                record.summary(),
-                record.sourceUrl(),
-                ResearchObjectOrigin.FEDERATED,
-                sourceSystem(record.sourceSystem()));
+                        record.id(),
+                        record.title(),
+                        record.contentType(),
+                        ResearchProgram.OTHER,
+                        record.publisher(),
+                        record.summary(),
+                        record.sourceUrl(),
+                        ResearchObjectOrigin.FEDERATED,
+                        sourceSystem(record.sourceSystem()))
+                .programName(record.program());
 
         return new DiscoveryDocument(
                 result,
