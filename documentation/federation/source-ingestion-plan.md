@@ -6,29 +6,7 @@ PI-1 should deliver adapters for every identified source while keeping ingestion
 
 The goal is **not** to ingest every record from every source simultaneously on day one. The goal is to make each source reproducibly harvestable and then establish controlled corpus tiers that can be used by both standalone and clustered search topologies.
 
-## Runtime implementation boundary
-
-All production-shaped federated harvesting is implemented inside the existing Spring Boot Java `repository-api` runtime.
-
-```text
-authoritative source
-  -> Java source adapter
-  -> shared Java harvest orchestration
-  -> federated metadata catalog
-  -> search projection
-```
-
-Rules:
-
-- do not create a NestJS harvester service,
-- do not create a Node.js harvester service,
-- source paging, retry/rate-limit behavior, normalization, checkpointing, quarantine/error handling and run state remain Java/Spring responsibilities,
-- Node scripts may support build/test/fixtures/local tooling but do not own durable harvest state,
-- evolve the existing `FederatedHarvestService`, `FederatedSourceHarvester`, checkpoint store and metadata catalog before adding another job framework.
-
-Spring Batch may be evaluated later if measured operational needs justify its restart/partition/job-metadata features. It is not required simply because the workload is batch-oriented.
-
-See [PI-1 Runtime and Ownership Boundaries](runtime-boundaries.md).
+All production-shaped harvesting runs inside the Spring Boot Java application. Node/NestJS is not an alternate ingestion runtime. Repository Node scripts may still support fixtures, build/test automation and local orchestration, but durable source checkpoints, retries, normalization, quarantine/error state and harvest-run ownership remain in Java.
 
 ## PI-1 source scope
 
@@ -42,11 +20,11 @@ See [PI-1 Runtime and Ownership Boundaries](runtime-boundaries.md).
 
 All five adapters belong in PI-1. Large local snapshots remain staged so disk, time and source limits do not force us to keep every corpus resident at maximum size simultaneously.
 
-## Shared harvester framework first
+## Shared Java harvester framework first
 
-Do not implement five independent loops and do not split harvesting into a second application runtime.
+Do not implement five independent loops and do not add a second harvester runtime.
 
-Create one Java/Spring framework that owns:
+The shared Spring/Java framework owns:
 
 ```text
 start/resume
@@ -58,22 +36,61 @@ start/resume
   -> continue until requested limit/end
 ```
 
-Shared capabilities:
+Implemented foundation already includes:
 
-- cursor/page/checkpoint persistence,
-- bounded retry with backoff and jitter,
-- `Retry-After` / source rate-limit awareness,
+- source-specific `FederatedSourceHarvester` registration,
+- stable cursor/page checkpoint persistence,
+- namespaced source identity validation,
+- idempotent catalog persistence,
+- bounded prepared-statement database batches,
+- typed retryable versus permanent source failures,
+- bounded three-attempt retry,
+- exponential backoff with jitter,
+- bounded publisher `Retry-After` handling.
+
+Remaining shared capabilities:
+
+- configurable source request concurrency/rate limits,
 - request timeout and cancellation,
+- durable harvest-run identity/status,
 - resumable runs after process failure,
-- idempotent source identity,
 - accepted/rejected/skipped counters,
 - quarantined malformed records,
 - progress and throughput metrics,
-- bounded concurrency per source,
 - explicit requested record limit,
 - source retrieval timestamp/window,
 - adapter version / git SHA,
 - final corpus manifest.
+
+Spring Batch remains optional. Adopt it only if the existing Java orchestration demonstrates a concrete need for its job repository, partitioning or restart machinery.
+
+## Normalization and discovery handoff
+
+A source adapter normalizes publisher data into `FederatedResearchRecord`. That record is then converted by `FederatedDiscoveryDocumentMapper` into the same engine-neutral `DiscoveryDocument` shape used for repository records.
+
+Important taxonomy rule:
+
+```text
+legacy ResearchProgram
+  compatibility classification for the curated Census slice
+
+programName
+  canonical data-driven publisher/source program value
+```
+
+A DOE OSTI record may therefore retain `ResearchProgram.OTHER` for legacy compatibility while preserving `programName = "Office of Science"` for discovery. New source program names must not require Java enum expansion and must not collapse into one giant `OTHER` facet.
+
+`CombinedDiscoveryCatalog` now provides bounded authority composition:
+
+```text
+curated DSpace documents
+  -> bounded repository portion
+  -> federated records ordered by namespaced stable ID
+  -> FederatedDiscoveryDocumentMapper
+  -> bounded DiscoveryDocument pages
+```
+
+The current projection lifecycle still needs to consume those pages in batches rather than materializing a full list before 100K+ runs.
 
 ## Run model
 
@@ -117,7 +134,7 @@ Primary mapping targets:
 - publisher/agency,
 - themes/tags,
 - modified/issued dates,
-- distribution/resource links,
+- distributions/resource links,
 - landing-page URL,
 - license/access metadata where present.
 
@@ -226,15 +243,15 @@ Do not attempt to retain the entire OpenAlex corpus locally. Controlled snapshot
 
 ## Adapter contract
 
-Conceptual interface:
+Current conceptual contract:
 
 ```text
 FederatedSourceHarvester
   sourceSystem()
-  fetchPage(checkpoint, limit)
+  fetch(checkpointCursor, pageSize)
 ```
 
-The shared Java harvester—not each adapter—owns persistence, retries, progress and resume semantics. Source-specific code should remain focused on source retrieval and normalization rather than duplicating orchestration behavior.
+The adapter returns normalized bounded pages. The shared harvester—not each adapter—owns persistence, retries, progress and resume semantics.
 
 ## Update strategy
 
@@ -280,24 +297,15 @@ Use:
 - workstation/manual workflows for 100K/1M,
 - manifests/artifacts rather than the full corpus in GitHub Actions where storage/runtime is excessive.
 
-## Local runtime resource policy
-
-PI-1 scale work must not treat workstation starvation as a valid engine benchmark.
-
-- Keep DSpace behind its optional Compose profile for workflows that need the repository system of record.
-- Do not merge DSpace's database schema or internal Solr cores with application-owned stores merely to reduce container count.
-- Record host/container/JVM resource context for meaningful 10K/100K/1M runs.
-- Measure before increasing corpus size or concurrency.
-- Use bounded resource settings where they improve reproducibility without masking genuine scale failures.
-
 ## PI-1 delivery sequence
 
 ### F0 — foundation
 
 - provenance/origin contract,
 - dynamic source/publisher/program model,
-- federated metadata persistence with bounded JDBC writes,
+- federated metadata persistence,
 - harvest-run/checkpoint model,
+- combined bounded repository/federated discovery catalog,
 - `/research/:id` detail abstraction,
 - streaming/batched projection contract.
 
@@ -335,14 +343,13 @@ Add optional broad scholarly/citation shape.
 
 PI-1 is complete when:
 
-- all five adapters are implemented and testable in Java/Spring,
+- all five adapters are implemented and testable,
 - every source has a reproducible bounded harvest,
-- no separate NestJS/Node production harvester is required,
 - at least Data.gov + OSTI + one additional large source are visible together in the normal UI,
 - federated records are clearly distinguished from DSpace-backed records,
 - `/research/:id` resolves both origins,
 - program/publisher/source facets do not rely on a fixed source-specific enum,
-- metadata writes and search projection work in bounded batches,
+- projection works in bounded batches,
 - a deterministic 1M corpus is indexed into standalone Solr and OpenSearch with matching identity/count,
 - large binaries remain external,
 - the Compose demo remains functional with the original curated repository slice,
