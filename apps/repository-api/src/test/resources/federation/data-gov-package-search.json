@@ -20,15 +20,36 @@
           "title": "Department of Commerce"
         },
         "tags": [
-          {"name": "workforce", "display_name": "Workforce"},
-          {"name": "north-dakota", "display_name": "North Dakota"}
+          {
+            "name": "workforce",
+            "display_name": "Workforce"
+          },
+          {
+            "name": "north-dakota",
+            "display_name": "North Dakota"
+          }
         ],
         "extras": [
-          {"key": "bureauCode", "value": "006:00"},
-          {"key": "programCode", "value": "006:123"},
-          {"key": "identifier", "value": "ND-WORKFORCE-DEMO"},
-          {"key": "landingPage", "value": "https://example.gov/workforce/north-dakota"},
-          {"key": "doi", "value": "10.1234/data-gov-demo"}
+          {
+            "key": "bureauCode",
+            "value": "006:00"
+          },
+          {
+            "key": "programCode",
+            "value": "006:123"
+          },
+          {
+            "key": "identifier",
+            "value": "ND-WORKFORCE-DEMO"
+          },
+          {
+            "key": "landingPage",
+            "value": "https://example.gov/workforce/north-dakota"
+          },
+          {
+            "key": "doi",
+            "value": "10.1234/data-gov-demo"
+          }
         ],
         "resources": [
           {
@@ -50,7 +71,10 @@
           "title": "Office of Science"
         },
         "tags": [
-          {"name": "open-science", "display_name": "Open Science"}
+          {
+            "name": "open-science",
+            "display_name": "Open Science"
+          }
         ],
         "extras": [],
         "resources": []
