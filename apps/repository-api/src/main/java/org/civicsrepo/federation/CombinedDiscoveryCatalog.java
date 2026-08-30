@@ -1,6 +1,7 @@
 package org.civicsrepo.federation;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -14,8 +15,9 @@ import org.springframework.stereotype.Component;
  * federated metadata ordered by stable namespaced identifier.
  *
  * <p>The repository slice is intentionally small and already bounded by {@link RepositoryCatalog}.
+ * It is sorted by stable result ID before paging because repository reads do not promise an order.
  * Federated records are never loaded as one corpus-sized list; callers advance through stable-ID
- * pages. This becomes the input seam for the later streaming Solr/OpenSearch projection.
+ * pages. Page size therefore cannot change the canonical authority/order sequence.
  *
  * <p>The cursor is an internal domain value. Browser/API pagination should encode its eventual
  * public form as an opaque token rather than exposing offsets or database identifiers directly.
@@ -48,7 +50,9 @@ public class CombinedDiscoveryCatalog {
     public DiscoveryPage findAfter(DiscoveryCursor cursor, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, MAX_PAGE_SIZE));
         DiscoveryCursor current = cursor == null ? DiscoveryCursor.start() : cursor;
-        List<DiscoveryDocument> repository = List.copyOf(repositoryDocuments.get());
+        List<DiscoveryDocument> repository = repositoryDocuments.get().stream()
+                .sorted(Comparator.comparing((document) -> document.result().getId()))
+                .toList();
         int repositoryOffset = Math.max(0, Math.min(current.repositoryOffset(), repository.size()));
         List<DiscoveryDocument> documents = new ArrayList<>(safeLimit);
 
