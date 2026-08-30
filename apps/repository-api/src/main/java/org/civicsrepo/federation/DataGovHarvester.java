@@ -19,47 +19,53 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Bounded Data.gov metadata harvester backed by CKAN {@code package_search}.
+ * Bounded Data.gov metadata harvester backed by the Data.gov Catalog API v4.
  *
  * <p>Data.gov is a metadata catalog, not a binary repository. The normalized record therefore
  * retains the Data.gov catalog page as provenance while the original dataset remains owned by its
- * publishing organization. CKAN offset pagination is exposed only as the shared harvester's opaque
- * cursor; callers never depend on the source-specific representation.
+ * publishing organization. The v4 API's {@code after} token is exposed only as the shared
+ * harvester's opaque cursor; callers never depend on the source-specific cursor representation.
  */
 @Component
 public class DataGovHarvester implements FederatedSourceHarvester {
     static final int MAX_SOURCE_PAGE_SIZE = 1_000;
     static final int MAX_RESOURCE_LINKS_PER_RECORD = 100;
-    static final String ADAPTER_VERSION = "data-gov-ckan-v1";
+    static final String ADAPTER_VERSION = "data-gov-catalog-v4-v1";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
     private static final String DEFAULT_CATALOG_BASE = "https://catalog.data.gov";
 
     private final String searchUrl;
+    private final String apiKey;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
     @Autowired
     public DataGovHarvester(
-            @Value("${civics.federation.data-gov.search-url:https://catalog.data.gov/api/3/action/package_search}")
-                    String searchUrl) {
+            @Value("${civics.federation.data-gov.search-url:https://api.gsa.gov/technology/datagov/v4/search}")
+                    String searchUrl,
+            @Value("${civics.federation.data-gov.api-key:DEMO_KEY}") String apiKey) {
         this(
                 searchUrl,
+                apiKey,
                 HttpClient.newBuilder().connectTimeout(REQUEST_TIMEOUT).build(),
                 new ObjectMapper(),
                 Clock.systemUTC());
     }
 
-    DataGovHarvester(String searchUrl, HttpClient httpClient, ObjectMapper objectMapper, Clock clock) {
+    DataGovHarvester(String searchUrl, String apiKey, HttpClient httpClient, ObjectMapper objectMapper, Clock clock) {
         this.searchUrl = stripTrailingQuestionMark(requireText(searchUrl, "searchUrl"));
+        this.apiKey = requireText(apiKey, "apiKey");
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         this.clock = clock;
@@ -77,11 +83,11 @@ public class DataGovHarvester implements FederatedSourceHarvester {
 
     @Override
     public HarvestPage fetch(String cursor, int pageSize) {
-        int start = parseCursor(cursor);
-        int rows = Math.max(1, Math.min(pageSize, MAX_SOURCE_PAGE_SIZE));
-        HttpRequest request = HttpRequest.newBuilder(searchUri(start, rows))
+        int perPage = Math.max(1, Math.min(pageSize, MAX_SOURCE_PAGE_SIZE));
+        HttpRequest request = HttpRequest.newBuilder(searchUri(cursor, perPage))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Accept", "application/json")
+                .header("X-Api-Key", apiKey)
                 .GET()
                 .build();
 
@@ -98,35 +104,29 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         int status = response.statusCode();
         if (status == 429 || status == 408 || status >= 500) {
             throw FederatedHarvestException.retryable(
-                    "Data.gov package_search returned HTTP " + status + ".",
+                    "Data.gov Catalog API returned HTTP " + status + ".",
                     retryAfter(response));
         }
         if (status >= 300) {
-            throw FederatedHarvestException.permanent("Data.gov package_search returned HTTP " + status + ".");
+            throw FederatedHarvestException.permanent("Data.gov Catalog API returned HTTP " + status + ".");
         }
 
-        return parsePage(response.body(), start);
+        return parsePage(response.body());
     }
 
-    private HarvestPage parsePage(String body, int start) {
+    private HarvestPage parsePage(String body) {
         final JsonNode root;
         try {
             root = objectMapper.readTree(body);
         } catch (JsonProcessingException exception) {
-            throw FederatedHarvestException.permanent("Data.gov package_search returned invalid JSON.", exception);
+            throw FederatedHarvestException.permanent("Data.gov Catalog API returned invalid JSON.", exception);
         }
 
-        if (!root.path("success").asBoolean(false)) {
-            throw FederatedHarvestException.permanent("Data.gov package_search reported success=false.");
+        JsonNode results = root.path("results");
+        if (!root.isObject() || !results.isArray()) {
+            throw FederatedHarvestException.permanent("Data.gov Catalog API response is missing results.");
         }
 
-        JsonNode result = root.path("result");
-        JsonNode results = result.path("results");
-        if (!result.isObject() || !results.isArray()) {
-            throw FederatedHarvestException.permanent("Data.gov package_search response is missing result.results.");
-        }
-
-        long total = Math.max(0L, result.path("count").asLong(0L));
         List<FederatedResearchRecord> records = new ArrayList<>();
         List<HarvestRejection> rejections = new ArrayList<>();
         for (JsonNode dataset : results) {
@@ -137,53 +137,55 @@ public class DataGovHarvester implements FederatedSourceHarvester {
                     throw exception;
                 }
                 rejections.add(new HarvestRejection(
-                        text(dataset, "id"),
+                        optionalIdentifier(dataset),
                         exception.getMessage(),
                         dataset.toString()));
             }
         }
 
-        // A rejected record still consumed a source offset. Advancing by accepted records would
-        // repeatedly fetch the same bad item forever and make resumability depend on validation.
-        long nextOffset = (long) start + results.size();
-        if (results.isEmpty() && nextOffset < total) {
+        String nextCursor = optionalText(root, "after");
+        if (results.isEmpty() && nextCursor != null) {
             throw FederatedHarvestException.permanent(
-                    "Data.gov returned an empty page before the reported catalog count was exhausted.");
+                    "Data.gov returned an empty page with a continuation cursor.");
         }
 
-        boolean complete = nextOffset >= total || results.isEmpty();
-        return new HarvestPage(
-                records,
-                rejections,
-                complete ? null : Long.toString(nextOffset),
-                complete);
+        boolean complete = nextCursor == null;
+        return new HarvestPage(records, rejections, nextCursor, complete);
     }
 
     private FederatedResearchRecord normalize(JsonNode dataset) {
-        String id = requiredText(dataset, "id");
-        String name = text(dataset, "name");
-        String title = requiredText(dataset, "title");
-        String publisher = organizationTitle(dataset);
-        String program = firstNonBlank(
-                extra(dataset, "programCode"),
-                extra(dataset, "bureauCode"),
-                publisher);
-        String author = text(dataset, "author");
-        OffsetDateTime sourceUpdatedAt = parseTimestamp(text(dataset, "metadata_modified"));
-        List<Map<String, String>> resourceLinks = resources(dataset);
-        int resourceCount = dataset.path("resources").isArray() ? dataset.path("resources").size() : 0;
+        JsonNode dcat = dataset.path("dcat");
+        String id = requiredFirst("identifier", optionalText(dataset, "identifier"), optionalText(dcat, "identifier"));
+        String slug = optionalText(dataset, "slug");
+        String title = requiredFirst("title", optionalText(dataset, "title"), optionalText(dcat, "title"));
+        String summary = firstNonBlank(optionalText(dataset, "description"), optionalText(dcat, "description"));
+        String publisher = firstNonBlank(
+                optionalText(dataset, "publisher"),
+                optionalText(dcat.path("publisher"), "name"),
+                optionalText(dataset.path("organization"), "name"),
+                "Data.gov");
+        String bureauCode = firstArrayText(dcat, "bureauCode");
+        String programCode = firstArrayText(dcat, "programCode");
+        String program = firstNonBlank(programCode, bureauCode, publisher);
+        OffsetDateTime sourceUpdatedAt = parseTimestamp(optionalText(dcat, "modified"));
+        List<Map<String, String>> resourceLinks = resources(dcat);
+        int resourceCount = dcat.path("distribution").isArray() ? dcat.path("distribution").size() : 0;
 
         Map<String, Object> sourceMetadata = new LinkedHashMap<>();
-        putIfPresent(sourceMetadata, "name", name);
-        putIfPresent(sourceMetadata, "metadataCreated", text(dataset, "metadata_created"));
-        putIfPresent(sourceMetadata, "metadataModified", text(dataset, "metadata_modified"));
-        putIfPresent(sourceMetadata, "licenseId", text(dataset, "license_id"));
-        putIfPresent(sourceMetadata, "licenseTitle", text(dataset, "license_title"));
-        putIfPresent(sourceMetadata, "bureauCode", extra(dataset, "bureauCode"));
-        putIfPresent(sourceMetadata, "programCode", extra(dataset, "programCode"));
-        putIfPresent(sourceMetadata, "identifier", extra(dataset, "identifier"));
-        putIfPresent(sourceMetadata, "landingPage", extra(dataset, "landingPage"));
-        putIfPresent(sourceMetadata, "doi", extra(dataset, "doi"));
+        putIfPresent(sourceMetadata, "slug", slug);
+        putIfPresent(sourceMetadata, "accessLevel", optionalText(dcat, "accessLevel"));
+        putIfPresent(sourceMetadata, "bureauCode", bureauCode);
+        putIfPresent(sourceMetadata, "programCode", programCode);
+        putIfPresent(sourceMetadata, "identifier", id);
+        putIfPresent(sourceMetadata, "landingPage", optionalText(dcat, "landingPage"));
+        putIfPresent(sourceMetadata, "license", optionalText(dcat, "license"));
+        putIfPresent(sourceMetadata, "doi", optionalText(dcat, "doi"));
+        putIfPresent(sourceMetadata, "issued", optionalText(dcat, "issued"));
+        putIfPresent(sourceMetadata, "lastHarvestedDate", optionalText(dataset, "last_harvested_date"));
+        putIfPresent(sourceMetadata, "harvestRecord", optionalText(dataset, "harvest_record"));
+        putIfPresent(sourceMetadata, "harvestRecordRaw", optionalText(dataset, "harvest_record_raw"));
+        putIfPresent(sourceMetadata, "organizationSlug", optionalText(dataset.path("organization"), "slug"));
+        putIfPresent(sourceMetadata, "organizationType", optionalText(dataset.path("organization"), "organization_type"));
         sourceMetadata.put("resourceCount", resourceCount);
         if (!resourceLinks.isEmpty()) {
             sourceMetadata.put("resources", resourceLinks);
@@ -196,90 +198,98 @@ public class DataGovHarvester implements FederatedSourceHarvester {
                 FederatedSourceSystem.DATA_GOV,
                 id,
                 title,
-                text(dataset, "notes"),
+                summary,
                 publisher,
                 program,
                 ResearchObjectType.DATASET,
-                catalogUri(name, id),
+                catalogUri(slug, id),
                 sourceUpdatedAt,
                 OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC),
                 ADAPTER_VERSION,
-                author.isBlank() ? List.of() : List.of(author),
-                tags(dataset),
+                List.of(),
+                subjects(dataset, dcat),
                 sourceMetadata);
     }
 
-    private URI searchUri(int start, int rows) {
+    private URI searchUri(String cursor, int perPage) {
         String delimiter = searchUrl.contains("?") ? "&" : "?";
-        String query = "rows=" + rows
-                + "&start=" + start
-                + "&facet=false"
-                + "&sort=" + encode("metadata_modified asc,id asc");
+        StringBuilder query = new StringBuilder("per_page=")
+                .append(perPage)
+                .append("&sort=last_harvested_date");
+        if (cursor != null && !cursor.isBlank()) {
+            query.append("&after=").append(encode(cursor.trim()));
+        }
         return URI.create(searchUrl + delimiter + query);
     }
 
-    private URI catalogUri(String name, String id) {
-        if (name != null && !name.isBlank()) {
-            return URI.create(DEFAULT_CATALOG_BASE + "/dataset/" + encodePathSegment(name));
+    private URI catalogUri(String slug, String id) {
+        if (slug != null && !slug.isBlank()) {
+            return URI.create(DEFAULT_CATALOG_BASE + "/dataset/" + encodePathSegment(slug));
         }
         return URI.create(DEFAULT_CATALOG_BASE + "/dataset/?id=" + encode(id));
     }
 
-    private List<String> tags(JsonNode dataset) {
-        if (!dataset.path("tags").isArray()) {
-            return List.of();
-        }
-        List<String> values = new ArrayList<>();
-        for (JsonNode tag : dataset.path("tags")) {
-            String value = text(tag, "display_name");
-            if (value.isBlank()) {
-                value = text(tag, "name");
-            }
-            if (!value.isBlank()) {
-                values.add(value);
-            }
-        }
+    private List<String> subjects(JsonNode dataset, JsonNode dcat) {
+        Set<String> values = new LinkedHashSet<>();
+        addTextArray(values, dataset.path("keyword"));
+        addTextArray(values, dataset.path("theme"));
+        addTextArray(values, dcat.path("keyword"));
+        addTextArray(values, dcat.path("theme"));
         return List.copyOf(values);
     }
 
-    private List<Map<String, String>> resources(JsonNode dataset) {
-        if (!dataset.path("resources").isArray()) {
+    private void addTextArray(Set<String> values, JsonNode node) {
+        if (!node.isArray()) {
+            return;
+        }
+        for (JsonNode item : node) {
+            if (item.isTextual() && !item.asText().isBlank()) {
+                values.add(item.asText().trim());
+            }
+        }
+    }
+
+    private List<Map<String, String>> resources(JsonNode dcat) {
+        if (!dcat.path("distribution").isArray()) {
             return List.of();
         }
         List<Map<String, String>> resources = new ArrayList<>();
-        for (JsonNode resource : dataset.path("resources")) {
+        for (JsonNode resource : dcat.path("distribution")) {
             if (resources.size() >= MAX_RESOURCE_LINKS_PER_RECORD) {
                 break;
             }
-            String url = text(resource, "url");
+            if (!resource.isObject()) {
+                continue;
+            }
+            String url = firstNonBlank(optionalText(resource, "downloadURL"), optionalText(resource, "accessURL"));
             if (url.isBlank()) {
                 continue;
             }
             Map<String, String> normalized = new LinkedHashMap<>();
-            putIfPresent(normalized, "id", text(resource, "id"));
-            putIfPresent(normalized, "name", text(resource, "name"));
-            putIfPresent(normalized, "format", text(resource, "format"));
+            putIfPresent(normalized, "id", optionalText(resource, "identifier"));
+            putIfPresent(normalized, "name", firstNonBlank(optionalText(resource, "title"), optionalText(resource, "description")));
+            putIfPresent(normalized, "format", firstNonBlank(optionalText(resource, "format"), optionalText(resource, "mediaType")));
             normalized.put("url", url);
             resources.add(Map.copyOf(normalized));
         }
         return List.copyOf(resources);
     }
 
-    private String organizationTitle(JsonNode dataset) {
-        String organization = text(dataset.path("organization"), "title");
-        return organization.isBlank() ? "Data.gov" : organization;
-    }
-
-    private String extra(JsonNode dataset, String key) {
-        if (!dataset.path("extras").isArray()) {
+    private String firstArrayText(JsonNode node, String field) {
+        JsonNode values = node.path(field);
+        if (values.isArray()) {
+            for (JsonNode value : values) {
+                if (value.isTextual() && !value.asText().isBlank()) {
+                    return value.asText().trim();
+                }
+            }
             return "";
         }
-        for (JsonNode extra : dataset.path("extras")) {
-            if (key.equalsIgnoreCase(text(extra, "key"))) {
-                return text(extra, "value");
-            }
-        }
-        return "";
+        return optionalText(node, field);
+    }
+
+    private String optionalIdentifier(JsonNode dataset) {
+        return firstNonBlank(optionalText(dataset, "identifier"), optionalText(dataset.path("dcat"), "identifier"));
     }
 
     private Duration retryAfter(HttpResponse<?> response) {
@@ -311,40 +321,29 @@ public class DataGovHarvester implements FederatedSourceHarvester {
             try {
                 return LocalDateTime.parse(value).atOffset(ZoneOffset.UTC);
             } catch (DateTimeParseException invalid) {
-                throw FederatedHarvestException.permanent("Data.gov metadata_modified is not a valid timestamp: " + value);
+                throw FederatedHarvestException.permanent("Data.gov modified timestamp is not valid: " + value);
             }
         }
     }
 
-    private int parseCursor(String cursor) {
-        if (cursor == null || cursor.isBlank()) {
-            return 0;
-        }
-        try {
-            long parsed = Long.parseLong(cursor.trim());
-            if (parsed < 0 || parsed > Integer.MAX_VALUE) {
-                throw new NumberFormatException("out of range");
-            }
-            return (int) parsed;
-        } catch (NumberFormatException exception) {
-            throw FederatedHarvestException.permanent("Data.gov cursor is not a non-negative integer: " + cursor, exception);
-        }
-    }
-
-    private String requiredText(JsonNode node, String field) {
-        String value = text(node, field);
+    private String requiredFirst(String field, String... values) {
+        String value = firstNonBlank(values);
         if (value.isBlank()) {
             throw FederatedHarvestException.permanent("Data.gov dataset is missing required field '" + field + "'.");
         }
         return value;
     }
 
-    private String text(JsonNode node, String field) {
+    private String optionalText(JsonNode node, String field) {
         if (node == null || node.isMissingNode() || node.isNull()) {
-            return "";
+            return null;
         }
         JsonNode value = node.path(field);
-        return value.isMissingNode() || value.isNull() ? "" : value.asText("").trim();
+        if (value.isMissingNode() || value.isNull()) {
+            return null;
+        }
+        String text = value.asText("").trim();
+        return text.isBlank() ? null : text;
     }
 
     private String firstNonBlank(String... values) {
@@ -382,6 +381,6 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(field + " must not be blank");
         }
-        return value;
+        return value.trim();
     }
 }
