@@ -15,8 +15,9 @@ import org.springframework.stereotype.Service;
  *
  * <p>A caller chooses how many pages may execute in one invocation. Hitting that operator bound is
  * a PAUSED run, not a success or failure; the persisted source checkpoint and run ID are reused on
- * the next invocation. A source-complete page marks the run COMPLETED. Exhausted retries or any
- * other page failure marks it FAILED without advancing the checkpoint.
+ * the next invocation. A source-complete page marks the run COMPLETED. Exhausted transient publisher
+ * failures also pause without advancing the checkpoint so the same run can resume later; permanent
+ * publisher/schema failures remain terminal FAILED runs.
  *
  * <p>Cancellation is cooperative at page boundaries. Cancelling a run preserves the source
  * checkpoint so a later ordinary run can continue from the last durable page. Restarting from the
@@ -144,6 +145,50 @@ public class FederatedHarvestRunService {
                 if (result.complete()) {
                     completedRun = run;
                 }
+            } catch (FederatedHarvestException exception) {
+                HarvestRun currentAfterFailure = current(run);
+                if (currentAfterFailure.status() == HarvestRunStatus.CANCELLED) {
+                    return currentAfterFailure;
+                }
+
+                OffsetDateTime now = now();
+                if (exception.retryable()) {
+                    HarvestRun paused = new HarvestRun(
+                            run.id(),
+                            run.sourceSystem(),
+                            run.adapterVersion(),
+                            HarvestRunStatus.PAUSED,
+                            run.pageSize(),
+                            run.pageCount(),
+                            run.acceptedCount(),
+                            run.rejectedCount(),
+                            run.skippedCount(),
+                            run.cursor(),
+                            run.startedAt(),
+                            now,
+                            null,
+                            failureMessage(exception));
+                    runStore.save(paused);
+                    return paused;
+                }
+
+                HarvestRun failed = new HarvestRun(
+                        run.id(),
+                        run.sourceSystem(),
+                        run.adapterVersion(),
+                        HarvestRunStatus.FAILED,
+                        run.pageSize(),
+                        run.pageCount(),
+                        run.acceptedCount(),
+                        run.rejectedCount(),
+                        run.skippedCount(),
+                        run.cursor(),
+                        run.startedAt(),
+                        now,
+                        now,
+                        failureMessage(exception));
+                runStore.save(failed);
+                throw exception;
             } catch (RuntimeException exception) {
                 HarvestRun currentAfterFailure = current(run);
                 if (currentAfterFailure.status() == HarvestRunStatus.CANCELLED) {
