@@ -171,9 +171,7 @@ export class DiscoveryPage implements OnInit {
       ...(this.selectedPrograms.length
         ? { programs: this.selectedPrograms }
         : {}),
-      ...(this.selectedPublisher
-        ? { publisher: this.selectedPublisher }
-        : {}),
+      ...(this.selectedPublisher ? { publisher: this.selectedPublisher } : {}),
       ...(this.selectedSourceSystem
         ? { sourceSystem: this.selectedSourceSystem }
         : {}),
