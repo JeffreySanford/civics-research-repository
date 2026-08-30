@@ -3,6 +3,7 @@ package org.civicsrepo.federation;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Objects;
+import org.civicsrepo.admin.CorpusProfileActivationService;
 import org.civicsrepo.repository.DiscoveryProjectionService;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.search.SearchService;
@@ -16,30 +17,36 @@ public class FederatedSnapshotProjectionCaptureService {
     private final DiscoveryProjectionService projectionService;
     private final SearchService searchService;
     private final FederatedSnapshotProjectionEvidenceStore evidenceStore;
+    private final CorpusProfileActivationService activationService;
 
     public FederatedSnapshotProjectionCaptureService(
             FederatedBoundedSnapshotCaptureService snapshotCaptureService,
             FederatedCorpusManifestService manifestService,
             DiscoveryProjectionService projectionService,
             SearchService searchService,
-            FederatedSnapshotProjectionEvidenceStore evidenceStore) {
+            FederatedSnapshotProjectionEvidenceStore evidenceStore,
+            CorpusProfileActivationService activationService) {
         this.snapshotCaptureService = snapshotCaptureService;
         this.manifestService = manifestService;
         this.projectionService = projectionService;
         this.searchService = searchService;
         this.evidenceStore = evidenceStore;
+        this.activationService = activationService;
     }
 
     /**
-     * Capture a bounded checkpoint, rebuild the combined projection, and persist the relationship.
+     * Capture a bounded checkpoint, rebuild its matching profile projection, and persist the
+     * relationship.
      *
      * <p>The source checkpoint is scanned again after reindex. If its content identity, counters,
-     * cursor, status or run update time changed while projection was running, no relationship is
-     * recorded. The pre-projection snapshot remains valid point-in-time evidence on its own.
+     * cursor, status or run update time changed while projection was running, no relationship or
+     * active-profile state is recorded. The pre-projection snapshot remains valid point-in-time
+     * evidence on its own.
      */
     public FederatedSnapshotProjectionEvidence captureAndProject(String runId) {
         FederatedBoundedSnapshotManifest before = snapshotCaptureService.capture(runId);
-        ProjectionState projected = projectionService.reindex(searchService.fixtureDocuments());
+        CorpusProfile profile = profileFor(before.retainedRecordCount());
+        ProjectionState projected = projectionService.reindex(profile, searchService.fixtureDocuments());
         String projectionId = projectionService.currentProjectionId();
         if (projectionId == null || projectionId.isBlank()) {
             throw new IllegalStateException("Discovery projection completed without a projectionId");
@@ -66,7 +73,18 @@ public class FederatedSnapshotProjectionCaptureService {
                 projected.rebuiltAt(),
                 OffsetDateTime.now(ZoneOffset.UTC));
         evidenceStore.save(evidence);
+        activationService.recordSuccessfulProjection(profile, projected);
         return evidence;
+    }
+
+    private CorpusProfile profileFor(long retainedRecordCount) {
+        for (CorpusProfile profile : CorpusProfile.values()) {
+            if (profile.targetRecordCount().isPresent()
+                    && profile.targetRecordCount().getAsLong() == retainedRecordCount) {
+                return profile;
+            }
+        }
+        return CorpusProfile.FULL;
     }
 
     private boolean sameCheckpoint(
