@@ -57,6 +57,7 @@ class DataGovHarvesterTest {
         assertThat(page.complete()).isFalse();
         assertThat(page.nextCursor()).isEqualTo("2");
         assertThat(page.records()).hasSize(2);
+        assertThat(page.rejections()).isEmpty();
         assertThat(requestQuery.get())
                 .contains("rows=1000", "start=0", "facet=false", "sort=metadata_modified+asc%2Cid+asc");
 
@@ -134,13 +135,13 @@ class DataGovHarvesterTest {
     }
 
     @Test
-    void rejectsMalformedDatasetWithoutRetryingPublisher() {
+    void quarantinesMalformedDatasetAndAdvancesSourceOffset() {
         responseBody.set(
                 """
                 {
                   "success": true,
                   "result": {
-                    "count": 1,
+                    "count": 2,
                     "results": [
                       {
                         "title": "Missing stable identifier",
@@ -152,11 +153,15 @@ class DataGovHarvesterTest {
                 }
                 """);
 
-        assertThatThrownBy(() -> harvester.fetch(null, 100))
-                .isInstanceOfSatisfying(FederatedHarvestException.class, exception -> {
-                    assertThat(exception.retryable()).isFalse();
-                    assertThat(exception.getMessage()).contains("required field 'id'");
-                });
+        HarvestPage page = harvester.fetch(null, 100);
+
+        assertThat(page.records()).isEmpty();
+        assertThat(page.rejections()).hasSize(1);
+        assertThat(page.rejections().getFirst().sourceIdentifier()).isNull();
+        assertThat(page.rejections().getFirst().message()).contains("required field 'id'");
+        assertThat(page.rejections().getFirst().rawSnippet()).contains("Missing stable identifier");
+        assertThat(page.complete()).isFalse();
+        assertThat(page.nextCursor()).isEqualTo("1");
     }
 
     @Test
