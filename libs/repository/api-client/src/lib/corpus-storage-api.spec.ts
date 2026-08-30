@@ -3,6 +3,7 @@ import {
   RepositoryCorpusStorageApi,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
+  type DiscoveryProjectionState,
 } from './corpus-storage-api';
 
 describe('RepositoryCorpusStorageApi', () => {
@@ -51,6 +52,28 @@ describe('RepositoryCorpusStorageApi', () => {
     );
     expect(http.get).toHaveBeenCalledWith(
       'http://api.test/api/admin/corpus/storage',
+    );
+  });
+
+  it('activates a named corpus profile through the guarded reindex endpoint', async () => {
+    const projection: DiscoveryProjectionState = {
+      source: 'REPOSITORY',
+      objectCount: 10_181,
+      projectionId: 'b'.repeat(64),
+    };
+    const http = { post: vi.fn(() => of(projection)) };
+    const api = new RepositoryCorpusStorageApi(
+      http as never,
+      'http://api.test/api',
+    );
+
+    await expect(
+      firstValueFrom(api.activateCorpusProfile('FEDERATED_10K')),
+    ).resolves.toBe(projection);
+    expect(http.post).toHaveBeenCalledWith(
+      'http://api.test/api/admin/reindex',
+      null,
+      { params: { profile: 'FEDERATED_10K' } },
     );
   });
 
