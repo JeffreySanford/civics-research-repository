@@ -26,9 +26,9 @@ PI-5 Browser Evidence CI and Governance
 PI-6 Solr/OpenSearch Comparison Hardening
 ```
 
-PI-1 is the active increment. Work already implemented in the PI-1 F0 foundation remains valid and is audited against the exit criteria rather than restarted.
+PI-1 is the active increment. The F0/foundation work merged through PR #3 on 2026-08-30 at `main` commit `4569416371c15bfe96660d53c4756a48d3c4ed4b`. The active branch is `codex/data-gov-10k-scale`.
 
-Docker Compose standalone search remains supported throughout all increments. It remains the fastest local development path, the easiest live-demo topology, the functional/regression baseline, the lowest-overhead environment for small corpora, and the control topology for later performance experiments.
+Docker Compose standalone search remains supported throughout all increments. It is the fastest local development path, the easiest live-demo topology, the functional/regression baseline, the lowest-overhead environment for small corpora, and the control topology for later performance experiments.
 
 ## PI-1 — Federated Metadata Expansion
 
@@ -60,6 +60,7 @@ PI-1 establishes:
 - `/research/:id` detail abstraction,
 - combined repository + federated discovery catalog,
 - streaming/batched deterministic projection,
+- deterministic bounded snapshots and snapshot/projection evidence,
 - cursor-capable search pagination design.
 
 The persistence layer must use bounded database batches. API-level batching that still performs one database interaction per record does not satisfy the scale requirement.
@@ -85,29 +86,125 @@ Facet counts are illustrative; actual source counts are recorded at harvest time
 
 ### Scale milestones
 
+The operational scale ladder is:
+
+```text
+curated demo (~200; currently 181)
+  -> 10K
+  -> 100K
+  -> 1M
+  -> optional FULL/source-defined bound
+```
+
+The program-increment milestone names remain:
+
 ```text
 F0 foundation
-F1 1K/10K federation proof
+F1 1K/10K federation proof + reusable instrumentation
 F2 100K standalone proof
 F3 1M standalone proof
 F4 multi-source 1M-class corpus
 F5 PI-1 handoff snapshot/manifests
 ```
 
-### F0 completion priority
+The curated baseline is intentionally approximate rather than fixed at exactly 200; it remains a small inspectable repository regression/demo corpus. The federated tiers are explicit bounded scale checkpoints.
 
-Before broad source-adapter expansion, finish the scale-sensitive foundation in this order:
+Detailed operator/profile behavior is defined in [CORPUS_SCALE_ADMIN_PLAN.md](CORPUS_SCALE_ADMIN_PLAN.md).
+
+### Current checkpoint — 2026-08-30
+
+F0 is merged. The 1K portion of F1 is complete end to end:
+
+- 1,000 Data.gov accepted / 0 rejected / 0 skipped,
+- deterministic bounded snapshot persisted,
+- guarded snapshot -> projection relationship persisted,
+- combined projection count 1,181 = 181 curated + 1,000 federated,
+- public search returned exactly 1,000 `DATA_GOV` records with federated provenance,
+- publisher/program/source facets were produced from the indexed corpus.
+
+The 10K functional portion of F1 is also complete:
+
+- the same durable Data.gov run `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131` resumed from 10 pages/1,000 accepted records to 100 pages/10,000 accepted,
+- accepted/rejected/skipped = 10,000 / 0 / 0,
+- snapshot `DATA_GOV:dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b` persisted,
+- guarded projection `b292f98bb8b141dd477cfbcdc9149e44bd53559c153c431f772809f41836742e` contains 10,181 objects = 181 curated + 10,000 federated,
+- projection-history evidence retained both the 1K and 10K snapshot/projection pairs,
+- normal public search returned exactly 10,000 `DATA_GOV` records,
+- a live `/research/:id` record resolved with federated provenance, authoritative publisher URL and no invented local files,
+- live comparison reported `sameProjection: true`, with Solr and OpenSearch both reachable and both containing 10,181 documents on the same projection ID,
+- the isolated 9,000-document projection increase added 4,342,637 bytes to Solr and 4,365,807 bytes to OpenSearch, approximately 482.5 and 485.1 bytes per newly projected object,
+- DSpace storage did not change during the federated search-index growth.
+
+The whole F1 checkpoint is **not yet complete** because instrumentation still needs to become reusable rather than manually reconstructed. Before Data.gov 100K:
+
+- record host/container/JVM CPU and memory context,
+- record reusable harvest elapsed time/records-per-second,
+- record reusable projection elapsed time/documents-per-second,
+- calculate application-PostgreSQL bytes per federated record only if a defensible historical 1K baseline exists,
+- replace the hard-coded `CURATED_DEMO` active-profile label with runtime-derived active-profile semantics,
+- expose profile evidence in Admin,
+- add a live named-profile scale checker distinct from ordinary PR quality gates.
+
+The exact 10K evidence is maintained in [PI1_DATA_GOV_SCALE_EVIDENCE.md](PI1_DATA_GOV_SCALE_EVIDENCE.md).
+
+### Admin profile activation and evidence
+
+The current corpus UI can view named profiles and storage history. PI-1 must evolve it into guarded profile activation for:
+
+```text
+CURATED_DEMO
+FEDERATED_10K
+FEDERATED_100K
+FEDERATED_1M
+FULL
+```
+
+Activation is not a client-side toggle. A safe profile activation must preview current/target state, resume compatible harvest state, stop at the bound, capture the deterministic snapshot, run guarded projection, verify Solr/OpenSearch parity, capture metrics, and only then mark the profile active. Failed activation preserves the previous known-good search projection/evidence.
+
+100K, 1M and FULL are explicit heavy operations. Arbitrary user-entered record counts are not required for the first version; named profiles keep evidence reproducible. A custom bounded profile can be added later if needed without changing the identity/evidence rules.
+
+At each tier Admin should eventually expose:
+
+- retained federated records,
+- active projected documents,
+- application PostgreSQL bytes,
+- DSpace stored bytes,
+- Solr/OpenSearch bytes,
+- total known measured bytes,
+- defensible bytes/record or bytes/projected-document,
+- harvest duration and records/second,
+- projection duration and documents/second,
+- stable-query API elapsed time plus Solr `QTime` / OpenSearch `took`,
+- p50/p95/p99 distributions,
+- host/container/JVM resource context,
+- snapshot/projection IDs,
+- topology and later shard/replica/node layout.
+
+Unknown values remain `Not measured`, never misleading zeroes.
+
+### Quality strategy
+
+`quality:all` is the deterministic ordinary-development/PR gate. It covers formatting, OpenAPI lint/generated drift, fixture/evidence/document drift, benchmark-tool tests, lint, all unit/service/component tests, all buildable application/runtime targets, and deterministic browser report suites.
+
+Live 10K/100K/1M harvesting and projection do **not** belong in `quality:all`; they depend on external APIs, persistent local state, host capacity and long-running evidence collection.
+
+PI-1 should add a separate live named-profile check, conceptually `quality:scale` / `scale:evidence:check`, which validates retained count, snapshot identity, guarded linkage, active projection, Solr/OpenSearch parity, public-search provenance and required measurement evidence for the selected profile. 1M/FULL checks remain explicit/manual or scheduled rather than ordinary PR checks.
+
+### F0 foundation status
+
+The merged foundation delivered the scale-sensitive path that had to exist before broad harvesting:
 
 1. bounded JDBC metadata persistence,
 2. typed provenance/source-system contract,
-3. dynamic publisher/program/subject taxonomy,
+3. dynamic publisher/program taxonomy,
 4. combined DSpace + federated catalog,
 5. bounded streaming search projection,
 6. deterministic streaming projection identity,
-7. cursor-capable discovery contract,
-8. harvest-run/error/quarantine observability.
+7. durable harvest-run/checkpoint/quarantine observability,
+8. bounded snapshot and guarded snapshot/projection evidence,
+9. authority-neutral research detail routing.
 
-The current PI-1 branch has already established namespaced source identity, normalized federated records, catalog persistence, resumable checkpoints, the harvester contract, corpus profiles, storage-history measurements and Admin corpus-scale visibility. Those capabilities remain part of F0.
+Still open from the original foundation design are cross-source durable-identifier reconciliation and opaque cursor/search-after pagination for million-record public discovery. Those are now follow-on scale-hardening work rather than blockers to the merged F0 path.
 
 ### Exit criteria
 
@@ -119,9 +216,11 @@ PI-1 exits only when:
 - all sources support reproducible bounded harvesting,
 - provenance and detail routing distinguish repository/federated records,
 - metadata persistence and projection are bounded-memory and batch-oriented,
+- named corpus profiles can be activated and measured without changing record semantics,
 - a deterministic 1M corpus is reproducible,
 - standalone Solr and OpenSearch receive identical normalized input,
 - count/projection parity is verified,
+- comparable storage/resource/performance evidence exists at meaningful tiers,
 - large-source query and semantic-difference evidence exists,
 - the existing small Compose demo still works,
 - a versioned corpus manifest is ready for PI-2.
@@ -256,7 +355,7 @@ PI-5 includes:
 
 ### Exit criteria
 
-PI-5 exits when deterministic browser evidence is reproducible, the real-stack smoke path remains independently visible, failures preserve actionable artifacts, failed refreshes cannot replace a prior known-good baseline, and merge-check/branch-protection decisions are documented.
+PI-5 exits when deterministic browser evidence is reproducible, the real-stack smoke path remains independently visible, failures preserve actionable artifacts, failed refreshes cannot replace the prior known-good baseline, and merge-check/branch-protection decisions are documented.
 
 ## PI-6 — Solr/OpenSearch Comparison Hardening
 
@@ -304,33 +403,31 @@ These rules remain true across all six increments:
 
 ### Taxonomy explosion
 
-A fixed `ResearchProgram` enum will not scale to thousands of provider program names.
+**Architecture resolved; presentation hardening remains.**
 
-Resolution direction: controlled `sourceSystem` and `contentType`; data-driven publisher/program/subjects.
+`sourceSystem` and `contentType` are controlled while publisher/program values are data-driven. Live Data.gov evidence showed why display hardening still matters: valid publisher program values such as `010:10` and `010:12` are searchable but not especially human-readable. Preserve the raw publisher value and add a defensible label/presentation strategy without reintroducing a fixed UI allowlist.
 
 ### Repository-versus-federated ambiguity
 
-The UI currently assumes every detail route describes a repository object.
+**Resolved for the merged foundation.**
 
-Resolution direction: canonical `/research/:id` route and explicit origin/provenance.
+Canonical `/research/:id` routing, per-record `origin`/`sourceSystem`, federated-authority messaging and authoritative external links distinguish repository and federated records. `/datasets/:id` remains a compatibility route.
 
 ### Full-corpus memory usage
 
-The current projection materializes a `List<DiscoveryDocument>` and search clients build whole update payloads.
+**Resolved architecturally; scale evidence remains.**
 
-Resolution direction: streaming/batched normalization, hashing and indexing before 100K/1M.
+Projection uses bounded combined-catalog pages, streaming deterministic hashing and bounded Solr/OpenSearch batches. 10K/100K/1M checkpoints still need resource context to prove the implementation behaves as intended under larger corpora.
 
 ### Deep pagination
 
 Offset-based page numbers become inefficient at million-record scale.
 
-Resolution direction: cursor/search-after capable API contract with opaque tokens while preserving accessible Previous/Next UI.
+Resolution direction: cursor/search-after capable API contract with opaque tokens while preserving accessible Previous/Next UI and the current offset contract during migration.
 
 ### Source API volatility/rate limiting
 
-Every public source has different pagination, quotas and schema evolution.
-
-Resolution direction: source adapters behind a common resumable framework, source fixture tests and recorded adapter versions.
+The shared retry/checkpoint framework is implemented, including bounded retry and `Retry-After` awareness. Remaining work is source-specific concurrency/rate policy, timeout tuning and evidence at larger scales.
 
 ### Cross-source duplicates
 
@@ -348,7 +445,7 @@ Resolution direction: measure bytes/document at 10K/100K, establish disk budgets
 
 Million-record harvest/index runs are inappropriate for every pull request.
 
-Resolution direction: tiny deterministic fixtures in normal CI, optional scheduled/manual bounded integration runs, and artifact/manifests for heavy evidence.
+Resolution direction: keep `quality:all` deterministic, use tiny fixtures in normal CI, and put named-profile live assertions in a separate scale-evidence gate.
 
 ## Planning risks to resolve during PI-2
 
@@ -382,8 +479,9 @@ Recommended execution branches:
 
 ```text
 PI-1
-  codex/federated-metadata-catalog
-  codex/data-gov-adapter
+  codex/federated-metadata-catalog   # merged through PR #3
+  codex/data-gov-10k-scale          # active
+  codex/data-gov-100k-scale         # after 10K instrumentation closes
   codex/osti-adapter
   codex/nasa-cmr-adapter
   codex/pubmed-adapter

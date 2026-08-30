@@ -20,7 +20,7 @@ All production-shaped harvesting runs inside the Spring Boot Java application. N
 
 All five adapters belong in PI-1. Large local snapshots remain staged so disk, time and source limits do not force us to keep every corpus resident at maximum size simultaneously.
 
-## Shared Java harvester framework first
+## Shared Java harvester framework
 
 Do not implement five independent loops and do not add a second harvester runtime.
 
@@ -33,34 +33,41 @@ start/resume
   -> normalize records
   -> persist records/checkpoint
   -> record metrics/errors
-  -> continue until requested limit/end
+  -> continue until requested bound/end
 ```
 
-Implemented foundation already includes:
+The merged PI-1 foundation already includes:
 
 - source-specific `FederatedSourceHarvester` registration,
 - stable cursor/page checkpoint persistence,
+- durable harvest-run identity and status,
+- process-safe resume from persisted run/checkpoint state,
+- explicit restart-from-beginning semantics separate from ordinary resume,
 - namespaced source identity validation,
 - idempotent catalog persistence,
 - bounded prepared-statement database batches,
+- accepted/rejected/skipped counters,
+- malformed-record quarantine without aborting the whole run,
 - typed retryable versus permanent source failures,
 - bounded three-attempt retry,
 - exponential backoff with jitter,
-- bounded publisher `Retry-After` handling.
+- bounded publisher `Retry-After` handling,
+- bounded `PAUSED` checkpoints when an operator page limit is reached,
+- adapter-version capture on durable runs,
+- deterministic corpus manifests for completed bounded runs,
+- deterministic `BOUNDED_SNAPSHOT` manifests for intentionally paused scale checkpoints,
+- source update-window and run-stat capture in snapshot evidence,
+- guarded snapshot -> projection linkage that refuses to persist the relationship if the harvest checkpoint drifts during projection,
+- durable snapshot/projection evidence history.
 
-Remaining shared capabilities:
+Remaining shared capabilities are narrower than the original F0 list:
 
-- configurable source request concurrency/rate limits,
-- request timeout and cancellation,
-- durable harvest-run identity/status,
-- resumable runs after process failure,
-- accepted/rejected/skipped counters,
-- quarantined malformed records,
-- progress and throughput metrics,
-- explicit requested record limit,
-- source retrieval timestamp/window,
-- adapter version / git SHA,
-- final corpus manifest.
+- configurable per-source request concurrency and explicit rate-limit policy,
+- explicit publisher/request timeout tuning where source defaults are insufficient,
+- progress/throughput observability appropriate for 100K/1M runs,
+- first-class requested-record target semantics if page bounds become too indirect for operators,
+- git/build identity in heavy-run evidence where adapter version alone is insufficient,
+- resource-context capture that makes large-run timing comparable rather than anecdotal.
 
 Spring Batch remains optional. Adopt it only if the existing Java orchestration demonstrates a concrete need for its job repository, partitioning or restart machinery.
 
@@ -80,7 +87,7 @@ programName
 
 A DOE OSTI record may therefore retain `ResearchProgram.OTHER` for legacy compatibility while preserving `programName = "Office of Science"` for discovery. New source program names must not require Java enum expansion and must not collapse into one giant `OTHER` facet.
 
-`CombinedDiscoveryCatalog` now provides bounded authority composition:
+`CombinedDiscoveryCatalog` provides bounded authority composition:
 
 ```text
 curated DSpace documents
@@ -90,37 +97,33 @@ curated DSpace documents
   -> bounded DiscoveryDocument pages
 ```
 
-The current projection lifecycle still needs to consume those pages in batches rather than materializing a full list before 100K+ runs.
+The current projection lifecycle consumes those pages in bounded batches, computes one deterministic streaming projection identity and sends the same normalized sequence to configured Solr/OpenSearch projection targets. The next scale work is therefore validation of resource/storage behavior and parity at 10K/100K, not another rewrite from whole-corpus materialization.
 
-## Run model
+## Current durable run model
 
-Every harvest should have an explicit run identity:
+The implemented `HarvestRun` evidence includes the operator-critical state needed for restart/resume:
 
 ```text
 HarvestRun
   id
   sourceSystem
-  mode
-  requestedLimit
-  startedAt
-  completedAt
-  checkpoint
-  fetchedCount
+  adapterVersion
+  status
+  pageSize
+  pageCount
   acceptedCount
   rejectedCount
   skippedCount
-  requestCount
-  retryCount
-  status
-  adapterVersion
+  cursor
+  startedAt
+  updatedAt
+  completedAt
+  failureMessage
 ```
 
-Recommended modes:
+The API-level bounded invocation supplies `pageSize` and `maxPages`. Reaching that bound produces `PAUSED`, not a false source-complete status. A later ordinary harvest call resumes the same compatible run and cursor. Restart is deliberately separate because it cancels the resumable run and clears source traversal state without deleting already-retained federated metadata.
 
-- `SAMPLE` — tiny deterministic development fixtures,
-- `BOUNDED` — 1K/10K/100K/1M controlled harvest,
-- `INCREMENTAL` — publisher updates since a checkpoint/date,
-- `FULL_AVAILABLE` — only where source rules and workstation budget make it sensible.
+For larger evidence runs, additional derived evidence should record requested target tier, duration/throughput, source retrieval window, storage/resource context and deterministic snapshot/projection identity.
 
 ## Source 1 — Data.gov
 
@@ -138,21 +141,28 @@ Primary mapping targets:
 - landing-page URL,
 - license/access metadata where present.
 
-Milestones:
+Milestones and current status:
 
-1. deterministic fixture,
-2. 1K local harvest,
-3. 10K harvest,
-4. 100K harvest,
-5. larger/full catalog after memory/indexing path is proven.
+1. **complete** — deterministic fixture and adapter/unit coverage,
+2. **complete** — 1K live harvest + bounded snapshot + guarded projection + public-search proof,
+3. **harvest complete; evidence completion active** — 10K resumed harvest,
+4. **next** — 100K harvest/projection/storage/resource proof,
+5. larger/full catalog only after the 100K path is stable.
 
-Important tests:
+The live 10K run resumed the exact durable 1K run instead of restarting it. It advanced from 10 to 100 total pages and from 1,000 to 10,000 accepted records with 0 rejected and 0 skipped while preserving run ID `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131`.
+
+The 10K claim remains intentionally precise: **harvest/resume is proven**; snapshot/projection linkage, public-search/detail verification, index parity and storage/resource evidence still need to be captured before the checkpoint is complete. See [PI-1 Data.gov Scale Evidence](../../planning/PI1_DATA_GOV_SCALE_EVIDENCE.md).
+
+Important tests and quality observations:
 
 - sparse metadata,
 - multiple distributions,
 - duplicated/cross-listed resources,
 - publisher normalization,
-- source updates without creating duplicates.
+- source updates without creating duplicates,
+- ISO date-only publisher `modified` values,
+- preservation of raw publisher program values,
+- presentation hardening for opaque program codes such as `010:10`/`010:12` without introducing fixed UI allowlists.
 
 ## Source 2 — DOE OSTI.GOV
 
@@ -248,6 +258,7 @@ Current conceptual contract:
 ```text
 FederatedSourceHarvester
   sourceSystem()
+  adapterVersion()
   fetch(checkpointCursor, pageSize)
 ```
 
@@ -265,7 +276,7 @@ Rules:
 - disappeared source records are not immediately deleted without an explicit source deletion/tombstone rule,
 - changed normalized content changes snapshot/projection identity,
 - unchanged records should not create write/index churn,
-- harvest runs record the source's effective freshness window.
+- harvest/snapshot evidence records the source's effective freshness window where available.
 
 ## Error policy
 
@@ -285,6 +296,8 @@ occurredAt
 
 Keep raw failed payloads bounded; do not create an unbounded error-data mirror.
 
+The live Data.gov path has already demonstrated why this matters: an initial adapter version quarantined 75 valid records because their source `modified` value was date-only. That evidence led to a versioned normalization fix and a clean repeated 1K proof instead of silently discarding the failure history.
+
 ## Development and CI corpus policy
 
 Ordinary CI should never depend on downloading 1M records.
@@ -299,19 +312,25 @@ Use:
 
 ## PI-1 delivery sequence
 
-### F0 — foundation
+### F0 — foundation — merged
+
+Delivered through PR #3:
 
 - provenance/origin contract,
 - dynamic source/publisher/program model,
 - federated metadata persistence,
-- harvest-run/checkpoint model,
+- durable harvest-run/checkpoint/quarantine model,
 - combined bounded repository/federated discovery catalog,
 - `/research/:id` detail abstraction,
-- streaming/batched projection contract.
+- streaming/batched deterministic projection,
+- bounded snapshot and guarded snapshot/projection evidence.
 
-### F1 — Data.gov
+### F1 — Data.gov — active
 
-Prove federation at 1K/10K and make new records naturally visible through discovery/facets/detail.
+- 1K federation proof: complete,
+- 10K harvest/resume proof: complete,
+- 10K snapshot/projection/search/storage/resource evidence: active,
+- 100K standalone proof: next.
 
 ### F2 — OSTI
 

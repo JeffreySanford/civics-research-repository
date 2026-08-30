@@ -8,6 +8,8 @@ This document belongs to the **federated data project**, not the Kubernetes proj
 
 Full source binaries are out of scope. The unit of scale is searchable metadata plus provenance and links to authoritative resources.
 
+Live Data.gov checkpoint evidence is recorded in [PI-1 Data.gov Scale Evidence](../../planning/PI1_DATA_GOV_SCALE_EVIDENCE.md).
+
 ## Source portfolio
 
 PI-1 plans adapters for all identified sources:
@@ -30,11 +32,12 @@ Source-specific harvesting is defined in [Source Ingestion Plan](source-ingestio
 publisher/API
   -> adapter
   -> federated metadata store
-  -> normalized DiscoveryDocument
+  -> CombinedDiscoveryCatalog
+  -> normalized DiscoveryDocument stream
   -> Solr + OpenSearch
 ```
 
-This is the normal PI-1 architecture and should drive the Angular discovery UI.
+This is the normal PI-1 architecture and drives the Angular discovery UI.
 
 ### Curated repository mode
 
@@ -45,26 +48,26 @@ publisher
   -> Solr + OpenSearch
 ```
 
-This remains the existing repository path. PI-1 does not remove it.
+This remains the curated repository path. PI-1 does not remove it.
 
 ### Snapshot benchmark mode
 
 ```text
-federated catalog / deterministic export
-  -> normalized snapshot
+federated catalog / deterministic bounded snapshot
+  -> normalized projection stream
   -> projection ID
   -> Solr + OpenSearch
 ```
 
-This mode isolates indexing/search experiments from metadata-store or DSpace throughput. It must be clearly labelled as benchmark/snapshot evidence.
+This mode isolates indexing/search experiments from publisher API timing. It must be clearly labelled as benchmark/snapshot evidence.
 
-All three modes share the same normalized search-document semantics.
+All modes share the same normalized search-document semantics.
 
 ## Checkpoints
 
 ### C0 — curated baseline
 
-Current small repository slice.
+Current small repository slice: 181 curated research objects.
 
 Purpose:
 
@@ -72,7 +75,7 @@ Purpose:
 - preserve demo speed,
 - keep an easy-to-inspect regression corpus.
 
-### C1 — 10,000
+### C1 — 10,000 — active
 
 Purpose:
 
@@ -80,7 +83,20 @@ Purpose:
 - validate dynamic taxonomy,
 - validate bounded projection,
 - catch mapping/facet explosions,
-- provide the first PI-2 Kubernetes corpus.
+- measure first meaningful storage/resource growth,
+- provide the first PI-2 Kubernetes corpus once evidence closes.
+
+Current Data.gov status on 2026-08-30:
+
+- same durable run resumed from 1K to 10K,
+- 100 total pages x 100,
+- 10,000 accepted,
+- 0 rejected,
+- 0 skipped,
+- no failure,
+- bounded snapshot/projection/search/storage/resource closure still pending.
+
+The correct claim today is **C1 harvest proven, C1 evidence incomplete**.
 
 ### C2 — 100,000
 
@@ -92,6 +108,8 @@ Purpose:
 - deep-search/pagination behavior,
 - standalone versus clustered crossover experiments.
 
+Do not begin C2 until C1 snapshot/projection/search/storage/resource evidence is closed.
+
 ### C3 — 1,000,000
 
 Purpose:
@@ -101,15 +119,69 @@ Purpose:
 - shard-layout experiments in PI-2,
 - semantic/relevance comparison at realistic scale.
 
+DOE OSTI remains the preferred source for the first controlled C3 corpus unless source-access evidence changes that decision.
+
 ### C4 — 5,000,000+
 
 Optional only when C3 is repeatable and workstation resources remain sensible.
 
-## Snapshot manifest
+## Evidence identities
 
-Every reusable corpus tier needs a compact manifest. The large document set itself does not belong in Git.
+PI-1 now uses two related but distinct deterministic identities.
 
-Example:
+### Bounded snapshot identity
+
+A `BOUNDED_SNAPSHOT` identifies a stable retained source checkpoint even when the source run is intentionally `PAUSED` rather than exhausted.
+
+Its evidence includes, where available:
+
+```text
+snapshotId
+sourceSystem
+runId
+adapterVersion
+retainedRecordCount
+acceptedCount
+rejectedCount
+skippedCount
+cursor
+source update window
+sha256
+capturedAt
+```
+
+The snapshot ID is content-addressed by source plus SHA-256, not merely by run ID.
+
+### Projection identity
+
+The projection ID identifies the deterministic ordered normalized `DiscoveryDocument` sequence sent to the search engines.
+
+It must be independent of:
+
+- database page size,
+- Solr/OpenSearch bulk size,
+- process restart boundaries,
+- host filesystem order.
+
+### Guarded snapshot -> projection linkage
+
+A scale checkpoint becomes stronger when the system can prove which projection was built from which stable source snapshot.
+
+The guarded linkage operation:
+
+1. captures the source checkpoint,
+2. rebuilds the mixed discovery projection,
+3. computes the projection identity,
+4. rescans the source run,
+5. persists the relationship only if counters/status/cursor/update time remained stable.
+
+The Data.gov 1K checkpoint has already proven this path. Its snapshot SHA is `78a2ec438b3dc3eab179fd94f5dd70c58fa770e3e18186dd624f078b0cbc3ce9` and its mixed 1,181-object projection ID is `5ad44932acd6166e9a32576ff06df9c4659cfba5f8800d952762503703af47dd`.
+
+## Corpus manifest
+
+Completed or reusable multi-source corpus tiers also need a compact manifest. The large document set itself does not belong in Git.
+
+A future combined/million-class manifest should record concepts such as:
 
 ```json
 {
@@ -120,27 +192,14 @@ Example:
   "acceptedRecords": 1000000,
   "rejectedRecords": 0,
   "skippedRecords": 0,
-  "normalizationVersion": "git-sha",
+  "normalizationVersion": "adapter-or-build-version",
   "canonicalizationVersion": 1,
   "projectionId": "sha256",
   "mode": "FEDERATED_CATALOG"
 }
 ```
 
-For a combined corpus, record each source and accepted count separately.
-
-## Deterministic identity
-
-Projection identity must be independent of:
-
-- database page size,
-- Solr/OpenSearch bulk size,
-- process restart boundaries,
-- host filesystem order.
-
-Use a canonical source identity ordering and normalized record representation.
-
-A streaming digest should allow 1M+ identity generation without retaining the full corpus in memory.
+For a combined corpus, record each source and accepted count separately. This higher-level corpus manifest complements, rather than replaces, source-specific bounded snapshots.
 
 ## Storage policy
 
@@ -152,7 +211,8 @@ Persist:
 - source/resource URLs,
 - harvest/checkpoint state,
 - compact source-specific fields needed for detail/reharvest,
-- corpus manifests,
+- bounded snapshot/corpus manifests,
+- snapshot/projection evidence relationships,
 - bounded diagnostic/error samples.
 
 Do not persist by default:
@@ -170,19 +230,19 @@ Metadata is much smaller than source binaries but one million rich records are s
 - PostgreSQL federated catalog,
 - Solr index,
 - OpenSearch index,
-- optional normalized snapshot,
+- optional normalized snapshot/export,
 - temporary bulk/indexing files,
 - logs and benchmark artifacts.
 
 Before C3, measure actual bytes/document at C1 and C2 and estimate C3 with safety margin rather than guessing.
 
-Example planning formula:
+Planning formula:
 
 ```text
 required local disk ~= federated store
                     + Solr index
                     + OpenSearch index
-                    + snapshot/export
+                    + optional snapshot/export
                     + 30-50% operational headroom
 ```
 
@@ -218,11 +278,13 @@ Preserve the existing benchmark discipline:
 - at least 100 measured requests for distribution claims,
 - API elapsed separate from Solr `QTime` / OpenSearch `took`,
 - p50/p95/p99/min/max/mean,
-- source corpus and projection ID,
+- source snapshot/corpus and projection ID,
 - errors/timeouts,
 - no winner claim from fixed engine order.
 
 At concurrency above one, add throughput and saturation/resource evidence.
+
+Harvest and projection duration should also be recorded separately from search latency.
 
 ## Semantic evidence
 
@@ -237,7 +299,7 @@ Record:
 - facet-bucket/count differences,
 - query-specific expected records where a gold set exists.
 
-Semantic differences should be evaluated on the same deterministic corpus snapshot used for performance.
+Semantic differences should be evaluated on the same deterministic corpus snapshot/projection used for performance.
 
 ## Standalone first, cluster second
 
@@ -257,7 +319,7 @@ kind
   multi-node OpenSearch
 ```
 
-This gives us a genuine baseline and keeps topology changes from being confused with data changes.
+This gives a genuine baseline and keeps topology changes from being confused with data changes.
 
 ## Ordinary development behavior
 
@@ -275,7 +337,7 @@ k8s-100k         clustered scale test
 k8s-1m           explicit heavy cluster run
 ```
 
-Exact command names can be chosen during implementation.
+Exact command names can be chosen as the scale workflow hardens. The current implementation already supports bounded page-size/max-page harvesting and persistent corpus/storage measurements without requiring a separate runtime.
 
 ## Acceptance criteria
 
@@ -286,7 +348,7 @@ The million-record corpus capability is complete when:
 - the corpus is reproducible without committing it to Git,
 - standalone Solr and OpenSearch index the exact same normalized corpus,
 - counts and deterministic identity match,
-- indexing duration/error counts are recorded,
+- indexing duration/error counts and resource context are recorded,
 - stable large-corpus query classes execute successfully,
 - p50/p95/p99 performance evidence can be collected,
 - semantic/result-difference evidence can be collected,

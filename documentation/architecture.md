@@ -1,10 +1,10 @@
 # Architecture
 
-This document describes the architecture that runs today. Planned work is kept in [planning/ROADMAP.md](../planning/ROADMAP.md); historical delivery detail is kept in [history/platform-evolution.md](history/platform-evolution.md). Current volatile counts live in the generated [platform status](platform-status.md).
+This document describes the architecture that runs today. Planned work is kept in [planning/ROADMAP.md](../planning/ROADMAP.md); historical delivery detail is kept in [history/platform-evolution.md](history/platform-evolution.md). Curated artifact-derived counts live in the generated [platform status](platform-status.md), while live federation-scale evidence is recorded in [PI-1 Data.gov Scale Evidence](../planning/PI1_DATA_GOV_SCALE_EVIDENCE.md).
 
 ## System purpose
 
-Civics Research Repository is a federal Open Science reference platform. It preserves and relates research objects in DSpace, projects them into rebuildable public-search representations, and exposes accessible search, repository workflows, search-engine comparison, and geospatial research views through a single typed API.
+Civics Research Repository is a federal Open Science reference platform. It preserves and relates curated research objects in DSpace, retains reproducible metadata and provenance for federated publisher records in application PostgreSQL, projects both origins into rebuildable public-search representations, and exposes accessible search, research-object detail, repository workflows, search-engine comparison, and geospatial research views through one typed API.
 
 The platform is intentionally broader than an open-data catalog. It models:
 
@@ -14,8 +14,9 @@ The platform is intentionally broader than an open-data catalog. It models:
 - projects,
 - researchers and DOI metadata,
 - access restrictions and access instructions,
-- typed relationships between research objects,
-- source files, manifests, provenance, versions, and mirrored bitstreams.
+- typed relationships between curated research objects,
+- source files, manifests, provenance, versions, and mirrored bitstreams,
+- federated external-source metadata with publisher authority and stable namespaced identity.
 
 ## Current container architecture
 
@@ -27,71 +28,80 @@ Angular discovery-ui (:4200)
   - search, facets, paging and research-object detail
   - Search Lab: Solr/OpenSearch side-by-side comparison
   - workforce and reference mapping
-  - admin synchronization and repository/index views
-  - accessibility, provenance and pipeline evidence
+  - admin synchronization, corpus/storage and evidence views
                   |
                   | REST/JSON, generated OpenAPI types
                   v
 Spring Boot repository-api (:8080/api)
   - owns every browser-facing integration
-  - catalog-backed metadata adapters
-  - dry-run / diff / apply synchronization
-  - DSpace identity and repository projection
-  - normalizes one DiscoveryDocument set
-  - computes deterministic projection identity
-  - projects configured search targets independently
+  - curated metadata adapters and repository sync
+  - federated source harvesters / durable checkpoints / quarantine
+  - federated metadata and bounded snapshot evidence
+  - authority-neutral research-object detail resolution
+  - bounded combined repository + federated discovery catalog
+  - deterministic streaming projection identity
+  - independent Solr/OpenSearch projection targets
   - search, comparison, maps, overlays and evidence endpoints
         |                 |                    |                    |
         v                 v                    v                    v
 Application          Solr discovery       OpenSearch           DSpace REST (:8081)
-PostgreSQL            (:8983)              comparison (:9200)   repository system of record
-(:5432)               public DiscoveryIndex parallel target     communities, collections,
-sync jobs             rebuildable          rebuildable          items, metadata, relations,
-                                                               versions and bitstreams
-                                                                    |              |
-                                                                    v              v
-                                                           DSpace PostgreSQL   DSpace Solr
-                                                           (:5433)             (:8984)
+PostgreSQL            (:8983)              comparison (:9200)   curated repository authority
+(:5432)               normal public        parallel target      communities, collections,
+sync/federation       search projection    rebuildable          items, metadata, relations,
+state + evidence                                               versions and bitstreams
+     ^                                                              |              |
+     |                                                              v              v
+     |                                                       DSpace PostgreSQL   DSpace Solr
+     |
+Federated publishers
+Data.gov / OSTI / CMR / PubMed / OpenAlex
+metadata + authoritative external resource links
 ```
 
-The Angular application never calls DSpace, Solr, OpenSearch, Census, or USGS directly. The Java API owns those integrations, keeps credentials and engine-specific behavior server-side, and presents one generated contract to the browser.
+The Angular application never calls DSpace, Solr, OpenSearch or external publisher APIs directly. The Java API owns those integrations, keeps credentials and engine-specific behavior server-side, and presents one generated contract to the browser.
 
-## Five datastore/search roles
+## Datastore and search roles
 
-| Datastore or engine                     | Role                                                             | Owner                                                |
-| --------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
-| Application PostgreSQL `civics_ops`     | Sync jobs and application operational state                      | `repository-api`                                     |
-| DSpace PostgreSQL                       | Repository system of record                                      | DSpace                                               |
-| Discovery Solr `discovery` core         | Public, rebuildable research-object discovery projection         | `repository-api` through `DiscoveryIndex`            |
-| OpenSearch `discovery-comparison` index | Parallel rebuildable projection for controlled engine comparison | `repository-api` through `DiscoveryProjectionTarget` |
-| DSpace Solr                             | DSpace internal discovery, authority and OAI cores               | DSpace                                               |
+| Datastore or engine                     | Role                                                                                             | Owner                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Application PostgreSQL `civics_ops`     | Sync jobs, federated metadata, harvest runs/checkpoints/quarantine, snapshots and evidence state | `repository-api`                                     |
+| DSpace PostgreSQL                       | Curated repository system of record                                                              | DSpace                                               |
+| Discovery Solr `discovery` core         | Normal public, rebuildable mixed-origin discovery projection                                     | `repository-api` through `DiscoveryIndex`            |
+| OpenSearch `discovery-comparison` index | Parallel rebuildable mixed-origin projection for controlled engine comparison                    | `repository-api` through `DiscoveryProjectionTarget` |
+| DSpace Solr                             | DSpace internal discovery, authority and OAI cores                                               | DSpace                                               |
 
-The duplication is an ownership boundary, not accidental redundancy. DSpace controls its own schema, migrations, search configuration, and upgrade lifecycle. Application-owned search projections can be discarded and rebuilt without treating DSpace's internal Solr as a public API or source of truth.
+The duplication is an ownership boundary, not accidental redundancy. DSpace controls its own schema, migrations, search configuration, and upgrade lifecycle. Application-owned federated state and search projections can evolve or be rebuilt without treating DSpace's internal Solr as a public API or forcing external publisher records into DSpace.
 
 ## Architectural rules
 
-### DSpace is authoritative
+### Authority is explicit by origin
 
-Repository metadata, access statements, relationships, versions, files, and bitstreams belong in DSpace. Search-engine indexes are derived state.
+Curated repository metadata, access statements, relationships, versions, files, and bitstreams belong in DSpace.
 
-### Normalize once, project many
+Federated records remain authoritative at their external publisher. The application retains searchable metadata, stable source identity, provenance, checkpoints and evidence; it does not claim publisher files are locally preserved merely because their metadata is searchable.
 
-`DiscoveryProjectionService` obtains one normalized `List<DiscoveryDocument>` and computes one deterministic SHA-256 identity for that document set. Every configured `DiscoveryProjectionTarget` receives that same list.
+Search-engine indexes are derived state for both origins.
 
-This prevents a comparison from quietly becoming a comparison of two different source datasets. Search-engine differences can then be investigated as query, analyzer, mapping, ranking, aggregation, runtime, or operational differences rather than unexplained projection drift.
+### Normalize once, project many — in bounded pages
 
-Each target records its own most-recent projection outcome. A failure rebuilding one engine does not erase the normalized repository state or prevent another configured target from being attempted.
+`CombinedDiscoveryCatalog` composes curated DSpace-backed records and persisted federated records into bounded, deterministically ordered pages of engine-neutral `DiscoveryDocument` values.
+
+`DiscoveryProjectionService` streams those pages through one deterministic SHA-256 digest and hands the same normalized batches to every active `DiscoveryProjectionTarget`. It does **not** require one whole-corpus `List<DiscoveryDocument>` before projection.
+
+This prevents a Solr/OpenSearch comparison from quietly becoming a comparison of two different source datasets while keeping memory bounded for 100K/1M-class work.
+
+Each target records its own most-recent projection outcome. A failure rebuilding one engine does not erase authoritative source state or prevent another configured target from being attempted.
 
 ### Projection identity is stronger than document count
 
-Two indexes containing 181 documents are not necessarily equivalent. Projection parity is verified only when:
+Two indexes containing the same number of documents are not necessarily equivalent. Projection parity is verified only when:
 
 - a current deterministic projection ID exists,
 - each engine records a successful current projection,
 - each engine records that same projection ID,
 - each engine reports the expected normalized document count.
 
-Search Lab exposes that evidence before showing engine differences.
+For bounded federation checkpoints, the project can also persist a guarded relationship between a deterministic source snapshot and the projection built from it. The linkage operation captures the source checkpoint, rebuilds discovery, rescans the source run and refuses to persist the relationship if the checkpoint changed during projection.
 
 ### The public query path and projection lifecycle are separate contracts
 
@@ -106,9 +116,24 @@ The architecture therefore supports two different decisions independently:
 
 The current OpenSearch work answers the first question; it does not presuppose the second.
 
+### Research-object detail is authority-neutral
+
+`/research/:id` is the canonical UI route. Route tokens are Base64URL-safe representations of canonical research identities. The API resolves the identity against federated metadata or curated repository content and returns one typed research-object detail contract.
+
+`/datasets/:id` remains a compatibility route for existing links.
+
+Federated detail:
+
+- labels the object as federated,
+- identifies the source system/publisher,
+- links to the authoritative external resource,
+- does not invent local versions, map layers or file preservation.
+
+Curated repository detail retains DSpace-owned enrichments such as versions, files and repository-specific relationships.
+
 ### Browser integrations are typed and centralized
 
-OpenAPI is the contract source of truth. TypeScript API types and Java wire DTOs are generated from the same schema. Browser code receives repository/source provenance explicitly instead of guessing whether a result is live or fixture-backed.
+OpenAPI is the contract source of truth. TypeScript API types and Java wire DTOs are generated from the same schema. Browser code receives per-record origin/source provenance explicitly instead of guessing whether a result is repository-backed, federated or fixture-backed.
 
 The comparison API returns both engine blocks in one typed response so one engine's failure does not mask useful evidence from the other.
 
@@ -116,23 +141,21 @@ The comparison API returns both engine blocks in one typed response so one engin
 
 The accessible table/list representation is generated from the same state as the map. Selection, URL state, announcements, layer visibility, and errors flow through NgRx rather than through direct map-to-DOM coupling.
 
-Search Lab follows the same rule: status, projection parity, warnings, facets/aggregations, and ranked results are exposed as semantic text/list structures and do not depend on color to communicate engine differences.
+Search and Search Lab follow the same rule: state, warnings, facets/aggregations, ranked results and provenance are exposed as semantic text/list structures and do not depend on color to communicate differences.
 
-## Repository population and synchronization
+## Curated repository population and synchronization
 
-There are two complementary paths.
+There are two complementary curated-repository paths.
 
 ### Curated repository composition
 
-`tools/dspace/catalog.json` declares which research objects belong in the reference repository. `generate-saf.mjs` resolves program templates and authored research objects into DSpace SAF packages. This path creates the broad catalog and the curated Open Science research package.
+`tools/dspace/catalog.json` declares which research objects belong in the reference repository. `generate-saf.mjs` resolves program templates and authored research objects into DSpace SAF packages. This path creates the broad curated catalog and the worked Open Science research package.
 
 The catalog is deliberately curated. Publisher APIs and listings can verify file existence, dates, sizes, and vintages, but they cannot determine all curatorial relationships or decide that a publication, methodology report, project, public dataset, and restricted microdata form one research package.
 
 ### Runtime reconciliation
 
-Registered Spring metadata adapters read catalog-backed definitions, verify publisher facts where available, normalize them as `ResearchObjectMetadata`, and reconcile fields owned by synchronization into DSpace. Startup, the admin UI, and command-line sync use the same `SyncService` path.
-
-The current adapter registry covers the publisher-backed objects. A small curated research package intentionally remains outside adapter identity coverage because its relationships are repository curation, not publisher-discovered facts. See [platform-status.md](platform-status.md) for the current counts.
+Registered Spring metadata adapters read catalog-backed definitions, verify publisher facts where available, normalize them as `ResearchObjectMetadata`, and reconcile synchronization-owned fields into DSpace. Startup, the admin UI, and command-line sync use the same `SyncService` path.
 
 Synchronization guarantees:
 
@@ -143,67 +166,101 @@ Synchronization guarantees:
 - source identifier to DSpace identity is recorded where reconciliation applies,
 - file manifests describe authoritative publisher files whether or not a bitstream is mirrored.
 
+## Federated ingestion and evidence flow
+
+Federated harvesting is a separate authority path from DSpace synchronization but remains inside the same Spring Boot application.
+
+```text
+External publisher API
+        |
+        v
+FederatedSourceHarvester
+ sourceSystem + adapterVersion
+        |
+        v
+FederatedHarvestRunService
+ durable run / page bound / retry / pause
+        |
+        +--> checkpoint cursor
+        +--> accepted/rejected/skipped counters
+        +--> bounded quarantine
+        |
+        v
+FederatedMetadataCatalog (application PostgreSQL)
+        |
+        +--> deterministic bounded snapshot
+        |
+        v
+CombinedDiscoveryCatalog
+        |
+        v
+guarded projection rebuild
+        |
+        +--> Solr
+        +--> OpenSearch
+        |
+        v
+persisted snapshot <-> projection evidence
+```
+
+An operator-bound harvest that reaches `maxPages` is intentionally `PAUSED`, not falsely `COMPLETED`. Ordinary harvest calls resume a compatible paused run with the same page size, adapter version and cursor. Restart-from-beginning is deliberately separate and clears traversal state without deleting retained federated metadata.
+
+The Data.gov live path has already proven 1K end to end and a same-run resume from 1K to 10K. See the scale-evidence document for the exact checkpoint state and remaining 10K evidence.
+
 ## Discovery and comparison flow
 
 ```text
-DSpace research objects
-        |
-        v
-DiscoveryProjectionService
-        |
-        +--> normalized DiscoveryDocument[]
-        |
-        +--> deterministic projection SHA-256
-        |
-        +------------------------+
-        |                        |
-        v                        v
-DiscoveryIndex             DiscoveryProjectionTarget
-Solr `discovery`           OpenSearch `discovery-comparison`
-        |                        |
-        |                        +----------------------+
-        |                                               |
-        +--> SearchService                              |
-        |    normal public search                       |
-        |                                               |
-        +----------------> SearchComparisonService <----+
-                              |
-                              v
-                       typed comparison API
-                              |
-                              v
-                         Angular Search Lab
+DSpace curated objects             FederatedMetadataCatalog
+        |                                    |
+        +----------------+-------------------+
+                         |
+                         v
+              CombinedDiscoveryCatalog
+                 bounded pages
+                         |
+                         v
+              DiscoveryProjectionService
+          streaming deterministic SHA-256
+                 /                 \
+                v                   v
+       DiscoveryIndex / Solr     OpenSearch target
+          normal search           comparison
+                |                    |
+                +--------+-----------+
+                         |
+        SearchService / SearchComparisonService
+                         |
+                         v
+                 typed Spring API
+                         |
+                         v
+               Angular Discovery/Search Lab
 ```
 
-Normal public search uses Solr eDisMax relevance, field and phrase boosts, facets, paging, URL state, and repository metadata such as subjects, authors, citation, DOI, geography, type, access level, and vintage.
+Normal public search uses Solr eDisMax relevance, field and phrase boosts, data-driven facets, paging, URL state, and mixed-origin metadata including publisher, source system, program name, subjects, authors, citation, DOI, geography, type, access level, and vintage where present.
 
 The implemented OpenSearch comparison query uses weighted lexical matching, phrase boosts, structured filters, and self-excluding aggregations so equivalent user-visible facet behavior can be compared. OpenSearch field names remain engine-neutral rather than copying Solr suffix conventions.
 
-A fixture catalog is available only as a labelled degradation path when repository content cannot be obtained. Fixture-backed comparison remains useful for engine behavior but is not presented as repository-backed evidence.
+A fixture catalog is available only as a labelled degradation path when neither authoritative repository nor federated content is available. Fixture-backed comparison remains useful for engine behavior but is not presented as authority-backed evidence.
+
+The projection-level compatibility field currently reports `REPOSITORY` for any authority-backed projection, including mixed repository + federated corpora. Per-record `origin` and `sourceSystem` are therefore the authoritative provenance fields. Renaming/expanding the projection-level label is a contract-cleanup seam, not a record-correctness defect.
 
 ## What comparison timing means
 
-Search Lab currently reports **API elapsed time around each engine request**. This is deliberately labelled local demo timing and is not a production benchmark.
+Search Lab reports API elapsed time around each engine request. This is deliberately labelled local demo timing and is not a production benchmark.
 
-At the current small index size, a single observed result such as Solr 20 ms and OpenSearch 46 ms can be dominated by fixed overhead:
+Meaningful scale evidence should separate:
 
-- HTTP and Docker networking,
-- JVM scheduling,
-- JSON serialization/deserialization,
-- connection behavior,
-- query/aggregation construction,
-- host activity and container warm-up.
-
-OpenSearch is not architecturally valuable only when more nodes are added, and more nodes do not guarantee a lower single-query latency. Distributed execution can add coordination overhead. Horizontal scaling is also not unique to OpenSearch; SolrCloud supports distributed shards and replicas.
-
-Future measurement should separate:
-
+- harvest duration/throughput,
+- projection duration,
 - API elapsed time,
 - Solr engine-native `QTime`,
 - OpenSearch engine-native `took`,
 - repeated-run p50/p95/p99 distributions,
-- index size,
+- corpus/snapshot/projection identity,
+- index/storage size,
 - concurrency,
+- host/container/JVM resources,
 - shard/replica/node topology.
 
 The comparison exists to evaluate functional semantics, operational fit, scaling behavior, resilience, analytics, and future vector/hybrid capabilities—not to force a predetermined performance winner.
@@ -227,24 +284,11 @@ The workforce journey begins in discovery, carries the selected geography into t
 
 The repository uses bounded mirroring rather than either extreme of mirroring nothing or downloading every public archive.
 
-- Metadata, authoritative source URLs, documentation, access statements, and file manifests are always represented.
-- Eligible source files are mirrored into DSpace as real bitstreams within a bounded total-byte budget.
-- Large or budget-exceeding artifacts remain authoritative links.
-- The Evidence page reports subscribed, mirrored, curated, and indexed as distinct measures.
-
-## Admin Sync direction
-
-Admin Sync currently combines repository synchronization with operational visibility. The search-comparison architecture extends the second responsibility.
-
-The page should present reindexing as:
-
-```text
-DSpace -> normalized projection -> projection ID -> Solr + OpenSearch
-```
-
-rather than visually implying that the projection pipeline terminates only at Solr.
-
-Per-engine state should expose enabled/reachable/projected status, index name, current projection identity, document count, parity, and warnings while preserving the statement that Solr is still the normal browser-facing discovery path.
+- Curated metadata, authoritative source URLs, documentation, access statements, and file manifests are represented in DSpace.
+- Eligible curated source files are mirrored into DSpace as real bitstreams within a bounded total-byte budget.
+- Large or budget-exceeding curated artifacts remain authoritative links.
+- Federated records retain publisher metadata/provenance and authoritative links without mirroring their underlying files merely for search scale.
+- Evidence distinguishes subscribed, mirrored, curated, federated and indexed concepts rather than collapsing them into one storage claim.
 
 ## Accessibility and evidence architecture
 
@@ -287,39 +331,29 @@ An automated pass is not presented as full Section 508 conformance.
 
 ## Testing-first rule
 
-New comparison capability should not outrun its evidence.
+New federation, comparison or scale capability should not outrun its evidence.
 
-Before adding broader phrase/highlight/geo/suggest/synonym/vector/hybrid scenarios, the current comparison path is expected to have:
+Normal CI uses small deterministic fixtures. Heavy 10K/100K/1M work is manual/scheduled evidence tied to deterministic snapshot/projection identity; full corpora are not committed merely to make CI look production-sized.
 
-1. Java service/use-case tests,
-2. controller/contract tests,
-3. OpenSearch HTTP request-semantics tests,
-4. Angular Search Lab component tests,
-5. Angular comparison API-client tests,
-6. format/lint/generated-drift gates,
-7. deterministic Playwright scenario coverage,
-8. axe WCAG/Section 508 route coverage,
-9. storyboard coverage,
-10. a live Solr/OpenSearch browser smoke path,
-11. manual evidence where manual conformance claims are made.
-
-A test file existing in the repository is not enough; CI must actually execute the relevant evidence path.
+A test file existing in the repository is not enough; CI must actually execute the relevant normal evidence path, while heavy scale evidence must record the runtime context that CI cannot economically reproduce.
 
 ## Deployment direction
 
-Docker Compose is the implemented platform and demo environment. The documented AWS target uses EKS as the preferred orchestration model, with ECS/Fargate as an alternate, RDS PostgreSQL, a persistent search-engine decision, CloudFront for the frontend, and explicit backup/observability posture. Infrastructure-as-code is not yet implemented.
+Docker Compose is the implemented platform and demo environment and the standalone baseline for PI-1 scale work. PI-2 will consume exact PI-1 corpus identities in a local kind-based SolrCloud/OpenSearch laboratory. Only after PI-2 evidence should the project finalize production-shaped AWS topology details. Infrastructure-as-code is not yet implemented.
 
 A production search-engine decision must include topology, persistent storage, backup/rebuild strategy, availability, cost, observability, security, index migration/alias strategy and operational ownership. Local single-node timing does not make that decision.
 
 ## Current seams
 
-The remaining seams are deliberately narrow:
+The remaining seams are now concentrated in scale and evidence rather than missing foundation architecture:
 
-1. Complete and record manual keyboard, NVDA, JAWS, Search Lab, and map-equivalence evidence.
-2. Finish enforcing the dedicated browser-evidence workflow and decide branch-protection/required-check policy.
-3. Extend Admin Sync and Evidence so projection identity and per-engine parity are visible outside Search Lab.
-4. Add engine-native timing and repeated measurement before making any performance claims.
-5. Implement Terraform or CDK for the documented AWS target.
-6. Finish research-object language and add a `/research/:id` route alias while preserving existing links.
-7. Expand publisher listing/vintage coverage and optional cross-agency federation without turning catalog curation into unsafe automatic edits.
-8. Continue provenance hardening: source freshness, indexing timestamps, and precise fallback provenance where a derived map can use either live aggregation or a stored sample.
+1. Close the 10K Data.gov snapshot/projection/search/storage/resource evidence, then prove 100K.
+2. Add DOE OSTI and the first controlled deterministic million-record corpus, followed by NASA CMR, PubMed and OpenAlex.
+3. Define DOI/PMID/other durable-identifier reconciliation without silent title-based merging.
+4. Add opaque cursor/search-after public discovery while preserving offset compatibility during migration.
+5. Harden live-source taxonomy presentation for opaque program values without fixed UI allowlists.
+6. Consider clearer projection-level authority terminology than compatibility `REPOSITORY` for mixed authority-backed projections.
+7. Record projection/index timestamps and large-run progress/resource context consistently across Admin, Evidence and Search Lab.
+8. Complete and record manual keyboard, NVDA, JAWS, Search Lab, and map-equivalence evidence.
+9. Decide required browser-evidence checks and `main` branch protection.
+10. Implement the PI-2 local Kubernetes laboratory before committing to the PI-3 AWS implementation candidate.
