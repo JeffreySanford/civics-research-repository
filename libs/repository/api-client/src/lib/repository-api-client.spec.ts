@@ -147,7 +147,7 @@ describe('RepositoryEvidenceApi', () => {
 });
 
 describe('RepositorySearchApi', () => {
-  it('loads typed search results with data-driven program parameters', async () => {
+  it('loads typed search results with data-driven authority filters', async () => {
     const response: SearchResponse = {
       query: 'North Dakota',
       page: 0,
@@ -178,18 +178,21 @@ describe('RepositorySearchApi', () => {
         api.searchResearchObjects({
           q: 'North Dakota',
           programs: ['TIGER_LINE', 'Office of Science'],
+          publisher: 'U.S. Census Bureau',
+          sourceSystem: 'CENSUS',
           page: 0,
           pageSize: 25,
         }),
       ),
     ).resolves.toEqual(response);
 
-    // Repeated keys are how the contract expresses "any of these programs". Federated publisher
-    // program names are passed through unchanged rather than validated against ResearchProgram.
+    // Repeated program keys and response-driven publisher/source values pass through unchanged.
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/search', {
       params: {
         q: 'North Dakota',
         program: ['TIGER_LINE', 'Office of Science'],
+        publisher: 'U.S. Census Bureau',
+        sourceSystem: 'CENSUS',
         page: 0,
         pageSize: 25,
       },
