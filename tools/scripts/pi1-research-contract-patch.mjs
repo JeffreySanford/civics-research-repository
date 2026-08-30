@@ -43,6 +43,12 @@ replaceOnce(
   `    ResearchId:\n      name: researchId\n      in: path\n      required: true\n      description: >-\n        URL-safe Base64 identity token for the canonical local research-object identifier. The\n        token keeps namespaced external identifiers containing slashes and URLs inside one path\n        segment without changing the underlying identity used by persistence and discovery.\n      schema:\n        type: string\n        minLength: 1\n        maxLength: 4096\n        pattern: '^[A-Za-z0-9_-]+$'\n    DatasetId:\n      name: datasetId\n`,
 );
 
+replaceOnce(
+  'dataset id YAML scalar',
+  `        pattern: '^[A-Za-z0-9._:-]+$'\n`,
+  `        pattern: "^[A-Za-z0-9._:-]+$"\n`,
+);
+
 replaceLast(
   'repository source schema semantics',
   `    RepositorySource:\n      type: string\n      description: >-\n        Legacy response/projection-level label retained for compatibility with the current curated\n        fallback path. REPOSITORY means the current projection was built from DSpace-backed content;\n        FIXTURE means generated placeholder content. Do not infer an individual result's authority\n        from this field once mixed repository + federated discovery is enabled; use SearchResult.origin\n        and SearchResult.sourceSystem instead.\n      enum: [REPOSITORY, FIXTURE]\n`,
