@@ -6,7 +6,7 @@ import { expectNoAxeViolations } from '../testing/axe';
 import { AdminCorpusStorageComponent } from './admin-corpus-storage.component';
 
 describe('AdminCorpusStorageComponent accessibility', () => {
-  it('has no axe violations with measured and planned corpus profiles', async () => {
+  it('has no axe violations with measured and inactive corpus profiles', async () => {
     await TestBed.configureTestingModule({
       imports: [AdminCorpusStorageComponent],
       providers: [
@@ -27,7 +27,7 @@ describe('AdminCorpusStorageComponent accessibility', () => {
                       profile: 'CURATED_DEMO',
                       topology: 'DOCKER_COMPOSE',
                       activeProjectionCount: 181,
-                      retainedFederatedCount: 0,
+                      retainedFederatedCount: 10_000,
                       applicationPostgresBytes: 12_000,
                       dspaceStoredBytes: 34_000,
                       solrIndexBytes: 56_000,
@@ -43,6 +43,11 @@ describe('AdminCorpusStorageComponent accessibility', () => {
                   },
                 ],
                 history: [],
+              }),
+            activateCorpusProfile: () =>
+              of({
+                source: 'REPOSITORY',
+                objectCount: 181,
               }),
             captureCorpusStorage: vi.fn(),
           },
