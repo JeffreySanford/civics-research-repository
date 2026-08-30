@@ -152,12 +152,12 @@ Resource context matters because a slow result caused by host pressure is not ev
 
 Admin should eventually be able to present a summary conceptually similar to:
 
-| Profile | Retained | Projected | PostgreSQL | Solr | OpenSearch | Harvest | Projection | Query p50/p95 | Resources | Snapshot / Projection |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
-| Curated ~200 | measured | measured | measured | measured | measured | N/A | measured | measured | measured | IDs |
-| 10K | 10,000 | 10,181 | measured | measured | measured | measured | measured | measured | measured | IDs |
-| 100K | pending | pending | pending | pending | pending | pending | pending | pending | pending | pending |
-| 1M | pending | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| Profile      | Retained | Projected | PostgreSQL |     Solr | OpenSearch |  Harvest | Projection | Query p50/p95 | Resources | Snapshot / Projection |
+| ------------ | -------: | --------: | ---------: | -------: | ---------: | -------: | ---------: | ------------- | --------- | --------------------- |
+| Curated ~200 | measured |  measured |   measured | measured |   measured |      N/A |   measured | measured      | measured  | IDs                   |
+| 10K          |   10,000 |    10,181 |   measured | measured |   measured | measured |   measured | measured      | measured  | IDs                   |
+| 100K         |  pending |   pending |    pending |  pending |    pending |  pending |    pending | pending       | pending   | pending               |
+| 1M           |  pending |   pending |    pending |  pending |    pending |  pending |    pending | pending       | pending   | pending               |
 
 The table should display `Not measured` rather than zero when evidence is unavailable.
 
