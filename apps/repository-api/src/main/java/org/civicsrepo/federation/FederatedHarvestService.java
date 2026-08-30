@@ -6,6 +6,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /** Coordinates one bounded, resumable harvest page at a time. */
@@ -21,6 +22,7 @@ public class FederatedHarvestService {
     private final HarvestSleeper sleeper;
     private final JitterSource jitterSource;
 
+    @Autowired
     public FederatedHarvestService(
             FederatedMetadataCatalog catalog,
             HarvestCheckpointStore checkpointStore,
