@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,10 @@ class ResearchObjectServiceTest {
 
     @Test
     void resolvesFederatedMetadataWithoutFallingIntoDatasetDetail() {
-        FederatedResearchRecord record = record();
+        FederatedResearchRecord record = record(Map.of(
+                "license", "https://creativecommons.org/publicdomain/zero/1.0/",
+                "doi", "10.1234/example",
+                "issued", "2025-04-15"));
         when(federatedCatalog.findById(record.id())).thenReturn(Optional.of(record));
 
         ResearchObjectDetail detail = service.getResearchObject(codec.encode(record.id()));
@@ -45,9 +49,20 @@ class ResearchObjectServiceTest {
         assertThat(detail.getSourceSystem()).isEqualTo(SourceSystem.DATA_GOV);
         assertThat(detail.getProgramName()).isEqualTo("Federal Highway Administration");
         assertThat(detail.getFiles()).isEmpty();
+        assertThat(detail.getReleasedOn()).isEqualTo(LocalDate.of(2025, 4, 15));
         assertThat(detail.getLicense()).isEqualTo("https://creativecommons.org/publicdomain/zero/1.0/");
         assertThat(detail.getDoi()).isEqualTo("10.1234/example");
         verify(datasetService, never()).getDataset(record.id());
+    }
+
+    @Test
+    void doesNotMislabelMetadataModifiedTimestampAsReleasedDate() {
+        FederatedResearchRecord record = record(Map.of());
+        when(federatedCatalog.findById(record.id())).thenReturn(Optional.of(record));
+
+        ResearchObjectDetail detail = service.getResearchObject(codec.encode(record.id()));
+
+        assertThat(detail.getReleasedOn()).isNull();
     }
 
     @Test
@@ -69,7 +84,7 @@ class ResearchObjectServiceTest {
         verify(federatedCatalog, never()).findById(org.mockito.ArgumentMatchers.anyString());
     }
 
-    private FederatedResearchRecord record() {
+    private FederatedResearchRecord record(Map<String, Object> sourceMetadata) {
         return new FederatedResearchRecord(
                 FederatedSourceSystem.DATA_GOV,
                 "https://data.transportation.gov/api/views/abcd-1234",
@@ -84,8 +99,6 @@ class ResearchObjectServiceTest {
                 "data-gov-catalog-v4-v2",
                 List.of("Jane Researcher"),
                 List.of("transportation"),
-                Map.of(
-                        "license", "https://creativecommons.org/publicdomain/zero/1.0/",
-                        "doi", "10.1234/example"));
+                sourceMetadata);
     }
 }
