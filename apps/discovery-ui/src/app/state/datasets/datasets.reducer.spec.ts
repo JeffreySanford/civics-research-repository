@@ -18,6 +18,8 @@ describe('datasetsReducer', () => {
     sourceUrl: 'https://example.test/tiger',
     accessibilityEvidenceStatus: 'AUTOMATED_PASS' as const,
     relatedResearch: [],
+    origin: 'REPOSITORY' as const,
+    sourceSystem: 'CENSUS' as const,
   };
 
   it('tracks opened dataset loading state', () => {
