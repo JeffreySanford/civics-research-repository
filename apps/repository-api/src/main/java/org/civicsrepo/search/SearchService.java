@@ -16,6 +16,7 @@ import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.civicsrepo.repository.FixtureCatalog;
 import org.civicsrepo.repository.RepositoryCatalog;
 import org.slf4j.Logger;
@@ -58,6 +59,7 @@ public class SearchService {
         return fixtureCatalog.discoveryDocuments();
     }
 
+    /** Compatibility overload for existing callers that do not yet filter by publisher/source. */
     public SearchResponse search(
             String query,
             List<String> programs,
@@ -66,11 +68,34 @@ public class SearchService {
             Integer vintageYear,
             int page,
             int pageSize) {
+        return search(query, programs, null, null, geography, contentType, vintageYear, page, pageSize);
+    }
+
+    public SearchResponse search(
+            String query,
+            List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
         if (discoveryIndex != null && discoveryIndex.isEnabled()) {
             try {
-                return discoveryIndex
-                        .search(query, programs, geography, contentType, vintageYear, page, pageSize)
-                        .resultSource(indexedSource());
+                SearchResponse response = normalize(publisher).isBlank() && sourceSystem == null
+                        ? discoveryIndex.search(query, programs, geography, contentType, vintageYear, page, pageSize)
+                        : discoveryIndex.search(
+                                query,
+                                programs,
+                                publisher,
+                                sourceSystem,
+                                geography,
+                                contentType,
+                                vintageYear,
+                                page,
+                                pageSize);
+                return response.resultSource(indexedSource());
             } catch (RuntimeException exception) {
                 LOGGER.warn("Solr search failed; answering from in-memory results.", exception);
             }
@@ -84,6 +109,8 @@ public class SearchService {
                     RepositorySource.REPOSITORY,
                     query,
                     programs,
+                    publisher,
+                    sourceSystem,
                     geography,
                     contentType,
                     vintageYear,
@@ -96,6 +123,8 @@ public class SearchService {
                 RepositorySource.FIXTURE,
                 query,
                 programs,
+                publisher,
+                sourceSystem,
                 geography,
                 contentType,
                 vintageYear,
@@ -113,25 +142,29 @@ public class SearchService {
             RepositorySource resultSource,
             String query,
             List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
         String normalizedQuery = normalize(query);
+        String normalizedPublisher = normalize(publisher);
+        String normalizedSourceSystem = sourceSystem == null ? "" : normalize(sourceSystem.getValue());
         String normalizedGeography = normalize(geography);
         Set<String> selectedPrograms = normalizeValues(programs);
 
-        List<SearchResult> filtered = catalog.stream()
-                .filter((result) -> matchesQuery(result, normalizedQuery))
-                .filter((result) -> selectedPrograms.isEmpty()
-                        || selectedPrograms.contains(normalize(programName(result))))
-                .filter((result) ->
-                        normalizedGeography.isBlank() || normalize(result.getGeography()).contains(normalizedGeography))
-                .filter((result) -> vintageYear == null || vintageYear.equals(result.getVintageYear()))
-                .filter((result) -> contentType == null || contentType == typeOf(result))
-                .sorted(Comparator.comparing(SearchResult::getTitle))
-                .toList();
+        List<SearchResult> filtered = filterCatalog(
+                catalog,
+                normalizedQuery,
+                selectedPrograms,
+                normalizedPublisher,
+                normalizedSourceSystem,
+                normalizedGeography,
+                contentType,
+                vintageYear,
+                null);
 
         int safePage = Math.max(0, page);
         int safePageSize = Math.max(1, Math.min(pageSize, 100));
@@ -149,54 +182,130 @@ public class SearchService {
                         facetGroup(
                                 "program",
                                 "Program",
-                                catalog.stream()
-                                        .filter((result) -> matchesQuery(result, normalizedQuery))
-                                        .filter((result) -> normalizedGeography.isBlank()
-                                                || normalize(result.getGeography()).contains(normalizedGeography))
-                                        .filter((result) ->
-                                                vintageYear == null || vintageYear.equals(result.getVintageYear()))
-                                        .filter((result) -> contentType == null || contentType == typeOf(result))
-                                        .toList(),
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "program"),
                                 this::programName,
                                 selectedPrograms),
                         facetGroup(
                                 "publisher",
                                 "Publisher",
-                                filtered,
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "publisher"),
                                 SearchResult::getPublisher,
-                                ""),
+                                normalizedPublisher.isBlank() ? Set.of() : Set.of(normalizedPublisher)),
                         facetGroup(
                                 "sourceSystem",
                                 "Source",
-                                filtered,
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "sourceSystem"),
                                 this::sourceSystemName,
-                                ""),
+                                normalizedSourceSystem.isBlank() ? Set.of() : Set.of(normalizedSourceSystem)),
                         facetGroup(
                                 "geography",
                                 "Geography",
-                                filtered,
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "geography"),
                                 SearchResult::getGeography,
                                 geography == null ? "" : geography),
                         facetGroup(
                                 "type",
                                 "Type",
-                                filtered,
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "type"),
                                 (result) -> typeOf(result).getValue(),
                                 contentType == null ? "" : contentType.getValue()),
                         descending(facetGroup(
                                 "vintageYear",
                                 "Year",
-                                catalog.stream()
-                                        .filter((result) -> matchesQuery(result, normalizedQuery))
-                                        .filter((result) -> selectedPrograms.isEmpty()
-                                                || selectedPrograms.contains(normalize(programName(result))))
-                                        .filter((result) -> normalizedGeography.isBlank()
-                                                || normalize(result.getGeography()).contains(normalizedGeography))
-                                        .filter((result) -> contentType == null || contentType == typeOf(result))
+                                filterCatalog(
+                                                catalog,
+                                                normalizedQuery,
+                                                selectedPrograms,
+                                                normalizedPublisher,
+                                                normalizedSourceSystem,
+                                                normalizedGeography,
+                                                contentType,
+                                                vintageYear,
+                                                "vintageYear")
+                                        .stream()
                                         .filter((result) -> result.getVintageYear() != null)
                                         .toList(),
                                 (result) -> String.valueOf(result.getVintageYear()),
                                 vintageYear == null ? "" : String.valueOf(vintageYear)))));
+    }
+
+    private List<SearchResult> filterCatalog(
+            List<SearchResult> catalog,
+            String normalizedQuery,
+            Set<String> selectedPrograms,
+            String normalizedPublisher,
+            String normalizedSourceSystem,
+            String normalizedGeography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            String excludedFacet) {
+        return catalog.stream()
+                .filter((result) -> matchesQuery(result, normalizedQuery))
+                .filter((result) -> "program".equals(excludedFacet)
+                        || selectedPrograms.isEmpty()
+                        || selectedPrograms.contains(normalize(programName(result))))
+                .filter((result) -> "publisher".equals(excludedFacet)
+                        || normalizedPublisher.isBlank()
+                        || normalize(result.getPublisher()).equals(normalizedPublisher))
+                .filter((result) -> "sourceSystem".equals(excludedFacet)
+                        || normalizedSourceSystem.isBlank()
+                        || normalize(sourceSystemName(result)).equals(normalizedSourceSystem))
+                .filter((result) -> "geography".equals(excludedFacet)
+                        || normalizedGeography.isBlank()
+                        || normalize(result.getGeography()).contains(normalizedGeography))
+                .filter((result) -> "vintageYear".equals(excludedFacet)
+                        || vintageYear == null
+                        || vintageYear.equals(result.getVintageYear()))
+                .filter((result) -> "type".equals(excludedFacet)
+                        || contentType == null
+                        || contentType == typeOf(result))
+                .sorted(Comparator.comparing(SearchResult::getTitle))
+                .toList();
     }
 
     private ResearchObjectType typeOf(SearchResult result) {
@@ -266,7 +375,9 @@ public class SearchService {
             Function<SearchResult, String> valueSelector,
             Set<String> normalizedSelected) {
         Map<String, Long> counts = results.stream()
-                .collect(Collectors.groupingBy(valueSelector, Collectors.counting()));
+                .map((result) -> Map.entry(result, valueSelector.apply(result)))
+                .filter((entry) -> entry.getValue() != null && !entry.getValue().isBlank())
+                .collect(Collectors.groupingBy(Map.Entry::getValue, Collectors.counting()));
 
         List<FacetValue> values = counts.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
