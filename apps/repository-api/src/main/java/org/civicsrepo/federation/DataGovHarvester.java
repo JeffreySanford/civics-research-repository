@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +47,7 @@ public class DataGovHarvester implements FederatedSourceHarvester {
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
+    @Autowired
     public DataGovHarvester(
             @Value("${civics.federation.data-gov.search-url:https://catalog.data.gov/api/3/action/package_search}")
                     String searchUrl) {
