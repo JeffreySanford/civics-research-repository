@@ -54,29 +54,57 @@ Docker Compose remains supported throughout both increments. It is the fast deve
 
 ## Current PI-1 foundation
 
-The branch now contains the first authority-neutral discovery seam:
+The branch now contains a live authority-neutral discovery path:
 
 ```text
-DSpace repository documents
-        +
-federated metadata records
+Data.gov / future federated sources
         |
         v
-CombinedDiscoveryCatalog
-  bounded pages
-  repository slice first
-  federated stable-id cursor
+Spring Boot federated harvest framework
+  durable runs / checkpoints / quarantine
         |
         v
-DiscoveryDocument
-  origin / sourceSystem
-  canonical data-driven programName
+FederatedMetadataCatalog
+        |
+        |                      DSpace
+        |                 curated repository
+        |                       |
+        +-----------+-----------+
+                    |
+         CombinedDiscoveryCatalog
+           bounded pages
+                    |
+                    v
+            DiscoveryDocument
+  origin / sourceSystem / programName
   publisher / subjects / authors
+                    |
+          deterministic projection
+             /              \
+          Solr            OpenSearch
+             \              /
+               Spring API
+                   |
+                Angular
 ```
 
 `ResearchProgram` remains a compatibility classification for the curated Census slice. Federated publisher program names are retained in `DiscoveryDocument.programName` rather than expanding the enum or collapsing every unknown program into `OTHER`.
 
-The combined catalog is deliberately not yet wired into the existing whole-list projection lifecycle. Replacing that lifecycle with bounded bulk projection and streaming deterministic hashing is the next scale-sensitive seam before 100K+ runs.
+### Proven 1K Data.gov checkpoint
+
+On 2026-08-30 the `data-gov-catalog-v4-v2` adapter completed a bounded live proof using 10 pages of 100 records:
+
+- 1,000 accepted / 0 rejected / 0 skipped,
+- 1,000 retained `DATA_GOV` metadata records,
+- 181 curated DSpace-backed records,
+- 1,181 objects projected through the same normalized stream into Solr and OpenSearch,
+- projection SHA-256 `5ad44932acd6166e9a32576ff06df9c4659cfba5f8800d952762503703af47dd`.
+
+The first v1 run surfaced 75 valid Data.gov date-only `modified` values. The adapter was versioned to v2, the normalizer was corrected, and the repeated 1K proof accepted all records. This is exactly the staged-live-data feedback loop PI-1 is intended to exercise before 10K/100K scale.
+
+The current branch therefore treats 1K ingestion/projection as proven. Its remaining merge gate is product-facing: make source/publisher filtering fully selectable, add canonical `/research/:id` detail for repository and federated records, preserve `/datasets/:id` compatibility, and cover the mixed-authority path with browser/accessibility evidence. The 10K scale proof starts from fresh `main` after that slice merges rather than extending this foundation PR indefinitely.
+
+See [PI-1 F1 Merge Gate](../../planning/PI1_F1_MERGE_GATE.md) for the exact branch boundary and merge checklist.
 
 ## Documents
 
@@ -85,6 +113,7 @@ The combined catalog is deliberately not yet wired into the existing whole-list 
 - [Runtime and Ownership Boundaries](runtime-boundaries.md) — Java/Spring harvesting, datastore ownership and Angular state-management decisions.
 - [Million-Record Corpus](million-record-corpus.md) — corpus sizes, snapshot manifests, benchmark modes, storage policy and scale acceptance criteria.
 - [Program Increment Plan](../../planning/PI_PLAN.md) — PI sequencing, dependencies and exit criteria.
+- [PI-1 F1 Merge Gate](../../planning/PI1_F1_MERGE_GATE.md) — live 1K evidence and the merge boundary before 10K scale work.
 
 ## Core rule
 
