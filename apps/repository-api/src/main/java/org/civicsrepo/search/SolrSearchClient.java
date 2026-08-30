@@ -66,13 +66,11 @@ public class SolrSearchClient implements DiscoveryIndex {
         return core;
     }
 
-    /** Cheap liveness probe against the configured discovery core. */
     @Override
     public boolean isReachable() {
         return documentCount().isPresent();
     }
 
-    /** Document count in the configured core, when Solr is enabled and answering. */
     @Override
     public Optional<Integer> documentCount() {
         if (!isEnabled()) {
@@ -98,7 +96,7 @@ public class SolrSearchClient implements DiscoveryIndex {
         }
     }
 
-    /** Program facet counts from the discovery core, when Solr is reachable. */
+    /** Legacy curated program counts used by the repository/admin overview. */
     @Override
     public Map<ResearchProgram, Integer> programFacetCounts() {
         if (!isEnabled()) {
@@ -117,14 +115,17 @@ public class SolrSearchClient implements DiscoveryIndex {
             if (response.statusCode() >= 300) {
                 return Map.of();
             }
-            JsonNode values =
-                    objectMapper.readTree(response.body()).path("facet_counts").path("facet_fields").path("program_s");
+            JsonNode values = objectMapper
+                    .readTree(response.body())
+                    .path("facet_counts")
+                    .path("facet_fields")
+                    .path("program_s");
             Map<ResearchProgram, Integer> counts = new LinkedHashMap<>();
             for (int index = 0; index + 1 < values.size(); index += 2) {
                 String programValue = values.get(index).asText();
                 int count = values.get(index + 1).asInt();
                 try {
-                    counts.put(ResearchProgram.valueOf(programValue), count);
+                    counts.put(ResearchProgram.fromValue(programValue), count);
                 } catch (IllegalArgumentException exception) {
                     counts.put(ResearchProgram.OTHER, counts.getOrDefault(ResearchProgram.OTHER, 0) + count);
                 }
@@ -172,7 +173,7 @@ public class SolrSearchClient implements DiscoveryIndex {
     @Override
     public SearchResponse search(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -184,14 +185,15 @@ public class SolrSearchClient implements DiscoveryIndex {
     @Override
     public SearchExecution searchWithDiagnostics(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(selectUri(query, programs, geography, contentType, vintageYear, page, pageSize))
+            HttpRequest request = HttpRequest.newBuilder(
+                            selectUri(query, programs, geography, contentType, vintageYear, page, pageSize))
                     .timeout(REQUEST_TIMEOUT)
                     .GET()
                     .build();
@@ -220,26 +222,22 @@ public class SolrSearchClient implements DiscoveryIndex {
         document.put("title_txt", result.getTitle());
         document.put("title_s", result.getTitle());
         document.put("contentType_s", result.getContentType().getValue());
-        // getValue(), not name(). The generator renames constants whose contract value starts a
-        // digit run -- USGS_3DEP becomes USGS_3_DEP -- while getValue() returns the contract
-        // value. Indexing name() would write a term no query could match.
         document.put("program_s", result.getProgram().getValue());
+        document.put("programName_s", object.programName());
         document.put("publisher_txt", result.getPublisher());
         document.put("publisher_s", result.getPublisher());
         document.put("summary_txt", result.getSummary());
         document.put("geography_txt", result.getGeography());
         document.put("geography_s", result.getGeography());
         document.put("vintageYear_i", result.getVintageYear());
-        document.put("accessLevel_s",
+        document.put(
+                "accessLevel_s",
                 (result.getAccessLevel() == null ? AccessLevel.PUBLIC : result.getAccessLevel()).getValue());
         document.put("sourceUrl_s", result.getSourceUrl());
         document.put("origin_s", result.getOrigin().getValue());
         document.put("sourceSystem_s", result.getSourceSystem().getValue());
         document.put("repositorySeed_b", true);
 
-        // Indexed, never returned. These are reasons a researcher types something into a search
-        // box -- an author's surname, a subject, a working paper number inside a citation -- and
-        // until now Solr could not see any of them.
         if (!object.subjects().isEmpty()) {
             document.put("subjects_txt", object.subjects());
         }
@@ -260,7 +258,7 @@ public class SolrSearchClient implements DiscoveryIndex {
             String query,
             int page,
             int pageSize,
-            List<ResearchProgram> selectedPrograms,
+            List<String> selectedPrograms,
             String selectedGeography,
             ResearchObjectType selectedContentType,
             Integer selectedVintageYear,
@@ -272,41 +270,35 @@ public class SolrSearchClient implements DiscoveryIndex {
 
             for (JsonNode document : response.path("docs")) {
                 results.add(new SearchResult(
-                        text(document, "id"),
-                        text(document, "title_s"),
-                        // fromValue, not valueOf, for the same reason the indexing side uses
-                        // getValue(): the constant name and the contract value differ wherever the
-                        // generator had to rename one, and valueOf would throw on the way back in.
-                        ResearchObjectType.fromValue(text(document, "contentType_s")),
-                        ResearchProgram.fromValue(text(document, "program_s")),
-                        text(document, "publisher_s"),
-                        text(document, "summary_txt"),
-                        URI.create(text(document, "sourceUrl_s")),
-                        ResearchObjectOrigin.fromValue(text(document, "origin_s")),
-                        SourceSystem.fromValue(text(document, "sourceSystem_s")))
+                                text(document, "id"),
+                                text(document, "title_s"),
+                                ResearchObjectType.fromValue(text(document, "contentType_s")),
+                                ResearchProgram.fromValue(text(document, "program_s")),
+                                text(document, "publisher_s"),
+                                text(document, "summary_txt"),
+                                URI.create(text(document, "sourceUrl_s")),
+                                ResearchObjectOrigin.fromValue(text(document, "origin_s")),
+                                SourceSystem.fromValue(text(document, "sourceSystem_s")))
+                        .programName(text(document, "programName_s"))
                         .geography(text(document, "geography_s"))
                         .vintageYear(integer(document, "vintageYear_i"))
                         .accessLevel(accessLevel(document)));
             }
 
-            // Conservative default. The client cannot know what was projected into the core, so
-            // SearchService relabels the response-level compatibility field. Per-record origin and
-            // sourceSystem are read from the indexed document and remain authoritative for mixed pages.
             return new SearchResponse(
                     RepositorySource.FIXTURE,
                     query == null ? "" : query,
                     Math.max(0, page),
                     Math.max(1, Math.min(pageSize, 100)),
-                    // int32 in the contract; toIntExact fails loudly rather than truncating.
                     Math.toIntExact(response.path("numFound").asLong()),
                     results,
                     List.of(
                             facetGroup(
                                     "program",
                                     "Program",
-                                    root.path("facet_counts").path("facet_fields").path("program_s"),
+                                    root.path("facet_counts").path("facet_fields").path("programName_s"),
                                     selectedPrograms.stream()
-                                            .map((program) -> normalize(program.getValue()))
+                                            .map(this::normalize)
                                             .collect(Collectors.toSet())),
                             facetGroup(
                                     "geography",
@@ -343,7 +335,6 @@ public class SolrSearchClient implements DiscoveryIndex {
         }
     }
 
-    /** Unreadable access metadata reads as restricted, never as public. */
     private AccessLevel accessLevel(JsonNode document) {
         String value = text(document, "accessLevel_s");
         if (value == null || value.isBlank()) {
@@ -356,12 +347,6 @@ public class SolrSearchClient implements DiscoveryIndex {
         }
     }
 
-    /**
-     * Reverses a facet group's values.
-     *
-     * Solr sorts a numeric field's facets ascending by index, which is the wrong order for a
-     * vintage: a reader scanning years wants the most recent release first.
-     */
     private FacetGroup descending(FacetGroup group) {
         List<FacetValue> reversed = new ArrayList<>(group.getValues());
         Collections.reverse(reversed);
@@ -393,7 +378,7 @@ public class SolrSearchClient implements DiscoveryIndex {
 
     private URI selectUri(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -404,46 +389,28 @@ public class SolrSearchClient implements DiscoveryIndex {
         List<String> params = new ArrayList<>();
         params.add("wt=json");
         params.add("defType=edismax");
-        // Weighted, not flat. Every one of the 181 objects is published by "U.S. Census Bureau",
-        // so an unweighted publisher field contributed the same score to every query -- noise with
-        // a tie-breaking effect. Title and geography are what a researcher is usually naming;
-        // summary is where a term appears incidentally.
         params.add("qf="
-                + encode("title_txt^5 geography_txt^4 subjects_txt^3 program_s^3 "
+                + encode("title_txt^5 geography_txt^4 subjects_txt^3 programName_s^3 "
                         + "authors_txt^3 summary_txt^2 citation_txt^1 publisher_txt^0.5"));
-
-        // Phrase boost: "North Dakota" as a phrase should outrank a document that merely contains
-        // both words somewhere. pf2 covers the two-word case, which is most Census geographies.
         params.add("pf=" + encode("title_txt^8 geography_txt^6 summary_txt^2"));
         params.add("pf2=" + encode("title_txt^4 geography_txt^4"));
-
-        // Two-thirds of the terms must match. Pure OR made "North Dakota workforce" return
-        // everything containing "North"; requiring all three would return nothing, because no
-        // object's text carries all of them.
         params.add("mm=" + encode("2<67%"));
         params.add("q=" + encode(normalize(query).isBlank() ? "*:*" : query));
         params.add("start=" + encode(Integer.toString(safePage * safePageSize)));
         params.add("rows=" + encode(Integer.toString(safePageSize)));
         params.add("facet=true");
         params.add("facet.mincount=1");
-        // Facets exclude their own filter. Solr computes facet counts after filter queries, so a
-        // plain facet.field would collapse the program list to whatever is already selected and
-        // leave no way to add a fourth program. Tagging each filter and excluding it from the
-        // matching facet keeps every option visible with its unfiltered count.
-        params.add("facet.field=" + encode("{!ex=programFilter}program_s"));
+        params.add("facet.field=" + encode("{!ex=programFilter}programName_s"));
         params.add("facet.field=" + encode("{!ex=geographyFilter}geography_s"));
         params.add("facet.field=" + encode("{!ex=typeFilter}contentType_s"));
-        // Newest first. A vintage list is read as a timeline, and Solr's default index order
-        // would put 2022 above 2025.
         params.add("facet.field=" + encode("{!ex=vintageFilter}vintageYear_i"));
         params.add("f.vintageYear_i.facet.sort=" + encode("index"));
 
-        if (!programs.isEmpty()) {
-            // One fq with an OR clause, not one fq per program: separate filter queries are ANDed,
-            // which would return nothing whenever more than one program is selected.
+        if (programs != null && !programs.isEmpty()) {
             params.add("fq="
                     + encode(programs.stream()
-                            .map((program) -> "program_s:" + program.getValue())
+                            .filter((program) -> program != null && !program.isBlank())
+                            .map((program) -> "programName_s:\"" + escapeQueryValue(program.trim()) + "\"")
                             .collect(Collectors.joining(" OR ", "{!tag=programFilter}(", ")"))));
         }
 
@@ -456,8 +423,6 @@ public class SolrSearchClient implements DiscoveryIndex {
             params.add("fq=" + encode("{!tag=vintageFilter}vintageYear_i:" + vintageYear));
         }
 
-        // Tagged and excluded from its own facet, like program and geography: selecting
-        // "Publication" must not collapse the type list to the one value already chosen.
         if (contentType != null) {
             params.add("fq="
                     + encode("{!tag=typeFilter}contentType_s:\"" + escapeQueryValue(contentType.getValue()) + "\""));
@@ -466,19 +431,6 @@ public class SolrSearchClient implements DiscoveryIndex {
         return URI.create(baseUrl + "/" + encode(core) + "/select?" + String.join("&", params));
     }
 
-    /**
-     * Escapes Lucene query syntax in a caller-supplied filter value.
-     *
-     * <p>{@code geography} arrives straight from a request parameter and is interpolated into an
-     * {@code fq} phrase. Without escaping, a quote closes the phrase early and the remainder is
-     * parsed as query syntax, which can widen the filter past what the caller asked for or fail the
-     * request outright. URL encoding does not help here: Solr decodes the parameter before parsing
-     * it.
-     *
-     * <p>Only the backslash and quote are escaped. The value is always wrapped in quotes, so every
-     * other Lucene operator — including the spaces in values such as {@code North Dakota} — is
-     * already inert inside the phrase, and escaping them would change what matches.
-     */
     static String escapeQueryValue(String value) {
         if (value == null) {
             return "";
