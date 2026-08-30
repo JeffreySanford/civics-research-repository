@@ -14,10 +14,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.net.URI;
 import java.util.List;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -61,7 +63,9 @@ class SearchControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resultSource").value("REPOSITORY"))
                 .andExpect(jsonPath("$.totalResults").value(1))
-                .andExpect(jsonPath("$.results[0].id").value("tiger-line-north-dakota-2025"));
+                .andExpect(jsonPath("$.results[0].id").value("tiger-line-north-dakota-2025"))
+                .andExpect(jsonPath("$.results[0].origin").value("REPOSITORY"))
+                .andExpect(jsonPath("$.results[0].sourceSystem").value("CENSUS"));
 
         verify(searchService).search(null, List.of(), null, null, null, 0, 25);
     }
@@ -71,7 +75,8 @@ class SearchControllerTest {
         given(searchService.search(
                         eq("tracts"),
                         eq(List.of(ResearchProgram.TIGER_LINE)),
-                        eq("North Dakota"),any(),
+                        eq("North Dakota"),
+                        any(),
                         eq(2025),
                         eq(2),
                         eq(10)))
@@ -96,7 +101,8 @@ class SearchControllerTest {
         given(searchService.search(
                         any(),
                         eq(List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES, ResearchProgram.ACS)),
-                        any(),any(),
+                        any(),
+                        any(),
                         any(),
                         anyInt(),
                         anyInt()))
@@ -112,7 +118,8 @@ class SearchControllerTest {
                 .search(
                         null,
                         List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES, ResearchProgram.ACS),
-                        null,null,
+                        null,
+                        null,
                         null,
                         0,
                         25);
@@ -161,7 +168,9 @@ class SearchControllerTest {
                                 ResearchProgram.TIGER_LINE,
                                 "U.S. Census Bureau",
                                 "Tract geometry metadata.",
-                                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"))
+                                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"),
+                                ResearchObjectOrigin.REPOSITORY,
+                                SourceSystem.CENSUS)
                         .geography("North Dakota")
                         .vintageYear(2025)),
                 List.of());
