@@ -1,6 +1,7 @@
 package org.civicsrepo.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -64,7 +65,7 @@ class SearchComparisonServiceTest {
 
         SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FACETED_SEARCH)
                 .query("North Dakota workforce")
-                .programs(List.of(ResearchProgram.LODES))
+                .programs(List.of(ResearchProgram.LODES.getValue()))
                 .geography("North Dakota")
                 .contentType(ResearchObjectType.DATASET)
                 .vintageYear(2023)
@@ -83,6 +84,16 @@ class SearchComparisonServiceTest {
         assertThat(result.getOpenSearch().getTotalHits()).isEqualTo(3);
         assertThat(result.getSolr().getEngineReportedMs()).isEqualTo(6L);
         assertThat(result.getOpenSearch().getEngineReportedMs()).isEqualTo(11L);
+    }
+
+    @Test
+    void rejectsUnknownDataDrivenProgramUntilComparisonIndexesUseCanonicalProgramName() {
+        SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FILTERING)
+                .programs(List.of("Office of Science"));
+
+        assertThatThrownBy(() -> service.run(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("programName migration");
     }
 
     @Test
