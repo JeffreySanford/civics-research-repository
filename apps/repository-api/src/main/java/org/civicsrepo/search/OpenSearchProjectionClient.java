@@ -19,10 +19,12 @@ import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.FacetValue;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -337,7 +339,9 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                     ResearchProgram.fromValue(document.path("program").asText()),
                     document.path("publisher").asText(),
                     document.path("summary").asText(),
-                    URI.create(document.path("sourceUrl").asText()))
+                    URI.create(document.path("sourceUrl").asText()),
+                    ResearchObjectOrigin.fromValue(document.path("origin").asText()),
+                    SourceSystem.fromValue(document.path("sourceSystem").asText()))
                     .geography(textOrNull(document, "geography"))
                     .vintageYear(integerOrNull(document, "vintageYear"))
                     .accessLevel(accessLevel(document)));
@@ -472,6 +476,8 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                 "accessLevel",
                 (result.getAccessLevel() == null ? AccessLevel.PUBLIC : result.getAccessLevel()).getValue());
         document.put("sourceUrl", result.getSourceUrl().toString());
+        document.put("origin", result.getOrigin().getValue());
+        document.put("sourceSystem", result.getSourceSystem().getValue());
         if (!object.subjects().isEmpty()) {
             document.put("subjects", object.subjects());
         }
@@ -495,6 +501,8 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         properties.put("vintageYear", Map.of("type", "integer"));
         properties.put("accessLevel", keyword());
         properties.put("sourceUrl", keyword());
+        properties.put("origin", keyword());
+        properties.put("sourceSystem", keyword());
         properties.put("subjects", Map.of("type", "text"));
         properties.put("authors", Map.of("type", "text"));
         properties.put("citation", Map.of("type", "text"));
