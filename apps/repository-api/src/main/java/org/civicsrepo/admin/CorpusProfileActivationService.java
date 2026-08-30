@@ -10,6 +10,7 @@ import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.federation.CorpusProfileActivation;
 import org.civicsrepo.federation.CorpusProfileActivationStore;
 import org.civicsrepo.repository.DiscoveryProjectionService;
+import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionProgressListener;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionTargetState;
 import org.civicsrepo.search.DiscoveryDocument;
@@ -29,14 +30,17 @@ public class CorpusProfileActivationService {
     private final DiscoveryProjectionService projectionService;
     private final SearchService searchService;
     private final CorpusProfileActivationStore activationStore;
+    private final CorpusProfileActivationProgressTracker progressTracker;
 
     public CorpusProfileActivationService(
             DiscoveryProjectionService projectionService,
             SearchService searchService,
-            CorpusProfileActivationStore activationStore) {
+            CorpusProfileActivationStore activationStore,
+            CorpusProfileActivationProgressTracker progressTracker) {
         this.projectionService = projectionService;
         this.searchService = searchService;
         this.activationStore = activationStore;
+        this.progressTracker = progressTracker;
     }
 
     public CorpusProfile currentProfile() {
@@ -49,19 +53,42 @@ public class CorpusProfileActivationService {
         return activationStore.findActive();
     }
 
+    public CorpusProfileActivationProgress currentProgress() {
+        return progressTracker.current();
+    }
+
     public ProjectionState rebuildActiveProfile() {
         return activate(currentProfile());
     }
 
     public ProjectionState activate(CorpusProfile profile) {
         Objects.requireNonNull(profile, "profile");
+        progressTracker.begin(profile);
         CorpusProfile previousProfile = currentProfile();
         String previousProjectionId = projectionService.currentProjectionId();
         List<DiscoveryDocument> fixtureFallback = searchService.fixtureDocuments();
 
+        ProjectionProgressListener progress = new ProjectionProgressListener() {
+            @Override
+            public void projectionStarted(long totalDocuments) {
+                progressTracker.projectionStarted(totalDocuments);
+            }
+
+            @Override
+            public void documentsProjected(long processedDocuments, long totalDocuments) {
+                progressTracker.projected(processedDocuments, totalDocuments);
+            }
+
+            @Override
+            public void verificationStarted(long processedDocuments, long totalDocuments) {
+                progressTracker.verifying(processedDocuments, totalDocuments);
+            }
+        };
+
         try {
-            ProjectionState projected = projectionService.reindex(profile, fixtureFallback);
+            ProjectionState projected = projectionService.reindex(profile, fixtureFallback, progress);
             recordSuccessfulProjection(profile, projected);
+            progressTracker.complete(projected.objectCount(), projected.objectCount());
             return projected;
         } catch (RuntimeException activationFailure) {
             String failedProjectionId = projectionService.currentProjectionId();
@@ -69,6 +96,7 @@ public class CorpusProfileActivationService {
             if (profile != previousProfile && projectionChanged) {
                 restorePreviousProfile(previousProfile, fixtureFallback, activationFailure);
             }
+            progressTracker.fail(activationFailure);
             throw activationFailure;
         }
     }
