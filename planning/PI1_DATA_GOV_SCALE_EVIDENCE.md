@@ -1,6 +1,6 @@
 # PI-1 Data.gov Scale Evidence
 
-This document is the living evidence record for the staged Data.gov scale path in PI-1. It records only facts that have been observed from the live local stack. A harvest count by itself does not complete a scale checkpoint: reusable checkpoints also require deterministic snapshot/projection evidence, public-search verification and resource/storage context.
+This document is the living evidence record for the staged Data.gov scale path in PI-1. It records only facts observed from the live local stack. A harvest count by itself does not complete a scale checkpoint: reusable checkpoints also require deterministic snapshot/projection evidence, public-search verification and resource/storage context.
 
 ## Stable baseline
 
@@ -42,8 +42,6 @@ The snapshot remained present after the application stack was rebuilt and contai
 
 ### Guarded snapshot -> projection relationship
 
-The guarded projection operation rebuilt discovery, rescanned the harvest checkpoint and persisted the relationship only after confirming that the checkpoint had not drifted during projection.
-
 - snapshot SHA-256: `78a2ec438b3dc3eab179fd94f5dd70c58fa770e3e18186dd624f078b0cbc3ce9`,
 - projection ID/SHA-256: `5ad44932acd6166e9a32576ff06df9c4659cfba5f8800d952762503703af47dd`,
 - projection object count: 1,181,
@@ -57,34 +55,21 @@ The persisted projection-evidence history returned the same snapshot/projection 
 
 ### Public-search verification
 
-The normal public endpoint was queried with:
+The normal public endpoint returned:
 
-```text
-/api/search?sourceSystem=DATA_GOV&page=0&pageSize=5
-```
+- `totalResults`: 1,000 for `sourceSystem=DATA_GOV`,
+- `origin: FEDERATED` on returned Data.gov records,
+- `sourceSystem: DATA_GOV` on returned Data.gov records,
+- live publisher/program values from the indexed corpus,
+- source facet counts `DATA_GOV = 1000`, `CENSUS = 178`, `USGS = 3`.
 
-Observed:
+This proved that federated records were not only retained in PostgreSQL; they were discoverable through the ordinary search/facet path.
 
-- `totalResults`: 1,000,
-- returned Data.gov records carried `origin: FEDERATED`,
-- returned Data.gov records carried `sourceSystem: DATA_GOV`,
-- publisher and program values came from live indexed metadata,
-- the source-system facet reported `DATA_GOV = 1000`, `CENSUS = 178`, `USGS = 3`, matching the 1,181-object mixed projection.
-
-This proves that federated records are not only retained in PostgreSQL; they are discoverable through the ordinary search/facet path.
-
-## 10K checkpoint — snapshot captured, evidence completion in progress
+## 10K checkpoint — projection/search/storage proven, evidence completion in progress
 
 The 10K checkpoint resumed the same durable 1K run rather than restarting from source offset zero.
 
-Invocation shape:
-
-```text
-POST /api/admin/federation/harvest
-sourceSystem = DATA_GOV
-pageSize = 100
-maxPages = 90
-```
+### Harvest and resumability
 
 Observed on 2026-08-30:
 
@@ -112,41 +97,101 @@ Captured and persisted on 2026-08-30:
 - mode: `BOUNDED_SNAPSHOT`,
 - snapshot ID: `DATA_GOV:dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`,
 - snapshot SHA-256: `dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`,
-- run ID: `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131`,
-- adapter version: `data-gov-catalog-v4-v2`,
 - retained count: 10,000,
 - accepted/rejected/skipped: 10,000 / 0 / 0,
 - page count: 100,
-- page size: 100,
 - first record ID: `DATA_GOV:7FEBA753-FD29-4DE3-860C-61B0A30D2D51`,
 - last record ID: `DATA_GOV:https://transtats.bts.gov/NTADmetadata/Automated/USDOT_BTS_NTAD_Waterway_Locks.xml`,
 - source update window observed: `2004-11-08T00:00:00Z` through `2026-08-29T09:29:22.300883Z`,
-- run updated at: `2026-08-30T20:12:01.218591Z`,
-- snapshot captured at: `2026-08-30T20:26:00.380919855Z`,
-- opaque publisher cursor persisted unchanged from the 10K harvest checkpoint.
+- snapshot captured at: `2026-08-30T20:26:00.380919855Z`.
 
-The 10K corpus therefore now has a durable content-addressed source identity. The next evidence step must use the guarded projection operation so the resulting mixed Solr/OpenSearch projection is linked to this exact snapshot only if the harvest checkpoint remains unchanged while projection runs.
+### Guarded snapshot -> projection relationship
+
+The guarded projection completed without checkpoint drift and persisted the exact relationship:
+
+- snapshot SHA-256: `dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`,
+- projection ID/SHA-256: `b292f98bb8b141dd477cfbcdc9149e44bd53559c153c431f772809f41836742e`,
+- projection object count: 10,181,
+- composition: 181 curated + 10,000 federated,
+- projection rebuilt at: `2026-08-30T20:57:21.88003542Z`,
+- relationship linked at: `2026-08-30T20:57:22.250986422Z`.
+
+The persisted projection-history endpoint returned both the 10K pair above and the earlier 1K pair. This proves that advancing the same harvest run creates a new content-addressed snapshot and projection relationship without erasing prior checkpoint evidence.
+
+### Public-search verification
+
+The normal public endpoint was queried with `sourceSystem=DATA_GOV` after the 10K projection.
+
+Observed:
+
+- `totalResults`: 10,000,
+- returned records carried `origin: FEDERATED`,
+- returned records carried `sourceSystem: DATA_GOV`,
+- publisher and program facets came from the live indexed metadata,
+- source facet counts were `DATA_GOV = 10000`, `CENSUS = 178`, `USGS = 3`, matching the 10,181-object mixed corpus.
+
+Representative returned records included EPA and National Park Service metadata. The expanded corpus also exposed a taxonomy/presentation seam: valid program values include both long organization names and opaque codes such as `010:118`, `020:072`, `010:10` and `010:12`. The raw publisher values should remain intact while presentation hardening is handled separately.
+
+### Storage evidence — before and after 10K projection
+
+A storage capture was taken after the 10K harvest/snapshot but before rebuilding the search projection. At that moment PostgreSQL held 10,000 federated records while Solr/OpenSearch still held the prior 1,181-object projection.
+
+Pre-projection capture `c94a2e78-27ab-467a-a800-57fd33769ab2`:
+
+- active projection count: 1,181,
+- retained federated count: 10,000,
+- application PostgreSQL: 47,142,579 bytes,
+- DSpace stored bytes: 1,073,739,747,
+- Solr index: 815,692 bytes,
+- OpenSearch index: 802,037 bytes,
+- total measured local bytes: 1,122,500,055,
+- projection ID: `5ad44932acd6166e9a32576ff06df9c4659cfba5f8800d952762503703af47dd`.
+
+Post-projection capture `1b92ceab-5392-4552-9b0e-56d704220284`:
+
+- active projection count: 10,181,
+- retained federated count: 10,000,
+- application PostgreSQL: 47,158,963 bytes,
+- DSpace stored bytes: 1,073,739,747,
+- Solr index: 5,158,329 bytes,
+- OpenSearch index: 5,167,844 bytes,
+- total measured local bytes: 1,131,224,883,
+- projection ID: `b292f98bb8b141dd477cfbcdc9149e44bd53559c153c431f772809f41836742e`.
+
+The isolated transition added 9,000 projected objects while the retained federated corpus was already at 10,000. Measured deltas were:
+
+- Solr: +4,342,637 bytes, approximately 482.5 bytes per newly projected object,
+- OpenSearch: +4,365,807 bytes, approximately 485.1 bytes per newly projected object,
+- Solr + OpenSearch combined: +8,708,444 bytes, approximately 967.6 bytes per newly projected object,
+- application PostgreSQL: +16,384 bytes between the two captures,
+- DSpace stored bytes: unchanged,
+- total measured local footprint: +8,724,828 bytes.
+
+The PostgreSQL delta between these two captures is **not** a 1K-to-10K database-growth measurement because both captures occurred after the 10K harvest. A historical 1K storage capture is needed to calculate a defensible application-PostgreSQL bytes-per-federated-record value.
+
+The storage endpoint still reports `profile: CURATED_DEMO` because the current active-profile label is hard-coded. The live measurement fields and projection IDs are still useful evidence; profile-selection semantics should be cleaned up separately before relying on that label for automated scale reports.
 
 ### 10K completion checklist
 
 - [x] Resume the existing Data.gov run from 1K to 10K without restart.
 - [x] Reach 10,000 accepted with 0 rejected and 0 skipped.
 - [x] Capture and persist the 10K bounded snapshot.
-- [ ] Run the guarded snapshot -> combined-projection operation.
-- [ ] Verify the persisted snapshot/projection relationship.
-- [ ] Verify the public search path returns exactly 10,000 `DATA_GOV` records.
+- [x] Run the guarded snapshot -> combined-projection operation.
+- [x] Verify the persisted snapshot/projection relationship.
+- [x] Verify the public search path returns exactly 10,000 `DATA_GOV` records.
 - [ ] Verify at least one live 10K Data.gov record through `/research/:id` and its authoritative publisher link.
-- [ ] Record Solr and OpenSearch document-count/projection-identity parity.
-- [ ] Capture application PostgreSQL, Solr and OpenSearch storage measurements.
+- [ ] Record explicit Solr and OpenSearch document-count/projection-identity parity from the live comparison endpoint.
+- [x] Capture application PostgreSQL, Solr and OpenSearch storage measurements before and after the 10K projection.
+- [x] Calculate the isolated incremental Solr/OpenSearch bytes per newly projected object.
+- [ ] Calculate application-PostgreSQL bytes per federated record from a comparable 1K/10K pair if historical evidence permits.
 - [ ] Record host/container/JVM CPU and memory context for the 10K run/projection.
-- [ ] Calculate bytes/document for the 10K checkpoint where the probes provide defensible measurements.
 - [ ] Record harvest/projection duration evidence in a reusable form.
 
-Until those items are complete, the correct statement is **"10K harvest and deterministic snapshot proven"**, not **"10K scale checkpoint complete."**
+Until those remaining items are complete, the correct statement is **"10K harvest, snapshot, guarded projection, public search and index-growth evidence proven"**, not **"10K scale checkpoint complete."**
 
 ## 100K acceptance boundary
 
-Do not begin the 100K proof merely because the 10K harvest succeeded. First close the 10K evidence checklist above and confirm that storage/resource behavior is understood.
+Do not begin the 100K proof merely because the 10K harvest succeeded. First close the remaining 10K evidence checklist and confirm that storage/resource behavior is understood.
 
 The 100K checkpoint should then repeat the same semantics:
 
