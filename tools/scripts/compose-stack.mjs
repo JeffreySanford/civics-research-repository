@@ -437,9 +437,7 @@ export function generateSafIfNeeded({ force = false } = {}) {
 }
 
 export async function runReindex(profile) {
-  const profileQuery = profile
-    ? `?profile=${encodeURIComponent(profile)}`
-    : '';
+  const profileQuery = profile ? `?profile=${encodeURIComponent(profile)}` : '';
   const reindex = await fetch(`${API_URL}/admin/reindex${profileQuery}`, {
     method: 'POST',
   });

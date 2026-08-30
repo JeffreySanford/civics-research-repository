@@ -60,9 +60,9 @@ interface ActivationResult {
           <h2 id="corpus-storage-heading">Corpus scale & local storage</h2>
           <p>
             Compare and activate deterministic search profiles without deleting
-            retained metadata. Normal <code>start:all</code> uses the fast curated
-            profile; larger retained corpora are projected only when explicitly
-            activated here.
+            retained metadata. Normal <code>start:all</code> uses the fast
+            curated profile; larger retained corpora are projected only when
+            explicitly activated here.
           </p>
         </div>
 

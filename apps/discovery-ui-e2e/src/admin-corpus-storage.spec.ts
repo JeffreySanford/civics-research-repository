@@ -75,17 +75,20 @@ test.describe('Admin Sync corpus storage evidence', () => {
       });
     });
 
-    await page.route(`**/api/admin/reindex?profile=FEDERATED_10K`, async (route) => {
-      await route.fulfill({
-        contentType: 'application/json',
-        json: {
-          source: 'REPOSITORY',
-          objectCount: 10_181,
-          projectionId: 'b'.repeat(64),
-          rebuiltAt: '2026-08-30T21:30:00Z',
-        },
-      });
-    });
+    await page.route(
+      `**/api/admin/reindex?profile=FEDERATED_10K`,
+      async (route) => {
+        await route.fulfill({
+          contentType: 'application/json',
+          json: {
+            source: 'REPOSITORY',
+            objectCount: 10_181,
+            projectionId: 'b'.repeat(64),
+            rebuiltAt: '2026-08-30T21:30:00Z',
+          },
+        });
+      },
+    );
   });
 
   test('views inactive corpus scale without pretending it is active @storyboard @comparison', async ({
