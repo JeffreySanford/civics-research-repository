@@ -31,6 +31,7 @@ import {
   switchMap,
   timer,
 } from 'rxjs';
+import { AdminCorpusHistoryTableComponent } from './admin-corpus-history-table.component';
 
 interface CorpusStorageView {
   readonly overview: CorpusStorageOverview;
@@ -47,6 +48,7 @@ interface ActivationResult {
   selector: 'app-admin-corpus-storage',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    AdminCorpusHistoryTableComponent,
     AsyncPipe,
     DatePipe,
     DecimalPipe,
@@ -367,56 +369,9 @@ interface ActivationResult {
             unknown rather than being recorded as zero.
           </p>
 
-          @if (view.overview.history.length > 0) {
-            <div class="corpus-storage__table-scroll" tabindex="0">
-              <table>
-                <caption class="visually-hidden">
-                  Historical corpus scale and local storage measurements
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Captured</th>
-                    <th scope="col">Profile</th>
-                    <th scope="col">Topology</th>
-                    <th scope="col">Active</th>
-                    <th scope="col">Retained</th>
-                    <th scope="col">Postgres</th>
-                    <th scope="col">DSpace</th>
-                    <th scope="col">Solr</th>
-                    <th scope="col">OpenSearch</th>
-                    <th scope="col">Known total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (
-                    measurement of view.overview.history;
-                    track measurement.id
-                  ) {
-                    <tr>
-                      <td>{{ measurement.capturedAt | date: 'short' }}</td>
-                      <td>{{ profileLabel(measurement.profile) }}</td>
-                      <td>{{ topologyLabel(measurement.topology) }}</td>
-                      <td>{{ measurement.activeProjectionCount | number }}</td>
-                      <td>{{ measurement.retainedFederatedCount | number }}</td>
-                      <td>
-                        {{ formatBytes(measurement.applicationPostgresBytes) }}
-                      </td>
-                      <td>{{ formatBytes(measurement.dspaceStoredBytes) }}</td>
-                      <td>{{ formatBytes(measurement.solrIndexBytes) }}</td>
-                      <td>
-                        {{ formatBytes(measurement.openSearchIndexBytes) }}
-                      </td>
-                      <td>
-                        {{ formatBytes(measurement.totalMeasuredLocalBytes) }}
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          } @else {
-            <p>No storage captures have been recorded yet.</p>
-          }
+          <app-admin-corpus-history-table
+            [history]="view.overview.history"
+          ></app-admin-corpus-history-table>
         </div>
       } @else {
         @if (loadError$ | async; as error) {
@@ -573,37 +528,6 @@ interface ActivationResult {
 
     .corpus-storage__history {
       margin-top: 1.75rem;
-    }
-
-    .corpus-storage__table-scroll {
-      overflow-x: auto;
-      margin-top: 1rem;
-      border: 1px solid var(--civics-border-subtle);
-      border-radius: 0.75rem;
-    }
-
-    table {
-      width: 100%;
-      min-width: 70rem;
-      border-collapse: collapse;
-    }
-
-    th,
-    td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--civics-border-subtle);
-      text-align: left;
-      white-space: nowrap;
-    }
-
-    th {
-      background: var(--mat-sys-surface-container);
-      color: var(--mat-sys-on-surface-variant);
-      font-size: 0.78rem;
-    }
-
-    tbody tr:last-child td {
-      border-bottom: 0;
     }
 
     code {
