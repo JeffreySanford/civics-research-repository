@@ -31,6 +31,7 @@ public class FederatedHarvestRunService {
     private final HarvestRunStore runStore;
     private final HarvestCheckpointStore checkpointStore;
     private final Map<FederatedSourceSystem, FederatedSourceHarvester> harvesters;
+    private final List<FederatedHarvestCompletionListener> completionListeners;
     private final Clock clock;
 
     @Autowired
@@ -38,8 +39,15 @@ public class FederatedHarvestRunService {
             FederatedHarvestService harvestService,
             HarvestRunStore runStore,
             HarvestCheckpointStore checkpointStore,
-            List<FederatedSourceHarvester> harvesters) {
-        this(harvestService, runStore, checkpointStore, harvesters, Clock.systemUTC());
+            List<FederatedSourceHarvester> harvesters,
+            List<FederatedHarvestCompletionListener> completionListeners) {
+        this(
+                harvestService,
+                runStore,
+                checkpointStore,
+                harvesters,
+                completionListeners,
+                Clock.systemUTC());
     }
 
     FederatedHarvestRunService(
@@ -48,9 +56,20 @@ public class FederatedHarvestRunService {
             HarvestCheckpointStore checkpointStore,
             List<FederatedSourceHarvester> harvesters,
             Clock clock) {
+        this(harvestService, runStore, checkpointStore, harvesters, List.of(), clock);
+    }
+
+    FederatedHarvestRunService(
+            FederatedHarvestService harvestService,
+            HarvestRunStore runStore,
+            HarvestCheckpointStore checkpointStore,
+            List<FederatedSourceHarvester> harvesters,
+            List<FederatedHarvestCompletionListener> completionListeners,
+            Clock clock) {
         this.harvestService = harvestService;
         this.runStore = runStore;
         this.checkpointStore = checkpointStore;
+        this.completionListeners = List.copyOf(completionListeners);
         this.clock = clock;
         this.harvesters = new EnumMap<>(FederatedSourceSystem.class);
         for (FederatedSourceHarvester harvester : harvesters) {
@@ -76,6 +95,7 @@ public class FederatedHarvestRunService {
                 return current;
             }
 
+            HarvestRun completedRun = null;
             try {
                 FederatedHarvestService.HarvestResult result =
                         harvestService.harvestNext(sourceSystem, pageSize, run.id());
@@ -122,7 +142,7 @@ public class FederatedHarvestRunService {
                         null);
                 runStore.save(run);
                 if (result.complete()) {
-                    return run;
+                    completedRun = run;
                 }
             } catch (RuntimeException exception) {
                 HarvestRun currentAfterFailure = current(run);
@@ -148,6 +168,11 @@ public class FederatedHarvestRunService {
                         failureMessage(exception));
                 runStore.save(failed);
                 throw exception;
+            }
+
+            if (completedRun != null) {
+                notifyCompleted(completedRun);
+                return completedRun;
             }
         }
 
@@ -274,6 +299,12 @@ public class FederatedHarvestRunService {
                 null);
         runStore.save(cancelled);
         return cancelled;
+    }
+
+    private void notifyCompleted(HarvestRun run) {
+        for (FederatedHarvestCompletionListener listener : completionListeners) {
+            listener.onCompleted(run);
+        }
     }
 
     private HarvestRun current(HarvestRun fallback) {
