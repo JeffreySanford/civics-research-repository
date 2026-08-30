@@ -442,7 +442,10 @@ export async function runReindex(profile) {
     method: 'POST',
   });
   if (!reindex.ok) {
-    throw new Error(`Reindex failed with HTTP ${reindex.status}.`);
+    const body = await reindex.text();
+    throw new Error(
+      `Reindex failed with HTTP ${reindex.status}${body ? `: ${body}` : '.'}`,
+    );
   }
 
   const projection = await reindex.json();
@@ -450,6 +453,64 @@ export async function runReindex(profile) {
   console.log(
     `    Indexed ${projection.objectCount} research objects${profileLabel} (source: ${projection.source}).`,
   );
+
+  if (projection.source !== 'REPOSITORY') {
+    console.warn(
+      '    WARNING: the discovery projection is serving FIXTURE data, which means the selected profile\n' +
+        '    returned no authoritative items. Check: pnpm run dspace:verify:seed',
+    );
+  }
+
+  return projection;
+}
+
+/**
+ * Waits for the Java startup runner to finish its guarded quick-start activation. Java is the
+ * single startup owner; this wrapper verifies the result instead of racing it with a second POST.
+ */
+export async function verifyStartupProfile(profile = 'CURATED_DEMO') {
+  let terminalProgress;
+  await waitFor(
+    `${profile} startup projection`,
+    `${API_URL}/admin/reindex/progress`,
+    {
+      intervalMs: 500,
+      check: async (response) => {
+        const progress = await response.json();
+        if (progress.profile !== profile) {
+          return false;
+        }
+        if (progress.phase === 'FAILED') {
+          throw new Error(progress.message || `${profile} activation failed.`);
+        }
+        if (progress.phase === 'COMPLETED') {
+          terminalProgress = progress;
+          return true;
+        }
+        return false;
+      },
+    },
+  );
+
+  const projectionResponse = await fetch(`${API_URL}/admin/reindex`);
+  if (!projectionResponse.ok) {
+    const body = await projectionResponse.text();
+    throw new Error(
+      `Unable to read startup projection with HTTP ${projectionResponse.status}${
+        body ? `: ${body}` : '.'
+      }`,
+    );
+  }
+
+  const projection = await projectionResponse.json();
+  console.log(
+    `    Verified ${profile}: ${projection.objectCount} searchable research objects (source: ${projection.source}).`,
+  );
+  if (terminalProgress?.elapsedMs !== undefined) {
+    console.log(
+      `    Startup projection completed in ${terminalProgress.elapsedMs} ms.`,
+    );
+  }
 
   if (projection.source !== 'REPOSITORY') {
     console.warn(
@@ -501,8 +562,9 @@ export function resetAnnouncements() {
 }
 
 /**
- * Brings up DSpace, seeds, starts the application stack, activates CURATED_DEMO, and waits for the
- * UI. Larger retained federated corpora remain in PostgreSQL but are not projected by default.
+ * Brings up DSpace, seeds, starts the application stack, verifies Java's CURATED_DEMO startup
+ * activation, and waits for the UI. Larger retained federated corpora remain in PostgreSQL but are
+ * not projected by default.
  */
 export async function runFullStartup({
   forceRecreate = false,
@@ -556,8 +618,8 @@ export async function runFullStartup({
     announce('Waiting for the repository API');
     await waitFor('Repository API', `${API_URL}/health`);
 
-    announce('Activating the CURATED_DEMO quick-start search profile');
-    await runReindex('CURATED_DEMO');
+    announce('Verifying the CURATED_DEMO quick-start search profile');
+    await verifyStartupProfile('CURATED_DEMO');
 
     announce(
       'Waiting for the Angular UI (first run installs dependencies and builds)',
