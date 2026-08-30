@@ -8,7 +8,7 @@ The goal is to expand discovery from the current curated DSpace-backed catalog i
 
 This project owns:
 
-- external metadata-source adapters and harvesters,
+- external metadata-source adapters and harvesters implemented in the Spring Boot Java runtime,
 - resumable paging/checkpointing and rate-limit behavior,
 - federated metadata persistence,
 - source identity and cross-source deduplication rules,
@@ -23,13 +23,28 @@ This project owns:
 
 This project does **not** own:
 
+- a NestJS or Node.js production harvester runtime,
 - SolrCloud,
 - multi-node OpenSearch,
 - kind/Kubernetes lifecycle,
 - pod failure/recovery,
 - EKS provisioning.
 
-Those belong under [`documentation/cloud/`](../cloud/).
+Node-based scripts may remain for repository tooling, fixture generation, build/test orchestration and local developer workflows. Durable federated harvesting and harvest state stay in Java/Spring Boot.
+
+Those cloud/topology concerns belong under [`documentation/cloud/`](../cloud/).
+
+## Runtime and ownership decisions
+
+PI-1 has explicit runtime boundaries:
+
+- federated harvesting is Java/Spring only,
+- DSpace-owned PostgreSQL/Solr remain isolated from application-owned PostgreSQL/public Solr,
+- local resource pressure is handled through profiles, resource measurement and lifecycle rather than collapsing ownership boundaries,
+- NgRx remains the shared-workflow state model while transient component state can stay local with RxJS/forms/component fields,
+- the project does not adopt Angular Signals as a simplification migration.
+
+See [PI-1 Runtime and Ownership Boundaries](runtime-boundaries.md).
 
 ## Program Increment relationship
 
@@ -55,8 +70,9 @@ Docker Compose remains supported throughout both increments. It is the fast deve
 
 - [Federated Metadata Architecture](federated-metadata-architecture.md) — source-of-truth boundaries, provenance, identity, UI behavior and search projection architecture.
 - [Source Ingestion Plan](source-ingestion-plan.md) — adapter order, source-specific strategies, checkpoints, retry/rate-limit rules and PI-1 delivery sequence.
+- [PI-1 Runtime and Ownership Boundaries](runtime-boundaries.md) — Java-only harvesting, datastore/search isolation, local resource policy and Angular state-management boundaries.
 - [Million-Record Corpus](million-record-corpus.md) — corpus sizes, snapshot manifests, benchmark modes, storage policy and scale acceptance criteria.
-- [Program Increment Plan](../../planning/PI_PLAN.md) — PI-1 and PI-2 sequencing, dependencies and exit criteria.
+- [Program Increment Plan](../../planning/PI_PLAN.md) — PI sequencing, dependencies and exit criteria.
 
 ## Core rule
 
