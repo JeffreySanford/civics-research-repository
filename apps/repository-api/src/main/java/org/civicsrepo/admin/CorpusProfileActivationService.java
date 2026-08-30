@@ -64,11 +64,35 @@ public class CorpusProfileActivationService {
     public ProjectionState activate(CorpusProfile profile) {
         Objects.requireNonNull(profile, "profile");
         progressTracker.begin(profile);
-        CorpusProfile previousProfile = currentProfile();
-        String previousProjectionId = projectionService.currentProjectionId();
-        List<DiscoveryDocument> fixtureFallback = searchService.fixtureDocuments();
 
-        ProjectionProgressListener progress = new ProjectionProgressListener() {
+        CorpusProfile previousProfile = null;
+        String previousProjectionId = null;
+        List<DiscoveryDocument> fixtureFallback = List.of();
+
+        try {
+            previousProfile = currentProfile();
+            previousProjectionId = projectionService.currentProjectionId();
+            fixtureFallback = searchService.fixtureDocuments();
+
+            ProjectionState projected = projectionService.reindex(profile, fixtureFallback, progressListener());
+            recordSuccessfulProjection(profile, projected);
+            progressTracker.complete(projected.objectCount(), projected.objectCount());
+            return projected;
+        } catch (RuntimeException activationFailure) {
+            if (previousProfile != null) {
+                String failedProjectionId = projectionService.currentProjectionId();
+                boolean projectionChanged = !Objects.equals(previousProjectionId, failedProjectionId);
+                if (profile != previousProfile && projectionChanged) {
+                    restorePreviousProfile(previousProfile, fixtureFallback, activationFailure);
+                }
+            }
+            progressTracker.fail(activationFailure);
+            throw activationFailure;
+        }
+    }
+
+    private ProjectionProgressListener progressListener() {
+        return new ProjectionProgressListener() {
             @Override
             public void projectionStarted(long totalDocuments) {
                 progressTracker.projectionStarted(totalDocuments);
@@ -84,21 +108,6 @@ public class CorpusProfileActivationService {
                 progressTracker.verifying(processedDocuments, totalDocuments);
             }
         };
-
-        try {
-            ProjectionState projected = projectionService.reindex(profile, fixtureFallback, progress);
-            recordSuccessfulProjection(profile, projected);
-            progressTracker.complete(projected.objectCount(), projected.objectCount());
-            return projected;
-        } catch (RuntimeException activationFailure) {
-            String failedProjectionId = projectionService.currentProjectionId();
-            boolean projectionChanged = !Objects.equals(previousProjectionId, failedProjectionId);
-            if (profile != previousProfile && projectionChanged) {
-                restorePreviousProfile(previousProfile, fixtureFallback, activationFailure);
-            }
-            progressTracker.fail(activationFailure);
-            throw activationFailure;
-        }
     }
 
     /** Record a projection produced by another guarded workflow, such as snapshot evidence capture. */
