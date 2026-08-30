@@ -75,9 +75,29 @@ test.describe('Admin Sync corpus storage evidence', () => {
       });
     });
 
+    await page.route(`**/api/admin/reindex/progress`, async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          operationId: 'activation-1',
+          profile: 'FEDERATED_10K',
+          phase: 'PROJECTING',
+          processedDocuments: 4_000,
+          totalDocuments: 10_181,
+          percentComplete: 39,
+          startedAt: '2026-08-30T21:29:59Z',
+          updatedAt: '2026-08-30T21:30:00Z',
+          elapsedMs: 1_000,
+          documentsPerSecond: 4_000,
+          message: 'Building Solr and OpenSearch projections.',
+        },
+      });
+    });
+
     await page.route(
       `**/api/admin/reindex?profile=FEDERATED_10K`,
       async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 900));
         await route.fulfill({
           contentType: 'application/json',
           json: {
@@ -114,16 +134,19 @@ test.describe('Admin Sync corpus storage evidence', () => {
     await expect(
       page.getByText('Selecting a profile does not activate it'),
     ).toBeVisible();
-    await expect(page.getByText('Heavy profile.')).toBeVisible();
+    await expect(page.getByText('Not available yet.')).toBeVisible();
+    await expect(
+      page.getByText(/the current corpus has\s*10,000/),
+    ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Activate Federated 1M' }),
-    ).toBeVisible();
+    ).toBeDisabled();
     await expect(
       page.getByRole('button', { name: 'Capture current footprint' }),
     ).toBeVisible();
   });
 
-  test('explicitly activates an already-retained 10K projection and captures its footprint @storyboard @comparison', async ({
+  test('explicitly activates an already-retained 10K projection with live progress and captures its footprint @storyboard @comparison', async ({
     page,
   }) => {
     await page.goto('/admin/sync');
@@ -131,6 +154,11 @@ test.describe('Admin Sync corpus storage evidence', () => {
     await page.getByLabel('View corpus profile').click();
     await page.getByRole('option', { name: 'Federated 10K' }).click();
     await page.getByRole('button', { name: 'Activate Federated 10K' }).click();
+
+    await expect(page.getByText('Loading search indexes')).toBeVisible();
+    await expect(page.getByText('4,000 / 10,181 documents')).toBeVisible();
+    await expect(page.getByText('39%')).toBeVisible();
+    await expect(page.getByText('4,000 docs/s')).toBeVisible();
 
     await expect(
       page.getByText(
