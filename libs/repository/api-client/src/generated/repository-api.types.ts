@@ -21,6 +21,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/research/{researchId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get an authority-neutral research object detail.
+     * @description Resolves either a curated DSpace-backed object or reproducible federated metadata. Federated responses link to the authoritative publisher resource and do not imply that publisher binaries are preserved locally.
+     */
+    get: operations['getResearchObject'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/search/comparison/scenarios': {
     parameters: {
       query?: never;
@@ -493,10 +513,10 @@ export interface components {
       | 'OPENALEX'
       | 'OTHER';
     /**
-     * @description Legacy response/projection-level label retained for compatibility with the current curated fallback path. REPOSITORY means the current projection was built from DSpace-backed content; FIXTURE means generated placeholder content. Do not infer an individual result's authority from this field once mixed repository + federated discovery is enabled; use SearchResult.origin and SearchResult.sourceSystem instead.
+     * @description Detail/projection compatibility label. REPOSITORY means DSpace-backed curated content, FEDERATED means locally retained metadata whose authoritative object remains at an external publisher, and FIXTURE means generated placeholder content. For individual authority and provenance, use origin and sourceSystem.
      * @enum {string}
      */
-    RepositorySource: 'REPOSITORY' | 'FIXTURE';
+    RepositorySource: 'REPOSITORY' | 'FEDERATED' | 'FIXTURE';
     SearchResponse: {
       resultSource: components['schemas']['RepositorySource'];
       query: string;
@@ -1141,12 +1161,18 @@ export interface components {
     SearchQuery: string;
     /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
     Program: string[];
+    /** @description Exact publisher facet value from the active discovery projection. */
+    Publisher: string;
+    /** @description Restrict results to one authoritative source system. */
+    SourceSystemFilter: components['schemas']['SourceSystem'];
     Geography: string;
     /** @description Restrict results to one research object type. */
     ContentType: components['schemas']['ResearchObjectType'];
     VintageYear: number;
     Page: number;
     PageSize: number;
+    /** @description URL-safe Base64 identity token for the canonical local research-object identifier. The token keeps namespaced external identifiers containing slashes and URLs inside one path segment without changing the underlying identity used by persistence and discovery. */
+    ResearchId: string;
     DatasetId: string;
     SyncJobId: string;
   };
@@ -1163,6 +1189,10 @@ export interface operations {
         q?: components['parameters']['SearchQuery'];
         /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
         program?: components['parameters']['Program'];
+        /** @description Exact publisher facet value from the active discovery projection. */
+        publisher?: components['parameters']['Publisher'];
+        /** @description Restrict results to one authoritative source system. */
+        sourceSystem?: components['parameters']['SourceSystemFilter'];
         geography?: components['parameters']['Geography'];
         /** @description Restrict results to one research object type. */
         contentType?: components['parameters']['ContentType'];
@@ -1186,6 +1216,33 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getResearchObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description URL-safe Base64 identity token for the canonical local research-object identifier. The token keeps namespaced external identifiers containing slashes and URLs inside one path segment without changing the underlying identity used by persistence and discovery. */
+        researchId: components['parameters']['ResearchId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Research object detail with explicit origin and source system. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ResearchObjectDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
       500: components['responses']['InternalServerError'];
       503: components['responses']['ServiceUnavailable'];
     };

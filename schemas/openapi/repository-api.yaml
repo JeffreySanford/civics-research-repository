@@ -30,6 +30,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/SearchQuery'
         - $ref: '#/components/parameters/Program'
+        - $ref: '#/components/parameters/Publisher'
+        - $ref: '#/components/parameters/SourceSystemFilter'
         - $ref: '#/components/parameters/Geography'
         - $ref: '#/components/parameters/ContentType'
         - $ref: '#/components/parameters/VintageYear'
@@ -44,6 +46,32 @@ paths:
                 $ref: '#/components/schemas/SearchResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /research/{researchId}:
+    get:
+      tags: [Datasets]
+      operationId: getResearchObject
+      summary: Get an authority-neutral research object detail.
+      description: >-
+        Resolves either a curated DSpace-backed object or reproducible federated metadata.
+        Federated responses link to the authoritative publisher resource and do not imply that
+        publisher binaries are preserved locally.
+      parameters:
+        - $ref: '#/components/parameters/ResearchId'
+      responses:
+        '200':
+          description: Research object detail with explicit origin and source system.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchObjectDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
         '503':
@@ -569,6 +597,20 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+    Publisher:
+      name: publisher
+      in: query
+      description: Exact publisher facet value from the active discovery projection.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 300
+    SourceSystemFilter:
+      name: sourceSystem
+      in: query
+      description: Restrict results to one authoritative source system.
+      schema:
+        $ref: '#/components/schemas/SourceSystem'
     Geography:
       name: geography
       in: query
@@ -603,6 +645,19 @@ components:
         minimum: 1
         maximum: 100
         default: 25
+    ResearchId:
+      name: researchId
+      in: path
+      required: true
+      description: >-
+        URL-safe Base64 identity token for the canonical local research-object identifier. The
+        token keeps namespaced external identifiers containing slashes and URLs inside one path
+        segment without changing the underlying identity used by persistence and discovery.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 4096
+        pattern: '^[A-Za-z0-9_-]+$'
     DatasetId:
       name: datasetId
       in: path
@@ -764,12 +819,11 @@ components:
     RepositorySource:
       type: string
       description: >-
-        Legacy response/projection-level label retained for compatibility with the current curated
-        fallback path. REPOSITORY means the current projection was built from DSpace-backed content;
-        FIXTURE means generated placeholder content. Do not infer an individual result's authority
-        from this field once mixed repository + federated discovery is enabled; use SearchResult.origin
-        and SearchResult.sourceSystem instead.
-      enum: [REPOSITORY, FIXTURE]
+        Detail/projection compatibility label. REPOSITORY means DSpace-backed curated content,
+        FEDERATED means locally retained metadata whose authoritative object remains at an external
+        publisher, and FIXTURE means generated placeholder content. For individual authority and
+        provenance, use origin and sourceSystem.
+      enum: [REPOSITORY, FEDERATED, FIXTURE]
     SearchResponse:
       type: object
       required:
