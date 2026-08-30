@@ -41,8 +41,8 @@ describe('AdminCorpusHistoryTableComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('table[mat-table]')).not.toBeNull();
-    expect(element.querySelectorAll('[mat-sort-header]').length).toBe(10);
+    expect(element.querySelector('table.mat-mdc-table')).not.toBeNull();
+    expect(element.querySelectorAll('.mat-sort-header').length).toBe(10);
     expect(element.querySelector('mat-paginator')).not.toBeNull();
 
     const input = element.querySelector<HTMLInputElement>(
@@ -51,6 +51,8 @@ describe('AdminCorpusHistoryTableComponent', () => {
     expect(input).not.toBeNull();
     input!.value = 'Federated 10K';
     input!.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const rows = element.querySelectorAll('tr.mat-mdc-row');
