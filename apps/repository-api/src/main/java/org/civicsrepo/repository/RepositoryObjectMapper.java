@@ -7,6 +7,7 @@ import org.civicsrepo.generated.dto.EvidenceStatus;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.ResearchAuthor;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -44,42 +45,48 @@ public class RepositoryObjectMapper {
 
     public SearchResult toSearchResult(JsonNode item) {
         String geography = firstValue(item, "dc.coverage.spatial").orElse("United States");
+        ResearchProgram researchProgram = program(item);
 
         return new SearchResult(
                 identifier(item),
                 title(item),
                 contentType(item),
-                program(item),
+                researchProgram,
                 firstValue(item, "dc.publisher").orElse(PUBLISHER_FALLBACK),
                 firstValue(item, "dc.description.abstract").orElse(""),
-                        URI.create(sourceUrl(item)))
-                        .geography(geography)
-                        .vintageYear(vintageYear(item).orElse(null))
-                        .accessLevel(accessLevel(item));
+                URI.create(sourceUrl(item)),
+                ResearchObjectOrigin.REPOSITORY,
+                ResearchSourceSystemClassifier.forProgram(researchProgram))
+                .geography(geography)
+                .vintageYear(vintageYear(item).orElse(null))
+                .accessLevel(accessLevel(item));
     }
 
     public ResearchObjectDetail toResearchObjectDetail(JsonNode item, List<SearchResult> relatedResearch) {
+        ResearchProgram researchProgram = program(item);
         return new ResearchObjectDetail(
                 RepositorySource.REPOSITORY,
                 identifier(item),
                 title(item),
-                program(item),
+                researchProgram,
                 firstValue(item, "dc.publisher").orElse(PUBLISHER_FALLBACK),
                 firstValue(item, "dc.description.abstract").orElse(""),
                 files(item),
                 firstValue(item, "dc.identifier.citation").orElse(title(item)),
                 URI.create(sourceUrl(item)),
-                relatedResearch)
-                        .geography(firstValue(item, "dc.coverage.spatial").orElse("United States"))
-                        .vintageYear(vintageYear(item).orElse(null))
-                        .releasedOn(releasedOn(item).orElse(null))
-                        .contentType(contentType(item))
-                        .accessLevel(accessLevel(item))
-                        .accessNote(firstValue(item, "crr.rights.accessnote").orElse(null))
-                        .license(firstValue(item, "crr.rights.license").orElse(null))
-                        .doi(firstValue(item, "crr.identifier.doi").orElse(null))
-                        .authors(authors(item))
-                        .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
+                relatedResearch,
+                ResearchObjectOrigin.REPOSITORY,
+                ResearchSourceSystemClassifier.forProgram(researchProgram))
+                .geography(firstValue(item, "dc.coverage.spatial").orElse("United States"))
+                .vintageYear(vintageYear(item).orElse(null))
+                .releasedOn(releasedOn(item).orElse(null))
+                .contentType(contentType(item))
+                .accessLevel(accessLevel(item))
+                .accessNote(firstValue(item, "crr.rights.accessnote").orElse(null))
+                .license(firstValue(item, "crr.rights.license").orElse(null))
+                .doi(firstValue(item, "crr.identifier.doi").orElse(null))
+                .authors(authors(item))
+                .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
     }
 
     /** The search result plus the text worth matching on but not worth returning. */
