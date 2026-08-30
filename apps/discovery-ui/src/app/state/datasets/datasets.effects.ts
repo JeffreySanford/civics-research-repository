@@ -40,4 +40,31 @@ export class DatasetsEffects {
       ),
     ),
   );
+
+  readonly openResearch$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DatasetsActions.researchOpened),
+      switchMap(({ researchId }) =>
+        this.datasetsApi.getResearchObject(researchId).pipe(
+          map((detail) =>
+            DatasetsActions.datasetLoaded({
+              detail,
+              versions: [],
+              mapLayers: [],
+            }),
+          ),
+          catchError((error: unknown) =>
+            of(
+              DatasetsActions.datasetFailed({
+                error: parseRepositoryError(
+                  error,
+                  'Research detail failed to load.',
+                ),
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
