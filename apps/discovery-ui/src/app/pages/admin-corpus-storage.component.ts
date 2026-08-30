@@ -16,6 +16,7 @@ import {
   type CorpusProfileSummary,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
+  type DiscoveryProjectionState,
 } from 'repository-api-client';
 import {
   BehaviorSubject,
@@ -32,6 +33,11 @@ interface CorpusStorageView {
   readonly overview: CorpusStorageOverview;
   readonly activeProfile: CorpusProfileSummary;
   readonly viewedProfile: CorpusProfileSummary;
+}
+
+interface ActivationResult {
+  readonly projection: DiscoveryProjectionState;
+  readonly footprintCaptured: boolean;
 }
 
 @Component({
@@ -53,9 +59,10 @@ interface CorpusStorageView {
           <p class="eyebrow">Corpus evidence</p>
           <h2 id="corpus-storage-heading">Corpus scale & local storage</h2>
           <p>
-            Compare the fast curated demo with planned federated corpus tiers.
-            Viewing a profile is read-only: retained metadata and the active
-            Solr/OpenSearch projection are tracked independently.
+            Compare and activate deterministic search profiles without deleting
+            retained metadata. Normal <code>start:all</code> uses the fast curated
+            profile; larger retained corpora are projected only when explicitly
+            activated here.
           </p>
         </div>
 
@@ -63,7 +70,9 @@ interface CorpusStorageView {
           mat-stroked-button
           type="button"
           (click)="captureCurrentFootprint()"
-          [disabled]="capturing$ | async"
+          [disabled]="
+            (capturing$ | async) === true || (activating$ | async) === true
+          "
         >
           Capture current footprint
         </button>
@@ -129,19 +138,65 @@ interface CorpusStorageView {
 
           <div class="corpus-storage__profile-note">
             @if (!view.viewedProfile.active) {
-              <strong>Viewing this profile does not activate it.</strong>
+              <strong>Selecting a profile does not activate it.</strong>
               <span>
-                Profile activation stays disabled until bounded batch projection
-                is implemented and tested.
+                Activation rebuilds Solr and OpenSearch from metadata already
+                retained locally. It does not automatically harvest missing
+                records.
               </span>
             } @else {
               <strong>This is the active search profile.</strong>
               <span>
-                Capture records the live footprint without changing the corpus.
+                Retained federated metadata remains independent from the active
+                projection.
               </span>
             }
           </div>
         </div>
+
+        @if (!view.viewedProfile.active) {
+          <div class="corpus-storage__activation-row">
+            <div>
+              @if (isHeavyProfile(view.viewedProfile.profile)) {
+                <strong>Heavy profile.</strong>
+                <span>
+                  Activation can require substantial indexing time, memory, and
+                  disk. The backend will refuse the operation if the required
+                  retained metadata is not available.
+                </span>
+              } @else {
+                <span>
+                  Activate this deterministic projection from the currently
+                  retained corpus.
+                </span>
+              }
+            </div>
+            <button
+              mat-flat-button
+              type="button"
+              (click)="activateProfile(view.viewedProfile.profile)"
+              [disabled]="
+                (activating$ | async) === true || (capturing$ | async) === true
+              "
+            >
+              Activate {{ view.viewedProfile.label }}
+            </button>
+          </div>
+        }
+
+        @if (activationStatus$ | async; as status) {
+          <p class="inline-status" role="status">{{ status }}</p>
+        }
+
+        @if (activating$ | async) {
+          <div class="inline-status" role="status">
+            <mat-spinner
+              diameter="20"
+              aria-label="Activating corpus search profile"
+            ></mat-spinner>
+            <span>Building and verifying the selected search projection</span>
+          </div>
+        }
 
         <article
           class="corpus-storage__profile-card"
@@ -160,7 +215,7 @@ interface CorpusStorageView {
               <span
                 class="corpus-storage__badge corpus-storage__badge--planned"
               >
-                Planned
+                Inactive
               </span>
             }
           </div>
@@ -176,7 +231,7 @@ interface CorpusStorageView {
                 } @else if (view.viewedProfile.profile === 'CURATED_DEMO') {
                   Curated repository only
                 } @else {
-                  Source-defined bound
+                  All retained records
                 }
               </dd>
             </div>
@@ -319,7 +374,8 @@ interface CorpusStorageView {
 
     .corpus-storage__heading-row,
     .corpus-storage__profile-title,
-    .corpus-storage__profile-controls {
+    .corpus-storage__profile-controls,
+    .corpus-storage__activation-row {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -361,22 +417,33 @@ interface CorpusStorageView {
 
     .corpus-storage__profile-controls {
       align-items: center;
-      margin: 1.5rem 0;
+      margin: 1.5rem 0 0.75rem;
     }
 
     mat-form-field {
       min-width: min(100%, 19rem);
     }
 
-    .corpus-storage__profile-note {
+    .corpus-storage__profile-note,
+    .corpus-storage__activation-row > div {
       display: grid;
       gap: 0.25rem;
       max-width: 42rem;
     }
 
     .corpus-storage__profile-note span,
+    .corpus-storage__activation-row span,
     .corpus-storage__history p {
       color: var(--mat-sys-on-surface-variant);
+    }
+
+    .corpus-storage__activation-row {
+      align-items: center;
+      margin: 0 0 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--civics-border-subtle);
+      border-radius: 0.75rem;
+      background: var(--mat-sys-surface-container-low);
     }
 
     .corpus-storage__profile-card {
@@ -451,11 +518,13 @@ interface CorpusStorageView {
     @media (max-width: 720px) {
       .corpus-storage__heading-row,
       .corpus-storage__profile-controls,
-      .corpus-storage__profile-title {
+      .corpus-storage__profile-title,
+      .corpus-storage__activation-row {
         flex-direction: column;
       }
 
       .corpus-storage__heading-row button,
+      .corpus-storage__activation-row button,
       mat-form-field {
         width: 100%;
       }
@@ -473,11 +542,18 @@ export class AdminCorpusStorageComponent {
   private readonly captureStatusSubject = new BehaviorSubject<string | null>(
     null,
   );
+  private readonly activationStatusSubject = new BehaviorSubject<string | null>(
+    null,
+  );
   private readonly capturingSubject = new BehaviorSubject(false);
+  private readonly activatingSubject = new BehaviorSubject(false);
 
   protected readonly loadError$ = this.loadErrorSubject.asObservable();
   protected readonly captureStatus$ = this.captureStatusSubject.asObservable();
+  protected readonly activationStatus$ =
+    this.activationStatusSubject.asObservable();
   protected readonly capturing$ = this.capturingSubject.asObservable();
+  protected readonly activating$ = this.activatingSubject.asObservable();
 
   private readonly overview$ = this.refresh$.pipe(
     switchMap(() => {
@@ -519,10 +595,62 @@ export class AdminCorpusStorageComponent {
 
   selectProfile(profile: CorpusProfile): void {
     this.selectedProfile$.next(profile);
+    this.activationStatusSubject.next(null);
+  }
+
+  activateProfile(profile: CorpusProfile): void {
+    if (this.activatingSubject.value || this.capturingSubject.value) {
+      return;
+    }
+
+    this.activatingSubject.next(true);
+    this.activationStatusSubject.next(null);
+    const label = this.profileLabel(profile);
+
+    this.adminApi
+      .activateCorpusProfile(profile)
+      .pipe(
+        switchMap((projection) =>
+          this.adminApi.captureCorpusStorage().pipe(
+            map(
+              (): ActivationResult => ({
+                projection,
+                footprintCaptured: true,
+              }),
+            ),
+            catchError(() =>
+              of<ActivationResult>({
+                projection,
+                footprintCaptured: false,
+              }),
+            ),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.activatingSubject.next(false)),
+      )
+      .subscribe({
+        next: ({ projection, footprintCaptured }) => {
+          const captureMessage = footprintCaptured
+            ? ' Storage footprint captured.'
+            : ' The profile is active, but its storage footprint could not be captured.';
+          this.activationStatusSubject.next(
+            `${label} activated with ${projection.objectCount.toLocaleString()} searchable documents.${captureMessage}`,
+          );
+          this.selectedProfile$.next(profile);
+          this.refresh$.next(this.refresh$.value + 1);
+        },
+        error: () => {
+          this.activationStatusSubject.next(
+            `Unable to activate ${label}. Required retained metadata may be missing, or a search target may be unavailable. The previous active profile was preserved or restored.`,
+          );
+          this.refresh$.next(this.refresh$.value + 1);
+        },
+      });
   }
 
   captureCurrentFootprint(): void {
-    if (this.capturingSubject.value) {
+    if (this.capturingSubject.value || this.activatingSubject.value) {
       return;
     }
     this.capturingSubject.next(true);
@@ -547,6 +675,14 @@ export class AdminCorpusStorageComponent {
           );
         },
       });
+  }
+
+  protected isHeavyProfile(profile: CorpusProfile): boolean {
+    return (
+      profile === 'FEDERATED_100K' ||
+      profile === 'FEDERATED_1M' ||
+      profile === 'FULL'
+    );
   }
 
   protected formatBytes(value: number | null | undefined): string {
