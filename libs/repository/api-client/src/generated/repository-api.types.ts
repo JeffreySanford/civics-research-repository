@@ -510,7 +510,10 @@ export interface components {
       id: string;
       title: string;
       contentType: components['schemas']['ResearchObjectType'];
+      /** @description Legacy curated classification; federated records may use OTHER. */
       program: components['schemas']['ResearchProgram'];
+      /** @description Data-driven source program name used for display, filtering, and facets. */
+      programName?: string;
       publisher: string;
       summary: string;
       geography?: string;
@@ -546,7 +549,7 @@ export interface components {
       scenario: components['schemas']['SearchComparisonScenarioId'];
       /** @default  */
       query: string;
-      programs?: components['schemas']['ResearchProgram'][];
+      programs?: string[];
       geography?: string;
       contentType?: components['schemas']['ResearchObjectType'];
       /** Format: int32 */
@@ -600,7 +603,10 @@ export interface components {
       source: components['schemas']['RepositorySource'];
       id: string;
       title: string;
+      /** @description Legacy curated classification; federated records may use OTHER. */
       program: components['schemas']['ResearchProgram'];
+      /** @description Data-driven source program name used for display and provenance. */
+      programName?: string;
       publisher: string;
       abstractText: string;
       geography?: string;
@@ -1133,8 +1139,8 @@ export interface components {
   parameters: {
     /** @description Keyword search terms. */
     SearchQuery: string;
-    /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
-    Program: components['schemas']['ResearchProgram'][];
+    /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
+    Program: string[];
     Geography: string;
     /** @description Restrict results to one research object type. */
     ContentType: components['schemas']['ResearchObjectType'];
@@ -1155,7 +1161,7 @@ export interface operations {
       query?: {
         /** @description Keyword search terms. */
         q?: components['parameters']['SearchQuery'];
-        /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
+        /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
         program?: components['parameters']['Program'];
         geography?: components['parameters']['Geography'];
         /** @description Restrict results to one research object type. */

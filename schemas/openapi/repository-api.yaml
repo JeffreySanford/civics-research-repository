@@ -558,14 +558,17 @@ components:
       name: program
       in: query
       description: >-
-        Repeatable. Repeat the parameter to select several programs; results match any of them.
-        Omitting it searches every program.
+        Repeatable data-driven program name. Repeat the parameter to select several programs;
+        results match any of them. Omitting it searches every program. Values come from indexed
+        metadata and are not restricted to the curated ResearchProgram enum.
       explode: true
       style: form
       schema:
         type: array
         items:
-          $ref: '#/components/schemas/ResearchProgram'
+          type: string
+          minLength: 1
+          maxLength: 200
     Geography:
       name: geography
       in: query
@@ -813,6 +816,10 @@ components:
           $ref: '#/components/schemas/ResearchObjectType'
         program:
           $ref: '#/components/schemas/ResearchProgram'
+          description: Legacy curated classification; federated records may use OTHER.
+        programName:
+          type: string
+          description: Data-driven source program name used for display, filtering, and facets.
         publisher:
           type: string
         summary:
@@ -879,7 +886,9 @@ components:
         programs:
           type: array
           items:
-            $ref: '#/components/schemas/ResearchProgram'
+            type: string
+            minLength: 1
+            maxLength: 200
         geography:
           type: string
         contentType:
@@ -1010,6 +1019,10 @@ components:
           type: string
         program:
           $ref: '#/components/schemas/ResearchProgram'
+          description: Legacy curated classification; federated records may use OTHER.
+        programName:
+          type: string
+          description: Data-driven source program name used for display and provenance.
         publisher:
           type: string
         abstractText:
