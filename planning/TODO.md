@@ -54,7 +54,7 @@ Design documents:
 - [x] Implement Data.gov source adapter.
 - [x] Map dataset ID, title, description, agency/publisher, tags/themes, dates, distributions/resource links and landing page.
 - [x] Add sparse/malformed/multiple-distribution fixture tests.
-- [ ] Prove 1K, then 10K, then 100K resumable harvests. (1K live traversal/projection proven locally on 2026-08-30; 10K/100K remain.)
+- [ ] Prove 1K, then 10K, then 100K resumable harvests. (1K live traversal/projection proven locally on 2026-08-30; v2 normalization rerun, 10K and 100K remain.)
 - [ ] Verify new records appear automatically through discovery results, source/publisher/program facets and `/research/:id`.
 - [ ] Evaluate larger/full-catalog harvest only after the 100K path is stable.
 
