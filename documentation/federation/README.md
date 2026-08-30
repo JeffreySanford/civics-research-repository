@@ -52,9 +52,9 @@ PI-2 Local Kubernetes Search Laboratory
 
 Docker Compose remains supported throughout both increments. It is the fast development path, the simplest demonstration topology, and the reference baseline for judging whether clustered infrastructure earns its complexity.
 
-## Current PI-1 foundation
+## Current PI-1 implementation
 
-The branch now contains a live authority-neutral discovery path:
+The merged PI-1 foundation contains a live authority-neutral discovery path:
 
 ```text
 Data.gov / future federated sources
@@ -90,6 +90,8 @@ FederatedMetadataCatalog
 
 `ResearchProgram` remains a compatibility classification for the curated Census slice. Federated publisher program names are retained in `DiscoveryDocument.programName` rather than expanding the enum or collapsing every unknown program into `OTHER`.
 
+PR #3, `Start PI-1 federated metadata catalog foundation`, merged to `main` on 2026-08-30 at commit `4569416371c15bfe96660d53c4756a48d3c4ed4b`. The active scale branch is `codex/data-gov-10k-scale`.
+
 ### Proven 1K Data.gov checkpoint
 
 On 2026-08-30 the `data-gov-catalog-v4-v2` adapter completed a bounded live proof using 10 pages of 100 records:
@@ -98,13 +100,40 @@ On 2026-08-30 the `data-gov-catalog-v4-v2` adapter completed a bounded live proo
 - 1,000 retained `DATA_GOV` metadata records,
 - 181 curated DSpace-backed records,
 - 1,181 objects projected through the same normalized stream into Solr and OpenSearch,
-- projection SHA-256 `5ad44932acd6166e9a32576ff06df9c4659cfba5f8800d952762503703af47dd`.
+- bounded snapshot ID `DATA_GOV:78a2ec438b3dc3eab179fd94f5dd70c58fa770e3e18186dd624f078b0cbc3ce9`,
+- snapshot SHA-256 `78a2ec438b3dc3eab179fd94f5dd70c58fa770e3e18186dd624f078b0cbc3ce9`,
+- projection SHA-256 `5ad44932acd6166e9a32576ff06df9c4659cfba5f8800d952762503703af47dd`,
+- the snapshot/projection relationship persisted after the guarded linkage operation,
+- public search returned exactly 1,000 Data.gov records with `origin: FEDERATED` and `sourceSystem: DATA_GOV`.
+
+The source-system facet reconciled the complete mixed projection as `DATA_GOV = 1000`, `CENSUS = 178`, and `USGS = 3`.
 
 The first v1 run surfaced 75 valid Data.gov date-only `modified` values. The adapter was versioned to v2, the normalizer was corrected, and the repeated 1K proof accepted all records. This is exactly the staged-live-data feedback loop PI-1 is intended to exercise before 10K/100K scale.
 
-The current branch therefore treats 1K ingestion/projection as proven. Its remaining merge gate is product-facing: make source/publisher filtering fully selectable, add canonical `/research/:id` detail for repository and federated records, preserve `/datasets/:id` compatibility, and cover the mixed-authority path with browser/accessibility evidence. The 10K scale proof starts from fresh `main` after that slice merges rather than extending this foundation PR indefinitely.
+### Active 10K Data.gov checkpoint
 
-See [PI-1 F1 Merge Gate](../../planning/PI1_F1_MERGE_GATE.md) for the exact branch boundary and merge checklist.
+The 10K scale branch resumed the **same** durable Data.gov run rather than restarting it. Starting from the proven 10-page/1K checkpoint, one bounded invocation processed 90 more pages of 100 records.
+
+Observed on 2026-08-30:
+
+- run ID remained `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131`,
+- 100 total pages,
+- 10,000 accepted,
+- 0 rejected,
+- 0 skipped,
+- status `PAUSED`,
+- no failure,
+- `projectionRefreshRequired: true`.
+
+That proves the **10K harvest/resume path**. The 10K scale checkpoint is not yet complete. Before moving to 100K, PI-1 still needs to capture and persist the 10K bounded snapshot, guarded projection relationship, normal public-search/detail verification, Solr/OpenSearch parity, storage growth and host/container/JVM resource context.
+
+See [Data.gov Scale Evidence](../../planning/PI1_DATA_GOV_SCALE_EVIDENCE.md) for the live 1K evidence, current 10K checklist and the 100K acceptance boundary.
+
+## Current scale-quality observations
+
+Live Data.gov records exposed publisher program values such as `010:10` and `010:12`. These are valid source metadata but are not ideal display labels. PI-1 should preserve the raw source value while adding a defensible presentation/label strategy rather than creating a fixed UI allowlist or silently rewriting publisher semantics.
+
+The compatibility-level projection source currently reports `REPOSITORY` for any authority-backed projection, including mixed repository + federated corpora. Per-record `origin` and `sourceSystem` are therefore the authoritative provenance fields. A future contract cleanup may rename or expand the projection-level label to make `AUTHORITY_BACKED`/mixed semantics clearer without changing record meaning.
 
 ## Documents
 
@@ -113,7 +142,8 @@ See [PI-1 F1 Merge Gate](../../planning/PI1_F1_MERGE_GATE.md) for the exact bran
 - [Runtime and Ownership Boundaries](runtime-boundaries.md) — Java/Spring harvesting, datastore ownership and Angular state-management decisions.
 - [Million-Record Corpus](million-record-corpus.md) — corpus sizes, snapshot manifests, benchmark modes, storage policy and scale acceptance criteria.
 - [Program Increment Plan](../../planning/PI_PLAN.md) — PI sequencing, dependencies and exit criteria.
-- [PI-1 F1 Merge Gate](../../planning/PI1_F1_MERGE_GATE.md) — live 1K evidence and the merge boundary before 10K scale work.
+- [PI-1 F1 Merge Gate](../../planning/PI1_F1_MERGE_GATE.md) — closed historical merge boundary for the merged federation foundation.
+- [Data.gov Scale Evidence](../../planning/PI1_DATA_GOV_SCALE_EVIDENCE.md) — living 1K/10K/100K evidence record.
 
 ## Core rule
 
