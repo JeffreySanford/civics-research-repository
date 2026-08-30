@@ -147,7 +147,7 @@ describe('RepositoryEvidenceApi', () => {
 });
 
 describe('RepositorySearchApi', () => {
-  it('loads typed search results with query parameters', async () => {
+  it('loads typed search results with data-driven program parameters', async () => {
     const response: SearchResponse = {
       query: 'North Dakota',
       page: 0,
@@ -177,18 +177,19 @@ describe('RepositorySearchApi', () => {
       firstValueFrom(
         api.searchResearchObjects({
           q: 'North Dakota',
-          programs: ['TIGER_LINE', 'LODES'],
+          programs: ['TIGER_LINE', 'Office of Science'],
           page: 0,
           pageSize: 25,
         }),
       ),
     ).resolves.toEqual(response);
 
-    // Repeated keys are how the contract expresses "any of these programs".
+    // Repeated keys are how the contract expresses "any of these programs". Federated publisher
+    // program names are passed through unchanged rather than validated against ResearchProgram.
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/search', {
       params: {
         q: 'North Dakota',
-        program: ['TIGER_LINE', 'LODES'],
+        program: ['TIGER_LINE', 'Office of Science'],
         page: 0,
         pageSize: 25,
       },
