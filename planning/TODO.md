@@ -4,7 +4,7 @@ This file contains open work only. Current status is generated in [documentation
 
 The repository follows a **testing-first rule** for new work: define or extend unit, use-case, contract, browser, accessibility and real-stack evidence before expanding the feature surface. A feature is not considered complete merely because it works in the local UI.
 
-The current execution order is **PI-1 -> PI-2 -> PI-3 -> PI-4 -> PI-5 -> PI-6**. Program-increment numbers are stable workstream identities and now also reflect the intended execution sequence.
+The intended execution order is **PI-1 -> PI-2 -> PI-3 -> PI-4 -> PI-5 -> PI-6**. PI-1 is active now.
 
 ## PI-1 — Federated Metadata Expansion
 
@@ -133,55 +133,13 @@ Design documents:
 
 ## PI-2 — Local Kubernetes Search Laboratory
 
-Design documents:
-
-- [Local Cloud Search Laboratory](../documentation/cloud/README.md)
-- [Local Kubernetes Search Cluster](../documentation/cloud/local-kubernetes-search-cluster.md)
-
-### PI-2.1 Preserve the standalone control topology
-
-- [ ] Keep Docker Compose as the default fast development/demo path.
-- [ ] Add explicit corpus/profile commands so small demo, 10K, 100K and heavy 1M runs do not overwrite one another accidentally.
-- [ ] Record standalone baseline measurements for each PI-1 corpus before clustered comparison.
-
-### PI-2.2 Kubernetes substrate
-
-- [ ] Add reproducible kind cluster configuration.
-- [ ] Add `k8s:create`, `k8s:build`, `k8s:deploy`, `k8s:reindex`, `k8s:benchmark` and `k8s:destroy` scripts or equivalent documented commands.
-- [ ] Record Docker Desktop/kind host resources with benchmark artifacts.
-
-### PI-2.3 SolrCloud
-
-- [ ] Deploy SolrCloud with the official Solr Operator and at least three Solr pods.
-- [ ] Deploy/configure ZooKeeper required by the selected SolrCloud topology.
-- [ ] Keep schema/config semantics aligned with standalone Solr.
-- [ ] Compare 1, 2 and 3 shard layouts before adding replica experiments.
-- [ ] Add replicas and deliberate node-loss/recovery only after baseline layouts are stable.
-
-### PI-2.4 Multi-node OpenSearch
-
-- [ ] Deploy a three-node OpenSearch cluster through the official operator or Helm chart.
-- [ ] Keep mappings/analyzers aligned with standalone OpenSearch.
-- [ ] Compare 1, 2 and 3 primary-shard layouts.
-- [ ] Add replicas as a resilience experiment rather than assuming they improve latency.
-
-### PI-2.5 Cluster performance matrix
-
-- [ ] Prove the exact PI-1 10K corpus in both clustered engines.
-- [ ] Prove the exact PI-1 100K corpus in both clustered engines.
-- [ ] Run the PI-1 1M corpus where workstation resources permit.
-- [ ] Compare concurrency 1/8/32 using identical query definitions.
-- [ ] Record API elapsed, Solr QTime, OpenSearch took, throughput/errors/timeouts, shards/replicas/resources/heap/storage.
-- [ ] Add alternating/randomized/separate equivalent engine order before comparative speed conclusions.
-- [ ] Verify semantic result/facet behavior before interpreting performance differences.
-
-### PI-2.6 Resilience evidence
-
-- [ ] Automate or document a Solr pod-loss/recovery experiment.
-- [ ] Automate or document an OpenSearch pod-loss/recovery experiment.
-- [ ] Record availability, latency/errors, pod recreation, shard recovery and projection parity.
-- [ ] Verify persistent data after pod restart/recreation.
-- [ ] Keep results labelled local clustered evidence, not cloud-capacity evidence.
+- [ ] Preserve Docker Compose as the default fast development/demo path and standalone control topology.
+- [ ] Add reproducible kind cluster configuration and repository-owned lifecycle commands.
+- [ ] Deploy SolrCloud with the official Solr Operator and ZooKeeper.
+- [ ] Deploy multi-node OpenSearch with aligned mappings/analyzers.
+- [ ] Compare exact PI-1 10K/100K/1M corpora and concurrency 1/8/32.
+- [ ] Record topology/resources/heap/storage and semantic parity with every benchmark.
+- [ ] Reproduce node-loss/recovery for each engine and verify persistence/projection parity.
 
 ## PI-3 — Infrastructure as Code / AWS
 
@@ -200,25 +158,22 @@ Design documents:
 - [ ] Complete Checklist 5 cognitive/workflow review.
 - [ ] Decide whether to add a `contentinfo` landmark.
 - [ ] Review the MapLibre canvas tab stop with a screen reader and document the decision.
-- [ ] Run the Search Lab comparison flow with keyboard-only input and record scenario selection, filter entry, run action, live completion announcement, projection evidence and both engine result regions.
+- [ ] Run the Search Lab comparison flow with keyboard-only input and record the result.
 
 ## PI-5 — Browser Evidence CI and Governance
 
 - [x] Add a dedicated or scheduled full Playwright evidence workflow.
 - [x] Upload Playwright HTML reports, traces and screenshots when the evidence workflow fails.
-- [x] Run the Search Lab comparison scenarios in the dedicated browser workflow.
-- [x] Run the Search Lab WCAG/Section 508 axe route in the dedicated browser workflow.
-- [x] Add a real-stack smoke path that exercises browser -> Spring API -> Solr + OpenSearch instead of only mocked API routes.
+- [x] Run the Search Lab comparison scenarios and WCAG/Section 508 axe route in the dedicated workflow.
+- [x] Add a real-stack browser -> Spring API -> Solr + OpenSearch smoke path.
 - [ ] Decide whether WCAG/Section 508-oriented jobs are required merge checks.
 - [ ] Decide whether `main` receives branch protection.
 - [x] Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.
 
 ## PI-6 — Solr/OpenSearch Comparison Hardening
 
-The first vertical slice is implemented. Remaining work is semantic-difference explanation and future scenario breadth.
-
 - [ ] Add rank/result-set/facet-difference summaries that explain _why_ engines differ rather than only showing two columns.
-- [ ] Add phrase search and highlighting after the current test matrix is green.
+- [ ] Add phrase search and highlighting after the core test matrix is green.
 - [ ] Add geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the basic comparison path is fully hardened.
 
 ## Cross-cutting — Publisher verification
