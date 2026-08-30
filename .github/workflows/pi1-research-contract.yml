@@ -24,6 +24,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Apply contract patch
         run: node tools/scripts/pi1-research-contract-patch.mjs
+      - name: Inspect patched parameters
+        run: nl -ba schemas/openapi/repository-api.yaml | sed -n '625,675p'
       - name: Regenerate client types
         run: pnpm openapi:generate
       - name: Validate contract
