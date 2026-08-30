@@ -18,13 +18,16 @@ Design documents:
 
 ### PI-1.1 Foundation before source breadth
 
-- [ ] Define OpenAPI/domain contract for `origin` and `sourceSystem`.
-- [ ] Replace fixed source-specific `ResearchProgram` assumptions with controlled source/content type plus data-driven publisher/program/subject facets.
+- [ ] Finish public OpenAPI migration for data-driven program taxonomy while preserving the existing curated `ResearchProgram` compatibility field.
+- [x] Add controlled `origin` / `sourceSystem` provenance to repository and fixture search/detail contracts and search projections.
+- [x] Add canonical data-driven `programName` to the engine-neutral `DiscoveryDocument` so federated publisher programs do not expand/collapse into the legacy enum.
+- [ ] Replace fixed source-specific `ResearchProgram` assumptions in public filtering/results with data-driven program values.
 - [x] Design and implement federated metadata persistence in the application data layer.
 - [ ] Add `harvest_runs`, resumable checkpoints, bounded error/quarantine state and source progress metrics.
 - [x] Define namespaced source identity: `SOURCE_SYSTEM:source-id`.
 - [ ] Define explicit DOI/PMID/other-identifier reconciliation rules without title-based silent merging.
-- [ ] Introduce a combined discovery catalog over DSpace-backed and federated records.
+- [x] Introduce a bounded combined discovery catalog over DSpace-backed and federated records.
+- [ ] Wire the combined discovery catalog into the projection lifecycle.
 - [ ] Replace whole-corpus `List<DiscoveryDocument>` projection with bounded streaming/batched projection before 100K+ runs.
 - [ ] Make deterministic projection hashing independent of database page size and search bulk size.
 - [ ] Add batch indexing to Solr and OpenSearch; do not create one giant million-document update body.
@@ -38,7 +41,7 @@ Design documents:
 - [x] Keep production-shaped federated harvesting in the Spring Boot Java runtime; do not introduce a NestJS/Node harvester service.
 - [x] Define `FederatedSourceHarvester` / shared harvesting interfaces.
 - [x] Add cursor/page checkpoint persistence.
-- [ ] Add bounded retry, backoff/jitter and `Retry-After` awareness.
+- [x] Add bounded retry, exponential backoff/jitter and bounded `Retry-After` awareness with typed permanent/transient failures.
 - [ ] Add configurable per-source request concurrency and rate limits.
 - [ ] Add run cancellation/restart/resume behavior.
 - [ ] Add malformed-record quarantine without aborting an entire run.
@@ -119,8 +122,8 @@ Design documents:
 
 ## PI-1 supporting work — Provenance and identity
 
-- [ ] Add typed origin/provenance values for repository, federated, fixture, stored sample, stale and unavailable data.
-- [ ] Add controlled `sourceSystem` values for Census, USGS, Data.gov, OSTI, NASA CMR, PubMed and OpenAlex.
+- [ ] Extend typed origin/provenance beyond repository/federated/fixture to stored sample, stale and unavailable data where those states apply.
+- [x] Add controlled `sourceSystem` values for Census, USGS, Data.gov, OSTI, NASA CMR, PubMed and OpenAlex.
 - [ ] Record publisher freshness per research object where a reliable source date exists.
 - [ ] Record and expose discovery projection timestamps consistently across Admin Sync, Evidence and Search Lab.
 - [ ] Add regression coverage for LODES fallback provenance.
