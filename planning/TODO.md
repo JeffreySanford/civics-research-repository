@@ -1,10 +1,12 @@
 # Active Backlog
 
-This file contains open work only. Current status is generated in [documentation/platform-status.md](../documentation/platform-status.md); delivered history is in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md). The next two major increments are sequenced in [PI_PLAN.md](PI_PLAN.md).
+This file contains open work only. Current status is generated in [documentation/platform-status.md](../documentation/platform-status.md); delivered history is in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md). Program increments and their execution order are defined in [PI_PLAN.md](PI_PLAN.md).
 
 The repository follows a **testing-first rule** for new work: define or extend unit, use-case, contract, browser, accessibility and real-stack evidence before expanding the feature surface. A feature is not considered complete merely because it works in the local UI.
 
-## P1 — Manual accessibility evidence
+The current execution order is intentionally **PI-4 -> PI-5 -> PI-6 -> return to PI-1 -> PI-2 -> PI-3**. Program-increment numbers are stable workstream identities, not chronological labels.
+
+## PI-4 — Manual Accessibility Evidence
 
 - [ ] Run Checklist 1 end to end without a mouse and record the result.
 - [ ] Run Checklist 2 with NVDA in Firefox and Chrome.
@@ -15,7 +17,7 @@ The repository follows a **testing-first rule** for new work: define or extend u
 - [ ] Review the MapLibre canvas tab stop with a screen reader and document the decision.
 - [ ] Run the Search Lab comparison flow with keyboard-only input and record scenario selection, filter entry, run action, live completion announcement, projection evidence and both engine result regions.
 
-## P2 — Browser evidence CI and governance
+## PI-5 — Browser Evidence CI and Governance
 
 - [x] Add a dedicated or scheduled full Playwright evidence workflow.
 - [x] Upload Playwright HTML reports, traces and screenshots when the evidence workflow fails.
@@ -26,7 +28,7 @@ The repository follows a **testing-first rule** for new work: define or extend u
 - [ ] Decide whether `main` receives branch protection.
 - [x] Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.
 
-## P3 — Solr/OpenSearch comparison hardening
+## PI-6 — Solr/OpenSearch Comparison Hardening
 
 The first vertical slice is implemented. Remaining work is semantic-difference explanation and future scenario breadth.
 
@@ -34,7 +36,7 @@ The first vertical slice is implemented. Remaining work is semantic-difference e
 - [ ] Add phrase search and highlighting after the current test matrix is green.
 - [ ] Add geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the basic comparison path is fully hardened.
 
-## P4 — Provenance and identity
+## PI-1 supporting work — Provenance and identity
 
 PI-1 expands this from repository-only provenance to repository + federated provenance.
 
@@ -46,7 +48,7 @@ PI-1 expands this from repository-only provenance to repository + federated prov
 - [ ] Review UUID/source-identifier route stability and relationship resolution.
 - [ ] Define cross-source identity/equivalence rules based on durable identifiers; never silently merge by title.
 
-## P5 — Research-object product language
+## PI-1 supporting work — Research-object product language
 
 - [ ] Add `/research/:id` as the canonical detail route while preserving `/datasets/:id` compatibility.
 - [ ] Resolve detail from either DSpace or the federated metadata catalog.
@@ -54,13 +56,13 @@ PI-1 expands this from repository-only provenance to repository + federated prov
 - [ ] Update examples and demo links to prefer research-object terminology.
 - [ ] Add unit/browser/accessibility coverage for federated detail states and outbound authoritative-source links.
 
-## P6 — Publisher verification
+## Cross-cutting — Publisher verification
 
 - [ ] Add listing/vintage verification to remaining curated programs where publisher structure permits it.
 - [ ] Keep catalog edits reviewable rather than automatically applying uncertain file-name changes.
 - [ ] Keep NOAA Climate Data Online and NASA POWER as possible later adapters after the PI-1 source portfolio is stable.
 
-## P7 — PI-1 Federated Metadata Expansion
+## PI-1 — Federated Metadata Expansion
 
 Design documents:
 
@@ -69,7 +71,7 @@ Design documents:
 - [Source Ingestion Plan](../documentation/federation/source-ingestion-plan.md)
 - [Million-Record Federated Metadata Corpus](../documentation/federation/million-record-corpus.md)
 
-### P7.1 Foundation before source breadth
+### PI-1.1 Foundation before source breadth
 
 - [ ] Define OpenAPI/domain contract for `origin` and `sourceSystem`.
 - [ ] Replace fixed source-specific `ResearchProgram` assumptions with controlled source/content type plus data-driven publisher/program/subject facets.
@@ -85,7 +87,7 @@ Design documents:
 - [ ] Design opaque cursor pagination so million-record discovery does not depend on deep offsets.
 - [ ] Keep the current offset contract working until the cursor path is tested and ready.
 
-### P7.2 Shared harvester framework
+### PI-1.2 Shared harvester framework
 
 - [ ] Define `FederatedSourceAdapter` / shared harvesting interfaces.
 - [ ] Add cursor/page checkpoint persistence.
@@ -97,7 +99,7 @@ Design documents:
 - [ ] Generate deterministic corpus manifests from completed bounded runs.
 - [ ] Add tiny committed source fixtures for normal CI rather than network-dependent tests.
 
-### P7.3 Data.gov adapter
+### PI-1.3 Data.gov adapter
 
 - [ ] Implement Data.gov source adapter.
 - [ ] Map dataset ID, title, description, agency/publisher, tags/themes, dates, distributions/resource links and landing page.
@@ -106,7 +108,7 @@ Design documents:
 - [ ] Verify new records appear automatically through discovery results, source/publisher/program facets and `/research/:id`.
 - [ ] Evaluate larger/full-catalog harvest only after the 100K path is stable.
 
-### P7.4 DOE OSTI adapter and first million
+### PI-1.4 DOE OSTI adapter and first million
 
 - [ ] Implement OSTI adapter and normalization fixtures.
 - [ ] Map title/abstract/authors/research organization/sponsor/subjects/resource type/date/DOI/source links.
@@ -116,7 +118,7 @@ Design documents:
 - [ ] Index the 1M corpus into standalone Solr and OpenSearch with matching count/projection identity.
 - [ ] Record indexing duration, accepted/rejected counts, disk growth and memory use.
 
-### P7.5 NASA CMR adapter
+### PI-1.5 NASA CMR adapter
 
 - [ ] Implement CMR collection and granule metadata handling as distinct concepts.
 - [ ] Add collection fixtures/tests.
@@ -124,7 +126,7 @@ Design documents:
 - [ ] Prove 10K and 100K controlled granule slices.
 - [ ] Prove a 1M controlled granule slice only after the OSTI 1M path is stable.
 
-### P7.6 PubMed adapter
+### PI-1.6 PubMed adapter
 
 - [ ] Implement PubMed adapter with PMID/title/abstract/authors/journal/date/type/identifier mapping.
 - [ ] Use API access for fixtures/bounded development samples.
@@ -132,14 +134,14 @@ Design documents:
 - [ ] Prove 10K and 100K bounded corpora.
 - [ ] Prove a 1M bibliographic corpus after OSTI establishes the first million-record infrastructure.
 
-### P7.7 OpenAlex adapter
+### PI-1.7 OpenAlex adapter
 
 - [ ] Implement OpenAlex adapter for works/authors/institutions/topics/funders/DOI/citation relationships.
 - [ ] Keep it last in PI-1 execution priority so the federal-source story remains primary.
 - [ ] Prove 10K and 100K controlled snapshots.
 - [ ] Evaluate an optional 1M+ slice without attempting to retain the whole source corpus locally.
 
-### P7.8 UI/search-scale completion
+### PI-1.8 UI/search-scale completion
 
 - [ ] Add source-system facet to normal discovery.
 - [ ] Ensure publisher/program facet values are returned from index data rather than a fixed UI allowlist.
@@ -149,7 +151,7 @@ Design documents:
 - [ ] Add result-set/top-N/rank/facet-difference evidence at scale.
 - [ ] Verify accessibility and keyboard behavior with large facet/result counts.
 
-### P7.9 Corpus and disk discipline
+### PI-1.9 Corpus and disk discipline
 
 - [ ] Keep large binaries/full text external by default.
 - [ ] Measure bytes/document in federated PostgreSQL, Solr and OpenSearch at 10K and 100K.
@@ -158,7 +160,7 @@ Design documents:
 - [ ] Make heavy snapshots regenerable so old corpora can be removed when disk pressure requires it.
 - [ ] Preserve the original small curated Compose demo profile.
 
-### P7.10 PI-1 handoff
+### PI-1.10 PI-1 handoff
 
 - [ ] All five source adapters implemented and fixture-tested.
 - [ ] Every source supports a reproducible bounded harvest.
@@ -166,26 +168,26 @@ Design documents:
 - [ ] Standalone Solr/OpenSearch parity proven for a deterministic 1M-class corpus.
 - [ ] Versioned corpus manifest/query definitions are ready for PI-2 without changing record semantics.
 
-## P8 — PI-2 Local Kubernetes Search Laboratory
+## PI-2 — Local Kubernetes Search Laboratory
 
 Design documents:
 
 - [Local Cloud Search Laboratory](../documentation/cloud/README.md)
 - [Local Kubernetes Search Cluster](../documentation/cloud/local-kubernetes-search-cluster.md)
 
-### P8.1 Preserve the standalone control topology
+### PI-2.1 Preserve the standalone control topology
 
 - [ ] Keep Docker Compose as the default fast development/demo path.
 - [ ] Add explicit corpus/profile commands so small demo, 10K, 100K and heavy 1M runs do not overwrite one another accidentally.
 - [ ] Record standalone baseline measurements for each PI-1 corpus before clustered comparison.
 
-### P8.2 Kubernetes substrate
+### PI-2.2 Kubernetes substrate
 
 - [ ] Add reproducible kind cluster configuration.
 - [ ] Add `k8s:create`, `k8s:build`, `k8s:deploy`, `k8s:reindex`, `k8s:benchmark` and `k8s:destroy` scripts or equivalent documented commands.
 - [ ] Record Docker Desktop/kind host resources with benchmark artifacts.
 
-### P8.3 SolrCloud
+### PI-2.3 SolrCloud
 
 - [ ] Deploy SolrCloud with the official Solr Operator and at least three Solr pods.
 - [ ] Deploy/configure ZooKeeper required by the selected SolrCloud topology.
@@ -193,14 +195,14 @@ Design documents:
 - [ ] Compare 1, 2 and 3 shard layouts before adding replica experiments.
 - [ ] Add replicas and deliberate node-loss/recovery only after baseline layouts are stable.
 
-### P8.4 Multi-node OpenSearch
+### PI-2.4 Multi-node OpenSearch
 
 - [ ] Deploy a three-node OpenSearch cluster through the official operator or Helm chart.
 - [ ] Keep mappings/analyzers aligned with standalone OpenSearch.
 - [ ] Compare 1, 2 and 3 primary-shard layouts.
 - [ ] Add replicas as a resilience experiment rather than assuming they improve latency.
 
-### P8.5 Cluster performance matrix
+### PI-2.5 Cluster performance matrix
 
 - [ ] Prove the exact PI-1 10K corpus in both clustered engines.
 - [ ] Prove the exact PI-1 100K corpus in both clustered engines.
@@ -210,7 +212,7 @@ Design documents:
 - [ ] Add alternating/randomized/separate equivalent engine order before comparative speed conclusions.
 - [ ] Verify semantic result/facet behavior before interpreting performance differences.
 
-### P8.6 Resilience evidence
+### PI-2.6 Resilience evidence
 
 - [ ] Automate or document a Solr pod-loss/recovery experiment.
 - [ ] Automate or document an OpenSearch pod-loss/recovery experiment.
@@ -218,7 +220,7 @@ Design documents:
 - [ ] Verify persistent data after pod restart/recreation.
 - [ ] Keep results labelled local clustered evidence, not cloud-capacity evidence.
 
-## P9 — Infrastructure as code / AWS
+## PI-3 — Infrastructure as Code / AWS
 
 - [ ] Choose Terraform or CDK after PI-2 provides topology/resource evidence.
 - [ ] Implement the documented AWS target or alternate.
@@ -226,7 +228,7 @@ Design documents:
 - [ ] Add secrets, observability, backup/restore and persistent search storage.
 - [ ] Document deployment and rollback from the local Compose/kind baselines.
 
-## P10 — Platform hardening
+## Cross-cutting — Platform hardening
 
 - [ ] Move NgRx dependencies from release candidates to stable versions after validation.
 - [ ] Revisit generated Spring controller interfaces when Spring 7 support is ready.
