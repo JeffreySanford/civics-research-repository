@@ -6,6 +6,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import org.civicsrepo.admin.CorpusProfileActivationProgress;
+import org.civicsrepo.admin.CorpusProfileActivationProgress.Phase;
 import org.civicsrepo.admin.CorpusProfileActivationService;
 import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.generated.dto.RepositorySource;
@@ -66,5 +68,29 @@ class ReindexControllerTest {
         assertThat(response.getObjectCount()).isEqualTo(10_181);
         assertThat(response.getProjectionId()).isEqualTo(PROJECTION_ID);
         verify(activationService).activate(CorpusProfile.FEDERATED_10K);
+    }
+
+    @Test
+    void exposesLiveActivationProgressWithoutStartingAnotherProjection() {
+        DiscoveryProjectionService projectionService = mock(DiscoveryProjectionService.class);
+        CorpusProfileActivationService activationService = mock(CorpusProfileActivationService.class);
+        CorpusProfileActivationProgress progress = new CorpusProfileActivationProgress(
+                "activation-1",
+                CorpusProfile.FEDERATED_100K,
+                Phase.PROJECTING,
+                42_000,
+                100_181L,
+                41,
+                OffsetDateTime.parse("2026-08-30T23:30:00Z"),
+                OffsetDateTime.parse("2026-08-30T23:30:05Z"),
+                null,
+                5_000,
+                8_400.0,
+                "Building Solr and OpenSearch projections.");
+        when(activationService.currentProgress()).thenReturn(progress);
+        ReindexController controller = new ReindexController(projectionService, activationService);
+
+        assertThat(controller.activationProgress()).isEqualTo(progress);
+        verify(activationService).currentProgress();
     }
 }
