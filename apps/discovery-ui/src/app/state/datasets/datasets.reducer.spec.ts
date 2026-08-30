@@ -32,6 +32,22 @@ describe('datasetsReducer', () => {
     expect(state.loading).toBe(true);
   });
 
+  it('tracks canonical research loading without treating the route token as a dataset id', () => {
+    const state = datasetsReducer(
+      {
+        ...initialDatasetsState,
+        selectedDatasetId: detail.id,
+      },
+      DatasetsActions.researchOpened({
+        researchId: 'REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg',
+      }),
+    );
+
+    expect(state.selectedDatasetId).toBeNull();
+    expect(state.loading).toBe(true);
+    expect(state.error).toBeNull();
+  });
+
   it('stores loaded dataset detail', () => {
     const state = datasetsReducer(
       initialDatasetsState,
