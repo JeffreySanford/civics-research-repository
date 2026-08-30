@@ -2,10 +2,12 @@ package org.civicsrepo.repository;
 
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.FileFormat;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.SourceSystem;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -34,6 +36,8 @@ class RepositoryObjectMapperTest {
         assertThat(result.getGeography()).isEqualTo("North Dakota");
         assertThat(result.getVintageYear()).isEqualTo(2025);
         assertThat(result.getSourceUrl().toString()).contains("www2.census.gov");
+        assertThat(result.getOrigin()).isEqualTo(ResearchObjectOrigin.REPOSITORY);
+        assertThat(result.getSourceSystem()).isEqualTo(SourceSystem.CENSUS);
     }
 
     @Test
@@ -48,6 +52,8 @@ class RepositoryObjectMapperTest {
                 List.of());
 
         assertThat(detail.getSource()).isEqualTo(RepositorySource.REPOSITORY);
+        assertThat(detail.getOrigin()).isEqualTo(ResearchObjectOrigin.REPOSITORY);
+        assertThat(detail.getSourceSystem()).isEqualTo(SourceSystem.CENSUS);
         assertThat(detail.getReleasedOn()).isEqualTo(LocalDate.of(2025, 1, 1));
         assertThat(detail.getCitation()).startsWith("U.S. Census Bureau.");
         assertThat(detail.getFiles()).hasSize(2);
@@ -75,7 +81,9 @@ class RepositoryObjectMapperTest {
     void reportsAnUnknownProgramAsOtherRatherThanGuessing() {
         JsonNode item = RepositoryFixtures.item("uuid", "Mystery item", Map.of("dc.title", "Mystery item"));
 
-        assertThat(mapper.toSearchResult(item).getProgram()).isEqualTo(ResearchProgram.OTHER);
+        SearchResult result = mapper.toSearchResult(item);
+        assertThat(result.getProgram()).isEqualTo(ResearchProgram.OTHER);
+        assertThat(result.getSourceSystem()).isEqualTo(SourceSystem.OTHER);
     }
 
     @Test
