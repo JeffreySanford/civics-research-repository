@@ -140,33 +140,54 @@ public class SolrSearchClient implements DiscoveryIndex {
     }
 
     @Override
-    public void indexResearchObjects(List<DiscoveryDocument> objects) {
+    public void beginProjection() {
         if (!isEnabled()) {
             return;
         }
+        sendProjectionUpdate(Map.of("delete", Map.of("query", "repositorySeed_b:true")));
+    }
 
+    @Override
+    public void indexBatch(List<DiscoveryDocument> objects) {
+        if (!isEnabled() || objects == null || objects.isEmpty()) {
+            return;
+        }
+        List<Map<String, Object>> documents = objects.stream().map(this::toSolrDocument).toList();
+        sendProjectionUpdate(documents);
+    }
+
+    @Override
+    public void completeProjection() {
+        if (!isEnabled()) {
+            return;
+        }
+        sendProjectionUpdate(Map.of("commit", Map.of()));
+    }
+
+    @Override
+    public void abortProjection() {
+        if (!isEnabled()) {
+            return;
+        }
+        sendProjectionUpdate(Map.of("rollback", Map.of()));
+    }
+
+    private void sendProjectionUpdate(Object payload) {
         try {
-            List<Map<String, Object>> documents = objects.stream().map(this::toSolrDocument).toList();
-            sendUpdate(Map.of("delete", Map.of("query", "repositorySeed_b:true")));
-            sendUpdate(documents);
+            HttpRequest request = HttpRequest.newBuilder(updateUri())
+                    .timeout(REQUEST_TIMEOUT)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 300) {
+                throw new IllegalStateException("Solr update failed with HTTP " + response.statusCode());
+            }
         } catch (IOException exception) {
             throw new IllegalStateException("Solr update request failed.", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Solr update request was interrupted.", exception);
-        }
-    }
-
-    private void sendUpdate(Object payload) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder(updateUri())
-                .timeout(REQUEST_TIMEOUT)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() >= 300) {
-            throw new IllegalStateException("Solr update failed with HTTP " + response.statusCode());
         }
     }
 
@@ -369,7 +390,7 @@ public class SolrSearchClient implements DiscoveryIndex {
     }
 
     private URI updateUri() {
-        return URI.create(baseUrl + "/" + encode(core) + "/update?commit=true&overwrite=true");
+        return URI.create(baseUrl + "/" + encode(core) + "/update?commit=false&overwrite=true");
     }
 
     private URI countUri() {
