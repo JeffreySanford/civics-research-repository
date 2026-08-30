@@ -160,6 +160,18 @@ public class SearchService {
                                 this::programName,
                                 selectedPrograms),
                         facetGroup(
+                                "publisher",
+                                "Publisher",
+                                filtered,
+                                SearchResult::getPublisher,
+                                ""),
+                        facetGroup(
+                                "sourceSystem",
+                                "Source",
+                                filtered,
+                                this::sourceSystemName,
+                                ""),
+                        facetGroup(
                                 "geography",
                                 "Geography",
                                 filtered,
@@ -197,6 +209,10 @@ public class SearchService {
             return result.getProgramName().trim();
         }
         return result.getProgram() == null ? "OTHER" : result.getProgram().getValue();
+    }
+
+    private String sourceSystemName(SearchResult result) {
+        return result.getSourceSystem() == null ? "OTHER" : result.getSourceSystem().getValue();
     }
 
     private boolean matchesQuery(SearchResult result, String normalizedQuery) {
