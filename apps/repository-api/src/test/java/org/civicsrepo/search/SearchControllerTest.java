@@ -36,18 +36,37 @@ class SearchControllerTest {
     @Test
     void acceptsADataDrivenProgramOutsideTheLegacyEnum() throws Exception {
         given(searchService.search(
-                        any(), eq(List.of("Office of Science")), any(), any(), any(), anyInt(), anyInt()))
+                        any(),
+                        eq(List.of("Office of Science")),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        anyInt(),
+                        anyInt()))
                 .willReturn(response());
 
         mockMvc.perform(get("/search").param("program", "Office of Science"))
                 .andExpect(status().isOk());
 
-        verify(searchService).search(any(), eq(List.of("Office of Science")), any(), any(), any(), anyInt(), anyInt());
+        verify(searchService)
+                .search(
+                        any(),
+                        eq(List.of("Office of Science")),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        anyInt(),
+                        anyInt());
     }
 
     @Test
     void appliesPagingDefaultsWhenNoParametersAreSupplied() throws Exception {
-        given(searchService.search(any(), anyList(), any(), any(), any(), eq(0), eq(25))).willReturn(response());
+        given(searchService.search(any(), anyList(), any(), any(), any(), any(), any(), eq(0), eq(25)))
+                .willReturn(response());
 
         mockMvc.perform(get("/search"))
                 .andExpect(status().isOk())
@@ -57,7 +76,7 @@ class SearchControllerTest {
                 .andExpect(jsonPath("$.results[0].origin").value("REPOSITORY"))
                 .andExpect(jsonPath("$.results[0].sourceSystem").value("CENSUS"));
 
-        verify(searchService).search(null, List.of(), null, null, null, 0, 25);
+        verify(searchService).search(null, List.of(), null, null, null, null, null, 0, 25);
     }
 
     @Test
@@ -65,6 +84,8 @@ class SearchControllerTest {
         given(searchService.search(
                         eq("tracts"),
                         eq(List.of("TIGER_LINE")),
+                        eq("U.S. Census Bureau"),
+                        eq(SourceSystem.CENSUS),
                         eq("North Dakota"),
                         any(),
                         eq(2025),
@@ -75,13 +96,25 @@ class SearchControllerTest {
         mockMvc.perform(get("/search")
                         .param("q", "tracts")
                         .param("program", "TIGER_LINE")
+                        .param("publisher", "U.S. Census Bureau")
+                        .param("sourceSystem", "CENSUS")
                         .param("geography", "North Dakota")
                         .param("vintageYear", "2025")
                         .param("page", "2")
                         .param("pageSize", "10"))
                 .andExpect(status().isOk());
 
-        verify(searchService).search("tracts", List.of("TIGER_LINE"), "North Dakota", null, 2025, 2, 10);
+        verify(searchService)
+                .search(
+                        "tracts",
+                        List.of("TIGER_LINE"),
+                        "U.S. Census Bureau",
+                        SourceSystem.CENSUS,
+                        "North Dakota",
+                        null,
+                        2025,
+                        2,
+                        10);
     }
 
     @Test
@@ -89,6 +122,8 @@ class SearchControllerTest {
         given(searchService.search(
                         any(),
                         eq(List.of("TIGER_LINE", "LODES", "Office of Science")),
+                        any(),
+                        any(),
                         any(),
                         any(),
                         any(),
@@ -109,6 +144,8 @@ class SearchControllerTest {
                         null,
                         null,
                         null,
+                        null,
+                        null,
                         0,
                         25);
     }
@@ -121,13 +158,23 @@ class SearchControllerTest {
 
     @Test
     void passesQuotedGeographyValuesThroughUnchanged() throws Exception {
-        given(searchService.search(any(), anyList(), eq("North \"Dakota\""), any(), any(), anyInt(), anyInt()))
+        given(searchService.search(
+                        any(),
+                        anyList(),
+                        any(),
+                        any(),
+                        eq("North \"Dakota\""),
+                        any(),
+                        any(),
+                        anyInt(),
+                        anyInt()))
                 .willReturn(response());
 
         mockMvc.perform(get("/search").param("geography", "North \"Dakota\""))
                 .andExpect(status().isOk());
 
-        verify(searchService).search(null, List.of(), "North \"Dakota\"", null, null, 0, 25);
+        verify(searchService)
+                .search(null, List.of(), null, null, "North \"Dakota\"", null, null, 0, 25);
     }
 
     private SearchResponse response() {
