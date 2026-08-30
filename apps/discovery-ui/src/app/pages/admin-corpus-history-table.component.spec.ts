@@ -22,14 +22,18 @@ const measurement = (
   capturedAt,
 });
 
+const configure = async () => {
+  await TestBed.configureTestingModule({
+    imports: [AdminCorpusHistoryTableComponent],
+    providers: [provideNoopAnimations()],
+  }).compileComponents();
+};
+
 describe('AdminCorpusHistoryTableComponent', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  it('renders a Material table with sortable columns, filtering, and pagination', async () => {
-    await TestBed.configureTestingModule({
-      imports: [AdminCorpusHistoryTableComponent],
-      providers: [provideNoopAnimations()],
-    }).compileComponents();
+  it('renders sortable Material columns newest-first and filters rows', async () => {
+    await configure();
 
     const fixture = TestBed.createComponent(AdminCorpusHistoryTableComponent);
     fixture.componentRef.setInput('history', [
@@ -45,19 +49,56 @@ describe('AdminCorpusHistoryTableComponent', () => {
     expect(element.querySelectorAll('.mat-sort-header').length).toBe(10);
     expect(element.querySelector('mat-paginator')).not.toBeNull();
 
+    let rows = element.querySelectorAll('tr.mat-mdc-row');
+    expect(rows[0]?.textContent).toContain('Federated 10K');
+
     const input = element.querySelector<HTMLInputElement>(
       'input[aria-label="Filter historical measurements"]',
     );
     expect(input).not.toBeNull();
-    input!.value = 'Federated 10K';
+    input!.value = 'Curated demo';
     input!.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const rows = element.querySelectorAll('tr.mat-mdc-row');
+    rows = element.querySelectorAll('tr.mat-mdc-row');
     expect(rows.length).toBe(1);
-    expect(rows[0]?.textContent).toContain('Federated 10K');
-    expect(rows[0]?.textContent).toContain('10,187');
+    expect(rows[0]?.textContent).toContain('Curated demo');
+    expect(rows[0]?.textContent).toContain('187');
+  });
+
+  it('paginates historical measurements at ten rows by default', async () => {
+    await configure();
+
+    const fixture = TestBed.createComponent(AdminCorpusHistoryTableComponent);
+    fixture.componentRef.setInput(
+      'history',
+      Array.from({ length: 12 }, (_, index) =>
+        measurement(
+          `measurement-${index}`,
+          'CURATED_DEMO',
+          `2026-08-${String(index + 1).padStart(2, '0')}T23:30:00Z`,
+          187 + index,
+        ),
+      ),
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('tr.mat-mdc-row').length).toBe(10);
+
+    const nextPage = element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Next page"]',
+    );
+    expect(nextPage).not.toBeNull();
+    nextPage!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(element.querySelectorAll('tr.mat-mdc-row').length).toBe(2);
   });
 });
