@@ -107,22 +107,63 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
     }
 
     @Override
-    public void indexResearchObjects(List<DiscoveryDocument> objects) {
+    public void beginProjection() {
         if (!isEnabled()) {
             return;
         }
-
         try {
             deleteIndexIfPresent();
             createIndex();
-            if (!objects.isEmpty()) {
-                bulkIndex(objects);
-            }
         } catch (IOException exception) {
-            throw new IllegalStateException("OpenSearch projection request failed.", exception);
+            throw new IllegalStateException("OpenSearch projection setup failed.", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("OpenSearch projection request was interrupted.", exception);
+            throw new IllegalStateException("OpenSearch projection setup was interrupted.", exception);
+        }
+    }
+
+    @Override
+    public void indexBatch(List<DiscoveryDocument> objects) {
+        if (!isEnabled() || objects == null || objects.isEmpty()) {
+            return;
+        }
+        try {
+            bulkIndex(objects);
+        } catch (IOException exception) {
+            throw new IllegalStateException("OpenSearch projection batch failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("OpenSearch projection batch was interrupted.", exception);
+        }
+    }
+
+    @Override
+    public void completeProjection() {
+        if (!isEnabled()) {
+            return;
+        }
+        try {
+            refreshIndex();
+        } catch (IOException exception) {
+            throw new IllegalStateException("OpenSearch projection refresh failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("OpenSearch projection refresh was interrupted.", exception);
+        }
+    }
+
+    @Override
+    public void abortProjection() {
+        if (!isEnabled()) {
+            return;
+        }
+        try {
+            deleteIndexIfPresent();
+        } catch (IOException exception) {
+            throw new IllegalStateException("OpenSearch partial projection cleanup failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("OpenSearch partial projection cleanup was interrupted.", exception);
         }
     }
 
@@ -427,6 +468,17 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
     }
 
+    private void refreshIndex() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(indexUri("/_refresh"))
+                .timeout(REQUEST_TIMEOUT)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() >= 300) {
+            throw new IllegalStateException("OpenSearch index refresh failed with HTTP " + response.statusCode());
+        }
+    }
+
     private void bulkIndex(List<DiscoveryDocument> objects) throws IOException, InterruptedException {
         StringBuilder payload = new StringBuilder();
         for (DiscoveryDocument object : objects) {
@@ -435,7 +487,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             payload.append(objectMapper.writeValueAsString(toOpenSearchDocument(object))).append('\n');
         }
 
-        HttpRequest request = HttpRequest.newBuilder(indexUri("/_bulk?refresh=true"))
+        HttpRequest request = HttpRequest.newBuilder(indexUri("/_bulk?refresh=false"))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/x-ndjson")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
