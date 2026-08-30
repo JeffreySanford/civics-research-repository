@@ -1,7 +1,11 @@
 package org.civicsrepo.research;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.civicsrepo.federation.FederatedResearchRecord;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchAuthor;
@@ -33,9 +37,9 @@ public final class FederatedResearchObjectMapper {
                 .contentType(record.contentType())
                 .authors(record.authors().stream().map(ResearchAuthor::new).toList());
 
-        if (record.sourceUpdatedAt() != null) {
-            detail.setReleasedOn(record.sourceUpdatedAt().toLocalDate());
-        }
+        // sourceUpdatedAt describes publisher metadata freshness, not publication/release date.
+        // Only expose Released when the source supplied an explicit DCAT-style issued value.
+        metadataDate(record.sourceMetadata(), "issued").ifPresent(detail::setReleasedOn);
         metadataText(record.sourceMetadata(), "license").ifPresent(detail::setLicense);
         metadataText(record.sourceMetadata(), "doi").ifPresent(detail::setDoi);
         return detail;
@@ -45,12 +49,28 @@ public final class FederatedResearchObjectMapper {
         return metadataText(record.sourceMetadata(), "citation").orElse(record.title());
     }
 
-    private static java.util.Optional<String> metadataText(Map<String, Object> metadata, String key) {
+    private static Optional<String> metadataText(Map<String, Object> metadata, String key) {
         Object value = metadata.get(key);
         if (!(value instanceof String text) || text.isBlank()) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
-        return java.util.Optional.of(text.trim());
+        return Optional.of(text.trim());
+    }
+
+    private static Optional<LocalDate> metadataDate(Map<String, Object> metadata, String key) {
+        Optional<String> value = metadataText(metadata, key);
+        if (value.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(LocalDate.parse(value.get()));
+        } catch (DateTimeParseException ignoredDate) {
+            try {
+                return Optional.of(OffsetDateTime.parse(value.get()).toLocalDate());
+            } catch (DateTimeParseException ignoredDateTime) {
+                return Optional.empty();
+            }
+        }
     }
 
     private static String blankToNull(String value) {
