@@ -1,25 +1,8 @@
 # Program Increment Plan
 
-This plan defines six named program increments. The increment numbers are stable workstream identities, not a promise that implementation must occur in numeric order.
-
-The current execution order is intentionally:
+This plan defines six named program increments. The program-increment numbers are stable workstream identities and the intended execution order is now numeric:
 
 ```text
-PI-4 Manual Accessibility Evidence
-        |
-        | closes human-verification gaps
-        v
-PI-5 Browser Evidence CI and Governance
-        |
-        | makes evidence repeatable and governed
-        v
-PI-6 Solr/OpenSearch Comparison Hardening
-        |
-        | strengthens semantic comparison before scale
-        v
-RETURN TO THE SCALE PATH
-        |
-        v
 PI-1 Federated Metadata Expansion
         |
         | produces deterministic corpora
@@ -29,118 +12,23 @@ PI-2 Local Kubernetes Search Laboratory
         | validates topology/resilience/scale
         v
 PI-3 AWS Implementation Candidate
+        |
+        | applies measured local lessons to cloud architecture
+        v
+PI-4 Manual Accessibility Evidence
+        |
+        | closes remaining human-verification gaps
+        v
+PI-5 Browser Evidence CI and Governance
+        |
+        | governs repeatable browser/accessibility evidence
+        v
+PI-6 Solr/OpenSearch Comparison Hardening
 ```
 
-PI-1 work already implemented before this sequencing decision remains valid. It is not discarded or reset; after PI-4 through PI-6 are closed, the project returns to PI-1, audits its exit criteria against the existing implementation, completes the missing work, then proceeds through PI-2 and PI-3.
+PI-1 is the active increment. Work already implemented in the PI-1 F0 foundation remains valid and is audited against the exit criteria rather than restarted.
 
-Docker Compose standalone search remains supported throughout all increments.
-
-It is not a temporary implementation to be deleted after Kubernetes exists. It remains:
-
-- the fastest local development path,
-- the easiest live-demo topology,
-- the functional/regression baseline,
-- the lowest-overhead environment for small corpora,
-- the control topology for performance experiments.
-
-## PI-4 — Manual Accessibility Evidence
-
-### Objective
-
-Close the remaining human-verification gap that automated lint, axe and Playwright evidence cannot prove. PI-4 is evidence work first: it should record actual keyboard and assistive-technology behavior without converting an unverified manual status into a pass.
-
-### Required evidence
-
-PI-4 includes:
-
-- complete keyboard-only application review without a mouse,
-- NVDA evidence in Firefox and Chrome,
-- JAWS evidence where a license is available, or an explicit documented N/A reason,
-- trusted map-click/map-to-list focus behavior and the broader map-equivalence review,
-- cognitive/workflow review,
-- MapLibre canvas tab-stop review with a screen reader,
-- Search Lab keyboard-only review covering scenario selection, filters, run action, live completion status, projection evidence and both engine result regions,
-- a decision on whether a `contentinfo` landmark improves the shell.
-
-### Exit criteria
-
-PI-4 exits when:
-
-- every manual checklist has a dated result,
-- evidence is bound to the commit/build actually tested,
-- failures or limitations are recorded explicitly rather than converted into inferred passes,
-- keyboard and screen-reader findings that require code changes have regression coverage before closure,
-- the Search Lab comparison flow has a recorded non-mouse verification path.
-
-## PI-5 — Browser Evidence CI and Governance
-
-### Objective
-
-Turn browser/accessibility evidence from an optional development aid into a repeatable governed quality signal with clear merge-policy decisions.
-
-### Required evidence and governance
-
-PI-5 includes:
-
-- deterministic Chromium/Firefox/WebKit comparison evidence,
-- automated WCAG/Section 508-oriented axe coverage,
-- Search Lab comparison scenarios in the dedicated browser workflow,
-- a live browser -> Spring API -> Solr + OpenSearch smoke path that is distinct from mocked deterministic evidence,
-- preserved HTML reports, traces and screenshots on failure,
-- local and CI use of the same evidence/document-drift rules,
-- an explicit decision on required evidence checks,
-- an explicit decision on `main` branch protection.
-
-### Exit criteria
-
-PI-5 exits when:
-
-- deterministic browser evidence is reproducible across the supported browser matrix,
-- the real-stack smoke path remains independently visible from mocked evidence,
-- failing runs preserve actionable evidence artifacts,
-- a failed evidence refresh cannot replace the prior known-good baseline,
-- merge-check and branch-protection decisions are documented and implemented or explicitly declined with rationale.
-
-## PI-6 — Solr/OpenSearch Comparison Hardening
-
-### Objective
-
-Make the Search Lab explain semantic differences between Solr and OpenSearch before large PI-1 corpora and PI-2 topology experiments amplify those differences.
-
-The first side-by-side vertical slice already exists. PI-6 focuses on explanation, reproducibility and expansion discipline rather than adding query types merely for breadth.
-
-### Required hardening
-
-PI-6 includes:
-
-- result-set overlap summaries,
-- top-N/rank-order difference summaries,
-- facet-bucket difference summaries,
-- stable comparison query/scenario definitions,
-- richer environment metadata for later scale evidence,
-- clear separation of semantic quality from timing/performance evidence,
-- phrase search and highlighting only after the current matrix is green,
-- geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the core comparison path is hardened.
-
-### Exit criteria
-
-PI-6 exits when:
-
-- the UI/evidence can explain meaningful result-set, rank and facet differences rather than only rendering two columns,
-- deterministic browser and real-stack evidence cover the hardened comparison behavior,
-- comparison queries and projection identity are versionable/reproducible for reuse by PI-1 and PI-2,
-- performance diagnostics retain environment/context metadata sufficient to avoid unsupported speed claims,
-- future scenario breadth has a documented evidence gate.
-
-## Return checkpoint after PI-6
-
-Before new PI-1 source breadth resumes:
-
-1. review PI-1, PI-2 and PI-3 exit criteria against the repository as it actually exists,
-2. retain already-delivered PI-1 F0 work that still satisfies the architecture,
-3. close or re-scope stale planning items instead of reimplementing them,
-4. prioritize bounded-memory/batched projection and deterministic corpus identity before large-source breadth,
-5. resume PI-1 from the earliest unmet dependency rather than from an assumed phase number.
+Docker Compose standalone search remains supported throughout all increments. It remains the fastest local development path, the easiest live-demo topology, the functional/regression baseline, the lowest-overhead environment for small corpora, and the control topology for later performance experiments.
 
 ## PI-1 — Federated Metadata Expansion
 
@@ -162,7 +50,7 @@ The adapters all ship in PI-1, but corpus sizes remain staged. The workstation d
 
 ### Architectural foundation
 
-PI-1 must first establish:
+PI-1 establishes:
 
 - `origin` / `sourceSystem` provenance,
 - dynamic publisher/program taxonomy,
@@ -173,6 +61,8 @@ PI-1 must first establish:
 - combined repository + federated discovery catalog,
 - streaming/batched deterministic projection,
 - cursor-capable search pagination design.
+
+The persistence layer must use bounded database batches. API-level batching that still performs one database interaction per record does not satisfy the scale requirement.
 
 ### Functional result
 
@@ -204,6 +94,21 @@ F4 multi-source 1M-class corpus
 F5 PI-1 handoff snapshot/manifests
 ```
 
+### F0 completion priority
+
+Before broad source-adapter expansion, finish the scale-sensitive foundation in this order:
+
+1. bounded JDBC metadata persistence,
+2. typed provenance/source-system contract,
+3. dynamic publisher/program/subject taxonomy,
+4. combined DSpace + federated catalog,
+5. bounded streaming search projection,
+6. deterministic streaming projection identity,
+7. cursor-capable discovery contract,
+8. harvest-run/error/quarantine observability.
+
+The current PI-1 branch has already established namespaced source identity, normalized federated records, catalog persistence, resumable checkpoints, the harvester contract, corpus profiles, storage-history measurements and Admin corpus-scale visibility. Those capabilities remain part of F0.
+
 ### Exit criteria
 
 PI-1 exits only when:
@@ -213,7 +118,7 @@ PI-1 exits only when:
 - at least one additional source works through the same path,
 - all sources support reproducible bounded harvesting,
 - provenance and detail routing distinguish repository/federated records,
-- projection is bounded-memory and batch-oriented,
+- metadata persistence and projection are bounded-memory and batch-oriented,
 - a deterministic 1M corpus is reproducible,
 - standalone Solr and OpenSearch receive identical normalized input,
 - count/projection parity is verified,
@@ -275,16 +180,7 @@ Initial concurrency checkpoints:
 
 ### Resilience work
 
-PI-2 must include deliberate node-loss and recovery experiments for both engines.
-
-Evidence should cover:
-
-- search availability during failure,
-- error/latency changes,
-- pod recreation,
-- shard/replica recovery,
-- persistence,
-- projection parity after recovery.
+PI-2 includes deliberate node-loss and recovery experiments for both engines. Evidence covers search availability during failure, error/latency changes, pod recreation, shard/replica recovery, persistence and projection parity after recovery.
 
 ### Exit criteria
 
@@ -304,7 +200,7 @@ PI-2 exits when:
 
 Only after PI-2 should the project commit to production-shaped AWS topology details.
 
-PI-2 should inform:
+PI-2 informs:
 
 - EKS node sizing,
 - search shard/replica strategy,
@@ -316,9 +212,80 @@ PI-2 should inform:
 
 Terraform/CDK selection remains a separate implementation decision.
 
+## PI-4 — Manual Accessibility Evidence
+
+### Objective
+
+Close the remaining human-verification gap that automated lint, axe and Playwright evidence cannot prove. PI-4 is evidence work first: it records actual keyboard and assistive-technology behavior without converting an unverified manual status into a pass.
+
+### Required evidence
+
+PI-4 includes:
+
+- complete keyboard-only application review without a mouse,
+- NVDA evidence in Firefox and Chrome,
+- JAWS evidence where a license is available, or an explicit documented N/A reason,
+- trusted map-click/map-to-list focus behavior and the broader map-equivalence review,
+- cognitive/workflow review,
+- MapLibre canvas tab-stop review with a screen reader,
+- Search Lab keyboard-only review,
+- a decision on whether a `contentinfo` landmark improves the shell.
+
+### Exit criteria
+
+PI-4 exits when every manual checklist has a dated, commit-bound result; failures or limitations are explicit; findings that require code changes have regression coverage; and Search Lab has a recorded non-mouse verification path.
+
+## PI-5 — Browser Evidence CI and Governance
+
+### Objective
+
+Turn browser/accessibility evidence from an optional development aid into a repeatable governed quality signal with clear merge-policy decisions.
+
+### Required evidence and governance
+
+PI-5 includes:
+
+- deterministic Chromium/Firefox/WebKit comparison evidence,
+- automated WCAG/Section 508-oriented axe coverage,
+- Search Lab comparison scenarios in the dedicated browser workflow,
+- a live browser -> Spring API -> Solr + OpenSearch smoke path distinct from mocked deterministic evidence,
+- preserved HTML reports, traces and screenshots on failure,
+- local and CI use of the same evidence/document-drift rules,
+- an explicit decision on required evidence checks,
+- an explicit decision on `main` branch protection.
+
+### Exit criteria
+
+PI-5 exits when deterministic browser evidence is reproducible, the real-stack smoke path remains independently visible, failures preserve actionable artifacts, failed refreshes cannot replace a prior known-good baseline, and merge-check/branch-protection decisions are documented.
+
+## PI-6 — Solr/OpenSearch Comparison Hardening
+
+### Objective
+
+Make the Search Lab explain semantic differences between Solr and OpenSearch beyond the scale evidence already created in PI-1/PI-2.
+
+The first side-by-side vertical slice already exists. PI-6 focuses on explanation, reproducibility and expansion discipline rather than adding query types merely for breadth.
+
+### Required hardening
+
+PI-6 includes:
+
+- result-set overlap summaries,
+- top-N/rank-order difference summaries,
+- facet-bucket difference summaries,
+- stable comparison query/scenario definitions,
+- richer environment metadata,
+- clear separation of semantic quality from timing/performance evidence,
+- phrase search and highlighting after the current matrix is green,
+- geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios after the core comparison path is hardened.
+
+### Exit criteria
+
+PI-6 exits when the UI/evidence explains meaningful result-set, rank and facet differences, deterministic browser and real-stack evidence cover the hardened behavior, comparison queries/projection identity are reproducible, performance diagnostics retain sufficient context, and future scenario breadth has a documented evidence gate.
+
 ## Cross-PI invariants
 
-These rules must remain true across all six increments:
+These rules remain true across all six increments:
 
 1. Search engines are derived state.
 2. DSpace remains authoritative for curated repository objects.
@@ -414,12 +381,7 @@ Resolution: measure throughput, failure recovery and operational resilience in a
 Recommended execution branches:
 
 ```text
-PI-4 / PI-5 / PI-6 first
-  evidence/manual-accessibility work as appropriate
-  codex/browser-evidence-governance
-  codex/search-comparison-hardening
-
-then resume PI-1
+PI-1
   codex/federated-metadata-catalog
   codex/data-gov-adapter
   codex/osti-adapter
@@ -428,12 +390,17 @@ then resume PI-1
   codex/openalex-adapter
   codex/million-record-projection
 
-then PI-2
+PI-2
   codex/kubernetes-search-cluster
   codex/kubernetes-resilience-evidence
 
-then PI-3
+PI-3
   infrastructure branch(es) selected after PI-2 evidence
+
+PI-4 / PI-5 / PI-6
+  evidence/manual-accessibility work as appropriate
+  codex/browser-evidence-governance
+  codex/search-comparison-hardening
 ```
 
 Large increments should still be broken into independently testable PRs rather than one long-lived mega-branch.
