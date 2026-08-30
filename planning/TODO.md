@@ -60,10 +60,11 @@ Design and evidence documents:
 - [x] Add sparse/malformed/multiple-distribution fixture tests.
 - [x] Prove the 1K live checkpoint end to end: 1,000 accepted / 0 rejected / 0 skipped, deterministic bounded snapshot, guarded projection linkage, 1,181-object mixed projection and public-search verification.
 - [x] Prove the 10K harvest/resume path: same durable run resumed from 10 to 100 pages, 10,000 accepted / 0 rejected / 0 skipped, no failure.
-- [ ] Complete the 10K scale evidence: snapshot, guarded projection linkage, persisted evidence history, public search/detail verification, Solr/OpenSearch parity, storage growth, duration and host/container/JVM context.
+- [ ] Complete the 10K scale evidence: snapshot/projection/search/detail/parity/storage are proven; remaining work is comparable PostgreSQL growth if historical evidence permits, host/container/JVM context, and reusable duration evidence.
 - [ ] Prove the 100K resumable harvest and standalone evidence checkpoint only after 10K evidence closes.
 - [x] Verify live Data.gov records appear automatically through discovery results and source/publisher/program facets without a UI rebuild.
-- [ ] Verify at least one live Data.gov record through `/research/:id` at the 10K checkpoint and record the authoritative-source behavior.
+- [x] Verify a live Data.gov record through `/research/:id` at the 10K checkpoint with federated provenance, authoritative source URL and no invented local files.
+- [x] Prove explicit 10K standalone Solr/OpenSearch projection parity: `sameProjection: true`, both engines reachable, both at 10,181 documents on projection `b292f98bb8b141dd477cfbcdc9149e44bd53559c153c431f772809f41836742e`.
 - [ ] Add a presentation strategy for opaque Data.gov program values such as `010:10`/`010:12` while preserving raw publisher metadata and avoiding fixed UI allowlists.
 - [ ] Evaluate larger/full-catalog harvest only after the 100K path is stable.
 
@@ -115,7 +116,7 @@ Design and evidence documents:
 
 - [x] Keep large binaries/full text external by default.
 - [x] Keep DSpace-owned PostgreSQL/Solr isolated from application-owned PostgreSQL/public Solr; use profiles and lifecycle rather than collapsing ownership boundaries.
-- [ ] Measure bytes/document in federated PostgreSQL, Solr and OpenSearch at 10K and 100K.
+- [ ] Measure bytes/document in federated PostgreSQL, Solr and OpenSearch at 10K and 100K. The 10K incremental Solr/OpenSearch cost is measured at approximately 482.5 / 485.1 bytes per newly projected object; comparable PostgreSQL growth and all 100K measurements remain.
 - [ ] Record host/container/JVM CPU and memory context for meaningful 10K/100K/1M runs.
 - [ ] Estimate 1M disk requirements with 30-50% operational headroom before creating the corpus.
 - [x] Keep 1M corpora out of Git and ordinary PR CI.
