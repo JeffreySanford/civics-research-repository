@@ -2,7 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import type { components } from '../generated/repository-api.types';
-import { REPOSITORY_API_BASE_URL } from './repository-api-client';
+import {
+  REPOSITORY_API_BASE_URL,
+  type DiscoveryProjectionState,
+} from './repository-api-client';
 
 export type CorpusProfile = components['schemas']['CorpusProfile'];
 export type DeploymentTopology = components['schemas']['DeploymentTopology'];
@@ -12,8 +15,6 @@ export type CorpusProfileSummary =
   components['schemas']['CorpusProfileSummary'];
 export type CorpusStorageOverview =
   components['schemas']['CorpusStorageOverview'];
-export type DiscoveryProjectionState =
-  components['schemas']['DiscoveryProjectionState'];
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryCorpusStorageApi {
