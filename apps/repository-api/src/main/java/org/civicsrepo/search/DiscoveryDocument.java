@@ -54,6 +54,9 @@ public record DiscoveryDocument(
         if (programName != null && !programName.isBlank()) {
             return programName.trim();
         }
+        if (result.getProgramName() != null && !result.getProgramName().isBlank()) {
+            return result.getProgramName().trim();
+        }
         if (result.getProgram() != null) {
             return result.getProgram().getValue();
         }
