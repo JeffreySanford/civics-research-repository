@@ -62,8 +62,8 @@ The Angular application never calls DSpace, Solr, OpenSearch or external publish
 
 ## Datastore and search roles
 
-| Datastore or engine                     | Role                                                                                              | Owner                                                |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Datastore or engine                     | Role                                                                                             | Owner                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
 | Application PostgreSQL `civics_ops`     | Sync jobs, federated metadata, harvest runs/checkpoints/quarantine, snapshots and evidence state | `repository-api`                                     |
 | DSpace PostgreSQL                       | Curated repository system of record                                                              | DSpace                                               |
 | Discovery Solr `discovery` core         | Normal public, rebuildable mixed-origin discovery projection                                     | `repository-api` through `DiscoveryIndex`            |
