@@ -108,9 +108,10 @@ F0 is merged. The 1K portion of F1 is complete end to end:
 
 The 10K harvest portion of F1 is also proven. The same durable Data.gov run `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131` resumed from 10 pages/1,000 accepted records for 90 additional pages and reached 100 pages/10,000 accepted with 0 rejected and 0 skipped.
 
+The 10K deterministic bounded snapshot is now captured and persisted as `DATA_GOV:dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`, with the same SHA-256 `dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`, 10,000 retained records, 100 pages, and the same durable run/cursor semantics.
+
 F1 is **not yet complete**. Before PI-1 moves to the 100K F2 proof, the 10K checkpoint still requires:
 
-- deterministic bounded snapshot capture,
 - guarded snapshot/projection linkage,
 - persisted evidence-history verification,
 - normal public search and live `/research/:id` verification,
