@@ -5,6 +5,7 @@ import {
   RepositoryCorpusStorageApi,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
+  type DiscoveryProjectionState,
 } from 'repository-api-client';
 import { AdminCorpusStorageComponent } from './admin-corpus-storage.component';
 
@@ -13,13 +14,19 @@ const measurement: CorpusStorageMeasurement = {
   profile: 'CURATED_DEMO',
   topology: 'DOCKER_COMPOSE',
   activeProjectionCount: 181,
-  retainedFederatedCount: 0,
+  retainedFederatedCount: 10_000,
   projectionId: 'a'.repeat(64),
   applicationPostgresBytes: 12_000,
   dspaceStoredBytes: 34_000,
   solrIndexBytes: 56_000,
   totalMeasuredLocalBytes: 102_000,
   capturedAt: '2026-08-29T23:30:00Z',
+};
+
+const projection: DiscoveryProjectionState = {
+  source: 'REPOSITORY',
+  objectCount: 10_181,
+  projectionId: 'b'.repeat(64),
 };
 
 const overview: CorpusStorageOverview = {
@@ -58,6 +65,7 @@ describe('AdminCorpusStorageComponent', () => {
   const render = async () => {
     const api = {
       getCorpusStorageOverview: vi.fn(() => of(overview)),
+      activateCorpusProfile: vi.fn(() => of(projection)),
       captureCorpusStorage: vi.fn(() => of(measurement)),
     };
 
@@ -96,7 +104,24 @@ describe('AdminCorpusStorageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('1,000,000');
     expect(fixture.nativeElement.textContent).toContain('Not measured yet');
     expect(fixture.nativeElement.textContent).toContain(
-      'Viewing this profile does not activate it',
+      'Selecting a profile does not activate it',
+    );
+    expect(fixture.nativeElement.textContent).toContain('Heavy profile');
+  });
+
+  it('activates an already-retained profile, captures its footprint, and refreshes evidence', async () => {
+    const { fixture, api } = await render();
+
+    fixture.componentInstance.selectProfile('FEDERATED_10K');
+    fixture.componentInstance.activateProfile('FEDERATED_10K');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.activateCorpusProfile).toHaveBeenCalledWith('FEDERATED_10K');
+    expect(api.captureCorpusStorage).toHaveBeenCalledTimes(1);
+    expect(api.getCorpusStorageOverview).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.textContent).toContain(
+      'Federated 10K activated with 10,181 searchable documents',
     );
   });
 
