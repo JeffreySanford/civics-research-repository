@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class FederatedCorpusManifestService {
     static final String MANIFEST_VERSION = "federated-corpus-manifest/v1";
+    static final String BOUNDED_SNAPSHOT_VERSION = "federated-bounded-snapshot/v1";
     private static final byte[] HASH_VERSION = "federated-corpus-record/v1\n".getBytes(StandardCharsets.UTF_8);
     private static final int DEFAULT_SCAN_PAGE_SIZE = 1_000;
 
@@ -48,7 +49,7 @@ public class FederatedCorpusManifestService {
     }
 
     /**
-     * Generates the retained source snapshot identity associated with a completed bounded run.
+     * Generates the retained source snapshot identity associated with a completed source run.
      *
      * <p>The content digest intentionally excludes {@link FederatedResearchRecord#harvestedAt()}.
      * Re-harvesting byte-for-byte equivalent normalized metadata at a later wall-clock time must
@@ -56,16 +57,91 @@ public class FederatedCorpusManifestService {
      * returned manifest.
      */
     public FederatedCorpusManifest generate(String runId) {
-        HarvestRun run = runStore.findById(runId)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown harvest run " + runId));
+        HarvestRun run = requireRun(runId);
         if (run.status() != HarvestRunStatus.COMPLETED) {
             throw new IllegalStateException("Corpus manifests require a COMPLETED harvest run: " + run.id());
         }
 
+        SnapshotScan scan = scanSource(run.sourceSystem());
+        return new FederatedCorpusManifest(
+                MANIFEST_VERSION,
+                run.id(),
+                run.sourceSystem(),
+                run.adapterVersion(),
+                scan.recordAdapterVersions(),
+                scan.retainedRecordCount(),
+                run.acceptedCount(),
+                run.rejectedCount(),
+                run.skippedCount(),
+                scan.firstRecordId(),
+                scan.lastRecordId(),
+                scan.sha256(),
+                scan.earliestSourceUpdatedAt(),
+                scan.latestSourceUpdatedAt(),
+                run.pageSize(),
+                run.pageCount(),
+                run.cursor(),
+                run.startedAt(),
+                run.completedAt());
+    }
+
+    /**
+     * Captures deterministic evidence for a deliberately bounded checkpoint without claiming that
+     * the external source was exhausted.
+     *
+     * <p>This is the manifest used for controlled 1K/10K/100K proofs. A {@link
+     * HarvestRunStatus#PAUSED} run is expected and remains resumable. COMPLETED is also accepted so
+     * the same evidence shape can describe a bounded source that happens to exhaust naturally.
+     */
+    public FederatedBoundedSnapshotManifest generateBoundedSnapshot(String runId) {
+        return generateBoundedSnapshot(runId, OffsetDateTime.now(ZoneOffset.UTC));
+    }
+
+    FederatedBoundedSnapshotManifest generateBoundedSnapshot(String runId, OffsetDateTime capturedAt) {
+        HarvestRun run = requireRun(runId);
+        if (run.status() != HarvestRunStatus.PAUSED && run.status() != HarvestRunStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Bounded snapshots require a PAUSED or COMPLETED harvest run: " + run.id());
+        }
+
+        SnapshotScan scan = scanSource(run.sourceSystem());
+        String snapshotId = run.sourceSystem().name() + ":" + scan.sha256();
+        return new FederatedBoundedSnapshotManifest(
+                BOUNDED_SNAPSHOT_VERSION,
+                FederatedBoundedSnapshotManifest.MODE,
+                snapshotId,
+                run.id(),
+                run.sourceSystem(),
+                run.adapterVersion(),
+                scan.recordAdapterVersions(),
+                run.status(),
+                scan.retainedRecordCount(),
+                run.acceptedCount(),
+                run.rejectedCount(),
+                run.skippedCount(),
+                scan.firstRecordId(),
+                scan.lastRecordId(),
+                scan.sha256(),
+                scan.earliestSourceUpdatedAt(),
+                scan.latestSourceUpdatedAt(),
+                run.pageSize(),
+                run.pageCount(),
+                run.cursor(),
+                run.startedAt(),
+                run.updatedAt(),
+                normalizeUtc(capturedAt));
+    }
+
+    private HarvestRun requireRun(String runId) {
+        return runStore.findById(runId)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown harvest run " + runId));
+    }
+
+    private SnapshotScan scanSource(FederatedSourceSystem sourceSystem) {
         MessageDigest digest = sha256();
         digest.update(HASH_VERSION);
 
-        String sourcePrefix = run.sourceSystem().name() + ":";
+        String sourcePrefix = sourceSystem.name() + ":";
         String cursor = sourcePrefix;
         String firstRecordId = null;
         String lastRecordId = null;
@@ -83,7 +159,7 @@ public class FederatedCorpusManifestService {
 
             int sourceRecordsOnPage = 0;
             for (FederatedResearchRecord record : page) {
-                if (record.sourceSystem() != run.sourceSystem()) {
+                if (record.sourceSystem() != sourceSystem) {
                     sourceRangeComplete = true;
                     break;
                 }
@@ -119,26 +195,14 @@ public class FederatedCorpusManifestService {
             }
         }
 
-        return new FederatedCorpusManifest(
-                MANIFEST_VERSION,
-                run.id(),
-                run.sourceSystem(),
-                run.adapterVersion(),
+        return new SnapshotScan(
                 List.copyOf(adapterVersions),
                 retainedRecordCount,
-                run.acceptedCount(),
-                run.rejectedCount(),
-                run.skippedCount(),
                 firstRecordId,
                 lastRecordId,
                 HexFormat.of().formatHex(digest.digest()),
                 earliestSourceUpdatedAt,
-                latestSourceUpdatedAt,
-                run.pageSize(),
-                run.pageCount(),
-                run.cursor(),
-                run.startedAt(),
-                run.completedAt());
+                latestSourceUpdatedAt);
     }
 
     private byte[] canonicalRecord(FederatedResearchRecord record) {
@@ -177,4 +241,13 @@ public class FederatedCorpusManifestService {
             throw new IllegalStateException("SHA-256 is unavailable.", exception);
         }
     }
+
+    private record SnapshotScan(
+            List<String> recordAdapterVersions,
+            long retainedRecordCount,
+            String firstRecordId,
+            String lastRecordId,
+            String sha256,
+            OffsetDateTime earliestSourceUpdatedAt,
+            OffsetDateTime latestSourceUpdatedAt) {}
 }
