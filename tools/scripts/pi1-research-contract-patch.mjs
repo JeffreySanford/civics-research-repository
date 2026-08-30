@@ -37,16 +37,29 @@ replaceOnce(
   `    Publisher:\n      name: publisher\n      in: query\n      description: Exact publisher facet value from the active discovery projection.\n      schema:\n        type: string\n        minLength: 1\n        maxLength: 300\n    SourceSystemFilter:\n      name: sourceSystem\n      in: query\n      description: Restrict results to one authoritative source system.\n      schema:\n        $ref: '#/components/schemas/SourceSystem'\n    Geography:\n      name: geography\n`,
 );
 
-replaceOnce(
-  'research id parameter',
-  `    DatasetId:\n      name: datasetId\n`,
-  `    ResearchId:\n      name: researchId\n      in: path\n      required: true\n      description: >-\n        URL-safe Base64 identity token for the canonical local research-object identifier. The\n        token keeps namespaced external identifiers containing slashes and URLs inside one path\n        segment without changing the underlying identity used by persistence and discovery.\n      schema:\n        type: string\n        minLength: 1\n        maxLength: 4096\n        pattern: '^[A-Za-z0-9_-]+$'\n    DatasetId:\n      name: datasetId\n`,
-);
+const researchIdParameter = [
+  '    ResearchId:',
+  '      name: researchId',
+  '      in: path',
+  '      required: true',
+  '      description: >-',
+  '        URL-safe Base64 identity token for the canonical local research-object identifier. The',
+  '        token keeps namespaced external identifiers containing slashes and URLs inside one path',
+  '        segment without changing the underlying identity used by persistence and discovery.',
+  '      schema:',
+  '        type: string',
+  '        minLength: 1',
+  '        maxLength: 4096',
+  "        pattern: '^[A-Za-z0-9_-]+$'",
+  '    DatasetId:',
+  '      name: datasetId',
+  '',
+].join('\n');
 
 replaceOnce(
-  'dataset id YAML scalar',
-  `    DatasetId:\n      name: datasetId\n      in: path\n      required: true\n      schema:\n        type: string\n        pattern: '^[A-Za-z0-9._:-]+$'\n`,
-  `    DatasetId:\n      name: datasetId\n      in: path\n      required: true\n      schema:\n        type: string\n        pattern: "^[A-Za-z0-9._:-]+$"\n`,
+  'research id parameter',
+  '    DatasetId:\n      name: datasetId\n',
+  researchIdParameter,
 );
 
 replaceLast(
