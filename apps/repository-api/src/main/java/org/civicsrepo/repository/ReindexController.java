@@ -1,5 +1,6 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.admin.CorpusProfileActivationProgress;
 import org.civicsrepo.admin.CorpusProfileActivationService;
 import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.generated.dto.DiscoveryProjectionState;
@@ -49,6 +50,12 @@ public class ReindexController {
     @GetMapping
     public DiscoveryProjectionState projectionState() {
         return response(discoveryProjectionService.state());
+    }
+
+    /** Live batch progress for the most recent or currently running corpus-profile activation. */
+    @GetMapping("/progress")
+    public CorpusProfileActivationProgress activationProgress() {
+        return activationService.currentProgress();
     }
 
     private DiscoveryProjectionState response(ProjectionState state) {
