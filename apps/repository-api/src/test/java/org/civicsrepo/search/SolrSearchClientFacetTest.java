@@ -56,7 +56,10 @@ class SolrSearchClientFacetTest {
                         .containsExactly("DOE_OSTI"));
 
         String decodedQuery = URLDecoder.decode(requestQuery.get(), StandardCharsets.UTF_8);
-        assertThat(decodedQuery).contains("facet.field=publisher_s", "facet.field=sourceSystem_s");
+        assertThat(decodedQuery)
+                .contains(
+                        "facet.field={!ex=publisherFilter}publisher_s",
+                        "facet.field={!ex=sourceSystemFilter}sourceSystem_s");
     }
 
     private void handleSearch(HttpExchange exchange) throws IOException {
