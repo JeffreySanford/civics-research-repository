@@ -193,8 +193,10 @@
     </mat-tab>
     }
 
-    @if (detail.source !== 'FEDERATED' && (detail.contentType === 'DATASET' ||
-    !detail.contentType)) {
+    @if (
+      detail.source !== 'FEDERATED' &&
+      (detail.contentType === 'DATASET' || !detail.contentType)
+    ) {
     <mat-tab label="Map Layers">
       <section class="tab-panel" aria-labelledby="map-layers-heading">
         <h2 id="map-layers-heading">Map Layers</h2>
