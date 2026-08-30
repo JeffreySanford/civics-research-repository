@@ -45,8 +45,8 @@ replaceOnce(
 
 replaceOnce(
   'dataset id YAML scalar',
-  `        pattern: '^[A-Za-z0-9._:-]+$'\n`,
-  `        pattern: "^[A-Za-z0-9._:-]+$"\n`,
+  `    DatasetId:\n      name: datasetId\n      in: path\n      required: true\n      schema:\n        type: string\n        pattern: '^[A-Za-z0-9._:-]+$'\n`,
+  `    DatasetId:\n      name: datasetId\n      in: path\n      required: true\n      schema:\n        type: string\n        pattern: "^[A-Za-z0-9._:-]+$"\n`,
 );
 
 replaceLast(
