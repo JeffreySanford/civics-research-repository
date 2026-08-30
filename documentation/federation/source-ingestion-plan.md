@@ -6,6 +6,30 @@ PI-1 should deliver adapters for every identified source while keeping ingestion
 
 The goal is **not** to ingest every record from every source simultaneously on day one. The goal is to make each source reproducibly harvestable and then establish controlled corpus tiers that can be used by both standalone and clustered search topologies.
 
+## Runtime implementation boundary
+
+All production-shaped federated harvesting is implemented inside the existing Spring Boot Java `repository-api` runtime.
+
+```text
+authoritative source
+  -> Java source adapter
+  -> shared Java harvest orchestration
+  -> federated metadata catalog
+  -> search projection
+```
+
+Rules:
+
+- do not create a NestJS harvester service,
+- do not create a Node.js harvester service,
+- source paging, retry/rate-limit behavior, normalization, checkpointing, quarantine/error handling and run state remain Java/Spring responsibilities,
+- Node scripts may support build/test/fixtures/local tooling but do not own durable harvest state,
+- evolve the existing `FederatedHarvestService`, `FederatedSourceHarvester`, checkpoint store and metadata catalog before adding another job framework.
+
+Spring Batch may be evaluated later if measured operational needs justify its restart/partition/job-metadata features. It is not required simply because the workload is batch-oriented.
+
+See [PI-1 Runtime and Ownership Boundaries](runtime-boundaries.md).
+
 ## PI-1 source scope
 
 | Source             | Adapter in PI-1 | First production-shaped tier |                  Larger tier | Primary value                                          |
@@ -20,9 +44,9 @@ All five adapters belong in PI-1. Large local snapshots remain staged so disk, t
 
 ## Shared harvester framework first
 
-Do not implement five independent loops.
+Do not implement five independent loops and do not split harvesting into a second application runtime.
 
-Create one framework that owns:
+Create one Java/Spring framework that owns:
 
 ```text
 start/resume
@@ -205,15 +229,12 @@ Do not attempt to retain the entire OpenAlex corpus locally. Controlled snapshot
 Conceptual interface:
 
 ```text
-FederatedSourceAdapter
+FederatedSourceHarvester
   sourceSystem()
-  fetchBatch(checkpoint, limit)
-  normalize(sourceRecord)
-  nextCheckpoint(response)
-  sourceUpdatedAt(sourceRecord)
+  fetchPage(checkpoint, limit)
 ```
 
-The shared harvester—not each adapter—owns persistence, retries, progress and resume semantics.
+The shared Java harvester—not each adapter—owns persistence, retries, progress and resume semantics. Source-specific code should remain focused on source retrieval and normalization rather than duplicating orchestration behavior.
 
 ## Update strategy
 
@@ -259,13 +280,23 @@ Use:
 - workstation/manual workflows for 100K/1M,
 - manifests/artifacts rather than the full corpus in GitHub Actions where storage/runtime is excessive.
 
+## Local runtime resource policy
+
+PI-1 scale work must not treat workstation starvation as a valid engine benchmark.
+
+- Keep DSpace behind its optional Compose profile for workflows that need the repository system of record.
+- Do not merge DSpace's database schema or internal Solr cores with application-owned stores merely to reduce container count.
+- Record host/container/JVM resource context for meaningful 10K/100K/1M runs.
+- Measure before increasing corpus size or concurrency.
+- Use bounded resource settings where they improve reproducibility without masking genuine scale failures.
+
 ## PI-1 delivery sequence
 
 ### F0 — foundation
 
 - provenance/origin contract,
 - dynamic source/publisher/program model,
-- federated metadata persistence,
+- federated metadata persistence with bounded JDBC writes,
 - harvest-run/checkpoint model,
 - `/research/:id` detail abstraction,
 - streaming/batched projection contract.
@@ -304,13 +335,14 @@ Add optional broad scholarly/citation shape.
 
 PI-1 is complete when:
 
-- all five adapters are implemented and testable,
+- all five adapters are implemented and testable in Java/Spring,
 - every source has a reproducible bounded harvest,
+- no separate NestJS/Node production harvester is required,
 - at least Data.gov + OSTI + one additional large source are visible together in the normal UI,
 - federated records are clearly distinguished from DSpace-backed records,
 - `/research/:id` resolves both origins,
 - program/publisher/source facets do not rely on a fixed source-specific enum,
-- projection works in bounded batches,
+- metadata writes and search projection work in bounded batches,
 - a deterministic 1M corpus is indexed into standalone Solr and OpenSearch with matching identity/count,
 - large binaries remain external,
 - the Compose demo remains functional with the original curated repository slice,
