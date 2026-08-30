@@ -31,6 +31,18 @@ export const datasetsReducer = createReducer(
   on(DatasetsActions.datasetOpened, (state, { datasetId }) => ({
     ...state,
     selectedDatasetId: datasetId,
+    detail: null,
+    versions: [],
+    mapLayers: [],
+    loading: true,
+    error: null,
+  })),
+  on(DatasetsActions.researchOpened, (state) => ({
+    ...state,
+    selectedDatasetId: null,
+    detail: null,
+    versions: [],
+    mapLayers: [],
     loading: true,
     error: null,
   })),

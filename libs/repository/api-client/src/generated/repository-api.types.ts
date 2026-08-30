@@ -21,6 +21,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/research/{researchId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get an authority-neutral research object detail.
+     * @description Resolves either a curated DSpace-backed object or reproducible federated metadata. Federated responses link to the authoritative publisher resource and do not imply that publisher binaries are preserved locally.
+     */
+    get: operations['getResearchObject'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/search/comparison/scenarios': {
     parameters: {
       query?: never;
@@ -344,6 +364,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/corpus/storage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Corpus profile definitions and historical measured local storage footprints. */
+    get: operations['getCorpusStorageOverview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/corpus/storage/capture': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Capture the current active corpus storage footprint as historical evidence. */
+    post: operations['captureCorpusStorage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/solr/overview': {
     parameters: {
       query?: never;
@@ -366,10 +420,103 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     /**
-     * @description Where the response data came from. REPOSITORY means DSpace is the source of record for these records. FIXTURE means DSpace was unavailable or empty and the response is generated placeholder content, which must never be presented to a user as repository data.
+     * @description Stable local corpus profile. FEDERATED_10K/100K/1M describe target federated metadata counts in addition to the curated repository records; FULL has no fixed count.
      * @enum {string}
      */
-    RepositorySource: 'REPOSITORY' | 'FIXTURE';
+    CorpusProfile:
+      | 'CURATED_DEMO'
+      | 'FEDERATED_10K'
+      | 'FEDERATED_100K'
+      | 'FEDERATED_1M'
+      | 'FULL';
+    /**
+     * @description Runtime topology associated with a storage measurement.
+     * @enum {string}
+     */
+    DeploymentTopology: 'DOCKER_COMPOSE' | 'KIND_CLUSTER' | 'OTHER';
+    CorpusStorageMeasurement: {
+      id: string;
+      profile: components['schemas']['CorpusProfile'];
+      topology: components['schemas']['DeploymentTopology'];
+      /**
+       * Format: int64
+       * @description Documents in the active Solr/OpenSearch discovery projection at capture time.
+       */
+      activeProjectionCount: number;
+      /**
+       * Format: int64
+       * @description Federated metadata records retained locally whether or not they are active in search.
+       */
+      retainedFederatedCount: number;
+      projectionId?: string;
+      /**
+       * Format: int64
+       * @description PostgreSQL database size when the runtime supports an authoritative measurement.
+       */
+      applicationPostgresBytes?: number;
+      /**
+       * Format: int64
+       * @description DSpace ORIGINAL bitstream bytes reported by DSpace.
+       */
+      dspaceStoredBytes?: number;
+      /**
+       * Format: int64
+       * @description Public discovery Solr core index bytes reported by Solr CoreAdmin.
+       */
+      solrIndexBytes?: number;
+      /**
+       * Format: int64
+       * @description OpenSearch comparison index store bytes reported by index stats.
+       */
+      openSearchIndexBytes?: number;
+      /**
+       * Format: int64
+       * @description Sum of known measured components; absent components remain unknown, not zero evidence.
+       */
+      totalMeasuredLocalBytes: number;
+      /** Format: date-time */
+      capturedAt: string;
+    };
+    CorpusProfileSummary: {
+      profile: components['schemas']['CorpusProfile'];
+      label: string;
+      /** @description Whether this profile describes the currently active discovery projection. */
+      active: boolean;
+      /**
+       * Format: int64
+       * @description Fixed federated-record target when the profile has one.
+       */
+      targetFederatedRecordCount?: number;
+      latestMeasurement?: components['schemas']['CorpusStorageMeasurement'];
+    };
+    CorpusStorageOverview: {
+      activeProfile: components['schemas']['CorpusProfile'];
+      profiles: components['schemas']['CorpusProfileSummary'][];
+      history: components['schemas']['CorpusStorageMeasurement'][];
+    };
+    /**
+     * @description Where this individual discovery record is represented locally. REPOSITORY means DSpace is authoritative for the curated repository object. FEDERATED means the authoritative object remains at an external publisher and the application retains reproducible metadata only. FIXTURE means generated fallback/demo content and must never be presented as repository data.
+     * @enum {string}
+     */
+    ResearchObjectOrigin: 'REPOSITORY' | 'FEDERATED' | 'FIXTURE';
+    /**
+     * @description Controlled authoritative source family for a research object. This is independent of origin: a CENSUS object may be represented as REPOSITORY or FIXTURE today, while a DATA_GOV or DOE_OSTI object is normally FEDERATED. OTHER is explicit unknown/unclassified provenance and must be preferred over guessing from title text.
+     * @enum {string}
+     */
+    SourceSystem:
+      | 'CENSUS'
+      | 'USGS'
+      | 'DATA_GOV'
+      | 'DOE_OSTI'
+      | 'NASA_CMR'
+      | 'PUBMED'
+      | 'OPENALEX'
+      | 'OTHER';
+    /**
+     * @description Detail/projection compatibility label. REPOSITORY means DSpace-backed curated content, FEDERATED means locally retained metadata whose authoritative object remains at an external publisher, and FIXTURE means generated placeholder content. For individual authority and provenance, use origin and sourceSystem.
+     * @enum {string}
+     */
+    RepositorySource: 'REPOSITORY' | 'FEDERATED' | 'FIXTURE';
     SearchResponse: {
       resultSource: components['schemas']['RepositorySource'];
       query: string;
@@ -383,7 +530,10 @@ export interface components {
       id: string;
       title: string;
       contentType: components['schemas']['ResearchObjectType'];
+      /** @description Legacy curated classification; federated records may use OTHER. */
       program: components['schemas']['ResearchProgram'];
+      /** @description Data-driven source program name used for display, filtering, and facets. */
+      programName?: string;
       publisher: string;
       summary: string;
       geography?: string;
@@ -391,6 +541,8 @@ export interface components {
       /** Format: uri */
       sourceUrl: string;
       accessLevel?: components['schemas']['AccessLevel'];
+      origin: components['schemas']['ResearchObjectOrigin'];
+      sourceSystem: components['schemas']['SourceSystem'];
     };
     FacetGroup: {
       field: string;
@@ -417,7 +569,7 @@ export interface components {
       scenario: components['schemas']['SearchComparisonScenarioId'];
       /** @default  */
       query: string;
-      programs?: components['schemas']['ResearchProgram'][];
+      programs?: string[];
       geography?: string;
       contentType?: components['schemas']['ResearchObjectType'];
       /** Format: int32 */
@@ -471,7 +623,10 @@ export interface components {
       source: components['schemas']['RepositorySource'];
       id: string;
       title: string;
+      /** @description Legacy curated classification; federated records may use OTHER. */
       program: components['schemas']['ResearchProgram'];
+      /** @description Data-driven source program name used for display and provenance. */
+      programName?: string;
       publisher: string;
       abstractText: string;
       geography?: string;
@@ -492,6 +647,8 @@ export interface components {
       doi?: string;
       authors?: components['schemas']['ResearchAuthor'][];
       relations?: components['schemas']['ResearchRelation'][];
+      origin: components['schemas']['ResearchObjectOrigin'];
+      sourceSystem: components['schemas']['SourceSystem'];
     };
     DatasetFile: {
       id: string;
@@ -1002,14 +1159,20 @@ export interface components {
   parameters: {
     /** @description Keyword search terms. */
     SearchQuery: string;
-    /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
-    Program: components['schemas']['ResearchProgram'][];
+    /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
+    Program: string[];
+    /** @description Exact publisher facet value from the active discovery projection. */
+    Publisher: string;
+    /** @description Restrict results to one authoritative source system. */
+    SourceSystemFilter: components['schemas']['SourceSystem'];
     Geography: string;
     /** @description Restrict results to one research object type. */
     ContentType: components['schemas']['ResearchObjectType'];
     VintageYear: number;
     Page: number;
     PageSize: number;
+    /** @description URL-safe Base64 identity token for the canonical local research-object identifier. The token keeps namespaced external identifiers containing slashes and URLs inside one path segment without changing the underlying identity used by persistence and discovery. */
+    ResearchId: string;
     DatasetId: string;
     SyncJobId: string;
   };
@@ -1024,8 +1187,12 @@ export interface operations {
       query?: {
         /** @description Keyword search terms. */
         q?: components['parameters']['SearchQuery'];
-        /** @description Repeatable. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. */
+        /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
         program?: components['parameters']['Program'];
+        /** @description Exact publisher facet value from the active discovery projection. */
+        publisher?: components['parameters']['Publisher'];
+        /** @description Restrict results to one authoritative source system. */
+        sourceSystem?: components['parameters']['SourceSystemFilter'];
         geography?: components['parameters']['Geography'];
         /** @description Restrict results to one research object type. */
         contentType?: components['parameters']['ContentType'];
@@ -1049,6 +1216,33 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getResearchObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description URL-safe Base64 identity token for the canonical local research-object identifier. The token keeps namespaced external identifiers containing slashes and URLs inside one path segment without changing the underlying identity used by persistence and discovery. */
+        researchId: components['parameters']['ResearchId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Research object detail with explicit origin and source system. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ResearchObjectDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
       500: components['responses']['InternalServerError'];
       503: components['responses']['ServiceUnavailable'];
     };
@@ -1535,6 +1729,48 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SourceInventory'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  getCorpusStorageOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Corpus profiles with recent storage history. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CorpusStorageOverview'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  captureCorpusStorage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Newly captured measured storage footprint. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CorpusStorageMeasurement'];
         };
       };
       500: components['responses']['InternalServerError'];

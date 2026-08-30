@@ -14,8 +14,10 @@ import org.civicsrepo.generated.dto.DatasetFile;
 import org.civicsrepo.generated.dto.DatasetVersion;
 import org.civicsrepo.generated.dto.EvidenceStatus;
 import org.civicsrepo.generated.dto.FileFormat;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -39,6 +41,8 @@ class DatasetControllerTest {
         mockMvc.perform(get("/datasets/tiger-line-north-dakota-2025"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.source").value("REPOSITORY"))
+                .andExpect(jsonPath("$.origin").value("REPOSITORY"))
+                .andExpect(jsonPath("$.sourceSystem").value("CENSUS"))
                 .andExpect(jsonPath("$.id").value("tiger-line-north-dakota-2025"))
                 .andExpect(jsonPath("$.program").value("TIGER_LINE"))
                 .andExpect(jsonPath("$.releasedOn").value("2025-08-01"))
@@ -60,9 +64,9 @@ class DatasetControllerTest {
         given(datasetService.getDatasetVersions("tiger-line-north-dakota-2025"))
                 .willReturn(List.of(
                         new DatasetVersion("v-current", "Current", true)
-                        .releasedOn(LocalDate.of(2025, 8, 1)),
+                                .releasedOn(LocalDate.of(2025, 8, 1)),
                         new DatasetVersion("v-previous", "Previous", false)
-                        .releasedOn(LocalDate.of(2024, 8, 1))));
+                                .releasedOn(LocalDate.of(2024, 8, 1))));
 
         mockMvc.perform(get("/datasets/tiger-line-north-dakota-2025/versions"))
                 .andExpect(status().isOk())
@@ -73,23 +77,25 @@ class DatasetControllerTest {
 
     private ResearchObjectDetail detail() {
         return new ResearchObjectDetail(
-                RepositorySource.REPOSITORY,
-                "tiger-line-north-dakota-2025",
-                "2025 TIGER/Line - Census Tracts - North Dakota",
-                ResearchProgram.TIGER_LINE,
-                "U.S. Census Bureau",
-                "Tract geometry metadata.",
-                List.of(new DatasetFile(
-                        "source-zip",
-                        "TIGER/Line source archive",
-                        FileFormat.ZIP,
-                        URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"))),
-                "U.S. Census Bureau. 2025 TIGER/Line Shapefiles.",
-                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"),
-                List.of())
-                        .geography("North Dakota")
-                        .vintageYear(2025)
-                        .releasedOn(LocalDate.of(2025, 8, 1))
-                        .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
+                        RepositorySource.REPOSITORY,
+                        "tiger-line-north-dakota-2025",
+                        "2025 TIGER/Line - Census Tracts - North Dakota",
+                        ResearchProgram.TIGER_LINE,
+                        "U.S. Census Bureau",
+                        "Tract geometry metadata.",
+                        List.of(new DatasetFile(
+                                "source-zip",
+                                "TIGER/Line source archive",
+                                FileFormat.ZIP,
+                                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"))),
+                        "U.S. Census Bureau. 2025 TIGER/Line Shapefiles.",
+                        URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"),
+                        List.of(),
+                        ResearchObjectOrigin.REPOSITORY,
+                        SourceSystem.CENSUS)
+                .geography("North Dakota")
+                .vintageYear(2025)
+                .releasedOn(LocalDate.of(2025, 8, 1))
+                .accessibilityEvidenceStatus(EvidenceStatus.AUTOMATED_PASS);
     }
 }

@@ -73,6 +73,20 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
     });
   });
 
+  // The public detail route carries an opaque Base64URL token. Decode it back to the same
+  // canonical identity used by the legacy dataset fixture so Discovery -> detail journeys exercise
+  // the authority-neutral route without duplicating fixture data.
+  await page.route(`**/api/research/*`, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    const researchId = pathname.split('/research/')[1] ?? '';
+    const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: datasetDetail(canonicalId),
+    });
+  });
+
   // Layers are geography-specific, the way the API serves them: the maps page requests a new
   // dataset id whenever the selected Census area changes.
   await page.route(`**/api/datasets/*/map-layers`, async (route) => {

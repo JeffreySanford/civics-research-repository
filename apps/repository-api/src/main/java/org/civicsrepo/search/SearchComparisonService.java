@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectType;
-import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchComparisonEngine;
 import org.civicsrepo.generated.dto.SearchComparisonProjection;
 import org.civicsrepo.generated.dto.SearchComparisonRequest;
@@ -22,13 +21,7 @@ import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionTargetState;
 import org.springframework.stereotype.Service;
 
-/**
- * Runs one normalized discovery request against the application-owned Solr and OpenSearch
- * projections.
- *
- * <p>This is a comparison service, not a search-engine router. Solr remains the production-shaped
- * discovery path while OpenSearch is measured beside it. DSpace remains authoritative for both.
- */
+/** Runs one normalized discovery request against the application-owned Solr and OpenSearch projections. */
 @Service
 public class SearchComparisonService {
     private static final int DEFAULT_PAGE_SIZE = 10;
@@ -59,13 +52,13 @@ public class SearchComparisonService {
                 new SearchComparisonScenario(
                         SearchComparisonScenarioId.FILTERING,
                         "Filtering",
-                        "Compare program, geography, research-object type and vintage filters while preserving self-excluding facets."));
+                        "Compare data-driven program, geography, research-object type and vintage filters while preserving self-excluding facets."));
     }
 
     public SearchComparisonResponse run(SearchComparisonRequest request) {
         SearchComparisonScenarioId scenario = Objects.requireNonNull(request.getScenario(), "scenario is required");
         String query = request.getQuery() == null ? "" : request.getQuery();
-        List<ResearchProgram> programs = request.getPrograms() == null ? List.of() : request.getPrograms();
+        List<String> programs = request.getPrograms() == null ? List.of() : request.getPrograms();
         String geography = request.getGeography();
         ResearchObjectType contentType = request.getContentType();
         Integer vintageYear = request.getVintageYear();
@@ -101,7 +94,7 @@ public class SearchComparisonService {
 
     private SearchEngineComparison runSolr(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -145,7 +138,7 @@ public class SearchComparisonService {
 
     private SearchEngineComparison runOpenSearch(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,

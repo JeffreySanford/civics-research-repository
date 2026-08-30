@@ -2,7 +2,7 @@
   <a class="back-link" routerLink="/discovery">Back to discovery</a>
 
   @if (loading$ | async) {
-  <p class="inline-status" role="status">Loading dataset detail</p>
+  <p class="inline-status" role="status">Loading research object detail</p>
   } @if (error$ | async; as error) {
   <p class="error-message" role="alert">{{ error }}</p>
   } @if ((datasetSource$ | async) === 'FIXTURE') {
@@ -11,11 +11,22 @@
     items, so these records are generated examples rather than DSpace repository
     content. Start DSpace and reseed to see repository-backed results.
   </p>
-  } @if (detail$ | async; as detail) {
+  } @if (detail$ | async; as detail) { @if (detail.source === 'FEDERATED') {
+  <p class="fixture-notice" role="note">
+    <strong>Federated metadata.</strong> This application retains searchable
+    metadata and provenance for this record; the publisher remains authoritative
+    for the research object and any downloadable files.
+    <a
+      class="source-link"
+      [href]="detail.sourceUrl"
+      target="_blank"
+      rel="noreferrer"
+      >View authoritative source</a
+    >
+  </p>
+  }
   <section aria-labelledby="dataset-title" class="dataset-hero">
     <div>
-      <!-- The eyebrow names what this object actually is. A working paper under the words
-           "Dataset detail" is the drift this rename was meant to end. -->
       <p class="eyebrow">{{ typeLabel(detail.contentType) }}</p>
       <h1 id="dataset-title">{{ detail.title }}</h1>
 
@@ -23,10 +34,7 @@
       <p class="dataset-authors">
         @for (author of detail.authors; track author.name; let last = $last) {
         <span>
-          {{ author.name }}
-          <!-- Linked only where the researcher has a public ORCID. Absent is absent: an empty
-               identifier would claim none exists. -->
-          @if (author.orcid) {
+          {{ author.name }} @if (author.orcid) {
           <a
             class="source-link"
             [href]="'https://orcid.org/' + author.orcid"
@@ -52,11 +60,15 @@
     <dl class="details-list">
       <div>
         <dt>Program</dt>
-        <dd>{{ detail.program }}</dd>
+        <dd>{{ detail.programName ?? detail.program }}</dd>
       </div>
       <div>
         <dt>Publisher</dt>
         <dd>{{ detail.publisher }}</dd>
+      </div>
+      <div>
+        <dt>Source system</dt>
+        <dd>{{ detail.sourceSystem }}</dd>
       </div>
       <div>
         <dt>Geography</dt>
@@ -68,15 +80,23 @@
       </div>
       <div>
         <dt>Released</dt>
-        <dd>{{ detail.releasedOn | date: 'mediumDate' }}</dd>
+        <dd>
+          {{ (detail.releasedOn | date: 'mediumDate') ?? 'Not specified' }}
+        </dd>
       </div>
       <div>
         <dt>Evidence</dt>
-        <dd>{{ detail.accessibilityEvidenceStatus ?? 'NOT_STARTED' }}</dd>
+        <dd>
+          {{ detail.accessibilityEvidenceStatus ?? (detail.source ===
+          'FEDERATED' ? 'Not collected' : 'NOT_STARTED') }}
+        </dd>
       </div>
       <div>
         <dt>Access</dt>
-        <dd>{{ detail.accessLevel ?? 'PUBLIC' }}</dd>
+        <dd>
+          {{ detail.accessLevel ?? (detail.source === 'FEDERATED' ? 'Not stated'
+          : 'PUBLIC') }}
+        </dd>
       </div>
       <div>
         <dt>Reuse</dt>
@@ -101,11 +121,12 @@
 
   <mat-tab-group
     class="dataset-tabs content-panel"
-    aria-label="Dataset supporting information"
+    aria-label="Research supporting information"
   >
     <mat-tab label="Files">
       <section class="tab-panel" aria-labelledby="files-heading">
         <h2 id="files-heading">Files and Source Links</h2>
+        @if (detail.files.length) {
         <ul class="feature-list">
           @for (file of detail.files; track file.id) {
           <li>
@@ -122,6 +143,14 @@
           </li>
           }
         </ul>
+        } @else if (detail.source === 'FEDERATED') {
+        <p>
+          No publisher files are preserved locally for this federated record.
+          Use the authoritative source link to inspect available distributions.
+        </p>
+        } @else {
+        <p>No files are listed for this research object.</p>
+        }
       </section>
     </mat-tab>
 
@@ -135,11 +164,12 @@
           target="_blank"
           rel="noreferrer"
         >
-          Source data page
+          Authoritative source page
         </a>
       </section>
     </mat-tab>
 
+    @if (detail.source !== 'FEDERATED') {
     <mat-tab label="Versions">
       <section class="tab-panel" aria-labelledby="versions-heading">
         <h2 id="versions-heading">Versions</h2>
@@ -158,10 +188,8 @@
         }
       </section>
     </mat-tab>
-
-    <!-- A working paper has no geometry. Rendering an empty map workspace under it would suggest
-         the repository failed to load something, rather than that there is nothing to draw. -->
-    @if (detail.contentType === 'DATASET' || !detail.contentType) {
+    } @if ( detail.source !== 'FEDERATED' && (detail.contentType === 'DATASET'
+    || !detail.contentType) ) {
     <mat-tab label="Map Layers">
       <section class="tab-panel" aria-labelledby="map-layers-heading">
         <h2 id="map-layers-heading">Map Layers</h2>
@@ -175,8 +203,6 @@
           }
         </ul>
         }
-        <!-- Carry the geography across, so the workspace opens positioned on this dataset's area
-           with that area's layers rather than the default one. -->
         <a
           class="source-link"
           routerLink="/maps"
@@ -214,7 +240,6 @@
         </div>
       </section>
     </mat-tab>
-
     } @if (detail.relations?.length) {
     <mat-tab label="Research Package">
       <section class="tab-panel" aria-labelledby="relations-heading">
@@ -230,7 +255,7 @@
             <p class="relation-verb">{{ relationLabel(relation.verb) }}</p>
             <a
               class="source-link"
-              [routerLink]="['/datasets', relation.targetId]"
+              [routerLink]="['/research', researchRouteId(relation.targetId)]"
               >{{ relation.targetTitle }}</a
             >
             <span class="relation-type">{{ relation.targetType }}</span>
@@ -256,10 +281,14 @@
           <li>
             <strong>{{ related.title }}</strong>
             <span>
-              {{ related.program }} - {{ related.geography ?? 'Not specified' }}
+              {{ related.programName ?? related.program }} - {{
+              related.geography ?? 'Not specified' }}
             </span>
-            <a class="source-link" [routerLink]="['/datasets', related.id]">
-              Open related dataset
+            <a
+              class="source-link"
+              [routerLink]="['/research', researchRouteId(related.id)]"
+            >
+              Open related research
             </a>
           </li>
           }

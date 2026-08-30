@@ -10,6 +10,7 @@ export const DatasetsActions = createActionGroup({
   source: 'Repository Datasets',
   events: {
     'Dataset Opened': props<{ datasetId: string }>(),
+    'Research Opened': props<{ researchId: string }>(),
     'Dataset Loaded': props<{
       detail: ResearchObjectDetail;
       versions: DatasetVersion[];

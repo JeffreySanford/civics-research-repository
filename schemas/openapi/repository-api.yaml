@@ -30,6 +30,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/SearchQuery'
         - $ref: '#/components/parameters/Program'
+        - $ref: '#/components/parameters/Publisher'
+        - $ref: '#/components/parameters/SourceSystemFilter'
         - $ref: '#/components/parameters/Geography'
         - $ref: '#/components/parameters/ContentType'
         - $ref: '#/components/parameters/VintageYear'
@@ -44,6 +46,32 @@ paths:
                 $ref: '#/components/schemas/SearchResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /research/{researchId}:
+    get:
+      tags: [Datasets]
+      operationId: getResearchObject
+      summary: Get an authority-neutral research object detail.
+      description: >-
+        Resolves either a curated DSpace-backed object or reproducible federated metadata.
+        Federated responses link to the authoritative publisher resource and do not imply that
+        publisher binaries are preserved locally.
+      parameters:
+        - $ref: '#/components/parameters/ResearchId'
+      responses:
+        '200':
+          description: Research object detail with explicit origin and source system.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchObjectDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
         '503':
@@ -499,6 +527,35 @@ paths:
                 $ref: '#/components/schemas/SourceInventory'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /admin/corpus/storage:
+    get:
+      tags: [Admin]
+      operationId: getCorpusStorageOverview
+      summary: Corpus profile definitions and historical measured local storage footprints.
+      responses:
+        '200':
+          description: Corpus profiles with recent storage history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusStorageOverview'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/corpus/storage/capture:
+    post:
+      tags: [Admin]
+      operationId: captureCorpusStorage
+      summary: Capture the current active corpus storage footprint as historical evidence.
+      responses:
+        '200':
+          description: Newly captured measured storage footprint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusStorageMeasurement'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /admin/solr/overview:
     get:
       tags: [Admin]
@@ -529,14 +586,31 @@ components:
       name: program
       in: query
       description: >-
-        Repeatable. Repeat the parameter to select several programs; results match any of them.
-        Omitting it searches every program.
+        Repeatable data-driven program name. Repeat the parameter to select several programs;
+        results match any of them. Omitting it searches every program. Values come from indexed
+        metadata and are not restricted to the curated ResearchProgram enum.
       explode: true
       style: form
       schema:
         type: array
         items:
-          $ref: '#/components/schemas/ResearchProgram'
+          type: string
+          minLength: 1
+          maxLength: 200
+    Publisher:
+      name: publisher
+      in: query
+      description: Exact publisher facet value from the active discovery projection.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 300
+    SourceSystemFilter:
+      name: sourceSystem
+      in: query
+      description: Restrict results to one authoritative source system.
+      schema:
+        $ref: '#/components/schemas/SourceSystem'
     Geography:
       name: geography
       in: query
@@ -571,6 +645,19 @@ components:
         minimum: 1
         maximum: 100
         default: 25
+    ResearchId:
+      name: researchId
+      in: path
+      required: true
+      description: >-
+        URL-safe Base64 identity token for the canonical local research-object identifier. The
+        token keeps namespaced external identifiers containing slashes and URLs inside one path
+        segment without changing the underlying identity used by persistence and discovery.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 4096
+        pattern: '^[A-Za-z0-9_-]+$'
     DatasetId:
       name: datasetId
       in: path
@@ -611,13 +698,132 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    CorpusProfile:
+      type: string
+      description: >-
+        Stable local corpus profile. FEDERATED_10K/100K/1M describe target federated metadata counts
+        in addition to the curated repository records; FULL has no fixed count.
+      enum: [CURATED_DEMO, FEDERATED_10K, FEDERATED_100K, FEDERATED_1M, FULL]
+    DeploymentTopology:
+      type: string
+      description: Runtime topology associated with a storage measurement.
+      enum: [DOCKER_COMPOSE, KIND_CLUSTER, OTHER]
+    CorpusStorageMeasurement:
+      type: object
+      required:
+        - id
+        - profile
+        - topology
+        - activeProjectionCount
+        - retainedFederatedCount
+        - totalMeasuredLocalBytes
+        - capturedAt
+      properties:
+        id:
+          type: string
+        profile:
+          $ref: '#/components/schemas/CorpusProfile'
+        topology:
+          $ref: '#/components/schemas/DeploymentTopology'
+        activeProjectionCount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Documents in the active Solr/OpenSearch discovery projection at capture time.
+        retainedFederatedCount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Federated metadata records retained locally whether or not they are active in search.
+        projectionId:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        applicationPostgresBytes:
+          type: integer
+          format: int64
+          minimum: 0
+          description: PostgreSQL database size when the runtime supports an authoritative measurement.
+        dspaceStoredBytes:
+          type: integer
+          format: int64
+          minimum: 0
+          description: DSpace ORIGINAL bitstream bytes reported by DSpace.
+        solrIndexBytes:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Public discovery Solr core index bytes reported by Solr CoreAdmin.
+        openSearchIndexBytes:
+          type: integer
+          format: int64
+          minimum: 0
+          description: OpenSearch comparison index store bytes reported by index stats.
+        totalMeasuredLocalBytes:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Sum of known measured components; absent components remain unknown, not zero evidence.
+        capturedAt:
+          type: string
+          format: date-time
+    CorpusProfileSummary:
+      type: object
+      required: [profile, label, active]
+      properties:
+        profile:
+          $ref: '#/components/schemas/CorpusProfile'
+        label:
+          type: string
+        active:
+          type: boolean
+          description: Whether this profile describes the currently active discovery projection.
+        targetFederatedRecordCount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Fixed federated-record target when the profile has one.
+        latestMeasurement:
+          $ref: '#/components/schemas/CorpusStorageMeasurement'
+    CorpusStorageOverview:
+      type: object
+      required: [activeProfile, profiles, history]
+      properties:
+        activeProfile:
+          $ref: '#/components/schemas/CorpusProfile'
+        profiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorpusProfileSummary'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorpusStorageMeasurement'
+
+    ResearchObjectOrigin:
+      type: string
+      description: >-
+        Where this individual discovery record is represented locally. REPOSITORY means DSpace is
+        authoritative for the curated repository object. FEDERATED means the authoritative object
+        remains at an external publisher and the application retains reproducible metadata only.
+        FIXTURE means generated fallback/demo content and must never be presented as repository data.
+      enum: [REPOSITORY, FEDERATED, FIXTURE]
+    SourceSystem:
+      type: string
+      description: >-
+        Controlled authoritative source family for a research object. This is independent of origin:
+        a CENSUS object may be represented as REPOSITORY or FIXTURE today, while a DATA_GOV or
+        DOE_OSTI object is normally FEDERATED. OTHER is explicit unknown/unclassified provenance and
+        must be preferred over guessing from title text.
+      enum:
+        [CENSUS, USGS, DATA_GOV, DOE_OSTI, NASA_CMR, PUBMED, OPENALEX, OTHER]
     RepositorySource:
       type: string
       description: >-
-        Where the response data came from. REPOSITORY means DSpace is the source of record for
-        these records. FIXTURE means DSpace was unavailable or empty and the response is generated
-        placeholder content, which must never be presented to a user as repository data.
-      enum: [REPOSITORY, FIXTURE]
+        Detail/projection compatibility label. REPOSITORY means DSpace-backed curated content,
+        FEDERATED means locally retained metadata whose authoritative object remains at an external
+        publisher, and FIXTURE means generated placeholder content. For individual authority and
+        provenance, use origin and sourceSystem.
+      enum: [REPOSITORY, FEDERATED, FIXTURE]
     SearchResponse:
       type: object
       required:
@@ -643,7 +849,18 @@ components:
             $ref: '#/components/schemas/FacetGroup'
     SearchResult:
       type: object
-      required: [id, title, contentType, program, publisher, summary, sourceUrl]
+      required:
+        [
+          id,
+          title,
+          contentType,
+          program,
+          publisher,
+          summary,
+          sourceUrl,
+          origin,
+          sourceSystem,
+        ]
       properties:
         id:
           type: string
@@ -653,6 +870,10 @@ components:
           $ref: '#/components/schemas/ResearchObjectType'
         program:
           $ref: '#/components/schemas/ResearchProgram'
+          description: Legacy curated classification; federated records may use OTHER.
+        programName:
+          type: string
+          description: Data-driven source program name used for display, filtering, and facets.
         publisher:
           type: string
         summary:
@@ -666,6 +887,10 @@ components:
           format: uri
         accessLevel:
           $ref: '#/components/schemas/AccessLevel'
+        origin:
+          $ref: '#/components/schemas/ResearchObjectOrigin'
+        sourceSystem:
+          $ref: '#/components/schemas/SourceSystem'
     FacetGroup:
       type: object
       required: [field, label, values]
@@ -715,7 +940,9 @@ components:
         programs:
           type: array
           items:
-            $ref: '#/components/schemas/ResearchProgram'
+            type: string
+            minLength: 1
+            maxLength: 200
         geography:
           type: string
         contentType:
@@ -834,6 +1061,8 @@ components:
           sourceUrl,
           relatedResearch,
           source,
+          origin,
+          sourceSystem,
         ]
       properties:
         source:
@@ -844,6 +1073,10 @@ components:
           type: string
         program:
           $ref: '#/components/schemas/ResearchProgram'
+          description: Legacy curated classification; federated records may use OTHER.
+        programName:
+          type: string
+          description: Data-driven source program name used for display and provenance.
         publisher:
           type: string
         abstractText:
@@ -889,6 +1122,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResearchRelation'
+        origin:
+          $ref: '#/components/schemas/ResearchObjectOrigin'
+        sourceSystem:
+          $ref: '#/components/schemas/SourceSystem'
     DatasetFile:
       type: object
       required: [id, label, format, url]

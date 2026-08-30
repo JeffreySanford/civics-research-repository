@@ -10,11 +10,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
-import { filter, map } from 'rxjs';
 import type {
   ResearchObjectType,
   ResearchRelation,
 } from 'repository-api-client';
+import { encodeResearchId } from '../research-id';
 import { DatasetsActions } from '../state/datasets/datasets.actions';
 import {
   selectResearchObjectDetail,
@@ -46,14 +46,23 @@ export class ResearchObjectDetailPage implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap
-      .pipe(
-        map((params) => params.get('datasetId')),
-        filter((datasetId): datasetId is string => Boolean(datasetId)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((datasetId) => {
-        this.store.dispatch(DatasetsActions.datasetOpened({ datasetId }));
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const researchId = params.get('researchId');
+        if (researchId) {
+          this.store.dispatch(DatasetsActions.researchOpened({ researchId }));
+          return;
+        }
+
+        const datasetId = params.get('datasetId');
+        if (datasetId) {
+          this.store.dispatch(DatasetsActions.datasetOpened({ datasetId }));
+        }
       });
+  }
+
+  protected researchRouteId(canonicalId: string): string {
+    return encodeResearchId(canonicalId);
   }
 
   /**

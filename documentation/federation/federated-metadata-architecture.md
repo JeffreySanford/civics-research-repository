@@ -136,15 +136,18 @@ Exact physical design should be tested before committing to aggressive normaliza
 
 The current `ResearchProgram` enum is too narrow for heterogeneous catalogs.
 
-PI-1 should separate:
+PI-1 separates:
 
 - `sourceSystem` — controlled enum owned by this application,
 - `publisher` / `agency` — data-driven strings or normalized entities,
-- `program` — data-driven source/program value,
+- `programName` — data-driven source/program value carried by the engine-neutral `DiscoveryDocument`,
+- legacy `ResearchProgram` — compatibility classification retained for the curated Census slice while the public contract migrates,
 - `contentType` — controlled high-level research-object classification,
 - `subjects` — data-driven multi-value terms.
 
-Unknown source program names must not collapse into one giant `OTHER` facet.
+Federated records must not expand the `ResearchProgram` enum merely to represent publisher program names. For example, a DOE OSTI record may keep `ResearchProgram.OTHER` as the compatibility classification while its canonical discovery taxonomy preserves `programName = "Office of Science"`.
+
+Unknown source program names must not collapse into one giant `OTHER` discovery facet.
 
 A source adapter may still map provider-specific resource types to a controlled `contentType`, for example:
 
@@ -158,25 +161,20 @@ NASA CMR granule      -> GRANULE or benchmark-specific scientific record
 
 ## Combined discovery catalog
 
-Introduce a catalog abstraction that can stream normalized records from multiple authorities without requiring them all to be materialized in memory.
+`CombinedDiscoveryCatalog` is the current bounded authority-composition seam.
 
-Conceptually:
+It emits the small curated DSpace slice first and then advances through federated metadata using the catalog's stable namespaced identifier cursor. Federated records are mapped through `FederatedDiscoveryDocumentMapper`, which preserves their explicit `FEDERATED` origin, controlled `sourceSystem`, publisher, data-driven `programName`, subjects and authors.
 
-```text
-DiscoveryCatalog
-  streamRepositoryDocuments()
-  streamFederatedDocuments(snapshot/source selection)
-  streamCombinedDocuments()
-```
+The current page cursor is deliberately an internal domain value. A later browser/search cursor must be opaque and versioned rather than exposing database offsets or identifiers directly.
 
-The current `List<DiscoveryDocument>` whole-corpus contract should be replaced or supplemented with a bounded streaming/batch contract before 100K+ projection work.
+The combined catalog does not materialize the retained federated corpus into one list. It is designed to feed the bounded projection pipeline below.
 
 ## Projection pipeline
 
 The projection process should operate in bounded batches:
 
 ```text
-source/database cursor
+combined discovery cursor
   -> 500-2,000 normalized documents
   -> update deterministic digest
   -> Solr bulk/update
@@ -195,6 +193,8 @@ Requirements:
 - no giant million-document HTTP body,
 - projection target failures isolated and recorded.
 
+The bounded combined catalog is implemented; the existing projection service still materializes its current repository/fixture input and remains the next seam to replace before 100K+ projection work.
+
 ## Corpus identity
 
 A million-record projection ID must not require keeping one million Java objects in memory.
@@ -202,7 +202,7 @@ A million-record projection ID must not require keeping one million Java objects
 Use a canonical deterministic ordering and streaming digest. For example:
 
 ```text
-sort/order key: sourceSystem + sourceIdentifier
+sort/order key: authority order + sourceSystem + sourceIdentifier
 canonical normalized representation per record
 SHA-256 digest updated record-by-record
 ```
@@ -215,7 +215,7 @@ The main discovery result list and facets are already largely response-driven, w
 
 PI-1 must remove the remaining repository-only assumptions:
 
-1. replace the fixed program allowlist with source/data-driven values,
+1. migrate the public program filter/result contract from the fixed enum to the canonical data-driven program value while preserving compatibility,
 2. introduce `origin` and `sourceSystem` in the search/detail contract,
 3. add `/research/:id` as the canonical detail route while preserving `/datasets/:id` compatibility,
 4. resolve detail from DSpace or the federated metadata catalog,
@@ -272,7 +272,8 @@ The combined catalog requires:
 
 - provenance tests,
 - duplicate/equivalence tests,
-- streaming order tests,
+- stable authority/order tests,
+- bounded page traversal tests,
 - deterministic digest tests,
 - batch-size independence tests.
 

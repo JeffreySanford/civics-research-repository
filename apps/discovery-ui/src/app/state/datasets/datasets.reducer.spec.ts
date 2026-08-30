@@ -18,16 +18,48 @@ describe('datasetsReducer', () => {
     sourceUrl: 'https://example.test/tiger',
     accessibilityEvidenceStatus: 'AUTOMATED_PASS' as const,
     relatedResearch: [],
+    origin: 'REPOSITORY' as const,
+    sourceSystem: 'CENSUS' as const,
   };
 
-  it('tracks opened dataset loading state', () => {
+  it('tracks opened dataset loading state without retaining prior detail', () => {
     const state = datasetsReducer(
-      initialDatasetsState,
+      {
+        ...initialDatasetsState,
+        detail,
+        versions: [{ id: 'old', label: 'Old', current: true }],
+        mapLayers: [{} as never],
+      },
       DatasetsActions.datasetOpened({ datasetId: detail.id }),
     );
 
     expect(state.selectedDatasetId).toBe(detail.id);
+    expect(state.detail).toBeNull();
+    expect(state.versions).toEqual([]);
+    expect(state.mapLayers).toEqual([]);
     expect(state.loading).toBe(true);
+  });
+
+  it('tracks canonical research loading without retaining dataset-only authority claims', () => {
+    const state = datasetsReducer(
+      {
+        ...initialDatasetsState,
+        selectedDatasetId: detail.id,
+        detail,
+        versions: [{ id: 'old', label: 'Old', current: true }],
+        mapLayers: [{} as never],
+      },
+      DatasetsActions.researchOpened({
+        researchId: 'REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg',
+      }),
+    );
+
+    expect(state.selectedDatasetId).toBeNull();
+    expect(state.detail).toBeNull();
+    expect(state.versions).toEqual([]);
+    expect(state.mapLayers).toEqual([]);
+    expect(state.loading).toBe(true);
+    expect(state.error).toBeNull();
   });
 
   it('stores loaded dataset detail', () => {

@@ -5,6 +5,7 @@ import {
   parseRepositoryError,
   RepositoryDatasetsApi,
   RepositoryMapsApi,
+  type ResearchObjectDetail,
 } from 'repository-api-client';
 import { DatasetsActions } from './datasets.actions';
 
@@ -40,4 +41,46 @@ export class DatasetsEffects {
       ),
     ),
   );
+
+  readonly openResearch$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DatasetsActions.researchOpened),
+      switchMap(({ researchId }) =>
+        this.datasetsApi.getResearchObject(researchId).pipe(
+          switchMap((detail) => this.loadResearchEnrichments(detail)),
+          catchError((error: unknown) =>
+            of(
+              DatasetsActions.datasetFailed({
+                error: parseRepositoryError(
+                  error,
+                  'Research detail failed to load.',
+                ),
+              }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  private loadResearchEnrichments(detail: ResearchObjectDetail) {
+    if (detail.source === 'FEDERATED') {
+      return of(
+        DatasetsActions.datasetLoaded({
+          detail,
+          versions: [],
+          mapLayers: [],
+        }),
+      );
+    }
+
+    return forkJoin({
+      versions: this.datasetsApi.getDatasetVersions(detail.id),
+      mapLayers: this.mapsApi.getDatasetMapLayers(detail.id),
+    }).pipe(
+      map(({ versions, mapLayers }) =>
+        DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),
+      ),
+    );
+  }
 }

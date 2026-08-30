@@ -16,7 +16,9 @@ import type {
   ResearchObjectType,
   ResearchProgram,
   SearchQuery,
+  SourceSystem,
 } from 'repository-api-client';
+import { encodeResearchId } from '../research-id';
 import { SearchActions } from '../state/search/search.actions';
 import {
   selectSearchError,
@@ -69,17 +71,25 @@ export class DiscoveryPage implements OnInit {
     'ACS',
   ];
 
-  /** Empty means every program, matching what an absent `program` parameter means to the API. */
-  protected selectedPrograms: ResearchProgram[] = [];
+  /**
+   * Empty means every program. Values are deliberately strings rather than ResearchProgram:
+   * federated publishers own their program taxonomy and values such as "Office of Science" must
+   * survive URL/deep-link round trips without being collapsed into the curated compatibility enum.
+   */
+  protected selectedPrograms: string[] = [];
 
-  protected readonly programControl = new FormControl<ResearchProgram | ''>(
-    '',
-    { nonNullable: true },
-  );
+  protected readonly programControl = new FormControl('', {
+    nonNullable: true,
+  });
+
+  /** Publisher and source are response-driven facets; empty means every value. */
+  protected selectedPublisher = '';
+  protected selectedSourceSystem: SourceSystem | '' = '';
+
   /** Empty means every type. One value at a time: the contract takes a single content type. */
   protected selectedContentType: ResearchObjectType | '' = '';
 
-  /** Empty means every vintage. One at a time: the contract takes a single year. */
+  /** Empty means every vintage. One value at a time: the contract takes a single year. */
   protected selectedVintageYear: number | null = null;
 
   /** Zero-based, matching the contract. Rendered one-based, matching how people count. */
@@ -110,8 +120,11 @@ export class DiscoveryPage implements OnInit {
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     this.searchControl.setValue(params.get('q') ?? '');
-    this.selectedPrograms = this.toResearchPrograms(params.getAll('program'));
+    this.selectedPrograms = this.toProgramNames(params.getAll('program'));
     this.programControl.setValue(this.selectedPrograms[0] ?? '');
+    this.selectedPublisher = params.get('publisher')?.trim() ?? '';
+    this.selectedSourceSystem =
+      (params.get('sourceSystem') as SourceSystem | null) ?? '';
     this.geographyControl.setValue(params.get('geography') ?? '');
     this.selectedContentType = (params.get('type') ?? '') as
       | ResearchObjectType
@@ -159,6 +172,10 @@ export class DiscoveryPage implements OnInit {
       ...(this.selectedPrograms.length
         ? { programs: this.selectedPrograms }
         : {}),
+      ...(this.selectedPublisher ? { publisher: this.selectedPublisher } : {}),
+      ...(this.selectedSourceSystem
+        ? { sourceSystem: this.selectedSourceSystem }
+        : {}),
       ...(this.geographyControl.value
         ? { geography: this.geographyControl.value }
         : {}),
@@ -173,12 +190,11 @@ export class DiscoveryPage implements OnInit {
     this.store.dispatch(SearchActions.searchSubmitted({ query }));
   }
 
-  /** Toggles one program in or out of the selection, rather than replacing it. */
+  /** Toggles one data-driven program name in or out of the selection. */
   protected toggleProgram(program: string): void {
-    const value = program as ResearchProgram;
-    this.selectedPrograms = this.selectedPrograms.includes(value)
-      ? this.selectedPrograms.filter((selected) => selected !== value)
-      : [...this.selectedPrograms, value];
+    this.selectedPrograms = this.selectedPrograms.includes(program)
+      ? this.selectedPrograms.filter((selected) => selected !== program)
+      : [...this.selectedPrograms, program];
     this.programControl.setValue(this.selectedPrograms[0] ?? '');
     this.submitSearch();
   }
@@ -191,6 +207,16 @@ export class DiscoveryPage implements OnInit {
   protected selectFacet(field: string, value: string): void {
     if (field === 'program') {
       this.toggleProgram(value);
+      return;
+    }
+
+    if (field === 'publisher') {
+      this.togglePublisher(value);
+      return;
+    }
+
+    if (field === 'sourceSystem') {
+      this.toggleSourceSystem(value);
       return;
     }
 
@@ -207,6 +233,22 @@ export class DiscoveryPage implements OnInit {
     if (field === 'vintageYear') {
       this.toggleVintageYear(value);
     }
+  }
+
+  /** Reselecting the chosen publisher clears it. */
+  protected togglePublisher(publisher: string): void {
+    this.selectedPublisher =
+      this.selectedPublisher === publisher ? '' : publisher;
+    this.submitSearch();
+  }
+
+  /** Reselecting the chosen authoritative source clears it. */
+  protected toggleSourceSystem(sourceSystem: string): void {
+    this.selectedSourceSystem =
+      this.selectedSourceSystem === sourceSystem
+        ? ''
+        : (sourceSystem as SourceSystem);
+    this.submitSearch();
   }
 
   /** Reselecting the chosen year clears it, the same way the type facet behaves. */
@@ -256,13 +298,15 @@ export class DiscoveryPage implements OnInit {
   }
 
   protected isProgramSelected(program: string): boolean {
-    return this.selectedPrograms.includes(program as ResearchProgram);
+    return this.selectedPrograms.includes(program);
   }
 
   protected clearFilters(): void {
     this.selectedContentType = '';
     this.selectedVintageYear = null;
     this.selectedPrograms = [];
+    this.selectedPublisher = '';
+    this.selectedSourceSystem = '';
     this.programControl.setValue('');
     this.geographyControl.setValue('');
     this.submitSearch();
@@ -276,6 +320,8 @@ export class DiscoveryPage implements OnInit {
         program: this.selectedPrograms.length
           ? [...this.selectedPrograms]
           : null,
+        publisher: this.selectedPublisher || null,
+        sourceSystem: this.selectedSourceSystem || null,
         geography: this.geographyControl.value || null,
         type: this.selectedContentType || null,
         vintageYear: this.selectedVintageYear ?? null,
@@ -288,14 +334,11 @@ export class DiscoveryPage implements OnInit {
     });
   }
 
-  /**
-   * An absent `program` parameter means every program, which is what the API already means by it.
-   *
-   * The page previously substituted three defaults here, so an absent parameter and an explicit
-   * empty selection produced different results even though the URL was identical. That made
-   * "Clear filters" undoable only by reloading, and it meant a shared link could not express
-   * "everything".
-   */
+  /** Canonical route token for either a curated or namespaced federated research identity. */
+  protected researchRouteId(canonicalId: string): string {
+    return encodeResearchId(canonicalId);
+  }
+
   /**
    * Query parameters for the workforce map, built here so the link is a real href.
    *
@@ -333,46 +376,13 @@ export class DiscoveryPage implements OnInit {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
   }
 
-  private toResearchPrograms(values: readonly string[]): ResearchProgram[] {
-    return values
-      .map((value) => this.toResearchProgram(value))
-      .filter((value): value is ResearchProgram => value !== '');
-  }
-
   /**
-   * Every program the contract defines.
-   *
-   * Derived from the generated contract type rather than hand-listed: an allowlist that silently
-   * dropped unknown values meant adding a program to the schema left it unselectable in the UI,
-   * with the URL parameter quietly discarded and the defaults restored instead.
+   * The public program filter is data-driven. Preserve any non-blank publisher program name from
+   * a shared URL instead of validating against the curated Census/USGS compatibility enum.
    */
-  private static readonly RESEARCH_PROGRAMS: readonly ResearchProgram[] = [
-    'ACS',
-    'SIPP',
-    'CPS',
-    'LEHD',
-    'LODES',
-    'TIGER_LINE',
-    'USGS',
-    'ECONOMIC_CENSUS',
-    'COUNTY_BUSINESS_PATTERNS',
-    'BUILDING_PERMITS',
-    'POPULATION_ESTIMATES',
-    'SAIPE',
-    'BUSINESS_DYNAMICS',
-    'USGS_3DEP',
-    'USGS_3HP',
-    'OTHER',
-  ];
-
-  private toResearchProgram(value: string | null): ResearchProgram | '' {
-    if (
-      value !== null &&
-      (DiscoveryPage.RESEARCH_PROGRAMS as readonly string[]).includes(value)
-    ) {
-      return value as ResearchProgram;
-    }
-
-    return '';
+  private toProgramNames(values: readonly string[]): string[] {
+    return values
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
   }
 }

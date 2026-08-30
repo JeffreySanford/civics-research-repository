@@ -4,8 +4,9 @@
       <p class="eyebrow">Discovery</p>
       <h1 id="search-heading">Find research objects</h1>
       <p>
-        Initial search will focus on TIGER/Line, LODES, ACS PUMS, SIPP, CPS, and
-        USGS overlay metadata.
+        Search the active mixed-authority corpus. Curated DSpace records and
+        federated publisher metadata use the same discovery path while retaining
+        their provenance.
       </p>
     </div>
 
@@ -46,6 +47,16 @@
           <p class="facet-hint">
             Select any number of programs. No selection means every program.
           </p>
+          } @if (facet.field === 'publisher') {
+          <p class="facet-hint">
+            One publisher at a time. Values come from the active index rather
+            than a UI allowlist.
+          </p>
+          } @if (facet.field === 'sourceSystem') {
+          <p class="facet-hint">
+            One authoritative source at a time. Select the chosen source again
+            to clear it.
+          </p>
           } @if (facet.field === 'vintageYear') {
           <p class="facet-hint">
             One year at a time, newest first. Selecting the year already chosen
@@ -67,6 +78,8 @@
               [attr.aria-pressed]="value.selected"
               [disabled]="
                 facet.field !== 'program' &&
+                facet.field !== 'publisher' &&
+                facet.field !== 'sourceSystem' &&
                 facet.field !== 'geography' &&
                 facet.field !== 'type' &&
                 facet.field !== 'vintageYear'
@@ -150,8 +163,10 @@
         <li>
           <article>
             <div class="result-meta">
-              <span>{{ result.program }}</span>
+              <span>{{ result.programName ?? result.program }}</span>
               <span>{{ result.contentType }}</span>
+              <span>{{ result.sourceSystem }}</span>
+              <span>{{ result.origin }}</span>
               <!-- Only when it is not public. A RESTRICTED badge means something precisely
                    because most objects do not carry one. -->
               @if (result.accessLevel && result.accessLevel !== 'PUBLIC') {
@@ -164,7 +179,10 @@
             </div>
             <h3>{{ result.title }}</h3>
             <p>{{ result.summary }}</p>
-            <a class="source-link" [routerLink]="['/datasets', result.id]">
+            <a
+              class="source-link"
+              [routerLink]="['/research', researchRouteId(result.id)]"
+            >
               Research object detail
             </a>
             <a
@@ -173,7 +191,7 @@
               target="_blank"
               rel="noreferrer"
             >
-              Source data
+              Authoritative source
             </a>
           </article>
         </li>

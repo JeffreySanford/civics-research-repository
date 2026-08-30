@@ -6,6 +6,8 @@ PI-1 should deliver adapters for every identified source while keeping ingestion
 
 The goal is **not** to ingest every record from every source simultaneously on day one. The goal is to make each source reproducibly harvestable and then establish controlled corpus tiers that can be used by both standalone and clustered search topologies.
 
+All production-shaped harvesting runs inside the Spring Boot Java application. Node/NestJS is not an alternate ingestion runtime. Repository Node scripts may still support fixtures, build/test automation and local orchestration, but durable source checkpoints, retries, normalization, quarantine/error state and harvest-run ownership remain in Java.
+
 ## PI-1 source scope
 
 | Source             | Adapter in PI-1 | First production-shaped tier |                  Larger tier | Primary value                                          |
@@ -18,11 +20,11 @@ The goal is **not** to ingest every record from every source simultaneously on d
 
 All five adapters belong in PI-1. Large local snapshots remain staged so disk, time and source limits do not force us to keep every corpus resident at maximum size simultaneously.
 
-## Shared harvester framework first
+## Shared Java harvester framework first
 
-Do not implement five independent loops.
+Do not implement five independent loops and do not add a second harvester runtime.
 
-Create one framework that owns:
+The shared Spring/Java framework owns:
 
 ```text
 start/resume
@@ -34,22 +36,61 @@ start/resume
   -> continue until requested limit/end
 ```
 
-Shared capabilities:
+Implemented foundation already includes:
 
-- cursor/page/checkpoint persistence,
-- bounded retry with backoff and jitter,
-- `Retry-After` / source rate-limit awareness,
+- source-specific `FederatedSourceHarvester` registration,
+- stable cursor/page checkpoint persistence,
+- namespaced source identity validation,
+- idempotent catalog persistence,
+- bounded prepared-statement database batches,
+- typed retryable versus permanent source failures,
+- bounded three-attempt retry,
+- exponential backoff with jitter,
+- bounded publisher `Retry-After` handling.
+
+Remaining shared capabilities:
+
+- configurable source request concurrency/rate limits,
 - request timeout and cancellation,
+- durable harvest-run identity/status,
 - resumable runs after process failure,
-- idempotent source identity,
 - accepted/rejected/skipped counters,
 - quarantined malformed records,
 - progress and throughput metrics,
-- bounded concurrency per source,
 - explicit requested record limit,
 - source retrieval timestamp/window,
 - adapter version / git SHA,
 - final corpus manifest.
+
+Spring Batch remains optional. Adopt it only if the existing Java orchestration demonstrates a concrete need for its job repository, partitioning or restart machinery.
+
+## Normalization and discovery handoff
+
+A source adapter normalizes publisher data into `FederatedResearchRecord`. That record is then converted by `FederatedDiscoveryDocumentMapper` into the same engine-neutral `DiscoveryDocument` shape used for repository records.
+
+Important taxonomy rule:
+
+```text
+legacy ResearchProgram
+  compatibility classification for the curated Census slice
+
+programName
+  canonical data-driven publisher/source program value
+```
+
+A DOE OSTI record may therefore retain `ResearchProgram.OTHER` for legacy compatibility while preserving `programName = "Office of Science"` for discovery. New source program names must not require Java enum expansion and must not collapse into one giant `OTHER` facet.
+
+`CombinedDiscoveryCatalog` now provides bounded authority composition:
+
+```text
+curated DSpace documents
+  -> bounded repository portion
+  -> federated records ordered by namespaced stable ID
+  -> FederatedDiscoveryDocumentMapper
+  -> bounded DiscoveryDocument pages
+```
+
+The current projection lifecycle still needs to consume those pages in batches rather than materializing a full list before 100K+ runs.
 
 ## Run model
 
@@ -93,7 +134,7 @@ Primary mapping targets:
 - publisher/agency,
 - themes/tags,
 - modified/issued dates,
-- distribution/resource links,
+- distributions/resource links,
 - landing-page URL,
 - license/access metadata where present.
 
@@ -202,18 +243,15 @@ Do not attempt to retain the entire OpenAlex corpus locally. Controlled snapshot
 
 ## Adapter contract
 
-Conceptual interface:
+Current conceptual contract:
 
 ```text
-FederatedSourceAdapter
+FederatedSourceHarvester
   sourceSystem()
-  fetchBatch(checkpoint, limit)
-  normalize(sourceRecord)
-  nextCheckpoint(response)
-  sourceUpdatedAt(sourceRecord)
+  fetch(checkpointCursor, pageSize)
 ```
 
-The shared harvester—not each adapter—owns persistence, retries, progress and resume semantics.
+The adapter returns normalized bounded pages. The shared harvester—not each adapter—owns persistence, retries, progress and resume semantics.
 
 ## Update strategy
 
@@ -267,6 +305,7 @@ Use:
 - dynamic source/publisher/program model,
 - federated metadata persistence,
 - harvest-run/checkpoint model,
+- combined bounded repository/federated discovery catalog,
 - `/research/:id` detail abstraction,
 - streaming/batched projection contract.
 

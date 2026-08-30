@@ -39,6 +39,7 @@ export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
 export type ResearchProgram = components['schemas']['ResearchProgram'];
 export type ResearchObjectType = components['schemas']['ResearchObjectType'];
+export type SourceSystem = components['schemas']['SourceSystem'];
 export type AccessLevel = components['schemas']['AccessLevel'];
 export type ResearchRelation = components['schemas']['ResearchRelation'];
 export type ResearchAuthor = components['schemas']['ResearchAuthor'];
@@ -59,8 +60,12 @@ export type EvidenceStatus = components['schemas']['EvidenceStatus'];
 
 export interface SearchQuery {
   readonly q?: string;
-  /** Repeatable. Results match any selected program; empty means every program. */
-  readonly programs?: readonly ResearchProgram[];
+  /** Repeatable data-driven program names. Empty means every program. */
+  readonly programs?: readonly string[];
+  /** Exact publisher facet value, or absent for every publisher. */
+  readonly publisher?: string;
+  /** Controlled authoritative source system, or absent for every source. */
+  readonly sourceSystem?: SourceSystem;
   readonly geography?: string;
   /** One research object type, or absent for every type. */
   readonly contentType?: ResearchObjectType;
@@ -190,6 +195,12 @@ export class RepositoryDatasetsApi {
     @Inject(REPOSITORY_API_BASE_URL) private readonly baseUrl: string,
   ) {}
 
+  getResearchObject(researchId: string): Observable<ResearchObjectDetail> {
+    return this.http.get<ResearchObjectDetail>(
+      `${this.baseUrl}/research/${researchId}`,
+    );
+  }
+
   getDataset(datasetId: string): Observable<ResearchObjectDetail> {
     return this.http.get<ResearchObjectDetail>(
       `${this.baseUrl}/datasets/${datasetId}`,
@@ -234,6 +245,14 @@ export class RepositorySearchApi {
     if (query.programs?.length) {
       // HttpParams keeps repeated keys, which is how the contract expresses "any of these".
       params['program'] = [...query.programs];
+    }
+
+    if (query.publisher) {
+      params['publisher'] = query.publisher;
+    }
+
+    if (query.sourceSystem) {
+      params['sourceSystem'] = query.sourceSystem;
     }
 
     if (query.geography) {

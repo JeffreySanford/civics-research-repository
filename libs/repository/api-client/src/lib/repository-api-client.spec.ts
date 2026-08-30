@@ -74,7 +74,7 @@ describe('RepositoryAdminApi', () => {
 });
 
 describe('RepositoryDatasetsApi', () => {
-  it('loads typed dataset details and versions', async () => {
+  it('loads authority-neutral research detail plus legacy dataset detail and versions', async () => {
     const detail: ResearchObjectDetail = {
       id: 'tiger-line-north-dakota-2025',
       title: '2025 TIGER/Line - Census Tracts - North Dakota',
@@ -104,6 +104,14 @@ describe('RepositoryDatasetsApi', () => {
       ),
     };
     const api = new RepositoryDatasetsApi(http as never, 'http://api.test/api');
+    const researchId = 'REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg';
+
+    await expect(
+      firstValueFrom(api.getResearchObject(researchId)),
+    ).resolves.toEqual(detail);
+    expect(http.get).toHaveBeenCalledWith(
+      `http://api.test/api/research/${researchId}`,
+    );
 
     await expect(
       firstValueFrom(api.getDataset('tiger-line-north-dakota-2025')),
@@ -147,7 +155,7 @@ describe('RepositoryEvidenceApi', () => {
 });
 
 describe('RepositorySearchApi', () => {
-  it('loads typed search results with query parameters', async () => {
+  it('loads typed search results with data-driven authority filters', async () => {
     const response: SearchResponse = {
       query: 'North Dakota',
       page: 0,
@@ -177,18 +185,22 @@ describe('RepositorySearchApi', () => {
       firstValueFrom(
         api.searchResearchObjects({
           q: 'North Dakota',
-          programs: ['TIGER_LINE', 'LODES'],
+          programs: ['TIGER_LINE', 'Office of Science'],
+          publisher: 'U.S. Census Bureau',
+          sourceSystem: 'CENSUS',
           page: 0,
           pageSize: 25,
         }),
       ),
     ).resolves.toEqual(response);
 
-    // Repeated keys are how the contract expresses "any of these programs".
+    // Repeated program keys and response-driven publisher/source values pass through unchanged.
     expect(http.get).toHaveBeenCalledWith('http://api.test/api/search', {
       params: {
         q: 'North Dakota',
-        program: ['TIGER_LINE', 'LODES'],
+        program: ['TIGER_LINE', 'Office of Science'],
+        publisher: 'U.S. Census Bureau',
+        sourceSystem: 'CENSUS',
         page: 0,
         pageSize: 25,
       },

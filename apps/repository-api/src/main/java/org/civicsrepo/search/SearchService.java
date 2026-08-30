@@ -1,9 +1,8 @@
 package org.civicsrepo.search;
 
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -11,16 +10,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.civicsrepo.repository.FixtureCatalog;
-import org.civicsrepo.repository.RepositoryCatalog;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.FacetValue;
+import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectType;
-import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
-import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.SourceSystem;
+import org.civicsrepo.repository.FixtureCatalog;
+import org.civicsrepo.repository.RepositoryCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,24 +59,43 @@ public class SearchService {
         return fixtureCatalog.discoveryDocuments();
     }
 
+    /** Compatibility overload for existing callers that do not yet filter by publisher/source. */
     public SearchResponse search(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
-        // Solr holds the projection built by DiscoveryProjectionService, so it is the fast path for
-        // both repository-backed and fixture-backed content. Its source label comes from what was
-        // last projected, not from the query.
+        return search(query, programs, null, null, geography, contentType, vintageYear, page, pageSize);
+    }
+
+    public SearchResponse search(
+            String query,
+            List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
         if (discoveryIndex != null && discoveryIndex.isEnabled()) {
             try {
-                return discoveryIndex
-                        .search(query, programs, geography, contentType, vintageYear, page, pageSize)
-                        // The generated model is mutable, and this response was just built by the
-                        // client for this call, so relabelling it in place is safe.
-                        .resultSource(indexedSource());
+                SearchResponse response = normalize(publisher).isBlank() && sourceSystem == null
+                        ? discoveryIndex.search(query, programs, geography, contentType, vintageYear, page, pageSize)
+                        : discoveryIndex.search(
+                                query,
+                                programs,
+                                publisher,
+                                sourceSystem,
+                                geography,
+                                contentType,
+                                vintageYear,
+                                page,
+                                pageSize);
+                return response.resultSource(indexedSource());
             } catch (RuntimeException exception) {
                 LOGGER.warn("Solr search failed; answering from in-memory results.", exception);
             }
@@ -92,6 +109,8 @@ public class SearchService {
                     RepositorySource.REPOSITORY,
                     query,
                     programs,
+                    publisher,
+                    sourceSystem,
                     geography,
                     contentType,
                     vintageYear,
@@ -104,6 +123,8 @@ public class SearchService {
                 RepositorySource.FIXTURE,
                 query,
                 programs,
+                publisher,
+                sourceSystem,
                 geography,
                 contentType,
                 vintageYear,
@@ -111,12 +132,6 @@ public class SearchService {
                 pageSize);
     }
 
-    /**
-     * Whether the Solr projection currently holds repository content.
-     *
-     * <p>Derived by asking the repository rather than by trusting the index, so a stale index
-     * cannot cause fixture content to be labelled as repository content.
-     */
     private RepositorySource indexedSource() {
         boolean repositoryBacked = repositoryCatalog != null && !repositoryCatalog.findAllResearchObjects().isEmpty();
         return repositoryBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
@@ -126,24 +141,30 @@ public class SearchService {
             List<SearchResult> catalog,
             RepositorySource resultSource,
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
             int page,
             int pageSize) {
         String normalizedQuery = normalize(query);
+        String normalizedPublisher = normalize(publisher);
+        String normalizedSourceSystem = sourceSystem == null ? "" : normalize(sourceSystem.getValue());
         String normalizedGeography = normalize(geography);
+        Set<String> selectedPrograms = normalizeValues(programs);
 
-        List<SearchResult> filtered = catalog.stream()
-                .filter((result) -> matchesQuery(result, normalizedQuery))
-                .filter((result) -> programs.isEmpty() || programs.contains(result.getProgram()))
-                .filter((result) ->
-                        normalizedGeography.isBlank() || normalize(result.getGeography()).contains(normalizedGeography))
-                .filter((result) -> vintageYear == null || vintageYear.equals(result.getVintageYear()))
-                .filter((result) -> contentType == null || contentType == typeOf(result))
-                .sorted(Comparator.comparing(SearchResult::getTitle))
-                .toList();
+        List<SearchResult> filtered = filterCatalog(
+                catalog,
+                normalizedQuery,
+                selectedPrograms,
+                normalizedPublisher,
+                normalizedSourceSystem,
+                normalizedGeography,
+                contentType,
+                vintageYear,
+                null);
 
         int safePage = Math.max(0, page);
         int safePageSize = Math.max(1, Math.min(pageSize, 100));
@@ -161,62 +182,148 @@ public class SearchService {
                         facetGroup(
                                 "program",
                                 "Program",
-                                // Facet counts ignore the program filter itself, so selecting one
-                                // program does not hide the others and make them unselectable.
-                                catalog.stream()
-                                        .filter((result) -> matchesQuery(result, normalizedQuery))
-                                        .filter((result) -> normalizedGeography.isBlank()
-                                                || normalize(result.getGeography()).contains(normalizedGeography))
-                                        .filter((result) ->
-                                                vintageYear == null || vintageYear.equals(result.getVintageYear()))
-                                        .toList(),
-                                (result) -> result.getProgram().getValue(),
-                                programs),
-                        facetGroup("geography", "Geography", filtered, SearchResult::getGeography, geography == null ? "" : geography),
-                        // Type last, because it is the newest axis and the narrowest: most of the
-                        // catalog is datasets, so leading with it would show one value at 177 and
-                        // three in single figures.
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "program"),
+                                this::programName,
+                                selectedPrograms),
+                        facetGroup(
+                                "publisher",
+                                "Publisher",
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "publisher"),
+                                SearchResult::getPublisher,
+                                normalizedPublisher.isBlank() ? Set.of() : Set.of(normalizedPublisher)),
+                        facetGroup(
+                                "sourceSystem",
+                                "Source",
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "sourceSystem"),
+                                this::sourceSystemName,
+                                normalizedSourceSystem.isBlank() ? Set.of() : Set.of(normalizedSourceSystem)),
+                        facetGroup(
+                                "geography",
+                                "Geography",
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "geography"),
+                                SearchResult::getGeography,
+                                geography == null ? "" : geography),
                         facetGroup(
                                 "type",
                                 "Type",
-                                filtered,
+                                filterCatalog(
+                                        catalog,
+                                        normalizedQuery,
+                                        selectedPrograms,
+                                        normalizedPublisher,
+                                        normalizedSourceSystem,
+                                        normalizedGeography,
+                                        contentType,
+                                        vintageYear,
+                                        "type"),
                                 (result) -> typeOf(result).getValue(),
                                 contentType == null ? "" : contentType.getValue()),
-                        // Counted before the vintage filter is applied, like every other facet, so
-                        // selecting a year does not hide the others and make the choice a one-way door.
                         descending(facetGroup(
                                 "vintageYear",
                                 "Year",
-                                catalog.stream()
-                                        .filter((result) -> matchesQuery(result, normalizedQuery))
-                                        .filter((result) -> programs.isEmpty()
-                                                || programs.contains(result.getProgram()))
-                                        .filter((result) -> normalizedGeography.isBlank()
-                                                || normalize(result.getGeography()).contains(normalizedGeography))
-                                        .filter((result) -> contentType == null || contentType == typeOf(result))
+                                filterCatalog(
+                                                catalog,
+                                                normalizedQuery,
+                                                selectedPrograms,
+                                                normalizedPublisher,
+                                                normalizedSourceSystem,
+                                                normalizedGeography,
+                                                contentType,
+                                                vintageYear,
+                                                "vintageYear")
+                                        .stream()
                                         .filter((result) -> result.getVintageYear() != null)
                                         .toList(),
                                 (result) -> String.valueOf(result.getVintageYear()),
                                 vintageYear == null ? "" : String.valueOf(vintageYear)))));
     }
 
-    /** Untyped results are datasets, which is what every item seeded before packages existed is. */
+    private List<SearchResult> filterCatalog(
+            List<SearchResult> catalog,
+            String normalizedQuery,
+            Set<String> selectedPrograms,
+            String normalizedPublisher,
+            String normalizedSourceSystem,
+            String normalizedGeography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            String excludedFacet) {
+        return catalog.stream()
+                .filter((result) -> matchesQuery(result, normalizedQuery))
+                .filter((result) -> "program".equals(excludedFacet)
+                        || selectedPrograms.isEmpty()
+                        || selectedPrograms.contains(normalize(programName(result))))
+                .filter((result) -> "publisher".equals(excludedFacet)
+                        || normalizedPublisher.isBlank()
+                        || normalize(result.getPublisher()).equals(normalizedPublisher))
+                .filter((result) -> "sourceSystem".equals(excludedFacet)
+                        || normalizedSourceSystem.isBlank()
+                        || normalize(sourceSystemName(result)).equals(normalizedSourceSystem))
+                .filter((result) -> "geography".equals(excludedFacet)
+                        || normalizedGeography.isBlank()
+                        || normalize(result.getGeography()).contains(normalizedGeography))
+                .filter((result) -> "vintageYear".equals(excludedFacet)
+                        || vintageYear == null
+                        || vintageYear.equals(result.getVintageYear()))
+                .filter((result) -> "type".equals(excludedFacet)
+                        || contentType == null
+                        || contentType == typeOf(result))
+                .sorted(Comparator.comparing(SearchResult::getTitle))
+                .toList();
+    }
+
     private ResearchObjectType typeOf(SearchResult result) {
         return result.getContentType() == null ? ResearchObjectType.DATASET : result.getContentType();
     }
 
-    /**
-     * Tokenized matching, so losing Solr changes the ranking rather than the result set.
-     *
-     * <p>This used to require the whole normalized query as a single substring, which meant Solr
-     * and the fallback disagreed about what a search even means: Solr returned Census objects for
-     * "North Dakota workforce" while the fallback returned nothing, because no title contains that
-     * phrase verbatim. A demo that falls back to a different search is a demo with two behaviours.
-     *
-     * <p>Two thirds of the terms must appear somewhere in the object's text, which is the rule the
-     * Solr query uses (mm=2&lt;67%). The fallback still cannot see subjects, authors or citations:
-     * those are indexed for Solr and are not carried on {@code SearchResult}.
-     */
+    /** Returns the canonical data-driven program name with legacy enum fallback. */
+    private String programName(SearchResult result) {
+        if (result.getProgramName() != null && !result.getProgramName().isBlank()) {
+            return result.getProgramName().trim();
+        }
+        return result.getProgram() == null ? "OTHER" : result.getProgram().getValue();
+    }
+
+    private String sourceSystemName(SearchResult result) {
+        return result.getSourceSystem() == null ? "OTHER" : result.getSourceSystem().getValue();
+    }
+
     private boolean matchesQuery(SearchResult result, String normalizedQuery) {
         if (normalizedQuery.isBlank()) {
             return true;
@@ -228,16 +335,15 @@ public class SearchService {
                 normalize(result.getSummary()),
                 normalize(result.getPublisher()),
                 normalize(result.getGeography()),
-                normalize(result.getProgram().getValue()));
+                normalize(programName(result)));
 
         List<String> terms =
-                Arrays.stream(normalizedQuery.split("\s+")).filter((term) -> !term.isBlank()).toList();
+                Arrays.stream(normalizedQuery.split("\\s+")).filter((term) -> !term.isBlank()).toList();
         if (terms.isEmpty()) {
             return true;
         }
 
         long matched = terms.stream().filter(haystack::contains).count();
-        // One or two terms must all match; three or more need two thirds, rounded up.
         long required = terms.size() <= 2 ? terms.size() : (long) Math.ceil(terms.size() * 2.0 / 3.0);
         return matched >= required;
     }
@@ -256,29 +362,6 @@ public class SearchService {
                 normalize(selectedValue).isBlank() ? Set.of() : Set.of(normalize(selectedValue)));
     }
 
-    private FacetGroup facetGroup(
-            String field,
-            String label,
-            List<SearchResult> results,
-            Function<SearchResult, String> valueSelector,
-            List<ResearchProgram> selectedPrograms) {
-        return facetGroup(
-                field,
-                label,
-                results,
-                valueSelector,
-                selectedPrograms.stream()
-                        .map((program) -> normalize(program.getValue()))
-                        .collect(Collectors.toSet()));
-    }
-
-    /**
-     * Reverses a facet group's values.
-     *
-     * Facet values are grouped and sorted ascending by key, which is right for a program or a
-     * geography and wrong for a year: a reader scanning vintages wants the most recent first. The
-     * Solr path reverses the same group for the same reason.
-     */
     private FacetGroup descending(FacetGroup group) {
         List<FacetValue> reversed = new ArrayList<>(group.getValues());
         Collections.reverse(reversed);
@@ -292,15 +375,15 @@ public class SearchService {
             Function<SearchResult, String> valueSelector,
             Set<String> normalizedSelected) {
         Map<String, Long> counts = results.stream()
-                .collect(Collectors.groupingBy(valueSelector, Collectors.counting()));
+                .map(valueSelector)
+                .filter((value) -> value != null && !value.isBlank())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         List<FacetValue> values = counts.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map((entry) -> new FacetValue(
                         entry.getKey(),
                         entry.getKey().replace('_', ' '),
-                        // The contract types counts as int32, so a long was never carried on the
-                        // wire. toIntExact fails loudly rather than truncating silently.
                         Math.toIntExact(entry.getValue()),
                         normalizedSelected.contains(normalize(entry.getKey()))))
                 .toList();
@@ -308,9 +391,17 @@ public class SearchService {
         return new FacetGroup(field, label, values);
     }
 
+    private Set<String> normalizeValues(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return Set.of();
+        }
+        return values.stream()
+                .map(this::normalize)
+                .filter((value) -> !value.isBlank())
+                .collect(Collectors.toSet());
+    }
+
     private String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
-
-
 }

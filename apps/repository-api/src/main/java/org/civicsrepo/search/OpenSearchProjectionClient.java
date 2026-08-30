@@ -19,21 +19,16 @@ import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.FacetValue;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * Rebuildable OpenSearch copy of the public discovery projection.
- *
- * <p>This client deliberately implements only {@link DiscoveryProjectionTarget}. Solr remains the
- * browser-facing {@link DiscoveryIndex} while the comparison work measures equivalent query
- * behavior. Both engines receive the same normalized {@link DiscoveryDocument} list from
- * DiscoveryProjectionService; neither becomes a source of truth.
- */
+/** Rebuildable OpenSearch copy of the public discovery projection. */
 @Component
 public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
@@ -112,35 +107,74 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
     }
 
     @Override
-    public void indexResearchObjects(List<DiscoveryDocument> objects) {
+    public void beginProjection() {
         if (!isEnabled()) {
             return;
         }
-
         try {
             deleteIndexIfPresent();
             createIndex();
-            if (!objects.isEmpty()) {
-                bulkIndex(objects);
-            }
         } catch (IOException exception) {
-            throw new IllegalStateException("OpenSearch projection request failed.", exception);
+            throw new IllegalStateException("OpenSearch projection setup failed.", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("OpenSearch projection request was interrupted.", exception);
+            throw new IllegalStateException("OpenSearch projection setup was interrupted.", exception);
+        }
+    }
+
+    @Override
+    public void indexBatch(List<DiscoveryDocument> objects) {
+        if (!isEnabled() || objects == null || objects.isEmpty()) {
+            return;
+        }
+        try {
+            bulkIndex(objects);
+        } catch (IOException exception) {
+            throw new IllegalStateException("OpenSearch projection batch failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("OpenSearch projection batch was interrupted.", exception);
+        }
+    }
+
+    @Override
+    public void completeProjection() {
+        if (!isEnabled()) {
+            return;
+        }
+        try {
+            refreshIndex();
+        } catch (IOException exception) {
+            throw new IllegalStateException("OpenSearch projection refresh failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("OpenSearch projection refresh was interrupted.", exception);
+        }
+    }
+
+    @Override
+    public void abortProjection() {
+        if (!isEnabled()) {
+            return;
+        }
+        try {
+            deleteIndexIfPresent();
+        } catch (IOException exception) {
+            throw new IllegalStateException("OpenSearch partial projection cleanup failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("OpenSearch partial projection cleanup was interrupted.", exception);
         }
     }
 
     /**
-     * Runs the normalized comparison query against OpenSearch.
-     *
-     * <p>Filters are applied as a post-filter so aggregations can intentionally exclude their own
-     * selected field, matching Solr's tagged-facet behavior. A selected program therefore does not
-     * collapse the program aggregation to the one value already selected.
+     * Runs the normalized comparison query against OpenSearch. Filters are applied as a post-filter
+     * so aggregations can intentionally exclude their own selected field, matching Solr's tagged
+     * facet behavior.
      */
     public SearchResponse search(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -151,7 +185,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
 
     public SearchExecution searchWithDiagnostics(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -198,7 +232,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
 
     private Map<String, Object> searchRequest(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -219,9 +253,21 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         aggregations.put(
                 "program_scope",
                 scopedTermsAggregation(
-                        "program",
-                        filterClauses(programs, geography, contentType, vintageYear, "program"),
+                        "programName",
+                        filterClauses(programs, geography, contentType, vintageYear, "programName"),
                         100));
+        aggregations.put(
+                "publisher_scope",
+                scopedTermsAggregation(
+                        "publisher",
+                        filterClauses(programs, geography, contentType, vintageYear, null),
+                        100));
+        aggregations.put(
+                "sourceSystem_scope",
+                scopedTermsAggregation(
+                        "sourceSystem",
+                        filterClauses(programs, geography, contentType, vintageYear, null),
+                        25));
         aggregations.put(
                 "geography_scope",
                 scopedTermsAggregation(
@@ -258,7 +304,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                         "title^5",
                                         "geography^4",
                                         "subjects^3",
-                                        "program^3",
+                                        "programName^3",
                                         "authors^3",
                                         "summary^2",
                                         "citation^1",
@@ -274,16 +320,21 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
     }
 
     private List<Map<String, Object>> filterClauses(
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
             String excludedField) {
         List<Map<String, Object>> filters = new ArrayList<>();
 
-        if (!"program".equals(excludedField) && programs != null && !programs.isEmpty()) {
-            filters.add(Map.of(
-                    "terms", Map.of("program", programs.stream().map(ResearchProgram::getValue).toList())));
+        if (!"programName".equals(excludedField) && programs != null && !programs.isEmpty()) {
+            List<String> selectedPrograms = programs.stream()
+                    .filter((program) -> program != null && !program.isBlank())
+                    .map(String::trim)
+                    .toList();
+            if (!selectedPrograms.isEmpty()) {
+                filters.add(Map.of("terms", Map.of("programName", selectedPrograms)));
+            }
         }
         if (!"geography".equals(excludedField) && !normalize(geography).isBlank()) {
             filters.add(Map.of("term", Map.of("geography.keyword", geography)));
@@ -304,11 +355,13 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                 ? Map.of("match_all", Map.of())
                 : Map.of("bool", Map.of("filter", filters));
         Map<String, Object> terms = new LinkedHashMap<>();
-        terms.put("field", "geography".equals(field) ? "geography.keyword" : field);
+        String aggregationField = switch (field) {
+            case "geography", "publisher" -> field + ".keyword";
+            default -> field;
+        };
+        terms.put("field", aggregationField);
         terms.put("size", size);
         if ("vintageYear".equals(field)) {
-            // Solr presents vintages newest first. OpenSearch defaults to bucket count, which would
-            // make a year comparison look different for a reason unrelated to search semantics.
             terms.put("order", Map.of("_key", "desc"));
         }
         return Map.of(
@@ -318,7 +371,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
 
     private SearchResponse toSearchResponse(
             String query,
-            List<ResearchProgram> selectedPrograms,
+            List<String> selectedPrograms,
             String selectedGeography,
             ResearchObjectType selectedContentType,
             Integer selectedVintageYear,
@@ -331,13 +384,16 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         for (JsonNode hit : root.path("hits").path("hits")) {
             JsonNode document = hit.path("_source");
             results.add(new SearchResult(
-                    document.path("id").asText(),
-                    document.path("title").asText(),
-                    ResearchObjectType.fromValue(document.path("contentType").asText()),
-                    ResearchProgram.fromValue(document.path("program").asText()),
-                    document.path("publisher").asText(),
-                    document.path("summary").asText(),
-                    URI.create(document.path("sourceUrl").asText()))
+                            document.path("id").asText(),
+                            document.path("title").asText(),
+                            ResearchObjectType.fromValue(document.path("contentType").asText()),
+                            ResearchProgram.fromValue(document.path("program").asText()),
+                            document.path("publisher").asText(),
+                            document.path("summary").asText(),
+                            URI.create(document.path("sourceUrl").asText()),
+                            ResearchObjectOrigin.fromValue(document.path("origin").asText()),
+                            SourceSystem.fromValue(document.path("sourceSystem").asText()))
+                    .programName(document.path("programName").asText())
                     .geography(textOrNull(document, "geography"))
                     .vintageYear(integerOrNull(document, "vintageYear"))
                     .accessLevel(accessLevel(document)));
@@ -346,10 +402,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         int totalResults = Math.toIntExact(root.path("hits").path("total").path("value").asLong(0));
         Set<String> programs = selectedPrograms == null
                 ? Set.of()
-                : selectedPrograms.stream()
-                        .map(ResearchProgram::getValue)
-                        .map(this::normalize)
-                        .collect(Collectors.toSet());
+                : selectedPrograms.stream().map(this::normalize).collect(Collectors.toSet());
 
         return new SearchResponse(
                 RepositorySource.FIXTURE,
@@ -364,6 +417,19 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                 "Program",
                                 root.path("aggregations").path("program_scope").path("values").path("buckets"),
                                 programs),
+                        facetGroup(
+                                "publisher",
+                                "Publisher",
+                                root.path("aggregations").path("publisher_scope").path("values").path("buckets"),
+                                Set.of()),
+                        facetGroup(
+                                "sourceSystem",
+                                "Source",
+                                root.path("aggregations")
+                                        .path("sourceSystem_scope")
+                                        .path("values")
+                                        .path("buckets"),
+                                Set.of()),
                         facetGroup(
                                 "geography",
                                 "Geography",
@@ -431,6 +497,17 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
     }
 
+    private void refreshIndex() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(indexUri("/_refresh"))
+                .timeout(REQUEST_TIMEOUT)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() >= 300) {
+            throw new IllegalStateException("OpenSearch index refresh failed with HTTP " + response.statusCode());
+        }
+    }
+
     private void bulkIndex(List<DiscoveryDocument> objects) throws IOException, InterruptedException {
         StringBuilder payload = new StringBuilder();
         for (DiscoveryDocument object : objects) {
@@ -439,7 +516,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             payload.append(objectMapper.writeValueAsString(toOpenSearchDocument(object))).append('\n');
         }
 
-        HttpRequest request = HttpRequest.newBuilder(indexUri("/_bulk?refresh=true"))
+        HttpRequest request = HttpRequest.newBuilder(indexUri("/_bulk?refresh=false"))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/x-ndjson")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
@@ -462,6 +539,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         document.put("title", result.getTitle());
         document.put("contentType", result.getContentType().getValue());
         document.put("program", result.getProgram().getValue());
+        document.put("programName", object.programName());
         document.put("publisher", result.getPublisher());
         document.put("summary", result.getSummary());
         putIfPresent(document, "geography", result.getGeography());
@@ -472,6 +550,8 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                 "accessLevel",
                 (result.getAccessLevel() == null ? AccessLevel.PUBLIC : result.getAccessLevel()).getValue());
         document.put("sourceUrl", result.getSourceUrl().toString());
+        document.put("origin", result.getOrigin().getValue());
+        document.put("sourceSystem", result.getSourceSystem().getValue());
         if (!object.subjects().isEmpty()) {
             document.put("subjects", object.subjects());
         }
@@ -489,12 +569,15 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         properties.put("title", textWithKeyword());
         properties.put("contentType", keyword());
         properties.put("program", keyword());
+        properties.put("programName", keyword());
         properties.put("publisher", textWithKeyword());
         properties.put("summary", Map.of("type", "text"));
         properties.put("geography", textWithKeyword());
         properties.put("vintageYear", Map.of("type", "integer"));
         properties.put("accessLevel", keyword());
         properties.put("sourceUrl", keyword());
+        properties.put("origin", keyword());
+        properties.put("sourceSystem", keyword());
         properties.put("subjects", Map.of("type", "text"));
         properties.put("authors", Map.of("type", "text"));
         properties.put("citation", Map.of("type", "text"));

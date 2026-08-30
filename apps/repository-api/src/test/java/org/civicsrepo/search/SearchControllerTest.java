@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,10 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.net.URI;
 import java.util.List;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -32,46 +33,61 @@ class SearchControllerTest {
     @MockitoBean
     private SearchService searchService;
 
-    /**
-     * The generator renames USGS_3DEP to the Java constant USGS_3_DEP. Spring binds query
-     * parameters with Enum.valueOf, which knows only the constant name, so without a converter
-     * this request answered 400 while every other program bound fine.
-     */
     @Test
-    void bindsAProgramTheGeneratorRenamedByItsContractValue() throws Exception {
+    void acceptsADataDrivenProgramOutsideTheLegacyEnum() throws Exception {
         given(searchService.search(
-                        any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), any(), anyInt(), anyInt()))
+                        any(),
+                        eq(List.of("Office of Science")),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        anyInt(),
+                        anyInt()))
                 .willReturn(response());
 
-        mockMvc.perform(get("/search").param("program", "USGS_3HP")).andExpect(status().isOk());
+        mockMvc.perform(get("/search").param("program", "Office of Science"))
+                .andExpect(status().isOk());
 
-        verify(searchService).search(any(), eq(List.of(ResearchProgram.USGS_3_HP)), any(), any(), any(), anyInt(), anyInt());
-    }
-
-    @Test
-    void rejectsAProgramValueTheContractDoesNotDefine() throws Exception {
-        mockMvc.perform(get("/search").param("program", "NOT_A_PROGRAM")).andExpect(status().isBadRequest());
+        verify(searchService)
+                .search(
+                        any(),
+                        eq(List.of("Office of Science")),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        anyInt(),
+                        anyInt());
     }
 
     @Test
     void appliesPagingDefaultsWhenNoParametersAreSupplied() throws Exception {
-        given(searchService.search(any(), anyList(), any(), any(), any(), eq(0), eq(25))).willReturn(response());
+        given(searchService.search(any(), anyList(), any(), any(), any(), any(), any(), eq(0), eq(25)))
+                .willReturn(response());
 
         mockMvc.perform(get("/search"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resultSource").value("REPOSITORY"))
                 .andExpect(jsonPath("$.totalResults").value(1))
-                .andExpect(jsonPath("$.results[0].id").value("tiger-line-north-dakota-2025"));
+                .andExpect(jsonPath("$.results[0].id").value("tiger-line-north-dakota-2025"))
+                .andExpect(jsonPath("$.results[0].origin").value("REPOSITORY"))
+                .andExpect(jsonPath("$.results[0].sourceSystem").value("CENSUS"));
 
-        verify(searchService).search(null, List.of(), null, null, null, 0, 25);
+        verify(searchService).search(null, List.of(), null, null, null, null, null, 0, 25);
     }
 
     @Test
     void bindsEveryFilterParameter() throws Exception {
         given(searchService.search(
                         eq("tracts"),
-                        eq(List.of(ResearchProgram.TIGER_LINE)),
-                        eq("North Dakota"),any(),
+                        eq(List.of("TIGER_LINE")),
+                        eq("U.S. Census Bureau"),
+                        eq(SourceSystem.CENSUS),
+                        eq("North Dakota"),
+                        any(),
                         eq(2025),
                         eq(2),
                         eq(10)))
@@ -80,6 +96,8 @@ class SearchControllerTest {
         mockMvc.perform(get("/search")
                         .param("q", "tracts")
                         .param("program", "TIGER_LINE")
+                        .param("publisher", "U.S. Census Bureau")
+                        .param("sourceSystem", "CENSUS")
                         .param("geography", "North Dakota")
                         .param("vintageYear", "2025")
                         .param("page", "2")
@@ -87,16 +105,27 @@ class SearchControllerTest {
                 .andExpect(status().isOk());
 
         verify(searchService)
-                .search("tracts", List.of(ResearchProgram.TIGER_LINE), "North Dakota", null, 2025, 2, 10);
+                .search(
+                        "tracts",
+                        List.of("TIGER_LINE"),
+                        "U.S. Census Bureau",
+                        SourceSystem.CENSUS,
+                        "North Dakota",
+                        null,
+                        2025,
+                        2,
+                        10);
     }
 
-    /** Repeating the parameter selects several programs; results match any of them. */
     @Test
     void bindsARepeatedProgramParameter() throws Exception {
         given(searchService.search(
                         any(),
-                        eq(List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES, ResearchProgram.ACS)),
-                        any(),any(),
+                        eq(List.of("TIGER_LINE", "LODES", "Office of Science")),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
                         any(),
                         anyInt(),
                         anyInt()))
@@ -105,25 +134,20 @@ class SearchControllerTest {
         mockMvc.perform(get("/search")
                         .param("program", "TIGER_LINE")
                         .param("program", "LODES")
-                        .param("program", "ACS"))
+                        .param("program", "Office of Science"))
                 .andExpect(status().isOk());
 
         verify(searchService)
                 .search(
                         null,
-                        List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES, ResearchProgram.ACS),
-                        null,null,
+                        List.of("TIGER_LINE", "LODES", "Office of Science"),
+                        null,
+                        null,
+                        null,
+                        null,
                         null,
                         0,
                         25);
-    }
-
-    @Test
-    void rejectsAnUnknownProgramFacet() throws Exception {
-        mockMvc.perform(get("/search").param("program", "NOT_A_PROGRAM"))
-                .andExpect(status().isBadRequest());
-
-        verify(searchService, never()).search(any(), anyList(), any(), any(), any(), anyInt(), anyInt());
     }
 
     @Test
@@ -132,19 +156,25 @@ class SearchControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    /**
-     * A quote in a geography value must reach the service unaltered; escaping is the Solr client's
-     * job, and doing it earlier would corrupt legitimate values.
-     */
     @Test
     void passesQuotedGeographyValuesThroughUnchanged() throws Exception {
-        given(searchService.search(any(), anyList(), eq("North \"Dakota\""), any(), any(), anyInt(), anyInt()))
+        given(searchService.search(
+                        any(),
+                        anyList(),
+                        any(),
+                        any(),
+                        eq("North \"Dakota\""),
+                        any(),
+                        any(),
+                        anyInt(),
+                        anyInt()))
                 .willReturn(response());
 
         mockMvc.perform(get("/search").param("geography", "North \"Dakota\""))
                 .andExpect(status().isOk());
 
-        verify(searchService).search(null, List.of(), "North \"Dakota\"", null, null, 0, 25);
+        verify(searchService)
+                .search(null, List.of(), null, null, "North \"Dakota\"", null, null, 0, 25);
     }
 
     private SearchResponse response() {
@@ -161,7 +191,10 @@ class SearchControllerTest {
                                 ResearchProgram.TIGER_LINE,
                                 "U.S. Census Bureau",
                                 "Tract geometry metadata.",
-                                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"))
+                                URI.create("https://www2.census.gov/geo/tiger/TIGER2025/"),
+                                ResearchObjectOrigin.REPOSITORY,
+                                SourceSystem.CENSUS)
+                        .programName("TIGER_LINE")
                         .geography("North Dakota")
                         .vintageYear(2025)),
                 List.of());
