@@ -1,5 +1,5 @@
 # Context-test profile: an in-memory datasource, and every outbound integration switched off so a
-# context load never reaches DSpace, Solr, or PostgreSQL.
+# context load never reaches DSpace, Solr, OpenSearch, or PostgreSQL.
 spring:
   datasource:
     url: jdbc:h2:mem:civics;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -20,5 +20,8 @@ civics:
   solr:
     base-url: ''
     core: discovery
+  opensearch:
+    base-url: ''
+    index: discovery-comparison
   storage:
     artifacts-path: /tmp/civics-artifacts
