@@ -1,12 +1,12 @@
 package org.civicsrepo.search;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
 import org.civicsrepo.generated.dto.FacetValue;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class SearchServiceTest {
@@ -48,9 +48,12 @@ class SearchServiceTest {
 
     @Test
     void programFilterReturnsSelectedFacet() {
-        SearchResponse response = searchService.search("", List.of(ResearchProgram.USGS), null, null, null, 0, 25);
+        SearchResponse response = searchService.search("", List.of("USGS"), null, null, null, 0, 25);
 
-        assertThat(response.getResults()).singleElement().extracting(SearchResult::getProgram).isEqualTo(ResearchProgram.USGS);
+        assertThat(response.getResults())
+                .singleElement()
+                .extracting(SearchResult::getProgram)
+                .isEqualTo(ResearchProgram.USGS);
         assertThat(response.getFacets())
                 .filteredOn((facet) -> facet.getField().equals("program"))
                 .singleElement()
@@ -62,22 +65,19 @@ class SearchServiceTest {
                                 .isEqualTo("USGS"));
     }
 
-    /** Several selected programs are a union, not an intersection. */
     @Test
     void severalProgramsReturnTheUnionOfTheirResults() {
         SearchResponse response = searchService.search(
-                "", List.of(ResearchProgram.TIGER_LINE, ResearchProgram.LODES), "Texas", null, null, 0, 25);
+                "", List.of("TIGER_LINE", "LODES"), "Texas", null, null, 0, 25);
 
         assertThat(response.getResults())
                 .extracting(SearchResult::getProgram)
                 .containsOnly(ResearchProgram.TIGER_LINE, ResearchProgram.LODES);
     }
 
-    /** Facet counts must not collapse to the selected program, or the others become unselectable. */
     @Test
     void programFacetCountsIgnoreTheProgramFilter() {
-        SearchResponse response =
-                searchService.search("", List.of(ResearchProgram.USGS), null, null, null, 0, 25);
+        SearchResponse response = searchService.search("", List.of("USGS"), null, null, null, 0, 25);
 
         assertThat(response.getFacets())
                 .filteredOn((facet) -> facet.getField().equals("program"))
@@ -85,11 +85,6 @@ class SearchServiceTest {
                 .satisfies((facet) -> assertThat(facet.getValues().size()).isGreaterThan(1));
     }
 
-    /**
-     * The fallback used to require the whole query as one substring, so it and Solr disagreed
-     * about what a search means: Solr found North Dakota objects for this query and the fallback
-     * found none, because no title contains the phrase verbatim.
-     */
     @Test
     void multiWordQueryMatchesWithoutTheExactPhrase() {
         SearchResponse response = searchService.search("North Dakota workforce", List.of(), null, null, null, 0, 25);
@@ -99,17 +94,16 @@ class SearchServiceTest {
                 .contains("lodes-wac-north-dakota-2023");
     }
 
-    /** Two thirds of the terms, matching the Solr minimum-match rule, not one term out of four. */
     @Test
     void unrelatedTermsDoNotMatchOnASingleWord() {
-        SearchResponse response = searchService.search("Wyoming hydrography earthquake census", List.of(), null, null, null, 0, 25);
+        SearchResponse response = searchService.search(
+                "Wyoming hydrography earthquake census", List.of(), null, null, null, 0, 25);
 
         assertThat(response.getResults())
                 .extracting(SearchResult::getGeography)
                 .doesNotContain("California");
     }
 
-    /** A single-word query still has to match that word. */
     @Test
     void singleTermQueryStillRequiresTheTerm() {
         SearchResponse response = searchService.search("Wyoming", List.of(), null, null, null, 0, 25);
