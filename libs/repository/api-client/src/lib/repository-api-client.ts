@@ -235,37 +235,48 @@ export class RepositorySearchApi {
     @Inject(REPOSITORY_API_BASE_URL) private readonly baseUrl: string,
   ) {}
 
-  search(query: SearchQuery = {}): Observable<SearchResponse> {
+  searchResearchObjects(query: SearchQuery): Observable<SearchResponse> {
     const params: Record<string, string | number | readonly string[]> = {};
 
     if (query.q) {
       params['q'] = query.q;
     }
+
     if (query.programs?.length) {
-      params['program'] = query.programs;
+      // HttpParams keeps repeated keys, which is how the contract expresses "any of these".
+      params['program'] = [...query.programs];
     }
+
     if (query.publisher) {
       params['publisher'] = query.publisher;
     }
+
     if (query.sourceSystem) {
       params['sourceSystem'] = query.sourceSystem;
     }
+
     if (query.geography) {
       params['geography'] = query.geography;
     }
+
     if (query.contentType) {
       params['contentType'] = query.contentType;
     }
+
     if (query.vintageYear !== undefined) {
       params['vintageYear'] = query.vintageYear;
     }
+
     if (query.page !== undefined) {
       params['page'] = query.page;
     }
+
     if (query.pageSize !== undefined) {
       params['pageSize'] = query.pageSize;
     }
 
-    return this.http.get<SearchResponse>(`${this.baseUrl}/search`, { params });
+    return this.http.get<SearchResponse>(`${this.baseUrl}/search`, {
+      params,
+    });
   }
 }
