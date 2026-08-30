@@ -2,7 +2,9 @@ package org.civicsrepo.admin;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.federation.CorpusProfileActivation;
@@ -10,12 +12,17 @@ import org.civicsrepo.federation.CorpusProfileActivationStore;
 import org.civicsrepo.repository.DiscoveryProjectionService;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionTargetState;
+import org.civicsrepo.search.DiscoveryDocument;
 import org.civicsrepo.search.SearchService;
 import org.springframework.stereotype.Service;
 
 /**
  * Makes corpus-profile changes explicit: a profile is active only after every enabled projection
  * target completed on the same deterministic projection identity and document count.
+ *
+ * <p>If a requested profile reaches the projection targets but fails final parity validation, the
+ * service compensates by rebuilding the previously active profile. The persisted active profile is
+ * never changed until a projection is fully valid.
  */
 @Service
 public class CorpusProfileActivationService {
@@ -47,9 +54,23 @@ public class CorpusProfileActivationService {
     }
 
     public ProjectionState activate(CorpusProfile profile) {
-        ProjectionState projected = projectionService.reindex(profile, searchService.fixtureDocuments());
-        recordSuccessfulProjection(profile, projected);
-        return projected;
+        Objects.requireNonNull(profile, "profile");
+        CorpusProfile previousProfile = currentProfile();
+        String previousProjectionId = projectionService.currentProjectionId();
+        List<DiscoveryDocument> fixtureFallback = searchService.fixtureDocuments();
+
+        try {
+            ProjectionState projected = projectionService.reindex(profile, fixtureFallback);
+            recordSuccessfulProjection(profile, projected);
+            return projected;
+        } catch (RuntimeException activationFailure) {
+            String failedProjectionId = projectionService.currentProjectionId();
+            boolean projectionChanged = !Objects.equals(previousProjectionId, failedProjectionId);
+            if (profile != previousProfile && projectionChanged) {
+                restorePreviousProfile(previousProfile, fixtureFallback, activationFailure);
+            }
+            throw activationFailure;
+        }
     }
 
     /** Record a projection produced by another guarded workflow, such as snapshot evidence capture. */
@@ -64,6 +85,18 @@ public class CorpusProfileActivationService {
                 projectionId,
                 projected.objectCount(),
                 OffsetDateTime.now(ZoneOffset.UTC)));
+    }
+
+    private void restorePreviousProfile(
+            CorpusProfile previousProfile,
+            List<DiscoveryDocument> fixtureFallback,
+            RuntimeException activationFailure) {
+        try {
+            ProjectionState restored = projectionService.reindex(previousProfile, fixtureFallback);
+            recordSuccessfulProjection(previousProfile, restored);
+        } catch (RuntimeException restoreFailure) {
+            activationFailure.addSuppressed(restoreFailure);
+        }
     }
 
     private void assertTargetParity(
