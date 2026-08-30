@@ -72,7 +72,8 @@ public class FederatedHarvestRunService {
 
         for (int page = 0; page < maxPages; page++) {
             try {
-                FederatedHarvestService.HarvestResult result = harvestService.harvestNext(sourceSystem, pageSize);
+                FederatedHarvestService.HarvestResult result =
+                        harvestService.harvestNext(sourceSystem, pageSize, run.id());
                 OffsetDateTime now = now();
                 run = new HarvestRun(
                         run.id(),
@@ -82,7 +83,7 @@ public class FederatedHarvestRunService {
                         run.pageSize(),
                         run.pageCount() + 1,
                         result.totalAccepted(),
-                        run.rejectedCount(),
+                        run.rejectedCount() + result.rejectedThisPage(),
                         run.skippedCount(),
                         result.nextCursor(),
                         run.startedAt(),
