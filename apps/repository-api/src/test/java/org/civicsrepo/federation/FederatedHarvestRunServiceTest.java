@@ -1,6 +1,7 @@
 package org.civicsrepo.federation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,7 +33,7 @@ class FederatedHarvestRunServiceTest {
         FederatedHarvestService pageService =
                 new FederatedHarvestService(catalog, checkpoints, List.of(harvester));
         FederatedHarvestRunService service =
-                new FederatedHarvestRunService(pageService, runs, List.of(harvester), CLOCK);
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(harvester), CLOCK);
 
         HarvestRun first = service.runBounded(FederatedSourceSystem.DATA_GOV, 2, 1);
 
@@ -56,6 +57,104 @@ class FederatedHarvestRunServiceTest {
         assertEquals(List.of("DATA_GOV:001", "DATA_GOV:002", "DATA_GOV:003"), catalog.records.stream()
                 .map(FederatedResearchRecord::id)
                 .toList());
+    }
+
+    @Test
+    void cancelPreservesCheckpointAndLaterRunContinuesWithNewRunId() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        InMemoryRunStore runs = new InMemoryRunStore();
+        TwoPageHarvester harvester = new TwoPageHarvester("test-v1");
+        FederatedHarvestService pageService =
+                new FederatedHarvestService(catalog, checkpoints, List.of(harvester));
+        FederatedHarvestRunService service =
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(harvester), CLOCK);
+
+        HarvestRun paused = service.runBounded(FederatedSourceSystem.DATA_GOV, 2, 1);
+        HarvestRun cancelled = service.cancel(FederatedSourceSystem.DATA_GOV);
+
+        assertEquals(paused.id(), cancelled.id());
+        assertEquals(HarvestRunStatus.CANCELLED, cancelled.status());
+        assertEquals(2, cancelled.acceptedCount());
+        assertEquals("page-2", cancelled.cursor());
+        assertEquals("page-2", checkpoints.find(FederatedSourceSystem.DATA_GOV).orElseThrow().cursor());
+
+        HarvestRun continued = service.runBounded(FederatedSourceSystem.DATA_GOV, 2, 1);
+
+        assertNotEquals(cancelled.id(), continued.id());
+        assertEquals(HarvestRunStatus.COMPLETED, continued.status());
+        assertEquals(1, continued.pageCount());
+        assertEquals(3, continued.acceptedCount());
+        assertNull(continued.cursor());
+        assertEquals(List.of(null, "page-2"), harvester.seenCursors);
+    }
+
+    @Test
+    void restartFromBeginningCancelsExistingRunClearsCheckpointAndStartsNewRunId() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        InMemoryRunStore runs = new InMemoryRunStore();
+        TwoPageHarvester harvester = new TwoPageHarvester("test-v1");
+        FederatedHarvestService pageService =
+                new FederatedHarvestService(catalog, checkpoints, List.of(harvester));
+        FederatedHarvestRunService service =
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(harvester), CLOCK);
+
+        HarvestRun first = service.runBounded(FederatedSourceSystem.DATA_GOV, 2, 1);
+        HarvestRun restarted = service.restartFromBeginning(FederatedSourceSystem.DATA_GOV, 2, 1);
+
+        assertEquals(HarvestRunStatus.CANCELLED, runs.findById(first.id()).orElseThrow().status());
+        assertNotEquals(first.id(), restarted.id());
+        assertEquals(HarvestRunStatus.PAUSED, restarted.status());
+        assertEquals(2, restarted.acceptedCount());
+        assertEquals("page-2", restarted.cursor());
+        assertEquals(List.of(null, null), harvester.seenCursors);
+        assertEquals("page-2", checkpoints.find(FederatedSourceSystem.DATA_GOV).orElseThrow().cursor());
+    }
+
+    @Test
+    void recordsQuarantinedCountInDurableRun() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        InMemoryRunStore runs = new InMemoryRunStore();
+        InMemoryQuarantineStore quarantine = new InMemoryQuarantineStore();
+        FederatedSourceHarvester harvester = new FederatedSourceHarvester() {
+            @Override
+            public FederatedSourceSystem sourceSystem() {
+                return FederatedSourceSystem.DATA_GOV;
+            }
+
+            @Override
+            public String adapterVersion() {
+                return "test-v1";
+            }
+
+            @Override
+            public HarvestPage fetch(String cursor, int pageSize) {
+                return new HarvestPage(
+                        List.of(record("accepted")),
+                        List.of(new HarvestRejection("bad", "missing title", "{\"id\":\"bad\"}")),
+                        null,
+                        true);
+            }
+        };
+        FederatedHarvestService pageService = new FederatedHarvestService(
+                catalog,
+                checkpoints,
+                quarantine,
+                List.of(harvester),
+                (duration) -> {},
+                () -> 1.0);
+        FederatedHarvestRunService service =
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(harvester), CLOCK);
+
+        HarvestRun run = service.runBounded(FederatedSourceSystem.DATA_GOV, 100, 1);
+
+        assertEquals(HarvestRunStatus.COMPLETED, run.status());
+        assertEquals(1, run.acceptedCount());
+        assertEquals(1, run.rejectedCount());
+        assertEquals(1, quarantine.records.size());
+        assertEquals(run.id(), quarantine.records.getFirst().runId());
     }
 
     @Test
@@ -86,7 +185,7 @@ class FederatedHarvestRunServiceTest {
         };
         FederatedHarvestService pageService = new FederatedHarvestService(catalog, checkpoints, List.of(invalid));
         FederatedHarvestRunService service =
-                new FederatedHarvestRunService(pageService, runs, List.of(invalid), CLOCK);
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(invalid), CLOCK);
 
         FederatedHarvestException failure = assertThrows(
                 FederatedHarvestException.class,
@@ -97,7 +196,8 @@ class FederatedHarvestRunServiceTest {
         assertEquals(HarvestRunStatus.FAILED, failed.status());
         assertEquals("publisher response failed validation", failed.failureMessage());
         assertEquals(0, failed.pageCount());
-        assertEquals(0, failed.acceptedCount());
+        assertEquals(400, failed.acceptedCount());
+        assertEquals("existing-cursor", failed.cursor());
         assertEquals("existing-cursor", checkpoints.find(FederatedSourceSystem.DATA_GOV).orElseThrow().cursor());
     }
 
@@ -141,7 +241,7 @@ class FederatedHarvestRunServiceTest {
         };
         FederatedHarvestService pageService = new FederatedHarvestService(catalog, checkpoints, List.of(v2));
         FederatedHarvestRunService service =
-                new FederatedHarvestRunService(pageService, runs, List.of(v2), CLOCK);
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(v2), CLOCK);
 
         IllegalStateException failure = assertThrows(
                 IllegalStateException.class,
@@ -161,7 +261,7 @@ class FederatedHarvestRunServiceTest {
         FederatedHarvestService pageService =
                 new FederatedHarvestService(catalog, checkpoints, List.of(harvester));
         FederatedHarvestRunService service =
-                new FederatedHarvestRunService(pageService, runs, List.of(harvester), CLOCK);
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(harvester), CLOCK);
 
         HarvestRun paused = service.runBounded(FederatedSourceSystem.DATA_GOV, 2, 1);
         IllegalStateException failure = assertThrows(
@@ -170,6 +270,24 @@ class FederatedHarvestRunServiceTest {
 
         assertTrue(failure.getMessage().contains("pageSize 2"));
         assertEquals(paused.id(), runs.findResumable(FederatedSourceSystem.DATA_GOV).orElseThrow().id());
+    }
+
+    @Test
+    void cancelRequiresResumableRun() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        InMemoryRunStore runs = new InMemoryRunStore();
+        TwoPageHarvester harvester = new TwoPageHarvester("test-v1");
+        FederatedHarvestService pageService =
+                new FederatedHarvestService(catalog, checkpoints, List.of(harvester));
+        FederatedHarvestRunService service =
+                new FederatedHarvestRunService(pageService, runs, checkpoints, List.of(harvester), CLOCK);
+
+        IllegalStateException failure = assertThrows(
+                IllegalStateException.class,
+                () -> service.cancel(FederatedSourceSystem.DATA_GOV));
+
+        assertTrue(failure.getMessage().contains("No resumable harvest run"));
     }
 
     private static FederatedResearchRecord record(String id) {
@@ -192,6 +310,7 @@ class FederatedHarvestRunServiceTest {
 
     private static final class TwoPageHarvester implements FederatedSourceHarvester {
         private final String version;
+        private final List<String> seenCursors = new ArrayList<>();
 
         private TwoPageHarvester(String version) {
             this.version = version;
@@ -209,6 +328,7 @@ class FederatedHarvestRunServiceTest {
 
         @Override
         public HarvestPage fetch(String cursor, int pageSize) {
+            seenCursors.add(cursor);
             if (cursor == null) {
                 return new HarvestPage(List.of(record("001"), record("002")), "page-2", false);
             }
@@ -288,6 +408,36 @@ class FederatedHarvestRunServiceTest {
             return runs.values().stream()
                     .filter((run) -> run.sourceSystem() == sourceSystem)
                     .sorted((left, right) -> right.startedAt().compareTo(left.startedAt()))
+                    .limit(limit)
+                    .toList();
+        }
+    }
+
+    private static final class InMemoryQuarantineStore implements HarvestQuarantineStore {
+        private final List<HarvestQuarantineRecord> records = new ArrayList<>();
+
+        @Override
+        public void saveAll(
+                String runId,
+                FederatedSourceSystem sourceSystem,
+                List<HarvestRejection> rejections,
+                OffsetDateTime observedAt) {
+            for (HarvestRejection rejection : rejections) {
+                records.add(new HarvestQuarantineRecord(
+                        "quarantine-" + records.size(),
+                        runId,
+                        sourceSystem,
+                        rejection.sourceIdentifier(),
+                        rejection.message(),
+                        rejection.rawSnippet(),
+                        observedAt));
+            }
+        }
+
+        @Override
+        public List<HarvestQuarantineRecord> findRecent(FederatedSourceSystem sourceSystem, int limit) {
+            return records.stream()
+                    .filter((record) -> record.sourceSystem() == sourceSystem)
                     .limit(limit)
                     .toList();
         }
