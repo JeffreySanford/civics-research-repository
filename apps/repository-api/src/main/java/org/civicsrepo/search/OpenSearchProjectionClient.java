@@ -257,6 +257,18 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                         filterClauses(programs, geography, contentType, vintageYear, "programName"),
                         100));
         aggregations.put(
+                "publisher_scope",
+                scopedTermsAggregation(
+                        "publisher",
+                        filterClauses(programs, geography, contentType, vintageYear, null),
+                        100));
+        aggregations.put(
+                "sourceSystem_scope",
+                scopedTermsAggregation(
+                        "sourceSystem",
+                        filterClauses(programs, geography, contentType, vintageYear, null),
+                        25));
+        aggregations.put(
                 "geography_scope",
                 scopedTermsAggregation(
                         "geography",
@@ -343,7 +355,11 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                 ? Map.of("match_all", Map.of())
                 : Map.of("bool", Map.of("filter", filters));
         Map<String, Object> terms = new LinkedHashMap<>();
-        terms.put("field", "geography".equals(field) ? "geography.keyword" : field);
+        String aggregationField = switch (field) {
+            case "geography", "publisher" -> field + ".keyword";
+            default -> field;
+        };
+        terms.put("field", aggregationField);
         terms.put("size", size);
         if ("vintageYear".equals(field)) {
             terms.put("order", Map.of("_key", "desc"));
@@ -401,6 +417,19 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                 "Program",
                                 root.path("aggregations").path("program_scope").path("values").path("buckets"),
                                 programs),
+                        facetGroup(
+                                "publisher",
+                                "Publisher",
+                                root.path("aggregations").path("publisher_scope").path("values").path("buckets"),
+                                Set.of()),
+                        facetGroup(
+                                "sourceSystem",
+                                "Source",
+                                root.path("aggregations")
+                                        .path("sourceSystem_scope")
+                                        .path("values")
+                                        .path("buckets"),
+                                Set.of()),
                         facetGroup(
                                 "geography",
                                 "Geography",
