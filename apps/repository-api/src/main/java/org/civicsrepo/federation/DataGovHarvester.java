@@ -43,6 +43,7 @@ public class DataGovHarvester implements FederatedSourceHarvester {
     static final int MAX_RESOURCE_LINKS_PER_RECORD = 100;
     static final String ADAPTER_VERSION = "data-gov-catalog-v4-v2";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
+    private static final Duration DEFAULT_RATE_LIMIT_DEFER = Duration.ofHours(1);
     private static final String DEFAULT_CATALOG_BASE = "https://catalog.data.gov";
 
     private final String searchUrl;
@@ -103,7 +104,13 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         }
 
         int status = response.statusCode();
-        if (status == 429 || status == 408 || status >= 500) {
+        if (status == 429) {
+            Duration retryAfter = retryAfter(response);
+            throw FederatedHarvestException.retryable(
+                    "Data.gov Catalog API returned HTTP 429.",
+                    retryAfter == null ? DEFAULT_RATE_LIMIT_DEFER : retryAfter);
+        }
+        if (status == 408 || status >= 500) {
             throw FederatedHarvestException.retryable(
                     "Data.gov Catalog API returned HTTP " + status + ".",
                     retryAfter(response));
