@@ -121,24 +121,42 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         }
 
         JsonNode result = root.path("result");
-        if (!result.isObject() || !result.path("results").isArray()) {
+        JsonNode results = result.path("results");
+        if (!result.isObject() || !results.isArray()) {
             throw FederatedHarvestException.permanent("Data.gov package_search response is missing result.results.");
         }
 
         long total = Math.max(0L, result.path("count").asLong(0L));
         List<FederatedResearchRecord> records = new ArrayList<>();
-        for (JsonNode dataset : result.path("results")) {
-            records.add(normalize(dataset));
+        List<HarvestRejection> rejections = new ArrayList<>();
+        for (JsonNode dataset : results) {
+            try {
+                records.add(normalize(dataset));
+            } catch (FederatedHarvestException exception) {
+                if (exception.retryable()) {
+                    throw exception;
+                }
+                rejections.add(new HarvestRejection(
+                        text(dataset, "id"),
+                        exception.getMessage(),
+                        dataset.toString()));
+            }
         }
 
-        long nextOffset = (long) start + records.size();
-        if (records.isEmpty() && nextOffset < total) {
+        // A rejected record still consumed a source offset. Advancing by accepted records would
+        // repeatedly fetch the same bad item forever and make resumability depend on validation.
+        long nextOffset = (long) start + results.size();
+        if (results.isEmpty() && nextOffset < total) {
             throw FederatedHarvestException.permanent(
                     "Data.gov returned an empty page before the reported catalog count was exhausted.");
         }
 
-        boolean complete = nextOffset >= total || records.isEmpty();
-        return new HarvestPage(records, complete ? null : Long.toString(nextOffset), complete);
+        boolean complete = nextOffset >= total || results.isEmpty();
+        return new HarvestPage(
+                records,
+                rejections,
+                complete ? null : Long.toString(nextOffset),
+                complete);
     }
 
     private FederatedResearchRecord normalize(JsonNode dataset) {
