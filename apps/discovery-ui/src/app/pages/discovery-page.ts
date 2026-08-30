@@ -18,6 +18,7 @@ import type {
   SearchQuery,
   SourceSystem,
 } from 'repository-api-client';
+import { encodeResearchId } from '../research-id';
 import { SearchActions } from '../state/search/search.actions';
 import {
   selectSearchError,
@@ -331,6 +332,11 @@ export class DiscoveryPage implements OnInit {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  }
+
+  /** Canonical route token for either a curated or namespaced federated research identity. */
+  protected researchRouteId(canonicalId: string): string {
+    return encodeResearchId(canonicalId);
   }
 
   /**
