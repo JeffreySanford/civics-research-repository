@@ -89,9 +89,11 @@ public class FederatedHarvestService {
         return new HarvestResult(
                 sourceSystem,
                 page.records().size(),
+                page.rejections().size(),
                 totalAccepted,
                 page.complete(),
-                page.complete() ? null : page.nextCursor());
+                page.complete() ? null : page.nextCursor(),
+                page.rejections());
     }
 
     private HarvestPage fetchWithRetry(FederatedSourceHarvester harvester, String cursor, int pageSize) {
@@ -137,7 +139,13 @@ public class FederatedHarvestService {
     public record HarvestResult(
             FederatedSourceSystem sourceSystem,
             int acceptedThisPage,
+            int rejectedThisPage,
             long totalAccepted,
             boolean complete,
-            String nextCursor) {}
+            String nextCursor,
+            List<HarvestRejection> rejections) {
+        public HarvestResult {
+            rejections = rejections == null ? List.of() : List.copyOf(rejections);
+        }
+    }
 }
