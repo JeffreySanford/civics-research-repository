@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import org.civicsrepo.generated.dto.FacetValue;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +61,22 @@ class OpenSearchProjectionClientSearchTest {
                         .path("field")
                         .asText())
                 .isEqualTo("programName");
+        assertThat(aggregations
+                        .path("publisher_scope")
+                        .path("aggs")
+                        .path("values")
+                        .path("terms")
+                        .path("field")
+                        .asText())
+                .isEqualTo("publisher.keyword");
+        assertThat(aggregations
+                        .path("sourceSystem_scope")
+                        .path("aggs")
+                        .path("values")
+                        .path("terms")
+                        .path("field")
+                        .asText())
+                .isEqualTo("sourceSystem");
 
         String programScope = aggregations.path("program_scope").path("filter").toString();
         assertThat(programScope).doesNotContain("programName").contains("contentType");
@@ -69,6 +86,23 @@ class OpenSearchProjectionClientSearchTest {
 
         String query = request.path("query").toString();
         assertThat(query).contains("programName^3");
+
+        assertThat(execution.response().getFacets())
+                .filteredOn((facet) -> facet.getField().equals("publisher"))
+                .singleElement()
+                .satisfies((facet) -> assertThat(facet.getValues())
+                        .singleElement()
+                        .extracting(FacetValue::getValue)
+                        .isEqualTo("Office of Science"));
+        assertThat(execution.response().getFacets())
+                .filteredOn((facet) -> facet.getField().equals("sourceSystem"))
+                .singleElement()
+                .satisfies((facet) -> assertThat(facet.getValues())
+                        .singleElement()
+                        .satisfies((value) -> {
+                            assertThat(value.getValue()).isEqualTo("DOE_OSTI");
+                            assertThat(value.getCount()).isEqualTo(2);
+                        }));
     }
 
     private void handleSearch(HttpExchange exchange) throws IOException {
@@ -79,6 +113,8 @@ class OpenSearchProjectionClientSearchTest {
                   "hits": {"total": {"value": 0}, "hits": []},
                   "aggregations": {
                     "program_scope": {"values": {"buckets": []}},
+                    "publisher_scope": {"values": {"buckets": [{"key": "Office of Science", "doc_count": 2}]}},
+                    "sourceSystem_scope": {"values": {"buckets": [{"key": "DOE_OSTI", "doc_count": 2}]}},
                     "geography_scope": {"values": {"buckets": []}},
                     "contentType_scope": {"values": {"buckets": []}},
                     "vintageYear_scope": {"values": {"buckets": []}}
