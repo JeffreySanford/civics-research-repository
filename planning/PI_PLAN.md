@@ -1,10 +1,25 @@
 # Program Increment Plan
 
-This plan separates the next two large initiatives so data semantics and infrastructure topology can evolve independently while remaining intentionally connected.
+This plan defines six named program increments. The increment numbers are stable workstream identities, not a promise that implementation must occur in numeric order.
 
-## Delivery strategy
+The current execution order is intentionally:
 
 ```text
+PI-4 Manual Accessibility Evidence
+        |
+        | closes human-verification gaps
+        v
+PI-5 Browser Evidence CI and Governance
+        |
+        | makes evidence repeatable and governed
+        v
+PI-6 Solr/OpenSearch Comparison Hardening
+        |
+        | strengthens semantic comparison before scale
+        v
+RETURN TO THE SCALE PATH
+        |
+        v
 PI-1 Federated Metadata Expansion
         |
         | produces deterministic corpora
@@ -13,8 +28,10 @@ PI-2 Local Kubernetes Search Laboratory
         |
         | validates topology/resilience/scale
         v
-Future AWS / EKS implementation
+PI-3 AWS Implementation Candidate
 ```
+
+PI-1 work already implemented before this sequencing decision remains valid. It is not discarded or reset; after PI-4 through PI-6 are closed, the project returns to PI-1, audits its exit criteria against the existing implementation, completes the missing work, then proceeds through PI-2 and PI-3.
 
 Docker Compose standalone search remains supported throughout all increments.
 
@@ -25,6 +42,105 @@ It is not a temporary implementation to be deleted after Kubernetes exists. It r
 - the functional/regression baseline,
 - the lowest-overhead environment for small corpora,
 - the control topology for performance experiments.
+
+## PI-4 — Manual Accessibility Evidence
+
+### Objective
+
+Close the remaining human-verification gap that automated lint, axe and Playwright evidence cannot prove. PI-4 is evidence work first: it should record actual keyboard and assistive-technology behavior without converting an unverified manual status into a pass.
+
+### Required evidence
+
+PI-4 includes:
+
+- complete keyboard-only application review without a mouse,
+- NVDA evidence in Firefox and Chrome,
+- JAWS evidence where a license is available, or an explicit documented N/A reason,
+- trusted map-click/map-to-list focus behavior and the broader map-equivalence review,
+- cognitive/workflow review,
+- MapLibre canvas tab-stop review with a screen reader,
+- Search Lab keyboard-only review covering scenario selection, filters, run action, live completion status, projection evidence and both engine result regions,
+- a decision on whether a `contentinfo` landmark improves the shell.
+
+### Exit criteria
+
+PI-4 exits when:
+
+- every manual checklist has a dated result,
+- evidence is bound to the commit/build actually tested,
+- failures or limitations are recorded explicitly rather than converted into inferred passes,
+- keyboard and screen-reader findings that require code changes have regression coverage before closure,
+- the Search Lab comparison flow has a recorded non-mouse verification path.
+
+## PI-5 — Browser Evidence CI and Governance
+
+### Objective
+
+Turn browser/accessibility evidence from an optional development aid into a repeatable governed quality signal with clear merge-policy decisions.
+
+### Required evidence and governance
+
+PI-5 includes:
+
+- deterministic Chromium/Firefox/WebKit comparison evidence,
+- automated WCAG/Section 508-oriented axe coverage,
+- Search Lab comparison scenarios in the dedicated browser workflow,
+- a live browser -> Spring API -> Solr + OpenSearch smoke path that is distinct from mocked deterministic evidence,
+- preserved HTML reports, traces and screenshots on failure,
+- local and CI use of the same evidence/document-drift rules,
+- an explicit decision on required evidence checks,
+- an explicit decision on `main` branch protection.
+
+### Exit criteria
+
+PI-5 exits when:
+
+- deterministic browser evidence is reproducible across the supported browser matrix,
+- the real-stack smoke path remains independently visible from mocked evidence,
+- failing runs preserve actionable evidence artifacts,
+- a failed evidence refresh cannot replace the prior known-good baseline,
+- merge-check and branch-protection decisions are documented and implemented or explicitly declined with rationale.
+
+## PI-6 — Solr/OpenSearch Comparison Hardening
+
+### Objective
+
+Make the Search Lab explain semantic differences between Solr and OpenSearch before large PI-1 corpora and PI-2 topology experiments amplify those differences.
+
+The first side-by-side vertical slice already exists. PI-6 focuses on explanation, reproducibility and expansion discipline rather than adding query types merely for breadth.
+
+### Required hardening
+
+PI-6 includes:
+
+- result-set overlap summaries,
+- top-N/rank-order difference summaries,
+- facet-bucket difference summaries,
+- stable comparison query/scenario definitions,
+- richer environment metadata for later scale evidence,
+- clear separation of semantic quality from timing/performance evidence,
+- phrase search and highlighting only after the current matrix is green,
+- geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the core comparison path is hardened.
+
+### Exit criteria
+
+PI-6 exits when:
+
+- the UI/evidence can explain meaningful result-set, rank and facet differences rather than only rendering two columns,
+- deterministic browser and real-stack evidence cover the hardened comparison behavior,
+- comparison queries and projection identity are versionable/reproducible for reuse by PI-1 and PI-2,
+- performance diagnostics retain environment/context metadata sufficient to avoid unsupported speed claims,
+- future scenario breadth has a documented evidence gate.
+
+## Return checkpoint after PI-6
+
+Before new PI-1 source breadth resumes:
+
+1. review PI-1, PI-2 and PI-3 exit criteria against the repository as it actually exists,
+2. retain already-delivered PI-1 F0 work that still satisfies the architecture,
+3. close or re-scope stale planning items instead of reimplementing them,
+4. prioritize bounded-memory/batched projection and deterministic corpus identity before large-source breadth,
+5. resume PI-1 from the earliest unmet dependency rather than from an assumed phase number.
 
 ## PI-1 — Federated Metadata Expansion
 
@@ -184,7 +300,7 @@ PI-2 exits when:
 - at least one failure/recovery scenario per engine is reproducible,
 - no result claims kind predicts cloud performance.
 
-## PI-3 — AWS implementation candidate
+## PI-3 — AWS Implementation Candidate
 
 Only after PI-2 should the project commit to production-shaped AWS topology details.
 
@@ -202,7 +318,7 @@ Terraform/CDK selection remains a separate implementation decision.
 
 ## Cross-PI invariants
 
-These rules must remain true in both PI-1 and PI-2:
+These rules must remain true across all six increments:
 
 1. Search engines are derived state.
 2. DSpace remains authoritative for curated repository objects.
@@ -214,6 +330,8 @@ These rules must remain true in both PI-1 and PI-2:
 8. Standalone remains a supported baseline.
 9. Kubernetes is optional for ordinary development/demo use.
 10. Performance and semantic quality are measured separately.
+11. Automated accessibility evidence never substitutes for required manual evidence.
+12. A failed evidence run never overwrites a prior known-good baseline.
 
 ## Planning risks to resolve during PI-1
 
@@ -293,21 +411,29 @@ Resolution: measure throughput, failure recovery and operational resilience in a
 
 ## Branch strategy
 
-Recommended implementation branches:
+Recommended execution branches:
 
 ```text
-codex/federated-metadata-catalog
-codex/data-gov-adapter
-codex/osti-adapter
-codex/nasa-cmr-adapter
-codex/pubmed-adapter
-codex/openalex-adapter
-codex/million-record-projection
+PI-4 / PI-5 / PI-6 first
+  evidence/manual-accessibility work as appropriate
+  codex/browser-evidence-governance
+  codex/search-comparison-hardening
 
-then
+then resume PI-1
+  codex/federated-metadata-catalog
+  codex/data-gov-adapter
+  codex/osti-adapter
+  codex/nasa-cmr-adapter
+  codex/pubmed-adapter
+  codex/openalex-adapter
+  codex/million-record-projection
 
-codex/kubernetes-search-cluster
-codex/kubernetes-resilience-evidence
+then PI-2
+  codex/kubernetes-search-cluster
+  codex/kubernetes-resilience-evidence
+
+then PI-3
+  infrastructure branch(es) selected after PI-2 evidence
 ```
 
 Large increments should still be broken into independently testable PRs rather than one long-lived mega-branch.
