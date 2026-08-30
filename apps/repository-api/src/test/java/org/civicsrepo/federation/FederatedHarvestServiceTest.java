@@ -27,6 +27,7 @@ class FederatedHarvestServiceTest {
 
         FederatedHarvestService.HarvestResult first = service.harvestNext(FederatedSourceSystem.DATA_GOV, 2);
         assertEquals(2, first.acceptedThisPage());
+        assertEquals(0, first.rejectedThisPage());
         assertEquals(2, first.totalAccepted());
         assertEquals("page-2", first.nextCursor());
         assertEquals("page-2", checkpoints.find(FederatedSourceSystem.DATA_GOV).orElseThrow().cursor());
@@ -41,6 +42,86 @@ class FederatedHarvestServiceTest {
         assertEquals(2, harvester.seenCursors.size());
         assertNull(harvester.seenCursors.getFirst());
         assertEquals("page-2", harvester.seenCursors.get(1));
+    }
+
+    @Test
+    void persistsRecordRejectionsWithRunIdAndStillAdvancesCheckpoint() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        InMemoryQuarantineStore quarantine = new InMemoryQuarantineStore();
+        FederatedSourceHarvester mixedPage = new FederatedSourceHarvester() {
+            @Override
+            public FederatedSourceSystem sourceSystem() {
+                return FederatedSourceSystem.DATA_GOV;
+            }
+
+            @Override
+            public HarvestPage fetch(String cursor, int pageSize) {
+                return new HarvestPage(
+                        List.of(record(FederatedSourceSystem.DATA_GOV, "accepted")),
+                        List.of(new HarvestRejection("rejected", "missing required title", "{\"id\":\"rejected\"}")),
+                        "source-offset-2",
+                        false);
+            }
+        };
+        FederatedHarvestService service = new FederatedHarvestService(
+                catalog,
+                checkpoints,
+                quarantine,
+                List.of(mixedPage),
+                (duration) -> {},
+                () -> 1.0);
+
+        FederatedHarvestService.HarvestResult result =
+                service.harvestNext(FederatedSourceSystem.DATA_GOV, 100, "run-123");
+
+        assertEquals(1, result.acceptedThisPage());
+        assertEquals(1, result.rejectedThisPage());
+        assertEquals(1, result.totalAccepted());
+        assertEquals("source-offset-2", result.nextCursor());
+        assertEquals(1, catalog.records.size());
+        assertEquals("source-offset-2", checkpoints.find(FederatedSourceSystem.DATA_GOV).orElseThrow().cursor());
+        assertEquals(1, checkpoints.find(FederatedSourceSystem.DATA_GOV).orElseThrow().acceptedCount());
+        assertEquals(1, quarantine.records.size());
+        assertEquals("run-123", quarantine.records.getFirst().runId());
+        assertEquals("rejected", quarantine.records.getFirst().sourceIdentifier());
+        assertEquals("missing required title", quarantine.records.getFirst().message());
+    }
+
+    @Test
+    void doesNotPersistQuarantineWithoutDurableRunId() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        InMemoryQuarantineStore quarantine = new InMemoryQuarantineStore();
+        FederatedSourceHarvester rejectedPage = new FederatedSourceHarvester() {
+            @Override
+            public FederatedSourceSystem sourceSystem() {
+                return FederatedSourceSystem.DATA_GOV;
+            }
+
+            @Override
+            public HarvestPage fetch(String cursor, int pageSize) {
+                return new HarvestPage(
+                        List.of(),
+                        List.of(new HarvestRejection(null, "invalid record", "{}")),
+                        null,
+                        true);
+            }
+        };
+        FederatedHarvestService service = new FederatedHarvestService(
+                catalog,
+                checkpoints,
+                quarantine,
+                List.of(rejectedPage),
+                (duration) -> {},
+                () -> 1.0);
+
+        FederatedHarvestService.HarvestResult result =
+                service.harvestNext(FederatedSourceSystem.DATA_GOV, 100);
+
+        assertTrue(result.complete());
+        assertEquals(1, result.rejectedThisPage());
+        assertTrue(quarantine.records.isEmpty());
     }
 
     @Test
@@ -244,6 +325,37 @@ class FederatedHarvestServiceTest {
         @Override
         public void clear(FederatedSourceSystem sourceSystem) {
             checkpoints.remove(sourceSystem);
+        }
+    }
+
+    private static final class InMemoryQuarantineStore implements HarvestQuarantineStore {
+        private final List<HarvestQuarantineRecord> records = new ArrayList<>();
+
+        @Override
+        public void saveAll(
+                String runId,
+                FederatedSourceSystem sourceSystem,
+                List<HarvestRejection> rejections,
+                OffsetDateTime observedAt) {
+            for (int index = 0; index < rejections.size(); index++) {
+                HarvestRejection rejection = rejections.get(index);
+                records.add(new HarvestQuarantineRecord(
+                        "quarantine-" + records.size(),
+                        runId,
+                        sourceSystem,
+                        rejection.sourceIdentifier(),
+                        rejection.message(),
+                        rejection.rawSnippet(),
+                        observedAt));
+            }
+        }
+
+        @Override
+        public List<HarvestQuarantineRecord> findRecent(FederatedSourceSystem sourceSystem, int limit) {
+            return records.stream()
+                    .filter((record) -> record.sourceSystem() == sourceSystem)
+                    .limit(limit)
+                    .toList();
         }
     }
 }
