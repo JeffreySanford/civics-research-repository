@@ -1,12 +1,11 @@
 package org.civicsrepo.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectType;
-import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchComparisonEngine;
 import org.civicsrepo.generated.dto.SearchComparisonRequest;
 import org.civicsrepo.generated.dto.SearchComparisonScenarioId;
@@ -48,27 +46,42 @@ class SearchComparisonServiceTest {
         when(solr.documentCount()).thenReturn(Optional.of(181));
         when(openSearch.documentCount()).thenReturn(Optional.of(181));
         when(projectionService.state())
-                .thenReturn(new ProjectionState(RepositorySource.REPOSITORY, 181, OffsetDateTime.parse("2026-08-29T13:03:07-05:00")));
+                .thenReturn(new ProjectionState(
+                        RepositorySource.REPOSITORY,
+                        181,
+                        OffsetDateTime.parse("2026-08-29T13:03:07-05:00")));
         when(projectionService.currentProjectionId()).thenReturn(PROJECTION_ID);
         currentProjectionFor("discovery", PROJECTION_ID, 181, null);
         currentProjectionFor("discovery-comparison", PROJECTION_ID, 181, null);
     }
 
     @Test
-    void runsBothEnginesAgainstTheSameNormalizedRequestAndVerifiesParity() {
+    void runsBothEnginesAgainstTheSameDataDrivenProgramRequestAndVerifiesParity() {
         available(solr);
         available(openSearch);
-        when(solr.searchWithDiagnostics("North Dakota workforce", List.of(ResearchProgram.LODES), "North Dakota", ResearchObjectType.DATASET, 2023, 0, 25))
+        when(solr.searchWithDiagnostics(
+                        "reactor materials",
+                        List.of("Office of Science"),
+                        null,
+                        ResearchObjectType.PUBLICATION,
+                        null,
+                        0,
+                        25))
                 .thenReturn(execution(3, 6));
-        when(openSearch.searchWithDiagnostics("North Dakota workforce", List.of(ResearchProgram.LODES), "North Dakota", ResearchObjectType.DATASET, 2023, 0, 25))
+        when(openSearch.searchWithDiagnostics(
+                        "reactor materials",
+                        List.of("Office of Science"),
+                        null,
+                        ResearchObjectType.PUBLICATION,
+                        null,
+                        0,
+                        25))
                 .thenReturn(execution(3, 11));
 
         SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FACETED_SEARCH)
-                .query("North Dakota workforce")
-                .programs(List.of(ResearchProgram.LODES.getValue()))
-                .geography("North Dakota")
-                .contentType(ResearchObjectType.DATASET)
-                .vintageYear(2023)
+                .query("reactor materials")
+                .programs(List.of("Office of Science"))
+                .contentType(ResearchObjectType.PUBLICATION)
                 .page(0)
                 .pageSize(25);
 
@@ -84,16 +97,6 @@ class SearchComparisonServiceTest {
         assertThat(result.getOpenSearch().getTotalHits()).isEqualTo(3);
         assertThat(result.getSolr().getEngineReportedMs()).isEqualTo(6L);
         assertThat(result.getOpenSearch().getEngineReportedMs()).isEqualTo(11L);
-    }
-
-    @Test
-    void rejectsUnknownDataDrivenProgramUntilComparisonIndexesUseCanonicalProgramName() {
-        SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FILTERING)
-                .programs(List.of("Office of Science"));
-
-        assertThatThrownBy(() -> service.run(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("programName migration");
     }
 
     @Test
