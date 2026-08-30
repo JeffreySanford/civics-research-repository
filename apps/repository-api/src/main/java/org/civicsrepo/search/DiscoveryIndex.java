@@ -10,21 +10,24 @@ import org.civicsrepo.generated.dto.SearchResponse;
  * The public search engine used by the browser-facing discovery path.
  *
  * <p>The projection lifecycle lives in {@link DiscoveryProjectionTarget}. This interface adds the
- * query behavior needed by the application. Keeping those concerns separate lets the same DSpace
- * document set be projected into OpenSearch for comparison without making OpenSearch the live
- * discovery engine before the comparison has earned that decision.
+ * query behavior needed by the application. Keeping those concerns separate lets the same
+ * normalized document set be projected into OpenSearch for comparison without making OpenSearch the
+ * live discovery engine before the comparison has earned that decision.
  *
  * <p>DSpace runs its own Solr for its own purposes and always will; this index is a separate,
  * application-owned projection serving the public search path.
  */
 public interface DiscoveryIndex extends DiscoveryProjectionTarget {
 
-    /** Per-program document counts, used by the admin overview to compare against the repository. */
+    /**
+     * Legacy curated per-program counts used by the repository/admin overview. Public discovery
+     * filtering uses data-driven program names instead.
+     */
     Map<ResearchProgram, Integer> programFacetCounts();
 
     SearchResponse search(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -37,7 +40,7 @@ public interface DiscoveryIndex extends DiscoveryProjectionTarget {
      */
     default SearchExecution searchWithDiagnostics(
             String query,
-            List<ResearchProgram> programs,
+            List<String> programs,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
