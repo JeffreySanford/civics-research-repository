@@ -157,7 +157,7 @@ class FederatedHarvestServiceTest {
     }
 
     @Test
-    void honorsRetryAfterWithoutAllowingUnboundedSleep() {
+    void defersLongRetryAfterWithoutSleepingOrRetrying() {
         InMemoryCatalog catalog = new InMemoryCatalog();
         InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
         AtomicInteger attempts = new AtomicInteger();
@@ -170,19 +170,21 @@ class FederatedHarvestServiceTest {
 
             @Override
             public HarvestPage fetch(String cursor, int pageSize) {
-                if (attempts.incrementAndGet() == 1) {
-                    throw FederatedHarvestException.retryable("rate limited", Duration.ofSeconds(30));
-                }
-                return new HarvestPage(List.of(record(FederatedSourceSystem.DATA_GOV, "001")), null, true);
+                attempts.incrementAndGet();
+                throw FederatedHarvestException.retryable("rate limited", Duration.ofSeconds(30));
             }
         };
         FederatedHarvestService service = new FederatedHarvestService(
                 catalog, checkpoints, List.of(rateLimited), delays::add, () -> 1.0);
 
-        service.harvestNext(FederatedSourceSystem.DATA_GOV, 100);
+        FederatedHarvestException failure = assertThrows(
+                FederatedHarvestException.class,
+                () -> service.harvestNext(FederatedSourceSystem.DATA_GOV, 100));
 
-        assertEquals(2, attempts.get());
-        assertEquals(List.of(Duration.ofSeconds(5)), delays);
+        assertEquals("rate limited", failure.getMessage());
+        assertEquals(1, attempts.get());
+        assertTrue(delays.isEmpty());
+        assertTrue(catalog.records.isEmpty());
     }
 
     @Test
