@@ -436,21 +436,27 @@ export function generateSafIfNeeded({ force = false } = {}) {
   return generated.status ?? 0;
 }
 
-export async function runReindex() {
-  const reindex = await fetch(`${API_URL}/admin/reindex`, { method: 'POST' });
+export async function runReindex(profile) {
+  const profileQuery = profile
+    ? `?profile=${encodeURIComponent(profile)}`
+    : '';
+  const reindex = await fetch(`${API_URL}/admin/reindex${profileQuery}`, {
+    method: 'POST',
+  });
   if (!reindex.ok) {
     throw new Error(`Reindex failed with HTTP ${reindex.status}.`);
   }
 
   const projection = await reindex.json();
+  const profileLabel = profile ? ` for ${profile}` : '';
   console.log(
-    `    Indexed ${projection.objectCount} research objects (source: ${projection.source}).`,
+    `    Indexed ${projection.objectCount} research objects${profileLabel} (source: ${projection.source}).`,
   );
 
   if (projection.source !== 'REPOSITORY') {
     console.warn(
-      '    WARNING: the discovery projection is serving FIXTURE data, which means the repository\n' +
-        '    returned no items. The UI will show a placeholder-data notice. Check: pnpm run dspace:verify:seed',
+      '    WARNING: the discovery projection is serving FIXTURE data, which means the selected profile\n' +
+        '    returned no authoritative items. Check: pnpm run dspace:verify:seed',
     );
   }
 
@@ -468,15 +474,18 @@ The stack is running.
   OpenSearch        http://localhost:9200
   DSpace Solr       http://localhost:8984/solr
 
+Default search profile: CURATED_DEMO (fast curated repository projection).
+Retained federated metadata is preserved independently for Admin-selected scale profiles.
+
 Worth showing, in order:
 
-  1. ${UI_URL}/discovery          search and facets, served from DSpace
+  1. ${UI_URL}/discovery          search and facets, served from the active corpus profile
   2. ${UI_URL}/datasets/tiger-line-north-dakota-2025
                                              repository metadata, files, citation, related research
   3. ${UI_URL}/maps               MapLibre with live USGS overlay and an accessible feature list
-  4. ${UI_URL}/admin/sync         dry-run, diff, and apply against the live repository
+  4. ${UI_URL}/admin/sync         sync plus corpus-profile/storage administration
   5. ${UI_URL}/evidence           WCAG and Section 508 status
-  6. ${UI_URL}/discovery          future Solr/OpenSearch comparison entry point
+  6. ${UI_URL}/search-lab         Solr/OpenSearch comparison on the active projection
 
 Stop with: ${stopCommand}
 `);
@@ -494,7 +503,8 @@ export function resetAnnouncements() {
 }
 
 /**
- * Brings up DSpace, seeds, starts the application stack, reindexes, and waits for the UI.
+ * Brings up DSpace, seeds, starts the application stack, activates CURATED_DEMO, and waits for the
+ * UI. Larger retained federated corpora remain in PostgreSQL but are not projected by default.
  */
 export async function runFullStartup({
   forceRecreate = false,
@@ -548,8 +558,8 @@ export async function runFullStartup({
     announce('Waiting for the repository API');
     await waitFor('Repository API', `${API_URL}/health`);
 
-    announce('Rebuilding the discovery projection from DSpace');
-    await runReindex();
+    announce('Activating the CURATED_DEMO quick-start search profile');
+    await runReindex('CURATED_DEMO');
 
     announce(
       'Waiting for the Angular UI (first run installs dependencies and builds)',
