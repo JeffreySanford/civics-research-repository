@@ -200,7 +200,31 @@ public class SolrSearchClient implements DiscoveryIndex {
             Integer vintageYear,
             int page,
             int pageSize) {
-        return searchWithDiagnostics(query, programs, geography, contentType, vintageYear, page, pageSize).response();
+        return search(query, programs, null, null, geography, contentType, vintageYear, page, pageSize);
+    }
+
+    @Override
+    public SearchResponse search(
+            String query,
+            List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
+        return searchWithDiagnostics(
+                        query,
+                        programs,
+                        publisher,
+                        sourceSystem,
+                        geography,
+                        contentType,
+                        vintageYear,
+                        page,
+                        pageSize)
+                .response();
     }
 
     @Override
@@ -212,9 +236,31 @@ public class SolrSearchClient implements DiscoveryIndex {
             Integer vintageYear,
             int page,
             int pageSize) {
+        return searchWithDiagnostics(
+                query, programs, null, null, geography, contentType, vintageYear, page, pageSize);
+    }
+
+    private SearchExecution searchWithDiagnostics(
+            String query,
+            List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(
-                            selectUri(query, programs, geography, contentType, vintageYear, page, pageSize))
+            HttpRequest request = HttpRequest.newBuilder(selectUri(
+                            query,
+                            programs,
+                            publisher,
+                            sourceSystem,
+                            geography,
+                            contentType,
+                            vintageYear,
+                            page,
+                            pageSize))
                     .timeout(REQUEST_TIMEOUT)
                     .GET()
                     .build();
@@ -226,7 +272,17 @@ public class SolrSearchClient implements DiscoveryIndex {
 
             String responseBody = response.body();
             return new SearchExecution(
-                    toSearchResponse(query, page, pageSize, programs, geography, contentType, vintageYear, responseBody),
+                    toSearchResponse(
+                            query,
+                            page,
+                            pageSize,
+                            programs,
+                            publisher,
+                            sourceSystem,
+                            geography,
+                            contentType,
+                            vintageYear,
+                            responseBody),
                     engineReportedMillis(responseBody));
         } catch (IOException exception) {
             throw new IllegalStateException("Solr search request failed.", exception);
@@ -280,6 +336,8 @@ public class SolrSearchClient implements DiscoveryIndex {
             int page,
             int pageSize,
             List<String> selectedPrograms,
+            String selectedPublisher,
+            SourceSystem selectedSourceSystem,
             String selectedGeography,
             ResearchObjectType selectedContentType,
             Integer selectedVintageYear,
@@ -325,12 +383,16 @@ public class SolrSearchClient implements DiscoveryIndex {
                                     "publisher",
                                     "Publisher",
                                     root.path("facet_counts").path("facet_fields").path("publisher_s"),
-                                    Set.of()),
+                                    normalize(selectedPublisher).isBlank()
+                                            ? Set.of()
+                                            : Set.of(normalize(selectedPublisher))),
                             facetGroup(
                                     "sourceSystem",
                                     "Source",
                                     root.path("facet_counts").path("facet_fields").path("sourceSystem_s"),
-                                    Set.of()),
+                                    selectedSourceSystem == null
+                                            ? Set.of()
+                                            : Set.of(normalize(selectedSourceSystem.getValue()))),
                             facetGroup(
                                     "geography",
                                     "Geography",
@@ -410,6 +472,8 @@ public class SolrSearchClient implements DiscoveryIndex {
     private URI selectUri(
             String query,
             List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
             String geography,
             ResearchObjectType contentType,
             Integer vintageYear,
@@ -432,8 +496,8 @@ public class SolrSearchClient implements DiscoveryIndex {
         params.add("facet=true");
         params.add("facet.mincount=1");
         params.add("facet.field=" + encode("{!ex=programFilter}programName_s"));
-        params.add("facet.field=" + encode("publisher_s"));
-        params.add("facet.field=" + encode("sourceSystem_s"));
+        params.add("facet.field=" + encode("{!ex=publisherFilter}publisher_s"));
+        params.add("facet.field=" + encode("{!ex=sourceSystemFilter}sourceSystem_s"));
         params.add("facet.field=" + encode("{!ex=geographyFilter}geography_s"));
         params.add("facet.field=" + encode("{!ex=typeFilter}contentType_s"));
         params.add("facet.field=" + encode("{!ex=vintageFilter}vintageYear_i"));
@@ -445,6 +509,18 @@ public class SolrSearchClient implements DiscoveryIndex {
                             .filter((program) -> program != null && !program.isBlank())
                             .map((program) -> "programName_s:\"" + escapeQueryValue(program.trim()) + "\"")
                             .collect(Collectors.joining(" OR ", "{!tag=programFilter}(", ")"))));
+        }
+
+        if (!normalize(publisher).isBlank()) {
+            params.add("fq="
+                    + encode("{!tag=publisherFilter}publisher_s:\"" + escapeQueryValue(publisher.trim()) + "\""));
+        }
+
+        if (sourceSystem != null) {
+            params.add("fq="
+                    + encode("{!tag=sourceSystemFilter}sourceSystem_s:\""
+                            + escapeQueryValue(sourceSystem.getValue())
+                            + "\""));
         }
 
         if (!normalize(geography).isBlank()) {
