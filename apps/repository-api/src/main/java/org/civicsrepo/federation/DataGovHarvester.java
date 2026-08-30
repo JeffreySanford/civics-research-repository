@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataGovHarvester implements FederatedSourceHarvester {
     static final int MAX_SOURCE_PAGE_SIZE = 1_000;
+    static final int MAX_RESOURCE_LINKS_PER_RECORD = 100;
     static final String ADAPTER_VERSION = "data-gov-ckan-v1";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
     private static final String DEFAULT_CATALOG_BASE = "https://catalog.data.gov";
@@ -144,6 +145,8 @@ public class DataGovHarvester implements FederatedSourceHarvester {
                 publisher);
         String author = text(dataset, "author");
         OffsetDateTime sourceUpdatedAt = parseTimestamp(text(dataset, "metadata_modified"));
+        List<Map<String, String>> resourceLinks = resources(dataset);
+        int resourceCount = dataset.path("resources").isArray() ? dataset.path("resources").size() : 0;
 
         Map<String, Object> sourceMetadata = new LinkedHashMap<>();
         putIfPresent(sourceMetadata, "name", name);
@@ -156,7 +159,13 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         putIfPresent(sourceMetadata, "identifier", extra(dataset, "identifier"));
         putIfPresent(sourceMetadata, "landingPage", extra(dataset, "landingPage"));
         putIfPresent(sourceMetadata, "doi", extra(dataset, "doi"));
-        sourceMetadata.put("resourceCount", dataset.path("resources").isArray() ? dataset.path("resources").size() : 0);
+        sourceMetadata.put("resourceCount", resourceCount);
+        if (!resourceLinks.isEmpty()) {
+            sourceMetadata.put("resources", resourceLinks);
+        }
+        if (resourceCount > resourceLinks.size()) {
+            sourceMetadata.put("resourceLinksTruncated", true);
+        }
 
         return new FederatedResearchRecord(
                 FederatedSourceSystem.DATA_GOV,
@@ -206,6 +215,29 @@ public class DataGovHarvester implements FederatedSourceHarvester {
             }
         }
         return List.copyOf(values);
+    }
+
+    private List<Map<String, String>> resources(JsonNode dataset) {
+        if (!dataset.path("resources").isArray()) {
+            return List.of();
+        }
+        List<Map<String, String>> resources = new ArrayList<>();
+        for (JsonNode resource : dataset.path("resources")) {
+            if (resources.size() >= MAX_RESOURCE_LINKS_PER_RECORD) {
+                break;
+            }
+            String url = text(resource, "url");
+            if (url.isBlank()) {
+                continue;
+            }
+            Map<String, String> normalized = new LinkedHashMap<>();
+            putIfPresent(normalized, "id", text(resource, "id"));
+            putIfPresent(normalized, "name", text(resource, "name"));
+            putIfPresent(normalized, "format", text(resource, "format"));
+            normalized.put("url", url);
+            resources.add(Map.copyOf(normalized));
+        }
+        return List.copyOf(resources);
     }
 
     private String organizationTitle(JsonNode dataset) {
@@ -299,7 +331,7 @@ public class DataGovHarvester implements FederatedSourceHarvester {
         return "";
     }
 
-    private void putIfPresent(Map<String, Object> metadata, String key, String value) {
+    private void putIfPresent(Map<String, ? super String> metadata, String key, String value) {
         if (value != null && !value.isBlank()) {
             metadata.put(key, value.trim());
         }
