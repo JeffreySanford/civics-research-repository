@@ -11,6 +11,14 @@ function replaceOnce(label, before, after) {
   source = source.replace(before, after);
 }
 
+function replaceLast(label, before, after) {
+  const index = source.lastIndexOf(before);
+  if (index < 0) {
+    throw new Error(`${label}: expected a match`);
+  }
+  source = source.slice(0, index) + after + source.slice(index + before.length);
+}
+
 replaceOnce(
   'search authority parameters',
   `        - $ref: '#/components/parameters/Program'\n        - $ref: '#/components/parameters/Geography'`,
@@ -35,8 +43,8 @@ replaceOnce(
   `    ResearchId:\n      name: researchId\n      in: path\n      required: true\n      description: >-\n        URL-safe Base64 identity token for the canonical local research-object identifier. The\n        token keeps namespaced external identifiers containing slashes and URLs inside one path\n        segment without changing the underlying identity used by persistence and discovery.\n      schema:\n        type: string\n        minLength: 1\n        maxLength: 4096\n        pattern: '^[A-Za-z0-9_-]+$'\n    DatasetId:\n      name: datasetId\n`,
 );
 
-replaceOnce(
-  'repository source semantics',
+replaceLast(
+  'repository source schema semantics',
   `    RepositorySource:\n      type: string\n      description: >-\n        Legacy response/projection-level label retained for compatibility with the current curated\n        fallback path. REPOSITORY means the current projection was built from DSpace-backed content;\n        FIXTURE means generated placeholder content. Do not infer an individual result's authority\n        from this field once mixed repository + federated discovery is enabled; use SearchResult.origin\n        and SearchResult.sourceSystem instead.\n      enum: [REPOSITORY, FIXTURE]\n`,
   `    RepositorySource:\n      type: string\n      description: >-\n        Detail/projection compatibility label. REPOSITORY means DSpace-backed curated content,\n        FEDERATED means locally retained metadata whose authoritative object remains at an external\n        publisher, and FIXTURE means generated placeholder content. For individual authority and\n        provenance, use origin and sourceSystem.\n      enum: [REPOSITORY, FEDERATED, FIXTURE]\n`,
 );
