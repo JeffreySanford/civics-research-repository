@@ -475,7 +475,25 @@ export interface components {
       history: components['schemas']['CorpusStorageMeasurement'][];
     };
     /**
-     * @description Where the response data came from. REPOSITORY means DSpace is the source of record for these records. FIXTURE means DSpace was unavailable or empty and the response is generated placeholder content, which must never be presented to a user as repository data.
+     * @description Where this individual discovery record is represented locally. REPOSITORY means DSpace is authoritative for the curated repository object. FEDERATED means the authoritative object remains at an external publisher and the application retains reproducible metadata only. FIXTURE means generated fallback/demo content and must never be presented as repository data.
+     * @enum {string}
+     */
+    ResearchObjectOrigin: 'REPOSITORY' | 'FEDERATED' | 'FIXTURE';
+    /**
+     * @description Controlled authoritative source family for a research object. This is independent of origin: a CENSUS object may be represented as REPOSITORY or FIXTURE today, while a DATA_GOV or DOE_OSTI object is normally FEDERATED. OTHER is explicit unknown/unclassified provenance and must be preferred over guessing from title text.
+     * @enum {string}
+     */
+    SourceSystem:
+      | 'CENSUS'
+      | 'USGS'
+      | 'DATA_GOV'
+      | 'DOE_OSTI'
+      | 'NASA_CMR'
+      | 'PUBMED'
+      | 'OPENALEX'
+      | 'OTHER';
+    /**
+     * @description Legacy response/projection-level label retained for compatibility with the current curated fallback path. REPOSITORY means the current projection was built from DSpace-backed content; FIXTURE means generated placeholder content. Do not infer an individual result's authority from this field once mixed repository + federated discovery is enabled; use SearchResult.origin and SearchResult.sourceSystem instead.
      * @enum {string}
      */
     RepositorySource: 'REPOSITORY' | 'FIXTURE';
@@ -500,6 +518,8 @@ export interface components {
       /** Format: uri */
       sourceUrl: string;
       accessLevel?: components['schemas']['AccessLevel'];
+      origin: components['schemas']['ResearchObjectOrigin'];
+      sourceSystem: components['schemas']['SourceSystem'];
     };
     FacetGroup: {
       field: string;
@@ -601,6 +621,8 @@ export interface components {
       doi?: string;
       authors?: components['schemas']['ResearchAuthor'][];
       relations?: components['schemas']['ResearchRelation'][];
+      origin: components['schemas']['ResearchObjectOrigin'];
+      sourceSystem: components['schemas']['SourceSystem'];
     };
     DatasetFile: {
       id: string;

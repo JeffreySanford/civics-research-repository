@@ -756,7 +756,8 @@ components:
         a CENSUS object may be represented as REPOSITORY or FIXTURE today, while a DATA_GOV or
         DOE_OSTI object is normally FEDERATED. OTHER is explicit unknown/unclassified provenance and
         must be preferred over guessing from title text.
-      enum: [CENSUS, USGS, DATA_GOV, DOE_OSTI, NASA_CMR, PUBMED, OPENALEX, OTHER]
+      enum:
+        [CENSUS, USGS, DATA_GOV, DOE_OSTI, NASA_CMR, PUBMED, OPENALEX, OTHER]
     RepositorySource:
       type: string
       description: >-
@@ -791,7 +792,18 @@ components:
             $ref: '#/components/schemas/FacetGroup'
     SearchResult:
       type: object
-      required: [id, title, contentType, program, publisher, summary, sourceUrl, origin, sourceSystem]
+      required:
+        [
+          id,
+          title,
+          contentType,
+          program,
+          publisher,
+          summary,
+          sourceUrl,
+          origin,
+          sourceSystem,
+        ]
       properties:
         id:
           type: string
