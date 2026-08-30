@@ -154,13 +154,19 @@ public class FederatedHarvestService {
             try {
                 return harvester.fetch(cursor, pageSize);
             } catch (FederatedHarvestException exception) {
-                if (!exception.retryable() || attempt == MAX_FETCH_ATTEMPTS) {
+                if (!exception.retryable()
+                        || attempt == MAX_FETCH_ATTEMPTS
+                        || requiresDeferredRetry(exception.retryAfter())) {
                     throw exception;
                 }
                 sleepBeforeRetry(attempt, exception.retryAfter());
             }
         }
         throw new IllegalStateException("Retry loop exited without returning or throwing.");
+    }
+
+    private boolean requiresDeferredRetry(Duration retryAfter) {
+        return retryAfter != null && retryAfter.compareTo(MAX_RETRY_DELAY) > 0;
     }
 
     private void sleepBeforeRetry(int failedAttempt, Duration retryAfter) {
