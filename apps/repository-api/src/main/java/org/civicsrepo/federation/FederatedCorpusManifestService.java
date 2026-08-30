@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /** Builds deterministic, bounded manifests for retained federated source snapshots. */
@@ -27,6 +28,7 @@ public class FederatedCorpusManifestService {
     private final ObjectMapper objectMapper;
     private final int scanPageSize;
 
+    @Autowired
     public FederatedCorpusManifestService(FederatedMetadataCatalog catalog, HarvestRunStore runStore) {
         this(catalog, runStore, new ObjectMapper(), DEFAULT_SCAN_PAGE_SIZE);
     }
