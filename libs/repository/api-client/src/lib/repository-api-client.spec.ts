@@ -74,7 +74,7 @@ describe('RepositoryAdminApi', () => {
 });
 
 describe('RepositoryDatasetsApi', () => {
-  it('loads typed dataset details and versions', async () => {
+  it('loads authority-neutral research detail plus legacy dataset detail and versions', async () => {
     const detail: ResearchObjectDetail = {
       id: 'tiger-line-north-dakota-2025',
       title: '2025 TIGER/Line - Census Tracts - North Dakota',
@@ -104,6 +104,14 @@ describe('RepositoryDatasetsApi', () => {
       ),
     };
     const api = new RepositoryDatasetsApi(http as never, 'http://api.test/api');
+    const researchId = 'REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg';
+
+    await expect(
+      firstValueFrom(api.getResearchObject(researchId)),
+    ).resolves.toEqual(detail);
+    expect(http.get).toHaveBeenCalledWith(
+      `http://api.test/api/research/${researchId}`,
+    );
 
     await expect(
       firstValueFrom(api.getDataset('tiger-line-north-dakota-2025')),
