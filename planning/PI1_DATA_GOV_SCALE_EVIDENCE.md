@@ -65,7 +65,7 @@ The normal public endpoint returned:
 
 This proved that federated records were not only retained in PostgreSQL; they were discoverable through the ordinary search/facet path.
 
-## 10K checkpoint — projection/search/storage proven, evidence completion in progress
+## 10K checkpoint — functional and index-growth evidence proven; instrumentation completion in progress
 
 The 10K checkpoint resumed the same durable 1K run rather than restarting from source offset zero.
 
@@ -132,6 +132,47 @@ Observed:
 
 Representative returned records included EPA and National Park Service metadata. The expanded corpus also exposed a taxonomy/presentation seam: valid program values include both long organization names and opaque codes such as `010:118`, `020:072`, `010:10` and `010:12`. The raw publisher values should remain intact while presentation hardening is handled separately.
 
+### Explicit Solr/OpenSearch projection parity
+
+The live comparison endpoint was run after the 10K projection. Its `sameProjection` predicate requires both engines to report the current projection identity and expected document count.
+
+Observed:
+
+- projection source compatibility label: `REPOSITORY`,
+- projection object count: 10,181,
+- projection ID: `b292f98bb8b141dd477cfbcdc9149e44bd53559c153c431f772809f41836742e`,
+- `sameProjection: true`,
+- Solr enabled/reachable: true / true,
+- Solr index: `discovery`,
+- Solr indexed document count: 10,181,
+- Solr total hits for the empty comparison query: 10,181,
+- Solr warning: none,
+- OpenSearch enabled/reachable: true / true,
+- OpenSearch index: `discovery-comparison`,
+- OpenSearch indexed document count: 10,181,
+- OpenSearch total hits for the empty comparison query: 10,181,
+- OpenSearch warning: none.
+
+This closes count/projection-identity parity for the 10K standalone checkpoint rather than inferring parity only from storage size or public Solr search results.
+
+### Authority-neutral federated detail verification
+
+The first record in the 10K bounded snapshot was resolved through the canonical research-object API route using its Base64URL research token.
+
+Observed:
+
+- `source: FEDERATED`,
+- ID: `DATA_GOV:7FEBA753-FD29-4DE3-860C-61B0A30D2D51`,
+- title: `Community Multi-scale Air Quality (CMAQ) Model Outputs`,
+- publisher: `U.S. EPA Office of Air and Radiation (OAR) - Office of State Air Partnerships (OSAP)`,
+- program name: `020:072`,
+- authoritative source URL: `https://catalog.data.gov/dataset/community-multi-scale-air-quality-cmaq-model-outputs`,
+- `origin: FEDERATED`,
+- `sourceSystem: DATA_GOV`,
+- local files: empty list.
+
+This proves the normal authority-neutral detail path at the 10K checkpoint: the federated record resolves as federated metadata, links to the authoritative publisher/catalog resource, and does not invent locally preserved files.
+
 ### Storage evidence — before and after 10K projection
 
 A storage capture was taken after the 10K harvest/snapshot but before rebuilding the search projection. At that moment PostgreSQL held 10,000 federated records while Solr/OpenSearch still held the prior 1,181-object projection.
@@ -179,19 +220,19 @@ The storage endpoint still reports `profile: CURATED_DEMO` because the current a
 - [x] Run the guarded snapshot -> combined-projection operation.
 - [x] Verify the persisted snapshot/projection relationship.
 - [x] Verify the public search path returns exactly 10,000 `DATA_GOV` records.
-- [ ] Verify at least one live 10K Data.gov record through `/research/:id` and its authoritative publisher link.
-- [ ] Record explicit Solr and OpenSearch document-count/projection-identity parity from the live comparison endpoint.
+- [x] Verify a live 10K Data.gov record through `/research/:id` and its authoritative publisher link without invented local files.
+- [x] Record explicit Solr and OpenSearch document-count/projection-identity parity from the live comparison endpoint.
 - [x] Capture application PostgreSQL, Solr and OpenSearch storage measurements before and after the 10K projection.
 - [x] Calculate the isolated incremental Solr/OpenSearch bytes per newly projected object.
 - [ ] Calculate application-PostgreSQL bytes per federated record from a comparable 1K/10K pair if historical evidence permits.
 - [ ] Record host/container/JVM CPU and memory context for the 10K run/projection.
 - [ ] Record harvest/projection duration evidence in a reusable form.
 
-Until those remaining items are complete, the correct statement is **"10K harvest, snapshot, guarded projection, public search and index-growth evidence proven"**, not **"10K scale checkpoint complete."**
+The functional 10K evidence chain and isolated search-index growth evidence are now complete. The remaining work before declaring the whole F1 checkpoint complete is measurement/instrumentation hardening: comparable PostgreSQL growth if historical evidence exists, host/container/JVM resource context, and reusable duration evidence.
 
 ## 100K acceptance boundary
 
-Do not begin the 100K proof merely because the 10K harvest succeeded. First close the remaining 10K evidence checklist and confirm that storage/resource behavior is understood.
+Do not begin the 100K proof merely because the functional 10K path succeeded. First close or explicitly disposition the remaining 10K measurement/instrumentation checklist and confirm that storage/resource behavior is understood.
 
 The 100K checkpoint should then repeat the same semantics:
 
