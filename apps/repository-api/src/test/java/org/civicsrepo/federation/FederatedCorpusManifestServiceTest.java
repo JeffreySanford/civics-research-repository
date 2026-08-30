@@ -123,6 +123,77 @@ class FederatedCorpusManifestServiceTest {
                 .hasMessageContaining("COMPLETED");
     }
 
+    @Test
+    void capturesAPausedRunAsABoundedSnapshotWithoutClaimingSourceCompletion() {
+        HarvestRun paused = new HarvestRun(
+                "run-paused-1k",
+                FederatedSourceSystem.DATA_GOV,
+                "data-gov-v1",
+                HarvestRunStatus.PAUSED,
+                100,
+                10,
+                1_000,
+                3,
+                0,
+                "opaque-after-token",
+                STARTED_AT,
+                STARTED_AT.plusMinutes(4),
+                null,
+                null);
+        List<FederatedResearchRecord> records = List.of(
+                record(
+                        FederatedSourceSystem.DATA_GOV,
+                        "alpha",
+                        OffsetDateTime.parse("2026-08-29T10:00:00Z"),
+                        OffsetDateTime.parse("2026-08-30T11:00:00Z"),
+                        Map.of()),
+                record(
+                        FederatedSourceSystem.DATA_GOV,
+                        "bravo",
+                        OffsetDateTime.parse("2026-08-29T11:00:00Z"),
+                        OffsetDateTime.parse("2026-08-30T11:01:00Z"),
+                        Map.of()));
+        FederatedCorpusManifestService service = new FederatedCorpusManifestService(
+                new ListCatalog(records), new SingleRunStore(paused), new ObjectMapper(), 1);
+        OffsetDateTime capturedAt = OffsetDateTime.parse("2026-08-30T12:04:30Z");
+
+        FederatedBoundedSnapshotManifest snapshot = service.generateBoundedSnapshot(paused.id(), capturedAt);
+
+        assertThat(snapshot.manifestVersion()).isEqualTo("federated-bounded-snapshot/v1");
+        assertThat(snapshot.mode()).isEqualTo("BOUNDED_SNAPSHOT");
+        assertThat(snapshot.runStatus()).isEqualTo(HarvestRunStatus.PAUSED);
+        assertThat(snapshot.retainedRecordCount()).isEqualTo(2);
+        assertThat(snapshot.acceptedCount()).isEqualTo(1_000);
+        assertThat(snapshot.rejectedCount()).isEqualTo(3);
+        assertThat(snapshot.pageSize()).isEqualTo(100);
+        assertThat(snapshot.pageCount()).isEqualTo(10);
+        assertThat(snapshot.cursor()).isEqualTo("opaque-after-token");
+        assertThat(snapshot.capturedAt()).isEqualTo(capturedAt);
+        assertThat(snapshot.snapshotId()).isEqualTo("DATA_GOV:" + snapshot.sha256());
+        assertThat(snapshot.firstRecordId()).isEqualTo("DATA_GOV:alpha");
+        assertThat(snapshot.lastRecordId()).isEqualTo("DATA_GOV:bravo");
+    }
+
+    @Test
+    void boundedSnapshotAndCompletedManifestUseTheSameRetainedContentDigest() {
+        HarvestRun completed = completedRun("run-completed", FederatedSourceSystem.DATA_GOV);
+        List<FederatedResearchRecord> records = List.of(record(
+                FederatedSourceSystem.DATA_GOV,
+                "alpha",
+                OffsetDateTime.parse("2026-08-29T10:00:00Z"),
+                OffsetDateTime.parse("2026-08-30T11:00:00Z"),
+                Map.of()));
+        FederatedCorpusManifestService service = new FederatedCorpusManifestService(
+                new ListCatalog(records), new SingleRunStore(completed), new ObjectMapper(), 10);
+
+        FederatedCorpusManifest completedManifest = service.generate(completed.id());
+        FederatedBoundedSnapshotManifest boundedSnapshot =
+                service.generateBoundedSnapshot(completed.id(), COMPLETED_AT);
+
+        assertThat(boundedSnapshot.sha256()).isEqualTo(completedManifest.sha256());
+        assertThat(boundedSnapshot.runStatus()).isEqualTo(HarvestRunStatus.COMPLETED);
+    }
+
     private HarvestRun completedRun(String id, FederatedSourceSystem sourceSystem) {
         return new HarvestRun(
                 id,
