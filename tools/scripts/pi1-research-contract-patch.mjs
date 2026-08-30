@@ -8,7 +8,10 @@ function replaceOnce(label, before, after) {
   if (count !== 1) {
     throw new Error(`${label}: expected exactly one match, found ${count}`);
   }
-  source = source.replace(before, after);
+  // Callback replacement is intentional. String.replace interprets replacement tokens such as
+  // $', which appears naturally at the end of a regex scalar like "...+$'". Returning the text
+  // from a callback makes every dollar sign literal and prevents accidental suffix expansion.
+  source = source.replace(before, () => after);
 }
 
 function replaceLast(label, before, after) {
