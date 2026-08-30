@@ -1,20 +1,22 @@
 # Active Backlog
 
-This file contains open work only. Current status is generated in [documentation/platform-status.md](../documentation/platform-status.md); delivered history is in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md). Program increments and their execution order are defined in [PI_PLAN.md](PI_PLAN.md).
+This file contains open work only, with completed checkboxes retained where they clarify the active PI boundary. Current status is generated in [documentation/platform-status.md](../documentation/platform-status.md); delivered history is in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md). Program increments and their execution order are defined in [PI_PLAN.md](PI_PLAN.md).
 
 The repository follows a **testing-first rule** for new work: define or extend unit, use-case, contract, browser, accessibility and real-stack evidence before expanding the feature surface. A feature is not considered complete merely because it works in the local UI.
 
-The intended execution order is **PI-1 -> PI-2 -> PI-3 -> PI-4 -> PI-5 -> PI-6**. PI-1 is active now.
+The intended execution order is **PI-1 -> PI-2 -> PI-3 -> PI-4 -> PI-5 -> PI-6**. PI-1 is active now. The merged federation foundation is on `main`; the active scale branch is `codex/data-gov-10k-scale`.
 
 ## PI-1 — Federated Metadata Expansion
 
-Design documents:
+Design and evidence documents:
 
 - [Federated Metadata Expansion](../documentation/federation/README.md)
 - [Federated Metadata Architecture](../documentation/federation/federated-metadata-architecture.md)
 - [Source Ingestion Plan](../documentation/federation/source-ingestion-plan.md)
 - [Runtime and Ownership Boundaries](../documentation/federation/runtime-boundaries.md)
 - [Million-Record Federated Metadata Corpus](../documentation/federation/million-record-corpus.md)
+- [Data.gov Scale Evidence](PI1_DATA_GOV_SCALE_EVIDENCE.md)
+- [Closed PI-1 F1 Merge Gate](PI1_F1_MERGE_GATE.md)
 
 ### PI-1.1 Foundation before source breadth
 
@@ -32,7 +34,7 @@ Design documents:
 - [x] Make deterministic projection hashing independent of database page size and search bulk size.
 - [x] Add batch indexing to Solr and OpenSearch; do not create one giant million-document update body.
 - [x] Use bounded JDBC prepared-statement batches for federated metadata persistence rather than one database interaction per record.
-- [ ] Record accepted/rejected/skipped/indexed counts and progress for large projections.
+- [ ] Record accepted/rejected/skipped/indexed counts and progress for large projections; harvest counters exist, but projection progress/throughput evidence still needs scale hardening.
 - [ ] Design opaque cursor pagination so million-record discovery does not depend on deep offsets.
 - [ ] Keep the current offset contract working until the cursor path is tested and ready.
 
@@ -42,20 +44,27 @@ Design documents:
 - [x] Define `FederatedSourceHarvester` / shared harvesting interfaces.
 - [x] Add cursor/page checkpoint persistence.
 - [x] Add bounded retry, exponential backoff/jitter and bounded `Retry-After` awareness with typed permanent/transient failures.
-- [ ] Add configurable per-source request concurrency and rate limits.
+- [ ] Add configurable per-source request concurrency and explicit rate-limit policy.
 - [x] Add run cancellation/restart/resume behavior.
 - [x] Add malformed-record quarantine without aborting an entire run.
-- [ ] Record source retrieval window/date, adapter version and run statistics.
-- [x] Generate deterministic corpus manifests from completed bounded runs.
+- [x] Record source update window/date, adapter version and run statistics in bounded snapshot/run evidence.
+- [x] Generate deterministic corpus manifests from completed bounded runs and deterministic bounded-snapshot manifests for intentionally paused scale checkpoints.
+- [x] Add guarded snapshot -> projection evidence with drift rejection and durable relationship history.
 - [x] Add tiny committed source fixtures for normal CI rather than network-dependent tests.
+- [ ] Add reusable progress/throughput and host/container/JVM context for 100K/1M-class evidence.
 
 ### PI-1.3 Data.gov adapter
 
 - [x] Implement Data.gov source adapter.
 - [x] Map dataset ID, title, description, agency/publisher, tags/themes, dates, distributions/resource links and landing page.
 - [x] Add sparse/malformed/multiple-distribution fixture tests.
-- [ ] Prove 1K, then 10K, then 100K resumable harvests. (1K v2 live proof completed locally on 2026-08-30: 1,000/1,000 accepted, 0 rejected, 1,000 retained Data.gov records, and 1,181 combined projected objects from the 181-object curated baseline; 10K and 100K remain.)
-- [ ] Verify new records appear automatically through discovery results, source/publisher/program facets and `/research/:id`.
+- [x] Prove the 1K live checkpoint end to end: 1,000 accepted / 0 rejected / 0 skipped, deterministic bounded snapshot, guarded projection linkage, 1,181-object mixed projection and public-search verification.
+- [x] Prove the 10K harvest/resume path: same durable run resumed from 10 to 100 pages, 10,000 accepted / 0 rejected / 0 skipped, no failure.
+- [ ] Complete the 10K scale evidence: snapshot, guarded projection linkage, persisted evidence history, public search/detail verification, Solr/OpenSearch parity, storage growth, duration and host/container/JVM context.
+- [ ] Prove the 100K resumable harvest and standalone evidence checkpoint only after 10K evidence closes.
+- [x] Verify live Data.gov records appear automatically through discovery results and source/publisher/program facets without a UI rebuild.
+- [ ] Verify at least one live Data.gov record through `/research/:id` at the 10K checkpoint and record the authoritative-source behavior.
+- [ ] Add a presentation strategy for opaque Data.gov program values such as `010:10`/`010:12` while preserving raw publisher metadata and avoiding fixed UI allowlists.
 - [ ] Evaluate larger/full-catalog harvest only after the 100K path is stable.
 
 ### PI-1.4 DOE OSTI adapter and first million
@@ -95,8 +104,9 @@ Design documents:
 
 - [x] Add source-system facet to normal discovery.
 - [x] Ensure publisher/program facet values are returned from index data rather than a fixed UI allowlist.
-- [ ] Clearly label `REPOSITORY` versus `FEDERATED` detail/provenance.
-- [ ] Keep authoritative source/resource links visible without claiming local file preservation.
+- [x] Clearly label `REPOSITORY` versus `FEDERATED` detail/provenance at the record level.
+- [x] Keep authoritative source/resource links visible without claiming local file preservation.
+- [ ] Consider renaming/expanding projection-level `resultSource` / `projectionSource` compatibility semantics so a mixed authority-backed projection is not misleadingly summarized only as `REPOSITORY`; per-record provenance remains correct today.
 - [ ] Add stable large-corpus query set: identifier, rare phrase, common multi-term, author, publisher, source, type, date/year, high/low-cardinality facets, empty and broad queries.
 - [ ] Add result-set/top-N/rank/facet-difference evidence at scale.
 - [ ] Verify accessibility and keyboard behavior with large facet/result counts.
@@ -132,11 +142,11 @@ Design documents:
 
 ## PI-1 supporting work — Research-object product language
 
-- [ ] Add `/research/:id` as the canonical detail route while preserving `/datasets/:id` compatibility.
-- [ ] Resolve detail from either DSpace or the federated metadata catalog.
+- [x] Add `/research/:id` as the canonical detail route while preserving `/datasets/:id` compatibility.
+- [x] Resolve detail from either DSpace or the federated metadata catalog.
 - [ ] Replace remaining dataset-shaped copy where the object may be a publication, report, software item, methodology, project or scientific granule.
-- [ ] Update examples and demo links to prefer research-object terminology.
-- [ ] Add unit/browser/accessibility coverage for federated detail states and outbound authoritative-source links.
+- [ ] Update examples and demo links to prefer research-object terminology where appropriate.
+- [x] Add unit/browser/accessibility coverage for federated detail states and outbound authoritative-source links.
 
 ## PI-2 — Local Kubernetes Search Laboratory
 
