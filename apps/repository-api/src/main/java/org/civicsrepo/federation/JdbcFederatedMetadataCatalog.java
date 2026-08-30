@@ -5,33 +5,68 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import java.net.URI;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /** PostgreSQL/H2-compatible persistence for normalized federated metadata. */
 @Component
 public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
     private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {};
     private static final TypeReference<Map<String, Object>> OBJECT_MAP = new TypeReference<>() {};
+    private static final int WRITE_BATCH_SIZE = 1_000;
+    private static final String UPDATE_SQL =
+            """
+            update federated_research_objects set
+                title = ?,
+                summary = ?,
+                publisher = ?,
+                program = ?,
+                content_type = ?,
+                source_url = ?,
+                source_updated_at = ?,
+                harvested_at = ?,
+                adapter_version = ?,
+                authors_json = ?,
+                subjects_json = ?,
+                source_metadata_json = ?,
+                updated_at = ?
+            where id = ?
+            """;
+    private static final String INSERT_SQL =
+            """
+            insert into federated_research_objects (
+                id, source_system, source_identifier, title, summary, publisher, program,
+                content_type, source_url, source_updated_at, harvested_at, adapter_version,
+                authors_json, subjects_json, source_metadata_json, updated_at
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
 
     private final JdbcClient jdbcClient;
+    private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public JdbcFederatedMetadataCatalog(JdbcClient jdbcClient) {
-        this(jdbcClient, new ObjectMapper());
+    public JdbcFederatedMetadataCatalog(JdbcClient jdbcClient, DataSource dataSource) {
+        this(jdbcClient, new JdbcTemplate(dataSource), new ObjectMapper());
     }
 
-    JdbcFederatedMetadataCatalog(JdbcClient jdbcClient, ObjectMapper objectMapper) {
+    JdbcFederatedMetadataCatalog(JdbcClient jdbcClient, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcClient = jdbcClient;
+        this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
 
@@ -64,86 +99,93 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
     }
 
     @Override
+    @Transactional
     public void upsertBatch(List<FederatedResearchRecord> records) {
         if (records == null || records.isEmpty()) {
             return;
         }
-        for (FederatedResearchRecord record : records) {
-            upsert(record);
+
+        OffsetDateTime updatedAt = OffsetDateTime.now();
+        List<PersistedRecord> persistedRecords = records.stream()
+                .map(record -> new PersistedRecord(
+                        record,
+                        json(record.authors()),
+                        json(record.subjects()),
+                        json(record.sourceMetadata()),
+                        updatedAt))
+                .toList();
+
+        int[][] updateCounts = jdbcTemplate.batchUpdate(
+                UPDATE_SQL, persistedRecords, WRITE_BATCH_SIZE, this::bindUpdate);
+
+        List<PersistedRecord> inserts = recordsWithNoUpdate(persistedRecords, updateCounts);
+        if (!inserts.isEmpty()) {
+            jdbcTemplate.batchUpdate(INSERT_SQL, inserts, WRITE_BATCH_SIZE, this::bindInsert);
         }
     }
 
-    private void upsert(FederatedResearchRecord record) {
-        OffsetDateTime now = OffsetDateTime.now();
-        int updated = jdbcClient
-                .sql(
-                        """
-                        update federated_research_objects set
-                            title = :title,
-                            summary = :summary,
-                            publisher = :publisher,
-                            program = :program,
-                            content_type = :contentType,
-                            source_url = :sourceUrl,
-                            source_updated_at = :sourceUpdatedAt,
-                            harvested_at = :harvestedAt,
-                            adapter_version = :adapterVersion,
-                            authors_json = :authorsJson,
-                            subjects_json = :subjectsJson,
-                            source_metadata_json = :sourceMetadataJson,
-                            updated_at = :updatedAt
-                        where id = :id
-                        """)
-                .param("id", record.id())
-                .param("title", record.title())
-                .param("summary", record.summary())
-                .param("publisher", record.publisher())
-                .param("program", record.program())
-                .param("contentType", record.contentType().getValue())
-                .param("sourceUrl", record.sourceUrl().toString())
-                .param("sourceUpdatedAt", record.sourceUpdatedAt())
-                .param("harvestedAt", record.harvestedAt())
-                .param("adapterVersion", record.adapterVersion())
-                .param("authorsJson", json(record.authors()))
-                .param("subjectsJson", json(record.subjects()))
-                .param("sourceMetadataJson", json(record.sourceMetadata()))
-                .param("updatedAt", now)
-                .update();
+    private List<PersistedRecord> recordsWithNoUpdate(List<PersistedRecord> records, int[][] updateCounts) {
+        List<PersistedRecord> inserts = new ArrayList<>();
+        int recordIndex = 0;
+        for (int[] batchCounts : updateCounts) {
+            for (int updateCount : batchCounts) {
+                if (updateCount == 0) {
+                    inserts.add(records.get(recordIndex));
+                }
+                recordIndex++;
+            }
+        }
+        if (recordIndex != records.size()) {
+            throw new IllegalStateException("JDBC batch update count did not match the federated metadata batch size.");
+        }
+        return inserts;
+    }
 
-        if (updated != 0) {
+    private void bindUpdate(PreparedStatement statement, PersistedRecord persisted) throws SQLException {
+        FederatedResearchRecord record = persisted.record();
+        statement.setString(1, record.title());
+        statement.setString(2, record.summary());
+        statement.setString(3, record.publisher());
+        statement.setString(4, record.program());
+        statement.setString(5, record.contentType().getValue());
+        statement.setString(6, record.sourceUrl().toString());
+        setOffsetDateTime(statement, 7, record.sourceUpdatedAt());
+        statement.setObject(8, record.harvestedAt());
+        statement.setString(9, record.adapterVersion());
+        statement.setString(10, persisted.authorsJson());
+        statement.setString(11, persisted.subjectsJson());
+        statement.setString(12, persisted.sourceMetadataJson());
+        statement.setObject(13, persisted.updatedAt());
+        statement.setString(14, record.id());
+    }
+
+    private void bindInsert(PreparedStatement statement, PersistedRecord persisted) throws SQLException {
+        FederatedResearchRecord record = persisted.record();
+        statement.setString(1, record.id());
+        statement.setString(2, record.sourceSystem().name());
+        statement.setString(3, record.sourceIdentifier());
+        statement.setString(4, record.title());
+        statement.setString(5, record.summary());
+        statement.setString(6, record.publisher());
+        statement.setString(7, record.program());
+        statement.setString(8, record.contentType().getValue());
+        statement.setString(9, record.sourceUrl().toString());
+        setOffsetDateTime(statement, 10, record.sourceUpdatedAt());
+        statement.setObject(11, record.harvestedAt());
+        statement.setString(12, record.adapterVersion());
+        statement.setString(13, persisted.authorsJson());
+        statement.setString(14, persisted.subjectsJson());
+        statement.setString(15, persisted.sourceMetadataJson());
+        statement.setObject(16, persisted.updatedAt());
+    }
+
+    private void setOffsetDateTime(PreparedStatement statement, int parameterIndex, OffsetDateTime value)
+            throws SQLException {
+        if (value == null) {
+            statement.setNull(parameterIndex, Types.TIMESTAMP_WITH_TIMEZONE);
             return;
         }
-
-        jdbcClient
-                .sql(
-                        """
-                        insert into federated_research_objects (
-                            id, source_system, source_identifier, title, summary, publisher, program,
-                            content_type, source_url, source_updated_at, harvested_at, adapter_version,
-                            authors_json, subjects_json, source_metadata_json, updated_at
-                        ) values (
-                            :id, :sourceSystem, :sourceIdentifier, :title, :summary, :publisher, :program,
-                            :contentType, :sourceUrl, :sourceUpdatedAt, :harvestedAt, :adapterVersion,
-                            :authorsJson, :subjectsJson, :sourceMetadataJson, :updatedAt
-                        )
-                        """)
-                .param("id", record.id())
-                .param("sourceSystem", record.sourceSystem().name())
-                .param("sourceIdentifier", record.sourceIdentifier())
-                .param("title", record.title())
-                .param("summary", record.summary())
-                .param("publisher", record.publisher())
-                .param("program", record.program())
-                .param("contentType", record.contentType().getValue())
-                .param("sourceUrl", record.sourceUrl().toString())
-                .param("sourceUpdatedAt", record.sourceUpdatedAt())
-                .param("harvestedAt", record.harvestedAt())
-                .param("adapterVersion", record.adapterVersion())
-                .param("authorsJson", json(record.authors()))
-                .param("subjectsJson", json(record.subjects()))
-                .param("sourceMetadataJson", json(record.sourceMetadata()))
-                .param("updatedAt", now)
-                .update();
+        statement.setObject(parameterIndex, value);
     }
 
     @Override
@@ -212,4 +254,11 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
             throw new IllegalStateException("Federated metadata JSON could not be serialized.", exception);
         }
     }
+
+    private record PersistedRecord(
+            FederatedResearchRecord record,
+            String authorsJson,
+            String subjectsJson,
+            String sourceMetadataJson,
+            OffsetDateTime updatedAt) {}
 }
