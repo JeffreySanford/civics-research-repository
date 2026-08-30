@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.FacetGroup;
@@ -25,18 +26,23 @@ import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.SourceSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /** Rebuildable OpenSearch copy of the public discovery projection. */
 @Component
 public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OpenSearchProjectionClient.class);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String baseUrl;
+    /** Stable read alias. The physical index changes only after a staged projection is complete. */
     private final String index;
+    private String stagingIndex;
 
     public OpenSearchProjectionClient(
             @Value("${civics.opensearch.base-url:}") String baseUrl,
@@ -89,7 +95,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
 
         try {
-            HttpResponse<String> response = send(HttpRequest.newBuilder(indexUri("/_count"))
+            HttpResponse<String> response = send(HttpRequest.newBuilder(indexUri(index, "/_count"))
                     .timeout(REQUEST_TIMEOUT)
                     .GET()
                     .build());
@@ -111,9 +117,14 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         if (!isEnabled()) {
             return;
         }
+        if (stagingIndex != null) {
+            throw new IllegalStateException("OpenSearch projection is already in progress.");
+        }
+
+        String candidate = projectionIndexName();
         try {
-            deleteIndexIfPresent();
-            createIndex();
+            createIndex(candidate);
+            stagingIndex = candidate;
         } catch (IOException exception) {
             throw new IllegalStateException("OpenSearch projection setup failed.", exception);
         } catch (InterruptedException exception) {
@@ -127,8 +138,9 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         if (!isEnabled() || objects == null || objects.isEmpty()) {
             return;
         }
+        String projectionIndex = requireStagingIndex();
         try {
-            bulkIndex(objects);
+            bulkIndex(projectionIndex, objects);
         } catch (IOException exception) {
             throw new IllegalStateException("OpenSearch projection batch failed.", exception);
         } catch (InterruptedException exception) {
@@ -142,23 +154,29 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         if (!isEnabled()) {
             return;
         }
+        String projectionIndex = requireStagingIndex();
         try {
-            refreshIndex();
+            refreshIndex(projectionIndex);
+            List<String> previousIndices = activateProjectionIndex(projectionIndex);
+            stagingIndex = null;
+            cleanupPreviousProjectionIndices(previousIndices, projectionIndex);
         } catch (IOException exception) {
-            throw new IllegalStateException("OpenSearch projection refresh failed.", exception);
+            throw new IllegalStateException("OpenSearch projection activation failed.", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("OpenSearch projection refresh was interrupted.", exception);
+            throw new IllegalStateException("OpenSearch projection activation was interrupted.", exception);
         }
     }
 
     @Override
     public void abortProjection() {
-        if (!isEnabled()) {
+        if (!isEnabled() || stagingIndex == null) {
             return;
         }
+        String partialIndex = stagingIndex;
+        stagingIndex = null;
         try {
-            deleteIndexIfPresent();
+            deleteIndexIfPresent(partialIndex);
         } catch (IOException exception) {
             throw new IllegalStateException("OpenSearch partial projection cleanup failed.", exception);
         } catch (InterruptedException exception) {
@@ -201,7 +219,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                 query, programs, geography, contentType, vintageYear, safePage, safePageSize);
 
         try {
-            HttpRequest request = HttpRequest.newBuilder(indexUri("/_search"))
+            HttpRequest request = HttpRequest.newBuilder(indexUri(index, "/_search"))
                     .timeout(REQUEST_TIMEOUT)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
@@ -474,8 +492,19 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         return new FacetGroup(field, label, values);
     }
 
-    private void deleteIndexIfPresent() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder(indexUri(""))
+    private String requireStagingIndex() {
+        if (stagingIndex == null || stagingIndex.isBlank()) {
+            throw new IllegalStateException("OpenSearch projection has not been started.");
+        }
+        return stagingIndex;
+    }
+
+    private String projectionIndexName() {
+        return validateIndex(index + "-projection-" + UUID.randomUUID().toString().replace("-", ""));
+    }
+
+    private void deleteIndexIfPresent(String indexName) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(indexUri(indexName, ""))
                 .timeout(REQUEST_TIMEOUT)
                 .DELETE()
                 .build();
@@ -485,8 +514,8 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
     }
 
-    private void createIndex() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder(indexUri(""))
+    private void createIndex(String indexName) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(indexUri(indexName, ""))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(indexDefinition())))
@@ -497,8 +526,8 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
     }
 
-    private void refreshIndex() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder(indexUri("/_refresh"))
+    private void refreshIndex(String indexName) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(indexUri(indexName, "/_refresh"))
                 .timeout(REQUEST_TIMEOUT)
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
@@ -508,7 +537,86 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
     }
 
-    private void bulkIndex(List<DiscoveryDocument> objects) throws IOException, InterruptedException {
+    private List<String> activateProjectionIndex(String projectionIndex) throws IOException, InterruptedException {
+        List<String> previousIndices = aliasTargets();
+        List<Map<String, Object>> actions = new ArrayList<>();
+        if (!previousIndices.isEmpty()) {
+            for (String previous : previousIndices) {
+                actions.add(Map.of("remove", Map.of("index", previous, "alias", index)));
+            }
+        } else if (resourceExists(index)) {
+            // First migration from the legacy concrete index to a stable alias. remove_index + add
+            // happen in one aliases request so readers never observe a half-built replacement.
+            actions.add(Map.of("remove_index", Map.of("index", index)));
+        }
+        actions.add(Map.of("add", Map.of("index", projectionIndex, "alias", index)));
+
+        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/_aliases"))
+                .timeout(REQUEST_TIMEOUT)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        objectMapper.writeValueAsString(Map.of("actions", actions))))
+                .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() >= 300) {
+            throw new IllegalStateException("OpenSearch alias activation failed with HTTP " + response.statusCode());
+        }
+        return previousIndices;
+    }
+
+    private List<String> aliasTargets() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/_alias/" + index))
+                .timeout(REQUEST_TIMEOUT)
+                .GET()
+                .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() == 404) {
+            return List.of();
+        }
+        if (response.statusCode() >= 300) {
+            throw new IllegalStateException("OpenSearch alias lookup failed with HTTP " + response.statusCode());
+        }
+        JsonNode root = objectMapper.readTree(response.body());
+        List<String> targets = new ArrayList<>();
+        root.fieldNames().forEachRemaining(targets::add);
+        return List.copyOf(targets);
+    }
+
+    private boolean resourceExists(String name) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(indexUri(name, ""))
+                .timeout(REQUEST_TIMEOUT)
+                .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() == 404) {
+            return false;
+        }
+        if (response.statusCode() >= 300) {
+            throw new IllegalStateException("OpenSearch resource lookup failed with HTTP " + response.statusCode());
+        }
+        return true;
+    }
+
+    private void cleanupPreviousProjectionIndices(List<String> previousIndices, String activeIndex) {
+        for (String previous : previousIndices) {
+            if (previous.equals(activeIndex)) {
+                continue;
+            }
+            try {
+                deleteIndexIfPresent(previous);
+            } catch (IOException exception) {
+                LOGGER.warn("Unable to remove old OpenSearch projection index {}: {}", previous, exception.getMessage());
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                LOGGER.warn("Interrupted while removing old OpenSearch projection index {}", previous);
+                return;
+            } catch (RuntimeException exception) {
+                LOGGER.warn("Unable to remove old OpenSearch projection index {}: {}", previous, exception.getMessage());
+            }
+        }
+    }
+
+    private void bulkIndex(String indexName, List<DiscoveryDocument> objects) throws IOException, InterruptedException {
         StringBuilder payload = new StringBuilder();
         for (DiscoveryDocument object : objects) {
             payload.append(objectMapper.writeValueAsString(Map.of("index", Map.of("_id", object.result().getId()))))
@@ -516,7 +624,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             payload.append(objectMapper.writeValueAsString(toOpenSearchDocument(object))).append('\n');
         }
 
-        HttpRequest request = HttpRequest.newBuilder(indexUri("/_bulk?refresh=false"))
+        HttpRequest request = HttpRequest.newBuilder(indexUri(indexName, "/_bulk?refresh=false"))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/x-ndjson")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
@@ -630,8 +738,8 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private URI indexUri(String suffix) {
-        return URI.create(baseUrl + "/" + index + suffix);
+    private URI indexUri(String indexName, String suffix) {
+        return URI.create(baseUrl + "/" + indexName + suffix);
     }
 
     private String normalize(String value) {
