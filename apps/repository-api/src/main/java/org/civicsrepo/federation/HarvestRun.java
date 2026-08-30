@@ -41,8 +41,10 @@ public record HarvestRun(
         if (!isTerminal(status) && completedAt != null) {
             throw new IllegalArgumentException("Non-terminal harvest runs must not set completedAt");
         }
-        if (status != HarvestRunStatus.FAILED && failureMessage != null) {
-            throw new IllegalArgumentException("Only failed harvest runs may carry failureMessage");
+        if (status != HarvestRunStatus.FAILED
+                && status != HarvestRunStatus.PAUSED
+                && failureMessage != null) {
+            throw new IllegalArgumentException("Only failed or paused harvest runs may carry failureMessage");
         }
     }
 
