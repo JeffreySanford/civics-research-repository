@@ -6,10 +6,12 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryCursor;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryPage;
+import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -27,9 +29,13 @@ import org.springframework.stereotype.Service;
  * digest and handed unchanged to every active target. Solr remains the normal public search engine;
  * OpenSearch remains a parallel comparison target until evidence justifies another routing decision.
  *
- * <p>When neither DSpace nor the federated metadata catalog contains records, the small fixture
- * catalog is projected instead so the demo still functions. That substitution remains explicitly
- * labelled through the compatibility {@link RepositorySource} field and per-result provenance.
+ * <p>Corpus profiles select a deterministic prefix of the federated authority without deleting any
+ * retained metadata. CURATED_DEMO includes repository records only; named federated profiles add a
+ * stable-ID ordered federated prefix; FULL includes all retained federated metadata.
+ *
+ * <p>When the selected profile has no authoritative records, the small fixture catalog is projected
+ * instead so the demo still functions. That substitution remains explicitly labelled through the
+ * compatibility {@link RepositorySource} field and per-result provenance.
  */
 @Service
 public class DiscoveryProjectionService {
@@ -72,21 +78,36 @@ public class DiscoveryProjectionService {
         return targetStates.get().get(indexName);
     }
 
+    /** All per-target outcomes for the most recent projection attempt. */
+    public Map<String, ProjectionTargetState> currentTargetStates() {
+        return targetStates.get();
+    }
+
     /** Source of the data currently searchable, used to label compatibility-level API responses. */
     public RepositorySource currentSource() {
         return state.get().source();
     }
 
     /**
-     * Rebuilds every configured discovery projection target from one bounded canonical sequence.
+     * Backward-compatible full retained-corpus rebuild used by existing evidence workflows.
      *
-     * @param fixtureFallback small fallback catalog to index only when no authoritative records exist
+     * <p>Operator/runtime paths should prefer {@link #reindex(CorpusProfile, List)} so the selected
+     * corpus profile is explicit.
      */
     public ProjectionState reindex(List<DiscoveryDocument> fixtureFallback) {
+        return reindex(CorpusProfile.FULL, fixtureFallback);
+    }
+
+    /** Rebuild every configured discovery target from the deterministic slice selected by profile. */
+    public ProjectionState reindex(CorpusProfile profile, List<DiscoveryDocument> fixtureFallback) {
+        Objects.requireNonNull(profile, "profile");
         repositoryCatalog.invalidate();
         List<DiscoveryDocument> repositoryObjects = repositoryCatalog.findAllDiscoveryDocuments();
         long federatedCount = combinedDiscoveryCatalog.retainedFederatedCount();
-        boolean authorityBacked = !repositoryObjects.isEmpty() || federatedCount > 0;
+        validateProfileAvailability(profile, federatedCount);
+
+        boolean includesFederated = profile != CorpusProfile.CURATED_DEMO;
+        boolean authorityBacked = !repositoryObjects.isEmpty() || (includesFederated && federatedCount > 0);
         RepositorySource source = authorityBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
 
         Map<String, ProjectionTargetState> projectedTargets = new LinkedHashMap<>();
@@ -95,7 +116,21 @@ public class DiscoveryProjectionService {
         List<String> indexedRepositoryIds = new ArrayList<>();
 
         if (authorityBacked) {
-            projectCombined(activeTargets, projectedTargets, digest, indexedRepositoryIds);
+            if (profile == CorpusProfile.CURATED_DEMO) {
+                projectRepository(
+                        repositoryObjects,
+                        activeTargets,
+                        projectedTargets,
+                        digest,
+                        indexedRepositoryIds);
+            } else {
+                projectCombined(
+                        profile,
+                        activeTargets,
+                        projectedTargets,
+                        digest,
+                        indexedRepositoryIds);
+            }
         } else {
             projectFixtures(
                     fixtureFallback == null ? List.of() : fixtureFallback,
@@ -118,19 +153,33 @@ public class DiscoveryProjectionService {
         targetStates.set(Map.copyOf(projectedTargets));
 
         if (authorityBacked) {
+            long projectedFederated = Math.max(0L, projectedCount - repositoryObjects.size());
             LOGGER.info(
-                    "Discovery projection rebuilt from authoritative metadata: {} objects ({} DSpace, {} retained federated).",
+                    "Discovery projection rebuilt for profile {}: {} objects ({} DSpace, {} federated; {} federated retained).",
+                    profile,
                     projectedCount,
                     repositoryObjects.size(),
+                    projectedFederated,
                     federatedCount);
         } else {
             LOGGER.warn(
-                    "Discovery projection is serving {} FIXTURE research objects because DSpace and the federated"
-                            + " catalog returned no authoritative records.",
+                    "Discovery projection for profile {} is serving {} FIXTURE research objects because the selected"
+                            + " profile returned no authoritative records.",
+                    profile,
                     projectedCount);
         }
 
         return projected;
+    }
+
+    private void validateProfileAvailability(CorpusProfile profile, long federatedCount) {
+        profile.targetRecordCount().ifPresent((target) -> {
+            if (federatedCount < target) {
+                throw new IllegalStateException(
+                        "Corpus profile " + profile + " requires " + target + " retained federated records; only "
+                                + federatedCount + " are available.");
+            }
+        });
     }
 
     private List<DiscoveryProjectionTarget> beginTargets(
@@ -165,24 +214,64 @@ public class DiscoveryProjectionService {
         return activeTargets;
     }
 
-    private void projectCombined(
+    private void projectRepository(
+            List<DiscoveryDocument> repositoryObjects,
             List<DiscoveryProjectionTarget> activeTargets,
             Map<String, ProjectionTargetState> projectedTargets,
             DiscoveryProjectionDigest digest,
             List<String> indexedRepositoryIds) {
+        List<DiscoveryDocument> repository = repositoryObjects.stream()
+                .sorted(Comparator.comparing((document) -> document.result().getId()))
+                .toList();
+        for (int from = 0; from < repository.size(); from += PROJECTION_BATCH_SIZE) {
+            int to = Math.min(from + PROJECTION_BATCH_SIZE, repository.size());
+            List<DiscoveryDocument> batch = repository.subList(from, to);
+            digest.updateBatch(batch);
+            batch.stream().map((document) -> document.result().getId()).forEach(indexedRepositoryIds::add);
+            projectBatch(batch, activeTargets, projectedTargets);
+        }
+    }
+
+    private void projectCombined(
+            CorpusProfile profile,
+            List<DiscoveryProjectionTarget> activeTargets,
+            Map<String, ProjectionTargetState> projectedTargets,
+            DiscoveryProjectionDigest digest,
+            List<String> indexedRepositoryIds) {
+        long federatedLimit = profile.targetRecordCount().orElse(Long.MAX_VALUE);
+        long projectedFederated = 0;
         DiscoveryCursor cursor = null;
         boolean complete = false;
         while (!complete) {
             DiscoveryPage page = combinedDiscoveryCatalog.findAfter(cursor, PROJECTION_BATCH_SIZE);
             List<DiscoveryDocument> documents = page.documents();
+            if (federatedLimit != Long.MAX_VALUE) {
+                List<DiscoveryDocument> bounded = new ArrayList<>(documents.size());
+                for (DiscoveryDocument document : documents) {
+                    if (document.result().getOrigin() == ResearchObjectOrigin.FEDERATED) {
+                        if (projectedFederated >= federatedLimit) {
+                            continue;
+                        }
+                        projectedFederated++;
+                    }
+                    bounded.add(document);
+                }
+                documents = List.copyOf(bounded);
+            } else {
+                projectedFederated += documents.stream()
+                        .filter((document) -> document.result().getOrigin() == ResearchObjectOrigin.FEDERATED)
+                        .count();
+            }
+
             digest.updateBatch(documents);
             documents.stream()
                     .filter((document) -> document.result().getOrigin() == ResearchObjectOrigin.REPOSITORY)
                     .map((document) -> document.result().getId())
                     .forEach(indexedRepositoryIds::add);
             projectBatch(documents, activeTargets, projectedTargets);
-            complete = page.complete();
-            cursor = page.nextCursor();
+
+            complete = page.complete() || projectedFederated >= federatedLimit;
+            cursor = complete ? null : page.nextCursor();
         }
     }
 
