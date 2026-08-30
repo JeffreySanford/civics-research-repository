@@ -322,6 +322,16 @@ public class SolrSearchClient implements DiscoveryIndex {
                                             .map(this::normalize)
                                             .collect(Collectors.toSet())),
                             facetGroup(
+                                    "publisher",
+                                    "Publisher",
+                                    root.path("facet_counts").path("facet_fields").path("publisher_s"),
+                                    Set.of()),
+                            facetGroup(
+                                    "sourceSystem",
+                                    "Source",
+                                    root.path("facet_counts").path("facet_fields").path("sourceSystem_s"),
+                                    Set.of()),
+                            facetGroup(
                                     "geography",
                                     "Geography",
                                     root.path("facet_counts").path("facet_fields").path("geography_s"),
@@ -422,6 +432,8 @@ public class SolrSearchClient implements DiscoveryIndex {
         params.add("facet=true");
         params.add("facet.mincount=1");
         params.add("facet.field=" + encode("{!ex=programFilter}programName_s"));
+        params.add("facet.field=" + encode("publisher_s"));
+        params.add("facet.field=" + encode("sourceSystem_s"));
         params.add("facet.field=" + encode("{!ex=geographyFilter}geography_s"));
         params.add("facet.field=" + encode("{!ex=typeFilter}contentType_s"));
         params.add("facet.field=" + encode("{!ex=vintageFilter}vintageYear_i"));
