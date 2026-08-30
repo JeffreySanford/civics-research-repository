@@ -82,6 +82,7 @@ class DataGovHarvesterTest {
                 .containsEntry("bureauCode", "006:00")
                 .containsEntry("programCode", "006:123")
                 .containsEntry("doi", "10.1234/data-gov-demo")
+                .containsEntry("modified", "2026-08-20T14:30:00Z")
                 .containsEntry("lastHarvestedDate", "2026-08-20T15:00:00Z")
                 .containsEntry("organizationSlug", "commerce")
                 .containsEntry("resourceCount", 2);
@@ -99,12 +100,15 @@ class DataGovHarvesterTest {
                 .containsEntry("format", "JSON")
                 .containsEntry("url", "https://example.gov/workforce/north-dakota.json");
 
-        // The second fixture is deliberately sparse: no program or bureau code and no
-        // distributions. Publisher fallback still produces a useful data-driven program name.
+        // The second fixture is deliberately sparse and uses the date-only `modified` shape that
+        // the live Data.gov v4 API emits. Publisher fallback still produces a useful program name.
         FederatedResearchRecord fallbackProgram = page.records().get(1);
         assertThat(fallbackProgram.program()).isEqualTo("Office of Science");
         assertThat(fallbackProgram.authors()).isEmpty();
-        assertThat(fallbackProgram.sourceMetadata()).containsEntry("resourceCount", 0);
+        assertThat(fallbackProgram.sourceUpdatedAt().toInstant()).isEqualTo(Instant.parse("2026-08-21T00:00:00Z"));
+        assertThat(fallbackProgram.sourceMetadata())
+                .containsEntry("modified", "2026-08-21")
+                .containsEntry("resourceCount", 0);
         assertThat(fallbackProgram.sourceMetadata()).doesNotContainKey("resources");
     }
 
