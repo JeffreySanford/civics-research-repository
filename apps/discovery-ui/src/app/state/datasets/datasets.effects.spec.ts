@@ -12,6 +12,9 @@ import { DatasetsActions } from './datasets.actions';
 import { DatasetsEffects } from './datasets.effects';
 
 const detail = {
+  source: 'REPOSITORY',
+  origin: 'REPOSITORY',
+  sourceSystem: 'CENSUS',
   id: 'tiger-line-north-dakota-2025',
   title: '2025 TIGER/Line - Census Tracts - North Dakota',
   program: 'TIGER_LINE',
@@ -25,6 +28,19 @@ const detail = {
   sourceUrl: 'https://www2.census.gov/geo/tiger/TIGER2025/',
   accessibilityEvidenceStatus: 'AUTOMATED_PASS',
   relatedResearch: [],
+} as unknown as ResearchObjectDetail;
+
+const federatedDetail = {
+  ...detail,
+  source: 'FEDERATED',
+  origin: 'FEDERATED',
+  sourceSystem: 'DATA_GOV',
+  id: 'DATA_GOV:https://catalog.data.gov/dataset/example',
+  title: 'Example Data.gov record',
+  program: 'OTHER',
+  programName: 'Example Federal Program',
+  files: [],
+  accessibilityEvidenceStatus: undefined,
 } as unknown as ResearchObjectDetail;
 
 const versions: DatasetVersion[] = [
@@ -93,8 +109,8 @@ describe('DatasetsEffects', () => {
     );
   });
 
-  it('loads canonical research detail without dataset-only enrichments', async () => {
-    const getResearchObject = vi.fn().mockReturnValue(of(detail));
+  it('loads federated research detail without dataset-only enrichments', async () => {
+    const getResearchObject = vi.fn().mockReturnValue(of(federatedDetail));
     const getDataset = vi.fn();
     const getDatasetVersions = vi.fn();
     const getDatasetMapLayers = vi.fn();
@@ -116,7 +132,35 @@ describe('DatasetsEffects', () => {
     expect(getDatasetVersions).not.toHaveBeenCalled();
     expect(getDatasetMapLayers).not.toHaveBeenCalled();
     expect(emitted).toEqual(
-      DatasetsActions.datasetLoaded({ detail, versions: [], mapLayers: [] }),
+      DatasetsActions.datasetLoaded({
+        detail: federatedDetail,
+        versions: [],
+        mapLayers: [],
+      }),
+    );
+  });
+
+  it('preserves repository versions and map layers through the canonical research route', async () => {
+    const getResearchObject = vi.fn().mockReturnValue(of(detail));
+    const getDatasetVersions = vi.fn().mockReturnValue(of(versions));
+    const getDatasetMapLayers = vi.fn().mockReturnValue(of(mapLayers));
+    const researchId = 'dGlnZXItbGluZS1ub3J0aC1kYWtvdGEtMjAyNQ';
+    const effects = setup(
+      {
+        getResearchObject,
+        getDatasetVersions,
+      } as unknown as RepositoryDatasetsApi,
+      { getDatasetMapLayers } as unknown as RepositoryMapsApi,
+      of(DatasetsActions.researchOpened({ researchId })),
+    );
+
+    const emitted = await firstValueFrom(effects.openResearch$);
+
+    expect(getResearchObject).toHaveBeenCalledWith(researchId);
+    expect(getDatasetVersions).toHaveBeenCalledWith(detail.id);
+    expect(getDatasetMapLayers).toHaveBeenCalledWith(detail.id);
+    expect(emitted).toEqual(
+      DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),
     );
   });
 
