@@ -375,9 +375,9 @@ public class SearchService {
             Function<SearchResult, String> valueSelector,
             Set<String> normalizedSelected) {
         Map<String, Long> counts = results.stream()
-                .map((result) -> Map.entry(result, valueSelector.apply(result)))
-                .filter((entry) -> entry.getValue() != null && !entry.getValue().isBlank())
-                .collect(Collectors.groupingBy(Map.Entry::getValue, Collectors.counting()));
+                .map(valueSelector)
+                .filter((value) -> value != null && !value.isBlank())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         List<FacetValue> values = counts.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
