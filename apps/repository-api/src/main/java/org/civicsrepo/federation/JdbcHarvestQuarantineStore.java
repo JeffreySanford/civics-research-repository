@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -27,10 +28,20 @@ public class JdbcHarvestQuarantineStore implements HarvestQuarantineStore {
 
     private final JdbcClient jdbcClient;
     private final JdbcTemplate jdbcTemplate;
+    private final int maxRetainedPerSource;
 
+    @Autowired
     public JdbcHarvestQuarantineStore(JdbcClient jdbcClient, DataSource dataSource) {
+        this(jdbcClient, dataSource, MAX_RETAINED_PER_SOURCE);
+    }
+
+    JdbcHarvestQuarantineStore(JdbcClient jdbcClient, DataSource dataSource, int maxRetainedPerSource) {
+        if (maxRetainedPerSource < 1) {
+            throw new IllegalArgumentException("maxRetainedPerSource must be positive");
+        }
         this.jdbcClient = jdbcClient;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.maxRetainedPerSource = maxRetainedPerSource;
     }
 
     @PostConstruct
@@ -113,7 +124,7 @@ public class JdbcHarvestQuarantineStore implements HarvestQuarantineStore {
                           )
                         """)
                 .param("sourceSystem", sourceSystem.name())
-                .param("retain", MAX_RETAINED_PER_SOURCE)
+                .param("retain", maxRetainedPerSource)
                 .update();
     }
 
