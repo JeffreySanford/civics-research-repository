@@ -1,0 +1,43 @@
+name: PI-1 Research Mock Patch
+
+on:
+  push:
+    branches:
+      - codex/federated-metadata-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: true
+      - name: Add authority-neutral research mock
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('apps/discovery-ui-e2e/src/support/repository-api-mocks.ts')
+          source = path.read_text()
+          marker = "  // Layers are geography-specific, the way the API serves them: the maps page requests a new\n"
+          block = """  // The public detail route carries an opaque Base64URL token. Decode it back to the same\n  // canonical identity used by the legacy dataset fixture so Discovery -> detail journeys exercise\n  // the authority-neutral route without duplicating fixture data.\n  await page.route(`**/api/research/*`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    const researchId = pathname.split('/research/')[1] ?? '';\n    const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: datasetDetail(canonicalId),\n    });\n  });\n\n"""
+          if block in source:
+              raise SystemExit(0)
+          if source.count(marker) != 1:
+              raise SystemExit(f'expected one insertion marker, found {source.count(marker)}')
+          path.write_text(source.replace(marker, block + marker, 1))
+      - name: Format shared mock
+        run: pnpm exec prettier --write apps/discovery-ui-e2e/src/support/repository-api-mocks.ts
+      - name: Commit shared mock patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/discovery-ui-e2e/src/support/repository-api-mocks.ts
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Mock authority-neutral research detail route"
+          git push
