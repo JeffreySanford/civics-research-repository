@@ -26,7 +26,7 @@ PI-5 Browser Evidence CI and Governance
 PI-6 Solr/OpenSearch Comparison Hardening
 ```
 
-PI-1 is the active increment. Work already implemented in the PI-1 F0 foundation remains valid and is audited against the exit criteria rather than restarted.
+PI-1 is the active increment. The F0/foundation work merged through PR #3 on 2026-08-30 at `main` commit `4569416371c15bfe96660d53c4756a48d3c4ed4b`. The active branch is now `codex/data-gov-10k-scale`, which is extending the proven Data.gov 1K corpus to staged 10K/100K scale evidence without changing record semantics.
 
 Docker Compose standalone search remains supported throughout all increments. It remains the fastest local development path, the easiest live-demo topology, the functional/regression baseline, the lowest-overhead environment for small corpora, and the control topology for later performance experiments.
 
@@ -60,6 +60,7 @@ PI-1 establishes:
 - `/research/:id` detail abstraction,
 - combined repository + federated discovery catalog,
 - streaming/batched deterministic projection,
+- deterministic bounded snapshots and snapshot/projection evidence,
 - cursor-capable search pagination design.
 
 The persistence layer must use bounded database batches. API-level batching that still performs one database interaction per record does not satisfy the scale requirement.
@@ -94,20 +95,47 @@ F4 multi-source 1M-class corpus
 F5 PI-1 handoff snapshot/manifests
 ```
 
-### F0 completion priority
+### Current checkpoint — 2026-08-30
 
-Before broad source-adapter expansion, finish the scale-sensitive foundation in this order:
+F0 is merged. The 1K portion of F1 is complete end to end:
+
+- 1,000 Data.gov accepted / 0 rejected / 0 skipped,
+- deterministic bounded snapshot persisted,
+- guarded snapshot -> projection relationship persisted,
+- combined projection count 1,181 = 181 curated + 1,000 federated,
+- public search returned exactly 1,000 `DATA_GOV` records with federated provenance,
+- publisher/program/source facets were produced from the indexed corpus.
+
+The 10K harvest portion of F1 is also proven. The same durable Data.gov run `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131` resumed from 10 pages/1,000 accepted records for 90 additional pages and reached 100 pages/10,000 accepted with 0 rejected and 0 skipped.
+
+F1 is **not yet complete**. Before PI-1 moves to the 100K F2 proof, the 10K checkpoint still requires:
+
+- deterministic bounded snapshot capture,
+- guarded snapshot/projection linkage,
+- persisted evidence-history verification,
+- normal public search and live `/research/:id` verification,
+- Solr/OpenSearch projection-count/identity parity,
+- storage growth and bytes/document measurements,
+- host/container/JVM resource context,
+- reusable duration evidence.
+
+The exact evidence checklist is maintained in [PI1_DATA_GOV_SCALE_EVIDENCE.md](PI1_DATA_GOV_SCALE_EVIDENCE.md).
+
+### F0 foundation status
+
+The merged foundation delivered the scale-sensitive path that had to exist before broad harvesting:
 
 1. bounded JDBC metadata persistence,
 2. typed provenance/source-system contract,
-3. dynamic publisher/program/subject taxonomy,
+3. dynamic publisher/program taxonomy,
 4. combined DSpace + federated catalog,
 5. bounded streaming search projection,
 6. deterministic streaming projection identity,
-7. cursor-capable discovery contract,
-8. harvest-run/error/quarantine observability.
+7. durable harvest-run/checkpoint/quarantine observability,
+8. bounded snapshot and guarded snapshot/projection evidence,
+9. authority-neutral research detail routing.
 
-The current PI-1 branch has already established namespaced source identity, normalized federated records, catalog persistence, resumable checkpoints, the harvester contract, corpus profiles, storage-history measurements and Admin corpus-scale visibility. Those capabilities remain part of F0.
+Still open from the original foundation design are cross-source durable-identifier reconciliation and opaque cursor/search-after pagination for million-record public discovery. Those are now follow-on scale-hardening work rather than blockers to the already-merged F0 path.
 
 ### Exit criteria
 
@@ -304,33 +332,31 @@ These rules remain true across all six increments:
 
 ### Taxonomy explosion
 
-A fixed `ResearchProgram` enum will not scale to thousands of provider program names.
+**Architecture resolved; presentation hardening remains.**
 
-Resolution direction: controlled `sourceSystem` and `contentType`; data-driven publisher/program/subjects.
+`sourceSystem` and `contentType` are controlled while publisher/program values are data-driven. Live Data.gov evidence showed why display hardening still matters: valid publisher program values such as `010:10` and `010:12` are searchable but not especially human-readable. Preserve the raw publisher value and add a defensible label/presentation strategy without reintroducing a fixed UI allowlist.
 
 ### Repository-versus-federated ambiguity
 
-The UI currently assumes every detail route describes a repository object.
+**Resolved for the merged foundation.**
 
-Resolution direction: canonical `/research/:id` route and explicit origin/provenance.
+Canonical `/research/:id` routing, per-record `origin`/`sourceSystem`, federated-authority messaging and authoritative external links now distinguish repository and federated records. `/datasets/:id` remains a compatibility route.
 
 ### Full-corpus memory usage
 
-The current projection materializes a `List<DiscoveryDocument>` and search clients build whole update payloads.
+**Resolved architecturally; scale evidence remains.**
 
-Resolution direction: streaming/batched normalization, hashing and indexing before 100K/1M.
+Projection now uses bounded combined-catalog pages, streaming deterministic hashing and bounded Solr/OpenSearch batches. The 10K/100K checkpoints must still record storage and host/container/JVM context to prove that the implementation behaves as intended under larger corpora.
 
 ### Deep pagination
 
 Offset-based page numbers become inefficient at million-record scale.
 
-Resolution direction: cursor/search-after capable API contract with opaque tokens while preserving accessible Previous/Next UI.
+Resolution direction: cursor/search-after capable API contract with opaque tokens while preserving accessible Previous/Next UI and the current offset contract during migration.
 
 ### Source API volatility/rate limiting
 
-Every public source has different pagination, quotas and schema evolution.
-
-Resolution direction: source adapters behind a common resumable framework, source fixture tests and recorded adapter versions.
+The shared retry/checkpoint framework is implemented, including bounded retry and `Retry-After` awareness. Remaining work is source-specific concurrency/rate policy, timeout tuning and evidence at larger scales.
 
 ### Cross-source duplicates
 
@@ -382,8 +408,9 @@ Recommended execution branches:
 
 ```text
 PI-1
-  codex/federated-metadata-catalog
-  codex/data-gov-adapter
+  codex/federated-metadata-catalog   # merged through PR #3
+  codex/data-gov-10k-scale          # active
+  codex/data-gov-100k-scale         # next after 10K evidence closes
   codex/osti-adapter
   codex/nasa-cmr-adapter
   codex/pubmed-adapter
