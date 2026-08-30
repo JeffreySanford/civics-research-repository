@@ -54,8 +54,15 @@
         "resources": [
           {
             "id": "resource-1",
+            "name": "Workforce CSV",
             "format": "CSV",
             "url": "https://example.gov/workforce/north-dakota.csv"
+          },
+          {
+            "id": "resource-2",
+            "name": "Workforce JSON",
+            "format": "JSON",
+            "url": "https://example.gov/workforce/north-dakota.json"
           }
         ]
       },
