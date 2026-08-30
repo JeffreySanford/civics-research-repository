@@ -5,6 +5,7 @@ import java.util.Map;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
+import org.civicsrepo.generated.dto.SourceSystem;
 
 /**
  * The public search engine used by the browser-facing discovery path.
@@ -33,6 +34,24 @@ public interface DiscoveryIndex extends DiscoveryProjectionTarget {
             Integer vintageYear,
             int page,
             int pageSize);
+
+    /**
+     * Additive mixed-authority filter surface for normal discovery. Alternate implementations that
+     * have not adopted publisher/source filtering yet retain their legacy behavior, while the live
+     * Solr discovery implementation overrides this method.
+     */
+    default SearchResponse search(
+            String query,
+            List<String> programs,
+            String publisher,
+            SourceSystem sourceSystem,
+            String geography,
+            ResearchObjectType contentType,
+            Integer vintageYear,
+            int page,
+            int pageSize) {
+        return search(query, programs, geography, contentType, vintageYear, page, pageSize);
+    }
 
     /**
      * Runs the same search while retaining engine-native timing when an implementation exposes it.
