@@ -145,11 +145,18 @@ test.describe('Admin Sync corpus storage evidence', () => {
       page.getByRole('button', { name: 'Capture current footprint' }),
     ).toBeVisible();
 
-    await expect(page.getByLabel('Filter historical measurements')).toBeVisible();
+    const historyFilter = page.getByLabel('Filter historical measurements');
+    await expect(historyFilter).toBeVisible();
     await expect(
       page.getByRole('columnheader', { name: /Captured/ }),
     ).toBeVisible();
     await expect(page.locator('mat-paginator')).toBeVisible();
+
+    await historyFilter.fill('no-such-profile');
+    await expect(
+      page.getByText('No historical measurements match the current filter.'),
+    ).toBeVisible();
+    await historyFilter.fill('');
   });
 
   test('explicitly activates an already-retained 10K projection with live progress and captures its footprint @storyboard @comparison', async ({
