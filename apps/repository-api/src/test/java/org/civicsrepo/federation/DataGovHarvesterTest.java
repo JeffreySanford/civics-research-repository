@@ -29,6 +29,7 @@ class DataGovHarvesterTest {
     private final AtomicReference<Integer> responseStatus = new AtomicReference<>(200);
     private final AtomicReference<String> retryAfter = new AtomicReference<>();
     private final AtomicReference<String> requestQuery = new AtomicReference<>();
+    private final AtomicReference<String> requestApiKey = new AtomicReference<>();
     private HttpServer server;
     private DataGovHarvester harvester;
 
@@ -36,10 +37,11 @@ class DataGovHarvesterTest {
     void startServer() throws IOException {
         responseBody.set(resource("/federation/data-gov-package-search.json"));
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/api/3/action/package_search", this::handleSearch);
+        server.createContext("/technology/datagov/v4/search", this::handleSearch);
         server.start();
         harvester = new DataGovHarvester(
-                "http://127.0.0.1:" + server.getAddress().getPort() + "/api/3/action/package_search",
+                "http://127.0.0.1:" + server.getAddress().getPort() + "/technology/datagov/v4/search",
+                "test-api-key",
                 HttpClient.newHttpClient(),
                 new ObjectMapper(),
                 Clock.fixed(HARVESTED_AT, ZoneOffset.UTC));
@@ -51,15 +53,16 @@ class DataGovHarvesterTest {
     }
 
     @Test
-    void normalizesBoundedPageAndEmitsResumeCursor() {
+    void normalizesBoundedV4PageAndEmitsOpaqueResumeCursor() {
         HarvestPage page = harvester.fetch(null, 5_000);
 
         assertThat(page.complete()).isFalse();
-        assertThat(page.nextCursor()).isEqualTo("2");
+        assertThat(page.nextCursor()).isEqualTo("WzEwMC4wLDAsXCJjdXJzb3ItMiJd");
         assertThat(page.records()).hasSize(2);
         assertThat(page.rejections()).isEmpty();
-        assertThat(requestQuery.get())
-                .contains("rows=1000", "start=0", "facet=false", "sort=metadata_modified+asc%2Cid+asc");
+        assertThat(requestQuery.get()).contains("per_page=1000", "sort=last_harvested_date");
+        assertThat(requestQuery.get()).doesNotContain("after=");
+        assertThat(requestApiKey.get()).isEqualTo("test-api-key");
 
         FederatedResearchRecord workforce = page.records().getFirst();
         assertThat(workforce.sourceSystem()).isEqualTo(FederatedSourceSystem.DATA_GOV);
@@ -73,12 +76,14 @@ class DataGovHarvesterTest {
         assertThat(workforce.sourceUpdatedAt().toInstant()).isEqualTo(Instant.parse("2026-08-20T14:30:00Z"));
         assertThat(workforce.harvestedAt().toInstant()).isEqualTo(HARVESTED_AT);
         assertThat(workforce.adapterVersion()).isEqualTo(DataGovHarvester.ADAPTER_VERSION);
-        assertThat(workforce.authors()).containsExactly("Office of Workforce Research");
-        assertThat(workforce.subjects()).containsExactly("Workforce", "North Dakota");
+        assertThat(workforce.authors()).isEmpty();
+        assertThat(workforce.subjects()).containsExactly("Workforce", "North Dakota", "Employment");
         assertThat(workforce.sourceMetadata())
                 .containsEntry("bureauCode", "006:00")
                 .containsEntry("programCode", "006:123")
                 .containsEntry("doi", "10.1234/data-gov-demo")
+                .containsEntry("lastHarvestedDate", "2026-08-20T15:00:00Z")
+                .containsEntry("organizationSlug", "commerce")
                 .containsEntry("resourceCount", 2);
 
         @SuppressWarnings("unchecked")
@@ -94,8 +99,8 @@ class DataGovHarvesterTest {
                 .containsEntry("format", "JSON")
                 .containsEntry("url", "https://example.gov/workforce/north-dakota.json");
 
-        // The second fixture is deliberately sparse: no author, program code, bureau code or
-        // resources. A useful publisher/program fallback still makes it through normalization.
+        // The second fixture is deliberately sparse: no program or bureau code and no
+        // distributions. Publisher fallback still produces a useful data-driven program name.
         FederatedResearchRecord fallbackProgram = page.records().get(1);
         assertThat(fallbackProgram.program()).isEqualTo("Office of Science");
         assertThat(fallbackProgram.authors()).isEmpty();
@@ -104,8 +109,14 @@ class DataGovHarvesterTest {
     }
 
     @Test
-    void marksLastPageCompleteFromReportedCatalogCount() {
-        responseBody.set(responseBody.get().replace("\"count\": 3", "\"count\": 2"));
+    void marksLastPageCompleteWhenV4OmitsAfterCursor() {
+        responseBody.set(responseBody.get().replace(
+                "  \"after\": \"WzEwMC4wLDAs\\\"Y3Vyc29yLTI=\\\"Jd\",\n",
+                ""));
+        // Use the actual committed cursor line if its encoded representation changes.
+        responseBody.set(responseBody.get().replace(
+                "  \"after\": \"WzEwMC4wLDAsXCJjdXJzb3ItMiJd\",\n",
+                ""));
 
         HarvestPage page = harvester.fetch(null, 100);
 
@@ -115,17 +126,17 @@ class DataGovHarvesterTest {
     }
 
     @Test
-    void resumesFromOpaqueOffsetCursor() {
-        harvester.fetch("27", 25);
+    void resumesFromOpaqueV4AfterCursor() {
+        harvester.fetch("opaque==", 25);
 
-        assertThat(requestQuery.get()).contains("rows=25", "start=27");
+        assertThat(requestQuery.get()).contains("per_page=25", "after=opaque%3D%3D");
     }
 
     @Test
     void turnsRateLimitIntoRetryableFailureWithRetryAfter() {
         responseStatus.set(429);
         retryAfter.set("4");
-        responseBody.set("{\"success\":false}");
+        responseBody.set("{\"error\":{\"code\":\"OVER_RATE_LIMIT\"}}");
 
         assertThatThrownBy(() -> harvester.fetch(null, 100))
                 .isInstanceOfSatisfying(FederatedHarvestException.class, exception -> {
@@ -135,21 +146,34 @@ class DataGovHarvesterTest {
     }
 
     @Test
-    void quarantinesMalformedDatasetAndAdvancesSourceOffset() {
+    void treatsInvalidApiKeyAsPermanentPublisherFailure() {
+        responseStatus.set(403);
+        responseBody.set("{\"error\":{\"code\":\"API_KEY_INVALID\"}}");
+
+        assertThatThrownBy(() -> harvester.fetch(null, 100))
+                .isInstanceOfSatisfying(FederatedHarvestException.class, exception -> {
+                    assertThat(exception.retryable()).isFalse();
+                    assertThat(exception.getMessage()).contains("HTTP 403");
+                });
+    }
+
+    @Test
+    void quarantinesMalformedDatasetAndStillKeepsV4ContinuationCursor() {
         responseBody.set(
                 """
                 {
-                  "success": true,
-                  "result": {
-                    "count": 2,
-                    "results": [
-                      {
+                  "after": "next-page-token",
+                  "sort": "last_harvested_date",
+                  "results": [
+                    {
+                      "title": "Missing stable identifier",
+                      "publisher": "Example Agency",
+                      "dcat": {
                         "title": "Missing stable identifier",
-                        "organization": {"title": "Example Agency"},
-                        "metadata_modified": "2026-08-20T00:00:00Z"
+                        "modified": "2026-08-20T00:00:00Z"
                       }
-                    ]
-                  }
+                    }
+                  ]
                 }
                 """);
 
@@ -158,23 +182,26 @@ class DataGovHarvesterTest {
         assertThat(page.records()).isEmpty();
         assertThat(page.rejections()).hasSize(1);
         assertThat(page.rejections().getFirst().sourceIdentifier()).isNull();
-        assertThat(page.rejections().getFirst().message()).contains("required field 'id'");
+        assertThat(page.rejections().getFirst().message()).contains("required field 'identifier'");
         assertThat(page.rejections().getFirst().rawSnippet()).contains("Missing stable identifier");
         assertThat(page.complete()).isFalse();
-        assertThat(page.nextCursor()).isEqualTo("1");
+        assertThat(page.nextCursor()).isEqualTo("next-page-token");
     }
 
     @Test
-    void rejectsInvalidCursorWithoutRetryingPublisher() {
-        assertThatThrownBy(() -> harvester.fetch("not-an-offset", 100))
+    void rejectsEmptyPageThatStillClaimsAContinuationCursor() {
+        responseBody.set("{\"after\":\"next\",\"results\":[]}");
+
+        assertThatThrownBy(() -> harvester.fetch(null, 100))
                 .isInstanceOfSatisfying(FederatedHarvestException.class, exception -> {
                     assertThat(exception.retryable()).isFalse();
-                    assertThat(exception.getMessage()).contains("cursor");
+                    assertThat(exception.getMessage()).contains("empty page");
                 });
     }
 
     private void handleSearch(HttpExchange exchange) throws IOException {
         requestQuery.set(exchange.getRequestURI().getRawQuery());
+        requestApiKey.set(exchange.getRequestHeaders().getFirst("X-Api-Key"));
         if (retryAfter.get() != null) {
             exchange.getResponseHeaders().set("Retry-After", retryAfter.get());
         }
