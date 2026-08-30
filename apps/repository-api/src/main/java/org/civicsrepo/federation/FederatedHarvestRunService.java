@@ -17,6 +17,11 @@ import org.springframework.stereotype.Service;
  * a PAUSED run, not a success or failure; the persisted source checkpoint and run ID are reused on
  * the next invocation. A source-complete page marks the run COMPLETED. Exhausted retries or any
  * other page failure marks it FAILED without advancing the checkpoint.
+ *
+ * <p>Cancellation is cooperative at page boundaries. Cancelling a run preserves the source
+ * checkpoint so a later ordinary run can continue from the last durable page. Restarting from the
+ * beginning is deliberately separate: it cancels any resumable run and clears the checkpoint before
+ * starting a fresh run ID.
  */
 @Service
 public class FederatedHarvestRunService {
@@ -24,6 +29,7 @@ public class FederatedHarvestRunService {
 
     private final FederatedHarvestService harvestService;
     private final HarvestRunStore runStore;
+    private final HarvestCheckpointStore checkpointStore;
     private final Map<FederatedSourceSystem, FederatedSourceHarvester> harvesters;
     private final Clock clock;
 
@@ -31,17 +37,20 @@ public class FederatedHarvestRunService {
     public FederatedHarvestRunService(
             FederatedHarvestService harvestService,
             HarvestRunStore runStore,
+            HarvestCheckpointStore checkpointStore,
             List<FederatedSourceHarvester> harvesters) {
-        this(harvestService, runStore, harvesters, Clock.systemUTC());
+        this(harvestService, runStore, checkpointStore, harvesters, Clock.systemUTC());
     }
 
     FederatedHarvestRunService(
             FederatedHarvestService harvestService,
             HarvestRunStore runStore,
+            HarvestCheckpointStore checkpointStore,
             List<FederatedSourceHarvester> harvesters,
             Clock clock) {
         this.harvestService = harvestService;
         this.runStore = runStore;
+        this.checkpointStore = checkpointStore;
         this.clock = clock;
         this.harvesters = new EnumMap<>(FederatedSourceSystem.class);
         for (FederatedSourceHarvester harvester : harvesters) {
@@ -53,28 +62,49 @@ public class FederatedHarvestRunService {
     }
 
     public HarvestRun runBounded(FederatedSourceSystem sourceSystem, int pageSize, int maxPages) {
-        if (pageSize < 1 || pageSize > 10_000) {
-            throw new IllegalArgumentException("pageSize must be between 1 and 10000");
-        }
-        if (maxPages < 1 || maxPages > MAX_PAGES_PER_INVOCATION) {
-            throw new IllegalArgumentException("maxPages must be between 1 and " + MAX_PAGES_PER_INVOCATION);
-        }
+        validateBounds(pageSize, maxPages);
 
-        FederatedSourceHarvester harvester = harvesters.get(sourceSystem);
-        if (harvester == null) {
-            throw new IllegalArgumentException("No harvester registered for " + sourceSystem);
-        }
-
+        FederatedSourceHarvester harvester = requireHarvester(sourceSystem);
         String adapterVersion = harvester.adapterVersion();
         HarvestRun run = runStore.findResumable(sourceSystem)
                 .map(existing -> resume(existing, pageSize, adapterVersion))
                 .orElseGet(() -> start(sourceSystem, adapterVersion, pageSize));
 
         for (int page = 0; page < maxPages; page++) {
+            HarvestRun current = current(run);
+            if (current.status() == HarvestRunStatus.CANCELLED) {
+                return current;
+            }
+
             try {
                 FederatedHarvestService.HarvestResult result =
                         harvestService.harvestNext(sourceSystem, pageSize, run.id());
                 OffsetDateTime now = now();
+
+                // A cancellation request can arrive while a bounded source page is in flight. The
+                // page itself is allowed to finish transactionally; cancellation takes effect before
+                // the next page and the terminal run retains the progress that was just committed.
+                HarvestRun afterPage = current(run);
+                if (afterPage.status() == HarvestRunStatus.CANCELLED) {
+                    HarvestRun cancelled = new HarvestRun(
+                            run.id(),
+                            run.sourceSystem(),
+                            run.adapterVersion(),
+                            HarvestRunStatus.CANCELLED,
+                            run.pageSize(),
+                            run.pageCount() + 1,
+                            result.totalAccepted(),
+                            run.rejectedCount() + result.rejectedThisPage(),
+                            run.skippedCount(),
+                            result.nextCursor(),
+                            run.startedAt(),
+                            now,
+                            afterPage.completedAt() == null ? now : afterPage.completedAt(),
+                            null);
+                    runStore.save(cancelled);
+                    return cancelled;
+                }
+
                 run = new HarvestRun(
                         run.id(),
                         run.sourceSystem(),
@@ -95,6 +125,11 @@ public class FederatedHarvestRunService {
                     return run;
                 }
             } catch (RuntimeException exception) {
+                HarvestRun currentAfterFailure = current(run);
+                if (currentAfterFailure.status() == HarvestRunStatus.CANCELLED) {
+                    return currentAfterFailure;
+                }
+
                 OffsetDateTime now = now();
                 HarvestRun failed = new HarvestRun(
                         run.id(),
@@ -114,6 +149,11 @@ public class FederatedHarvestRunService {
                 runStore.save(failed);
                 throw exception;
             }
+        }
+
+        HarvestRun current = current(run);
+        if (current.status() == HarvestRunStatus.CANCELLED) {
+            return current;
         }
 
         OffsetDateTime pausedAt = now();
@@ -136,8 +176,36 @@ public class FederatedHarvestRunService {
         return paused;
     }
 
+    /**
+     * Cancels the current resumable run but deliberately keeps the source checkpoint.
+     *
+     * <p>A later {@link #runBounded} call starts a new run ID and continues from that checkpoint.
+     */
+    public HarvestRun cancel(FederatedSourceSystem sourceSystem) {
+        HarvestRun run = runStore.findResumable(sourceSystem)
+                .orElseThrow(() -> new IllegalStateException("No resumable harvest run for " + sourceSystem));
+        return cancelRun(run);
+    }
+
+    /**
+     * Starts from source offset zero with a new run ID.
+     *
+     * <p>Any resumable run is marked CANCELLED first; then the source checkpoint is explicitly
+     * cleared. This operation is intentionally different from ordinary resume-after-cancel.
+     */
+    public HarvestRun restartFromBeginning(FederatedSourceSystem sourceSystem, int pageSize, int maxPages) {
+        validateBounds(pageSize, maxPages);
+        requireHarvester(sourceSystem);
+        runStore.findResumable(sourceSystem).ifPresent(this::cancelRun);
+        checkpointStore.clear(sourceSystem);
+        return runBounded(sourceSystem, pageSize, maxPages);
+    }
+
     private HarvestRun start(FederatedSourceSystem sourceSystem, String adapterVersion, int pageSize) {
         OffsetDateTime startedAt = now();
+        HarvestCheckpoint checkpoint = checkpointStore
+                .find(sourceSystem)
+                .orElseGet(() -> HarvestCheckpoint.initial(sourceSystem));
         HarvestRun run = new HarvestRun(
                 UUID.randomUUID().toString(),
                 sourceSystem,
@@ -145,10 +213,10 @@ public class FederatedHarvestRunService {
                 HarvestRunStatus.RUNNING,
                 pageSize,
                 0,
+                checkpoint.acceptedCount(),
                 0,
                 0,
-                0,
-                null,
+                checkpoint.cursor(),
                 startedAt,
                 startedAt,
                 null,
@@ -185,6 +253,48 @@ public class FederatedHarvestRunService {
                 null);
         runStore.save(resumed);
         return resumed;
+    }
+
+    private HarvestRun cancelRun(HarvestRun run) {
+        OffsetDateTime cancelledAt = now();
+        HarvestRun cancelled = new HarvestRun(
+                run.id(),
+                run.sourceSystem(),
+                run.adapterVersion(),
+                HarvestRunStatus.CANCELLED,
+                run.pageSize(),
+                run.pageCount(),
+                run.acceptedCount(),
+                run.rejectedCount(),
+                run.skippedCount(),
+                run.cursor(),
+                run.startedAt(),
+                cancelledAt,
+                cancelledAt,
+                null);
+        runStore.save(cancelled);
+        return cancelled;
+    }
+
+    private HarvestRun current(HarvestRun fallback) {
+        return runStore.findById(fallback.id()).orElse(fallback);
+    }
+
+    private FederatedSourceHarvester requireHarvester(FederatedSourceSystem sourceSystem) {
+        FederatedSourceHarvester harvester = harvesters.get(sourceSystem);
+        if (harvester == null) {
+            throw new IllegalArgumentException("No harvester registered for " + sourceSystem);
+        }
+        return harvester;
+    }
+
+    private void validateBounds(int pageSize, int maxPages) {
+        if (pageSize < 1 || pageSize > 10_000) {
+            throw new IllegalArgumentException("pageSize must be between 1 and 10000");
+        }
+        if (maxPages < 1 || maxPages > MAX_PAGES_PER_INVOCATION) {
+            throw new IllegalArgumentException("maxPages must be between 1 and " + MAX_PAGES_PER_INVOCATION);
+        }
     }
 
     private String failureMessage(RuntimeException exception) {
