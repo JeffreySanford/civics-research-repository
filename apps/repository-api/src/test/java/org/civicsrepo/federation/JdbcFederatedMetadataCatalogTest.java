@@ -8,9 +8,11 @@ import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -23,7 +25,7 @@ class JdbcFederatedMetadataCatalogTest {
         DriverManagerDataSource dataSource = new DriverManagerDataSource(
                 "jdbc:h2:mem:federation-" + System.nanoTime() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "sa", "");
         JdbcClient jdbcClient = JdbcClient.create(dataSource);
-        catalog = new JdbcFederatedMetadataCatalog(jdbcClient, new ObjectMapper());
+        catalog = new JdbcFederatedMetadataCatalog(jdbcClient, new JdbcTemplate(dataSource), new ObjectMapper());
         catalog.createSchema();
         checkpoints = new JdbcHarvestCheckpointStore(jdbcClient);
         checkpoints.createSchema();
@@ -45,6 +47,24 @@ class JdbcFederatedMetadataCatalogTest {
                 .toList());
         assertEquals(List.of("Author One"), catalog.findById("DOE_OSTI:001").orElseThrow().authors());
         assertEquals("value", catalog.findById("DOE_OSTI:001").orElseThrow().sourceMetadata().get("key"));
+    }
+
+    @Test
+    void batchesThousandsOfRecordsAndRemainsIdempotentAcrossBatchBoundaries() {
+        List<FederatedResearchRecord> initial = IntStream.range(0, 2_505)
+                .mapToObj(index -> record(String.format("%05d", index), "Initial " + index))
+                .toList();
+        catalog.upsertBatch(initial);
+
+        List<FederatedResearchRecord> updated = IntStream.range(0, 2_505)
+                .mapToObj(index -> record(String.format("%05d", index), "Updated " + index))
+                .toList();
+        catalog.upsertBatch(updated);
+
+        assertEquals(2_505, catalog.count());
+        assertEquals("Updated 0", catalog.findById("DOE_OSTI:00000").orElseThrow().title());
+        assertEquals("Updated 1000", catalog.findById("DOE_OSTI:01000").orElseThrow().title());
+        assertEquals("Updated 2504", catalog.findById("DOE_OSTI:02504").orElseThrow().title());
     }
 
     @Test
