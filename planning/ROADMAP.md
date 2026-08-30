@@ -1,10 +1,12 @@
 # Roadmap
 
-This roadmap contains future work only. Delivered phases and major architectural decisions are summarized in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md). Current verified facts live in the generated [documentation/platform-status.md](../documentation/platform-status.md). The executable checklist is [TODO.md](TODO.md), and the next two major increments are sequenced in [PI_PLAN.md](PI_PLAN.md).
+This roadmap contains future work only. Delivered phases and major architectural decisions are summarized in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md). Current verified facts live in the generated [documentation/platform-status.md](../documentation/platform-status.md). The executable checklist is [TODO.md](TODO.md), and named program increments plus their execution sequence are defined in [PI_PLAN.md](PI_PLAN.md).
+
+The current execution order is **PI-4 -> PI-5 -> PI-6 -> return to PI-1 -> PI-2 -> PI-3**. The PI numbers identify stable workstreams; they are not chronological phase numbers. PI-1 work already implemented remains valid and will be audited against its exit criteria when the project returns to the scale path.
 
 A repository-wide rule now applies to new comparison work: **testing and evidence precede feature expansion**. A working local screen is a development milestone, not completion. New behavior should have unit/use-case coverage, contract coverage, browser workflow coverage, accessibility evidence and—where the behavior depends on infrastructure—a real-stack smoke path before broader scenarios are added.
 
-## 1. Complete manual accessibility evidence
+## PI-4 — Complete manual accessibility evidence
 
 The highest-priority gap is evidence quality, not UI breadth.
 
@@ -18,7 +20,7 @@ The highest-priority gap is evidence quality, not UI breadth.
 
 Completion means dated, commit-bound artifacts exist under `documentation/accessibility-evidence/`; it does not mean changing a manually unverified status to pass.
 
-## 2. Govern browser evidence as a merge policy
+## PI-5 — Govern browser evidence as a merge policy
 
 Dedicated Browser Evidence is implemented and scheduled. It runs deterministic Chromium/Firefox/WebKit comparison and accessibility evidence, preserves HTML reports and failure traces/screenshots, and includes a live Angular -> Spring -> Solr + OpenSearch smoke path. Mocked deterministic evidence and real-stack evidence are labelled separately.
 
@@ -28,27 +30,27 @@ Remaining governance decisions:
 - Decide whether `main` receives branch protection and required checks.
 - Keep the local `evidence:refresh` behavior: a failed run must never replace the prior known-good evidence.
 
-## 3. Harden the Solr/OpenSearch comparison demo
+## PI-6 — Harden the Solr/OpenSearch comparison demo
 
 The first side-by-side vertical slice now exists. DSpace remains authoritative for curated repository objects; the Java layer normalizes research objects, computes deterministic projection identity and projects equivalent documents into Solr and OpenSearch. Solr remains the production-shaped public discovery implementation while OpenSearch is currently a parallel comparison target.
 
 The next phase is **hardening, observability and explanation**, not simply adding more query types.
 
-### 3.1 Keep the implemented test matrix as the expansion gate
+### PI-6.1 Keep the implemented test matrix as the expansion gate
 
 The comparison service/controller, Angular component/client, OpenSearch request semantics, deterministic Playwright scenarios, axe route, storyboard, and live-stack smoke are all implemented. Future comparison behavior must extend those layers rather than bypassing them.
 
-### 3.2 Keep Admin Sync as the operational projection view
+### PI-6.2 Keep Admin Sync as the operational projection view
 
 Admin Sync now explains normalized `DiscoveryDocument` -> deterministic projection ID -> Solr + OpenSearch, including per-target liveness/parity and the distinction between public Solr discovery and the OpenSearch comparison target. PI-1 federation work should extend this vocabulary to identify repository versus federated source composition rather than return to Solr-only language.
 
-### 3.3 Keep Evidence explicit about verification boundaries
+### PI-6.3 Keep Evidence explicit about verification boundaries
 
 Evidence includes live projection/parity state plus a Search Engine Comparison section that separates unit/use-case gates, deterministic mocked browser evidence, automated WCAG/Section 508-oriented evidence, real-stack smoke evidence, repeated performance diagnostics, and manual keyboard/screen-reader work that remains pending.
 
 The runtime page does not synthesize current CI success. Exact commit validation remains a CI/PR artifact.
 
-### 3.4 Improve explanatory diagnostics before broader search features
+### PI-6.4 Improve explanatory diagnostics before broader search features
 
 Engine-native Solr `QTime` / OpenSearch `took` and repeated warm-up/p50/p95/p99 tooling are implemented separately from API elapsed timing. Remaining diagnostic work:
 
@@ -57,7 +59,7 @@ Engine-native Solr `QTime` / OpenSearch `took` and repeated warm-up/p50/p95/p99 
 - Repeat at materially larger index sizes before drawing scaling conclusions.
 - Keep the UI warning that local/container timings are diagnostic evidence, not production benchmarks.
 
-### 3.5 Expand scenarios only after hardening
+### PI-6.5 Expand scenarios only after hardening
 
 After the test/evidence matrix is green:
 
@@ -71,7 +73,7 @@ After the test/evidence matrix is green:
 
 The hybrid/vector work is strategically useful because OpenSearch can be evaluated for capabilities beyond ordinary lexical search. It should be framed as a capability comparison rather than an assumption that OpenSearch is automatically faster than Solr.
 
-## 4. Harden provenance and repository identity
+## PI-1 supporting work — Harden provenance and repository identity
 
 Repository identity is recorded for publisher-backed objects; PI-1 expands that model so provenance can represent both curated repository content and external federated metadata.
 
@@ -81,7 +83,7 @@ Repository identity is recorded for publisher-backed objects; PI-1 expands that 
 - Review route handling so UUID-backed and source-identifier-backed research links remain stable.
 - Add regression tests for fallback provenance, especially LODES-derived map data.
 
-## 5. Finish research-object language
+## PI-1 supporting work — Finish research-object language
 
 The domain model is research-object-shaped, but several routes and labels retain dataset-era wording. PI-1 makes this work a prerequisite because federated records will include publications, reports, software and scientific granules as well as datasets.
 
@@ -91,7 +93,7 @@ The domain model is research-object-shaped, but several routes and labels retain
 - Update API/documentation examples to use “research object” where the type is not necessarily a dataset.
 - Keep type-specific language where it improves clarity.
 
-## 6. Expand publisher verification
+## Cross-cutting — Expand publisher verification
 
 The curated catalog should remain verifiable even as federation expands.
 
@@ -100,7 +102,7 @@ The curated catalog should remain verifiable even as federation expands.
 - Keep NOAA Climate Data Online and NASA POWER as possible additional adapters after the planned PI-1 source portfolio is stable.
 - Preserve the distinction between publisher-discovered facts and repository-curated relationships.
 
-## 7. PI-1 — Federated metadata expansion and large-corpus discovery
+## PI-1 — Federated metadata expansion and large-corpus discovery
 
 Detailed design:
 
@@ -109,9 +111,9 @@ Detailed design:
 - [Source Ingestion Plan](../documentation/federation/source-ingestion-plan.md)
 - [Million-Record Federated Metadata Corpus](../documentation/federation/million-record-corpus.md)
 
-PI-1 comes before Kubernetes. Its job is to create a scalable, provenance-aware catalog and deterministic corpus artifacts that work against the existing standalone topology.
+PI-1 comes before Kubernetes. Its job is to create a scalable, provenance-aware catalog and deterministic corpus artifacts that work against the existing standalone topology. Existing PI-1 F0 implementation remains part of this increment; after PI-4 through PI-6 close, PI-1 resumes from the earliest unmet exit criterion rather than restarting.
 
-### 7.1 Evolve authority without weakening it
+### PI-1.1 Evolve authority without weakening it
 
 The existing invariant becomes:
 
@@ -122,7 +124,7 @@ The existing invariant becomes:
 
 A search document that cannot be reproduced from either DSpace or a provenance-bearing federated record is an integrity failure.
 
-### 7.2 Build the federated metadata foundation first
+### PI-1.2 Build the federated metadata foundation first
 
 Before large harvesting:
 
@@ -134,7 +136,7 @@ Before large harvesting:
 - replace whole-corpus in-memory projection with bounded streaming/batched projection,
 - plan cursor/search-after pagination before deep offsets become an operational problem.
 
-### 7.3 Bring in all planned source adapters during PI-1
+### PI-1.3 Bring in all planned source adapters during PI-1
 
 Implement, in staged order:
 
@@ -146,11 +148,11 @@ Implement, in staged order:
 
 “All sources in PI-1” means all adapters and bounded harvest paths are implemented and testable. It does not require every source to remain locally stored at its maximum possible size simultaneously.
 
-### 7.4 Keep source binaries external
+### PI-1.4 Keep source binaries external
 
 Do not download millions of PDFs, ZIPs or NASA granule bytes merely to increase record count. Store searchable metadata, identifiers, provenance and authoritative links. Full-file mirroring remains a separate preservation decision with its own budget.
 
-### 7.5 Use staged deterministic corpus checkpoints
+### PI-1.5 Use staged deterministic corpus checkpoints
 
 ```text
 curated baseline -> 10K -> 100K -> 1M -> optional 5M+
@@ -165,7 +167,7 @@ Every reusable corpus needs:
 - deterministic projection identity,
 - manifest that can be handed unchanged to PI-2.
 
-### 7.6 Validate standalone first
+### PI-1.6 Validate standalone first
 
 Every major corpus checkpoint first runs against:
 
@@ -177,7 +179,7 @@ Docker Compose
 
 This preserves the fast demo path and establishes the control topology for later cluster experiments.
 
-### 7.7 Validate semantics as well as speed
+### PI-1.7 Validate semantics as well as speed
 
 At large scale add stable query classes and record:
 
@@ -190,7 +192,7 @@ At large scale add stable query classes and record:
 
 Completion means PI-1 can reproducibly harvest every planned source, render federated records through the normal UI, index a deterministic 1M-class corpus in standalone Solr/OpenSearch with parity, and hand versioned corpus definitions to PI-2.
 
-## 8. PI-2 — Local Kubernetes search laboratory
+## PI-2 — Local Kubernetes search laboratory
 
 Detailed design:
 
@@ -199,32 +201,32 @@ Detailed design:
 
 PI-2 consumes PI-1 corpora. It does not invent a separate data model.
 
-### 8.1 Preserve Docker Compose permanently
+### PI-2.1 Preserve Docker Compose permanently
 
 Compose remains the default development/demo path and the reference baseline. Kubernetes is an additional topology, not a replacement.
 
-### 8.2 Add kind as the local Kubernetes substrate
+### PI-2.2 Add kind as the local Kubernetes substrate
 
 - Create a reproducible kind cluster from repository configuration.
 - Prefer one control-plane plus multiple worker nodes so placement and node-loss experiments are visible.
 - Add repository scripts for create/build/deploy/reindex/benchmark/destroy.
 - Record Docker Desktop and Kubernetes resource allocation with every benchmark.
 
-### 8.3 Run real SolrCloud
+### PI-2.3 Run real SolrCloud
 
 - Use the official Apache Solr Operator rather than merely running standalone Solr inside a pod.
 - Start with three Solr pods and ZooKeeper.
 - Compare 1, 2 and 3 shard layouts before adding replicas.
 - Add replica/failover experiments only after the baseline is reproducible.
 
-### 8.4 Run multi-node OpenSearch
+### PI-2.4 Run multi-node OpenSearch
 
 - Use the official OpenSearch Kubernetes Operator or Helm chart.
 - Start with a three-node cluster and explicit resource limits.
 - Compare 1, 2 and 3 primary-shard layouts.
 - Add replicas as a resilience experiment rather than assuming replicas improve single-query latency.
 
-### 8.5 Compare identical data and query definitions
+### PI-2.5 Compare identical data and query definitions
 
 PI-2 must use the exact PI-1 corpus manifest/projection identity and stable query set for standalone versus clustered comparisons.
 
@@ -244,7 +246,7 @@ Concurrency checkpoints:
 32
 ```
 
-### 8.6 Preserve measurement honesty
+### PI-2.6 Preserve measurement honesty
 
 At each topology, retain:
 
@@ -261,7 +263,7 @@ At each topology, retain:
 
 Before comparative speed claims, benchmark with alternating/randomized/separate equivalent engine execution rather than a fixed Solr-first order.
 
-### 8.7 Test resilience, not only latency
+### PI-2.7 Test resilience, not only latency
 
 Deliberately remove Solr/OpenSearch pods and record:
 
@@ -274,7 +276,7 @@ Deliberately remove Solr/OpenSearch pods and record:
 
 Completion means the repository can reproduce a clustered local search topology, compare it honestly with Compose using the same PI-1 corpora, and demonstrate node-loss/recovery without implying that one workstation predicts cloud capacity.
 
-## 9. Implement the documented AWS target
+## PI-3 — Implement the documented AWS target
 
 The AWS architecture is documented but not provisioned. PI-1 and PI-2 should inform this step rather than being treated as unrelated experiments.
 
@@ -285,7 +287,7 @@ The AWS architecture is documented but not provisioned. PI-1 and PI-2 should inf
 - Reuse Kubernetes/operator/Helm configuration concepts where they transfer cleanly from kind to EKS.
 - Document local-to-cloud migration and operational cost boundaries.
 
-## 10. Platform and test hardening
+## Cross-cutting — Platform and test hardening
 
 - Move NgRx to stable 22 when available and validated.
 - Revisit generated Spring controller interfaces when tooling supports Spring 7 conventions.
