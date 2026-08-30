@@ -65,7 +65,7 @@ public class SearchComparisonService {
     public SearchComparisonResponse run(SearchComparisonRequest request) {
         SearchComparisonScenarioId scenario = Objects.requireNonNull(request.getScenario(), "scenario is required");
         String query = request.getQuery() == null ? "" : request.getQuery();
-        List<ResearchProgram> programs = request.getPrograms() == null ? List.of() : request.getPrograms();
+        List<ResearchProgram> programs = legacyPrograms(request.getPrograms());
         String geography = request.getGeography();
         ResearchObjectType contentType = request.getContentType();
         Integer vintageYear = request.getVintageYear();
@@ -97,6 +97,29 @@ public class SearchComparisonService {
                 sameProjection(projection),
                 solrResult,
                 openSearchResult);
+    }
+
+    private List<ResearchProgram> legacyPrograms(List<String> programNames) {
+        if (programNames == null || programNames.isEmpty()) {
+            return List.of();
+        }
+        return programNames.stream().map(this::legacyProgram).toList();
+    }
+
+    private ResearchProgram legacyProgram(String programName) {
+        if (programName == null || programName.isBlank()) {
+            throw new IllegalArgumentException("Program filter must not be blank.");
+        }
+        String requested = programName.trim();
+        for (ResearchProgram program : ResearchProgram.values()) {
+            if (program.getValue().equalsIgnoreCase(requested)) {
+                return program;
+            }
+        }
+        throw new IllegalArgumentException(
+                "Program '" + requested
+                        + "' is data-driven but the comparison engines still use the legacy curated program filter."
+                        + " Complete the Solr/OpenSearch programName migration before comparing this value.");
     }
 
     private SearchEngineComparison runSolr(
