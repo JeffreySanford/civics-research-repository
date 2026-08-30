@@ -41,7 +41,7 @@ import org.springframework.stereotype.Component;
 public class DataGovHarvester implements FederatedSourceHarvester {
     static final int MAX_SOURCE_PAGE_SIZE = 1_000;
     static final int MAX_RESOURCE_LINKS_PER_RECORD = 100;
-    static final String ADAPTER_VERSION = "data-gov-catalog-v4-v1";
+    static final String ADAPTER_VERSION = "data-gov-catalog-v4-v2";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
     private static final String DEFAULT_CATALOG_BASE = "https://catalog.data.gov";
 
