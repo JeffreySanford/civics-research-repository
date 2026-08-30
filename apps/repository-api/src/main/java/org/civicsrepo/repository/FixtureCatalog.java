@@ -21,6 +21,7 @@ import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.ResearchAuthor;
+import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -154,14 +155,17 @@ public class FixtureCatalog {
     }
 
     private SearchResult toSearchResult(JsonNode item) {
+        ResearchProgram researchProgram = program(item.path("program").asText());
         return new SearchResult(
                         item.path("id").asText(),
                         item.path("title").asText(),
                         contentType(item),
-                        program(item.path("program").asText()),
+                        researchProgram,
                         item.path("publisher").asText(),
                         item.path("summary").asText(),
-                        URI.create(item.path("sourceUrl").asText()))
+                        URI.create(item.path("sourceUrl").asText()),
+                        ResearchObjectOrigin.FIXTURE,
+                        ResearchSourceSystemClassifier.forProgram(researchProgram))
                 .geography(item.path("geography").asText())
                 .vintageYear(item.path("vintageYear").asInt())
                 .accessLevel(accessLevel(item));
@@ -178,7 +182,9 @@ public class FixtureCatalog {
                         files(item),
                         item.path("citation").asText(),
                         result.getSourceUrl(),
-                        List.of())
+                        List.of(),
+                        ResearchObjectOrigin.FIXTURE,
+                        result.getSourceSystem())
                 .geography(result.getGeography())
                 .vintageYear(result.getVintageYear())
                 .releasedOn(releasedOn(item))
