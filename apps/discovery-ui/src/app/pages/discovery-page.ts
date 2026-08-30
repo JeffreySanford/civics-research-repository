@@ -16,6 +16,7 @@ import type {
   ResearchObjectType,
   ResearchProgram,
   SearchQuery,
+  SourceSystem,
 } from 'repository-api-client';
 import { SearchActions } from '../state/search/search.actions';
 import {
@@ -79,10 +80,15 @@ export class DiscoveryPage implements OnInit {
   protected readonly programControl = new FormControl('', {
     nonNullable: true,
   });
+
+  /** Publisher and source are response-driven facets; empty means every value. */
+  protected selectedPublisher = '';
+  protected selectedSourceSystem: SourceSystem | '' = '';
+
   /** Empty means every type. One value at a time: the contract takes a single content type. */
   protected selectedContentType: ResearchObjectType | '' = '';
 
-  /** Empty means every vintage. One at a time: the contract takes a single year. */
+  /** Empty means every vintage. One value at a time: the contract takes a single year. */
   protected selectedVintageYear: number | null = null;
 
   /** Zero-based, matching the contract. Rendered one-based, matching how people count. */
@@ -115,6 +121,9 @@ export class DiscoveryPage implements OnInit {
     this.searchControl.setValue(params.get('q') ?? '');
     this.selectedPrograms = this.toProgramNames(params.getAll('program'));
     this.programControl.setValue(this.selectedPrograms[0] ?? '');
+    this.selectedPublisher = params.get('publisher')?.trim() ?? '';
+    this.selectedSourceSystem =
+      (params.get('sourceSystem') as SourceSystem | null) ?? '';
     this.geographyControl.setValue(params.get('geography') ?? '');
     this.selectedContentType = (params.get('type') ?? '') as
       | ResearchObjectType
@@ -162,6 +171,12 @@ export class DiscoveryPage implements OnInit {
       ...(this.selectedPrograms.length
         ? { programs: this.selectedPrograms }
         : {}),
+      ...(this.selectedPublisher
+        ? { publisher: this.selectedPublisher }
+        : {}),
+      ...(this.selectedSourceSystem
+        ? { sourceSystem: this.selectedSourceSystem }
+        : {}),
       ...(this.geographyControl.value
         ? { geography: this.geographyControl.value }
         : {}),
@@ -196,6 +211,16 @@ export class DiscoveryPage implements OnInit {
       return;
     }
 
+    if (field === 'publisher') {
+      this.togglePublisher(value);
+      return;
+    }
+
+    if (field === 'sourceSystem') {
+      this.toggleSourceSystem(value);
+      return;
+    }
+
     if (field === 'geography') {
       this.selectGeography(value);
       return;
@@ -209,6 +234,22 @@ export class DiscoveryPage implements OnInit {
     if (field === 'vintageYear') {
       this.toggleVintageYear(value);
     }
+  }
+
+  /** Reselecting the chosen publisher clears it. */
+  protected togglePublisher(publisher: string): void {
+    this.selectedPublisher =
+      this.selectedPublisher === publisher ? '' : publisher;
+    this.submitSearch();
+  }
+
+  /** Reselecting the chosen authoritative source clears it. */
+  protected toggleSourceSystem(sourceSystem: string): void {
+    this.selectedSourceSystem =
+      this.selectedSourceSystem === sourceSystem
+        ? ''
+        : (sourceSystem as SourceSystem);
+    this.submitSearch();
   }
 
   /** Reselecting the chosen year clears it, the same way the type facet behaves. */
@@ -265,6 +306,8 @@ export class DiscoveryPage implements OnInit {
     this.selectedContentType = '';
     this.selectedVintageYear = null;
     this.selectedPrograms = [];
+    this.selectedPublisher = '';
+    this.selectedSourceSystem = '';
     this.programControl.setValue('');
     this.geographyControl.setValue('');
     this.submitSearch();
@@ -278,6 +321,8 @@ export class DiscoveryPage implements OnInit {
         program: this.selectedPrograms.length
           ? [...this.selectedPrograms]
           : null,
+        publisher: this.selectedPublisher || null,
+        sourceSystem: this.selectedSourceSystem || null,
         geography: this.geographyControl.value || null,
         type: this.selectedContentType || null,
         vintageYear: this.selectedVintageYear ?? null,
