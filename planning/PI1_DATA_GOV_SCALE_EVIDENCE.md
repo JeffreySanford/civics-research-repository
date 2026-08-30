@@ -73,7 +73,7 @@ Observed:
 
 This proves that federated records are not only retained in PostgreSQL; they are discoverable through the ordinary search/facet path.
 
-## 10K checkpoint — harvest complete, evidence completion in progress
+## 10K checkpoint — snapshot captured, evidence completion in progress
 
 The 10K checkpoint resumed the same durable 1K run rather than restarting from source offset zero.
 
@@ -104,11 +104,34 @@ Observed on 2026-08-30:
 
 This is a direct resumability proof: the existing 10 pages / 1,000 accepted records were extended with 90 additional bounded pages to 100 pages / 10,000 accepted records while preserving the run identity and source cursor semantics.
 
+### Deterministic bounded snapshot
+
+Captured and persisted on 2026-08-30:
+
+- manifest version: `federated-bounded-snapshot/v1`,
+- mode: `BOUNDED_SNAPSHOT`,
+- snapshot ID: `DATA_GOV:dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`,
+- snapshot SHA-256: `dbe9d11ba420ddf4c8854eced77aed8f2d9fafcd4f96d5d8be22c419378ef12b`,
+- run ID: `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131`,
+- adapter version: `data-gov-catalog-v4-v2`,
+- retained count: 10,000,
+- accepted/rejected/skipped: 10,000 / 0 / 0,
+- page count: 100,
+- page size: 100,
+- first record ID: `DATA_GOV:7FEBA753-FD29-4DE3-860C-61B0A30D2D51`,
+- last record ID: `DATA_GOV:https://transtats.bts.gov/NTADmetadata/Automated/USDOT_BTS_NTAD_Waterway_Locks.xml`,
+- source update window observed: `2004-11-08T00:00:00Z` through `2026-08-29T09:29:22.300883Z`,
+- run updated at: `2026-08-30T20:12:01.218591Z`,
+- snapshot captured at: `2026-08-30T20:26:00.380919855Z`,
+- opaque publisher cursor persisted unchanged from the 10K harvest checkpoint.
+
+The 10K corpus therefore now has a durable content-addressed source identity. The next evidence step must use the guarded projection operation so the resulting mixed Solr/OpenSearch projection is linked to this exact snapshot only if the harvest checkpoint remains unchanged while projection runs.
+
 ### 10K completion checklist
 
 - [x] Resume the existing Data.gov run from 1K to 10K without restart.
 - [x] Reach 10,000 accepted with 0 rejected and 0 skipped.
-- [ ] Capture and persist the 10K bounded snapshot.
+- [x] Capture and persist the 10K bounded snapshot.
 - [ ] Run the guarded snapshot -> combined-projection operation.
 - [ ] Verify the persisted snapshot/projection relationship.
 - [ ] Verify the public search path returns exactly 10,000 `DATA_GOV` records.
@@ -119,7 +142,7 @@ This is a direct resumability proof: the existing 10 pages / 1,000 accepted reco
 - [ ] Calculate bytes/document for the 10K checkpoint where the probes provide defensible measurements.
 - [ ] Record harvest/projection duration evidence in a reusable form.
 
-Until those items are complete, the correct statement is **"10K harvest proven"**, not **"10K scale checkpoint complete."**
+Until those items are complete, the correct statement is **"10K harvest and deterministic snapshot proven"**, not **"10K scale checkpoint complete."**
 
 ## 100K acceptance boundary
 
