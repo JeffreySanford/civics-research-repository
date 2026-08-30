@@ -138,7 +138,7 @@
     "@nx/playwright": "23.1.1",
     "@nx/vite": "23.1.1",
     "@nx/vitest": "23.1.1",
-    "@nx/web": "~23.1.1",
+    "@nx/web": "23.1.1",
     "@oxc-project/runtime": "^0.115.0",
     "@playwright/test": "^1.54.0",
     "@redocly/cli": "2.46.1",
