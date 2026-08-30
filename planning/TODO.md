@@ -4,63 +4,7 @@ This file contains open work only. Current status is generated in [documentation
 
 The repository follows a **testing-first rule** for new work: define or extend unit, use-case, contract, browser, accessibility and real-stack evidence before expanding the feature surface. A feature is not considered complete merely because it works in the local UI.
 
-The current execution order is intentionally **PI-4 -> PI-5 -> PI-6 -> return to PI-1 -> PI-2 -> PI-3**. Program-increment numbers are stable workstream identities, not chronological labels.
-
-## PI-4 — Manual Accessibility Evidence
-
-- [ ] Run Checklist 1 end to end without a mouse and record the result.
-- [ ] Run Checklist 2 with NVDA in Firefox and Chrome.
-- [ ] Run Checklist 3 with JAWS, or record N/A with the licensing reason.
-- [ ] Complete Checklist 4, starting with the trusted map-click/map-to-list focus path.
-- [ ] Complete Checklist 5 cognitive/workflow review.
-- [ ] Decide whether to add a `contentinfo` landmark.
-- [ ] Review the MapLibre canvas tab stop with a screen reader and document the decision.
-- [ ] Run the Search Lab comparison flow with keyboard-only input and record scenario selection, filter entry, run action, live completion announcement, projection evidence and both engine result regions.
-
-## PI-5 — Browser Evidence CI and Governance
-
-- [x] Add a dedicated or scheduled full Playwright evidence workflow.
-- [x] Upload Playwright HTML reports, traces and screenshots when the evidence workflow fails.
-- [x] Run the Search Lab comparison scenarios in the dedicated browser workflow.
-- [x] Run the Search Lab WCAG/Section 508 axe route in the dedicated browser workflow.
-- [x] Add a real-stack smoke path that exercises browser -> Spring API -> Solr + OpenSearch instead of only mocked API routes.
-- [ ] Decide whether WCAG/Section 508-oriented jobs are required merge checks.
-- [ ] Decide whether `main` receives branch protection.
-- [x] Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.
-
-## PI-6 — Solr/OpenSearch Comparison Hardening
-
-The first vertical slice is implemented. Remaining work is semantic-difference explanation and future scenario breadth.
-
-- [ ] Add rank/result-set/facet-difference summaries that explain _why_ engines differ rather than only showing two columns.
-- [ ] Add phrase search and highlighting after the current test matrix is green.
-- [ ] Add geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the basic comparison path is fully hardened.
-
-## PI-1 supporting work — Provenance and identity
-
-PI-1 expands this from repository-only provenance to repository + federated provenance.
-
-- [ ] Add typed origin/provenance values for repository, federated, fixture, stored sample, stale and unavailable data.
-- [ ] Add controlled `sourceSystem` values for Census, USGS, Data.gov, OSTI, NASA CMR, PubMed and OpenAlex.
-- [ ] Record publisher freshness per research object where a reliable source date exists.
-- [ ] Record and expose discovery projection timestamps consistently across Admin Sync, Evidence and Search Lab.
-- [ ] Add regression coverage for LODES fallback provenance.
-- [ ] Review UUID/source-identifier route stability and relationship resolution.
-- [ ] Define cross-source identity/equivalence rules based on durable identifiers; never silently merge by title.
-
-## PI-1 supporting work — Research-object product language
-
-- [ ] Add `/research/:id` as the canonical detail route while preserving `/datasets/:id` compatibility.
-- [ ] Resolve detail from either DSpace or the federated metadata catalog.
-- [ ] Replace remaining dataset-shaped copy where the object may be a publication, report, software item, methodology, project or scientific granule.
-- [ ] Update examples and demo links to prefer research-object terminology.
-- [ ] Add unit/browser/accessibility coverage for federated detail states and outbound authoritative-source links.
-
-## Cross-cutting — Publisher verification
-
-- [ ] Add listing/vintage verification to remaining curated programs where publisher structure permits it.
-- [ ] Keep catalog edits reviewable rather than automatically applying uncertain file-name changes.
-- [ ] Keep NOAA Climate Data Online and NASA POWER as possible later adapters after the PI-1 source portfolio is stable.
+The current execution order is **PI-1 -> PI-2 -> PI-3 -> PI-4 -> PI-5 -> PI-6**. Program-increment numbers are stable workstream identities and now also reflect the intended execution sequence.
 
 ## PI-1 — Federated Metadata Expansion
 
@@ -75,22 +19,23 @@ Design documents:
 
 - [ ] Define OpenAPI/domain contract for `origin` and `sourceSystem`.
 - [ ] Replace fixed source-specific `ResearchProgram` assumptions with controlled source/content type plus data-driven publisher/program/subject facets.
-- [ ] Design and implement federated metadata persistence in the application data layer.
+- [x] Design and implement federated metadata persistence in the application data layer.
 - [ ] Add `harvest_runs`, resumable checkpoints, bounded error/quarantine state and source progress metrics.
-- [ ] Define namespaced source identity: `SOURCE_SYSTEM:source-id`.
+- [x] Define namespaced source identity: `SOURCE_SYSTEM:source-id`.
 - [ ] Define explicit DOI/PMID/other-identifier reconciliation rules without title-based silent merging.
 - [ ] Introduce a combined discovery catalog over DSpace-backed and federated records.
 - [ ] Replace whole-corpus `List<DiscoveryDocument>` projection with bounded streaming/batched projection before 100K+ runs.
 - [ ] Make deterministic projection hashing independent of database page size and search bulk size.
 - [ ] Add batch indexing to Solr and OpenSearch; do not create one giant million-document update body.
+- [x] Use bounded JDBC prepared-statement batches for federated metadata persistence rather than one database interaction per record.
 - [ ] Record accepted/rejected/skipped/indexed counts and progress for large projections.
 - [ ] Design opaque cursor pagination so million-record discovery does not depend on deep offsets.
 - [ ] Keep the current offset contract working until the cursor path is tested and ready.
 
 ### PI-1.2 Shared harvester framework
 
-- [ ] Define `FederatedSourceAdapter` / shared harvesting interfaces.
-- [ ] Add cursor/page checkpoint persistence.
+- [x] Define `FederatedSourceHarvester` / shared harvesting interfaces.
+- [x] Add cursor/page checkpoint persistence.
 - [ ] Add bounded retry, backoff/jitter and `Retry-After` awareness.
 - [ ] Add configurable per-source request concurrency and rate limits.
 - [ ] Add run cancellation/restart/resume behavior.
@@ -153,12 +98,12 @@ Design documents:
 
 ### PI-1.9 Corpus and disk discipline
 
-- [ ] Keep large binaries/full text external by default.
+- [x] Keep large binaries/full text external by default.
 - [ ] Measure bytes/document in federated PostgreSQL, Solr and OpenSearch at 10K and 100K.
 - [ ] Estimate 1M disk requirements with 30-50% operational headroom before creating the corpus.
-- [ ] Keep 1M corpora out of Git and ordinary PR CI.
+- [x] Keep 1M corpora out of Git and ordinary PR CI.
 - [ ] Make heavy snapshots regenerable so old corpora can be removed when disk pressure requires it.
-- [ ] Preserve the original small curated Compose demo profile.
+- [x] Preserve the original small curated Compose demo profile.
 
 ### PI-1.10 PI-1 handoff
 
@@ -167,6 +112,24 @@ Design documents:
 - [ ] Data.gov + OSTI + at least one additional source render together in the normal UI.
 - [ ] Standalone Solr/OpenSearch parity proven for a deterministic 1M-class corpus.
 - [ ] Versioned corpus manifest/query definitions are ready for PI-2 without changing record semantics.
+
+## PI-1 supporting work — Provenance and identity
+
+- [ ] Add typed origin/provenance values for repository, federated, fixture, stored sample, stale and unavailable data.
+- [ ] Add controlled `sourceSystem` values for Census, USGS, Data.gov, OSTI, NASA CMR, PubMed and OpenAlex.
+- [ ] Record publisher freshness per research object where a reliable source date exists.
+- [ ] Record and expose discovery projection timestamps consistently across Admin Sync, Evidence and Search Lab.
+- [ ] Add regression coverage for LODES fallback provenance.
+- [ ] Review UUID/source-identifier route stability and relationship resolution.
+- [ ] Define cross-source identity/equivalence rules based on durable identifiers; never silently merge by title.
+
+## PI-1 supporting work — Research-object product language
+
+- [ ] Add `/research/:id` as the canonical detail route while preserving `/datasets/:id` compatibility.
+- [ ] Resolve detail from either DSpace or the federated metadata catalog.
+- [ ] Replace remaining dataset-shaped copy where the object may be a publication, report, software item, methodology, project or scientific granule.
+- [ ] Update examples and demo links to prefer research-object terminology.
+- [ ] Add unit/browser/accessibility coverage for federated detail states and outbound authoritative-source links.
 
 ## PI-2 — Local Kubernetes Search Laboratory
 
@@ -227,6 +190,42 @@ Design documents:
 - [ ] Reuse local Kubernetes/operator/Helm lessons where they transfer to EKS.
 - [ ] Add secrets, observability, backup/restore and persistent search storage.
 - [ ] Document deployment and rollback from the local Compose/kind baselines.
+
+## PI-4 — Manual Accessibility Evidence
+
+- [ ] Run Checklist 1 end to end without a mouse and record the result.
+- [ ] Run Checklist 2 with NVDA in Firefox and Chrome.
+- [ ] Run Checklist 3 with JAWS, or record N/A with the licensing reason.
+- [ ] Complete Checklist 4, starting with the trusted map-click/map-to-list focus path.
+- [ ] Complete Checklist 5 cognitive/workflow review.
+- [ ] Decide whether to add a `contentinfo` landmark.
+- [ ] Review the MapLibre canvas tab stop with a screen reader and document the decision.
+- [ ] Run the Search Lab comparison flow with keyboard-only input and record scenario selection, filter entry, run action, live completion announcement, projection evidence and both engine result regions.
+
+## PI-5 — Browser Evidence CI and Governance
+
+- [x] Add a dedicated or scheduled full Playwright evidence workflow.
+- [x] Upload Playwright HTML reports, traces and screenshots when the evidence workflow fails.
+- [x] Run the Search Lab comparison scenarios in the dedicated browser workflow.
+- [x] Run the Search Lab WCAG/Section 508 axe route in the dedicated browser workflow.
+- [x] Add a real-stack smoke path that exercises browser -> Spring API -> Solr + OpenSearch instead of only mocked API routes.
+- [ ] Decide whether WCAG/Section 508-oriented jobs are required merge checks.
+- [ ] Decide whether `main` receives branch protection.
+- [x] Ensure CI uses the same `evidence:check` and generated-document drift rules as local quality gates.
+
+## PI-6 — Solr/OpenSearch Comparison Hardening
+
+The first vertical slice is implemented. Remaining work is semantic-difference explanation and future scenario breadth.
+
+- [ ] Add rank/result-set/facet-difference summaries that explain _why_ engines differ rather than only showing two columns.
+- [ ] Add phrase search and highlighting after the current test matrix is green.
+- [ ] Add geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios only after the basic comparison path is fully hardened.
+
+## Cross-cutting — Publisher verification
+
+- [ ] Add listing/vintage verification to remaining curated programs where publisher structure permits it.
+- [ ] Keep catalog edits reviewable rather than automatically applying uncertain file-name changes.
+- [ ] Keep NOAA Climate Data Online and NASA POWER as possible later adapters after the PI-1 source portfolio is stable.
 
 ## Cross-cutting — Platform hardening
 
