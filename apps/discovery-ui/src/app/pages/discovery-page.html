@@ -1,230 +1,243 @@
 <div class="page-stack">
-  <section aria-labelledby="search-heading" class="search-panel">
+  <section class="page-hero" aria-labelledby="discovery-heading">
     <div>
-      <p class="eyebrow">Discovery</p>
-      <h1 id="search-heading">Find research objects</h1>
+      <p class="eyebrow">Public discovery</p>
+      <h1 id="discovery-heading">Research Discovery</h1>
       <p>
-        Search the active mixed-authority corpus. Curated DSpace records and
-        federated publisher metadata use the same discovery path while retaining
-        their provenance.
+        Search public datasets, publications, code, methodologies, supporting
+        material, and research projects across curated repository records and
+        federated metadata.
       </p>
     </div>
-
-    <form
-      class="search-form"
-      role="search"
-      aria-label="Repository search"
-      (submit)="$event.preventDefault(); submitSearch()"
-    >
-      <label for="repository-search">Search terms</label>
-      <div class="search-row">
-        <input
-          id="repository-search"
-          name="repository-search"
-          type="search"
-          autocomplete="off"
-          [formControl]="searchControl"
-          placeholder="Search by state, program, publisher, or topic"
-        />
-        <button mat-flat-button type="submit" [disabled]="loading$ | async">
-          Search
-        </button>
-      </div>
-    </form>
   </section>
 
-  <section aria-labelledby="discovery-results-heading" class="discovery-layout">
-    <aside class="content-panel" aria-labelledby="filter-heading">
-      <p class="eyebrow">Filters</p>
-      <h2 id="filter-heading">Facets</h2>
+  <section class="content-panel search-panel" aria-labelledby="search-heading">
+    <div class="section-heading-row">
+      <div>
+        <p class="eyebrow">Search</p>
+        <h2 id="search-heading">Find research objects</h2>
+      </div>
+      @if (totalResults$ | async; as totalResults) {
+      <p class="result-count" aria-live="polite">
+        {{ totalResults }} result{{ totalResults === 1 ? '' : 's' }}
+      </p>
+      }
+    </div>
 
-      @if (facets$ | async; as facets) { @if (facets.length > 0) {
-      <div class="facet-list">
+    <form class="search-form" (submit)="$event.preventDefault(); submitSearch()">
+      <label for="research-search">Keywords</label>
+      <div class="search-row">
+        <input
+          id="research-search"
+          type="search"
+          [formControl]="searchControl"
+          autocomplete="off"
+        />
+        <button mat-flat-button type="submit">Search</button>
+      </div>
+    </form>
+
+    @if (facets$ | async; as facets) {
+    <div class="facet-layout">
+      <div class="facet-groups" aria-label="Search filters">
         @for (facet of facets; track facet.field) {
-        <section [attr.aria-labelledby]="'facet-' + facet.field">
+        <section class="facet-group" [attr.aria-labelledby]="'facet-' + facet.field">
           <h3 [id]="'facet-' + facet.field">{{ facet.label }}</h3>
-          @if (facet.field === 'program') {
-          <p class="facet-hint">
-            Select any number of programs. No selection means every program.
-          </p>
-          } @if (facet.field === 'publisher') {
-          <p class="facet-hint">
-            One publisher at a time. Values come from the active index rather
-            than a UI allowlist.
-          </p>
-          } @if (facet.field === 'sourceSystem') {
-          <p class="facet-hint">
-            One authoritative source at a time. Select the chosen source again
-            to clear it.
-          </p>
-          } @if (facet.field === 'vintageYear') {
-          <p class="facet-hint">
-            One year at a time, newest first. Selecting the year already chosen
-            clears it.
-          </p>
-          } @if (facet.field === 'type') {
-          <p class="facet-hint">
-            One type at a time. Selecting the type already chosen clears it.
-            Most of the repository is datasets; publications, methodology, and
-            the research project that ties them together are the rest.
-          </p>
-          }
           <div class="facet-values">
             @for (value of facet.values; track value.value) {
             <button
               mat-stroked-button
               type="button"
-              [class.selected]="value.selected"
-              [attr.aria-pressed]="value.selected"
-              [disabled]="
-                facet.field !== 'program' &&
-                facet.field !== 'publisher' &&
-                facet.field !== 'sourceSystem' &&
-                facet.field !== 'geography' &&
-                facet.field !== 'type' &&
-                facet.field !== 'vintageYear'
+              [attr.aria-pressed]="
+                facet.field === 'program'
+                  ? isProgramSelected(value.value)
+                  : facet.field === 'publisher'
+                    ? selectedPublisher === value.value
+                    : facet.field === 'sourceSystem'
+                      ? selectedSourceSystem === value.value
+                      : facet.field === 'geography'
+                        ? geographyControl.value === value.value
+                        : facet.field === 'type'
+                          ? selectedContentType === value.value
+                          : facet.field === 'vintageYear'
+                            ? selectedVintageYear === +value.value
+                            : false
               "
               (click)="selectFacet(facet.field, value.value)"
             >
-              {{ value.label }} ({{ value.count }})
+              {{ value.label }} <span>{{ value.count }}</span>
             </button>
             }
           </div>
-          @if (facet.field === 'program') {
-          <button
-            type="button"
-            class="facet-reset"
-            [attr.aria-pressed]="featuredProgramsSelected"
-            (click)="selectFeaturedPrograms()"
-          >
-            {{ featuredProgramsSelected ? 'Clear' : 'Select' }} the three
-            geospatial programs
-          </button>
-          }
         </section>
         }
       </div>
-      <button mat-button type="button" (click)="clearFilters()">
-        Clear filters
-      </button>
-      } @else {
-      <p>No facets available yet.</p>
-      } }
-    </aside>
 
-    <div class="content-panel">
-      <div class="results-heading">
-        <div>
-          <p class="eyebrow">Results</p>
-          <!-- tabindex="-1" so paging can move focus here: the list below is replaced wholesale,
-               and leaving focus on the pager button strands a keyboard user in changed content. -->
-          <h2 id="discovery-results-heading" #resultsHeading tabindex="-1">
-            {{ totalResults$ | async }} research objects
-          </h2>
-          @if (exploreGeography$ | async; as exploreGeography) {
-          <!-- Names the area it will open, so the reader is never guessing where the map goes. -->
-          <a
-            class="explore-map-link"
-            mat-stroked-button
-            [routerLink]="['/maps']"
-            [queryParams]="exploreMapParams(exploreGeography)"
-          >
-            Explore {{ exploreGeography }} workforce on the map
-          </a>
-          } @if (pagination$ | async; as pagination) { @if (pagination.visible)
-          {
-          <p class="results-range">
-            Showing {{ pagination.firstResult }}-{{ pagination.lastResult }} of
-            {{ pagination.totalResults }}
-          </p>
-          } }
-        </div>
-
-        @if (loading$ | async) {
-        <div class="inline-status" role="status">
-          <mat-spinner diameter="24" aria-label="Searching"></mat-spinner>
-          <span>Searching</span>
-        </div>
-        }
-      </div>
-
-      @if (error$ | async; as error) {
-      <p class="error-message" role="alert">{{ error }}</p>
-      } @if ((resultSource$ | async) === 'FIXTURE') {
-      <p class="fixture-notice" role="status">
-        <strong>Placeholder data.</strong> The repository is unavailable or
-        holds no items, so these records are generated examples rather than
-        DSpace repository content. Start DSpace and reseed to see
-        repository-backed results.
-      </p>
-      } @if (results$ | async; as results) { @if (results.length > 0) {
-      <ol class="result-list">
-        @for (result of results; track result.id) {
-        <li>
-          <article>
-            <div class="result-meta">
-              <span>{{ result.programName ?? result.program }}</span>
-              <span>{{ result.contentType }}</span>
-              <span>{{ result.sourceSystem }}</span>
-              <span>{{ result.origin }}</span>
-              <!-- Only when it is not public. A RESTRICTED badge means something precisely
-                   because most objects do not carry one. -->
-              @if (result.accessLevel && result.accessLevel !== 'PUBLIC') {
-              <span class="result-access">{{ result.accessLevel }}</span>
-              } @if (result.geography) {
-              <span>{{ result.geography }}</span>
-              } @if (result.vintageYear) {
-              <span>{{ result.vintageYear }}</span>
-              }
-            </div>
-            <h3>{{ result.title }}</h3>
-            <p>{{ result.summary }}</p>
-            <a class="source-link" [routerLink]="['/datasets', result.id]">
-              Research object detail
-            </a>
-            <a
-              class="source-link"
-              [href]="result.sourceUrl"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Authoritative source
-            </a>
-          </article>
-        </li>
-        }
-      </ol>
-      @if (pagination$ | async; as pagination) { @if (pagination.visible) {
-      <!-- A nav landmark with its own name: a screen-reader user listing landmarks should be able
-           to tell this pager apart from the primary site navigation. -->
-      <nav class="pager" aria-label="Search results pages">
-        <button
-          mat-stroked-button
-          type="button"
-          [disabled]="!pagination.hasPrevious"
-          (click)="goToPage(pagination.page - 1)"
-        >
-          Previous
+      <aside class="filter-summary" aria-labelledby="filter-summary-heading">
+        <h3 id="filter-summary-heading">Current filters</h3>
+        @if (
+          searchControl.value ||
+          selectedPrograms.length ||
+          selectedPublisher ||
+          selectedSourceSystem ||
+          geographyControl.value ||
+          selectedContentType ||
+          selectedVintageYear !== null
+        ) {
+        <dl>
+          @if (searchControl.value) {
+          <div>
+            <dt>Keywords</dt>
+            <dd>{{ searchControl.value }}</dd>
+          </div>
+          } @if (selectedPrograms.length) {
+          <div>
+            <dt>Programs</dt>
+            <dd>{{ selectedPrograms.join(', ') }}</dd>
+          </div>
+          } @if (selectedPublisher) {
+          <div>
+            <dt>Publisher</dt>
+            <dd>{{ selectedPublisher }}</dd>
+          </div>
+          } @if (selectedSourceSystem) {
+          <div>
+            <dt>Source</dt>
+            <dd>{{ selectedSourceSystem }}</dd>
+          </div>
+          } @if (geographyControl.value) {
+          <div>
+            <dt>Geography</dt>
+            <dd>{{ geographyControl.value }}</dd>
+          </div>
+          } @if (selectedContentType) {
+          <div>
+            <dt>Type</dt>
+            <dd>{{ selectedContentType }}</dd>
+          </div>
+          } @if (selectedVintageYear !== null) {
+          <div>
+            <dt>Vintage</dt>
+            <dd>{{ selectedVintageYear }}</dd>
+          </div>
+          }
+        </dl>
+        <button mat-stroked-button type="button" (click)="clearFilters()">
+          Clear filters
         </button>
-
-        <!-- aria-current="page" is what tells assistive technology which page this is; the
-             visible text says the same thing for everyone else. -->
-        <span class="pager-position" aria-current="page">
-          Page {{ pagination.page + 1 }} of {{ pagination.pageCount }}
-        </span>
-
-        <button
-          mat-stroked-button
-          type="button"
-          [disabled]="!pagination.hasNext"
-          (click)="goToPage(pagination.page + 1)"
-        >
-          Next
-        </button>
-      </nav>
-      } } } @else if ((loading$ | async) === false) {
-      <p class="empty-state">No research objects matched this search.</p>
-      } }
+        } @else {
+        <p>No filters selected.</p>
+        }
+      </aside>
     </div>
+    }
+
+    @if (exploreGeography$ | async; as exploreGeography) {
+    <div class="map-explore-callout">
+      <div>
+        <p class="eyebrow">Workforce context</p>
+        <h2>Explore {{ exploreGeography }} on the map</h2>
+        <p>
+          Carry this search into the workforce map with TIGER geography, LODES
+          employment, and SAIPE socioeconomic context already selected.
+        </p>
+      </div>
+      <a
+        mat-stroked-button
+        routerLink="/maps"
+        [queryParams]="exploreMapParams(exploreGeography)"
+      >
+        Open map workspace
+      </a>
+    </div>
+    }
+  </section>
+
+  <section class="content-panel" aria-labelledby="results-heading">
+    <div class="section-heading-row">
+      <div>
+        <p class="eyebrow">Results</p>
+        <h2 id="results-heading" #resultsHeading tabindex="-1">
+          Research objects
+        </h2>
+      </div>
+      @if (loading$ | async) {
+      <mat-spinner diameter="30" aria-label="Loading search results"></mat-spinner>
+      }
+    </div>
+
+    @if (error$ | async; as error) {
+    <p class="error-message" role="alert">{{ error }}</p>
+    } @if ((resultSource$ | async) === 'FIXTURE') {
+    <p class="fixture-notice" role="status">
+      <strong>Placeholder data.</strong> The repository is unavailable or holds no
+      items, so these records are generated examples rather than DSpace repository
+      content. Start DSpace and reseed to see repository-backed results.
+    </p>
+    } @if (results$ | async; as results) { @if (results.length > 0) {
+    <ol class="result-list">
+      @for (result of results; track result.id) {
+      <li>
+        <article>
+          <div class="result-meta">
+            <span>{{ result.programName ?? result.program }}</span>
+            <span>{{ result.contentType }}</span>
+            <span>{{ result.sourceSystem }}</span>
+            <span>{{ result.origin }}</span>
+            @if (result.accessLevel && result.accessLevel !== 'PUBLIC') {
+            <span class="result-access">{{ result.accessLevel }}</span>
+            } @if (result.geography) {
+            <span>{{ result.geography }}</span>
+            } @if (result.vintageYear) {
+            <span>{{ result.vintageYear }}</span>
+            }
+          </div>
+          <h3>{{ result.title }}</h3>
+          <p>{{ result.summary }}</p>
+          <a
+            class="source-link"
+            [routerLink]="['/research', researchRouteId(result.id)]"
+          >
+            Research object detail
+          </a>
+          <a
+            class="source-link"
+            [href]="result.sourceUrl"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Authoritative source
+          </a>
+        </article>
+      </li>
+      }
+    </ol>
+    @if (pagination$ | async; as pagination) { @if (pagination.visible) {
+    <nav class="pager" aria-label="Search results pages">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="!pagination.hasPrevious"
+        (click)="goToPage(pagination.page - 1)"
+      >
+        Previous
+      </button>
+
+      <span class="pager-position" aria-current="page">
+        Page {{ pagination.page + 1 }} of {{ pagination.pageCount }}
+      </span>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="!pagination.hasNext"
+        (click)="goToPage(pagination.page + 1)"
+      >
+        Next
+      </button>
+    </nav>
+    } } } @else if ((loading$ | async) === false) {
+    <p class="empty-state">No research objects matched this search.</p>
+    } }
   </section>
 </div>
