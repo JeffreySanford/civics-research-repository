@@ -71,7 +71,7 @@
         "description": "Second deterministic Data.gov v4 federation fixture.",
         "identifier": "22222222-2222-2222-2222-222222222222",
         "accessLevel": "public",
-        "modified": "2026-08-21T10:15:00Z",
+        "modified": "2026-08-21",
         "publisher": {
           "name": "Office of Science"
         },
