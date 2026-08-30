@@ -71,6 +71,11 @@ public class DataGovHarvester implements FederatedSourceHarvester {
     }
 
     @Override
+    public String adapterVersion() {
+        return ADAPTER_VERSION;
+    }
+
+    @Override
     public HarvestPage fetch(String cursor, int pageSize) {
         int start = parseCursor(cursor);
         int rows = Math.max(1, Math.min(pageSize, MAX_SOURCE_PAGE_SIZE));
