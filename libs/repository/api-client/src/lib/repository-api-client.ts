@@ -39,6 +39,7 @@ export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
 export type ResearchProgram = components['schemas']['ResearchProgram'];
 export type ResearchObjectType = components['schemas']['ResearchObjectType'];
+export type SourceSystem = components['schemas']['SourceSystem'];
 export type AccessLevel = components['schemas']['AccessLevel'];
 export type ResearchRelation = components['schemas']['ResearchRelation'];
 export type ResearchAuthor = components['schemas']['ResearchAuthor'];
@@ -61,6 +62,10 @@ export interface SearchQuery {
   readonly q?: string;
   /** Repeatable data-driven program names. Empty means every program. */
   readonly programs?: readonly string[];
+  /** Exact publisher facet value, or absent for every publisher. */
+  readonly publisher?: string;
+  /** Controlled authoritative source system, or absent for every source. */
+  readonly sourceSystem?: SourceSystem;
   readonly geography?: string;
   /** One research object type, or absent for every type. */
   readonly contentType?: ResearchObjectType;
@@ -234,6 +239,14 @@ export class RepositorySearchApi {
     if (query.programs?.length) {
       // HttpParams keeps repeated keys, which is how the contract expresses "any of these".
       params['program'] = [...query.programs];
+    }
+
+    if (query.publisher) {
+      params['publisher'] = query.publisher;
+    }
+
+    if (query.sourceSystem) {
+      params['sourceSystem'] = query.sourceSystem;
     }
 
     if (query.geography) {
