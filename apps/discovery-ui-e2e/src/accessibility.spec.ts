@@ -7,12 +7,19 @@ import { waitForStablePage } from './support/wait-for-stable-page';
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 const federatedResearchId =
   'REFUQV9HT1Y6aHR0cHM6Ly9jYXRhbG9nLmRhdGEuZ292L2RhdGFzZXQvd29ya2ZvcmNlLWV4YW1wbGU';
+const curatedResearchId = 'dGlnZXJfbGluZS1jYWxpZm9ybmlh';
 
 test.describe('accessibility evidence', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);
     await mockSearchComparisonApi(page);
     await page.route(`**/api/research/*`, async (route) => {
+      const token = new URL(route.request().url()).pathname.split('/research/')[1];
+      if (token !== federatedResearchId) {
+        await route.fallback();
+        return;
+      }
+
       await route.fulfill({
         contentType: 'application/json',
         json: {
@@ -75,7 +82,7 @@ test.describe('accessibility evidence', () => {
     });
   }
 
-  test('federated detail discloses external authority without repository-only tabs', async ({
+  test('federated detail discloses external authority without repository-only tabs @wcag @section508', async ({
     page,
   }) => {
     await page.goto(`/research/${federatedResearchId}`);
@@ -92,5 +99,22 @@ test.describe('accessibility evidence', () => {
     await expect(page.getByRole('tab', { name: 'Versions' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'Map Layers' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'Map Preview' })).toHaveCount(0);
+  });
+
+  test('curated detail keeps repository enrichments on the authority-neutral route @wcag @section508', async ({
+    page,
+  }) => {
+    await page.goto(`/research/${curatedResearchId}`);
+
+    await expect(
+      page.getByRole('heading', {
+        name: '2025 TIGER/Line - Census Tracts - California',
+      }),
+    ).toBeVisible();
+    await page.getByRole('tab', { name: 'Versions' }).click();
+    await expect(page.getByText('Current')).toBeVisible();
+    await page.getByRole('tab', { name: 'Map Layers' }).click();
+    await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Map Preview' })).toBeVisible();
   });
 });
