@@ -59,8 +59,8 @@ export type EvidenceStatus = components['schemas']['EvidenceStatus'];
 
 export interface SearchQuery {
   readonly q?: string;
-  /** Repeatable. Results match any selected program; empty means every program. */
-  readonly programs?: readonly ResearchProgram[];
+  /** Repeatable data-driven program names. Empty means every program. */
+  readonly programs?: readonly string[];
   readonly geography?: string;
   /** One research object type, or absent for every type. */
   readonly contentType?: ResearchObjectType;
