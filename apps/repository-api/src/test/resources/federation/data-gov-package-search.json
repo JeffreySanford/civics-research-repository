@@ -1,91 +1,83 @@
 {
-  "help": "https://catalog.data.gov/api/3/action/help_show?name=package_search",
-  "success": true,
-  "result": {
-    "count": 3,
-    "sort": "metadata_modified asc,id asc",
-    "results": [
-      {
-        "id": "11111111-1111-1111-1111-111111111111",
-        "name": "north-dakota-workforce-demo",
+  "after": "WzEwMC4wLDAsXCJjdXJzb3ItMiJd",
+  "sort": "last_harvested_date",
+  "results": [
+    {
+      "title": "North Dakota Workforce Demonstration Dataset",
+      "description": "A deterministic fixture representing a Data.gov v4 metadata record for federation tests.",
+      "identifier": "11111111-1111-1111-1111-111111111111",
+      "slug": "north-dakota-workforce-demo",
+      "publisher": "Department of Commerce",
+      "keyword": ["Workforce", "North Dakota"],
+      "theme": ["Employment"],
+      "last_harvested_date": "2026-08-20T15:00:00Z",
+      "organization": {
+        "id": "commerce-demo",
+        "name": "Department of Commerce",
+        "slug": "commerce",
+        "organization_type": "Federal Government"
+      },
+      "dcat": {
+        "@type": "dcat:Dataset",
         "title": "North Dakota Workforce Demonstration Dataset",
-        "notes": "A deterministic fixture representing a Data.gov metadata record for federation tests.",
-        "author": "Office of Workforce Research",
-        "metadata_created": "2025-01-15T10:00:00.000000",
-        "metadata_modified": "2026-08-20T14:30:00.000000",
-        "license_id": "cc-by",
-        "license_title": "Creative Commons Attribution",
-        "organization": {
-          "id": "commerce-demo",
-          "title": "Department of Commerce"
+        "description": "A deterministic fixture representing a Data.gov v4 metadata record for federation tests.",
+        "identifier": "11111111-1111-1111-1111-111111111111",
+        "accessLevel": "public",
+        "modified": "2026-08-20T14:30:00Z",
+        "bureauCode": ["006:00"],
+        "programCode": ["006:123"],
+        "publisher": {
+          "@type": "org:Organization",
+          "name": "Department of Commerce"
         },
-        "tags": [
+        "keyword": ["Workforce", "North Dakota"],
+        "theme": ["Employment"],
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "landingPage": "https://example.gov/workforce/north-dakota",
+        "doi": "10.1234/data-gov-demo",
+        "distribution": [
           {
-            "name": "workforce",
-            "display_name": "Workforce"
-          },
-          {
-            "name": "north-dakota",
-            "display_name": "North Dakota"
-          }
-        ],
-        "extras": [
-          {
-            "key": "bureauCode",
-            "value": "006:00"
-          },
-          {
-            "key": "programCode",
-            "value": "006:123"
-          },
-          {
-            "key": "identifier",
-            "value": "ND-WORKFORCE-DEMO"
-          },
-          {
-            "key": "landingPage",
-            "value": "https://example.gov/workforce/north-dakota"
-          },
-          {
-            "key": "doi",
-            "value": "10.1234/data-gov-demo"
-          }
-        ],
-        "resources": [
-          {
-            "id": "resource-1",
-            "name": "Workforce CSV",
+            "title": "Workforce CSV",
             "format": "CSV",
-            "url": "https://example.gov/workforce/north-dakota.csv"
+            "downloadURL": "https://example.gov/workforce/north-dakota.csv"
           },
           {
-            "id": "resource-2",
-            "name": "Workforce JSON",
+            "title": "Workforce JSON",
             "format": "JSON",
-            "url": "https://example.gov/workforce/north-dakota.json"
+            "accessURL": "https://example.gov/workforce/north-dakota.json"
           }
         ]
       },
-      {
-        "id": "22222222-2222-2222-2222-222222222222",
-        "name": "open-science-demo",
+      "harvest_record": "https://api.gsa.gov/technology/datagov/v4/harvest_record/record-1",
+      "harvest_record_raw": "https://api.gsa.gov/technology/datagov/v4/harvest_record/record-1/raw"
+    },
+    {
+      "title": "Open Science Demonstration Dataset",
+      "description": "Second deterministic Data.gov v4 federation fixture.",
+      "identifier": "22222222-2222-2222-2222-222222222222",
+      "slug": "open-science-demo",
+      "publisher": "Office of Science",
+      "keyword": ["Open Science"],
+      "theme": [],
+      "last_harvested_date": "2026-08-21T10:30:00Z",
+      "organization": {
+        "id": "science-demo",
+        "name": "Office of Science",
+        "slug": "science",
+        "organization_type": "Federal Government"
+      },
+      "dcat": {
         "title": "Open Science Demonstration Dataset",
-        "notes": "Second deterministic Data.gov federation fixture.",
-        "metadata_created": "2025-02-01T00:00:00Z",
-        "metadata_modified": "2026-08-21T10:15:00Z",
-        "organization": {
-          "id": "science-demo",
-          "title": "Office of Science"
+        "description": "Second deterministic Data.gov v4 federation fixture.",
+        "identifier": "22222222-2222-2222-2222-222222222222",
+        "accessLevel": "public",
+        "modified": "2026-08-21T10:15:00Z",
+        "publisher": {
+          "name": "Office of Science"
         },
-        "tags": [
-          {
-            "name": "open-science",
-            "display_name": "Open Science"
-          }
-        ],
-        "extras": [],
-        "resources": []
+        "keyword": ["Open Science"],
+        "distribution": []
       }
-    ]
-  }
+    }
+  ]
 }
