@@ -125,6 +125,32 @@ Do not migrate the project to Angular Signals or NgRx Signal Store solely to red
 
 The current project standard remains RxJS/Observables plus NgRx where shared workflow state warrants it. A future state-management change requires a measured problem and explicit architecture decision rather than framework fashion.
 
+## Decision 4 — Separate canonical discovery taxonomy from legacy curated classification
+
+The curated repository already uses `ResearchProgram` as a controlled Census-era classification. That enum should not become the registry for every external publisher program encountered during federation.
+
+PI-1 therefore uses two distinct concepts during migration:
+
+```text
+ResearchProgram
+  legacy/curated compatibility classification
+  finite enum
+
+DiscoveryDocument.programName
+  canonical discovery taxonomy value
+  data-driven publisher/source program name
+```
+
+Rules:
+
+- Do not add a new `ResearchProgram` constant merely because a federated source returns a new program label.
+- Federated records may use `ResearchProgram.OTHER` for compatibility while preserving their real `programName`.
+- The public search/filter contract should migrate toward the data-driven value rather than exposing an ever-growing enum.
+- Solr and OpenSearch projection changes must consume the canonical value before large-source faceting is declared complete.
+- Existing Census UI/search behavior must remain compatible during the migration.
+
+This is a staged compatibility transition, not a permanent requirement to carry duplicate taxonomy forever.
+
 ## Relationship to current PI numbering
 
 Some older reviews describe historical phases such as "local repository platform", "public data harvester" and "Angular discovery UI" as PI-1/PI-2/PI-3. Those labels do not match the current six-increment plan.
@@ -152,4 +178,5 @@ PI-1 planning should therefore assume:
 4. local resource pressure addressed through profiles, limits and measurement rather than schema/core consolidation,
 5. NgRx retained for shared workflow state,
 6. transient UI state kept out of NgRx when a local RxJS/form/component solution is sufficient,
-7. no Signals migration as part of PI-1.
+7. no Signals migration as part of PI-1,
+8. data-driven discovery taxonomy kept separate from legacy curated enum classification until the public contract migration is complete.
