@@ -8,11 +8,13 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import {
   RepositoryCorpusStorageApi,
   type CorpusProfile,
+  type CorpusProfileActivationProgress,
   type CorpusProfileSummary,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
@@ -27,6 +29,7 @@ import {
   of,
   shareReplay,
   switchMap,
+  timer,
 } from 'rxjs';
 
 interface CorpusStorageView {
@@ -49,6 +52,7 @@ interface ActivationResult {
     DecimalPipe,
     MatButtonModule,
     MatFormFieldModule,
+    MatProgressBarModule,
     MatProgressSpinnerModule,
     MatSelectModule,
   ],
@@ -157,12 +161,23 @@ interface ActivationResult {
         @if (!view.viewedProfile.active) {
           <div class="corpus-storage__activation-row">
             <div>
-              @if (isHeavyProfile(view.viewedProfile.profile)) {
+              @if (!profileAvailable(view.viewedProfile, view.activeProfile)) {
+                <strong>Not available yet.</strong>
+                <span>
+                  {{ view.viewedProfile.label }} requires
+                  {{
+                    view.viewedProfile.targetFederatedRecordCount | number
+                  }}
+                  retained federated records; the current corpus has
+                  {{ retainedCount(view.activeProfile) | number }}.
+                  Harvesting additional metadata is a separate guarded scale
+                  operation.
+                </span>
+              } @else if (isHeavyProfile(view.viewedProfile.profile)) {
                 <strong>Heavy profile.</strong>
                 <span>
                   Activation can require substantial indexing time, memory, and
-                  disk. The backend will refuse the operation if the required
-                  retained metadata is not available.
+                  disk. Live projection progress will be shown below.
                 </span>
               } @else {
                 <span>
@@ -176,7 +191,9 @@ interface ActivationResult {
               type="button"
               (click)="activateProfile(view.viewedProfile.profile)"
               [disabled]="
-                (activating$ | async) === true || (capturing$ | async) === true
+                (activating$ | async) === true ||
+                (capturing$ | async) === true ||
+                !profileAvailable(view.viewedProfile, view.activeProfile)
               "
             >
               Activate {{ view.viewedProfile.label }}
@@ -189,13 +206,61 @@ interface ActivationResult {
         }
 
         @if (activating$ | async) {
-          <div class="inline-status" role="status">
-            <mat-spinner
-              diameter="20"
-              aria-label="Activating corpus search profile"
-            ></mat-spinner>
-            <span>Building and verifying the selected search projection</span>
-          </div>
+          @if (activationProgress$ | async; as progress) {
+            <div
+              class="corpus-storage__activation-progress"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <div class="corpus-storage__progress-heading">
+                <strong>{{ activationPhaseLabel(progress.phase) }}</strong>
+                <span>{{ progress.percentComplete }}%</span>
+              </div>
+              <mat-progress-bar
+                mode="determinate"
+                [value]="progress.percentComplete"
+                [attr.aria-label]="
+                  'Corpus profile activation ' +
+                  progress.percentComplete +
+                  ' percent complete'
+                "
+              ></mat-progress-bar>
+              <div class="corpus-storage__progress-meta">
+                @if (
+                  progress.totalDocuments !== null &&
+                  progress.totalDocuments !== undefined
+                ) {
+                  <span>
+                    {{ progress.processedDocuments | number }} /
+                    {{ progress.totalDocuments | number }} documents
+                  </span>
+                } @else {
+                  <span>Preparing document count</span>
+                }
+                @if (
+                  progress.documentsPerSecond !== null &&
+                  progress.documentsPerSecond !== undefined
+                ) {
+                  <span>
+                    {{ progress.documentsPerSecond | number: '1.0-0' }} docs/s
+                  </span>
+                }
+                <span>{{ formatElapsed(progress.elapsedMs) }}</span>
+              </div>
+              @if (progress.message) {
+                <p>{{ progress.message }}</p>
+              }
+            </div>
+          } @else {
+            <div class="inline-status" role="status">
+              <mat-spinner
+                diameter="20"
+                aria-label="Starting corpus search profile activation"
+              ></mat-spinner>
+              <span>Starting corpus profile activation</span>
+            </div>
+          }
         }
 
         <article
@@ -433,7 +498,9 @@ interface ActivationResult {
 
     .corpus-storage__profile-note span,
     .corpus-storage__activation-row span,
-    .corpus-storage__history p {
+    .corpus-storage__history p,
+    .corpus-storage__activation-progress p,
+    .corpus-storage__progress-meta {
       color: var(--mat-sys-on-surface-variant);
     }
 
@@ -444,6 +511,34 @@ interface ActivationResult {
       border: 1px solid var(--civics-border-subtle);
       border-radius: 0.75rem;
       background: var(--mat-sys-surface-container-low);
+    }
+
+    .corpus-storage__activation-progress {
+      display: grid;
+      gap: 0.7rem;
+      margin: 0 0 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--civics-border-strong);
+      border-radius: 0.75rem;
+      background: var(--mat-sys-surface-container);
+    }
+
+    .corpus-storage__progress-heading,
+    .corpus-storage__progress-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .corpus-storage__progress-heading span {
+      font-variant-numeric: tabular-nums;
+      font-weight: 750;
+    }
+
+    .corpus-storage__activation-progress p {
+      margin: 0;
     }
 
     .corpus-storage__profile-card {
@@ -554,6 +649,21 @@ export class AdminCorpusStorageComponent {
     this.activationStatusSubject.asObservable();
   protected readonly capturing$ = this.capturingSubject.asObservable();
   protected readonly activating$ = this.activatingSubject.asObservable();
+
+  protected readonly activationProgress$ = this.activatingSubject.pipe(
+    switchMap((active) =>
+      active
+        ? timer(0, 500).pipe(
+            switchMap(() =>
+              this.adminApi.getCorpusProfileActivationProgress().pipe(
+                catchError(() => of(null)),
+              ),
+            ),
+          )
+        : of(null),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   private readonly overview$ = this.refresh$.pipe(
     switchMap(() => {
@@ -677,12 +787,59 @@ export class AdminCorpusStorageComponent {
       });
   }
 
+  protected profileAvailable(
+    profile: CorpusProfileSummary,
+    activeProfile: CorpusProfileSummary,
+  ): boolean {
+    const target = profile.targetFederatedRecordCount;
+    if (target === undefined) {
+      return true;
+    }
+    return this.retainedCount(activeProfile) >= target;
+  }
+
+  protected retainedCount(profile: CorpusProfileSummary): number {
+    return profile.latestMeasurement?.retainedFederatedCount ?? 0;
+  }
+
   protected isHeavyProfile(profile: CorpusProfile): boolean {
     return (
       profile === 'FEDERATED_100K' ||
       profile === 'FEDERATED_1M' ||
       profile === 'FULL'
     );
+  }
+
+  protected activationPhaseLabel(
+    phase: CorpusProfileActivationProgress['phase'],
+  ): string {
+    switch (phase) {
+      case 'IDLE':
+        return 'Waiting';
+      case 'PREPARING':
+        return 'Preparing projection';
+      case 'PROJECTING':
+        return 'Loading search indexes';
+      case 'VERIFYING':
+        return 'Verifying Solr/OpenSearch parity';
+      case 'COMPLETED':
+        return 'Projection complete';
+      case 'FAILED':
+        return 'Projection failed';
+    }
+  }
+
+  protected formatElapsed(elapsedMs: number): string {
+    if (elapsedMs < 1_000) {
+      return '<1s elapsed';
+    }
+    const totalSeconds = Math.floor(elapsedMs / 1_000);
+    if (totalSeconds < 60) {
+      return `${totalSeconds}s elapsed`;
+    }
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s elapsed`;
   }
 
   protected formatBytes(value: number | null | undefined): string {
