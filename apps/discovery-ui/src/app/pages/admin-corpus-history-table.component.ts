@@ -56,70 +56,140 @@ import {
           </caption>
 
           <ng-container matColumnDef="capturedAt">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Captured</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by capture time"
+            >
+              Captured
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ measurement.capturedAt | date: 'short' }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="profile">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Profile</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by corpus profile"
+            >
+              Profile
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ profileLabel(measurement.profile) }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="topology">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Topology</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by deployment topology"
+            >
+              Topology
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ topologyLabel(measurement.topology) }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="activeProjectionCount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Active</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by active projection count"
+            >
+              Active
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ measurement.activeProjectionCount | number }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="retainedFederatedCount">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Retained</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by retained federated record count"
+            >
+              Retained
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ measurement.retainedFederatedCount | number }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="applicationPostgresBytes">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Postgres</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by application PostgreSQL size"
+            >
+              Postgres
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ formatBytes(measurement.applicationPostgresBytes) }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="dspaceStoredBytes">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>DSpace</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by DSpace storage size"
+            >
+              DSpace
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ formatBytes(measurement.dspaceStoredBytes) }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="solrIndexBytes">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Solr</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by Solr index size"
+            >
+              Solr
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ formatBytes(measurement.solrIndexBytes) }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="openSearchIndexBytes">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>OpenSearch</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by OpenSearch index size"
+            >
+              OpenSearch
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ formatBytes(measurement.openSearchIndexBytes) }}
             </td>
           </ng-container>
 
           <ng-container matColumnDef="totalMeasuredLocalBytes">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Known total</th>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              sortActionDescription="Sort by known measured total size"
+            >
+              Known total
+            </th>
             <td mat-cell *matCellDef="let measurement">
               {{ formatBytes(measurement.totalMeasuredLocalBytes) }}
             </td>
