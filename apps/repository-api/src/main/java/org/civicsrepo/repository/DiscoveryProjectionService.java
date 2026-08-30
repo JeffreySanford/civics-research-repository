@@ -41,6 +41,7 @@ import org.springframework.stereotype.Service;
 public class DiscoveryProjectionService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryProjectionService.class);
     private static final int PROJECTION_BATCH_SIZE = 1_000;
+    private static final ProjectionProgressListener NO_PROGRESS = new ProjectionProgressListener() {};
 
     private final RepositoryCatalog repositoryCatalog;
     private final CombinedDiscoveryCatalog combinedDiscoveryCatalog;
@@ -95,12 +96,25 @@ public class DiscoveryProjectionService {
      * corpus profile is explicit.
      */
     public ProjectionState reindex(List<DiscoveryDocument> fixtureFallback) {
-        return reindex(CorpusProfile.FULL, fixtureFallback);
+        return reindex(CorpusProfile.FULL, fixtureFallback, NO_PROGRESS);
     }
 
     /** Rebuild every configured discovery target from the deterministic slice selected by profile. */
     public ProjectionState reindex(CorpusProfile profile, List<DiscoveryDocument> fixtureFallback) {
+        return reindex(profile, fixtureFallback, NO_PROGRESS);
+    }
+
+    /**
+     * Rebuild every configured discovery target while reporting exact batch progress to an operator
+     * workflow. Progress counts normalized documents after each bounded batch is handed to all
+     * still-active projection targets; it is not an elapsed-time estimate.
+     */
+    public ProjectionState reindex(
+            CorpusProfile profile,
+            List<DiscoveryDocument> fixtureFallback,
+            ProjectionProgressListener progressListener) {
         Objects.requireNonNull(profile, "profile");
+        ProjectionProgressListener progress = progressListener == null ? NO_PROGRESS : progressListener;
         repositoryCatalog.invalidate();
         List<DiscoveryDocument> repositoryObjects = repositoryCatalog.findAllDiscoveryDocuments();
         long federatedCount = combinedDiscoveryCatalog.retainedFederatedCount();
@@ -109,11 +123,15 @@ public class DiscoveryProjectionService {
         boolean includesFederated = profile != CorpusProfile.CURATED_DEMO;
         boolean authorityBacked = !repositoryObjects.isEmpty() || (includesFederated && federatedCount > 0);
         RepositorySource source = authorityBacked ? RepositorySource.REPOSITORY : RepositorySource.FIXTURE;
+        List<DiscoveryDocument> safeFixtures = fixtureFallback == null ? List.of() : fixtureFallback;
+        long plannedDocumentCount = plannedDocumentCount(
+                profile, repositoryObjects.size(), federatedCount, authorityBacked, safeFixtures.size());
 
         Map<String, ProjectionTargetState> projectedTargets = new LinkedHashMap<>();
         List<DiscoveryProjectionTarget> activeTargets = beginTargets(projectedTargets);
         DiscoveryProjectionDigest digest = new DiscoveryProjectionDigest();
         List<String> indexedRepositoryIds = new ArrayList<>();
+        progress.projectionStarted(plannedDocumentCount);
 
         if (authorityBacked) {
             if (profile == CorpusProfile.CURATED_DEMO) {
@@ -122,24 +140,31 @@ public class DiscoveryProjectionService {
                         activeTargets,
                         projectedTargets,
                         digest,
-                        indexedRepositoryIds);
+                        indexedRepositoryIds,
+                        plannedDocumentCount,
+                        progress);
             } else {
                 projectCombined(
                         profile,
                         activeTargets,
                         projectedTargets,
                         digest,
-                        indexedRepositoryIds);
+                        indexedRepositoryIds,
+                        plannedDocumentCount,
+                        progress);
             }
         } else {
             projectFixtures(
-                    fixtureFallback == null ? List.of() : fixtureFallback,
+                    safeFixtures,
                     activeTargets,
                     projectedTargets,
-                    digest);
+                    digest,
+                    plannedDocumentCount,
+                    progress);
         }
 
         String projectedDocumentSetId = digest.finish();
+        progress.verificationStarted(digest.documentCount(), plannedDocumentCount);
         finishTargets(activeTargets, projectedTargets, projectedDocumentSetId);
 
         if (!indexedRepositoryIds.isEmpty()) {
@@ -170,6 +195,22 @@ public class DiscoveryProjectionService {
         }
 
         return projected;
+    }
+
+    private long plannedDocumentCount(
+            CorpusProfile profile,
+            int repositoryCount,
+            long federatedCount,
+            boolean authorityBacked,
+            int fixtureCount) {
+        if (!authorityBacked) {
+            return fixtureCount;
+        }
+        if (profile == CorpusProfile.CURATED_DEMO) {
+            return repositoryCount;
+        }
+        long federatedTarget = profile.targetRecordCount().orElse(federatedCount);
+        return Math.addExact(repositoryCount, federatedTarget);
     }
 
     private void validateProfileAvailability(CorpusProfile profile, long federatedCount) {
@@ -219,7 +260,9 @@ public class DiscoveryProjectionService {
             List<DiscoveryProjectionTarget> activeTargets,
             Map<String, ProjectionTargetState> projectedTargets,
             DiscoveryProjectionDigest digest,
-            List<String> indexedRepositoryIds) {
+            List<String> indexedRepositoryIds,
+            long totalDocuments,
+            ProjectionProgressListener progress) {
         List<DiscoveryDocument> repository = repositoryObjects.stream()
                 .sorted(Comparator.comparing((document) -> document.result().getId()))
                 .toList();
@@ -229,6 +272,7 @@ public class DiscoveryProjectionService {
             digest.updateBatch(batch);
             batch.stream().map((document) -> document.result().getId()).forEach(indexedRepositoryIds::add);
             projectBatch(batch, activeTargets, projectedTargets);
+            progress.documentsProjected(digest.documentCount(), totalDocuments);
         }
     }
 
@@ -237,7 +281,9 @@ public class DiscoveryProjectionService {
             List<DiscoveryProjectionTarget> activeTargets,
             Map<String, ProjectionTargetState> projectedTargets,
             DiscoveryProjectionDigest digest,
-            List<String> indexedRepositoryIds) {
+            List<String> indexedRepositoryIds,
+            long totalDocuments,
+            ProjectionProgressListener progress) {
         long federatedLimit = profile.targetRecordCount().orElse(Long.MAX_VALUE);
         long projectedFederated = 0;
         DiscoveryCursor cursor = null;
@@ -269,6 +315,7 @@ public class DiscoveryProjectionService {
                     .map((document) -> document.result().getId())
                     .forEach(indexedRepositoryIds::add);
             projectBatch(documents, activeTargets, projectedTargets);
+            progress.documentsProjected(digest.documentCount(), totalDocuments);
 
             complete = page.complete() || projectedFederated >= federatedLimit;
             cursor = complete ? null : page.nextCursor();
@@ -279,7 +326,9 @@ public class DiscoveryProjectionService {
             List<DiscoveryDocument> fixtureFallback,
             List<DiscoveryProjectionTarget> activeTargets,
             Map<String, ProjectionTargetState> projectedTargets,
-            DiscoveryProjectionDigest digest) {
+            DiscoveryProjectionDigest digest,
+            long totalDocuments,
+            ProjectionProgressListener progress) {
         List<DiscoveryDocument> fixtures = fixtureFallback.stream()
                 .sorted(Comparator.comparing((document) -> document.result().getId()))
                 .toList();
@@ -288,6 +337,7 @@ public class DiscoveryProjectionService {
             List<DiscoveryDocument> batch = fixtures.subList(from, to);
             digest.updateBatch(batch);
             projectBatch(batch, activeTargets, projectedTargets);
+            progress.documentsProjected(digest.documentCount(), totalDocuments);
         }
     }
 
@@ -377,4 +427,13 @@ public class DiscoveryProjectionService {
             String projectionId,
             Integer documentCount,
             String warning) {}
+
+    /** Exact progress callbacks for the bounded projection loop. */
+    public interface ProjectionProgressListener {
+        default void projectionStarted(long totalDocuments) {}
+
+        default void documentsProjected(long processedDocuments, long totalDocuments) {}
+
+        default void verificationStarted(long processedDocuments, long totalDocuments) {}
+    }
 }
