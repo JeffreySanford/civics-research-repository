@@ -16,6 +16,7 @@ Design and evidence documents:
 - [Runtime and Ownership Boundaries](../documentation/federation/runtime-boundaries.md)
 - [Million-Record Federated Metadata Corpus](../documentation/federation/million-record-corpus.md)
 - [Data.gov Scale Evidence](PI1_DATA_GOV_SCALE_EVIDENCE.md)
+- [Corpus Scale Admin and Evidence Plan](CORPUS_SCALE_ADMIN_PLAN.md)
 - [Closed PI-1 F1 Merge Gate](PI1_F1_MERGE_GATE.md)
 
 ### PI-1.1 Foundation before source breadth
@@ -61,7 +62,7 @@ Design and evidence documents:
 - [x] Prove the 1K live checkpoint end to end: 1,000 accepted / 0 rejected / 0 skipped, deterministic bounded snapshot, guarded projection linkage, 1,181-object mixed projection and public-search verification.
 - [x] Prove the 10K harvest/resume path: same durable run resumed from 10 to 100 pages, 10,000 accepted / 0 rejected / 0 skipped, no failure.
 - [ ] Complete the 10K scale evidence: snapshot/projection/search/detail/parity/storage are proven; remaining work is comparable PostgreSQL growth if historical evidence permits, host/container/JVM context, and reusable duration evidence.
-- [ ] Prove the 100K resumable harvest and standalone evidence checkpoint only after 10K evidence closes.
+- [ ] Prove the 100K resumable harvest and standalone evidence checkpoint only after 10K instrumentation closes.
 - [x] Verify live Data.gov records appear automatically through discovery results and source/publisher/program facets without a UI rebuild.
 - [x] Verify a live Data.gov record through `/research/:id` at the 10K checkpoint with federated provenance, authoritative source URL and no invented local files.
 - [x] Prove explicit 10K standalone Solr/OpenSearch projection parity: `sameProjection: true`, both engines reachable, both at 10,181 documents on projection `b292f98bb8b141dd477cfbcdc9149e44bd53559c153c431f772809f41836742e`.
@@ -112,18 +113,36 @@ Design and evidence documents:
 - [ ] Add result-set/top-N/rank/facet-difference evidence at scale.
 - [ ] Verify accessibility and keyboard behavior with large facet/result counts.
 
-### PI-1.9 Corpus and local-resource discipline
+### PI-1.9 Corpus profiles, Admin activation and local-resource discipline
 
 - [x] Keep large binaries/full text external by default.
 - [x] Keep DSpace-owned PostgreSQL/Solr isolated from application-owned PostgreSQL/public Solr; use profiles and lifecycle rather than collapsing ownership boundaries.
+- [x] Preserve named scale profiles for the curated demo, 10K, 100K, 1M and FULL/source-defined bound.
+- [ ] Replace hard-coded `CURATED_DEMO` active-profile reporting with runtime-derived active profile/evidence state.
+- [ ] Persist profile activation state separately from retained federated metadata and active projection state.
+- [ ] Add guarded Admin `Activate profile` / `Resume activation` orchestration for named profiles; preview current/target state and warn clearly for 100K/1M/FULL heavy operations.
+- [ ] Require snapshot capture, guarded projection and Solr/OpenSearch parity before marking a federated profile active.
+- [ ] Preserve the prior known-good projection/evidence if a profile activation fails.
+- [ ] Show per-profile historical storage metrics in Admin: PostgreSQL, DSpace, Solr, OpenSearch, known total, retained count and projection count.
+- [ ] Show per-profile harvest/projection metrics in Admin: elapsed time, records/documents per second, accepted/rejected/skipped and projection identity.
+- [ ] Show stable-query performance metrics in Admin/Evidence: API elapsed, Solr `QTime`, OpenSearch `took`, p50/p95/p99 and error counts tied to projection identity.
+- [ ] Capture host/container/JVM CPU and memory context for meaningful 10K/100K/1M runs and display the evidence context where useful.
 - [ ] Measure bytes/document in federated PostgreSQL, Solr and OpenSearch at 10K and 100K. The 10K incremental Solr/OpenSearch cost is measured at approximately 482.5 / 485.1 bytes per newly projected object; comparable PostgreSQL growth and all 100K measurements remain.
-- [ ] Record host/container/JVM CPU and memory context for meaningful 10K/100K/1M runs.
 - [ ] Estimate 1M disk requirements with 30-50% operational headroom before creating the corpus.
 - [x] Keep 1M corpora out of Git and ordinary PR CI.
 - [ ] Make heavy snapshots regenerable so old corpora can be removed when disk pressure requires it.
 - [x] Preserve the original small curated Compose demo profile.
 
-### PI-1.10 PI-1 handoff
+### PI-1.10 Quality and scale evidence gates
+
+- [x] Keep `quality:all` deterministic and appropriate for ordinary development/PRs.
+- [x] Make `quality:all` build all buildable application/runtime targets rather than only the Angular UI.
+- [ ] Add a separate live named-profile checker, conceptually `quality:scale` / `scale:evidence:check`.
+- [ ] Make the scale checker validate expected retained count, deterministic snapshot, guarded snapshot/projection linkage, active projection identity/count, Solr/OpenSearch parity and normal public-search provenance.
+- [ ] Make the scale checker require storage/resource/duration evidence when a checkpoint is being declared complete.
+- [ ] Keep 1M/FULL scale checks explicit/manual or scheduled rather than ordinary PR checks.
+
+### PI-1.11 PI-1 handoff
 
 - [ ] All five source adapters implemented and fixture-tested.
 - [ ] Every source supports a reproducible bounded harvest.
