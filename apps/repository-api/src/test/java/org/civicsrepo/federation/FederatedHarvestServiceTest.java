@@ -6,12 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +41,98 @@ class FederatedHarvestServiceTest {
         assertEquals(2, harvester.seenCursors.size());
         assertNull(harvester.seenCursors.getFirst());
         assertEquals("page-2", harvester.seenCursors.get(1));
+    }
+
+    @Test
+    void retriesTransientFailuresWithBoundedBackoff() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        AtomicInteger attempts = new AtomicInteger();
+        List<Duration> delays = new ArrayList<>();
+        FederatedSourceHarvester flaky = new FederatedSourceHarvester() {
+            @Override
+            public FederatedSourceSystem sourceSystem() {
+                return FederatedSourceSystem.DATA_GOV;
+            }
+
+            @Override
+            public HarvestPage fetch(String cursor, int pageSize) {
+                int attempt = attempts.incrementAndGet();
+                if (attempt < 3) {
+                    throw FederatedHarvestException.retryable("temporary upstream failure");
+                }
+                return new HarvestPage(List.of(record(FederatedSourceSystem.DATA_GOV, "001")), null, true);
+            }
+        };
+        FederatedHarvestService service = new FederatedHarvestService(
+                catalog, checkpoints, List.of(flaky), delays::add, () -> 1.0);
+
+        FederatedHarvestService.HarvestResult result = service.harvestNext(FederatedSourceSystem.DATA_GOV, 100);
+
+        assertTrue(result.complete());
+        assertEquals(3, attempts.get());
+        assertEquals(List.of(Duration.ofMillis(250), Duration.ofMillis(500)), delays);
+        assertEquals(1, catalog.count());
+    }
+
+    @Test
+    void honorsRetryAfterWithoutAllowingUnboundedSleep() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        AtomicInteger attempts = new AtomicInteger();
+        List<Duration> delays = new ArrayList<>();
+        FederatedSourceHarvester rateLimited = new FederatedSourceHarvester() {
+            @Override
+            public FederatedSourceSystem sourceSystem() {
+                return FederatedSourceSystem.DATA_GOV;
+            }
+
+            @Override
+            public HarvestPage fetch(String cursor, int pageSize) {
+                if (attempts.incrementAndGet() == 1) {
+                    throw FederatedHarvestException.retryable("rate limited", Duration.ofSeconds(30));
+                }
+                return new HarvestPage(List.of(record(FederatedSourceSystem.DATA_GOV, "001")), null, true);
+            }
+        };
+        FederatedHarvestService service = new FederatedHarvestService(
+                catalog, checkpoints, List.of(rateLimited), delays::add, () -> 1.0);
+
+        service.harvestNext(FederatedSourceSystem.DATA_GOV, 100);
+
+        assertEquals(2, attempts.get());
+        assertEquals(List.of(Duration.ofSeconds(5)), delays);
+    }
+
+    @Test
+    void doesNotRetryPermanentFailures() {
+        InMemoryCatalog catalog = new InMemoryCatalog();
+        InMemoryCheckpointStore checkpoints = new InMemoryCheckpointStore();
+        AtomicInteger attempts = new AtomicInteger();
+        List<Duration> delays = new ArrayList<>();
+        FederatedSourceHarvester invalidSource = new FederatedSourceHarvester() {
+            @Override
+            public FederatedSourceSystem sourceSystem() {
+                return FederatedSourceSystem.DATA_GOV;
+            }
+
+            @Override
+            public HarvestPage fetch(String cursor, int pageSize) {
+                attempts.incrementAndGet();
+                throw FederatedHarvestException.permanent("publisher response failed validation");
+            }
+        };
+        FederatedHarvestService service = new FederatedHarvestService(
+                catalog, checkpoints, List.of(invalidSource), delays::add, () -> 1.0);
+
+        FederatedHarvestException failure = assertThrows(
+                FederatedHarvestException.class,
+                () -> service.harvestNext(FederatedSourceSystem.DATA_GOV, 100));
+
+        assertEquals("publisher response failed validation", failure.getMessage());
+        assertEquals(1, attempts.get());
+        assertTrue(delays.isEmpty());
+        assertTrue(catalog.records.isEmpty());
     }
 
     @Test
