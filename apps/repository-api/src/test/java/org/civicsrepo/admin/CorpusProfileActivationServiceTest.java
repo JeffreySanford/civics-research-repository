@@ -2,6 +2,7 @@ package org.civicsrepo.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -17,6 +18,7 @@ import org.civicsrepo.federation.CorpusProfileActivation;
 import org.civicsrepo.federation.CorpusProfileActivationStore;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.repository.DiscoveryProjectionService;
+import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionProgressListener;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionTargetState;
 import org.civicsrepo.search.SearchService;
@@ -33,8 +35,7 @@ class CorpusProfileActivationServiceTest {
         CorpusProfileActivationStore store = mock(CorpusProfileActivationStore.class);
         when(store.findActive()).thenReturn(Optional.empty());
 
-        CorpusProfileActivationService service =
-                new CorpusProfileActivationService(projectionService, searchService, store);
+        CorpusProfileActivationService service = service(projectionService, searchService, store);
 
         assertThat(service.currentProfile()).isEqualTo(CorpusProfile.CURATED_DEMO);
     }
@@ -47,7 +48,11 @@ class CorpusProfileActivationServiceTest {
         ProjectionState projected = new ProjectionState(
                 RepositorySource.REPOSITORY, 10_181, OffsetDateTime.parse("2026-08-30T20:57:21Z"));
         when(searchService.fixtureDocuments()).thenReturn(List.of());
-        when(projectionService.reindex(CorpusProfile.FEDERATED_10K, List.of())).thenReturn(projected);
+        when(projectionService.reindex(
+                        org.mockito.ArgumentMatchers.eq(CorpusProfile.FEDERATED_10K),
+                        org.mockito.ArgumentMatchers.eq(List.of()),
+                        any(ProjectionProgressListener.class)))
+                .thenReturn(projected);
         when(projectionService.currentProjectionId()).thenReturn(PROJECTION_ID);
         when(projectionService.currentTargetStates())
                 .thenReturn(Map.of(
@@ -57,8 +62,7 @@ class CorpusProfileActivationServiceTest {
                         new ProjectionTargetState(
                                 "discovery-comparison", true, true, PROJECTION_ID, 10_181, null)));
 
-        CorpusProfileActivationService service =
-                new CorpusProfileActivationService(projectionService, searchService, store);
+        CorpusProfileActivationService service = service(projectionService, searchService, store);
 
         service.activate(CorpusProfile.FEDERATED_10K);
 
@@ -67,6 +71,9 @@ class CorpusProfileActivationServiceTest {
         assertThat(activation.getValue().profile()).isEqualTo(CorpusProfile.FEDERATED_10K);
         assertThat(activation.getValue().projectionId()).isEqualTo(PROJECTION_ID);
         assertThat(activation.getValue().projectionObjectCount()).isEqualTo(10_181);
+        assertThat(service.currentProgress().phase())
+                .isEqualTo(CorpusProfileActivationProgress.Phase.COMPLETED);
+        assertThat(service.currentProgress().percentComplete()).isEqualTo(100);
     }
 
     @Test
@@ -77,7 +84,11 @@ class CorpusProfileActivationServiceTest {
         ProjectionState projected = new ProjectionState(
                 RepositorySource.REPOSITORY, 181, OffsetDateTime.parse("2026-08-30T21:00:00Z"));
         when(searchService.fixtureDocuments()).thenReturn(List.of());
-        when(projectionService.reindex(CorpusProfile.CURATED_DEMO, List.of())).thenReturn(projected);
+        when(projectionService.reindex(
+                        org.mockito.ArgumentMatchers.eq(CorpusProfile.CURATED_DEMO),
+                        org.mockito.ArgumentMatchers.eq(List.of()),
+                        any(ProjectionProgressListener.class)))
+                .thenReturn(projected);
         when(projectionService.currentProjectionId()).thenReturn(PROJECTION_ID);
         when(projectionService.currentTargetStates())
                 .thenReturn(Map.of(
@@ -87,14 +98,15 @@ class CorpusProfileActivationServiceTest {
                         new ProjectionTargetState(
                                 "discovery-comparison", true, false, null, 0, "simulated failure")));
 
-        CorpusProfileActivationService service =
-                new CorpusProfileActivationService(projectionService, searchService, store);
+        CorpusProfileActivationService service = service(projectionService, searchService, store);
 
         assertThatThrownBy(() -> service.activate(CorpusProfile.CURATED_DEMO))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("discovery-comparison")
                 .hasMessageContaining("simulated failure");
         verify(store, never()).save(org.mockito.ArgumentMatchers.any());
+        assertThat(service.currentProgress().phase())
+                .isEqualTo(CorpusProfileActivationProgress.Phase.FAILED);
     }
 
     @Test
@@ -117,7 +129,11 @@ class CorpusProfileActivationServiceTest {
 
         when(store.findActive()).thenReturn(Optional.of(previousActivation));
         when(searchService.fixtureDocuments()).thenReturn(List.of());
-        when(projectionService.reindex(CorpusProfile.FEDERATED_10K, List.of())).thenReturn(failedProjection);
+        when(projectionService.reindex(
+                        org.mockito.ArgumentMatchers.eq(CorpusProfile.FEDERATED_10K),
+                        org.mockito.ArgumentMatchers.eq(List.of()),
+                        any(ProjectionProgressListener.class)))
+                .thenReturn(failedProjection);
         when(projectionService.reindex(CorpusProfile.CURATED_DEMO, List.of())).thenReturn(restoredProjection);
         when(projectionService.currentProjectionId())
                 .thenReturn(previousId, failedId, failedId, restoredId);
@@ -136,8 +152,7 @@ class CorpusProfileActivationServiceTest {
                                 new ProjectionTargetState(
                                         "discovery-comparison", true, true, restoredId, 181, null)));
 
-        CorpusProfileActivationService service =
-                new CorpusProfileActivationService(projectionService, searchService, store);
+        CorpusProfileActivationService service = service(projectionService, searchService, store);
 
         assertThatThrownBy(() -> service.activate(CorpusProfile.FEDERATED_10K))
                 .isInstanceOf(IllegalStateException.class)
@@ -149,5 +164,18 @@ class CorpusProfileActivationServiceTest {
         assertThat(saved.getValue().profile()).isEqualTo(CorpusProfile.CURATED_DEMO);
         assertThat(saved.getValue().projectionId()).isEqualTo(restoredId);
         assertThat(saved.getValue().projectionObjectCount()).isEqualTo(181);
+        assertThat(service.currentProgress().phase())
+                .isEqualTo(CorpusProfileActivationProgress.Phase.FAILED);
+    }
+
+    private CorpusProfileActivationService service(
+            DiscoveryProjectionService projectionService,
+            SearchService searchService,
+            CorpusProfileActivationStore store) {
+        return new CorpusProfileActivationService(
+                projectionService,
+                searchService,
+                store,
+                new CorpusProfileActivationProgressTracker());
     }
 }
