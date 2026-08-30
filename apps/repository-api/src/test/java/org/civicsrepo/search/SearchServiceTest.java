@@ -86,6 +86,22 @@ class SearchServiceTest {
     }
 
     @Test
+    void publisherAndSourceFacetsComeFromResultData() {
+        SearchResponse response = searchService.search("", List.of(), null, null, null, 0, 25);
+
+        assertThat(response.getFacets())
+                .filteredOn((facet) -> facet.getField().equals("publisher"))
+                .singleElement()
+                .satisfies((facet) -> assertThat(facet.getValues()).isNotEmpty());
+        assertThat(response.getFacets())
+                .filteredOn((facet) -> facet.getField().equals("sourceSystem"))
+                .singleElement()
+                .satisfies((facet) -> assertThat(facet.getValues())
+                        .extracting(FacetValue::getValue)
+                        .contains("CENSUS", "USGS"));
+    }
+
+    @Test
     void multiWordQueryMatchesWithoutTheExactPhrase() {
         SearchResponse response = searchService.search("North Dakota workforce", List.of(), null, null, null, 0, 25);
 
