@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import {
   RepositoryCorpusStorageApi,
+  type CorpusProfileActivationProgress,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
   type DiscoveryProjectionState,
@@ -13,7 +14,7 @@ const measurement: CorpusStorageMeasurement = {
   id: 'measurement-1',
   profile: 'CURATED_DEMO',
   topology: 'DOCKER_COMPOSE',
-  activeProjectionCount: 181,
+  activeProjectionCount: 187,
   retainedFederatedCount: 10_000,
   projectionId: 'a'.repeat(64),
   applicationPostgresBytes: 12_000,
@@ -25,8 +26,22 @@ const measurement: CorpusStorageMeasurement = {
 
 const projection: DiscoveryProjectionState = {
   source: 'REPOSITORY',
-  objectCount: 10_181,
+  objectCount: 10_187,
   projectionId: 'b'.repeat(64),
+};
+
+const progress: CorpusProfileActivationProgress = {
+  operationId: 'activation-1',
+  profile: 'FEDERATED_10K',
+  phase: 'PROJECTING',
+  processedDocuments: 4_000,
+  totalDocuments: 10_187,
+  percentComplete: 39,
+  startedAt: '2026-08-30T23:30:00Z',
+  updatedAt: '2026-08-30T23:30:01Z',
+  elapsedMs: 1_000,
+  documentsPerSecond: 4_000,
+  message: 'Building Solr and OpenSearch projections.',
 };
 
 const overview: CorpusStorageOverview = {
@@ -62,10 +77,13 @@ const overview: CorpusStorageOverview = {
 };
 
 describe('AdminCorpusStorageComponent', () => {
-  const render = async () => {
+  const render = async (
+    activation$: Observable<DiscoveryProjectionState> = of(projection),
+  ) => {
     const api = {
       getCorpusStorageOverview: vi.fn(() => of(overview)),
-      activateCorpusProfile: vi.fn(() => of(projection)),
+      activateCorpusProfile: vi.fn(() => activation$),
+      getCorpusProfileActivationProgress: vi.fn(() => of(progress)),
       captureCorpusStorage: vi.fn(() => of(measurement)),
     };
 
@@ -106,7 +124,10 @@ describe('AdminCorpusStorageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Selecting a profile does not activate it',
     );
-    expect(fixture.nativeElement.textContent).toContain('Heavy profile');
+    expect(fixture.nativeElement.textContent).toContain('Not available yet');
+    expect(fixture.nativeElement.textContent).toContain(
+      'the current corpus has 10,000',
+    );
   });
 
   it('activates an already-retained profile, captures its footprint, and refreshes evidence', async () => {
@@ -121,8 +142,30 @@ describe('AdminCorpusStorageComponent', () => {
     expect(api.captureCorpusStorage).toHaveBeenCalledTimes(1);
     expect(api.getCorpusStorageOverview).toHaveBeenCalledTimes(2);
     expect(fixture.nativeElement.textContent).toContain(
-      'Federated 10K activated with 10,181 searchable documents',
+      'Federated 10K activated with 10,187 searchable documents',
     );
+  });
+
+  it('renders exact backend progress while a profile activation is running', async () => {
+    const activationSubject = new Subject<DiscoveryProjectionState>();
+    const { fixture, api } = await render(activationSubject.asObservable());
+
+    fixture.componentInstance.selectProfile('FEDERATED_10K');
+    fixture.componentInstance.activateProfile('FEDERATED_10K');
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    fixture.detectChanges();
+
+    expect(api.getCorpusProfileActivationProgress).toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Loading search indexes');
+    expect(fixture.nativeElement.textContent).toContain('4,000 / 10,187 documents');
+    expect(fixture.nativeElement.textContent).toContain('39%');
+    expect(fixture.nativeElement.textContent).toContain('4,000 docs/s');
+
+    activationSubject.next(projection);
+    activationSubject.complete();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
   });
 
   it('captures only the current active footprint and refreshes history', async () => {
