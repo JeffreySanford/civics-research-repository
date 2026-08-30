@@ -1,7 +1,6 @@
 package org.civicsrepo.search;
 
 import org.civicsrepo.generated.dto.ResearchObjectType;
-import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResponse;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,13 +18,14 @@ public class SearchController {
     }
 
     /**
-     * @param program repeatable; results match any selected program. Absent means every program,
-     *     which is why the frontend sends its defaults explicitly rather than relying on omission.
+     * @param program repeatable data-driven program names; results match any selected value. Absent
+     *     means every program. Values come from indexed metadata and are not limited to the legacy
+     *     curated ResearchProgram enum.
      */
     @GetMapping
     public SearchResponse searchResearchObjects(
             @RequestParam(required = false, name = "q") String query,
-            @RequestParam(required = false) List<ResearchProgram> program,
+            @RequestParam(required = false) List<String> program,
             @RequestParam(required = false) String geography,
             @RequestParam(required = false) ResearchObjectType contentType,
             @RequestParam(required = false) Integer vintageYear,
