@@ -18,19 +18,19 @@ Design documents:
 
 ### PI-1.1 Foundation before source breadth
 
-- [ ] Finish public OpenAPI migration for data-driven program taxonomy while preserving the existing curated `ResearchProgram` compatibility field.
+- [x] Finish public OpenAPI migration for data-driven program taxonomy while preserving the existing curated `ResearchProgram` compatibility field.
 - [x] Add controlled `origin` / `sourceSystem` provenance to repository and fixture search/detail contracts and search projections.
 - [x] Add canonical data-driven `programName` to the engine-neutral `DiscoveryDocument` so federated publisher programs do not expand/collapse into the legacy enum.
-- [ ] Replace fixed source-specific `ResearchProgram` assumptions in public filtering/results with data-driven program values.
+- [x] Replace fixed source-specific `ResearchProgram` assumptions in public filtering/results with data-driven program values.
 - [x] Design and implement federated metadata persistence in the application data layer.
-- [ ] Add `harvest_runs`, resumable checkpoints, bounded error/quarantine state and source progress metrics.
+- [x] Add `harvest_runs`, resumable checkpoints, bounded error/quarantine state and source progress metrics.
 - [x] Define namespaced source identity: `SOURCE_SYSTEM:source-id`.
 - [ ] Define explicit DOI/PMID/other-identifier reconciliation rules without title-based silent merging.
 - [x] Introduce a bounded combined discovery catalog over DSpace-backed and federated records.
-- [ ] Wire the combined discovery catalog into the projection lifecycle.
-- [ ] Replace whole-corpus `List<DiscoveryDocument>` projection with bounded streaming/batched projection before 100K+ runs.
-- [ ] Make deterministic projection hashing independent of database page size and search bulk size.
-- [ ] Add batch indexing to Solr and OpenSearch; do not create one giant million-document update body.
+- [x] Wire the combined discovery catalog into the projection lifecycle.
+- [x] Replace whole-corpus `List<DiscoveryDocument>` projection with bounded streaming/batched projection before 100K+ runs.
+- [x] Make deterministic projection hashing independent of database page size and search bulk size.
+- [x] Add batch indexing to Solr and OpenSearch; do not create one giant million-document update body.
 - [x] Use bounded JDBC prepared-statement batches for federated metadata persistence rather than one database interaction per record.
 - [ ] Record accepted/rejected/skipped/indexed counts and progress for large projections.
 - [ ] Design opaque cursor pagination so million-record discovery does not depend on deep offsets.
@@ -43,17 +43,17 @@ Design documents:
 - [x] Add cursor/page checkpoint persistence.
 - [x] Add bounded retry, exponential backoff/jitter and bounded `Retry-After` awareness with typed permanent/transient failures.
 - [ ] Add configurable per-source request concurrency and rate limits.
-- [ ] Add run cancellation/restart/resume behavior.
-- [ ] Add malformed-record quarantine without aborting an entire run.
+- [x] Add run cancellation/restart/resume behavior.
+- [x] Add malformed-record quarantine without aborting an entire run.
 - [ ] Record source retrieval window/date, adapter version and run statistics.
 - [ ] Generate deterministic corpus manifests from completed bounded runs.
-- [ ] Add tiny committed source fixtures for normal CI rather than network-dependent tests.
+- [x] Add tiny committed source fixtures for normal CI rather than network-dependent tests.
 
 ### PI-1.3 Data.gov adapter
 
-- [ ] Implement Data.gov source adapter.
-- [ ] Map dataset ID, title, description, agency/publisher, tags/themes, dates, distributions/resource links and landing page.
-- [ ] Add sparse/malformed/multiple-distribution fixture tests.
+- [x] Implement Data.gov source adapter.
+- [x] Map dataset ID, title, description, agency/publisher, tags/themes, dates, distributions/resource links and landing page.
+- [x] Add sparse/malformed/multiple-distribution fixture tests.
 - [ ] Prove 1K, then 10K, then 100K resumable harvests.
 - [ ] Verify new records appear automatically through discovery results, source/publisher/program facets and `/research/:id`.
 - [ ] Evaluate larger/full-catalog harvest only after the 100K path is stable.
