@@ -69,13 +69,16 @@ export class DiscoveryPage implements OnInit {
     'ACS',
   ];
 
-  /** Empty means every program, matching what an absent `program` parameter means to the API. */
-  protected selectedPrograms: ResearchProgram[] = [];
+  /**
+   * Empty means every program. Values are deliberately strings rather than ResearchProgram:
+   * federated publishers own their program taxonomy and values such as "Office of Science" must
+   * survive URL/deep-link round trips without being collapsed into the curated compatibility enum.
+   */
+  protected selectedPrograms: string[] = [];
 
-  protected readonly programControl = new FormControl<ResearchProgram | ''>(
-    '',
-    { nonNullable: true },
-  );
+  protected readonly programControl = new FormControl('', {
+    nonNullable: true,
+  });
   /** Empty means every type. One value at a time: the contract takes a single content type. */
   protected selectedContentType: ResearchObjectType | '' = '';
 
@@ -110,7 +113,7 @@ export class DiscoveryPage implements OnInit {
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     this.searchControl.setValue(params.get('q') ?? '');
-    this.selectedPrograms = this.toResearchPrograms(params.getAll('program'));
+    this.selectedPrograms = this.toProgramNames(params.getAll('program'));
     this.programControl.setValue(this.selectedPrograms[0] ?? '');
     this.geographyControl.setValue(params.get('geography') ?? '');
     this.selectedContentType = (params.get('type') ?? '') as
@@ -173,12 +176,11 @@ export class DiscoveryPage implements OnInit {
     this.store.dispatch(SearchActions.searchSubmitted({ query }));
   }
 
-  /** Toggles one program in or out of the selection, rather than replacing it. */
+  /** Toggles one data-driven program name in or out of the selection. */
   protected toggleProgram(program: string): void {
-    const value = program as ResearchProgram;
-    this.selectedPrograms = this.selectedPrograms.includes(value)
-      ? this.selectedPrograms.filter((selected) => selected !== value)
-      : [...this.selectedPrograms, value];
+    this.selectedPrograms = this.selectedPrograms.includes(program)
+      ? this.selectedPrograms.filter((selected) => selected !== program)
+      : [...this.selectedPrograms, program];
     this.programControl.setValue(this.selectedPrograms[0] ?? '');
     this.submitSearch();
   }
@@ -256,7 +258,7 @@ export class DiscoveryPage implements OnInit {
   }
 
   protected isProgramSelected(program: string): boolean {
-    return this.selectedPrograms.includes(program as ResearchProgram);
+    return this.selectedPrograms.includes(program);
   }
 
   protected clearFilters(): void {
@@ -288,14 +290,6 @@ export class DiscoveryPage implements OnInit {
     });
   }
 
-  /**
-   * An absent `program` parameter means every program, which is what the API already means by it.
-   *
-   * The page previously substituted three defaults here, so an absent parameter and an explicit
-   * empty selection produced different results even though the URL was identical. That made
-   * "Clear filters" undoable only by reloading, and it meant a shared link could not express
-   * "everything".
-   */
   /**
    * Query parameters for the workforce map, built here so the link is a real href.
    *
@@ -333,46 +327,11 @@ export class DiscoveryPage implements OnInit {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
   }
 
-  private toResearchPrograms(values: readonly string[]): ResearchProgram[] {
-    return values
-      .map((value) => this.toResearchProgram(value))
-      .filter((value): value is ResearchProgram => value !== '');
-  }
-
   /**
-   * Every program the contract defines.
-   *
-   * Derived from the generated contract type rather than hand-listed: an allowlist that silently
-   * dropped unknown values meant adding a program to the schema left it unselectable in the UI,
-   * with the URL parameter quietly discarded and the defaults restored instead.
+   * The public program filter is data-driven. Preserve any non-blank publisher program name from
+   * a shared URL instead of validating against the curated Census/USGS compatibility enum.
    */
-  private static readonly RESEARCH_PROGRAMS: readonly ResearchProgram[] = [
-    'ACS',
-    'SIPP',
-    'CPS',
-    'LEHD',
-    'LODES',
-    'TIGER_LINE',
-    'USGS',
-    'ECONOMIC_CENSUS',
-    'COUNTY_BUSINESS_PATTERNS',
-    'BUILDING_PERMITS',
-    'POPULATION_ESTIMATES',
-    'SAIPE',
-    'BUSINESS_DYNAMICS',
-    'USGS_3DEP',
-    'USGS_3HP',
-    'OTHER',
-  ];
-
-  private toResearchProgram(value: string | null): ResearchProgram | '' {
-    if (
-      value !== null &&
-      (DiscoveryPage.RESEARCH_PROGRAMS as readonly string[]).includes(value)
-    ) {
-      return value as ResearchProgram;
-    }
-
-    return '';
+  private toProgramNames(values: readonly string[]): string[] {
+    return values.map((value) => value.trim()).filter((value) => value.length > 0);
   }
 }
