@@ -5,12 +5,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /** PostgreSQL/H2-compatible durable composite-corpus to projection evidence history. */
 @Component
@@ -50,35 +49,8 @@ public class JdbcFederatedCompositeCorpusProjectionEvidenceStore
     }
 
     @Override
-    @Transactional
     public void save(FederatedCompositeCorpusProjectionEvidence evidence) {
-        Map<String, Object> values = Map.ofEntries(
-                Map.entry("compositionSha256", evidence.compositionSha256()),
-                Map.entry("projectionId", evidence.projectionId()),
-                Map.entry("corpusProfile", evidence.corpusProfile().name()),
-                Map.entry("federatedRecordCount", evidence.federatedRecordCount()),
-                Map.entry("projectionSource", evidence.projectionSource().getValue()),
-                Map.entry("projectionObjectCount", evidence.projectionObjectCount()),
-                Map.entry("projectionRebuiltAt", evidence.projectionRebuiltAt()),
-                Map.entry("linkedAt", evidence.linkedAt()));
-
-        int updated = jdbcClient
-                .sql(
-                        """
-                        update federated_composite_projection_evidence set
-                            corpus_profile = :corpusProfile,
-                            federated_record_count = :federatedRecordCount,
-                            projection_source = :projectionSource,
-                            projection_object_count = :projectionObjectCount,
-                            projection_rebuilt_at = :projectionRebuiltAt,
-                            linked_at = :linkedAt
-                        where composition_sha256 = :compositionSha256
-                          and projection_id = :projectionId
-                        """)
-                .params(values)
-                .update();
-
-        if (updated == 0) {
+        try {
             jdbcClient
                     .sql(
                             """
@@ -92,8 +64,25 @@ public class JdbcFederatedCompositeCorpusProjectionEvidenceStore
                                 :projectionRebuiltAt, :linkedAt
                             )
                             """)
-                    .params(values)
+                    .param("compositionSha256", evidence.compositionSha256())
+                    .param("projectionId", evidence.projectionId())
+                    .param("corpusProfile", evidence.corpusProfile().name())
+                    .param("federatedRecordCount", evidence.federatedRecordCount())
+                    .param("projectionSource", evidence.projectionSource().getValue())
+                    .param("projectionObjectCount", evidence.projectionObjectCount())
+                    .param("projectionRebuiltAt", evidence.projectionRebuiltAt())
+                    .param("linkedAt", evidence.linkedAt())
                     .update();
+            return;
+        } catch (DuplicateKeyException duplicateKey) {
+            FederatedCompositeCorpusProjectionEvidence existing = findExact(
+                            evidence.compositionSha256(), evidence.projectionId())
+                    .orElseThrow(() -> duplicateKey);
+            if (!sameIdentity(existing, evidence)) {
+                throw new IllegalStateException(
+                        "Composite projection identity is already associated with different evidence",
+                        duplicateKey);
+            }
         }
     }
 
@@ -127,6 +116,32 @@ public class JdbcFederatedCompositeCorpusProjectionEvidenceStore
                 .param("limit", Math.max(1, Math.min(limit, 1_000)))
                 .query(this::mapEvidence)
                 .list();
+    }
+
+    private Optional<FederatedCompositeCorpusProjectionEvidence> findExact(
+            String compositionSha256, String projectionId) {
+        return jdbcClient
+                .sql(
+                        """
+                        select * from federated_composite_projection_evidence
+                        where composition_sha256 = :compositionSha256
+                          and projection_id = :projectionId
+                        """)
+                .param("compositionSha256", compositionSha256)
+                .param("projectionId", projectionId)
+                .query(this::mapEvidence)
+                .optional();
+    }
+
+    private boolean sameIdentity(
+            FederatedCompositeCorpusProjectionEvidence left,
+            FederatedCompositeCorpusProjectionEvidence right) {
+        return left.compositionSha256().equals(right.compositionSha256())
+                && left.corpusProfile() == right.corpusProfile()
+                && left.federatedRecordCount() == right.federatedRecordCount()
+                && left.projectionId().equals(right.projectionId())
+                && left.projectionSource() == right.projectionSource()
+                && left.projectionObjectCount() == right.projectionObjectCount();
     }
 
     private FederatedCompositeCorpusProjectionEvidence mapEvidence(ResultSet resultSet, int rowNumber)
