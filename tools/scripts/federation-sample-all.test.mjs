@@ -141,7 +141,10 @@ test('sampler continues across a source failure and reports partial evidence', a
 
 test('sampler refuses to call an empty successful request source representation', async () => {
   const retained = new Map(
-    FEDERATION_SAMPLE_SOURCES.map((source) => [source, source === 'NASA_CMR' ? 0 : 1]),
+    FEDERATION_SAMPLE_SOURCES.map((source) => [
+      source,
+      source === 'NASA_CMR' ? 0 : 1,
+    ]),
   );
   const fetchImpl = async (url, init) => {
     const parsed = new URL(url);
