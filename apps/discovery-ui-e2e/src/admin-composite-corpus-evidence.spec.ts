@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 
 const sha = 'c'.repeat(64);
+const projectionSha = 'd'.repeat(64);
 
 const composition = {
   compositionVersion: 'federated-composition/v1',
@@ -36,6 +37,17 @@ const composition = {
   ],
 };
 
+const projection = {
+  compositionSha256: sha,
+  corpusProfile: 'FEDERATED_1M',
+  federatedRecordCount: 1_000_000,
+  projectionId: projectionSha,
+  projectionSource: 'REPOSITORY',
+  projectionObjectCount: 1_000_181,
+  projectionRebuiltAt: '2026-08-31T20:30:00Z',
+  linkedAt: '2026-08-31T20:31:00Z',
+};
+
 const storageOverview = {
   activeProfile: 'CURATED_DEMO',
   profiles: [
@@ -65,19 +77,32 @@ test.describe('Admin composite corpus evidence', () => {
     });
   });
 
-  test('shows source-level provenance for a captured mixed-source identity @storyboard @comparison @wcag @section508', async ({
+  test('shows an exact mixed-source identity linked to the full search projection @storyboard @comparison @wcag @section508', async ({
     page,
   }) => {
     await page.route(
       `**/api/admin/federation/compositions**`,
       async (route) => {
         const url = new URL(route.request().url());
-        expect(url.searchParams.get('corpusProfile')).toBe('FEDERATED_1M');
-        expect(url.searchParams.get('limit')).toBe('20');
-        await route.fulfill({
-          contentType: 'application/json',
-          json: [composition],
-        });
+        if (url.pathname.endsWith('/compositions/projections')) {
+          expect(url.searchParams.get('corpusProfile')).toBe('FEDERATED_1M');
+          expect(url.searchParams.get('limit')).toBe('20');
+          await route.fulfill({
+            contentType: 'application/json',
+            json: [projection],
+          });
+          return;
+        }
+        if (url.pathname.endsWith('/compositions')) {
+          expect(url.searchParams.get('corpusProfile')).toBe('FEDERATED_1M');
+          expect(url.searchParams.get('limit')).toBe('20');
+          await route.fulfill({
+            contentType: 'application/json',
+            json: [composition],
+          });
+          return;
+        }
+        await route.fallback();
       },
     );
 
@@ -95,20 +120,66 @@ test.describe('Admin composite corpus evidence', () => {
     await expect(
       page.getByRole('cell', { name: '500,000' }).first(),
     ).toBeVisible();
+
+    await expect(page.getByText('Search projection linked')).toBeVisible();
+    await expect(page.getByText('1,000,181')).toBeVisible();
+    await expect(page.getByText('181', { exact: true })).toBeVisible();
     await expect(
-      page.getByText(
-        /Projection linkage to compositionSha256 belongs to the next delivery slice/,
-      ),
+      page.getByText(`${projectionSha.slice(0, 12)}…${projectionSha.slice(-8)}`),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/projection identity covers those records plus the curated DSpace repository slice/i),
     ).toBeVisible();
   });
 
-  test('does not imply evidence exists before bounded snapshots are composed @storyboard @comparison', async ({
+  test('shows a captured composition without pretending a projection linkage exists @storyboard @comparison', async ({
     page,
   }) => {
     await page.route(
       `**/api/admin/federation/compositions**`,
       async (route) => {
-        await route.fulfill({ contentType: 'application/json', json: [] });
+        const url = new URL(route.request().url());
+        if (url.pathname.endsWith('/compositions/projections')) {
+          await route.fulfill({ contentType: 'application/json', json: [] });
+          return;
+        }
+        if (url.pathname.endsWith('/compositions')) {
+          await route.fulfill({
+            contentType: 'application/json',
+            json: [composition],
+          });
+          return;
+        }
+        await route.fallback();
+      },
+    );
+
+    await page.goto('/admin/sync');
+
+    await expect(
+      page.getByText('Composition captured; search projection not linked yet.'),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/profile name or document count alone is not treated as projection evidence/i),
+    ).toBeVisible();
+    await expect(page.getByText('Search projection linked')).toHaveCount(0);
+  });
+
+  test('does not imply composition evidence exists before bounded snapshots are composed @storyboard @comparison', async ({
+    page,
+  }) => {
+    await page.route(
+      `**/api/admin/federation/compositions**`,
+      async (route) => {
+        const url = new URL(route.request().url());
+        if (
+          url.pathname.endsWith('/compositions') ||
+          url.pathname.endsWith('/compositions/projections')
+        ) {
+          await route.fulfill({ contentType: 'application/json', json: [] });
+          return;
+        }
+        await route.fallback();
       },
     );
 
