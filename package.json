@@ -79,6 +79,8 @@
     "research:test": "pnpm performance:test",
     "research:preflight": "node tools/scripts/research-scale-preflight.mjs --profile FEDERATED_1M",
     "research:preflight:1m": "node tools/scripts/research-scale-preflight.mjs --profile FEDERATED_1M",
+    "research:scale": "node tools/scripts/research-scale-runner.mjs --profile FEDERATED_1M",
+    "research:scale:1m": "node tools/scripts/research-scale-runner.mjs --profile FEDERATED_1M",
     "research:report": "node tools/scripts/research-performance-report.mjs --profile FEDERATED_100K",
     "research:report:100k": "node tools/scripts/research-performance-report.mjs --profile FEDERATED_100K",
     "research:report:1m": "node tools/scripts/research-performance-report.mjs --profile FEDERATED_1M",
