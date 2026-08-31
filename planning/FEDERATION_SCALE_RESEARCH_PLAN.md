@@ -33,8 +33,10 @@ pnpm federation:sample:all
 Rules:
 
 - existing retained sources are observed but not advanced,
-- empty sources receive one bounded page,
-- failures are reported per source and do not prevent attempts against the remaining sources,
+- empty authorities receive one fresh bounded page from source offset zero so a stale failed-adapter cursor cannot contaminate a repaired sample,
+- an empty authority counts as represented only after at least one normalized record is actually retained; HTTP success with zero retained records is reported as `EMPTY`/`PARTIAL`,
+- accepted and rejected counts remain visible so schema drift cannot masquerade as successful sampling,
+- failures or empty samples are reported per source and do not prevent attempts against the remaining sources,
 - no mixed-source search profile is activated automatically,
 - no publisher binaries are mirrored,
 - the result is written as JSON + Markdown under ignored `browser-evidence-artifacts/`.
@@ -255,12 +257,13 @@ Normal CI should verify the **protocol**, not download large corpora.
 
 Normal quality gates include:
 
-- every live adapter has deterministic local HTTP fixture tests,
+- every live adapter has deterministic local HTTP fixture tests that mirror publisher-documented field names and pagination semantics,
 - malformed records quarantine rather than abort a page,
 - transient statuses become retryable failures,
 - cursors/checkpoints are deterministic and explicit,
 - source-system identity cannot drift,
 - all-source sampling orchestration is unit tested,
+- zero-retention source samples cannot satisfy representation evidence,
 - composite evidence and bulk-manifest logic will receive deterministic fixture tests before live use,
 - formatting and linting cover new scripts/docs,
 - large live runs remain explicit workstation/manual research commands.
@@ -268,7 +271,7 @@ Normal quality gates include:
 ## Near-term sequence
 
 1. validate all five live adapters locally,
-2. run `pnpm federation:sample:all`,
+2. run `pnpm federation:sample:all` and require retained evidence from every authority,
 3. inspect normalized source diversity and UI/detail implications,
 4. preserve the established 100K benchmark evidence,
 5. close a deterministic 500K Data.gov tier only if it has research value,
