@@ -220,6 +220,15 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
         return jdbcClient.sql("select count(*) from federated_research_objects").query(Long.class).single();
     }
 
+    @Override
+    public long count(FederatedSourceSystem sourceSystem) {
+        return jdbcClient
+                .sql("select count(*) from federated_research_objects where source_system = :sourceSystem")
+                .param("sourceSystem", sourceSystem.name())
+                .query(Long.class)
+                .single();
+    }
+
     private FederatedResearchRecord mapRecord(ResultSet resultSet, int rowNumber) throws SQLException {
         try {
             return new FederatedResearchRecord(
