@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/admin/federation/compositions")
 public class FederatedCompositeCorpusAdminController {
     private static final int MAX_HISTORY = 1_000;
+    private static final String SHA256_PATTERN = "[0-9a-f]{64}";
 
     private final FederatedCompositeCorpusManifestService manifestService;
     private final FederatedCompositeCorpusManifestStore manifestStore;
@@ -57,6 +58,10 @@ public class FederatedCompositeCorpusAdminController {
     /** Resolve one exact composition identity without mutating evidence. */
     @GetMapping("/{compositionSha256}")
     public FederatedCompositeCorpusManifest byCompositionSha256(@PathVariable String compositionSha256) {
+        if (!compositionSha256.matches(SHA256_PATTERN)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "compositionSha256 must be a lowercase SHA-256 hex digest.");
+        }
         return manifestStore
                 .findByCompositionSha256(compositionSha256)
                 .orElseThrow(() -> new ResponseStatusException(
