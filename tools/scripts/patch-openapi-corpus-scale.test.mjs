@@ -87,6 +87,10 @@ test('migration adds the proven corpus, progress, harvest, evidence, and executi
   );
   assert.match(
     output,
+    /FEDERATED_100K is the\s+currently supported growth target/,
+  );
+  assert.doesNotMatch(
+    output,
     /FEDERATED_100K and\s+FEDERATED_1M are supported growth targets/,
   );
   assert.equal(output.split("pattern: '^[0-9a-f]{64}$'").length - 1, 3);
