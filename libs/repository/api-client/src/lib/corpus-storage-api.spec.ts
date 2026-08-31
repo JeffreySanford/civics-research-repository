@@ -5,8 +5,8 @@ import {
   type CorpusScaleEvidenceReport,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
-  type DiscoveryProjectionState,
 } from './corpus-storage-api';
+import type { DiscoveryProjectionState } from './repository-api-client';
 
 describe('RepositoryCorpusStorageApi', () => {
   const measurement: CorpusStorageMeasurement = {
