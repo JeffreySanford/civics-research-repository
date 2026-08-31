@@ -55,7 +55,8 @@ const scaleStarted: CorpusProfileActivationProgress = {
   updatedAt: '2026-08-31T00:40:01Z',
   elapsedMs: 1_000,
   documentsPerSecond: 100,
-  message: 'Harvesting and retaining federated metadata from the authoritative source.',
+  message:
+    'Harvesting and retaining federated metadata from the authoritative source.',
 };
 
 const scaleCompleted: CorpusProfileActivationProgress = {

@@ -88,7 +88,8 @@ describe('RepositoryCorpusStorageApi', () => {
       percentComplete: 10,
       updatedAt: '2026-08-31T00:40:00Z',
       elapsedMs: 25,
-      message: 'Harvesting and retaining federated metadata from the authoritative source.',
+      message:
+        'Harvesting and retaining federated metadata from the authoritative source.',
     };
     const http = { post: vi.fn(() => of(progress)) };
     const api = new RepositoryCorpusStorageApi(

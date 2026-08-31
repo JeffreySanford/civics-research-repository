@@ -104,25 +104,28 @@ test.describe('Admin Sync corpus storage evidence', () => {
       });
     });
 
-    await page.route(`**/api/admin/corpus/scale?profile=FEDERATED_100K`, async (route) => {
-      scaleStarted = true;
-      await route.fulfill({
-        status: 202,
-        contentType: 'application/json',
-        json: {
-          operationId: 'scale-100k',
-          profile: 'FEDERATED_100K',
-          phase: 'PREPARING',
-          processedDocuments: 0,
-          totalDocuments: null,
-          percentComplete: 0,
-          startedAt: '2026-08-31T00:40:00Z',
-          updatedAt: '2026-08-31T00:40:00Z',
-          elapsedMs: 1,
-          message: 'Preparing deterministic corpus projection.',
-        },
-      });
-    });
+    await page.route(
+      `**/api/admin/corpus/scale?profile=FEDERATED_100K`,
+      async (route) => {
+        scaleStarted = true;
+        await route.fulfill({
+          status: 202,
+          contentType: 'application/json',
+          json: {
+            operationId: 'scale-100k',
+            profile: 'FEDERATED_100K',
+            phase: 'PREPARING',
+            processedDocuments: 0,
+            totalDocuments: null,
+            percentComplete: 0,
+            startedAt: '2026-08-31T00:40:00Z',
+            updatedAt: '2026-08-31T00:40:00Z',
+            elapsedMs: 1,
+            message: 'Preparing deterministic corpus projection.',
+          },
+        });
+      },
+    );
 
     await page.route(`**/api/admin/reindex/progress`, async (route) => {
       if (scaleStarted) {
