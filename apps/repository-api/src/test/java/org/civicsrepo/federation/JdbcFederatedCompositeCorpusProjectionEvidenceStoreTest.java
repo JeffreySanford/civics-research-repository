@@ -1,6 +1,7 @@
 package org.civicsrepo.federation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.OffsetDateTime;
 import org.civicsrepo.generated.dto.RepositorySource;
@@ -37,7 +38,7 @@ class JdbcFederatedCompositeCorpusProjectionEvidenceStoreTest {
     }
 
     @Test
-    void identicalCompositionAndProjectionRecaptureIsIdempotent() {
+    void identicalCompositionAndProjectionRecaptureKeepsTheFirstEvidenceRow() {
         FederatedCompositeCorpusProjectionEvidence original = evidence(
                 "a".repeat(64), "b".repeat(64), "2026-08-31T20:30:00Z");
         FederatedCompositeCorpusProjectionEvidence recaptured = new FederatedCompositeCorpusProjectionEvidence(
@@ -47,14 +48,36 @@ class JdbcFederatedCompositeCorpusProjectionEvidenceStoreTest {
                 original.projectionId(),
                 original.projectionSource(),
                 original.projectionObjectCount(),
-                original.projectionRebuiltAt(),
+                original.projectionRebuiltAt().plusHours(2),
                 OffsetDateTime.parse("2026-08-31T22:30:00Z"));
 
         store.save(original);
         store.save(recaptured);
 
-        assertThat(store.findLatestByCompositionSha256(original.compositionSha256())).contains(recaptured);
-        assertThat(store.findRecent(CorpusProfile.FEDERATED_1M, 10)).containsExactly(recaptured);
+        assertThat(store.findLatestByCompositionSha256(original.compositionSha256())).contains(original);
+        assertThat(store.findRecent(CorpusProfile.FEDERATED_1M, 10)).containsExactly(original);
+    }
+
+    @Test
+    void refusesToReuseTheSameCompositionProjectionPairForDifferentMeaning() {
+        FederatedCompositeCorpusProjectionEvidence original = evidence(
+                "a".repeat(64), "b".repeat(64), "2026-08-31T20:30:00Z");
+        FederatedCompositeCorpusProjectionEvidence conflicting = new FederatedCompositeCorpusProjectionEvidence(
+                original.compositionSha256(),
+                original.corpusProfile(),
+                original.federatedRecordCount(),
+                original.projectionId(),
+                original.projectionSource(),
+                original.projectionObjectCount() + 1,
+                original.projectionRebuiltAt(),
+                original.linkedAt().plusHours(1));
+
+        store.save(original);
+
+        assertThatThrownBy(() -> store.save(conflicting))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("different evidence");
+        assertThat(store.findLatestByCompositionSha256(original.compositionSha256())).contains(original);
     }
 
     private FederatedCompositeCorpusProjectionEvidence evidence(
