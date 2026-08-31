@@ -49,12 +49,15 @@ function formatBytes(value) {
 }
 
 function measurementForProfile(overview, profile) {
-  const fromProfile = overview?.profiles?.find((entry) => entry.profile === profile)
-    ?.latestMeasurement;
+  const fromProfile = overview?.profiles?.find(
+    (entry) => entry.profile === profile,
+  )?.latestMeasurement;
   if (fromProfile) {
     return fromProfile;
   }
-  return (overview?.history ?? []).find((entry) => entry.profile === profile) ?? null;
+  return (
+    (overview?.history ?? []).find((entry) => entry.profile === profile) ?? null
+  );
 }
 
 function componentEstimate(lower, upper, field, targetRetained) {
@@ -183,7 +186,8 @@ export function classifyPreflight({
     (asNumber(targetEvidence?.retainedFederatedRecordCount) ?? 0) >= target;
   const baselineEvidenceReady =
     targetEvidenceReady ||
-    (baselineEvidence?.valid === true && baselineEvidence?.targetParity === true);
+    (baselineEvidence?.valid === true &&
+      baselineEvidence?.targetParity === true);
 
   const checks = [
     check(
@@ -213,11 +217,7 @@ export function classifyPreflight({
     ),
     check(
       'disk-headroom',
-      !diskKnown
-        ? 'UNKNOWN'
-        : diskReady
-          ? 'READY'
-          : 'BLOCKED',
+      !diskKnown ? 'UNKNOWN' : diskReady ? 'READY' : 'BLOCKED',
       !diskKnown
         ? 'Local free disk could not be measured.'
         : storageEstimate
@@ -315,11 +315,15 @@ This is a research estimate, not a production capacity guarantee. PostgreSQL, So
 | --- | ---: | --- | ---: |
 ${componentRows}
 
-${estimate ? `- Current measured local footprint: **${formatBytes(estimate.currentMeasuredBytes)}**
+${
+  estimate
+    ? `- Current measured local footprint: **${formatBytes(estimate.currentMeasuredBytes)}**
 - Estimated steady 1M footprint: **${formatBytes(estimate.estimatedSteadyBytes)}**
 - Conservative peak estimate including current derived indexes during projection: **${formatBytes(estimate.estimatedPeakBytes)}**
 - Minimum additional free space from current state: **${formatBytes(estimate.minimumAdditionalFreeBytes)}**
-- Recommended free space with ${estimate.safetyMarginPercent}% research margin: **${formatBytes(estimate.recommendedFreeBytes)}**` : '- Storage estimate unavailable.'}
+- Recommended free space with ${estimate.safetyMarginPercent}% research margin: **${formatBytes(estimate.recommendedFreeBytes)}**`
+    : '- Storage estimate unavailable.'
+}
 
 ## Next action
 
@@ -338,23 +342,28 @@ export async function runResearchScalePreflight({
 } = {}) {
   requireProfile(profile);
   const root = baseUrl.replace(/\/$/, '');
-  const [overview, baselineEvidence, targetEvidence, harvestStatus, freeDiskBytes] =
-    await Promise.all([
-      fetchJson(fetchImpl, `${root}/admin/corpus/storage`),
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/corpus/scale/evidence?profile=FEDERATED_100K`,
-      ),
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`,
-      ),
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/federation/harvest/status?sourceSystem=DATA_GOV`,
-      ),
-      diskProvider(),
-    ]);
+  const [
+    overview,
+    baselineEvidence,
+    targetEvidence,
+    harvestStatus,
+    freeDiskBytes,
+  ] = await Promise.all([
+    fetchJson(fetchImpl, `${root}/admin/corpus/storage`),
+    fetchJson(
+      fetchImpl,
+      `${root}/admin/corpus/scale/evidence?profile=FEDERATED_100K`,
+    ),
+    fetchJson(
+      fetchImpl,
+      `${root}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`,
+    ),
+    fetchJson(
+      fetchImpl,
+      `${root}/admin/federation/harvest/status?sourceSystem=DATA_GOV`,
+    ),
+    diskProvider(),
+  ]);
 
   const lowerMeasurement = measurementForProfile(overview, 'FEDERATED_10K');
   const upperMeasurement = measurementForProfile(overview, 'FEDERATED_100K');

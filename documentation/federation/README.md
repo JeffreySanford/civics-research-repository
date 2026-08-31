@@ -51,13 +51,13 @@ The retained federated catalog already supports multiple source systems because 
 
 All modeled authorities now have a live Java adapter/sampler path on the active scale branch:
 
-| Source | Initial semantic role | Large-scale role | Public auth |
-| --- | --- | --- | --- |
-| Data.gov | federal datasets/agencies/distributions | bounded to the real catalog ceiling | API key required for meaningful sustained harvesting |
-| DOE OSTI.GOV | DOE publications/reports/datasets/software | millions of DOE research records | none |
-| NASA Earthdata CMR | Earth science collection metadata | explicit high-volume granule slices | none for public metadata; bearer token only for protected holdings |
-| PubMed | biomedical citations/authors/journals | bulk baseline/update ingest rather than REST crawling | key optional for bounded sample, recommended for sustained API use |
-| OpenAlex | broad scholarly works/topics/authors | public S3 snapshot for 10M/100M | key optional for bounded API sample; no key for public snapshot |
+| Source             | Initial semantic role                      | Large-scale role                                      | Public auth                                                        |
+| ------------------ | ------------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------ |
+| Data.gov           | federal datasets/agencies/distributions    | bounded to the real catalog ceiling                   | API key required for meaningful sustained harvesting               |
+| DOE OSTI.GOV       | DOE publications/reports/datasets/software | millions of DOE research records                      | none                                                               |
+| NASA Earthdata CMR | Earth science collection metadata          | explicit high-volume granule slices                   | none for public metadata; bearer token only for protected holdings |
+| PubMed             | biomedical citations/authors/journals      | bulk baseline/update ingest rather than REST crawling | key optional for bounded sample, recommended for sustained API use |
+| OpenAlex           | broad scholarly works/topics/authors       | public S3 snapshot for 10M/100M                       | key optional for bounded API sample; no key for public snapshot    |
 
 The sources are intentionally heterogeneous. A dataset catalog, a publication corpus and a granule stream should not be treated as interchangeable merely because they contain the same number of records.
 

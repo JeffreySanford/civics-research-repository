@@ -74,11 +74,15 @@ test('all-source sampler preserves existing sources and samples only empty autho
     posts.map((request) => request.sourceSystem),
     ['DOE_OSTI', 'NASA_CMR', 'PUBMED', 'OPENALEX'],
   );
-  assert.ok(posts.every((request) => request.pageSize === 25 && request.maxPages === 1));
+  assert.ok(
+    posts.every((request) => request.pageSize === 25 && request.maxPages === 1),
+  );
 });
 
 test('sampler continues across a source failure and reports partial evidence', async () => {
-  const retained = new Map(FEDERATION_SAMPLE_SOURCES.map((source) => [source, 0]));
+  const retained = new Map(
+    FEDERATION_SAMPLE_SOURCES.map((source) => [source, 0]),
+  );
   const fetchImpl = async (url, init) => {
     const parsed = new URL(url);
     const sourceSystem = parsed.searchParams.get('sourceSystem');
@@ -110,7 +114,9 @@ test('sampler continues across a source failure and reports partial evidence', a
   });
 
   assert.equal(report.successful, false);
-  const pubmed = report.sources.find((source) => source.sourceSystem === 'PUBMED');
+  const pubmed = report.sources.find(
+    (source) => source.sourceSystem === 'PUBMED',
+  );
   assert.equal(pubmed.status, 'FAILED');
   assert.match(pubmed.detail, /HTTP 502/);
   assert.equal(
@@ -147,6 +153,9 @@ test('sample CLI and report rendering expose bounded non-projecting semantics', 
       },
     ],
   });
-  assert.match(markdown, /does \*\*not\*\* activate a mixed-source search projection/);
+  assert.match(
+    markdown,
+    /does \*\*not\*\* activate a mixed-source search projection/,
+  );
   assert.match(markdown, /Publisher binaries are not mirrored/);
 });

@@ -12,7 +12,9 @@ const TERMINAL_PHASES = new Set(['COMPLETED', 'FAILED']);
 
 function requireProfile(profile) {
   if (profile !== 'FEDERATED_1M') {
-    throw new Error('The research scale runner currently supports FEDERATED_1M only.');
+    throw new Error(
+      'The research scale runner currently supports FEDERATED_1M only.',
+    );
   }
   return profile;
 }
@@ -43,7 +45,9 @@ async function fetchJson(fetchImpl, url, init) {
     } catch {
       // Preserve the HTTP status when a response body cannot be read.
     }
-    throw new Error(`Request failed with HTTP ${response.status}: ${url}${detail}`);
+    throw new Error(
+      `Request failed with HTTP ${response.status}: ${url}${detail}`,
+    );
   }
   return response.json();
 }
@@ -60,7 +64,9 @@ function progressFingerprint(progress) {
 }
 
 function formatProgress(progress) {
-  const processed = Number(progress?.processedDocuments ?? 0).toLocaleString('en-US');
+  const processed = Number(progress?.processedDocuments ?? 0).toLocaleString(
+    'en-US',
+  );
   const total = Number.isFinite(Number(progress?.totalDocuments))
     ? Number(progress.totalDocuments).toLocaleString('en-US')
     : '?';
@@ -114,7 +120,8 @@ export function parseArguments(argv) {
 export async function runResearchScale({
   fetchImpl = globalThis.fetch,
   preflightRunner = runResearchScalePreflight,
-  sleepImpl = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms)),
+  sleepImpl = (ms) =>
+    new Promise((resolveSleep) => setTimeout(resolveSleep, ms)),
   now = () => new Date(),
   baseUrl = DEFAULT_BASE_URL,
   profile = DEFAULT_PROFILE,
@@ -125,7 +132,11 @@ export async function runResearchScale({
   requirePositiveInteger(pollMs, 'poll-ms');
   const root = baseUrl.replace(/\/$/, '');
   const capturedAt = now().toISOString();
-  const preflightBefore = await preflightRunner({ fetchImpl, baseUrl: root, profile });
+  const preflightBefore = await preflightRunner({
+    fetchImpl,
+    baseUrl: root,
+    profile,
+  });
   const beforeStatus = preflightBefore.readiness.overallStatus;
 
   if (beforeStatus === 'BLOCKED') {
@@ -167,7 +178,10 @@ export async function runResearchScale({
   let terminalProgress = null;
 
   while (terminalProgress === null) {
-    const progress = await fetchJson(fetchImpl, `${root}/admin/reindex/progress`);
+    const progress = await fetchJson(
+      fetchImpl,
+      `${root}/admin/reindex/progress`,
+    );
     if (progress.operationId && progress.operationId !== operationId) {
       throw new Error(
         `Scale progress operationId changed from ${operationId} to ${progress.operationId}; refusing to mix operation evidence.`,
@@ -195,7 +209,11 @@ export async function runResearchScale({
     );
   }
 
-  const preflightAfter = await preflightRunner({ fetchImpl, baseUrl: root, profile });
+  const preflightAfter = await preflightRunner({
+    fetchImpl,
+    baseUrl: root,
+    profile,
+  });
   if (preflightAfter.readiness.overallStatus !== 'READY_TO_MEASURE') {
     throw new Error(
       `Scale operation completed but post-run preflight is ${preflightAfter.readiness.overallStatus}; refusing to mark 1M research scale ready.`,
@@ -232,7 +250,9 @@ async function main() {
   console.log(`Research scale journal written to ${outputPath}`);
 
   if (!result.started) {
-    console.log('FEDERATED_1M was already READY_TO_MEASURE; no scale mutation was started.');
+    console.log(
+      'FEDERATED_1M was already READY_TO_MEASURE; no scale mutation was started.',
+    );
     return;
   }
 

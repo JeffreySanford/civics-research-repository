@@ -10,13 +10,13 @@ The established 100K Data.gov corpus remains the first evidence-grade baseline. 
 
 The modeled federation authorities are:
 
-| Source | Public corpus scale | Initial live adapter role | Large-scale transport | Credentials |
-| --- | ---: | --- | --- | --- |
-| Data.gov | ~556K datasets observed in August 2026 | federal dataset breadth; proven 100K baseline | Catalog API v4 / bounded source completion | personal api.data.gov key required for meaningful harvesting |
-| DOE OSTI.GOV | >4M records | DOE publications, reports, datasets, software and patents | OSTI API or OAI-PMH/full-corpus metadata service | none for public metadata |
-| NASA Earthdata CMR | ~65K collections / >2.5B granules | collection-level Earth science sample | explicit collection or granule stream using CMR Search-After | none for public metadata; Earthdata token only for protected holdings |
-| PubMed | >40M citations | biomedical/bibliographic relevance sample | NCBI bulk baseline + update files for large tiers | API key optional for sample, recommended for sustained E-utilities use |
-| OpenAlex | >320M core works / >510M all works | broad scholarly sample | pinned public S3 snapshot, preferably Parquet/JSONL manifest-driven | API key optional for sample; no key for public S3 snapshot |
+| Source             |                    Public corpus scale | Initial live adapter role                                 | Large-scale transport                                               | Credentials                                                            |
+| ------------------ | -------------------------------------: | --------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Data.gov           | ~556K datasets observed in August 2026 | federal dataset breadth; proven 100K baseline             | Catalog API v4 / bounded source completion                          | personal api.data.gov key required for meaningful harvesting           |
+| DOE OSTI.GOV       |                            >4M records | DOE publications, reports, datasets, software and patents | OSTI API or OAI-PMH/full-corpus metadata service                    | none for public metadata                                               |
+| NASA Earthdata CMR |      ~65K collections / >2.5B granules | collection-level Earth science sample                     | explicit collection or granule stream using CMR Search-After        | none for public metadata; Earthdata token only for protected holdings  |
+| PubMed             |                         >40M citations | biomedical/bibliographic relevance sample                 | NCBI bulk baseline + update files for large tiers                   | API key optional for sample, recommended for sustained E-utilities use |
+| OpenAlex           |     >320M core works / >510M all works | broad scholarly sample                                    | pinned public S3 snapshot, preferably Parquet/JSONL manifest-driven | API key optional for sample; no key for public S3 snapshot             |
 
 Source sizes are observations, not immutable constants. A research report must capture the source count/manifest date used for its run.
 

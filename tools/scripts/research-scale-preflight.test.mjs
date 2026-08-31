@@ -76,8 +76,12 @@ test('1M storage estimate uses measured slope and keeps DSpace fixed', () => {
     estimate.components.applicationPostgresBytes.bytes >
       MEASURE_100K.applicationPostgresBytes,
   );
-  assert.ok(estimate.estimatedSteadyBytes > MEASURE_100K.totalMeasuredLocalBytes);
-  assert.ok(estimate.recommendedFreeBytes > estimate.minimumAdditionalFreeBytes);
+  assert.ok(
+    estimate.estimatedSteadyBytes > MEASURE_100K.totalMeasuredLocalBytes,
+  );
+  assert.ok(
+    estimate.recommendedFreeBytes > estimate.minimumAdditionalFreeBytes,
+  );
 });
 
 test('preflight reports ready to grow before the 1M retained target exists', () => {

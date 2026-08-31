@@ -29,13 +29,13 @@ host/storage context
 
 ## Source capacity and role
 
-| Source | Approximate public scale observed in 2026 | Research role |
-| --- | ---: | --- |
-| Data.gov | ~556K datasets | federal dataset/agency breadth; proven 100K baseline |
-| DOE OSTI.GOV | >4M records | DOE publications, reports, datasets, software and patents |
-| NASA Earthdata CMR | ~65K collections / >2.5B granules | Earth science collections plus explicit extreme-scale granule research |
-| PubMed | >40M citations | biomedical bibliographic/relevance corpus |
-| OpenAlex | >320M core / >510M all works | broad scholarly corpus; snapshot-driven 10M/100M source |
+| Source             | Approximate public scale observed in 2026 | Research role                                                          |
+| ------------------ | ----------------------------------------: | ---------------------------------------------------------------------- |
+| Data.gov           |                            ~556K datasets | federal dataset/agency breadth; proven 100K baseline                   |
+| DOE OSTI.GOV       |                               >4M records | DOE publications, reports, datasets, software and patents              |
+| NASA Earthdata CMR |         ~65K collections / >2.5B granules | Earth science collections plus explicit extreme-scale granule research |
+| PubMed             |                            >40M citations | biomedical bibliographic/relevance corpus                              |
+| OpenAlex           |              >320M core / >510M all works | broad scholarly corpus; snapshot-driven 10M/100M source                |
 
 These numbers change. Capture the source count or publisher manifest date at run time rather than treating this table as permanent evidence.
 

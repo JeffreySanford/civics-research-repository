@@ -94,12 +94,18 @@ test('scale runner no-ops when one million is already ready to measure', async (
 
   assert.equal(fetchCount, 0);
   assert.equal(result.started, false);
-  assert.equal(result.preflightAfter.readiness.overallStatus, 'READY_TO_MEASURE');
+  assert.equal(
+    result.preflightAfter.readiness.overallStatus,
+    'READY_TO_MEASURE',
+  );
 });
 
 test('scale runner journals one guarded operation through ready to measure', async () => {
   const requests = [];
-  const preflights = [preflight('READY_TO_GROW'), preflight('READY_TO_MEASURE')];
+  const preflights = [
+    preflight('READY_TO_GROW'),
+    preflight('READY_TO_MEASURE'),
+  ];
   const responses = [
     response(progress('PREPARING', 100_000), 202),
     response(progress('HARVESTING', 250_000)),
@@ -128,14 +134,23 @@ test('scale runner journals one guarded operation through ready to measure', asy
   });
 
   assert.equal(requests[0].init.method, 'POST');
-  assert.match(requests[0].url, /\/admin\/corpus\/scale\?profile=FEDERATED_1M$/);
-  assert.equal(requests[1].url, 'http://localhost:8080/api/admin/reindex/progress');
+  assert.match(
+    requests[0].url,
+    /\/admin\/corpus\/scale\?profile=FEDERATED_1M$/,
+  );
+  assert.equal(
+    requests[1].url,
+    'http://localhost:8080/api/admin/reindex/progress',
+  );
   assert.equal(result.started, true);
   assert.equal(result.operationId, 'operation-1');
   assert.equal(result.progress.length, 2);
   assert.equal(observed.length, 2);
   assert.equal(result.terminalProgress.phase, 'COMPLETED');
-  assert.equal(result.preflightAfter.readiness.overallStatus, 'READY_TO_MEASURE');
+  assert.equal(
+    result.preflightAfter.readiness.overallStatus,
+    'READY_TO_MEASURE',
+  );
 });
 
 test('scale runner refuses to mix progress from another operation', async () => {

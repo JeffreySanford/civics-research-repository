@@ -59,13 +59,19 @@ export async function sampleAllFederatedSources({
         beforeRetainedRecordCount: before.retainedRecordCount,
         afterRetainedRecordCount: before.retainedRecordCount,
         acceptedThisSample: 0,
-        detail: 'Retained metadata already exists; sampler did not advance this source checkpoint.',
+        detail:
+          'Retained metadata already exists; sampler did not advance this source checkpoint.',
       });
       continue;
     }
 
     try {
-      const run = await requestSample(fetchImpl, baseUrl, sourceSystem, pageSize);
+      const run = await requestSample(
+        fetchImpl,
+        baseUrl,
+        sourceSystem,
+        pageSize,
+      );
       const after = await readStatus(fetchImpl, baseUrl, sourceSystem);
       results.push({
         sourceSystem,
@@ -182,7 +188,9 @@ function requiredValue(args, index, argument) {
 function boundedInteger(value, argument, min, max) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
-    throw new Error(`${argument} must be an integer between ${min} and ${max}.`);
+    throw new Error(
+      `${argument} must be an integer between ${min} and ${max}.`,
+    );
   }
   return parsed;
 }

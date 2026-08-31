@@ -13,13 +13,13 @@ All durable ingestion ownership remains in the Spring Boot Java application. Nod
 
 ## Source matrix
 
-| Source | Current live adapter | Initial sample | Large-scale transport | Scale value |
-| --- | --- | --- | --- | --- |
-| Data.gov | `DataGovHarvester` | already represented by proven retained corpus | Catalog API v4 until source completion | federal dataset breadth and heterogeneous agency metadata |
-| DOE OSTI.GOV | `OstiGovHarvester` | one bounded records page | OSTI API / OAI-PMH/full-corpus metadata | DOE publications, reports, datasets, software, patents |
-| NASA Earthdata CMR | `NasaCmrHarvester` | public **collection** metadata | explicit granule or collection stream using Search-After | geospatial/temporal and extreme-scale metadata |
-| PubMed | `PubMedHarvester` | bounded E-utilities sample | NCBI PubMed baseline + update files | biomedical lexical/relevance and author/journal metadata |
-| OpenAlex | `OpenAlexHarvester` | bounded Works cursor sample | pinned public S3 snapshot | broad scholarly works/topics/authors at 10M/100M scale |
+| Source             | Current live adapter | Initial sample                                | Large-scale transport                                    | Scale value                                               |
+| ------------------ | -------------------- | --------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------- |
+| Data.gov           | `DataGovHarvester`   | already represented by proven retained corpus | Catalog API v4 until source completion                   | federal dataset breadth and heterogeneous agency metadata |
+| DOE OSTI.GOV       | `OstiGovHarvester`   | one bounded records page                      | OSTI API / OAI-PMH/full-corpus metadata                  | DOE publications, reports, datasets, software, patents    |
+| NASA Earthdata CMR | `NasaCmrHarvester`   | public **collection** metadata                | explicit granule or collection stream using Search-After | geospatial/temporal and extreme-scale metadata            |
+| PubMed             | `PubMedHarvester`    | bounded E-utilities sample                    | NCBI PubMed baseline + update files                      | biomedical lexical/relevance and author/journal metadata  |
+| OpenAlex           | `OpenAlexHarvester`  | bounded Works cursor sample                   | pinned public S3 snapshot                                | broad scholarly works/topics/authors at 10M/100M scale    |
 
 The first cross-source command is:
 
@@ -33,13 +33,13 @@ It does not restart or advance a source that already has retained records, so th
 
 Credentials live only in the git-ignored `.env` file.
 
-| Source | Local credential policy |
-| --- | --- |
+| Source   | Local credential policy                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------ |
 | Data.gov | personal api.data.gov key required for meaningful sustained harvesting; `DEMO_KEY` only for tiny exploratory calls |
-| DOE OSTI | none for public records API |
-| NASA CMR | none for public metadata; stable Client-Id sent; Earthdata bearer token only for protected holdings |
-| PubMed | API key optional for initial sample, recommended for sustained E-utilities use; developer email recommended |
-| OpenAlex | API key optional for casual sample, recommended for API research; public S3 snapshot requires no credentials |
+| DOE OSTI | none for public records API                                                                                        |
+| NASA CMR | none for public metadata; stable Client-Id sent; Earthdata bearer token only for protected holdings                |
+| PubMed   | API key optional for initial sample, recommended for sustained E-utilities use; developer email recommended        |
+| OpenAlex | API key optional for casual sample, recommended for API research; public S3 snapshot requires no credentials       |
 
 See `.env.sample` for variable names.
 
