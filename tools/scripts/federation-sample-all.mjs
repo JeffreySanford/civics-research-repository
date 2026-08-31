@@ -128,6 +128,17 @@ export function renderMarkdown(report) {
       `| ${result.sourceSystem} | ${result.status} | ${result.beforeRetainedRecordCount} | ${result.afterRetainedRecordCount} | ${result.acceptedThisSample} | ${evidence || '—'} |`,
     );
   }
+
+  const failures = report.sources.filter((result) => result.status === 'FAILED');
+  if (failures.length > 0) {
+    lines.push('', '## Failure details', '');
+    for (const failure of failures) {
+      lines.push(
+        `- **${failure.sourceSystem}:** ${singleLineDetail(failure.detail)}`,
+      );
+    }
+  }
+
   lines.push(
     '',
     '## Methodology',
@@ -175,6 +186,12 @@ async function safeBody(response) {
   } catch {
     return '<response body unavailable>';
   }
+}
+
+function singleLineDetail(detail) {
+  return String(detail ?? '<no failure detail>')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function requiredValue(args, index, argument) {
