@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 
 class FederatedCompositeCorpusManifestServiceTest {
     private static final OffsetDateTime CAPTURED_AT = OffsetDateTime.parse("2026-08-31T18:30:00Z");
+    private static final String FEDERATED_1M_GOLDEN_SHA256 =
+            "342157e25da83ee890efb1b05837117cdb62c1fad2f39a02e09161c6c1cdb83b";
 
     @Test
     void reproducesCompositionIdentityAcrossSourceOrderRunIdsAndCaptureTimes() {
@@ -60,6 +62,7 @@ class FederatedCompositeCorpusManifestServiceTest {
                         List.of(request(dataGovRecaptured), request(ostiRecaptured)),
                         CAPTURED_AT.plusHours(8));
 
+        assertThat(first.compositionSha256()).isEqualTo(FEDERATED_1M_GOLDEN_SHA256);
         assertThat(first.compositionSha256()).isEqualTo(second.compositionSha256());
         assertThat(first.sources())
                 .extracting(FederatedCompositeCorpusSource::sourceSystem)
