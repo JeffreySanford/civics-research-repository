@@ -37,3 +37,13 @@ test('DSpace datastores remain release-matched and separate from application dat
   assert.match(dspaceSolr, /image: dspace\/dspace-solr:dspace-9\.0/);
   assert.match(dspaceSolr, /dspace-solr-data:\/var\/solr/);
 });
+
+test('DSpace seed keeps the path contract expected by seed-structure.sh', async () => {
+  const compose = await readFile(COMPOSE_PATH, 'utf8');
+  const dspaceSeed = serviceBlock(compose, 'dspace-seed', 'dspace-postgres');
+
+  assert.match(dspaceSeed, /- \/seed\/seed-structure\.sh/);
+  assert.match(dspaceSeed, /\.\/tools\/dspace:\/seed:ro/);
+  assert.match(dspaceSeed, /dspace-assetstore:\/dspace\/assetstore/);
+  assert.doesNotMatch(dspaceSeed, /DSPACE_SEED_SAF_ROOT/);
+});
