@@ -134,7 +134,7 @@ public class PubMedHarvester implements FederatedSourceHarvester {
         }
 
         int nextOffset = retstart + pmids.size();
-        boolean sourceExhausted = nextOffset >= total || pmids.size() < retmax;
+        boolean sourceExhausted = nextOffset >= total;
         String nextCursor = sourceExhausted ? null : Integer.toString(nextOffset);
         return new HarvestPage(records, rejections, nextCursor, sourceExhausted);
     }
