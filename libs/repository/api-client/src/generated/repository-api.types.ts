@@ -402,6 +402,60 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/federation/compositions/projections': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List recent composite-corpus to discovery-projection evidence. */
+    get: operations['listFederatedCompositeCorpusProjectionEvidence'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/federation/compositions/{compositionSha256}/projection': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Resolve the newest discovery projection linked to one exact composition. */
+    get: operations['getFederatedCompositeCorpusProjectionEvidence'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/federation/compositions/{compositionSha256}/project': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rebuild discovery from the exact source quotas named by one composition.
+     * @description Regenerates each bounded source snapshot before and after projection, streams each source's exact stable-ID quota, requires enabled search targets to share one projection identity and document count, then persists the composition-to-projection relationship.
+     */
+    post: operations['projectFederatedCompositeCorpus'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/federation/harvest/status': {
     parameters: {
       query?: never;
@@ -637,6 +691,19 @@ export interface components {
       compositionSha256: string;
       /** Format: date-time */
       capturedAt: string;
+    };
+    FederatedCompositeCorpusProjectionEvidence: {
+      compositionSha256: string;
+      corpusProfile: components['schemas']['CorpusProfile'];
+      /** Format: int64 */
+      federatedRecordCount: number;
+      projectionId: string;
+      projectionSource: components['schemas']['RepositorySource'];
+      projectionObjectCount: number;
+      /** Format: date-time */
+      projectionRebuiltAt: string;
+      /** Format: date-time */
+      linkedAt: string;
     };
     /** @enum {string} */
     FederatedSourceSystem:
@@ -2079,6 +2146,82 @@ export interface operations {
       };
       400: components['responses']['BadRequest'];
       404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  listFederatedCompositeCorpusProjectionEvidence: {
+    parameters: {
+      query: {
+        corpusProfile: components['schemas']['CorpusProfile'];
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recent composition-to-projection evidence for the requested profile. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FederatedCompositeCorpusProjectionEvidence'][];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  getFederatedCompositeCorpusProjectionEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        compositionSha256: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Newest valid composition-to-projection evidence. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FederatedCompositeCorpusProjectionEvidence'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  projectFederatedCompositeCorpus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        compositionSha256: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Durable composition-to-projection evidence. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FederatedCompositeCorpusProjectionEvidence'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
       500: components['responses']['InternalServerError'];
     };
   };
