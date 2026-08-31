@@ -133,13 +133,11 @@ test('composite preflight requires exact per-source quotas', () => {
   assert.equal(result.retainedRecordCount, 800000);
   assert.equal(result.remainingRecordCount, 200000);
   assert.equal(
-    result.checks.find((entry) => entry.id === 'source-data_gov-quota')
-      .status,
+    result.checks.find((entry) => entry.id === 'source-data_gov-quota').status,
     'READY',
   );
   assert.equal(
-    result.checks.find((entry) => entry.id === 'source-doe_osti-quota')
-      .status,
+    result.checks.find((entry) => entry.id === 'source-doe_osti-quota').status,
     'PENDING',
   );
 });

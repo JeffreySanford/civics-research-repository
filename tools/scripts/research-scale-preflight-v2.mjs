@@ -200,7 +200,8 @@ function legacyClassify({
     (asNumber(targetEvidence?.retainedFederatedRecordCount) ?? 0) >= target;
   const baselineEvidenceReady =
     targetEvidenceReady ||
-    (baselineEvidence?.valid === true && baselineEvidence?.targetParity === true);
+    (baselineEvidence?.valid === true &&
+      baselineEvidence?.targetParity === true);
 
   const checks = [
     check(
@@ -297,7 +298,8 @@ function exactComposition(profile, recipe, compositions) {
       composition.sources.some(
         (actual) =>
           actual?.sourceSystem === required.sourceSystem &&
-          asNumber(actual?.requestedRecordCount) === required.requestedRecordCount,
+          asNumber(actual?.requestedRecordCount) ===
+            required.requestedRecordCount,
       ),
     );
   });
@@ -336,12 +338,12 @@ export function classifyPreflight(options) {
     freeDiskBytes >= storageEstimate.recommendedFreeBytes;
   const composition = exactComposition(profile, recipe, compositions);
   const linkedProjection = composition
-    ? projectionEvidence.find(
+    ? (projectionEvidence.find(
         (entry) =>
           entry?.compositionSha256 === composition.compositionSha256 &&
           entry?.corpusProfile === profile &&
           asNumber(entry?.federatedRecordCount) === recipe.target,
-      ) ?? null
+      ) ?? null)
     : null;
   const activeTargetReady =
     linkedProjection != null &&
@@ -416,7 +418,10 @@ export function classifyPreflight(options) {
   const blocked = checks.some((entry) => entry.status === 'BLOCKED');
   const overallStatus = blocked
     ? 'BLOCKED'
-    : allSourceQuotasReady && composition && linkedProjection && activeTargetReady
+    : allSourceQuotasReady &&
+        composition &&
+        linkedProjection &&
+        activeTargetReady
       ? 'READY_TO_MEASURE'
       : 'READY_TO_GROW';
 
@@ -513,20 +518,22 @@ export async function runResearchScalePreflight({
   let readiness;
   let evidence;
   if (!recipe.composite) {
-    const [baselineEvidence, targetEvidence, harvestStatus] = await Promise.all([
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/corpus/scale/evidence?profile=FEDERATED_100K`,
-      ),
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`,
-      ),
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/federation/harvest/status?sourceSystem=DATA_GOV`,
-      ),
-    ]);
+    const [baselineEvidence, targetEvidence, harvestStatus] = await Promise.all(
+      [
+        fetchJson(
+          fetchImpl,
+          `${root}/admin/corpus/scale/evidence?profile=FEDERATED_100K`,
+        ),
+        fetchJson(
+          fetchImpl,
+          `${root}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`,
+        ),
+        fetchJson(
+          fetchImpl,
+          `${root}/admin/federation/harvest/status?sourceSystem=DATA_GOV`,
+        ),
+      ],
+    );
     readiness = legacyClassify({
       profile,
       storageEstimate,
