@@ -23,12 +23,12 @@ import org.springframework.stereotype.Service;
 /**
  * Owns long-running corpus growth from a durable federated checkpoint through verified activation.
  *
- * <p>The first supported scale transition is Data.gov -> FEDERATED_100K. The operation resumes the
- * existing harvest run and page size, retains publisher metadata durably, captures an exact stable-ID
- * 100K prefix, rebuilds both search targets from that same prefix, verifies parity, records activation,
- * then captures local-storage evidence. Search remains unchanged during harvest. If projection or
- * checkpoint verification fails, the previously active profile is rebuilt before the operation is
- * reported failed.
+ * <p>The guarded scale tiers are Data.gov -> FEDERATED_100K and FEDERATED_1M. The operation resumes
+ * the existing harvest run and page size, retains publisher metadata durably, captures an exact
+ * stable-ID prefix for the requested profile, rebuilds both search targets from that same prefix,
+ * verifies parity, records activation, then captures local-storage evidence. Search remains unchanged
+ * during harvest. If projection or checkpoint verification fails, the previously active profile is
+ * rebuilt before the operation is reported failed.
  */
 @Service
 public class CorpusProfileScaleService {
@@ -86,7 +86,7 @@ public class CorpusProfileScaleService {
         this.executor = executor;
     }
 
-    /** Start the first guarded scale tier and return immediately with operator progress state. */
+    /** Start a guarded federated scale tier and return immediately with operator progress state. */
     public CorpusProfileActivationProgress start(CorpusProfile profile) {
         validateSupportedProfile(profile);
         progressTracker.begin(profile);
@@ -261,9 +261,9 @@ public class CorpusProfileScaleService {
 
     private void validateSupportedProfile(CorpusProfile profile) {
         Objects.requireNonNull(profile, "profile");
-        if (profile != CorpusProfile.FEDERATED_100K) {
+        if (profile != CorpusProfile.FEDERATED_100K && profile != CorpusProfile.FEDERATED_1M) {
             throw new IllegalArgumentException(
-                    "Guarded corpus growth currently supports FEDERATED_100K only; requested " + profile + ".");
+                    "Guarded corpus growth supports FEDERATED_100K and FEDERATED_1M; requested " + profile + ".");
         }
     }
 
