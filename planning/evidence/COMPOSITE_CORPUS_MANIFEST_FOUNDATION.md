@@ -28,6 +28,7 @@ Implemented evidence primitives:
 - profile total mismatch fails closed,
 - JDBC store round-trips all fields,
 - repeated identical composition capture is idempotent and does not replace first durable evidence,
+- concurrent identical composition capture remains idempotent under the database primary-key race,
 - conflicting evidence cannot reuse an existing composition SHA,
 - workspace formatting/lint/build gates pass,
 - `git diff --check` is clean.
