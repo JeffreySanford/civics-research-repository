@@ -24,11 +24,13 @@ import {
   BehaviorSubject,
   catchError,
   combineLatest,
+  filter,
   finalize,
   map,
   of,
   shareReplay,
   switchMap,
+  take,
   timer,
 } from 'rxjs';
 import { AdminCorpusHistoryTableComponent } from './admin-corpus-history-table.component';
@@ -146,9 +148,10 @@ interface ActivationResult {
             @if (!view.viewedProfile.active) {
               <strong>Selecting a profile does not activate it.</strong>
               <span>
-                Activation rebuilds Solr and OpenSearch from metadata already
-                retained locally. It does not automatically harvest missing
-                records.
+                Normal activation rebuilds Solr and OpenSearch only from
+                metadata already retained locally. Federated 100K can also use
+                the guarded grow-and-activate workflow when its metadata is
+                missing.
               </span>
             } @else {
               <strong>This is the active search profile.</strong>
@@ -164,14 +167,27 @@ interface ActivationResult {
           <div class="corpus-storage__activation-row">
             <div>
               @if (!profileAvailable(view.viewedProfile, view.activeProfile)) {
-                <strong>Not available yet.</strong>
-                <span>
-                  {{ view.viewedProfile.label }} requires
-                  {{ view.viewedProfile.targetFederatedRecordCount | number }}
-                  retained federated records; the current corpus has
-                  {{ retainedCount(view.activeProfile) | number }}. Harvesting
-                  additional metadata is a separate guarded scale operation.
-                </span>
+                @if (canScaleProfile(view.viewedProfile.profile)) {
+                  <strong>Ready for guarded growth.</strong>
+                  <span>
+                    {{ view.viewedProfile.label }} requires
+                    {{ view.viewedProfile.targetFederatedRecordCount | number }}
+                    retained federated records; the current corpus has
+                    {{ retainedCount(view.activeProfile) | number }}. This
+                    operation resumes the durable Data.gov checkpoint, captures
+                    an exact 100K snapshot, verifies both search engines, and
+                    records storage evidence before completing.
+                  </span>
+                } @else {
+                  <strong>Not available yet.</strong>
+                  <span>
+                    {{ view.viewedProfile.label }} requires
+                    {{ view.viewedProfile.targetFederatedRecordCount | number }}
+                    retained federated records; the current corpus has
+                    {{ retainedCount(view.activeProfile) | number }}. Harvesting
+                    this scale tier is not enabled yet.
+                  </span>
+                }
               } @else if (isHeavyProfile(view.viewedProfile.profile)) {
                 <strong>Heavy profile.</strong>
                 <span>
@@ -188,14 +204,26 @@ interface ActivationResult {
             <button
               mat-flat-button
               type="button"
-              (click)="activateProfile(view.viewedProfile.profile)"
+              (click)="
+                profileAvailable(view.viewedProfile, view.activeProfile)
+                  ? activateProfile(view.viewedProfile.profile)
+                  : scaleProfile(view.viewedProfile.profile)
+              "
               [disabled]="
                 (activating$ | async) === true ||
                 (capturing$ | async) === true ||
-                !profileAvailable(view.viewedProfile, view.activeProfile)
+                (!profileAvailable(view.viewedProfile, view.activeProfile) &&
+                  !canScaleProfile(view.viewedProfile.profile))
               "
             >
-              Activate {{ view.viewedProfile.label }}
+              @if (
+                !profileAvailable(view.viewedProfile, view.activeProfile) &&
+                canScaleProfile(view.viewedProfile.profile)
+              ) {
+                Grow & activate {{ view.viewedProfile.label }}
+              } @else {
+                Activate {{ view.viewedProfile.label }}
+              }
             </button>
           </div>
         }
@@ -220,7 +248,7 @@ interface ActivationResult {
                 mode="determinate"
                 [value]="progress.percentComplete"
                 [attr.aria-label]="
-                  'Corpus profile activation ' +
+                  'Corpus profile operation ' +
                   progress.percentComplete +
                   ' percent complete'
                 "
@@ -232,17 +260,19 @@ interface ActivationResult {
                 ) {
                   <span>
                     {{ progress.processedDocuments | number }} /
-                    {{ progress.totalDocuments | number }} documents
+                    {{ progress.totalDocuments | number }}
+                    {{ progressUnit(progress.phase) }}
                   </span>
                 } @else {
-                  <span>Preparing document count</span>
+                  <span>Preparing operation count</span>
                 }
                 @if (
                   progress.documentsPerSecond !== null &&
                   progress.documentsPerSecond !== undefined
                 ) {
                   <span>
-                    {{ progress.documentsPerSecond | number: '1.0-0' }} docs/s
+                    {{ progress.documentsPerSecond | number: '1.0-0' }}
+                    {{ progressRateUnit(progress.phase) }}
                   </span>
                 }
                 <span>{{ formatElapsed(progress.elapsedMs) }}</span>
@@ -255,9 +285,9 @@ interface ActivationResult {
             <div class="inline-status" role="status">
               <mat-spinner
                 diameter="20"
-                aria-label="Starting corpus search profile activation"
+                aria-label="Starting corpus profile operation"
               ></mat-spinner>
-              <span>Starting corpus profile activation</span>
+              <span>Starting corpus profile operation</span>
             </div>
           }
         }
@@ -680,6 +710,66 @@ export class AdminCorpusStorageComponent {
       });
   }
 
+  scaleProfile(profile: CorpusProfile): void {
+    if (
+      !this.canScaleProfile(profile) ||
+      this.activatingSubject.value ||
+      this.capturingSubject.value
+    ) {
+      return;
+    }
+
+    this.activatingSubject.next(true);
+    this.activationStatusSubject.next(null);
+    const label = this.profileLabel(profile);
+
+    this.adminApi
+      .startCorpusProfileScale(profile)
+      .pipe(
+        switchMap(() =>
+          timer(0, 500).pipe(
+            switchMap(() =>
+              this.adminApi
+                .getCorpusProfileActivationProgress()
+                .pipe(catchError(() => of(null))),
+            ),
+            filter(
+              (progress): progress is CorpusProfileActivationProgress =>
+                progress !== null,
+            ),
+            filter(
+              (progress) =>
+                progress.phase === 'COMPLETED' || progress.phase === 'FAILED',
+            ),
+            take(1),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.activatingSubject.next(false)),
+      )
+      .subscribe({
+        next: (progress) => {
+          if (progress.phase === 'COMPLETED') {
+            this.activationStatusSubject.next(
+              `${label} growth and activation completed. ${progress.message ?? ''}`.trim(),
+            );
+            this.selectedProfile$.next(profile);
+          } else {
+            this.activationStatusSubject.next(
+              `Unable to grow and activate ${label}. ${progress.message ?? 'The previous active profile was preserved or restored.'}`,
+            );
+          }
+          this.refresh$.next(this.refresh$.value + 1);
+        },
+        error: () => {
+          this.activationStatusSubject.next(
+            `Unable to start guarded growth for ${label}. No corpus scale operation was started.`,
+          );
+          this.refresh$.next(this.refresh$.value + 1);
+        },
+      });
+  }
+
   captureCurrentFootprint(): void {
     if (this.capturingSubject.value || this.activatingSubject.value) {
       return;
@@ -719,6 +809,10 @@ export class AdminCorpusStorageComponent {
     return this.retainedCount(activeProfile) >= target;
   }
 
+  protected canScaleProfile(profile: CorpusProfile): boolean {
+    return profile === 'FEDERATED_100K';
+  }
+
   protected retainedCount(profile: CorpusProfileSummary): number {
     return profile.latestMeasurement?.retainedFederatedCount ?? 0;
   }
@@ -738,16 +832,36 @@ export class AdminCorpusStorageComponent {
       case 'IDLE':
         return 'Waiting';
       case 'PREPARING':
-        return 'Preparing projection';
+        return 'Preparing corpus operation';
+      case 'HARVESTING':
+        return 'Harvesting Data.gov metadata';
+      case 'SNAPSHOTTING':
+        return 'Capturing deterministic snapshot';
       case 'PROJECTING':
         return 'Loading search indexes';
       case 'VERIFYING':
         return 'Verifying Solr/OpenSearch parity';
+      case 'CAPTURING_EVIDENCE':
+        return 'Capturing storage evidence';
       case 'COMPLETED':
-        return 'Projection complete';
+        return 'Corpus profile ready';
       case 'FAILED':
-        return 'Projection failed';
+        return 'Corpus operation failed';
     }
+  }
+
+  protected progressUnit(
+    phase: CorpusProfileActivationProgress['phase'],
+  ): string {
+    return phase === 'HARVESTING' || phase === 'SNAPSHOTTING'
+      ? 'records'
+      : 'documents';
+  }
+
+  protected progressRateUnit(
+    phase: CorpusProfileActivationProgress['phase'],
+  ): string {
+    return phase === 'HARVESTING' ? 'records/s' : 'docs/s';
   }
 
   protected formatElapsed(elapsedMs: number): string {
