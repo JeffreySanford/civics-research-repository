@@ -32,4 +32,5 @@ civics:
     base-url: ${CIVICS_OPENSEARCH_BASE_URL:http://opensearch:9200}
     index: ${CIVICS_OPENSEARCH_INDEX:discovery-comparison}
   storage:
-    artifacts-path: /var/lib/civics/artifacts
+    artifacts-path: ${CIVICS_STORAGE_ARTIFACTS_PATH:/var/lib/civics/artifacts}
+    corpus-archives-path: ${CIVICS_CORPUS_ARCHIVES_PATH:/var/lib/civics/artifacts/corpus-archives}
