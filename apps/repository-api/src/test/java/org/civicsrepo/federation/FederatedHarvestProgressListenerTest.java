@@ -2,6 +2,7 @@ package org.civicsrepo.federation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -25,7 +26,8 @@ class FederatedHarvestProgressListenerTest {
         when(harvester.sourceSystem()).thenReturn(FederatedSourceSystem.DATA_GOV);
         when(harvester.adapterVersion()).thenReturn("data-gov-test-v1");
         when(checkpointStore.find(FederatedSourceSystem.DATA_GOV)).thenReturn(Optional.empty());
-        when(harvestService.harvestNext(FederatedSourceSystem.DATA_GOV, 100, anyString()))
+        when(harvestService.harvestNext(
+                        eq(FederatedSourceSystem.DATA_GOV), eq(100), anyString()))
                 .thenReturn(new FederatedHarvestService.HarvestResult(
                         FederatedSourceSystem.DATA_GOV,
                         100,
