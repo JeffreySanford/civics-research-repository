@@ -1,6 +1,7 @@
 package org.civicsrepo.admin;
 
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -38,8 +39,7 @@ class FederatedCompositeCorpusAdminControllerTest {
     @Test
     void capturesCompositeEvidenceFromExplicitBoundedSnapshots() throws Exception {
         FederatedCompositeCorpusManifest manifest = manifest();
-        given(manifestService.capture(org.mockito.ArgumentMatchers.eq(CorpusProfile.FEDERATED_1M), anyList()))
-                .willReturn(manifest);
+        given(manifestService.capture(eq(CorpusProfile.FEDERATED_1M), anyList())).willReturn(manifest);
 
         mockMvc.perform(post("/admin/federation/compositions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,12 +67,12 @@ class FederatedCompositeCorpusAdminControllerTest {
                 .andExpect(jsonPath("$.sources[0].sourceSystem").value("DATA_GOV"))
                 .andExpect(jsonPath("$.sources[1].sourceSystem").value("DOE_OSTI"));
 
-        verify(manifestService).capture(org.mockito.ArgumentMatchers.eq(CorpusProfile.FEDERATED_1M), anyList());
+        verify(manifestService).capture(eq(CorpusProfile.FEDERATED_1M), anyList());
     }
 
     @Test
     void mapsGuardedCaptureFailureToBadRequest() throws Exception {
-        given(manifestService.capture(org.mockito.ArgumentMatchers.eq(CorpusProfile.FEDERATED_1M), anyList()))
+        given(manifestService.capture(eq(CorpusProfile.FEDERATED_1M), anyList()))
                 .willThrow(new IllegalArgumentException("Unknown bounded snapshot"));
 
         mockMvc.perform(post("/admin/federation/compositions")
@@ -112,6 +112,12 @@ class FederatedCompositeCorpusAdminControllerTest {
         mockMvc.perform(get("/admin/federation/compositions/{sha}", manifest.compositionSha256()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.compositionSha256").value(manifest.compositionSha256()));
+    }
+
+    @Test
+    void rejectsMalformedCompositionSha() throws Exception {
+        mockMvc.perform(get("/admin/federation/compositions/{sha}", "not-a-sha"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
