@@ -82,6 +82,11 @@ test('migration adds the proven corpus, progress, harvest, evidence, and executi
   assert.match(output, /Conflict:/);
   assert.match(output, /enum: \[SOLR_FIRST, OPENSEARCH_FIRST\]/);
   assert.match(output, /enum: \[RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED\]/);
+  assert.equal(
+    output.split("pattern: '^[0-9a-f]{64}$'").length - 1,
+    3,
+  );
+  assert.equal(output.split('DeploymentTopology:').length - 1, 1);
 });
 
 test('migration is idempotent', () => {
@@ -89,6 +94,19 @@ test('migration is idempotent', () => {
   const twice = upgradeRepositoryApiContract(once);
 
   assert.equal(twice, once);
+});
+
+test('migration refuses a partially migrated contract instead of calling it current', () => {
+  const migrated = upgradeRepositoryApiContract(fixture);
+  const corrupted = migrated.replace(
+    "pattern: '^[0-9a-f]{64}$'",
+    "pattern: '^[0-9a-f]{64}",
+  );
+
+  assert.throws(
+    () => upgradeRepositoryApiContract(corrupted),
+    /migration markers are present but the projection-id regex literals are invalid/,
+  );
 });
 
 test('migration fails instead of guessing when a stale anchor no longer matches', () => {
