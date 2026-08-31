@@ -37,7 +37,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class NasaCmrHarvester implements FederatedSourceHarvester {
     static final int MAX_SOURCE_PAGE_SIZE = 2_000;
-    static final String ADAPTER_VERSION = "nasa-cmr-collections-v2";
+    static final String ADAPTER_VERSION = "nasa-cmr-collections-v3";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
     private static final String DEFAULT_COLLECTIONS_URL = "https://cmr.earthdata.nasa.gov/search/collections.json";
 
@@ -145,7 +145,7 @@ public class NasaCmrHarvester implements FederatedSourceHarvester {
                 records.add(normalize(entry));
             } catch (RuntimeException exception) {
                 rejections.add(new HarvestRejection(
-                        optionalText(entry, "concept-id"),
+                        firstOptionalText(entry, "id", "concept-id"),
                         message(exception),
                         entry.toString()));
             }
@@ -156,25 +156,35 @@ public class NasaCmrHarvester implements FederatedSourceHarvester {
     }
 
     private FederatedResearchRecord normalize(JsonNode entry) {
-        String conceptId = requireField(entry, "concept-id");
+        // CMR's standard collections.json representation uses snake_case and `id` for the concept
+        // identifier. The hyphenated aliases are retained only as defensive compatibility with
+        // older fixtures/representations; publisher-documented JSON is the primary contract.
+        String conceptId = requireAnyField(entry, "id", "concept-id");
         String title = firstNonBlank(
-                optionalText(entry, "entry-title"),
-                optionalText(entry, "dataset-id"),
-                optionalText(entry, "title"));
+                firstOptionalText(entry, "title", "entry-title"),
+                firstOptionalText(entry, "dataset_id", "dataset-id"));
         if (title.isBlank()) {
-            throw new IllegalArgumentException("NASA CMR collection is missing an entry title.");
+            throw new IllegalArgumentException("NASA CMR collection is missing a title.");
         }
-        String shortName = optionalText(entry, "short-name");
-        String provider = firstNonBlank(optionalText(entry, "data-center"), firstOrganization(entry), "NASA Earthdata");
+        String shortName = firstOptionalText(entry, "short_name", "short-name");
+        String provider = firstNonBlank(
+                firstOptionalText(entry, "data_center", "data-center"),
+                firstOrganization(entry),
+                "NASA Earthdata");
         String program = firstNonBlank(shortName, provider);
         String updated = optionalText(entry, "updated");
 
         Map<String, Object> metadata = new LinkedHashMap<>();
-        putIfPresent(metadata, "nativeId", optionalText(entry, "native-id"));
+        putIfPresent(metadata, "nativeId", firstOptionalText(entry, "native_id", "native-id"));
         putIfPresent(metadata, "shortName", shortName);
-        putIfPresent(metadata, "versionId", optionalText(entry, "version-id"));
-        putIfPresent(metadata, "datasetId", optionalText(entry, "dataset-id"));
-        putIfPresent(metadata, "collectionDataType", optionalText(entry, "collection-data-type"));
+        putIfPresent(metadata, "versionId", firstOptionalText(entry, "version_id", "version-id"));
+        putIfPresent(metadata, "datasetId", firstOptionalText(entry, "dataset_id", "dataset-id"));
+        putIfPresent(
+                metadata,
+                "collectionDataType",
+                firstOptionalText(entry, "collection_data_type", "collection-data-type"));
+        putIfPresent(metadata, "archiveCenter", firstOptionalText(entry, "archive_center", "archive-center"));
+        putIfPresent(metadata, "timeStart", firstOptionalText(entry, "time_start", "time-start"));
         putIfPresent(metadata, "updated", updated);
         List<Map<String, String>> links = links(entry.path("links"));
         if (!links.isEmpty()) {
@@ -290,12 +300,23 @@ public class NasaCmrHarvester implements FederatedSourceHarvester {
         }
     }
 
-    private String requireField(JsonNode node, String field) {
-        String value = optionalText(node, field);
+    private String requireAnyField(JsonNode node, String... fields) {
+        String value = firstOptionalText(node, fields);
         if (value == null) {
-            throw new IllegalArgumentException("NASA CMR collection is missing required field '" + field + "'.");
+            throw new IllegalArgumentException(
+                    "NASA CMR collection is missing required field '" + fields[0] + "'.");
         }
         return value;
+    }
+
+    private String firstOptionalText(JsonNode node, String... fields) {
+        for (String field : fields) {
+            String value = optionalText(node, field);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private String optionalText(JsonNode node, String field) {
