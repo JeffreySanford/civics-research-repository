@@ -5,6 +5,7 @@ import java.time.ZoneOffset;
 import java.util.Objects;
 import org.civicsrepo.admin.CorpusProfileActivationService;
 import org.civicsrepo.repository.DiscoveryProjectionService;
+import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionProgressListener;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
 import org.civicsrepo.search.SearchService;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,7 @@ public class FederatedSnapshotProjectionCaptureService {
     public FederatedSnapshotProjectionEvidence captureAndProject(String runId) {
         FederatedBoundedSnapshotManifest before = snapshotCaptureService.capture(runId);
         CorpusProfile profile = profileFor(before.retainedRecordCount());
-        return projectStableCheckpoint(runId, profile, before);
+        return projectStableCheckpoint(runId, profile, before, null);
     }
 
     /**
@@ -53,17 +54,27 @@ public class FederatedSnapshotProjectionCaptureService {
      * than 100,000 records.
      */
     public FederatedSnapshotProjectionEvidence captureAndProject(String runId, CorpusProfile profile) {
+        return captureAndProject(runId, profile, null);
+    }
+
+    /** Same guarded named-profile workflow with exact projection-batch progress for operator UI. */
+    public FederatedSnapshotProjectionEvidence captureAndProject(
+            String runId, CorpusProfile profile, ProjectionProgressListener progressListener) {
         Objects.requireNonNull(profile, "profile");
         if (profile == CorpusProfile.CURATED_DEMO) {
             throw new IllegalArgumentException("CURATED_DEMO does not use a federated snapshot.");
         }
         FederatedBoundedSnapshotManifest before = captureForProfile(runId, profile);
-        return projectStableCheckpoint(runId, profile, before);
+        return projectStableCheckpoint(runId, profile, before, progressListener);
     }
 
     private FederatedSnapshotProjectionEvidence projectStableCheckpoint(
-            String runId, CorpusProfile profile, FederatedBoundedSnapshotManifest before) {
-        ProjectionState projected = projectionService.reindex(profile, searchService.fixtureDocuments());
+            String runId,
+            CorpusProfile profile,
+            FederatedBoundedSnapshotManifest before,
+            ProjectionProgressListener progressListener) {
+        ProjectionState projected =
+                projectionService.reindex(profile, searchService.fixtureDocuments(), progressListener);
         String projectionId = projectionService.currentProjectionId();
         if (projectionId == null || projectionId.isBlank()) {
             throw new IllegalStateException("Discovery projection completed without a projectionId");
