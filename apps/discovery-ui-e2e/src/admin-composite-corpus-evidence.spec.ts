@@ -111,7 +111,12 @@ test.describe('Admin composite corpus evidence', () => {
     await expect(
       page.getByRole('heading', { name: 'Composite corpus identity' }),
     ).toBeVisible();
-    await expect(page.getByText('1,000,000 federated records')).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: '1,000,000 federated records',
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(page.getByText('Data.gov', { exact: true })).toBeVisible();
     await expect(page.getByText('DOE OSTI', { exact: true })).toBeVisible();
     await expect(
