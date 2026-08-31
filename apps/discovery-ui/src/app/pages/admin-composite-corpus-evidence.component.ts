@@ -3,8 +3,22 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
   RepositoryCompositeCorpusApi,
   type CompositeCorpusManifest,
+  type CompositeCorpusProjectionEvidence,
 } from 'repository-api-client';
-import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  combineLatest,
+  map,
+  of,
+  shareReplay,
+} from 'rxjs';
+
+interface CompositeCorpusEvidenceView {
+  readonly manifest: CompositeCorpusManifest;
+  readonly projection: CompositeCorpusProjectionEvidence | null;
+  readonly projectionHistoryAvailable: boolean;
+}
 
 @Component({
   selector: 'app-admin-composite-corpus-evidence',
@@ -22,8 +36,9 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
         </h2>
         <p>
           A mixed-source corpus becomes evidence only after exact bounded source
-          snapshots are composed into one deterministic identity. Capture is an
-          explicit Admin API operation; this view is read-only.
+          snapshots are composed into one deterministic identity. Search
+          projection evidence is linked separately after those exact source
+          quotas are rebuilt with target parity. This view is read-only.
         </p>
       </div>
 
@@ -40,49 +55,123 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
           </div>
         } @else {
           <div class="composite-evidence__history">
-            @for (manifest of evidence; track manifest.compositionSha256) {
+            @for (item of evidence; track item.manifest.compositionSha256) {
               <article
                 class="composite-evidence__manifest"
                 [attr.aria-labelledby]="
-                  'composition-' + manifest.compositionSha256
+                  'composition-' + item.manifest.compositionSha256
                 "
               >
                 <div class="composite-evidence__manifest-heading">
                   <div>
-                    <p class="eyebrow">{{ manifest.corpusProfile }}</p>
-                    <h3 [id]="'composition-' + manifest.compositionSha256">
-                      {{ manifest.federatedRecordCount | number }} federated
-                      records
+                    <p class="eyebrow">{{ item.manifest.corpusProfile }}</p>
+                    <h3 [id]="'composition-' + item.manifest.compositionSha256">
+                      {{ item.manifest.federatedRecordCount | number }}
+                      federated records
                     </h3>
                   </div>
-                  <span>{{ manifest.capturedAt | date: 'medium' }}</span>
+                  <span>{{ item.manifest.capturedAt | date: 'medium' }}</span>
                 </div>
 
                 <dl class="composite-evidence__identity">
                   <div>
                     <dt>Composition version</dt>
-                    <dd>{{ manifest.compositionVersion }}</dd>
+                    <dd>{{ item.manifest.compositionVersion }}</dd>
                   </div>
                   <div>
                     <dt>Composition SHA-256</dt>
                     <dd>
-                      <code [title]="manifest.compositionSha256">
-                        {{ shortSha(manifest.compositionSha256) }}
+                      <code [title]="item.manifest.compositionSha256">
+                        {{ shortSha(item.manifest.compositionSha256) }}
                       </code>
                     </dd>
                   </div>
                   <div>
                     <dt>Mode</dt>
-                    <dd>{{ manifest.mode }}</dd>
+                    <dd>{{ item.manifest.mode }}</dd>
                   </div>
                 </dl>
+
+                @if (!item.projectionHistoryAvailable) {
+                  <div
+                    class="composite-evidence__projection composite-evidence__projection--warning"
+                    role="status"
+                  >
+                    <strong
+                      >Projection linkage evidence could not be loaded.</strong
+                    >
+                    <p>
+                      No claim is made about whether this composition has been
+                      projected. The composition identity above remains valid.
+                    </p>
+                  </div>
+                } @else if (item.projection; as projection) {
+                  <div
+                    class="composite-evidence__projection"
+                    aria-label="Search projection linkage"
+                  >
+                    <p class="eyebrow">Search projection linked</p>
+                    <dl class="composite-evidence__identity">
+                      <div>
+                        <dt>Projection SHA-256</dt>
+                        <dd>
+                          <code [title]="projection.projectionId">
+                            {{ shortSha(projection.projectionId) }}
+                          </code>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Full projected objects</dt>
+                        <dd>{{ projection.projectionObjectCount | number }}</dd>
+                      </div>
+                      <div>
+                        <dt>Curated repository slice</dt>
+                        <dd>
+                          {{ curatedProjectionCount(projection) | number }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Projection source</dt>
+                        <dd>{{ projection.projectionSource }}</dd>
+                      </div>
+                      <div>
+                        <dt>Projection rebuilt</dt>
+                        <dd>
+                          {{ projection.projectionRebuiltAt | date: 'medium' }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Evidence linked</dt>
+                        <dd>{{ projection.linkedAt | date: 'medium' }}</dd>
+                      </div>
+                    </dl>
+                    <p class="composite-evidence__projection-note">
+                      The composition controls
+                      {{ projection.federatedRecordCount | number }} federated
+                      records. The projection identity covers those records plus
+                      the curated DSpace repository slice shown above.
+                    </p>
+                  </div>
+                } @else {
+                  <div class="composite-evidence__projection" role="status">
+                    <strong
+                      >Composition captured; search projection not linked
+                      yet.</strong
+                    >
+                    <p>
+                      No projection evidence has been recorded for this exact
+                      composition SHA. A profile name or document count alone is
+                      not treated as projection evidence.
+                    </p>
+                  </div>
+                }
 
                 <div class="composite-evidence__table-wrap">
                   <table>
                     <caption>
                       Bounded source evidence for composition
                       {{
-                        shortSha(manifest.compositionSha256)
+                        shortSha(item.manifest.compositionSha256)
                       }}
                     </caption>
                     <thead>
@@ -97,7 +186,7 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
                     </thead>
                     <tbody>
                       @for (
-                        source of manifest.sources;
+                        source of item.manifest.sources;
                         track source.sourceSystem
                       ) {
                         <tr>
@@ -135,9 +224,10 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
       }
 
       <p class="composite-evidence__boundary">
-        Search projection identity is intentionally separate from composition
-        identity. Projection linkage to <code>compositionSha256</code> belongs
-        to the next delivery slice.
+        Composition identity covers the exact federated input. Projection
+        identity covers the derived Solr/OpenSearch document set, including the
+        curated DSpace slice, and is linked only after source stability and
+        target parity succeed.
       </p>
     </section>
   `,
@@ -154,7 +244,8 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
     }
 
     .composite-evidence__empty,
-    .composite-evidence__manifest {
+    .composite-evidence__manifest,
+    .composite-evidence__projection {
       margin-top: 1.25rem;
       padding: 1rem;
       border: 1px solid var(--civics-border-subtle);
@@ -162,10 +253,24 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
       background: var(--mat-sys-surface-container-low);
     }
 
+    .composite-evidence__projection {
+      background: var(--mat-sys-surface-container);
+    }
+
+    .composite-evidence__projection--warning {
+      border-style: dashed;
+    }
+
     .composite-evidence__empty p,
     .composite-evidence__boundary,
-    .composite-evidence__manifest-heading > span {
+    .composite-evidence__manifest-heading > span,
+    .composite-evidence__projection p {
       color: var(--mat-sys-on-surface-variant);
+    }
+
+    .composite-evidence__projection-note {
+      margin-bottom: 0;
+      font-size: 0.9rem;
     }
 
     .composite-evidence__history {
@@ -210,6 +315,7 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
     }
 
     .composite-evidence__table-wrap {
+      margin-top: 1rem;
       overflow-x: auto;
     }
 
@@ -259,15 +365,44 @@ export class AdminCompositeCorpusEvidenceComponent {
   private readonly api = inject(RepositoryCompositeCorpusApi);
   protected readonly loadError$ = new BehaviorSubject<string | null>(null);
 
-  protected readonly evidence$ = this.api
+  private readonly manifests$ = this.api
     .getRecentCompositeCorpusEvidence('FEDERATED_1M', 20)
     .pipe(
       catchError(() => {
         this.loadError$.next('Composite corpus evidence could not be loaded.');
         return of<readonly CompositeCorpusManifest[] | null>(null);
       }),
-      shareReplay({ bufferSize: 1, refCount: true }),
     );
+
+  private readonly projections$ = this.api
+    .getRecentCompositeCorpusProjectionEvidence('FEDERATED_1M', 20)
+    .pipe(
+      catchError(() =>
+        of<readonly CompositeCorpusProjectionEvidence[] | null>(null),
+      ),
+    );
+
+  protected readonly evidence$ = combineLatest([
+    this.manifests$,
+    this.projections$,
+  ]).pipe(
+    map(([manifests, projections]) => {
+      if (manifests === null) {
+        return null;
+      }
+      const projectionHistoryAvailable = projections !== null;
+      return manifests.map<CompositeCorpusEvidenceView>((manifest) => ({
+        manifest,
+        projection:
+          projections?.find(
+            (candidate) =>
+              candidate.compositionSha256 === manifest.compositionSha256,
+          ) ?? null,
+        projectionHistoryAvailable,
+      }));
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   protected shortSha(value: string): string {
     return `${value.slice(0, 12)}…${value.slice(-8)}`;
@@ -281,6 +416,15 @@ export class AdminCompositeCorpusEvidenceComponent {
     return `${value.slice(0, separator + 1)}${this.shortSha(
       value.slice(separator + 1),
     )}`;
+  }
+
+  protected curatedProjectionCount(
+    projection: CompositeCorpusProjectionEvidence,
+  ): number {
+    return Math.max(
+      0,
+      projection.projectionObjectCount - projection.federatedRecordCount,
+    );
   }
 
   protected sourceLabel(sourceSystem: string): string {

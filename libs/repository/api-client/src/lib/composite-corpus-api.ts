@@ -15,6 +15,8 @@ export type CompositeCorpusSourceEvidence =
   components['schemas']['FederatedCompositeCorpusSource'];
 export type CompositeCorpusManifest =
   components['schemas']['FederatedCompositeCorpusManifest'];
+export type CompositeCorpusProjectionEvidence =
+  components['schemas']['FederatedCompositeCorpusProjectionEvidence'];
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryCompositeCorpusApi {
@@ -47,6 +49,33 @@ export class RepositoryCompositeCorpusApi {
     return this.http.post<CompositeCorpusManifest>(
       `${this.baseUrl}/admin/federation/compositions`,
       request,
+    );
+  }
+
+  getRecentCompositeCorpusProjectionEvidence(
+    corpusProfile: CompositeCorpusProfile,
+    limit = 20,
+  ): Observable<readonly CompositeCorpusProjectionEvidence[]> {
+    return this.http.get<readonly CompositeCorpusProjectionEvidence[]>(
+      `${this.baseUrl}/admin/federation/compositions/projections`,
+      { params: { corpusProfile, limit } },
+    );
+  }
+
+  getCompositeCorpusProjectionEvidence(
+    compositionSha256: string,
+  ): Observable<CompositeCorpusProjectionEvidence> {
+    return this.http.get<CompositeCorpusProjectionEvidence>(
+      `${this.baseUrl}/admin/federation/compositions/${encodeURIComponent(compositionSha256)}/projection`,
+    );
+  }
+
+  projectCompositeCorpus(
+    compositionSha256: string,
+  ): Observable<CompositeCorpusProjectionEvidence> {
+    return this.http.post<CompositeCorpusProjectionEvidence>(
+      `${this.baseUrl}/admin/federation/compositions/${encodeURIComponent(compositionSha256)}/project`,
+      null,
     );
   }
 }

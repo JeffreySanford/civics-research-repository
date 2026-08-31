@@ -3,6 +3,7 @@ import {
   RepositoryCompositeCorpusApi,
   type CompositeCorpusCaptureRequest,
   type CompositeCorpusManifest,
+  type CompositeCorpusProjectionEvidence,
 } from './composite-corpus-api';
 
 describe('RepositoryCompositeCorpusApi', () => {
@@ -37,6 +38,17 @@ describe('RepositoryCompositeCorpusApi', () => {
         snapshotCapturedAt: '2026-08-31T18:05:00Z',
       },
     ],
+  };
+
+  const projection: CompositeCorpusProjectionEvidence = {
+    compositionSha256: manifest.compositionSha256,
+    corpusProfile: 'FEDERATED_1M',
+    federatedRecordCount: 1_000_000,
+    projectionId: 'd'.repeat(64),
+    projectionSource: 'REPOSITORY',
+    projectionObjectCount: 1_000_181,
+    projectionRebuiltAt: '2026-08-31T20:30:00Z',
+    linkedAt: '2026-08-31T20:31:00Z',
   };
 
   it('loads profile-scoped recent composition evidence with an explicit history bound', async () => {
@@ -100,6 +112,57 @@ describe('RepositoryCompositeCorpusApi', () => {
     expect(http.post).toHaveBeenCalledWith(
       'http://api.test/api/admin/federation/compositions',
       request,
+    );
+  });
+
+  it('loads profile-scoped composition-to-projection history', async () => {
+    const http = { get: vi.fn(() => of([projection])) };
+    const api = new RepositoryCompositeCorpusApi(
+      http as never,
+      'http://api.test/api',
+    );
+
+    await expect(
+      firstValueFrom(
+        api.getRecentCompositeCorpusProjectionEvidence('FEDERATED_1M', 20),
+      ),
+    ).resolves.toEqual([projection]);
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/admin/federation/compositions/projections',
+      { params: { corpusProfile: 'FEDERATED_1M', limit: 20 } },
+    );
+  });
+
+  it('resolves the newest projection linked to one composition', async () => {
+    const http = { get: vi.fn(() => of(projection)) };
+    const api = new RepositoryCompositeCorpusApi(
+      http as never,
+      'http://api.test/api',
+    );
+
+    await expect(
+      firstValueFrom(
+        api.getCompositeCorpusProjectionEvidence(manifest.compositionSha256),
+      ),
+    ).resolves.toBe(projection);
+    expect(http.get).toHaveBeenCalledWith(
+      `http://api.test/api/admin/federation/compositions/${manifest.compositionSha256}/projection`,
+    );
+  });
+
+  it('projects one exact composition without accepting an alternate request body', async () => {
+    const http = { post: vi.fn(() => of(projection)) };
+    const api = new RepositoryCompositeCorpusApi(
+      http as never,
+      'http://api.test/api',
+    );
+
+    await expect(
+      firstValueFrom(api.projectCompositeCorpus(manifest.compositionSha256)),
+    ).resolves.toBe(projection);
+    expect(http.post).toHaveBeenCalledWith(
+      `http://api.test/api/admin/federation/compositions/${manifest.compositionSha256}/project`,
+      null,
     );
   });
 });

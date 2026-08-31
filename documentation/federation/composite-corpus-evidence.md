@@ -1,12 +1,14 @@
 # Composite Corpus Evidence
 
-Composite corpus evidence gives a mixed-source federated profile a reproducible identity before search projection begins.
+Composite corpus evidence gives a mixed-source federated profile a reproducible identity before search projection begins, then links that exact identity to the search projection derived from it.
 
 ## Why this exists
 
 A document count such as `1,000,000` is not enough to identify a research corpus. Two one-million-record runs can differ radically if their source mix, bounded source snapshots or normalization outputs differ.
 
 Civics Research Repository therefore composes evidence from deterministic bounded source snapshots. Each source snapshot already has a normalized-record SHA-256. The composite layer records the exact source quotas and snapshot identities and derives one higher-level SHA-256 for the mixed corpus.
+
+A named profile is not a substitute for that evidence. `FEDERATED_1M` by itself means a target count; it does not prove that the active million records are the intended source mix.
 
 ## Identity versus provenance
 
@@ -21,31 +23,41 @@ The composition SHA is intentionally stable across operational recapture. It is 
 
 The durable evidence also records harvest run IDs, adapter versions and capture timestamps. Those fields explain how the evidence was produced, but they do not cause an otherwise identical normalized corpus to receive a new composition identity merely because it was harvested later.
 
-## Projection boundary
+## Projection linkage
 
 A composite manifest identifies federated input. Solr and OpenSearch remain derived discovery state.
 
-Projection identity must reference the composite SHA rather than being included in it. This keeps these questions separate:
+Projection identity references the composite SHA rather than being included in it. This keeps these questions separate:
 
 1. **What exact mixed-source corpus did we select?** — composite corpus evidence.
-2. **What exact search projection was derived from it?** — projection evidence.
-3. **Did both engines receive the same projection?** — parity evidence.
+2. **What exact search projection was derived from it?** — composition-to-projection evidence.
+3. **Did both engines receive the same projection?** — projection-target parity evidence.
+
+The linkage path does not call the ordinary count-bounded `reindex(profile)` path and then attach a SHA afterward. Instead it streams each source independently from its stable namespaced ID range and projects exactly the quota recorded by the composition manifest.
+
+Before projection starts and again after projection completes, each source's bounded snapshot is regenerated from retained normalized metadata using the original run and exact quota. The projection relationship is not persisted if source system, retained count, snapshot ID or snapshot SHA no longer match the composition.
+
+After those checks, normal activation parity validation still requires every enabled projection target to complete with the same deterministic `projectionId` and document count before the composition-to-projection relationship is saved.
 
 That separation follows the repository's existing authority model: DSpace and external publishers remain authoritative; search indexes are disposable projections.
 
-## Admin and OpenAPI evidence surface
+## Admin evidence surface
 
-Composite evidence is exposed to operators without changing the projection boundary:
+Composite identity is exposed through:
 
-- `GET /api/admin/federation/compositions?corpusProfile=FEDERATED_1M&limit=20` lists recent immutable manifests for one named profile.
-- `GET /api/admin/federation/compositions/{compositionSha256}` resolves one exact composition identity.
-- `POST /api/admin/federation/compositions` is the explicit capture operation. It accepts source system, exact quota and bounded snapshot ID for each source and delegates all snapshot/quota validation to the composite manifest service.
+- `GET /api/admin/federation/compositions?corpusProfile=FEDERATED_1M&limit=20` — recent immutable manifests for one named profile.
+- `GET /api/admin/federation/compositions/{compositionSha256}` — one exact composition identity.
+- `POST /api/admin/federation/compositions` — explicit composition capture from existing bounded source snapshots.
 
-Capture is intentionally guarded. The endpoint cannot perform a live publisher scan and cannot accept an arbitrary document count as evidence. Every requested source must resolve to an already-persisted bounded snapshot, the requested quota must exactly equal that snapshot's retained record count, duplicate sources are rejected and source quotas must sum to the selected profile target.
+Projection linkage is exposed through:
 
-The `/admin/sync` operator screen presents the resulting identity and source-level provenance in a read-only accessible table. It shows the composition version and SHA plus source quota, bounded snapshot, harvest run, adapter version and snapshot capture time. An empty state explains the evidence prerequisites rather than implying that the planned 1M composition already exists.
+- `POST /api/admin/federation/compositions/{compositionSha256}/project` — rebuild discovery from the exact composed source quotas and persist the relationship only if source stability and target parity succeed.
+- `GET /api/admin/federation/compositions/{compositionSha256}/projection` — newest projection evidence for one exact composition.
+- `GET /api/admin/federation/compositions/projections?corpusProfile=FEDERATED_1M&limit=20` — recent composition-to-projection evidence for a named profile.
 
-The canonical OpenAPI contract and generated TypeScript client describe the same request and evidence shapes. The Angular client aliases those generated schemas instead of maintaining a parallel hand-written model.
+Capture is intentionally guarded. The composition endpoint cannot perform a live publisher scan and cannot accept an arbitrary document count as evidence. Every requested source must resolve to an already-persisted bounded snapshot, the requested quota must exactly equal that snapshot's retained record count, duplicate sources are rejected and source quotas must sum to the selected profile target.
+
+The projection endpoint is also guarded. It cannot silently reinterpret a composition as the first N rows of the retained federated catalog. It must be able to regenerate the same source snapshots and stream the exact source quotas named by the manifest.
 
 ## Initial 1M composition
 
@@ -57,29 +69,49 @@ The first planned mixed-source evidence-grade profile is:
 + curated DSpace repository objects during projection
 ```
 
-The composite manifest covers the 1,000,000 federated records. Curated DSpace objects are linked during projection and are not used to inflate or alter the federated composition digest.
+The composite manifest covers exactly the 1,000,000 federated records. Curated DSpace objects remain part of the public discovery projection but are not used to inflate or alter the federated composition digest.
 
-The Admin/OpenAPI surface does **not** activate this profile. A valid `FEDERATED_1M` composition exists only after the two exact 500,000-record bounded snapshots have actually been captured and explicitly composed. Projection linkage to `compositionSha256` is a later delivery slice.
+For that reason, projection evidence records both:
+
+- `federatedRecordCount` — the composition-controlled federated count, expected to be exactly 1,000,000 for this recipe, and
+- `projectionObjectCount` — the actual full search projection count, including curated DSpace records.
+
+The same federated composition can legitimately produce a different full `projectionId` later if the curated DSpace slice changes. Projection history is therefore preserved rather than replacing a composition with one permanent projection value.
+
+This PR establishes the linkage mechanism but does **not** perform the live 500K + 500K harvest/composition/projection evidence run. The live 1M run remains an explicit operational evidence step after the code path is merged.
 
 ## Persistence behavior
 
-Composite evidence is insert-once by `compositionSha256`.
+Composite manifests remain insert-once by `compositionSha256`.
 
-- Capturing the same semantic composition again is idempotent.
-- Concurrent identical capture is race-safe through the database primary key.
-- The original durable evidence row is retained.
-- A request that attempts to associate an existing composition SHA with different source composition is rejected.
+Composition-to-projection evidence is historical by `(compositionSha256, projectionId)`:
 
-This behavior prevents a research identifier from quietly changing meaning over time.
+- re-linking the identical composition and identical deterministic projection is idempotent and retains the first durable evidence row,
+- a later valid projection ID for the same composition is retained as another historical relationship,
+- a request that tries to reuse the same composition/projection pair with conflicting semantic evidence is rejected,
+- newest linkage can be resolved without deleting earlier evidence,
+- no linkage row is written if source stability or projection-target parity fails.
+
+This behavior prevents a research identifier from quietly changing meaning over time while still acknowledging that the repository-owned curated projection slice may evolve independently of the federated composition.
 
 ## Evidence coverage
 
-The Admin/OpenAPI slice is covered at multiple boundaries:
+The composite identity/Admin slice is covered at multiple boundaries:
 
-- Spring MVC tests cover guarded capture, profile-scoped history, exact-SHA lookup, malformed SHA rejection, unknown SHA handling and history bounds.
+- Spring MVC tests cover guarded composition capture, profile-scoped history, exact-SHA lookup, malformed SHA rejection, unknown SHA handling and history bounds.
 - API-client tests cover profile/limit query serialization, exact identity lookup and the explicit bounded-snapshot capture request.
 - Browser evidence covers both a populated two-source composition and the truthful pre-composition empty state on `/admin/sync`, including the existing WCAG and Section 508 browser gates.
 
+The projection-linkage slice adds focused backend evidence for:
+
+- source-scoped stable-ID traversal,
+- exact composition projection rather than count-only profile projection,
+- before/after bounded-snapshot stability checks,
+- conflict semantics when an existing composition can no longer revalidate its source evidence,
+- aborting partial projection targets when an exact source quota cannot be satisfied,
+- rejection without persisted linkage when a source changes,
+- immutable, idempotent projection evidence plus durable projection history for one composition identity.
+
 ## Scale continuity
 
-The same model is intended to extend to 10M and 100M research tiers. Large-scale source transports may switch from live REST APIs to publisher snapshots, bulk files or partition manifests, but each source contribution must still resolve to a deterministic normalized-record snapshot before it can participate in composite evidence.
+The same model is intended to extend to 10M and 100M research tiers. Large-scale source transports may switch from live REST APIs to publisher snapshots, bulk files or partition manifests, but each source contribution must still resolve to a deterministic normalized-record snapshot before it can participate in composite evidence. Projection remains bounded-memory because each source range is streamed in fixed-size batches.

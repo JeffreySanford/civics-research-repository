@@ -637,6 +637,94 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /admin/federation/compositions/projections:
+    get:
+      tags: [Admin]
+      operationId: listFederatedCompositeCorpusProjectionEvidence
+      summary: List recent composite-corpus to discovery-projection evidence.
+      parameters:
+        - name: corpusProfile
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CorpusProfile'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 20
+      responses:
+        '200':
+          description: Recent composition-to-projection evidence for the requested profile.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FederatedCompositeCorpusProjectionEvidence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/federation/compositions/{compositionSha256}/projection:
+    get:
+      tags: [Admin]
+      operationId: getFederatedCompositeCorpusProjectionEvidence
+      summary: Resolve the newest discovery projection linked to one exact composition.
+      parameters:
+        - name: compositionSha256
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+      responses:
+        '200':
+          description: Newest valid composition-to-projection evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FederatedCompositeCorpusProjectionEvidence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/federation/compositions/{compositionSha256}/project:
+    post:
+      tags: [Admin]
+      operationId: projectFederatedCompositeCorpus
+      summary: Rebuild discovery from the exact source quotas named by one composition.
+      description: >-
+        Regenerates each bounded source snapshot before and after projection, streams each source's
+        exact stable-ID quota, requires enabled search targets to share one projection identity and
+        document count, then persists the composition-to-projection relationship.
+      parameters:
+        - name: compositionSha256
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+      responses:
+        '200':
+          description: Durable composition-to-projection evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FederatedCompositeCorpusProjectionEvidence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /admin/federation/harvest/status:
     get:
       tags: [Admin]
@@ -1117,6 +1205,41 @@ components:
           type: string
           pattern: '^[0-9a-f]{64}$'
         capturedAt:
+          type: string
+          format: date-time
+    FederatedCompositeCorpusProjectionEvidence:
+      type: object
+      required:
+        - compositionSha256
+        - corpusProfile
+        - federatedRecordCount
+        - projectionId
+        - projectionSource
+        - projectionObjectCount
+        - projectionRebuiltAt
+        - linkedAt
+      properties:
+        compositionSha256:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        corpusProfile:
+          $ref: '#/components/schemas/CorpusProfile'
+        federatedRecordCount:
+          type: integer
+          format: int64
+          minimum: 1
+        projectionId:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        projectionSource:
+          $ref: '#/components/schemas/RepositorySource'
+        projectionObjectCount:
+          type: integer
+          minimum: 1
+        projectionRebuiltAt:
+          type: string
+          format: date-time
+        linkedAt:
           type: string
           format: date-time
     FederatedSourceSystem:
