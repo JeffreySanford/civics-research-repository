@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import './dspace-compose-contract.test.mjs';
 import {
   FEDERATION_SAMPLE_SOURCES,
   parseArguments,
@@ -123,6 +124,12 @@ test('sampler continues across a source failure and reports partial evidence', a
     report.sources.find((source) => source.sourceSystem === 'OPENALEX').status,
     'SAMPLED',
   );
+
+  const markdown = renderMarkdown(report);
+  assert.match(markdown, /## Failure details/);
+  assert.match(markdown, /\*\*PUBMED:\*\*/);
+  assert.match(markdown, /HTTP 502/);
+  assert.match(markdown, /rate limited/);
 });
 
 test('sample CLI and report rendering expose bounded non-projecting semantics', () => {
