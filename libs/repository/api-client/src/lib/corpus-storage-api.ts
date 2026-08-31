@@ -19,8 +19,11 @@ export type CorpusStorageOverview =
 export type CorpusProfileActivationPhase =
   | 'IDLE'
   | 'PREPARING'
+  | 'HARVESTING'
+  | 'SNAPSHOTTING'
   | 'PROJECTING'
   | 'VERIFYING'
+  | 'CAPTURING_EVIDENCE'
   | 'COMPLETED'
   | 'FAILED';
 
@@ -57,6 +60,16 @@ export class RepositoryCorpusStorageApi {
   ): Observable<DiscoveryProjectionState> {
     return this.http.post<DiscoveryProjectionState>(
       `${this.baseUrl}/admin/reindex`,
+      null,
+      { params: { profile } },
+    );
+  }
+
+  startCorpusProfileScale(
+    profile: CorpusProfile,
+  ): Observable<CorpusProfileActivationProgress> {
+    return this.http.post<CorpusProfileActivationProgress>(
+      `${this.baseUrl}/admin/corpus/scale`,
       null,
       { params: { profile } },
     );
