@@ -40,6 +40,27 @@ public class CorpusProfileActivationProgressTracker {
         }
     }
 
+    public void harvesting(long processedRecords, long totalRecords) {
+        long safeTotal = Math.max(0, totalRecords);
+        long safeProcessed = Math.max(0, Math.min(processedRecords, safeTotal));
+        updateActive(
+                Phase.HARVESTING,
+                safeProcessed,
+                safeTotal,
+                "Harvesting and retaining federated metadata from the authoritative source.",
+                false);
+    }
+
+    public void snapshotting(long targetRecords) {
+        long safeTarget = Math.max(0, targetRecords);
+        updateActive(
+                Phase.SNAPSHOTTING,
+                safeTarget,
+                safeTarget,
+                "Capturing the deterministic bounded corpus snapshot.",
+                false);
+    }
+
     public void projectionStarted(long totalDocuments) {
         updateActive(
                 Phase.PROJECTING,
@@ -68,6 +89,17 @@ public class CorpusProfileActivationProgressTracker {
                 safeProcessed,
                 safeTotal,
                 "Committing indexes and verifying projection identity and document-count parity.",
+                false);
+    }
+
+    public void capturingEvidence(long processedDocuments, long totalDocuments) {
+        long safeTotal = Math.max(0, totalDocuments);
+        long safeProcessed = Math.max(0, Math.min(processedDocuments, safeTotal));
+        updateActive(
+                Phase.CAPTURING_EVIDENCE,
+                safeProcessed,
+                safeTotal,
+                "Capturing the immutable local storage footprint for this profile.",
                 false);
     }
 
