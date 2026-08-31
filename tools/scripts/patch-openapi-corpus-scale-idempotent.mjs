@@ -6,6 +6,8 @@ import { upgradeRepositoryApiContract as upgradeOnce } from './patch-openapi-cor
 const DEFAULT_SCHEMA = 'schemas/openapi/repository-api.yaml';
 const HASH_PATTERN_PREFIX = "pattern: '^[0-9a-f]{64}";
 const HASH_PATTERN_LITERAL = "pattern: '^[0-9a-f]{64}$'";
+const SCALE_DESCRIPTION_BEFORE = `        Starts the durable harvest/snapshot/projection/evidence workflow. FEDERATED_100K is the\n        currently supported growth target; retained publisher metadata is reused when already present.\n`;
+const SCALE_DESCRIPTION_AFTER = `        Starts the durable harvest/snapshot/projection/evidence workflow. FEDERATED_100K and\n        FEDERATED_1M are supported growth targets; retained publisher metadata is reused when already present.\n`;
 
 const MIGRATED_MARKERS = [
   'name: order',
@@ -104,10 +106,14 @@ function replaceOptional(source, before, after) {
   }
   if (!source.includes(before)) {
     throw new Error(
-      `Cannot normalize OpenAPI nullability because an expected field shape is missing: ${before.split('\n')[0].trim()}.`,
+      `Cannot normalize OpenAPI contract because an expected field shape is missing: ${before.split('\n')[0].trim()}.`,
     );
   }
   return source.replace(before, () => after);
+}
+
+function normalizeScaleCapability(input) {
+  return replaceOptional(input, SCALE_DESCRIPTION_BEFORE, SCALE_DESCRIPTION_AFTER);
 }
 
 function normalizeNullableRuntimeFields(input) {
@@ -129,7 +135,7 @@ export function upgradeRepositoryApiContract(input) {
     migrated = upgradeOnce(input);
   }
 
-  return normalizeNullableRuntimeFields(migrated);
+  return normalizeNullableRuntimeFields(normalizeScaleCapability(migrated));
 }
 
 export async function patchRepositoryApiContract(schemaPath = DEFAULT_SCHEMA) {
