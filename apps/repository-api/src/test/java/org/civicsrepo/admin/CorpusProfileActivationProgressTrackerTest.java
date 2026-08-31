@@ -34,6 +34,35 @@ class CorpusProfileActivationProgressTrackerTest {
     }
 
     @Test
+    void carriesOneOperationAcrossHarvestSnapshotProjectionAndEvidencePhases() {
+        CorpusProfileActivationProgressTracker tracker = new CorpusProfileActivationProgressTracker();
+        String operationId = tracker.begin(CorpusProfile.FEDERATED_100K);
+
+        tracker.harvesting(42_000, 100_000);
+        CorpusProfileActivationProgress harvesting = tracker.current();
+        assertThat(harvesting.operationId()).isEqualTo(operationId);
+        assertThat(harvesting.phase()).isEqualTo(Phase.HARVESTING);
+        assertThat(harvesting.processedDocuments()).isEqualTo(42_000);
+        assertThat(harvesting.totalDocuments()).isEqualTo(100_000);
+        assertThat(harvesting.percentComplete()).isEqualTo(42);
+
+        tracker.snapshotting(100_000);
+        assertThat(tracker.current().phase()).isEqualTo(Phase.SNAPSHOTTING);
+        assertThat(tracker.current().percentComplete()).isEqualTo(100);
+
+        tracker.projectionStarted(100_187);
+        tracker.projected(50_000, 100_187);
+        assertThat(tracker.current().phase()).isEqualTo(Phase.PROJECTING);
+
+        tracker.verifying(100_187, 100_187);
+        assertThat(tracker.current().phase()).isEqualTo(Phase.VERIFYING);
+
+        tracker.capturingEvidence(100_187, 100_187);
+        assertThat(tracker.current().phase()).isEqualTo(Phase.CAPTURING_EVIDENCE);
+        assertThat(tracker.current().operationId()).isEqualTo(operationId);
+    }
+
+    @Test
     void rejectsAConcurrentActivation() {
         CorpusProfileActivationProgressTracker tracker = new CorpusProfileActivationProgressTracker();
         tracker.begin(CorpusProfile.FEDERATED_10K);
