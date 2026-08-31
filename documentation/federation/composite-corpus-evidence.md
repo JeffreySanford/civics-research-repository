@@ -86,8 +86,9 @@ Composite manifests remain insert-once by `compositionSha256`.
 
 Composition-to-projection evidence is historical by `(compositionSha256, projectionId)`:
 
-- re-linking the identical composition and identical deterministic projection is idempotent,
+- re-linking the identical composition and identical deterministic projection is idempotent and retains the first durable evidence row,
 - a later valid projection ID for the same composition is retained as another historical relationship,
+- a request that tries to reuse the same composition/projection pair with conflicting semantic evidence is rejected,
 - newest linkage can be resolved without deleting earlier evidence,
 - no linkage row is written if source stability or projection-target parity fails.
 
@@ -106,8 +107,10 @@ The projection-linkage slice adds focused backend evidence for:
 - source-scoped stable-ID traversal,
 - exact composition projection rather than count-only profile projection,
 - before/after bounded-snapshot stability checks,
+- conflict semantics when an existing composition can no longer revalidate its source evidence,
+- aborting partial projection targets when an exact source quota cannot be satisfied,
 - rejection without persisted linkage when a source changes,
-- durable projection history for one composition identity.
+- immutable, idempotent projection evidence plus durable projection history for one composition identity.
 
 ## Scale continuity
 
