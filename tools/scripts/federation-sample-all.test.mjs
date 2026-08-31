@@ -21,7 +21,7 @@ function jsonResponse(body, status = 200) {
   };
 }
 
-test('all-source sampler preserves existing sources and samples only empty authorities', async () => {
+test('all-source sampler preserves existing sources and freshly samples only empty authorities', async () => {
   const retained = new Map([
     ['DATA_GOV', 100000],
     ['DOE_OSTI', 0],
@@ -42,7 +42,7 @@ test('all-source sampler preserves existing sources and samples only empty autho
       });
     }
     const request = JSON.parse(init.body);
-    posts.push(request);
+    posts.push({ path: parsed.pathname, request });
     retained.set(request.sourceSystem, retained.get(request.sourceSystem) + 25);
     return jsonResponse({
       runId: `run-${request.sourceSystem}`,
@@ -72,11 +72,16 @@ test('all-source sampler preserves existing sources and samples only empty autho
   assert.equal(report.sources[0].afterRetainedRecordCount, 100000);
   assert.equal(posts.length, 4);
   assert.deepEqual(
-    posts.map((request) => request.sourceSystem),
+    posts.map(({ request }) => request.sourceSystem),
     ['DOE_OSTI', 'NASA_CMR', 'PUBMED', 'OPENALEX'],
   );
   assert.ok(
-    posts.every((request) => request.pageSize === 25 && request.maxPages === 1),
+    posts.every(
+      ({ path, request }) =>
+        path.endsWith('/admin/federation/harvest/restart') &&
+        request.pageSize === 25 &&
+        request.maxPages === 1,
+    ),
   );
 });
 
@@ -105,6 +110,8 @@ test('sampler continues across a source failure and reports partial evidence', a
       sourceSystem: request.sourceSystem,
       adapterVersion: `adapter-${request.sourceSystem}`,
       status: 'PAUSED',
+      rejectedCount: 0,
+      skippedCount: 0,
     });
   };
 
@@ -126,10 +133,61 @@ test('sampler continues across a source failure and reports partial evidence', a
   );
 
   const markdown = renderMarkdown(report);
-  assert.match(markdown, /## Failure details/);
-  assert.match(markdown, /\*\*PUBMED:\*\*/);
+  assert.match(markdown, /## Sampling issues/);
+  assert.match(markdown, /\*\*PUBMED \(FAILED\):\*\*/);
   assert.match(markdown, /HTTP 502/);
   assert.match(markdown, /rate limited/);
+});
+
+test('sampler refuses to call an empty successful request source representation', async () => {
+  const retained = new Map(
+    FEDERATION_SAMPLE_SOURCES.map((source) => [source, source === 'NASA_CMR' ? 0 : 1]),
+  );
+  const fetchImpl = async (url, init) => {
+    const parsed = new URL(url);
+    const sourceSystem = parsed.searchParams.get('sourceSystem');
+    if (!init) {
+      return jsonResponse({
+        sourceSystem,
+        retainedRecordCount: retained.get(sourceSystem),
+        resumableRun: null,
+        latestRun: null,
+      });
+    }
+    const request = JSON.parse(init.body);
+    assert.equal(request.sourceSystem, 'NASA_CMR');
+    return jsonResponse({
+      runId: 'run-nasa-empty',
+      sourceSystem: 'NASA_CMR',
+      adapterVersion: 'nasa-cmr-collections-v2',
+      status: 'PAUSED',
+      acceptedCount: 0,
+      rejectedCount: 25,
+      skippedCount: 0,
+    });
+  };
+
+  const report = await sampleAllFederatedSources({
+    fetchImpl,
+    baseUrl: 'http://repository.test/api',
+    pageSize: 25,
+  });
+
+  assert.equal(report.successful, false);
+  const nasa = report.sources.find(
+    (source) => source.sourceSystem === 'NASA_CMR',
+  );
+  assert.equal(nasa.status, 'EMPTY');
+  assert.equal(nasa.afterRetainedRecordCount, 0);
+  assert.equal(nasa.rejectedThisSample, 25);
+  assert.match(nasa.detail, /source representation is not established/);
+
+  const markdown = renderMarkdown(report);
+  assert.match(markdown, /Overall: \*\*PARTIAL\*\*/);
+  assert.match(markdown, /NASA_CMR \| EMPTY/);
+  assert.match(markdown, /\*\*NASA_CMR \(EMPTY\):\*\*/);
+  assert.match(markdown, /rejected=25/);
+  assert.match(markdown, /HTTP success alone is not sufficient/);
 });
 
 test('sample CLI and report rendering expose bounded non-projecting semantics', () => {
@@ -157,6 +215,7 @@ test('sample CLI and report rendering expose bounded non-projecting semantics', 
         beforeRetainedRecordCount: 100000,
         afterRetainedRecordCount: 100000,
         acceptedThisSample: 0,
+        rejectedThisSample: 0,
       },
     ],
   });
