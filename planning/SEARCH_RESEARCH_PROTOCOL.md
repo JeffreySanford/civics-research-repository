@@ -19,7 +19,8 @@ It covers:
 - paired execution-order methodology,
 - OpenSearch aggregation-shape semantic equivalence,
 - research-report rendering,
-- 100K and 1M profile protocol support.
+- 100K and 1M profile protocol support,
+- 1M scale-preflight estimation and readiness classification.
 
 These checks belong in normal CI because they are fast and deterministic.
 
@@ -76,6 +77,30 @@ Current experiments:
 
 A faster candidate is rejected if semantic parity changes.
 
+## 1M readiness preflight
+
+Run `pnpm research:preflight:1m` before starting or resuming growth toward one million retained records.
+
+The preflight is read-only. It inspects:
+
+- the proven 100K scale-evidence baseline,
+- current 1M scale evidence,
+- durable Data.gov harvest/checkpoint state,
+- measured 10K and 100K storage footprints,
+- local filesystem free space.
+
+For PostgreSQL, Solr, and OpenSearch, the 1M storage estimate uses the measured 10K-to-100K per-record slope when both measurements are available. DSpace is held at the measured upper-baseline footprint because federated records remain metadata references instead of mirrored binaries.
+
+The conservative peak estimate adds the currently active Solr/OpenSearch derived-index footprint to the estimated 1M steady state, then reports a separate 25% research headroom margin. The assumptions and per-component estimate method are written into the preflight report; this is not a production capacity guarantee.
+
+Preflight states:
+
+- `BLOCKED`: a prerequisite such as baseline evidence, durable checkpointing, storage baseline, or measured disk headroom is inadequate,
+- `READY_TO_GROW`: infrastructure prerequisites are adequate but the real 1M corpus/evidence does not yet exist,
+- `READY_TO_MEASURE`: the requested 1M corpus is active, target-complete, and parity-valid.
+
+`research:full:1m` uses the stricter `--require-ready-to-measure` gate and stops before the expensive quality/report sequence unless the preflight reaches `READY_TO_MEASURE`.
+
 ## 1M plan
 
 Profile: `FEDERATED_1M`
@@ -84,15 +109,17 @@ The 1M run must use the same report runner and methodology as 100K. Do not creat
 
 Before measuring 1M:
 
-1. retain at least 1,000,000 federated records using the durable harvest/resume path,
-2. snapshot the retained corpus,
-3. project the requested profile to Solr and OpenSearch,
-4. verify deterministic projection identity and target count parity,
-5. capture scale/storage evidence,
-6. record activation duration and any warnings,
-7. run the same paired search scenarios and sample policy used for 100K,
-8. retain host/container resource context,
-9. produce the same JSON + Markdown report schema.
+1. run and retain the 1M readiness preflight,
+2. retain at least 1,000,000 federated records using the durable harvest/resume path,
+3. snapshot the retained corpus,
+4. project the requested profile to Solr and OpenSearch,
+5. verify deterministic projection identity and target count parity,
+6. capture scale/storage evidence,
+7. record activation duration and any warnings,
+8. rerun the preflight and require `READY_TO_MEASURE`,
+9. run the same paired search scenarios and sample policy used for 100K,
+10. retain host/container resource context,
+11. produce the same JSON + Markdown report schema.
 
 The 1M report should compare scale behavior, not simply absolute engine winners. Useful questions include:
 
