@@ -6,6 +6,7 @@ import { runSearchComparisonBenchmark } from './search-comparison-benchmark.mjs'
 
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
 const DEFAULT_PROFILE = 'FEDERATED_100K';
+const DEFAULT_EXECUTION_ORDER = 'SOLR_FIRST';
 const DEFAULT_OUTPUT =
   'browser-evidence-artifacts/search-comparison-100k-matrix.json';
 
@@ -113,6 +114,7 @@ export async function runHundredKSearchComparisonMatrix({
   profile = DEFAULT_PROFILE,
   warmupRuns = 5,
   measuredRuns = 100,
+  executionOrder = DEFAULT_EXECUTION_ORDER,
   scenarios = DEFAULT_SCENARIOS,
   now = () => new Date(),
   hostContext = summarizeHostContext(),
@@ -139,6 +141,7 @@ export async function runHundredKSearchComparisonMatrix({
       baseUrl,
       warmupRuns,
       measuredRuns,
+      executionOrder,
       request: scenario.request,
       now,
     });
@@ -154,9 +157,10 @@ export async function runHundredKSearchComparisonMatrix({
     kind: 'federated-100k-search-comparison-matrix',
     capturedAt: now().toISOString(),
     profile,
+    executionOrder,
     comparativeClaimAllowed: false,
     methodology:
-      'Each scenario uses the existing diagnostic harness with warmups excluded and the same deterministic projection required for every sample. SearchComparisonService executes Solr before OpenSearch, so ordering remains a confound and results are diagnostic rather than proof that either engine is inherently faster.',
+      'Each scenario uses the existing diagnostic harness with warmups excluded and the same deterministic projection required for every sample. Engine execution order is explicit so reversed-order passes can test order sensitivity. Results remain local single-topology diagnostics rather than proof that either engine is inherently faster in production.',
     evidence: {
       retainedFederatedRecordCount: evidence.retainedFederatedRecordCount,
       activeProfile: evidence.activeProfile,
@@ -180,6 +184,7 @@ export function parseArguments(argv) {
     profile: DEFAULT_PROFILE,
     warmupRuns: 5,
     measuredRuns: 100,
+    executionOrder: DEFAULT_EXECUTION_ORDER,
     output: DEFAULT_OUTPUT,
   };
 
@@ -205,6 +210,10 @@ export function parseArguments(argv) {
         options.measuredRuns = Number(value);
         index += 1;
         break;
+      case '--order':
+        options.executionOrder = value;
+        index += 1;
+        break;
       case '--output':
         options.output = value;
         index += 1;
@@ -223,6 +232,7 @@ async function main() {
     profile: options.profile,
     warmupRuns: options.warmupRuns,
     measuredRuns: options.measuredRuns,
+    executionOrder: options.executionOrder,
   });
 
   const outputPath = resolve(options.output);
@@ -233,6 +243,7 @@ async function main() {
   console.log(
     `Profile/projection: ${result.profile} / ${result.evidence.currentProjectionId}`,
   );
+  console.log(`Execution order: ${result.executionOrder}`);
   for (const scenario of result.scenarios) {
     console.log(
       `${scenario.id}: Solr API p50/p95/p99 ${scenario.solr.elapsed.p50Ms}/${scenario.solr.elapsed.p95Ms}/${scenario.solr.elapsed.p99Ms} ms; OpenSearch API p50/p95/p99 ${scenario.openSearch.elapsed.p50Ms}/${scenario.openSearch.elapsed.p95Ms}/${scenario.openSearch.elapsed.p99Ms} ms`,
