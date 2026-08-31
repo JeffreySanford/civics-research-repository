@@ -54,7 +54,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    InternalServerError: {}
+    InternalServerError:
+      description: Unexpected server error.
   schemas:
     CorpusProfile:
       type: string
