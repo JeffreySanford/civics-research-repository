@@ -103,12 +103,12 @@ The same projection ID is recorded by the live projection state and the persiste
 
 Captured for `DOCKER_COMPOSE` after the verified 100K activation:
 
-| Component | Bytes |
-| --- | ---: |
-| Application PostgreSQL | 391,091,891 |
-| DSpace stored bytes | 1,073,739,747 |
-| Solr index | 46,972,408 |
-| OpenSearch index | 43,235,010 |
+| Component                  |         Bytes |
+| -------------------------- | ------------: |
+| Application PostgreSQL     |   391,091,891 |
+| DSpace stored bytes        | 1,073,739,747 |
+| Solr index                 |    46,972,408 |
+| OpenSearch index           |    43,235,010 |
 | Known measured local total | 1,555,039,056 |
 
 The DSpace stored-byte value is essentially unchanged from lower federated tiers because large federated records retain metadata rather than mirroring publisher binaries into DSpace. PostgreSQL and both derived search indexes grow with the federated corpus as expected.
@@ -266,12 +266,12 @@ Resource context matters because host pressure is not evidence that one search e
 
 ## Scale evidence table
 
-| Profile | Retained | Projected | PostgreSQL | Solr | OpenSearch | Known measured total | Projection ID |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| Curated ~200 | retained federation independent | 181 | measured | measured | measured | measured | historical IDs |
-| 10K | 10,000 | 10,181 | 47,371,955 B | 5,231,724 B | 5,179,880 B | 1,131,523,306 B | `b292f98b…` |
-| 100K | 100,000 | 100,181 | 391,091,891 B | 46,972,408 B | 43,235,010 B | 1,555,039,056 B | `125fc791…` |
-| 1M | not harvested | not projected | Not measured | Not measured | Not measured | Not measured | Not measured |
+| Profile      | Retained                    | Projected     | PostgreSQL    | Solr           | OpenSearch     | Known measured total | Projection ID  |
+| ------------ | --------------------------- | ------------: | -------------: | -------------: | -------------: | -------------------: | -------------- |
+| Curated ~200 | retained federation independent |           181 |       measured |       measured |       measured |             measured | historical IDs |
+| 10K          | 10,000                      |        10,181 |   47,371,955 B |    5,231,724 B |    5,179,880 B |      1,131,523,306 B | `b292f98b…`    |
+| 100K         | 100,000                     |       100,181 |  391,091,891 B |   46,972,408 B |   43,235,010 B |      1,555,039,056 B | `125fc791…`    |
+| 1M           | not harvested               | not projected |   Not measured |   Not measured |   Not measured |         Not measured | Not measured   |
 
 `Not measured` means no evidence exists; it must never be rendered as zero.
 
