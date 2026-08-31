@@ -81,11 +81,11 @@ test('migration adds the proven corpus, progress, harvest, evidence, and executi
   assert.match(output, /FederationHarvestStatusResponse:/);
   assert.match(output, /Conflict:/);
   assert.match(output, /enum: \[SOLR_FIRST, OPENSEARCH_FIRST\]/);
-  assert.match(output, /enum: \[RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED\]/);
-  assert.equal(
-    output.split("pattern: '^[0-9a-f]{64}$'").length - 1,
-    3,
+  assert.match(
+    output,
+    /enum: \[RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED\]/,
   );
+  assert.equal(output.split("pattern: '^[0-9a-f]{64}$'").length - 1, 3);
   assert.equal(output.split('DeploymentTopology:').length - 1, 1);
 });
 
@@ -123,10 +123,7 @@ test('migration remains idempotent when the base schema already has a hash patte
   const once = upgradeRepositoryApiContract(withExistingHash);
   const twice = upgradeRepositoryApiContract(once);
 
-  assert.equal(
-    once.split("pattern: '^[0-9a-f]{64}$'").length - 1,
-    4,
-  );
+  assert.equal(once.split("pattern: '^[0-9a-f]{64}$'").length - 1, 4);
   assert.equal(twice, once);
 });
 
@@ -145,7 +142,13 @@ test('migration refuses a partially migrated contract instead of calling it curr
 
 test('migration fails instead of guessing when a stale anchor no longer matches', () => {
   assert.throws(
-    () => upgradeRepositoryApiContract(fixture.replace('Rebuild the discovery Solr projection from DSpace.', 'Changed elsewhere.')),
+    () =>
+      upgradeRepositoryApiContract(
+        fixture.replace(
+          'Rebuild the discovery Solr projection from DSpace.',
+          'Changed elsewhere.',
+        ),
+      ),
     /profile-aware reindex and corpus admin paths expected exactly one stale contract anchor/,
   );
 });

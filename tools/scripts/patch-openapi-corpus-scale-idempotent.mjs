@@ -1,9 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  upgradeRepositoryApiContract as upgradeOnce,
-} from './patch-openapi-corpus-scale.mjs';
+import { upgradeRepositoryApiContract as upgradeOnce } from './patch-openapi-corpus-scale.mjs';
 
 const DEFAULT_SCHEMA = 'schemas/openapi/repository-api.yaml';
 const HASH_PATTERN_PREFIX = "pattern: '^[0-9a-f]{64}";
@@ -134,9 +132,7 @@ export function upgradeRepositoryApiContract(input) {
   return normalizeNullableRuntimeFields(migrated);
 }
 
-export async function patchRepositoryApiContract(
-  schemaPath = DEFAULT_SCHEMA,
-) {
+export async function patchRepositoryApiContract(schemaPath = DEFAULT_SCHEMA) {
   const path = resolve(schemaPath);
   const before = await readFile(path, 'utf8');
   const after = upgradeRepositoryApiContract(before);

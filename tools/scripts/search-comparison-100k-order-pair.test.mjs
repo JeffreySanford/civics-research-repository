@@ -35,8 +35,7 @@ function engine(engine, elapsedMs, engineReportedMs, facets = []) {
     engine,
     enabled: true,
     reachable: true,
-    indexName:
-      engine === 'SOLR' ? 'discovery' : 'discovery-comparison',
+    indexName: engine === 'SOLR' ? 'discovery' : 'discovery-comparison',
     indexedDocumentCount: 100181,
     elapsedMs,
     engineReportedMs,
@@ -155,7 +154,8 @@ test('paired 100K benchmark reuses one selective filter across both execution or
   assert.equal(filteredRequests.length, 2);
   assert.ok(
     filteredRequests.every(
-      (request) => request.programs?.length === 1 && request.programs[0] === PROGRAM,
+      (request) =>
+        request.programs?.length === 1 && request.programs[0] === PROGRAM,
     ),
   );
   assert.equal(

@@ -103,7 +103,9 @@ export async function runOrderPairedHundredKBenchmark({
 
   const projectionId = solrFirst.evidence.currentProjectionId;
   if (openSearchFirst.evidence.currentProjectionId !== projectionId) {
-    throw new Error('Projection changed between execution-order benchmark passes.');
+    throw new Error(
+      'Projection changed between execution-order benchmark passes.',
+    );
   }
   if (
     openSearchFirst.evidence.currentProjectionObjectCount !==
