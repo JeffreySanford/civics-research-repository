@@ -100,6 +100,7 @@ tasks.register("resolveDependencies") {
 
 dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("jakarta.transaction:jakarta.transaction-api")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
