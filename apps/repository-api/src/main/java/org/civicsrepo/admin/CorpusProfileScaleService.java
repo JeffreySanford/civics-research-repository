@@ -17,6 +17,7 @@ import org.civicsrepo.federation.HarvestRunStore;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionProgressListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -46,6 +47,7 @@ public class CorpusProfileScaleService {
     private final CorpusStorageAdminService storageAdminService;
     private final ExecutorService executor;
 
+    @Autowired
     public CorpusProfileScaleService(
             FederatedMetadataCatalog metadataCatalog,
             FederatedHarvestRunService harvestRunService,
