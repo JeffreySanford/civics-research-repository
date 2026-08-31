@@ -22,6 +22,8 @@ Source sizes are observations, not immutable constants. A research report must c
 
 ## Phase 0 — representative source sampling
 
+**Status: COMPLETE (2026-08-31).** Tracked evidence: `planning/evidence/FEDERATION_FIVE_SOURCE_SAMPLE_EVIDENCE.md`.
+
 Before scaling any new source deeply, retain one small bounded page from every authority.
 
 Command:
@@ -42,6 +44,8 @@ Rules:
 - the result is written as JSON + Markdown under ignored `browser-evidence-artifacts/`.
 
 The first objective is semantic coverage: confirm that datasets, publications, software, Earth science collections, authors, subjects, identifiers and publisher provenance all survive normalization into the shared catalog.
+
+The completed Phase 0 sample established retained representation for Data.gov, DOE OSTI.GOV, NASA Earthdata CMR, PubMed and OpenAlex. Completion of this phase does not imply that any mixed-source scale tier is evidence-grade; composite corpus identity remains the next prerequisite.
 
 ## Scale ladder
 
@@ -270,13 +274,19 @@ Normal quality gates include:
 
 ## Near-term sequence
 
+Completed in this branch:
+
 1. validate all five live adapters locally,
 2. run `pnpm federation:sample:all` and require retained evidence from every authority,
-3. inspect normalized source diversity and UI/detail implications,
-4. preserve the established 100K benchmark evidence,
-5. close a deterministic 500K Data.gov tier only if it has research value,
-6. implement composite multi-source snapshot/evidence,
-7. add runtime/OpenAPI profile definitions for 500K/1M/10M/100M only as their recipes become executable,
-8. produce the first 1M mixed-source projection,
-9. extend the same report methodology to 10M,
-10. treat 100M as a bulk-ingest/cluster research program, not a larger REST loop.
+3. preserve the successful five-source sample as tracked evidence,
+4. preserve the established 100K benchmark evidence.
+
+Continue after merge:
+
+1. inspect normalized source diversity and UI/detail implications,
+2. implement composite multi-source snapshot/evidence,
+3. close a deterministic 500K Data.gov tier only if it adds research value,
+4. add runtime/OpenAPI profile definitions for 500K/1M/10M/100M only as their recipes become executable,
+5. produce the first 1M mixed-source projection,
+6. extend the same report methodology to 10M,
+7. treat 100M as a bulk-ingest/cluster research program, not a larger REST loop.
