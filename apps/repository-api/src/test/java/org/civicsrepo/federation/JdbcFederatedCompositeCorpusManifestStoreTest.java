@@ -1,10 +1,12 @@
 package org.civicsrepo.federation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -45,6 +47,17 @@ class JdbcFederatedCompositeCorpusManifestStoreTest {
 
         assertThat(store.findByCompositionSha256(original.compositionSha256())).contains(original);
         assertThat(store.findRecent(CorpusProfile.FEDERATED_1M, 10)).containsExactly(original);
+    }
+
+    @Test
+    void acceptsConcurrentIdempotentCaptureOfTheSameCompositionIdentity() {
+        FederatedCompositeCorpusManifest manifest = manifest(
+                "c".repeat(64), "2026-08-31T18:30:00Z", "data-run-1", "osti-run-1");
+
+        assertThatCode(() -> IntStream.range(0, 8).parallel().forEach(ignored -> store.save(manifest)))
+                .doesNotThrowAnyException();
+
+        assertThat(store.findRecent(CorpusProfile.FEDERATED_1M, 10)).containsExactly(manifest);
     }
 
     @Test
