@@ -53,12 +53,20 @@ function scenarioSummary(solrFirst, openSearchFirst) {
         solrApiP95Ms: firstScenario.solr.elapsed.p95Ms,
         openSearchApiP50Ms: firstScenario.openSearch.elapsed.p50Ms,
         openSearchApiP95Ms: firstScenario.openSearch.elapsed.p95Ms,
+        solrEngineP50Ms: firstScenario.solr.engineReported.p50Ms,
+        solrEngineP95Ms: firstScenario.solr.engineReported.p95Ms,
+        openSearchEngineP50Ms: firstScenario.openSearch.engineReported.p50Ms,
+        openSearchEngineP95Ms: firstScenario.openSearch.engineReported.p95Ms,
       },
       openSearchFirst: {
         solrApiP50Ms: reversedScenario.solr.elapsed.p50Ms,
         solrApiP95Ms: reversedScenario.solr.elapsed.p95Ms,
         openSearchApiP50Ms: reversedScenario.openSearch.elapsed.p50Ms,
         openSearchApiP95Ms: reversedScenario.openSearch.elapsed.p95Ms,
+        solrEngineP50Ms: reversedScenario.solr.engineReported.p50Ms,
+        solrEngineP95Ms: reversedScenario.solr.engineReported.p95Ms,
+        openSearchEngineP50Ms: reversedScenario.openSearch.engineReported.p50Ms,
+        openSearchEngineP95Ms: reversedScenario.openSearch.engineReported.p95Ms,
       },
       solrLeadsP50BothOrders,
       solrLeadsP95BothOrders,
@@ -133,7 +141,7 @@ export async function runOrderPairedHundredKBenchmark({
     measuredRuns,
     comparativeClaimAllowed: false,
     methodology:
-      'The same selective program and deterministic 100K projection are measured twice: once with Solr first and once with OpenSearch first. Warmups are excluded in both passes. A lead that survives both execution orders is more robust against ordering effects, but results remain local single-topology diagnostics rather than universal engine performance claims.',
+      'The same selective program and deterministic 100K projection are measured twice: once with Solr first and once with OpenSearch first. Warmups are excluded in both passes. API elapsed and engine-native QTime/took distributions are retained separately. A lead that survives both execution orders is more robust against ordering effects, but results remain local single-topology diagnostics rather than universal engine performance claims.',
     passes: {
       SOLR_FIRST: solrFirst,
       OPENSEARCH_FIRST: openSearchFirst,
@@ -184,6 +192,9 @@ function printPass(order, pass) {
   for (const scenario of pass.scenarios) {
     console.log(
       `${scenario.id}: Solr API p50/p95/p99 ${scenario.solr.elapsed.p50Ms}/${scenario.solr.elapsed.p95Ms}/${scenario.solr.elapsed.p99Ms} ms; OpenSearch API p50/p95/p99 ${scenario.openSearch.elapsed.p50Ms}/${scenario.openSearch.elapsed.p95Ms}/${scenario.openSearch.elapsed.p99Ms} ms`,
+    );
+    console.log(
+      `${scenario.id}: Solr QTime p50/p95/p99 ${scenario.solr.engineReported.p50Ms}/${scenario.solr.engineReported.p95Ms}/${scenario.solr.engineReported.p99Ms} ms; OpenSearch took p50/p95/p99 ${scenario.openSearch.engineReported.p50Ms}/${scenario.openSearch.engineReported.p95Ms}/${scenario.openSearch.engineReported.p99Ms} ms`,
     );
   }
 }
