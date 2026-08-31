@@ -21,6 +21,69 @@ const MIGRATED_MARKERS = [
   'FederationHarvestStatusResponse:',
 ];
 
+const NULLABILITY_REPLACEMENTS = [
+  [
+    `        operationId:\n          type: string\n`,
+    `        operationId:\n          type: [string, 'null']\n`,
+  ],
+  [
+    `        profile:\n          $ref: '#/components/schemas/CorpusProfile'\n        phase:\n`,
+    `        profile:\n          oneOf:\n            - $ref: '#/components/schemas/CorpusProfile'\n            - type: 'null'\n        phase:\n`,
+  ],
+  [
+    `        totalDocuments:\n          type: integer\n          format: int64\n          minimum: 0\n`,
+    `        totalDocuments:\n          type: [integer, 'null']\n          format: int64\n          minimum: 0\n`,
+  ],
+  [
+    `        startedAt:\n          type: string\n          format: date-time\n`,
+    `        startedAt:\n          type: [string, 'null']\n          format: date-time\n`,
+  ],
+  [
+    `        completedAt:\n          type: string\n          format: date-time\n`,
+    `        completedAt:\n          type: [string, 'null']\n          format: date-time\n`,
+  ],
+  [
+    `        documentsPerSecond:\n          type: number\n          format: double\n          minimum: 0\n`,
+    `        documentsPerSecond:\n          type: [number, 'null']\n          format: double\n          minimum: 0\n`,
+  ],
+  [
+    `        targetFederatedRecordCount:\n          type: integer\n          format: int64\n          minimum: 0\n`,
+    `        targetFederatedRecordCount:\n          type: [integer, 'null']\n          format: int64\n          minimum: 0\n`,
+  ],
+  [
+    `        activeProfile:\n          $ref: '#/components/schemas/CorpusProfile'\n        activationProjectionObjectCount:\n`,
+    `        activeProfile:\n          oneOf:\n            - $ref: '#/components/schemas/CorpusProfile'\n            - type: 'null'\n        activationProjectionObjectCount:\n`,
+  ],
+  [
+    `        activationProjectionObjectCount:\n          type: integer\n          format: int64\n          minimum: 0\n`,
+    `        activationProjectionObjectCount:\n          type: [integer, 'null']\n          format: int64\n          minimum: 0\n`,
+  ],
+  [
+    `        activationProjectionId:\n          type: string\n          pattern: '^[0-9a-f]{64}$'\n`,
+    `        activationProjectionId:\n          type: [string, 'null']\n          pattern: '^[0-9a-f]{64}$'\n`,
+  ],
+  [
+    `        currentProjectionId:\n          type: string\n          pattern: '^[0-9a-f]{64}$'\n`,
+    `        currentProjectionId:\n          type: [string, 'null']\n          pattern: '^[0-9a-f]{64}$'\n`,
+  ],
+  [
+    `        storageProjectionObjectCount:\n          type: integer\n          format: int64\n          minimum: 0\n`,
+    `        storageProjectionObjectCount:\n          type: [integer, 'null']\n          format: int64\n          minimum: 0\n`,
+  ],
+  [
+    `        storageRetainedFederatedCount:\n          type: integer\n          format: int64\n          minimum: 0\n`,
+    `        storageRetainedFederatedCount:\n          type: [integer, 'null']\n          format: int64\n          minimum: 0\n`,
+  ],
+  [
+    `        storageProjectionId:\n          type: string\n          pattern: '^[0-9a-f]{64}$'\n`,
+    `        storageProjectionId:\n          type: [string, 'null']\n          pattern: '^[0-9a-f]{64}$'\n`,
+  ],
+  [
+    `        storageCapturedAt:\n          type: string\n          format: date-time\n`,
+    `        storageCapturedAt:\n          type: [string, 'null']\n          format: date-time\n`,
+  ],
+];
+
 function hasMigratedMarkers(source) {
   return MIGRATED_MARKERS.every((marker) => source.includes(marker));
 }
@@ -37,21 +100,38 @@ function hasOnlyLiteralHashPatterns(source) {
   );
 }
 
-function isFullyMigrated(source) {
-  return hasMigratedMarkers(source) && hasOnlyLiteralHashPatterns(source);
+function replaceOptional(source, before, after) {
+  if (source.includes(after)) {
+    return source;
+  }
+  if (!source.includes(before)) {
+    throw new Error(
+      `Cannot normalize OpenAPI nullability because an expected field shape is missing: ${before.split('\n')[0].trim()}.`,
+    );
+  }
+  return source.replace(before, () => after);
+}
+
+function normalizeNullableRuntimeFields(input) {
+  return NULLABILITY_REPLACEMENTS.reduce(
+    (source, [before, after]) => replaceOptional(source, before, after),
+    input,
+  );
 }
 
 export function upgradeRepositoryApiContract(input) {
-  if (isFullyMigrated(input)) {
-    return input;
-  }
+  let migrated = input;
   if (hasMigratedMarkers(input)) {
-    throw new Error(
-      'Corpus-scale OpenAPI migration markers are present but the projection-id regex literals are invalid. Restore schemas/openapi/repository-api.yaml from git before rerunning the migration.',
-    );
+    if (!hasOnlyLiteralHashPatterns(input)) {
+      throw new Error(
+        'Corpus-scale OpenAPI migration markers are present but the projection-id regex literals are invalid. Restore schemas/openapi/repository-api.yaml from git before rerunning the migration.',
+      );
+    }
+  } else {
+    migrated = upgradeOnce(input);
   }
 
-  return upgradeOnce(input);
+  return normalizeNullableRuntimeFields(migrated);
 }
 
 export async function patchRepositoryApiContract(
