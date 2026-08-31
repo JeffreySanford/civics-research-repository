@@ -35,17 +35,34 @@ public class FederatedSnapshotProjectionCaptureService {
     }
 
     /**
-     * Capture a bounded checkpoint, rebuild its matching profile projection, and persist the
-     * relationship.
-     *
-     * <p>The source checkpoint is scanned again after reindex. If its content identity, counters,
-     * cursor, status or run update time changed while projection was running, no relationship or
-     * active-profile state is recorded. The pre-projection snapshot remains valid point-in-time
-     * evidence on its own.
+     * Capture the current bounded checkpoint, infer its exact named profile when one exists, rebuild
+     * discovery, and persist the relationship.
      */
     public FederatedSnapshotProjectionEvidence captureAndProject(String runId) {
         FederatedBoundedSnapshotManifest before = snapshotCaptureService.capture(runId);
         CorpusProfile profile = profileFor(before.retainedRecordCount());
+        return projectStableCheckpoint(runId, profile, before);
+    }
+
+    /**
+     * Capture exactly the deterministic prefix represented by a named profile, then rebuild and
+     * link that same profile projection.
+     *
+     * <p>This decouples evidence tiers from publisher page boundaries: a 100K profile remains an
+     * exact 100,000-record snapshot/projection even when the retained source contains slightly more
+     * than 100,000 records.
+     */
+    public FederatedSnapshotProjectionEvidence captureAndProject(String runId, CorpusProfile profile) {
+        Objects.requireNonNull(profile, "profile");
+        if (profile == CorpusProfile.CURATED_DEMO) {
+            throw new IllegalArgumentException("CURATED_DEMO does not use a federated snapshot.");
+        }
+        FederatedBoundedSnapshotManifest before = captureForProfile(runId, profile);
+        return projectStableCheckpoint(runId, profile, before);
+    }
+
+    private FederatedSnapshotProjectionEvidence projectStableCheckpoint(
+            String runId, CorpusProfile profile, FederatedBoundedSnapshotManifest before) {
         ProjectionState projected = projectionService.reindex(profile, searchService.fixtureDocuments());
         String projectionId = projectionService.currentProjectionId();
         if (projectionId == null || projectionId.isBlank()) {
@@ -55,7 +72,7 @@ public class FederatedSnapshotProjectionCaptureService {
             throw new IllegalStateException("Discovery projection completed without rebuiltAt evidence");
         }
 
-        FederatedBoundedSnapshotManifest after = manifestService.generateBoundedSnapshot(runId);
+        FederatedBoundedSnapshotManifest after = regenerateForProfile(runId, profile);
         if (!sameCheckpoint(before, after)) {
             throw new IllegalStateException(
                     "Federated checkpoint changed during discovery projection; projection evidence was not linked");
@@ -75,6 +92,20 @@ public class FederatedSnapshotProjectionCaptureService {
         evidenceStore.save(evidence);
         activationService.recordSuccessfulProjection(profile, projected);
         return evidence;
+    }
+
+    private FederatedBoundedSnapshotManifest captureForProfile(String runId, CorpusProfile profile) {
+        if (profile.targetRecordCount().isPresent()) {
+            return snapshotCaptureService.capture(runId, profile.targetRecordCount().getAsLong());
+        }
+        return snapshotCaptureService.capture(runId);
+    }
+
+    private FederatedBoundedSnapshotManifest regenerateForProfile(String runId, CorpusProfile profile) {
+        if (profile.targetRecordCount().isPresent()) {
+            return manifestService.generateBoundedSnapshot(runId, profile.targetRecordCount().getAsLong());
+        }
+        return manifestService.generateBoundedSnapshot(runId);
     }
 
     private CorpusProfile profileFor(long retainedRecordCount) {
