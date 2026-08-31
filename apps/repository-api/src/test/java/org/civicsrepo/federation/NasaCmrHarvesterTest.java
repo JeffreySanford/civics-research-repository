@@ -86,11 +86,12 @@ class NasaCmrHarvesterTest {
     void normalizesPublicCollectionAndUsesSearchAfterCursor() {
         HarvestPage first = harvester.fetch(null, 5_000);
 
+        assertThat(harvester.adapterVersion()).isEqualTo("nasa-cmr-collections-v2");
         assertThat(first.complete()).isFalse();
         assertThat(first.nextCursor()).isEqualTo("[\"cursor-value\",12345]");
         assertThat(first.records()).hasSize(1);
         assertThat(first.rejections()).isEmpty();
-        assertThat(requestQuery.get()).contains("page_size=2000", "sort_key%5B%5D=concept_id");
+        assertThat(requestQuery.get()).contains("page_size=2000").doesNotContain("sort_key");
         assertThat(requestClientId.get()).isEqualTo("civics-test-client");
         assertThat(requestSearchAfter.get()).isNull();
         assertThat(requestAuthorization.get()).isNull();
