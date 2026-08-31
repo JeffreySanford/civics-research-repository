@@ -68,13 +68,7 @@ function report(profile = 'FEDERATED_100K') {
         [1, 1, 1],
         [3, 3, 4],
       ),
-      scenario(
-        'FACETED_SEARCH',
-        [4, 5, 6],
-        [9, 10, 11],
-        [3, 3, 4],
-        [7, 8, 8],
-      ),
+      scenario('FACETED_SEARCH', [4, 5, 6], [9, 10, 11], [3, 3, 4], [7, 8, 8]),
       scenario(
         'FILTERING_SELECTIVE_PROGRAM',
         [2, 3, 3],

@@ -122,7 +122,10 @@ export async function runPairedProfileBenchmark({
   requireBoundedInteger(measuredRuns, 'measuredRuns', 1, 100);
 
   const evidence = await fetchScaleEvidence(fetchImpl, baseUrl, profile);
-  const selectedProgram = await discoverSelectiveProgram({ fetchImpl, baseUrl });
+  const selectedProgram = await discoverSelectiveProgram({
+    fetchImpl,
+    baseUrl,
+  });
   const scenarios = adaptiveScenarios(selectedProgram);
 
   const solrFirst = await runHundredKSearchComparisonMatrix({
