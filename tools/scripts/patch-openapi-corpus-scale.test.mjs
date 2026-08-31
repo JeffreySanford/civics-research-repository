@@ -98,8 +98,8 @@ test('migration is idempotent', () => {
 
 test('migration remains idempotent when the base schema already has a hash pattern', () => {
   const withExistingHash = fixture.replace(
-    '    DeploymentTopology:\n      type: string\n',
-    "    ExistingProjectionEvidence:\n      type: object\n      properties:\n        projectionId:\n          type: string\n          pattern: '^[0-9a-f]{64}$'\n    DeploymentTopology:\n      type: string\n",
+    '    CorpusProfile:\n',
+    "    ExistingProjectionEvidence:\n      type: object\n      properties:\n        projectionId:\n          type: string\n          pattern: '^[0-9a-f]{64}$'\n    CorpusProfile:\n",
   );
   const once = upgradeRepositoryApiContract(withExistingHash);
   const twice = upgradeRepositoryApiContract(once);
