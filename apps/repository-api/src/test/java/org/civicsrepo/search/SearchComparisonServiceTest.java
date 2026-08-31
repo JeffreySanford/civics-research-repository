@@ -118,10 +118,10 @@ class SearchComparisonServiceTest {
 
         var order = inOrder(openSearch, solr);
         order.verify(openSearch).isEnabled();
-        order.verify(openSearch).isReachable();
+        order.verify(openSearch).documentCount();
         order.verify(openSearch).searchWithDiagnostics("workforce", List.of(), null, null, null, 0, 10);
         order.verify(solr).isEnabled();
-        order.verify(solr).isReachable();
+        order.verify(solr).documentCount();
         order.verify(solr).searchWithDiagnostics("workforce", List.of(), null, null, null, 0, 10);
         assertThat(result.getSameProjection()).isTrue();
         assertThat(result.getSolr().getTotalHits()).isEqualTo(2);
@@ -132,7 +132,7 @@ class SearchComparisonServiceTest {
     void keepsSolrResultWhenOpenSearchIsDown() {
         available(solr);
         when(openSearch.isEnabled()).thenReturn(true);
-        when(openSearch.isReachable()).thenReturn(false);
+        when(openSearch.documentCount()).thenReturn(Optional.empty());
         when(solr.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), eq(0), eq(10)))
                 .thenReturn(execution(2, 5));
 
@@ -218,7 +218,6 @@ class SearchComparisonServiceTest {
 
     private void available(DiscoveryProjectionTarget target) {
         when(target.isEnabled()).thenReturn(true);
-        when(target.isReachable()).thenReturn(true);
     }
 
     private SearchResponse response(int total) {
