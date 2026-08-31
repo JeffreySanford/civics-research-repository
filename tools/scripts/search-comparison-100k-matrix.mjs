@@ -56,12 +56,14 @@ function requireProjectionId(value, label) {
   return value;
 }
 
-export function summarizeHostContext(os = {
-  cpus,
-  totalmem,
-  platform,
-  arch,
-}) {
+export function summarizeHostContext(
+  os = {
+    cpus,
+    totalmem,
+    platform,
+    arch,
+  },
+) {
   return {
     logicalCpuCount: os.cpus().length,
     totalMemoryBytes: os.totalmem(),
@@ -94,7 +96,9 @@ async function fetchScaleEvidence(fetchImpl, baseUrl, profile) {
     );
   }
   if (!evidence.targetParity) {
-    throw new Error('Corpus scale evidence reports discovery target parity false.');
+    throw new Error(
+      'Corpus scale evidence reports discovery target parity false.',
+    );
   }
   requireProjectionId(
     evidence.currentProjectionId,

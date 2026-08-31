@@ -13,7 +13,9 @@ const DEFAULT_OUTPUT =
 function requireFacetGroup(engine, field) {
   const group = engine?.facets?.find((facet) => facet.field === field);
   if (!group || !Array.isArray(group.values) || group.values.length === 0) {
-    throw new Error(`No ${field} facet values are available for adaptive filtering.`);
+    throw new Error(
+      `No ${field} facet values are available for adaptive filtering.`,
+    );
   }
   return group;
 }
@@ -26,10 +28,14 @@ function countMap(group) {
 
 export function chooseSelectiveProgram(response) {
   if (!response?.sameProjection) {
-    throw new Error('Adaptive filter discovery requires Solr/OpenSearch projection parity.');
+    throw new Error(
+      'Adaptive filter discovery requires Solr/OpenSearch projection parity.',
+    );
   }
   if (!response?.solr?.reachable || !response?.openSearch?.reachable) {
-    throw new Error('Adaptive filter discovery requires both engines to be reachable.');
+    throw new Error(
+      'Adaptive filter discovery requires both engines to be reachable.',
+    );
   }
 
   const solrGroup = requireFacetGroup(response.solr, 'program');
@@ -37,7 +43,9 @@ export function chooseSelectiveProgram(response) {
   const openSearchCounts = countMap(openSearchGroup);
   const total = Number(response?.projection?.objectCount ?? 0);
   if (!Number.isFinite(total) || total <= 0) {
-    throw new Error('Adaptive filter discovery requires a positive projection object count.');
+    throw new Error(
+      'Adaptive filter discovery requires a positive projection object count.',
+    );
   }
 
   const minimumCount = Math.max(10, Math.floor(total * 0.001));
@@ -57,7 +65,10 @@ export function chooseSelectiveProgram(response) {
         candidate.count <= maximumCount &&
         candidate.openSearchCount === candidate.count,
     )
-    .sort((left, right) => right.count - left.count || left.value.localeCompare(right.value));
+    .sort(
+      (left, right) =>
+        right.count - left.count || left.value.localeCompare(right.value),
+    );
 
   if (candidates.length === 0) {
     throw new Error(
@@ -88,7 +99,9 @@ export async function discoverSelectiveProgram({
     body: JSON.stringify(request),
   });
   if (!httpResponse.ok) {
-    throw new Error(`Adaptive facet discovery failed with HTTP ${httpResponse.status}.`);
+    throw new Error(
+      `Adaptive facet discovery failed with HTTP ${httpResponse.status}.`,
+    );
   }
   const response = await httpResponse.json();
   return chooseSelectiveProgram(response);
@@ -121,7 +134,10 @@ export async function runAdaptiveHundredKBenchmark({
   measuredRuns = 100,
   now = () => new Date(),
 } = {}) {
-  const selectedProgram = await discoverSelectiveProgram({ fetchImpl, baseUrl });
+  const selectedProgram = await discoverSelectiveProgram({
+    fetchImpl,
+    baseUrl,
+  });
   const matrix = await runHundredKSearchComparisonMatrix({
     fetchImpl,
     baseUrl,
@@ -139,12 +155,12 @@ export async function runAdaptiveHundredKBenchmark({
       matchingDocuments: selectedProgram.count,
       selectivityPercent:
         Math.round(
-          (selectedProgram.count / matrix.evidence.currentProjectionObjectCount) *
+          (selectedProgram.count /
+            matrix.evidence.currentProjectionObjectCount) *
             10000,
         ) / 100,
     },
-    methodology:
-      `${matrix.methodology} The filtering workload is selected from the live program facet before measurement and requires identical Solr/OpenSearch facet counts; it intentionally avoids the DATASET type filter because Data.gov normalizes every harvested record as a dataset.`,
+    methodology: `${matrix.methodology} The filtering workload is selected from the live program facet before measurement and requires identical Solr/OpenSearch facet counts; it intentionally avoids the DATASET type filter because Data.gov normalizes every harvested record as a dataset.`,
   };
 }
 
@@ -178,7 +194,9 @@ export function parseArguments(argv) {
         index += 1;
         break;
       default:
-        throw new Error(`Unknown adaptive 100K benchmark argument: ${argument}`);
+        throw new Error(
+          `Unknown adaptive 100K benchmark argument: ${argument}`,
+        );
     }
   }
   return options;
