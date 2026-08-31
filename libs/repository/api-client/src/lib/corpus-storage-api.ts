@@ -2,7 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import type { components } from '../generated/repository-api.types';
-import { REPOSITORY_API_BASE_URL } from './repository-api-client';
+import {
+  REPOSITORY_API_BASE_URL,
+  type DiscoveryProjectionState,
+} from './repository-api-client';
 
 export type CorpusProfile = components['schemas']['CorpusProfile'];
 export type DeploymentTopology = components['schemas']['DeploymentTopology'];
@@ -12,6 +15,12 @@ export type CorpusProfileSummary =
   components['schemas']['CorpusProfileSummary'];
 export type CorpusStorageOverview =
   components['schemas']['CorpusStorageOverview'];
+export type CorpusProfileActivationPhase =
+  components['schemas']['CorpusProfileActivationPhase'];
+export type CorpusProfileActivationProgress =
+  components['schemas']['CorpusProfileActivationProgress'];
+export type CorpusScaleEvidenceReport =
+  components['schemas']['CorpusScaleEvidenceReport'];
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryCorpusStorageApi {
@@ -23,6 +32,41 @@ export class RepositoryCorpusStorageApi {
   getCorpusStorageOverview(): Observable<CorpusStorageOverview> {
     return this.http.get<CorpusStorageOverview>(
       `${this.baseUrl}/admin/corpus/storage`,
+    );
+  }
+
+  activateCorpusProfile(
+    profile: CorpusProfile,
+  ): Observable<DiscoveryProjectionState> {
+    return this.http.post<DiscoveryProjectionState>(
+      `${this.baseUrl}/admin/reindex`,
+      null,
+      { params: { profile } },
+    );
+  }
+
+  startCorpusProfileScale(
+    profile: CorpusProfile,
+  ): Observable<CorpusProfileActivationProgress> {
+    return this.http.post<CorpusProfileActivationProgress>(
+      `${this.baseUrl}/admin/corpus/scale`,
+      null,
+      { params: { profile } },
+    );
+  }
+
+  getCorpusProfileActivationProgress(): Observable<CorpusProfileActivationProgress> {
+    return this.http.get<CorpusProfileActivationProgress>(
+      `${this.baseUrl}/admin/reindex/progress`,
+    );
+  }
+
+  getCorpusScaleEvidence(
+    profile: CorpusProfile,
+  ): Observable<CorpusScaleEvidenceReport> {
+    return this.http.get<CorpusScaleEvidenceReport>(
+      `${this.baseUrl}/admin/corpus/scale/evidence`,
+      { params: { profile } },
     );
   }
 

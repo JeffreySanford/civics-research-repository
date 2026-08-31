@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import './search-comparison-100k-matrix.test.mjs';
+import './search-comparison-100k-adaptive.test.mjs';
+import './search-comparison-100k-order-pair.test.mjs';
+import './opensearch-aggregation-shape-diagnostic.test.mjs';
+import './research-performance-report.test.mjs';
+import './research-scale-preflight.test.mjs';
+import './research-scale-runner.test.mjs';
+import './federation-sample-all.test.mjs';
 import {
   nearestRankPercentile,
   parseArguments,
@@ -83,19 +91,22 @@ test('nearest-rank percentiles and summary are deterministic', () => {
   });
 });
 
-test('CLI parser accepts a conventional standalone argument separator', () => {
+test('CLI parser accepts a conventional standalone argument separator and order', () => {
   const options = parseArguments([
     '--',
     '--warmups',
     '5',
     '--samples',
     '100',
+    '--order',
+    'OPENSEARCH_FIRST',
     '--query',
     'North Dakota workforce',
   ]);
 
   assert.equal(options.warmupRuns, 5);
   assert.equal(options.measuredRuns, 100);
+  assert.equal(options.executionOrder, 'OPENSEARCH_FIRST');
   assert.equal(options.query, 'North Dakota workforce');
 });
 
@@ -116,13 +127,14 @@ test('benchmark excludes warmups and reports measured distributions only', async
     baseUrl: 'http://repository.test/api/',
     warmupRuns: 2,
     measuredRuns: 5,
+    executionOrder: 'OPENSEARCH_FIRST',
     now: () => new Date('2026-08-29T20:30:00Z'),
   });
 
   assert.equal(requests.length, 7);
   assert.equal(
     requests[0].url,
-    'http://repository.test/api/search/comparison/run',
+    'http://repository.test/api/search/comparison/run?order=OPENSEARCH_FIRST',
   );
   assert.equal(requests[0].init.method, 'POST');
   assert.equal(result.projection.projectionId, PROJECTION_ID);
@@ -140,9 +152,21 @@ test('benchmark excludes warmups and reports measured distributions only', async
   assert.equal(result.solr.engineReported.p50Ms, 30);
   assert.equal(result.openSearch.engineReported.p95Ms, 52);
   assert.equal(result.comparativeClaimAllowed, false);
-  assert.equal(result.executionOrder, 'SOLR_THEN_OPENSEARCH');
+  assert.equal(result.executionOrder, 'OPENSEARCH_FIRST');
   assert.match(result.measurementBoundary, /API elapsed measures Spring/);
-  assert.match(result.caveat, /not as proof/);
+  assert.match(result.caveat, /reversed-order passes/);
+});
+
+test('benchmark refuses an unsupported execution order', async () => {
+  await assert.rejects(
+    runSearchComparisonBenchmark({
+      fetchImpl: queuedFetch([]),
+      warmupRuns: 0,
+      measuredRuns: 1,
+      executionOrder: 'RANDOM',
+    }),
+    /executionOrder must be one of/,
+  );
 });
 
 test('benchmark refuses to mix samples from different projections', async () => {

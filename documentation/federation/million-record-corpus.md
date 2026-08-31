@@ -1,139 +1,199 @@
-# Million-Record Federated Metadata Corpus
+# Federated Metadata Scale Corpus
 
 ## Purpose
 
-Create reproducible metadata corpora at 10K, 100K, 1M and optional larger tiers for realistic search, indexing and topology experiments.
+Create reproducible metadata corpora for realistic search, indexing, storage and topology experiments at 100K, 1M, 10M and potentially 100M records.
 
-This document belongs to the **federated data project**, not the Kubernetes project. The corpus must be useful against the existing standalone Docker Compose search services before PI-2 moves the same data into clustered SolrCloud/OpenSearch.
+The original document treated one million records as the destination. It is now one point on a broader scale curve.
 
-Full source binaries are out of scope. The unit of scale is searchable metadata plus provenance and links to authoritative resources.
+Full source binaries remain out of scope. The unit of scale is searchable metadata plus provenance and links to authoritative resources.
 
-Live Data.gov checkpoint evidence is recorded in [PI-1 Data.gov Scale Evidence](../../planning/PI1_DATA_GOV_SCALE_EVIDENCE.md).
+## Research invariant
 
-## Source portfolio
+A corpus tier is identified by more than its total record count.
 
-PI-1 plans adapters for all identified sources:
-
-| Source             | Scale role                                  | Primary metadata shape                                                  |
-| ------------------ | ------------------------------------------- | ----------------------------------------------------------------------- |
-| Data.gov           | federal breadth to hundreds of thousands    | datasets, agencies, tags, distributions                                 |
-| DOE OSTI.GOV       | preferred first 1M+ federal corpus          | reports, publications, datasets, software, patents and research outputs |
-| NASA Earthdata CMR | controlled 1M+ scientific/geospatial slices | collections and granules                                                |
-| PubMed             | 1M+ bibliographic/relevance corpus          | citations, abstracts, authors and publication metadata                  |
-| OpenAlex           | optional broad 1M+ scholarly corpus         | works, authors, institutions, topics and citations                      |
-
-Source-specific harvesting is defined in [Source Ingestion Plan](source-ingestion-plan.md).
-
-## Corpus modes
-
-### Federated catalog mode
+Every evidence-grade tier must capture:
 
 ```text
-publisher/API
-  -> adapter
-  -> federated metadata store
-  -> CombinedDiscoveryCatalog
-  -> normalized DiscoveryDocument stream
-  -> Solr + OpenSearch
+corpus profile / recipe version
+source composition and exact quotas
+source snapshot/run/release identities
+normalization adapter versions
+accepted/rejected/skipped counts
+composition digest
+projection ID
+host/storage context
 ```
 
-This is the normal PI-1 architecture and drives the Angular discovery UI.
+`10M records` without source composition is not a reproducible corpus definition.
 
-### Curated repository mode
+## Source capacity and role
 
-```text
-publisher
-  -> DSpace-curated object
-  -> normalized DiscoveryDocument
-  -> Solr + OpenSearch
-```
+| Source             | Approximate public scale observed in 2026 | Research role                                                          |
+| ------------------ | ----------------------------------------: | ---------------------------------------------------------------------- |
+| Data.gov           |                            ~556K datasets | federal dataset/agency breadth; proven 100K baseline                   |
+| DOE OSTI.GOV       |                               >4M records | DOE publications, reports, datasets, software and patents              |
+| NASA Earthdata CMR |         ~65K collections / >2.5B granules | Earth science collections plus explicit extreme-scale granule research |
+| PubMed             |                            >40M citations | biomedical bibliographic/relevance corpus                              |
+| OpenAlex           |              >320M core / >510M all works | broad scholarly corpus; snapshot-driven 10M/100M source                |
 
-This remains the curated repository path. PI-1 does not remove it.
+These numbers change. Capture the source count or publisher manifest date at run time rather than treating this table as permanent evidence.
+
+## Ingestion modes
+
+### Live API mode
+
+Use for:
+
+- representative all-source sampling,
+- mapping development,
+- retry/rate-limit research,
+- source freshness,
+- modest bounded slices.
+
+### Bulk snapshot mode
+
+Use for 10M/100M where publisher-supported bulk data exists.
+
+Examples:
+
+- OpenAlex public S3 snapshot,
+- PubMed baseline/update files,
+- publisher-supported OSTI full-corpus metadata,
+- explicit NASA CMR high-volume granule harvesting/bulk strategy.
+
+The bulk file is an ingestion artifact. The publisher remains authoritative.
 
 ### Snapshot benchmark mode
 
 ```text
-federated catalog / deterministic bounded snapshot
-  -> normalized projection stream
+source API/bulk artifact
+  -> retained normalized metadata
+  -> deterministic source snapshot(s)
+  -> deterministic composition identity
+  -> normalized DiscoveryDocument stream
   -> projection ID
   -> Solr + OpenSearch
 ```
 
-This mode isolates indexing/search experiments from publisher API timing. It must be clearly labelled as benchmark/snapshot evidence.
+This isolates search/index research from publisher timing.
 
-All modes share the same normalized search-document semantics.
-
-## Checkpoints
+## Scale checkpoints
 
 ### C0 — curated baseline
 
-Current small repository slice: 181 curated research objects.
+181 curated DSpace research objects.
 
 Purpose:
 
-- preserve known functional behavior,
-- preserve demo speed,
-- keep an easy-to-inspect regression corpus.
+- easy inspection,
+- functional regression,
+- curated Open Science relationships and accessibility demo.
 
-### C1 — 10,000 — active
+### C1 — 100K — proven evidence baseline
 
-Purpose:
+Composition:
 
-- validate harvest/resume,
-- validate dynamic taxonomy,
-- validate bounded projection,
-- catch mapping/facet explosions,
-- measure first meaningful storage/resource growth,
-- provide the first PI-2 Kubernetes corpus once evidence closes.
+```text
+100,000 Data.gov
++ 181 curated DSpace
+= 100,181 projected objects
+```
 
-Current Data.gov status on 2026-08-30:
+Evidence includes:
 
-- same durable run resumed from 1K to 10K,
-- 100 total pages x 100,
-- 10,000 accepted,
-- 0 rejected,
-- 0 skipped,
-- no failure,
-- bounded snapshot/projection/search/storage/resource closure still pending.
+- retained durable Data.gov checkpoint,
+- exact bounded 100K source snapshot,
+- deterministic projection ID `125fc791065fd8c68806f62a52c2203c2ce74a083954ce469f3e0cd627015024`,
+- Solr/OpenSearch count + identity parity,
+- restart/reprojection reproduction,
+- storage measurement,
+- paired execution-order search report,
+- OpenSearch aggregation-shape experiments.
 
-The correct claim today is **C1 harvest proven, C1 evidence incomplete**.
+C1 must remain reproducible after later source sampling and scale work.
 
-### C2 — 100,000
-
-Purpose:
-
-- meaningful indexing duration,
-- heap/disk growth,
-- high-cardinality facets,
-- deep-search/pagination behavior,
-- standalone versus clustered crossover experiments.
-
-Do not begin C2 until C1 snapshot/projection/search/storage/resource evidence is closed.
-
-### C3 — 1,000,000
+### C1.5 — optional 500K Data.gov
 
 Purpose:
 
-- first true large-corpus search benchmark,
-- concurrency 1/8/32,
-- shard-layout experiments in PI-2,
-- semantic/relevance comparison at realistic scale.
+- one-source scale curve from 100K toward the actual Data.gov ceiling,
+- longer checkpoint/resume behavior,
+- storage/index growth before source composition changes.
 
-DOE OSTI remains the preferred source for the first controlled C3 corpus unless source-access evidence changes that decision.
+This is optional. It is useful only if the API request/time cost is justified and a personal Data.gov API key is configured.
 
-### C4 — 5,000,000+
+### C2 — 1M — first composite tier
 
-Optional only when C3 is repeatable and workstation resources remain sensible.
+Preferred initial recipe:
 
-## Evidence identities
+```text
+500,000 Data.gov
+500,000 DOE OSTI
++ curated DSpace
+```
 
-PI-1 now uses two related but distinct deterministic identities.
+Why balanced quotas:
 
-### Bounded snapshot identity
+- exact composition remains reproducible even when source totals change,
+- neither source dominates by accident,
+- dataset-heavy and publication/research-output-heavy metadata coexist,
+- source-system/content-type facets become meaningful research variables.
 
-A `BOUNDED_SNAPSHOT` identifies a stable retained source checkpoint even when the source run is intentionally `PAUSED` rather than exhausted.
+The current single-source bounded snapshot evidence is insufficient for C2. A composite corpus manifest/evidence chain is required first.
 
-Its evidence includes, where available:
+### C3 — 10M — heterogeneous research tier
+
+A candidate recipe might use Data.gov + OSTI + PubMed + OpenAlex + an explicit NASA granule slice.
+
+The exact recipe is intentionally not frozen. It should be chosen to answer a research question and then versioned.
+
+Purpose:
+
+- source diversity under meaningful scale,
+- high-cardinality subjects/topics/programs,
+- source-aware relevance and facets,
+- index merge/segment behavior,
+- concurrency and saturation,
+- standalone versus clustered crossover.
+
+### C4 — 100M — bulk-ingest / cluster tier
+
+100M should be built from publisher-supported bulk transports where possible, not hundreds of thousands or millions of REST calls.
+
+Purpose:
+
+- large bulk normalization throughput,
+- PostgreSQL/catalog write strategy,
+- search-index build duration,
+- shard/segment sizing,
+- storage amplification,
+- search latency and throughput at very large scale,
+- recovery/reprojection time,
+- cluster topology research.
+
+A workstation may still coordinate or sample this tier, but the actual search experiment may become cluster-only depending on measured storage/memory/indexing cost.
+
+## Source sampling before scale
+
+Before creating the first composite profile:
+
+```bash
+pnpm federation:sample:all
+```
+
+Expected behavior:
+
+- existing Data.gov records are observed but not advanced,
+- empty OSTI/NASA/PubMed/OpenAlex sources each receive one bounded page,
+- source failures remain visible,
+- no search profile is activated automatically.
+
+The goal is to validate semantic diversity before investing in bulk-scale ingestion.
+
+## Source snapshot identity
+
+Current single-source bounded evidence records:
 
 ```text
 snapshotId
@@ -141,216 +201,182 @@ sourceSystem
 runId
 adapterVersion
 retainedRecordCount
-acceptedCount
-rejectedCount
-skippedCount
-cursor
+accepted/rejected/skipped
+cursor/run status
 source update window
 sha256
 capturedAt
 ```
 
-The snapshot ID is content-addressed by source plus SHA-256, not merely by run ID.
+This remains useful for each source independently.
 
-### Projection identity
+## Composite corpus identity
 
-The projection ID identifies the deterministic ordered normalized `DiscoveryDocument` sequence sent to the search engines.
+Multi-source tiers require a higher-level composition record.
 
-It must be independent of:
-
-- database page size,
-- Solr/OpenSearch bulk size,
-- process restart boundaries,
-- host filesystem order.
-
-### Guarded snapshot -> projection linkage
-
-A scale checkpoint becomes stronger when the system can prove which projection was built from which stable source snapshot.
-
-The guarded linkage operation:
-
-1. captures the source checkpoint,
-2. rebuilds the mixed discovery projection,
-3. computes the projection identity,
-4. rescans the source run,
-5. persists the relationship only if counters/status/cursor/update time remained stable.
-
-The Data.gov 1K checkpoint has already proven this path. Its snapshot SHA is `78a2ec438b3dc3eab179fd94f5dd70c58fa770e3e18186dd624f078b0cbc3ce9` and its mixed 1,181-object projection ID is `5ad44932acd6166e9a32576ff06df9c4659cfba5f8800d952762503703af47dd`.
-
-## Corpus manifest
-
-Completed or reusable multi-source corpus tiers also need a compact manifest. The large document set itself does not belong in Git.
-
-A future combined/million-class manifest should record concepts such as:
+Conceptual example:
 
 ```json
 {
-  "corpusId": "federated-osti-1m-v1",
-  "sources": ["DOE_OSTI"],
-  "retrievedAt": "2026-09-01T00:00:00Z",
-  "requestedRecords": 1000000,
-  "acceptedRecords": 1000000,
-  "rejectedRecords": 0,
-  "skippedRecords": 0,
-  "normalizationVersion": "adapter-or-build-version",
-  "canonicalizationVersion": 1,
-  "projectionId": "sha256",
-  "mode": "FEDERATED_CATALOG"
+  "profile": "FEDERATED_1M",
+  "compositionVersion": "federated-composition/v1",
+  "sources": [
+    {
+      "sourceSystem": "DATA_GOV",
+      "requestedRecords": 500000,
+      "evidenceId": "DATA_GOV:<sha>"
+    },
+    {
+      "sourceSystem": "DOE_OSTI",
+      "requestedRecords": 500000,
+      "evidenceId": "DOE_OSTI:<sha>"
+    }
+  ],
+  "federatedRecordCount": 1000000,
+  "compositionSha256": "...",
+  "projectionId": "..."
 }
 ```
 
-For a combined corpus, record each source and accepted count separately. This higher-level corpus manifest complements, rather than replaces, source-specific bounded snapshots.
+The composition SHA must be independent of:
+
+- database page size,
+- ingest batch size,
+- process restart boundaries,
+- filesystem traversal order,
+- Solr/OpenSearch bulk size.
+
+For bulk publishers, the source evidence should include publisher release/manifest identity in addition to the normalized digest.
 
 ## Storage policy
 
 Persist:
 
 - normalized metadata,
-- source identity,
-- provenance,
+- source identity/provenance,
 - source/resource URLs,
+- source-specific compact metadata needed for research/detail,
 - harvest/checkpoint state,
-- compact source-specific fields needed for detail/reharvest,
-- bounded snapshot/corpus manifests,
-- snapshot/projection evidence relationships,
-- bounded diagnostic/error samples.
+- bulk source manifest/release evidence,
+- bounded/composite corpus manifests,
+- projection evidence,
+- bounded quarantine/error samples.
 
 Do not persist by default:
 
 - millions of PDFs,
 - dataset ZIPs,
-- NASA science granule bytes,
+- NASA granule bytes,
 - publisher full-text mirrors,
-- complete raw API payload history where normalized/provenance data is enough.
+- complete raw response history when normalized/provenance data is sufficient.
 
 ## Disk planning
 
-Metadata is much smaller than source binaries but one million rich records are still nontrivial once represented in:
+The measured 10K/100K work proved that federated PostgreSQL/search indexes grow while DSpace remains approximately fixed because external binaries are not mirrored.
 
-- PostgreSQL federated catalog,
-- Solr index,
-- OpenSearch index,
-- optional normalized snapshot/export,
-- temporary bulk/indexing files,
-- logs and benchmark artifacts.
-
-Before C3, measure actual bytes/document at C1 and C2 and estimate C3 with safety margin rather than guessing.
-
-Planning formula:
+Continue estimating components separately:
 
 ```text
-required local disk ~= federated store
-                    + Solr index
-                    + OpenSearch index
-                    + optional snapshot/export
-                    + 30-50% operational headroom
+steady state ~= PostgreSQL federated catalog
+             + fixed DSpace authority footprint
+             + Solr index
+             + OpenSearch index
+             + optional normalized/bulk staging artifacts
+
+peak ~= steady state
+      + staged replacement indexes
+      + active ingest partitions/files
+      + research margin
 ```
 
-PI-2 replicas will multiply search-index storage further, so the cluster project must consume the measured PI-1 bytes/document values.
+At 10M/100M, bulk source files may dominate temporary disk even when normalized search metadata remains modest. Preflight must model that separately.
 
 ## Query corpus
 
-Large-scale testing needs stable query classes, not one favorite query.
+As source diversity grows, the query set must evolve beyond the original Data.gov scenarios.
 
-Required query set:
+Required research classes:
 
+- cross-source full text,
 - exact source identifier,
-- DOI/PMID/persistent identifier,
-- rare phrase,
-- common multi-term query,
+- DOI,
+- PMID,
 - author query,
-- publisher/agency filter,
+- publisher/agency/institution filter,
 - source-system filter,
 - content-type filter,
 - year/date filter,
-- high-cardinality subject/program facet,
-- low-cardinality facet,
-- intentionally empty query,
-- intentionally broad query.
+- subject/topic facet,
+- high-cardinality program/topic facet,
+- source-specific selective filter,
+- intentionally broad query,
+- intentionally empty query.
 
-Every query definition should have a stable ID and expected semantic intent.
+A query should have a stable ID, semantic intent and expected evidence boundaries.
 
 ## Performance evidence
 
-Preserve the existing benchmark discipline:
+Retain the current discipline:
 
-- warm-ups excluded,
+- warmups excluded,
+- paired engine execution order,
 - at least 100 measured requests for distribution claims,
-- API elapsed separate from Solr `QTime` / OpenSearch `took`,
+- API elapsed separate from native Solr `QTime` / OpenSearch `took`,
 - p50/p95/p99/min/max/mean,
-- source snapshot/corpus and projection ID,
+- projection/corpus identity,
+- source composition,
 - errors/timeouts,
-- no winner claim from fixed engine order.
+- host/resource context.
 
-At concurrency above one, add throughput and saturation/resource evidence.
+At concurrency above one, add throughput, CPU, memory, GC and saturation evidence.
 
-Harvest and projection duration should also be recorded separately from search latency.
+Ingest duration, normalization throughput, projection duration and search latency are separate measurements.
 
 ## Semantic evidence
 
-At scale, faster is not sufficient.
+Faster is not enough.
 
 Record:
 
-- result-set overlap,
+- total-hit parity where equivalent semantics are expected,
+- facet bucket/count parity,
 - top-N overlap,
 - rank movement,
 - missing/extra results,
-- facet-bucket/count differences,
-- query-specific expected records where a gold set exists.
+- source distribution,
+- content-type distribution,
+- query-specific gold records where available.
 
-Semantic differences should be evaluated on the same deterministic corpus snapshot/projection used for performance.
+Source heterogeneity may legitimately change relevance behavior; document that as a research result rather than treating every rank difference as an engine bug.
 
 ## Standalone first, cluster second
 
-Each corpus checkpoint should first pass through the stable standalone path:
+Evidence-grade tiers should first pass through the simplest topology that can reasonably hold them.
 
 ```text
-Docker Compose
-  Solr standalone
-  OpenSearch single node
+Docker Compose standalone
+  -> baseline where feasible
+
+kind / cluster
+  -> same corpus manifest
+  -> SolrCloud / multi-node OpenSearch
+  -> topology/resilience/concurrency comparison
 ```
 
-Only then should PI-2 run the same manifest/snapshot against:
+At 100M, feasibility may dictate cluster-first execution, but the corpus/evidence semantics must remain unchanged.
 
-```text
-kind
-  SolrCloud
-  multi-node OpenSearch
-```
+## Acceptance criteria by tier
 
-This gives a genuine baseline and keeps topology changes from being confused with data changes.
+A scale tier is complete when:
 
-## Ordinary development behavior
+- its exact source composition is versioned,
+- each source has reproducible source evidence,
+- the composite corpus digest is reproducible,
+- Solr/OpenSearch receive the exact same normalized sequence,
+- count/identity parity is proven,
+- storage and ingest/projection duration are recorded,
+- search performance and semantic evidence are collected,
+- source binaries remain external unless explicitly part of a separate content experiment,
+- the corpus can be replayed in another topology without changing record meaning.
 
-Developers should not need a million-record corpus to run the application.
-
-Maintain named profiles/commands conceptually similar to:
-
-```text
-demo-small       curated/fixture-scale Compose
-data-10k         bounded federated corpus
-data-100k        larger local test
-data-1m          explicit heavy run
-k8s-10k          clustered test
-k8s-100k         clustered scale test
-k8s-1m           explicit heavy cluster run
-```
-
-Exact command names can be chosen as the scale workflow hardens. The current implementation already supports bounded page-size/max-page harvesting and persistent corpus/storage measurements without requiring a separate runtime.
-
-## Acceptance criteria
-
-The million-record corpus capability is complete when:
-
-- a 1M normalized metadata corpus can be produced resumably,
-- its manifest captures source counts, timestamps, normalization version and projection identity,
-- the corpus is reproducible without committing it to Git,
-- standalone Solr and OpenSearch index the exact same normalized corpus,
-- counts and deterministic identity match,
-- indexing duration/error counts and resource context are recorded,
-- stable large-corpus query classes execute successfully,
-- p50/p95/p99 performance evidence can be collected,
-- semantic/result-difference evidence can be collected,
-- the same corpus can be handed unchanged to the PI-2 Kubernetes project,
-- no requirement exists to download the underlying publisher binaries.
+See [Federation Scale Research Plan](../../planning/FEDERATION_SCALE_RESEARCH_PLAN.md) for the active 100K→1M→10M→100M sequence.

@@ -1,6 +1,7 @@
 package org.civicsrepo.admin;
 
 import java.util.List;
+import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.federation.FederatedSnapshotProjectionCaptureService;
 import org.civicsrepo.federation.FederatedSnapshotProjectionEvidence;
 import org.civicsrepo.federation.FederatedSnapshotProjectionEvidenceStore;
@@ -30,11 +31,19 @@ public class FederationSnapshotProjectionAdminController {
         this.evidenceStore = evidenceStore;
     }
 
-    /** Capture the run checkpoint, rebuild combined discovery, and link only if the checkpoint stays stable. */
+    /**
+     * Capture the run checkpoint, rebuild combined discovery, and link only if the checkpoint stays
+     * stable. Supplying a named federated profile snapshots exactly that deterministic record
+     * prefix even when more source metadata is retained locally.
+     */
     @PostMapping("/runs/{runId}/project")
-    public FederatedSnapshotProjectionEvidence captureAndProject(@PathVariable String runId) {
+    public FederatedSnapshotProjectionEvidence captureAndProject(
+            @PathVariable String runId,
+            @RequestParam(required = false) CorpusProfile profile) {
         try {
-            return captureService.captureAndProject(runId);
+            return profile == null
+                    ? captureService.captureAndProject(runId)
+                    : captureService.captureAndProject(runId, profile);
         } catch (IllegalArgumentException | IllegalStateException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage(), exception);
         }

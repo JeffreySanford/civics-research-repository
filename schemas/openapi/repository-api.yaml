@@ -98,9 +98,16 @@ paths:
       operationId: runSearchComparison
       summary: Run one normalized discovery query against Solr and OpenSearch.
       description: >-
-        Both engines query projections built from the same normalized DSpace research-object set.
-        Elapsed timings are local demo measurements and must not be presented as production
-        benchmarks.
+        Both engines query the same deterministic active discovery projection. Elapsed timings are
+        local diagnostic measurements and must not be presented as universal production benchmarks.
+        The optional execution order exists so controlled experiments can detect ordering effects.
+      parameters:
+        - name: order
+          in: query
+          required: false
+          description: Engine invocation order for controlled local diagnostics; defaults to SOLR_FIRST.
+          schema:
+            $ref: '#/components/schemas/SearchComparisonExecutionOrder'
       requestBody:
         required: true
         content:
@@ -461,18 +468,115 @@ paths:
     post:
       tags: [Admin]
       operationId: reindexDiscoveryProjection
-      summary: Rebuild the discovery Solr projection from DSpace.
+      summary: Activate or rebuild a deterministic discovery corpus profile.
+      description: >-
+        Rebuilds Solr and OpenSearch from the normalized records belonging to the requested corpus
+        profile and persists a named activation only after projection parity succeeds. When profile is
+        omitted, the currently active profile is rebuilt; before any activation exists that resolves
+        to CURATED_DEMO. This endpoint currently returns after activation completes even though its
+        historical HTTP status remains 202.
+      parameters:
+        - name: profile
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CorpusProfile'
       responses:
         '202':
-          description: Reindex accepted and completed.
+          description: Profile activation/rebuild completed and the resulting projection state is returned.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscoveryProjectionState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /admin/reindex/progress:
+    get:
+      tags: [Admin]
+      operationId: getCorpusProfileActivationProgress
+      summary: Get live progress for the current or most recent corpus-profile activation.
+      responses:
+        '200':
+          description: Operator-facing activation progress.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusProfileActivationProgress'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/corpus/scale:
+    post:
+      tags: [Admin]
+      operationId: startCorpusProfileScale
+      summary: Start guarded asynchronous growth and activation of a supported corpus profile.
+      description: >-
+        Starts the durable harvest/snapshot/projection/evidence workflow. FEDERATED_100K is the
+        currently supported growth target; retained publisher metadata is reused when already present.
+      parameters:
+        - name: profile
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CorpusProfile'
+      responses:
+        '202':
+          description: Scale operation accepted; poll the reindex progress endpoint for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusProfileActivationProgress'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/corpus/scale/evidence:
+    get:
+      tags: [Admin]
+      operationId: getCorpusScaleEvidence
+      summary: Verify the current evidence chain for a named corpus profile without mutating state.
+      parameters:
+        - name: profile
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CorpusProfile'
+      responses:
+        '200':
+          description: Read-only corpus evidence report and any detected violations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusScaleEvidenceReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/federation/harvest/status:
+    get:
+      tags: [Admin]
+      operationId: getFederationHarvestStatus
+      summary: Inspect retained metadata and the durable harvest checkpoint for one federated source.
+      parameters:
+        - name: sourceSystem
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/FederatedSourceSystem'
+      responses:
+        '200':
+          description: Source-scoped retained count plus resumable/latest durable run metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FederationHarvestStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /admin/dspace/overview:
     get:
       tags: [Admin]
@@ -685,6 +789,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: The requested operator action conflicts with current runtime state.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     InternalServerError:
       description: Unexpected server error.
       content:
@@ -704,6 +814,210 @@ components:
         Stable local corpus profile. FEDERATED_10K/100K/1M describe target federated metadata counts
         in addition to the curated repository records; FULL has no fixed count.
       enum: [CURATED_DEMO, FEDERATED_10K, FEDERATED_100K, FEDERATED_1M, FULL]
+    SearchComparisonExecutionOrder:
+      type: string
+      description: Invocation order used by a controlled Solr/OpenSearch comparison request.
+      enum: [SOLR_FIRST, OPENSEARCH_FIRST]
+    CorpusProfileActivationPhase:
+      type: string
+      enum:
+        - IDLE
+        - PREPARING
+        - HARVESTING
+        - SNAPSHOTTING
+        - PROJECTING
+        - VERIFYING
+        - CAPTURING_EVIDENCE
+        - COMPLETED
+        - FAILED
+    CorpusProfileActivationProgress:
+      type: object
+      required:
+        - phase
+        - processedDocuments
+        - percentComplete
+        - updatedAt
+        - elapsedMs
+        - message
+      properties:
+        operationId:
+          type: [string, 'null']
+        profile:
+          oneOf:
+            - $ref: '#/components/schemas/CorpusProfile'
+            - type: 'null'
+        phase:
+          $ref: '#/components/schemas/CorpusProfileActivationPhase'
+        processedDocuments:
+          type: integer
+          format: int64
+          minimum: 0
+        totalDocuments:
+          type: [integer, 'null']
+          format: int64
+          minimum: 0
+        percentComplete:
+          type: integer
+          minimum: 0
+          maximum: 100
+        startedAt:
+          type: [string, 'null']
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: [string, 'null']
+          format: date-time
+        elapsedMs:
+          type: integer
+          format: int64
+          minimum: 0
+        documentsPerSecond:
+          type: [number, 'null']
+          format: double
+          minimum: 0
+        message:
+          type: string
+    CorpusScaleEvidenceReport:
+      type: object
+      required:
+        - profile
+        - valid
+        - retainedFederatedRecordCount
+        - currentProjectionObjectCount
+        - targetParity
+        - storageEvidencePresent
+        - violations
+      properties:
+        profile:
+          $ref: '#/components/schemas/CorpusProfile'
+        valid:
+          type: boolean
+        targetFederatedRecordCount:
+          type: [integer, 'null']
+          format: int64
+          minimum: 0
+        retainedFederatedRecordCount:
+          type: integer
+          format: int64
+          minimum: 0
+        activeProfile:
+          oneOf:
+            - $ref: '#/components/schemas/CorpusProfile'
+            - type: 'null'
+        activationProjectionObjectCount:
+          type: [integer, 'null']
+          format: int64
+          minimum: 0
+        activationProjectionId:
+          type: [string, 'null']
+          pattern: '^[0-9a-f]{64}$'
+        currentProjectionObjectCount:
+          type: integer
+          minimum: 0
+        currentProjectionId:
+          type: [string, 'null']
+          pattern: '^[0-9a-f]{64}$'
+        targetParity:
+          type: boolean
+        storageEvidencePresent:
+          type: boolean
+        storageProjectionObjectCount:
+          type: [integer, 'null']
+          format: int64
+          minimum: 0
+        storageRetainedFederatedCount:
+          type: [integer, 'null']
+          format: int64
+          minimum: 0
+        storageProjectionId:
+          type: [string, 'null']
+          pattern: '^[0-9a-f]{64}$'
+        storageCapturedAt:
+          type: [string, 'null']
+          format: date-time
+        violations:
+          type: array
+          items:
+            type: string
+    FederatedSourceSystem:
+      type: string
+      enum: [DATA_GOV, DOE_OSTI, NASA_CMR, PUBMED, OPENALEX]
+    HarvestRunStatus:
+      type: string
+      enum: [RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED]
+    FederationHarvestResponse:
+      type: object
+      required:
+        - runId
+        - sourceSystem
+        - adapterVersion
+        - status
+        - pageSize
+        - pageCount
+        - acceptedCount
+        - rejectedCount
+        - skippedCount
+        - startedAt
+        - updatedAt
+        - projectionRefreshRequired
+      properties:
+        runId:
+          type: string
+        sourceSystem:
+          $ref: '#/components/schemas/FederatedSourceSystem'
+        adapterVersion:
+          type: string
+        status:
+          $ref: '#/components/schemas/HarvestRunStatus'
+        pageSize:
+          type: integer
+          minimum: 1
+        pageCount:
+          type: integer
+          minimum: 0
+        acceptedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        rejectedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        skippedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        cursor:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        failureMessage:
+          type: string
+        projectionRefreshRequired:
+          type: boolean
+    FederationHarvestStatusResponse:
+      type: object
+      required: [sourceSystem, retainedRecordCount]
+      properties:
+        sourceSystem:
+          $ref: '#/components/schemas/FederatedSourceSystem'
+        retainedRecordCount:
+          type: integer
+          format: int64
+          minimum: 0
+        resumableRun:
+          $ref: '#/components/schemas/FederationHarvestResponse'
+        latestRun:
+          $ref: '#/components/schemas/FederationHarvestResponse'
     DeploymentTopology:
       type: string
       description: Runtime topology associated with a storage measurement.

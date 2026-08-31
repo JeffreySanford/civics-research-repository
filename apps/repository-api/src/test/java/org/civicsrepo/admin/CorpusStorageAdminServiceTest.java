@@ -29,9 +29,11 @@ class CorpusStorageAdminServiceTest {
             OffsetDateTime.parse("2026-08-29T23:30:00Z"));
 
     @Test
-    void exposesTheCurrentCuratedProfileAndPlannedScaleTiersWithoutInventingMeasurements() {
+    void exposesThePersistedActiveProfileAndPlannedScaleTiersWithoutInventingMeasurements() {
         CorpusStorageMeasurementStore store = mock(CorpusStorageMeasurementStore.class);
         CorpusStorageCaptureService captureService = mock(CorpusStorageCaptureService.class);
+        CorpusProfileActivationService activationService = mock(CorpusProfileActivationService.class);
+        given(activationService.currentProfile()).willReturn(CorpusProfile.CURATED_DEMO);
         given(store.findRecent(50)).willReturn(List.of(CURATED_MEASUREMENT));
         given(store.findRecentByProfile(CorpusProfile.CURATED_DEMO, 1))
                 .willReturn(List.of(CURATED_MEASUREMENT));
@@ -41,7 +43,7 @@ class CorpusStorageAdminServiceTest {
         given(store.findRecentByProfile(CorpusProfile.FULL, 1)).willReturn(List.of());
 
         CorpusStorageAdminService service =
-                new CorpusStorageAdminService(store, captureService, "DOCKER_COMPOSE");
+                new CorpusStorageAdminService(store, captureService, activationService, "DOCKER_COMPOSE");
 
         var overview = service.overview();
 
@@ -62,14 +64,16 @@ class CorpusStorageAdminServiceTest {
     }
 
     @Test
-    void capturesOnlyTheCurrentlyActiveProfileAndStandaloneTopology() {
+    void capturesOnlyThePersistedActiveProfileAndStandaloneTopology() {
         CorpusStorageMeasurementStore store = mock(CorpusStorageMeasurementStore.class);
         CorpusStorageCaptureService captureService = mock(CorpusStorageCaptureService.class);
+        CorpusProfileActivationService activationService = mock(CorpusProfileActivationService.class);
+        given(activationService.currentProfile()).willReturn(CorpusProfile.CURATED_DEMO);
         given(captureService.capture(CorpusProfile.CURATED_DEMO, DeploymentTopology.DOCKER_COMPOSE))
                 .willReturn(CURATED_MEASUREMENT);
 
         CorpusStorageAdminService service =
-                new CorpusStorageAdminService(store, captureService, "DOCKER_COMPOSE");
+                new CorpusStorageAdminService(store, captureService, activationService, "DOCKER_COMPOSE");
 
         var captured = service.captureCurrent();
 

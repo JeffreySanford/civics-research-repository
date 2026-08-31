@@ -1,10 +1,11 @@
 package org.civicsrepo.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +16,7 @@ import java.util.Optional;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryCursor;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryPage;
+import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
@@ -75,6 +77,56 @@ class DiscoveryProjectionServiceTest {
         verify(identityStore).recordIndexed(List.of("repo-001", "repo-002"));
         verify(combinedCatalog).findAfter(null, 1_000);
         verify(combinedCatalog).findAfter(next, 1_000);
+    }
+
+    @Test
+    void curatedDemoProjectsRepositoryOnlyEvenWhenFederatedMetadataIsRetained() {
+        RepositoryCatalog repositoryCatalog = mock(RepositoryCatalog.class);
+        CombinedDiscoveryCatalog combinedCatalog = mock(CombinedDiscoveryCatalog.class);
+        RepositoryIdentityStore identityStore = mock(RepositoryIdentityStore.class);
+        RecordingTarget target = new RecordingTarget("discovery", false);
+        DiscoveryDocument repositoryOne = document("repo-001", ResearchObjectOrigin.REPOSITORY, "ACS");
+        DiscoveryDocument repositoryTwo = document("repo-002", ResearchObjectOrigin.REPOSITORY, "LODES");
+
+        when(repositoryCatalog.findAllDiscoveryDocuments()).thenReturn(List.of(repositoryTwo, repositoryOne));
+        when(combinedCatalog.retainedFederatedCount()).thenReturn(10_000L);
+
+        DiscoveryProjectionService service = new DiscoveryProjectionService(
+                repositoryCatalog,
+                combinedCatalog,
+                List.of(target),
+                identityStore);
+
+        DiscoveryProjectionService.ProjectionState state =
+                service.reindex(CorpusProfile.CURATED_DEMO, List.of());
+
+        assertThat(state.objectCount()).isEqualTo(2);
+        assertThat(target.batches).containsExactly(List.of(repositoryOne, repositoryTwo));
+        verify(combinedCatalog, never()).findAfter(isNull(), eq(1_000));
+        verify(identityStore).recordIndexed(List.of("repo-001", "repo-002"));
+    }
+
+    @Test
+    void namedFederatedProfileRefusesToProjectBeforeItsRetainedBoundExists() {
+        RepositoryCatalog repositoryCatalog = mock(RepositoryCatalog.class);
+        CombinedDiscoveryCatalog combinedCatalog = mock(CombinedDiscoveryCatalog.class);
+        RepositoryIdentityStore identityStore = mock(RepositoryIdentityStore.class);
+        RecordingTarget target = new RecordingTarget("discovery", false);
+
+        when(repositoryCatalog.findAllDiscoveryDocuments()).thenReturn(List.of());
+        when(combinedCatalog.retainedFederatedCount()).thenReturn(9_999L);
+
+        DiscoveryProjectionService service = new DiscoveryProjectionService(
+                repositoryCatalog,
+                combinedCatalog,
+                List.of(target),
+                identityStore);
+
+        assertThatThrownBy(() -> service.reindex(CorpusProfile.FEDERATED_10K, List.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("requires 10000 retained federated records")
+                .hasMessageContaining("9999 are available");
+        assertThat(target.begun).isFalse();
     }
 
     @Test

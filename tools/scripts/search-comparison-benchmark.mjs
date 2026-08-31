@@ -5,8 +5,10 @@ import { pathToFileURL } from 'node:url';
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
 const DEFAULT_WARMUP_RUNS = 5;
 const DEFAULT_MEASURED_RUNS = 100;
+const DEFAULT_EXECUTION_ORDER = 'SOLR_FIRST';
 const MAX_WARMUP_RUNS = 20;
 const MAX_MEASURED_RUNS = 100;
+const EXECUTION_ORDERS = new Set(['SOLR_FIRST', 'OPENSEARCH_FIRST']);
 
 function requireBoundedInteger(value, label, minimum, maximum) {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
@@ -21,6 +23,15 @@ function requireTiming(value, label) {
   if (!Number.isFinite(value) || value < 0) {
     throw new Error(
       `${label} must be a finite, non-negative millisecond value.`,
+    );
+  }
+  return value;
+}
+
+function requireExecutionOrder(value) {
+  if (!EXECUTION_ORDERS.has(value)) {
+    throw new Error(
+      `executionOrder must be one of ${[...EXECUTION_ORDERS].join(', ')}.`,
     );
   }
   return value;
@@ -109,6 +120,7 @@ export async function runSearchComparisonBenchmark({
   baseUrl = DEFAULT_BASE_URL,
   warmupRuns = DEFAULT_WARMUP_RUNS,
   measuredRuns = DEFAULT_MEASURED_RUNS,
+  executionOrder = DEFAULT_EXECUTION_ORDER,
   request = {
     scenario: 'FULL_TEXT_RELEVANCE',
     query: 'North Dakota workforce',
@@ -123,8 +135,9 @@ export async function runSearchComparisonBenchmark({
 
   requireBoundedInteger(warmupRuns, 'warmupRuns', 0, MAX_WARMUP_RUNS);
   requireBoundedInteger(measuredRuns, 'measuredRuns', 1, MAX_MEASURED_RUNS);
+  const order = requireExecutionOrder(executionOrder);
 
-  const endpoint = `${baseUrl.replace(/\/$/, '')}/search/comparison/run`;
+  const endpoint = `${baseUrl.replace(/\/$/, '')}/search/comparison/run?order=${encodeURIComponent(order)}`;
   let projectionId = null;
   let projection = null;
   const solrSamples = [];
@@ -168,10 +181,10 @@ export async function runSearchComparisonBenchmark({
     capturedAt: now().toISOString(),
     measurementBoundary:
       'API elapsed measures Spring around each engine HTTP request. Engine-reported timing is captured from that same response (Solr QTime / OpenSearch took); vendor definitions differ and are not directly equivalent.',
-    executionOrder: 'SOLR_THEN_OPENSEARCH',
+    executionOrder: order,
     comparativeClaimAllowed: false,
     caveat:
-      'Warm-up runs are excluded, but engine order is fixed and this is a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Use these distributions as diagnostics, not as proof that either engine is inherently faster in production.',
+      'Warm-up runs are excluded and execution order is explicit, but this remains a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Compare reversed-order passes before treating an engine lead as robust.',
     endpoint,
     request,
     projection,
@@ -195,6 +208,7 @@ export function parseArguments(argv) {
     baseUrl: DEFAULT_BASE_URL,
     warmupRuns: DEFAULT_WARMUP_RUNS,
     measuredRuns: DEFAULT_MEASURED_RUNS,
+    executionOrder: DEFAULT_EXECUTION_ORDER,
     output: 'browser-evidence-artifacts/search-comparison-benchmark.json',
     scenario: 'FULL_TEXT_RELEVANCE',
     query: 'North Dakota workforce',
@@ -216,6 +230,10 @@ export function parseArguments(argv) {
         break;
       case '--samples':
         options.measuredRuns = Number(value);
+        index += 1;
+        break;
+      case '--order':
+        options.executionOrder = value;
         index += 1;
         break;
       case '--output':
@@ -244,6 +262,7 @@ async function main() {
     baseUrl: options.baseUrl,
     warmupRuns: options.warmupRuns,
     measuredRuns: options.measuredRuns,
+    executionOrder: options.executionOrder,
     request: {
       scenario: options.scenario,
       query: options.query,
@@ -258,6 +277,7 @@ async function main() {
 
   console.log(`Search comparison diagnostic written to ${outputPath}`);
   console.log(`Projection: ${result.projection.projectionId}`);
+  console.log(`Execution order: ${result.executionOrder}`);
   console.log(
     `Solr API elapsed p50/p95/p99: ${result.solr.elapsed.p50Ms}/${result.solr.elapsed.p95Ms}/${result.solr.elapsed.p99Ms} ms`,
   );

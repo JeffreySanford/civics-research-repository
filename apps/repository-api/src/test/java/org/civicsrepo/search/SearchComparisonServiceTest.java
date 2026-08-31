@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -100,10 +101,38 @@ class SearchComparisonServiceTest {
     }
 
     @Test
+    void reversesEngineExecutionOrderWithoutChangingTheResponseShape() {
+        available(solr);
+        available(openSearch);
+        when(solr.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+                .thenReturn(execution(2, 4));
+        when(openSearch.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), anyInt(), anyInt()))
+                .thenReturn(execution(2, 7));
+
+        SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FULL_TEXT_RELEVANCE)
+                .query("workforce")
+                .page(0)
+                .pageSize(10);
+
+        var result = service.run(request, SearchComparisonExecutionOrder.OPENSEARCH_FIRST);
+
+        var order = inOrder(openSearch, solr);
+        order.verify(openSearch).isEnabled();
+        order.verify(openSearch).documentCount();
+        order.verify(openSearch).searchWithDiagnostics("workforce", List.of(), null, null, null, 0, 10);
+        order.verify(solr).isEnabled();
+        order.verify(solr).documentCount();
+        order.verify(solr).searchWithDiagnostics("workforce", List.of(), null, null, null, 0, 10);
+        assertThat(result.getSameProjection()).isTrue();
+        assertThat(result.getSolr().getTotalHits()).isEqualTo(2);
+        assertThat(result.getOpenSearch().getTotalHits()).isEqualTo(2);
+    }
+
+    @Test
     void keepsSolrResultWhenOpenSearchIsDown() {
         available(solr);
         when(openSearch.isEnabled()).thenReturn(true);
-        when(openSearch.isReachable()).thenReturn(false);
+        when(openSearch.documentCount()).thenReturn(Optional.empty());
         when(solr.searchWithDiagnostics(any(), anyList(), isNull(), isNull(), isNull(), eq(0), eq(10)))
                 .thenReturn(execution(2, 5));
 
@@ -189,7 +218,6 @@ class SearchComparisonServiceTest {
 
     private void available(DiscoveryProjectionTarget target) {
         when(target.isEnabled()).thenReturn(true);
-        when(target.isReachable()).thenReturn(true);
     }
 
     private SearchResponse response(int total) {

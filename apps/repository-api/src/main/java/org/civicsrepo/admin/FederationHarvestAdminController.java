@@ -1,12 +1,18 @@
 package org.civicsrepo.admin;
 
+import java.util.List;
 import org.civicsrepo.federation.FederatedHarvestException;
 import org.civicsrepo.federation.FederatedHarvestRunService;
+import org.civicsrepo.federation.FederatedMetadataCatalog;
+import org.civicsrepo.federation.FederatedSourceSystem;
 import org.civicsrepo.federation.HarvestRun;
+import org.civicsrepo.federation.HarvestRunStore;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -18,9 +24,29 @@ public class FederationHarvestAdminController {
     private static final int MAX_PAGES = 100_000;
 
     private final FederatedHarvestRunService harvestRunService;
+    private final HarvestRunStore harvestRunStore;
+    private final FederatedMetadataCatalog metadataCatalog;
 
-    public FederationHarvestAdminController(FederatedHarvestRunService harvestRunService) {
+    public FederationHarvestAdminController(
+            FederatedHarvestRunService harvestRunService,
+            HarvestRunStore harvestRunStore,
+            FederatedMetadataCatalog metadataCatalog) {
         this.harvestRunService = harvestRunService;
+        this.harvestRunStore = harvestRunStore;
+        this.metadataCatalog = metadataCatalog;
+    }
+
+    /** Inspect retained metadata and the durable run that would be resumed before mutating the source. */
+    @GetMapping("/status")
+    public FederationHarvestStatusResponse status(
+            @RequestParam(defaultValue = "DATA_GOV") FederatedSourceSystem sourceSystem) {
+        FederationHarvestResponse resumable = harvestRunStore
+                .findResumable(sourceSystem)
+                .map(FederationHarvestResponse::from)
+                .orElse(null);
+        List<HarvestRun> recent = harvestRunStore.findRecent(sourceSystem, 1);
+        FederationHarvestResponse latest = recent.isEmpty() ? null : FederationHarvestResponse.from(recent.getFirst());
+        return new FederationHarvestStatusResponse(sourceSystem, metadataCatalog.count(sourceSystem), resumable, latest);
     }
 
     /** Run a new harvest or resume the current bounded run for this source. */

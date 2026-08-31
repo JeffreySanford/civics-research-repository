@@ -436,21 +436,86 @@ export function generateSafIfNeeded({ force = false } = {}) {
   return generated.status ?? 0;
 }
 
-export async function runReindex() {
-  const reindex = await fetch(`${API_URL}/admin/reindex`, { method: 'POST' });
+export async function runReindex(profile) {
+  const profileQuery = profile ? `?profile=${encodeURIComponent(profile)}` : '';
+  const reindex = await fetch(`${API_URL}/admin/reindex${profileQuery}`, {
+    method: 'POST',
+  });
   if (!reindex.ok) {
-    throw new Error(`Reindex failed with HTTP ${reindex.status}.`);
+    const body = await reindex.text();
+    throw new Error(
+      `Reindex failed with HTTP ${reindex.status}${body ? `: ${body}` : '.'}`,
+    );
   }
 
   const projection = await reindex.json();
+  const profileLabel = profile ? ` for ${profile}` : '';
   console.log(
-    `    Indexed ${projection.objectCount} research objects (source: ${projection.source}).`,
+    `    Indexed ${projection.objectCount} research objects${profileLabel} (source: ${projection.source}).`,
   );
 
   if (projection.source !== 'REPOSITORY') {
     console.warn(
-      '    WARNING: the discovery projection is serving FIXTURE data, which means the repository\n' +
-        '    returned no items. The UI will show a placeholder-data notice. Check: pnpm run dspace:verify:seed',
+      '    WARNING: the discovery projection is serving FIXTURE data, which means the selected profile\n' +
+        '    returned no authoritative items. Check: pnpm run dspace:verify:seed',
+    );
+  }
+
+  return projection;
+}
+
+/**
+ * Waits for the Java startup runner to finish its guarded quick-start activation. Java is the
+ * single startup owner; this wrapper verifies the result instead of racing it with a second POST.
+ */
+export async function verifyStartupProfile(profile = 'CURATED_DEMO') {
+  let terminalProgress;
+  await waitFor(
+    `${profile} startup projection`,
+    `${API_URL}/admin/reindex/progress`,
+    {
+      intervalMs: 500,
+      check: async (response) => {
+        const progress = await response.json();
+        if (progress.profile !== profile) {
+          return false;
+        }
+        if (progress.phase === 'FAILED') {
+          throw new Error(progress.message || `${profile} activation failed.`);
+        }
+        if (progress.phase === 'COMPLETED') {
+          terminalProgress = progress;
+          return true;
+        }
+        return false;
+      },
+    },
+  );
+
+  const projectionResponse = await fetch(`${API_URL}/admin/reindex`);
+  if (!projectionResponse.ok) {
+    const body = await projectionResponse.text();
+    throw new Error(
+      `Unable to read startup projection with HTTP ${projectionResponse.status}${
+        body ? `: ${body}` : '.'
+      }`,
+    );
+  }
+
+  const projection = await projectionResponse.json();
+  console.log(
+    `    Verified ${profile}: ${projection.objectCount} searchable research objects (source: ${projection.source}).`,
+  );
+  if (terminalProgress?.elapsedMs !== undefined) {
+    console.log(
+      `    Startup projection completed in ${terminalProgress.elapsedMs} ms.`,
+    );
+  }
+
+  if (projection.source !== 'REPOSITORY') {
+    console.warn(
+      '    WARNING: the discovery projection is serving FIXTURE data, which means the selected profile\n' +
+        '    returned no authoritative items. Check: pnpm run dspace:verify:seed',
     );
   }
 
@@ -468,15 +533,18 @@ The stack is running.
   OpenSearch        http://localhost:9200
   DSpace Solr       http://localhost:8984/solr
 
+Default search profile: CURATED_DEMO (fast curated repository projection).
+Retained federated metadata is preserved independently for Admin-selected scale profiles.
+
 Worth showing, in order:
 
-  1. ${UI_URL}/discovery          search and facets, served from DSpace
+  1. ${UI_URL}/discovery          search and facets, served from the active corpus profile
   2. ${UI_URL}/datasets/tiger-line-north-dakota-2025
                                              repository metadata, files, citation, related research
   3. ${UI_URL}/maps               MapLibre with live USGS overlay and an accessible feature list
-  4. ${UI_URL}/admin/sync         dry-run, diff, and apply against the live repository
+  4. ${UI_URL}/admin/sync         sync plus corpus-profile/storage administration
   5. ${UI_URL}/evidence           WCAG and Section 508 status
-  6. ${UI_URL}/discovery          future Solr/OpenSearch comparison entry point
+  6. ${UI_URL}/search-lab         Solr/OpenSearch comparison on the active projection
 
 Stop with: ${stopCommand}
 `);
@@ -494,7 +562,9 @@ export function resetAnnouncements() {
 }
 
 /**
- * Brings up DSpace, seeds, starts the application stack, reindexes, and waits for the UI.
+ * Brings up DSpace, seeds, starts the application stack, verifies Java's CURATED_DEMO startup
+ * activation, and waits for the UI. Larger retained federated corpora remain in PostgreSQL but are
+ * not projected by default.
  */
 export async function runFullStartup({
   forceRecreate = false,
@@ -548,8 +618,8 @@ export async function runFullStartup({
     announce('Waiting for the repository API');
     await waitFor('Repository API', `${API_URL}/health`);
 
-    announce('Rebuilding the discovery projection from DSpace');
-    await runReindex();
+    announce('Verifying the CURATED_DEMO quick-start search profile');
+    await verifyStartupProfile('CURATED_DEMO');
 
     announce(
       'Waiting for the Angular UI (first run installs dependencies and builds)',

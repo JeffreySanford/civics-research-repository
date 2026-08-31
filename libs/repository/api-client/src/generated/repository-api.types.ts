@@ -69,7 +69,7 @@ export interface paths {
     put?: never;
     /**
      * Run one normalized discovery query against Solr and OpenSearch.
-     * @description Both engines query projections built from the same normalized DSpace research-object set. Elapsed timings are local demo measurements and must not be presented as production benchmarks.
+     * @description Both engines query the same deterministic active discovery projection. Elapsed timings are local diagnostic measurements and must not be presented as universal production benchmarks. The optional execution order exists so controlled experiments can detect ordering effects.
      */
     post: operations['runSearchComparison'];
     delete?: never;
@@ -299,8 +299,82 @@ export interface paths {
     /** Get the current discovery projection state without rebuilding it. */
     get: operations['getDiscoveryProjectionState'];
     put?: never;
-    /** Rebuild the discovery Solr projection from DSpace. */
+    /**
+     * Activate or rebuild a deterministic discovery corpus profile.
+     * @description Rebuilds Solr and OpenSearch from the normalized records belonging to the requested corpus profile and persists a named activation only after projection parity succeeds. When profile is omitted, the currently active profile is rebuilt; before any activation exists that resolves to CURATED_DEMO. This endpoint currently returns after activation completes even though its historical HTTP status remains 202.
+     */
     post: operations['reindexDiscoveryProjection'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/reindex/progress': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get live progress for the current or most recent corpus-profile activation. */
+    get: operations['getCorpusProfileActivationProgress'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/corpus/scale': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start guarded asynchronous growth and activation of a supported corpus profile.
+     * @description Starts the durable harvest/snapshot/projection/evidence workflow. FEDERATED_100K is the currently supported growth target; retained publisher metadata is reused when already present.
+     */
+    post: operations['startCorpusProfileScale'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/corpus/scale/evidence': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Verify the current evidence chain for a named corpus profile without mutating state. */
+    get: operations['getCorpusScaleEvidence'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/federation/harvest/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Inspect retained metadata and the durable harvest checkpoint for one federated source. */
+    get: operations['getFederationHarvestStatus'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -429,6 +503,111 @@ export interface components {
       | 'FEDERATED_100K'
       | 'FEDERATED_1M'
       | 'FULL';
+    /**
+     * @description Invocation order used by a controlled Solr/OpenSearch comparison request.
+     * @enum {string}
+     */
+    SearchComparisonExecutionOrder: 'SOLR_FIRST' | 'OPENSEARCH_FIRST';
+    /** @enum {string} */
+    CorpusProfileActivationPhase:
+      | 'IDLE'
+      | 'PREPARING'
+      | 'HARVESTING'
+      | 'SNAPSHOTTING'
+      | 'PROJECTING'
+      | 'VERIFYING'
+      | 'CAPTURING_EVIDENCE'
+      | 'COMPLETED'
+      | 'FAILED';
+    CorpusProfileActivationProgress: {
+      operationId?: string | null;
+      profile?: components['schemas']['CorpusProfile'] | null;
+      phase: components['schemas']['CorpusProfileActivationPhase'];
+      /** Format: int64 */
+      processedDocuments: number;
+      /** Format: int64 */
+      totalDocuments?: number | null;
+      percentComplete: number;
+      /** Format: date-time */
+      startedAt?: string | null;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: date-time */
+      completedAt?: string | null;
+      /** Format: int64 */
+      elapsedMs: number;
+      /** Format: double */
+      documentsPerSecond?: number | null;
+      message: string;
+    };
+    CorpusScaleEvidenceReport: {
+      profile: components['schemas']['CorpusProfile'];
+      valid: boolean;
+      /** Format: int64 */
+      targetFederatedRecordCount?: number | null;
+      /** Format: int64 */
+      retainedFederatedRecordCount: number;
+      activeProfile?: components['schemas']['CorpusProfile'] | null;
+      /** Format: int64 */
+      activationProjectionObjectCount?: number | null;
+      activationProjectionId?: string | null;
+      currentProjectionObjectCount: number;
+      currentProjectionId?: string | null;
+      targetParity: boolean;
+      storageEvidencePresent: boolean;
+      /** Format: int64 */
+      storageProjectionObjectCount?: number | null;
+      /** Format: int64 */
+      storageRetainedFederatedCount?: number | null;
+      storageProjectionId?: string | null;
+      /** Format: date-time */
+      storageCapturedAt?: string | null;
+      violations: string[];
+    };
+    /** @enum {string} */
+    FederatedSourceSystem:
+      | 'DATA_GOV'
+      | 'DOE_OSTI'
+      | 'NASA_CMR'
+      | 'PUBMED'
+      | 'OPENALEX';
+    /** @enum {string} */
+    HarvestRunStatus:
+      | 'RUNNING'
+      | 'PAUSED'
+      | 'COMPLETED'
+      | 'FAILED'
+      | 'CANCELLED';
+    FederationHarvestResponse: {
+      runId: string;
+      sourceSystem: components['schemas']['FederatedSourceSystem'];
+      adapterVersion: string;
+      status: components['schemas']['HarvestRunStatus'];
+      pageSize: number;
+      pageCount: number;
+      /** Format: int64 */
+      acceptedCount: number;
+      /** Format: int64 */
+      rejectedCount: number;
+      /** Format: int64 */
+      skippedCount: number;
+      cursor?: string;
+      /** Format: date-time */
+      startedAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: date-time */
+      completedAt?: string;
+      failureMessage?: string;
+      projectionRefreshRequired: boolean;
+    };
+    FederationHarvestStatusResponse: {
+      sourceSystem: components['schemas']['FederatedSourceSystem'];
+      /** Format: int64 */
+      retainedRecordCount: number;
+      resumableRun?: components['schemas']['FederationHarvestResponse'];
+      latestRun?: components['schemas']['FederationHarvestResponse'];
+    };
     /**
      * @description Runtime topology associated with a storage measurement.
      * @enum {string}
@@ -1137,6 +1316,15 @@ export interface components {
         'application/json': components['schemas']['ErrorResponse'];
       };
     };
+    /** @description The requested operator action conflicts with current runtime state. */
+    Conflict: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': components['schemas']['ErrorResponse'];
+      };
+    };
     /** @description Unexpected server error. */
     InternalServerError: {
       headers: {
@@ -1270,7 +1458,10 @@ export interface operations {
   };
   runSearchComparison: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Engine invocation order for controlled local diagnostics; defaults to SOLR_FIRST. */
+        order?: components['schemas']['SearchComparisonExecutionOrder'];
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -1649,14 +1840,16 @@ export interface operations {
   };
   reindexDiscoveryProjection: {
     parameters: {
-      query?: never;
+      query?: {
+        profile?: components['schemas']['CorpusProfile'];
+      };
       header?: never;
       path?: never;
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description Reindex accepted and completed. */
+      /** @description Profile activation/rebuild completed and the resulting projection state is returned. */
       202: {
         headers: {
           [name: string]: unknown;
@@ -1665,8 +1858,102 @@ export interface operations {
           'application/json': components['schemas']['DiscoveryProjectionState'];
         };
       };
+      400: components['responses']['BadRequest'];
       500: components['responses']['InternalServerError'];
       503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getCorpusProfileActivationProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Operator-facing activation progress. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CorpusProfileActivationProgress'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  startCorpusProfileScale: {
+    parameters: {
+      query: {
+        profile: components['schemas']['CorpusProfile'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Scale operation accepted; poll the reindex progress endpoint for completion. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CorpusProfileActivationProgress'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      409: components['responses']['Conflict'];
+    };
+  };
+  getCorpusScaleEvidence: {
+    parameters: {
+      query: {
+        profile: components['schemas']['CorpusProfile'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Read-only corpus evidence report and any detected violations. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CorpusScaleEvidenceReport'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  getFederationHarvestStatus: {
+    parameters: {
+      query: {
+        sourceSystem: components['schemas']['FederatedSourceSystem'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Source-scoped retained count plus resumable/latest durable run metadata. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FederationHarvestStatusResponse'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
     };
   };
   getDspaceOverview: {

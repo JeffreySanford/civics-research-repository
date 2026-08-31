@@ -56,7 +56,12 @@ public class SearchComparisonService {
     }
 
     public SearchComparisonResponse run(SearchComparisonRequest request) {
+        return run(request, SearchComparisonExecutionOrder.SOLR_FIRST);
+    }
+
+    public SearchComparisonResponse run(SearchComparisonRequest request, SearchComparisonExecutionOrder executionOrder) {
         SearchComparisonScenarioId scenario = Objects.requireNonNull(request.getScenario(), "scenario is required");
+        SearchComparisonExecutionOrder order = Objects.requireNonNull(executionOrder, "executionOrder is required");
         String query = request.getQuery() == null ? "" : request.getQuery();
         List<String> programs = request.getPrograms() == null ? List.of() : request.getPrograms();
         String geography = request.getGeography();
@@ -69,10 +74,19 @@ public class SearchComparisonService {
                         100,
                         request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize()));
 
-        SearchEngineComparison solrResult = runSolr(
-                query, programs, geography, contentType, vintageYear, page, pageSize);
-        SearchEngineComparison openSearchResult = runOpenSearch(
-                query, programs, geography, contentType, vintageYear, page, pageSize);
+        SearchEngineComparison solrResult;
+        SearchEngineComparison openSearchResult;
+        if (order == SearchComparisonExecutionOrder.OPENSEARCH_FIRST) {
+            openSearchResult = runOpenSearch(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+            solrResult = runSolr(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+        } else {
+            solrResult = runSolr(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+            openSearchResult = runOpenSearch(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+        }
 
         ProjectionState projection = projectionService.state();
         SearchComparisonProjection projectionDto =
@@ -101,14 +115,15 @@ public class SearchComparisonService {
             int page,
             int pageSize) {
         boolean enabled = solr.isEnabled();
-        boolean reachable = enabled && solr.isReachable();
+        Optional<Integer> indexedCount = enabled ? solr.documentCount() : Optional.empty();
+        boolean reachable = enabled && indexedCount.isPresent();
         if (!enabled || !reachable) {
             return unavailable(
                     SearchComparisonEngine.SOLR,
                     enabled,
                     reachable,
                     solr.indexName(),
-                    solr.documentCount(),
+                    indexedCount,
                     enabled ? "Solr discovery core is not reachable." : "Solr discovery is disabled.");
         }
 
@@ -116,11 +131,12 @@ public class SearchComparisonService {
         try {
             SearchExecution execution =
                     solr.searchWithDiagnostics(query, programs, geography, contentType, vintageYear, page, pageSize);
+            long elapsedMs = elapsedMillis(started);
             return completed(
                     SearchComparisonEngine.SOLR,
                     solr.indexName(),
-                    solr.documentCount(),
-                    elapsedMillis(started),
+                    indexedCount,
+                    elapsedMs,
                     execution.response(),
                     execution.engineReportedMs(),
                     targetWarning(solr.indexName()));
@@ -130,7 +146,7 @@ public class SearchComparisonService {
                     true,
                     true,
                     solr.indexName(),
-                    solr.documentCount(),
+                    indexedCount,
                     exception.getMessage(),
                     elapsedMillis(started));
         }
@@ -145,14 +161,15 @@ public class SearchComparisonService {
             int page,
             int pageSize) {
         boolean enabled = openSearch.isEnabled();
-        boolean reachable = enabled && openSearch.isReachable();
+        Optional<Integer> indexedCount = enabled ? openSearch.documentCount() : Optional.empty();
+        boolean reachable = enabled && indexedCount.isPresent();
         if (!enabled || !reachable) {
             return unavailable(
                     SearchComparisonEngine.OPENSEARCH,
                     enabled,
                     reachable,
                     openSearch.indexName(),
-                    openSearch.documentCount(),
+                    indexedCount,
                     enabled ? "OpenSearch is not reachable." : "OpenSearch comparison is disabled.");
         }
 
@@ -160,11 +177,12 @@ public class SearchComparisonService {
         try {
             SearchExecution execution = openSearch.searchWithDiagnostics(
                     query, programs, geography, contentType, vintageYear, page, pageSize);
+            long elapsedMs = elapsedMillis(started);
             return completed(
                     SearchComparisonEngine.OPENSEARCH,
                     openSearch.indexName(),
-                    openSearch.documentCount(),
-                    elapsedMillis(started),
+                    indexedCount,
+                    elapsedMs,
                     execution.response(),
                     execution.engineReportedMs(),
                     targetWarning(openSearch.indexName()));
@@ -174,7 +192,7 @@ public class SearchComparisonService {
                     true,
                     true,
                     openSearch.indexName(),
-                    openSearch.documentCount(),
+                    indexedCount,
                     exception.getMessage(),
                     elapsedMillis(started));
         }

@@ -4,6 +4,7 @@
 /.nx/cache
 /.nx/workspace-data
 .angular
+/browser-evidence-artifacts/
 
 # pnpm owns the lockfile's format and rewrites it on every install, so reformatting it here
 # guarantees a diff on the next `pnpm install` and a format:check failure either way.
