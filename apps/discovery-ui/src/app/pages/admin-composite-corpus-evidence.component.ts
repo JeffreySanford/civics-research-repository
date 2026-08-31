@@ -66,9 +66,7 @@ interface CompositeCorpusEvidenceView {
                   <div>
                     <p class="eyebrow">{{ item.manifest.corpusProfile }}</p>
                     <h3 [id]="'composition-' + item.manifest.compositionSha256">
-                      {{
-                        item.manifest.federatedRecordCount | number
-                      }}
+                      {{ item.manifest.federatedRecordCount | number }}
                       federated records
                     </h3>
                   </div>
