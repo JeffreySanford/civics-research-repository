@@ -2,258 +2,50 @@
 
 ## Goal
 
-PI-1 should deliver adapters for every identified source while keeping ingestion repeatable, bounded and provenance-aware.
+Deliver reproducible adapters for all modeled Open Science authorities while keeping ingestion bounded, provenance-aware and appropriate to each publisher's transport.
 
-The goal is **not** to ingest every record from every source simultaneously on day one. The goal is to make each source reproducibly harvestable and then establish controlled corpus tiers that can be used by both standalone and clustered search topologies.
+The system has two distinct ingestion classes:
 
-All production-shaped harvesting runs inside the Spring Boot Java application. Node/NestJS is not an alternate ingestion runtime. Repository Node scripts may still support fixtures, build/test automation and local orchestration, but durable source checkpoints, retries, normalization, quarantine/error state and harvest-run ownership remain in Java.
+1. **live API adapters** for representative samples, mapping development, freshness and modest bounded slices;
+2. **bulk snapshot/baseline adapters** for 10M/100M research tiers where API crawling is wasteful, expensive or publisher-discouraged.
 
-## PI-1 source scope
+All durable ingestion ownership remains in the Spring Boot Java application. Node scripts may orchestrate local research commands and reports, but they do not become a second metadata persistence runtime.
 
-| Source             | Adapter in PI-1 | First production-shaped tier |                  Larger tier | Primary value                                          |
-| ------------------ | --------------- | ---------------------------: | ---------------------------: | ------------------------------------------------------ |
-| Data.gov           | yes             |                  10K -> 100K | full catalog where practical | federal dataset breadth and heterogeneous agencies     |
-| DOE OSTI.GOV       | yes             |                  10K -> 100K |                      **1M+** | preferred federal research-object scale corpus         |
-| NASA Earthdata CMR | yes             |   collections + 10K granules | 100K -> 1M controlled slices | geospatial/temporal and very high scale                |
-| PubMed             | yes             |                  10K -> 100K |                          1M+ | bibliographic lexical/relevance scale                  |
-| OpenAlex           | yes             |                  10K -> 100K |                 optional 1M+ | broad open-science/citation relationship stress corpus |
+## Source matrix
 
-All five adapters belong in PI-1. Large local snapshots remain staged so disk, time and source limits do not force us to keep every corpus resident at maximum size simultaneously.
+| Source | Current live adapter | Initial sample | Large-scale transport | Scale value |
+| --- | --- | --- | --- | --- |
+| Data.gov | `DataGovHarvester` | already represented by proven retained corpus | Catalog API v4 until source completion | federal dataset breadth and heterogeneous agency metadata |
+| DOE OSTI.GOV | `OstiGovHarvester` | one bounded records page | OSTI API / OAI-PMH/full-corpus metadata | DOE publications, reports, datasets, software, patents |
+| NASA Earthdata CMR | `NasaCmrHarvester` | public **collection** metadata | explicit granule or collection stream using Search-After | geospatial/temporal and extreme-scale metadata |
+| PubMed | `PubMedHarvester` | bounded E-utilities sample | NCBI PubMed baseline + update files | biomedical lexical/relevance and author/journal metadata |
+| OpenAlex | `OpenAlexHarvester` | bounded Works cursor sample | pinned public S3 snapshot | broad scholarly works/topics/authors at 10M/100M scale |
+
+The first cross-source command is:
+
+```bash
+pnpm federation:sample:all
+```
+
+It does not restart or advance a source that already has retained records, so the established Data.gov checkpoint is preserved while empty sources receive one bounded page.
+
+## Credential policy
+
+Credentials live only in the git-ignored `.env` file.
+
+| Source | Local credential policy |
+| --- | --- |
+| Data.gov | personal api.data.gov key required for meaningful sustained harvesting; `DEMO_KEY` only for tiny exploratory calls |
+| DOE OSTI | none for public records API |
+| NASA CMR | none for public metadata; stable Client-Id sent; Earthdata bearer token only for protected holdings |
+| PubMed | API key optional for initial sample, recommended for sustained E-utilities use; developer email recommended |
+| OpenAlex | API key optional for casual sample, recommended for API research; public S3 snapshot requires no credentials |
+
+See `.env.sample` for variable names.
 
 ## Shared Java harvester framework
 
-Do not implement five independent loops and do not add a second harvester runtime.
-
-The shared Spring/Java framework owns:
-
-```text
-start/resume
-  -> fetch source page/batch
-  -> validate source response
-  -> normalize records
-  -> persist records/checkpoint
-  -> record metrics/errors
-  -> continue until requested bound/end
-```
-
-The merged PI-1 foundation already includes:
-
-- source-specific `FederatedSourceHarvester` registration,
-- stable cursor/page checkpoint persistence,
-- durable harvest-run identity and status,
-- process-safe resume from persisted run/checkpoint state,
-- explicit restart-from-beginning semantics separate from ordinary resume,
-- namespaced source identity validation,
-- idempotent catalog persistence,
-- bounded prepared-statement database batches,
-- accepted/rejected/skipped counters,
-- malformed-record quarantine without aborting the whole run,
-- typed retryable versus permanent source failures,
-- bounded three-attempt retry,
-- exponential backoff with jitter,
-- bounded publisher `Retry-After` handling,
-- bounded `PAUSED` checkpoints when an operator page limit is reached,
-- adapter-version capture on durable runs,
-- deterministic corpus manifests for completed bounded runs,
-- deterministic `BOUNDED_SNAPSHOT` manifests for intentionally paused scale checkpoints,
-- source update-window and run-stat capture in snapshot evidence,
-- guarded snapshot -> projection linkage that refuses to persist the relationship if the harvest checkpoint drifts during projection,
-- durable snapshot/projection evidence history.
-
-Remaining shared capabilities are narrower than the original F0 list:
-
-- configurable per-source request concurrency and explicit rate-limit policy,
-- explicit publisher/request timeout tuning where source defaults are insufficient,
-- progress/throughput observability appropriate for 100K/1M runs,
-- first-class requested-record target semantics if page bounds become too indirect for operators,
-- git/build identity in heavy-run evidence where adapter version alone is insufficient,
-- resource-context capture that makes large-run timing comparable rather than anecdotal.
-
-Spring Batch remains optional. Adopt it only if the existing Java orchestration demonstrates a concrete need for its job repository, partitioning or restart machinery.
-
-## Normalization and discovery handoff
-
-A source adapter normalizes publisher data into `FederatedResearchRecord`. That record is then converted by `FederatedDiscoveryDocumentMapper` into the same engine-neutral `DiscoveryDocument` shape used for repository records.
-
-Important taxonomy rule:
-
-```text
-legacy ResearchProgram
-  compatibility classification for the curated Census slice
-
-programName
-  canonical data-driven publisher/source program value
-```
-
-A DOE OSTI record may therefore retain `ResearchProgram.OTHER` for legacy compatibility while preserving `programName = "Office of Science"` for discovery. New source program names must not require Java enum expansion and must not collapse into one giant `OTHER` facet.
-
-`CombinedDiscoveryCatalog` provides bounded authority composition:
-
-```text
-curated DSpace documents
-  -> bounded repository portion
-  -> federated records ordered by namespaced stable ID
-  -> FederatedDiscoveryDocumentMapper
-  -> bounded DiscoveryDocument pages
-```
-
-The current projection lifecycle consumes those pages in bounded batches, computes one deterministic streaming projection identity and sends the same normalized sequence to configured Solr/OpenSearch projection targets. The next scale work is therefore validation of resource/storage behavior and parity at 10K/100K, not another rewrite from whole-corpus materialization.
-
-## Current durable run model
-
-The implemented `HarvestRun` evidence includes the operator-critical state needed for restart/resume:
-
-```text
-HarvestRun
-  id
-  sourceSystem
-  adapterVersion
-  status
-  pageSize
-  pageCount
-  acceptedCount
-  rejectedCount
-  skippedCount
-  cursor
-  startedAt
-  updatedAt
-  completedAt
-  failureMessage
-```
-
-The API-level bounded invocation supplies `pageSize` and `maxPages`. Reaching that bound produces `PAUSED`, not a false source-complete status. A later ordinary harvest call resumes the same compatible run and cursor. Restart is deliberately separate because it cancels the resumable run and clears source traversal state without deleting already-retained federated metadata.
-
-For larger evidence runs, additional derived evidence should record requested target tier, duration/throughput, source retrieval window, storage/resource context and deterministic snapshot/projection identity.
-
-## Source 1 — Data.gov
-
-Use Data.gov as the first **federation integration** source because it closely matches the external-metadata/no-local-binary model.
-
-Primary mapping targets:
-
-- dataset identifier,
-- title,
-- description,
-- publisher/agency,
-- themes/tags,
-- modified/issued dates,
-- distributions/resource links,
-- landing-page URL,
-- license/access metadata where present.
-
-Milestones and current status:
-
-1. **complete** — deterministic fixture and adapter/unit coverage,
-2. **complete** — 1K live harvest + bounded snapshot + guarded projection + public-search proof,
-3. **harvest complete; evidence completion active** — 10K resumed harvest,
-4. **next** — 100K harvest/projection/storage/resource proof,
-5. larger/full catalog only after the 100K path is stable.
-
-The live 10K run resumed the exact durable 1K run instead of restarting it. It advanced from 10 to 100 total pages and from 1,000 to 10,000 accepted records with 0 rejected and 0 skipped while preserving run ID `e8dcd9ef-85d5-48d4-8b13-4f8cdc939131`.
-
-The 10K claim remains intentionally precise: **harvest/resume is proven**; snapshot/projection linkage, public-search/detail verification, index parity and storage/resource evidence still need to be captured before the checkpoint is complete. See [PI-1 Data.gov Scale Evidence](../../planning/PI1_DATA_GOV_SCALE_EVIDENCE.md).
-
-Important tests and quality observations:
-
-- sparse metadata,
-- multiple distributions,
-- duplicated/cross-listed resources,
-- publisher normalization,
-- source updates without creating duplicates,
-- ISO date-only publisher `modified` values,
-- preservation of raw publisher program values,
-- presentation hardening for opaque program codes such as `010:10`/`010:12` without introducing fixed UI allowlists.
-
-## Source 2 — DOE OSTI.GOV
-
-OSTI is the preferred **first million-record source** because its research outputs align closely with the existing domain model.
-
-Map where available:
-
-```text
-osti_id              -> sourceIdentifier
-title                -> title
-abstract/description -> summary
-authors              -> authors
-research_org         -> publisher/research organization
-sponsoring_org       -> sponsor metadata
-subjects             -> subjects
-publication_date     -> publication/vintage metadata
-resource_type        -> contentType mapping
-doi                  -> identifier
-record/product URLs  -> source/resource URLs
-```
-
-Milestones:
-
-```text
-10K
-100K
-1M
-optional larger slice after 1M is repeatable
-```
-
-OSTI should provide the canonical PI-1 million-record acceptance run unless a source-access constraint appears during implementation.
-
-## Source 3 — NASA Earthdata CMR
-
-Treat CMR collections and granules distinctly.
-
-Do not call one million granules one million research projects.
-
-Recommended normalized distinction:
-
-- CMR collection -> dataset/research collection,
-- CMR granule -> scientific data-granule metadata or a benchmark-specific high-volume content type.
-
-Capture spatial/temporal fields for later geo/time search work without forcing that search feature into the first ingestion slice.
-
-Milestones:
-
-```text
-collections baseline
-10K granules
-100K granules
-1M controlled granules
-```
-
-## Source 4 — PubMed
-
-Use API access for development-sized fixtures and bounded samples. For very large reproducible ingestion, prefer the publisher's bulk/baseline/update mechanism when practical rather than performing millions of individual API calls.
-
-Useful metadata:
-
-- PMID,
-- title,
-- abstract,
-- authors,
-- journal,
-- publication dates,
-- publication type,
-- controlled subjects/terms where available,
-- DOI/other identifiers,
-- PubMed record URL.
-
-This corpus is particularly useful for relevance testing because author/title/abstract vocabulary differs substantially from government dataset catalogs.
-
-## Source 5 — OpenAlex
-
-Implement the adapter in PI-1, but keep it last in execution priority because the federal-source path is the repository's primary story.
-
-Use it to test:
-
-- scholarly works,
-- authors/institutions,
-- topics,
-- funders,
-- DOI relationships,
-- citation/reference relationships.
-
-Do not attempt to retain the entire OpenAlex corpus locally. Controlled snapshots are sufficient.
-
-## Adapter contract
-
-Current conceptual contract:
+Every live adapter implements:
 
 ```text
 FederatedSourceHarvester
@@ -262,114 +54,235 @@ FederatedSourceHarvester
   fetch(checkpointCursor, pageSize)
 ```
 
-The adapter returns normalized bounded pages. The shared harvester—not each adapter—owns persistence, retries, progress and resume semantics.
+The shared runtime—not each adapter—owns:
 
-## Update strategy
+```text
+start/resume
+  -> fetch page
+  -> validate response
+  -> normalize records
+  -> quarantine record-level failures
+  -> upsert namespaced metadata
+  -> persist checkpoint/run evidence
+  -> retry transient publisher failures
+  -> pause at operator bound or complete at source end
+```
 
-Initial corpus builds and incremental updates are different workloads.
+Existing shared behavior includes:
 
-After the first full/bounded snapshot, sources should update by stable source identifier and publisher-supported change markers where available.
+- durable harvest runs,
+- source-scoped checkpoints,
+- idempotent metadata upsert,
+- namespaced source identity validation,
+- accepted/rejected/skipped counters,
+- quarantine persistence,
+- retryable versus permanent publisher failures,
+- bounded retry/backoff/jitter,
+- publisher `Retry-After` support,
+- explicit restart separate from resume,
+- adapter-version evidence,
+- source-specific bounded manifests,
+- snapshot/projection linkage for stable single-source checkpoints.
 
-Rules:
+## Normalized research-object rules
 
-- same source identity updates the existing federated record,
-- disappeared source records are not immediately deleted without an explicit source deletion/tombstone rule,
-- changed normalized content changes snapshot/projection identity,
-- unchanged records should not create write/index churn,
-- harvest/snapshot evidence records the source's effective freshness window where available.
+All adapters normalize into `FederatedResearchRecord`; the shared `FederatedDiscoveryDocumentMapper` then creates engine-neutral `DiscoveryDocument` values.
+
+The record ID is always:
+
+```text
+<SOURCE_SYSTEM>:<publisher-stable-id>
+```
+
+This is what permits multiple authorities to coexist safely in `FederatedMetadataCatalog`.
+
+Research-object type should preserve publisher semantics where defensible:
+
+- Data.gov -> `DATASET`,
+- OSTI journal/report-like output -> `PUBLICATION`,
+- OSTI/OpenAlex software -> `CODE`,
+- NASA CMR collection -> `DATASET`,
+- PubMed citation -> `PUBLICATION`,
+- OpenAlex dataset -> `DATASET`, otherwise scholarly work -> `PUBLICATION` unless a stronger mapping exists.
+
+Do not flatten all sources to `DATASET` merely because the original repository began as a dataset portal.
+
+## Source-specific plans
+
+### Data.gov
+
+Current state:
+
+- durable run/checkpoint proven,
+- 100K retained baseline proven,
+- 100,181-document projection parity proven,
+- restart/reprojection identity proven,
+- storage and paired search research established.
+
+Data.gov is no longer the planned source for a million-record corpus because the current live catalog is below one million records. A 500K checkpoint may still be useful as a single-source scale curve point if API/time cost is justified.
+
+### DOE OSTI.GOV
+
+`OstiGovHarvester` uses the public REST records endpoint with page-number checkpoints and a fixed ascending `osti_id` sort.
+
+Initial mapping includes:
+
+```text
+osti_id             -> sourceIdentifier
+title               -> title
+description         -> summary
+publisher/research_org -> publisher
+sponsor_org         -> program/sponsor metadata
+product_type        -> research object type
+authors             -> authors
+subjects            -> subjects
+doi                 -> source metadata
+links               -> provenance/resource links
+```
+
+OSTI is an excellent component of the first multi-source 1M tier, but should not be treated as the only million-record recipe simply because it is large enough.
+
+### NASA Earthdata CMR
+
+The initial live adapter intentionally harvests **collections** with CMR Search-After.
+
+That is a semantic choice: a collection is a dataset/research collection, while a granule is a much finer scientific data object. The repository must not silently switch the same adapter from collections to billions of granules.
+
+For 10M/100M work, add an explicit granule ingestion stream/profile with its own adapter/transport identity and bounded collection/provider selection.
+
+Public CMR search does not require authentication; a `Client-Id` is sent for operational identification. Protected holdings may use an Earthdata bearer token, but protected records are out of the initial public sample.
+
+### PubMed
+
+The current E-utilities adapter is deliberately a **sampler**.
+
+It uses:
+
+- ESearch for PMIDs,
+- ESummary for normalized bibliographic metadata,
+- an offset cursor,
+- a hard refusal at the ordinary 10,000-ID ESearch retrieval boundary.
+
+That refusal is intentional. The adapter must not report PubMed source completion at 10K when PubMed contains tens of millions of citations.
+
+Large-scale PubMed research should use the publisher's baseline/update file distribution and normalize those records through a bulk-ingest path.
+
+### OpenAlex
+
+The live Works adapter uses cursor paging and optional API-key authentication for bounded samples.
+
+OpenAlex explicitly advises against cursor-crawling the full database. At large scale use a pinned public S3 snapshot release and its manifest. The public snapshot is the correct transport for 10M/100M slices because it is resumable, release-identifiable and does not consume REST request budget.
+
+## API versus bulk evidence
+
+A live API run and a bulk snapshot run can normalize to the same record model, but their source evidence differs.
+
+### API evidence
+
+Record:
+
+- source system,
+- adapter version,
+- run ID,
+- cursor/page state,
+- accepted/rejected/skipped counts,
+- source update window where available,
+- bounded snapshot digest.
+
+### Bulk evidence
+
+Record:
+
+- source system,
+- publisher release/snapshot date,
+- publisher manifest identity/hash,
+- file/partition identity,
+- normalized record count,
+- accepted/rejected/skipped counts,
+- adapter version,
+- normalized digest.
+
+The downloaded bulk file is an ingestion artifact, not a new authority.
+
+## Multi-source composition
+
+The retained catalog already supports cross-source discovery, but current bounded snapshot evidence is source-run scoped.
+
+Before `FEDERATED_1M` is executable, add a composite corpus evidence object that binds several source snapshots/bulk manifests to exact quotas and one deterministic composition digest.
+
+A profile must therefore mean more than a count:
+
+```text
+profile
+  -> composition recipe/version
+  -> source quotas
+  -> source snapshot/release identities
+  -> composition SHA-256
+  -> projection ID
+```
+
+This becomes essential at 10M and 100M.
+
+## Scale strategy
+
+See [Federation Scale Research Plan](../../planning/FEDERATION_SCALE_RESEARCH_PLAN.md).
+
+Planned progression:
+
+```text
+100K proven Data.gov baseline
+optional 500K Data.gov
+1M balanced multi-source
+10M heterogeneous multi-source
+100M bulk-ingest / cluster research
+```
+
+The exact source recipe at 10M/100M is part of the experiment and must be written into the manifest.
 
 ## Error policy
 
-One malformed source record must not abort a million-record run.
+One malformed record must not abort a large run.
 
-Quarantine errors with:
+Quarantine evidence should retain:
 
 ```text
 sourceSystem
 sourceIdentifier if known
 harvestRunId
-errorCode
-message
-raw payload reference/sample
+message/error class
+bounded raw payload snippet
 occurredAt
 ```
 
-Keep raw failed payloads bounded; do not create an unbounded error-data mirror.
+Keep failed payload evidence bounded. Do not build an accidental second raw-data mirror.
 
-The live Data.gov path has already demonstrated why this matters: an initial adapter version quarantined 75 valid records because their source `modified` value was date-only. That evidence led to a versioned normalization fix and a clean repeated 1K proof instead of silently discarding the failure history.
+## Development and CI policy
 
-## Development and CI corpus policy
+Ordinary CI never downloads a live large corpus.
 
-Ordinary CI should never depend on downloading 1M records.
+Normal automated quality gates cover:
 
-Use:
+- local HTTP fixtures for each source adapter,
+- source-specific cursor behavior,
+- malformed-record quarantine,
+- retry/rate-limit semantics,
+- identity/source ownership validation,
+- all-source sampling orchestration,
+- deterministic composition logic once added,
+- report generation,
+- formatting/lint/build.
 
-- tiny committed source fixtures for adapter unit tests,
-- generated deterministic 100-1,000 record integration fixtures when useful,
-- optional scheduled/manual 10K integration evidence,
-- workstation/manual workflows for 100K/1M,
-- manifests/artifacts rather than the full corpus in GitHub Actions where storage/runtime is excessive.
+Manual/workstation research owns live source samples and evidence-grade 100K+ runs.
 
-## PI-1 delivery sequence
+## Delivery sequence
 
-### F0 — foundation — merged
-
-Delivered through PR #3:
-
-- provenance/origin contract,
-- dynamic source/publisher/program model,
-- federated metadata persistence,
-- durable harvest-run/checkpoint/quarantine model,
-- combined bounded repository/federated discovery catalog,
-- `/research/:id` detail abstraction,
-- streaming/batched deterministic projection,
-- bounded snapshot and guarded snapshot/projection evidence.
-
-### F1 — Data.gov — active
-
-- 1K federation proof: complete,
-- 10K harvest/resume proof: complete,
-- 10K snapshot/projection/search/storage/resource evidence: active,
-- 100K standalone proof: next.
-
-### F2 — OSTI
-
-Prove 10K/100K, then 1M metadata snapshot and standalone search projection.
-
-### F3 — NASA CMR
-
-Add collections and controlled granule slices.
-
-### F4 — PubMed
-
-Add bibliographic scale/relevance shape.
-
-### F5 — OpenAlex
-
-Add optional broad scholarly/citation shape.
-
-### F6 — PI-1 consolidation
-
-- all adapters covered by fixtures/tests,
-- deterministic source manifests,
-- combined multi-source corpus,
-- standalone Solr/OpenSearch parity,
-- UI/source facets/detail flows,
-- 1M benchmark/relevance evidence,
-- snapshot handed to PI-2 Kubernetes work.
-
-## PI-1 exit criteria
-
-PI-1 is complete when:
-
-- all five adapters are implemented and testable,
-- every source has a reproducible bounded harvest,
-- at least Data.gov + OSTI + one additional large source are visible together in the normal UI,
-- federated records are clearly distinguished from DSpace-backed records,
-- `/research/:id` resolves both origins,
-- program/publisher/source facets do not rely on a fixed source-specific enum,
-- projection works in bounded batches,
-- a deterministic 1M corpus is indexed into standalone Solr and OpenSearch with matching identity/count,
-- large binaries remain external,
-- the Compose demo remains functional with the original curated repository slice,
-- PI-2 receives a versioned corpus manifest/snapshot definition rather than a hand-built local index.
+1. **complete/proven** — Data.gov 100K evidence-grade baseline.
+2. **current** — all five live source adapters + representative source sampling.
+3. inspect mixed-source normalized semantics and UI/detail needs.
+4. add composite source snapshot/corpus evidence.
+5. optionally prove 500K Data.gov if it adds research value.
+6. build the first balanced 1M multi-source corpus.
+7. add bulk adapters for OpenAlex and PubMed.
+8. introduce explicit NASA granule stream for high-scale research.
+9. run 10M matched-methodology search/storage/indexing research.
+10. treat 100M as bulk-ingest/cluster research, not a larger API loop.
