@@ -7,39 +7,14 @@ import { REPOSITORY_API_BASE_URL } from './repository-api-client';
 export type CompositeCorpusProfile = components['schemas']['CorpusProfile'];
 export type CompositeFederatedSourceSystem =
   components['schemas']['FederatedSourceSystem'];
-
-export interface CompositeCorpusSourceRequest {
-  readonly sourceSystem: CompositeFederatedSourceSystem;
-  readonly requestedRecordCount: number;
-  readonly snapshotId: string;
-}
-
-export interface CompositeCorpusCaptureRequest {
-  readonly corpusProfile: CompositeCorpusProfile;
-  readonly sources: readonly CompositeCorpusSourceRequest[];
-}
-
-export interface CompositeCorpusSourceEvidence {
-  readonly sourceSystem: CompositeFederatedSourceSystem;
-  readonly requestedRecordCount: number;
-  readonly snapshotId: string;
-  readonly runId: string;
-  readonly runAdapterVersion: string;
-  readonly recordAdapterVersions: readonly string[];
-  readonly retainedRecordCount: number;
-  readonly sha256: string;
-  readonly snapshotCapturedAt: string;
-}
-
-export interface CompositeCorpusManifest {
-  readonly compositionVersion: string;
-  readonly mode: 'COMPOSITE_SNAPSHOT';
-  readonly corpusProfile: CompositeCorpusProfile;
-  readonly sources: readonly CompositeCorpusSourceEvidence[];
-  readonly federatedRecordCount: number;
-  readonly compositionSha256: string;
-  readonly capturedAt: string;
-}
+export type CompositeCorpusSourceRequest =
+  components['schemas']['FederatedCompositeCorpusSourceRequest'];
+export type CompositeCorpusCaptureRequest =
+  components['schemas']['FederatedCompositeCorpusCaptureRequest'];
+export type CompositeCorpusSourceEvidence =
+  components['schemas']['FederatedCompositeCorpusSource'];
+export type CompositeCorpusManifest =
+  components['schemas']['FederatedCompositeCorpusManifest'];
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryCompositeCorpusApi {
