@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import './search-comparison-100k-matrix.test.mjs';
+import './search-comparison-100k-adaptive.test.mjs';
 import {
   nearestRankPercentile,
   parseArguments,
