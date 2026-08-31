@@ -73,8 +73,19 @@ public class FederatedCompositeCorpusProjectionService {
 
     private void assertCompositionStable(FederatedCompositeCorpusManifest composition, String phase) {
         for (FederatedCompositeCorpusSource source : composition.sources()) {
-            FederatedBoundedSnapshotManifest regenerated = corpusManifestService.generateBoundedSnapshot(
-                    source.runId(), source.requestedRecordCount());
+            FederatedBoundedSnapshotManifest regenerated;
+            try {
+                regenerated = corpusManifestService.generateBoundedSnapshot(
+                        source.runId(), source.requestedRecordCount());
+            } catch (IllegalArgumentException | IllegalStateException exception) {
+                throw new IllegalStateException(
+                        "Composite source evidence could not be revalidated "
+                                + phase
+                                + " projection for "
+                                + source.sourceSystem().name()
+                                + "; projection evidence was not linked",
+                        exception);
+            }
             if (regenerated.sourceSystem() != source.sourceSystem()
                     || regenerated.retainedRecordCount() != source.requestedRecordCount()
                     || !Objects.equals(regenerated.snapshotId(), source.snapshotId())
