@@ -85,13 +85,22 @@ jobs:
       - name: Start repository API and both application search engines
         run: docker compose up -d --build postgres solr opensearch repository-api
 
-      - name: Wait for the repository API
+      - name: Wait for the repository API and startup projection
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 80); do
-            if curl -fsS http://localhost:8080/api/admin/reindex >/dev/null; then
-              exit 0
+            if progress="$(curl -fsS http://localhost:8080/api/admin/reindex/progress 2>/dev/null)"; then
+              phase="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.phase ?? "")' "$progress")"
+              if [[ "$phase" == "COMPLETED" ]]; then
+                curl -fsS http://localhost:8080/api/admin/reindex >/dev/null
+                exit 0
+              fi
+              if [[ "$phase" == "FAILED" ]]; then
+                echo "Startup corpus projection failed: $progress" >&2
+                docker compose logs --tail=200 repository-api solr opensearch
+                exit 1
+              fi
             fi
             sleep 3
           done

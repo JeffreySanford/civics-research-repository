@@ -130,7 +130,10 @@ test.describe('Admin Sync corpus storage evidence', () => {
     await page.route(`**/api/admin/reindex/progress`, async (route) => {
       if (scaleStarted) {
         scalePolls += 1;
-        if (scalePolls <= 3) {
+        // The UI has separate render and completion observers. Keep the mocked
+        // transient state around for several polling cycles so every browser can
+        // observe the same operator-facing progress evidence before completion.
+        if (scalePolls <= 8) {
           await route.fulfill({
             contentType: 'application/json',
             json: {
