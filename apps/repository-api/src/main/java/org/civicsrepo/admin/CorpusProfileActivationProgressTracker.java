@@ -104,14 +104,16 @@ public class CorpusProfileActivationProgressTracker {
     }
 
     public void complete(long processedDocuments, long totalDocuments) {
+        complete(processedDocuments, totalDocuments, "Corpus profile activation completed.");
+    }
+
+    public void complete(long processedDocuments, long totalDocuments, String message) {
         long safeTotal = Math.max(0, totalDocuments);
         long safeProcessed = Math.max(0, Math.min(processedDocuments, safeTotal));
-        updateActive(
-                Phase.COMPLETED,
-                safeProcessed,
-                safeTotal,
-                "Corpus profile activation completed.",
-                true);
+        String safeMessage = message == null || message.isBlank()
+                ? "Corpus profile activation completed."
+                : message;
+        updateActive(Phase.COMPLETED, safeProcessed, safeTotal, safeMessage, true);
     }
 
     public void fail(Throwable failure) {
