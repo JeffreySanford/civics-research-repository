@@ -74,7 +74,7 @@ class FederatedSnapshotProjectionCaptureServiceTest {
         when(searchService.fixtureDocuments()).thenReturn(List.of());
         when(projectionService.reindex(CorpusProfile.FEDERATED_10K, List.of())).thenReturn(projected);
         when(projectionService.currentProjectionId()).thenReturn(PROJECTION_ID);
-        when(manifestService.generateBoundedSnapshot("run-1")).thenReturn(snapshot);
+        when(manifestService.generateBoundedSnapshot("run-1", 10_000L)).thenReturn(snapshot);
 
         FederatedSnapshotProjectionCaptureService service = new FederatedSnapshotProjectionCaptureService(
                 snapshotCapture,
@@ -87,6 +87,7 @@ class FederatedSnapshotProjectionCaptureServiceTest {
         service.captureAndProject("run-1");
 
         verify(activationService).recordSuccessfulProjection(CorpusProfile.FEDERATED_10K, projected);
+        verify(manifestService).generateBoundedSnapshot("run-1", 10_000L);
     }
 
     @Test
