@@ -96,6 +96,21 @@ test('migration is idempotent', () => {
   assert.equal(twice, once);
 });
 
+test('migration remains idempotent when the base schema already has a hash pattern', () => {
+  const withExistingHash = fixture.replace(
+    '    DeploymentTopology:\n      type: string\n',
+    "    ExistingProjectionEvidence:\n      type: object\n      properties:\n        projectionId:\n          type: string\n          pattern: '^[0-9a-f]{64}$'\n    DeploymentTopology:\n      type: string\n",
+  );
+  const once = upgradeRepositoryApiContract(withExistingHash);
+  const twice = upgradeRepositoryApiContract(once);
+
+  assert.equal(
+    once.split("pattern: '^[0-9a-f]{64}$'").length - 1,
+    4,
+  );
+  assert.equal(twice, once);
+});
+
 test('migration refuses a partially migrated contract instead of calling it current', () => {
   const migrated = upgradeRepositoryApiContract(fixture);
   const corrupted = migrated.replace(
