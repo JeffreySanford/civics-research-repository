@@ -6,6 +6,7 @@ import {
   currentUnfilteredAggregations,
   directUnfilteredAggregations,
   groupedSelectiveAggregations,
+  parseArguments,
 } from './opensearch-aggregation-shape-diagnostic.mjs';
 
 const PROGRAM =
@@ -98,10 +99,7 @@ test('selective candidate replaces five duplicate program filter scopes with one
     grouped.shared_program_scope.filter.bool.filter[0].terms.programName[0],
     PROGRAM,
   );
-  assert.equal(
-    Object.keys(grouped.shared_program_scope.aggs).length,
-    5,
-  );
+  assert.equal(Object.keys(grouped.shared_program_scope.aggs).length, 5);
 });
 
 test('canonical facet comparison treats current, direct, and grouped response shapes identically', () => {
@@ -111,4 +109,19 @@ test('canonical facet comparison treats current, direct, and grouped response sh
 
   assert.deepEqual(direct, current);
   assert.deepEqual(grouped, current);
+});
+
+test('aggregation diagnostic uses the same profile protocol at 100K and 1M', () => {
+  assert.equal(
+    parseArguments(['--profile', 'FEDERATED_100K']).profile,
+    'FEDERATED_100K',
+  );
+  assert.equal(
+    parseArguments(['--profile', 'FEDERATED_1M']).profile,
+    'FEDERATED_1M',
+  );
+  assert.throws(
+    () => parseArguments(['--profile', 'FULL']),
+    /profile must be one of/,
+  );
 });
