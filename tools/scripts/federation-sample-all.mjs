@@ -59,6 +59,8 @@ export async function sampleAllFederatedSources({
         beforeRetainedRecordCount: before.retainedRecordCount,
         afterRetainedRecordCount: before.retainedRecordCount,
         acceptedThisSample: 0,
+        rejectedThisSample: 0,
+        skippedThisSample: 0,
         detail:
           'Retained metadata already exists; sampler did not advance this source checkpoint.',
       });
@@ -66,26 +68,38 @@ export async function sampleAllFederatedSources({
     }
 
     try {
-      const run = await requestSample(
+      // An empty authority is a sampling experiment, not an ordinary production-style resume. A
+      // previous bad adapter may have left a PAUSED run/checkpoint while retaining zero records.
+      // Restarting from source offset zero is safe here because there is no retained source corpus
+      // to preserve, and it prevents repaired adapters from inheriting a stale cursor/version.
+      const run = await requestFreshSample(
         fetchImpl,
         baseUrl,
         sourceSystem,
         pageSize,
       );
       const after = await readStatus(fetchImpl, baseUrl, sourceSystem);
+      const acceptedThisSample = Math.max(
+        0,
+        after.retainedRecordCount - before.retainedRecordCount,
+      );
+      const rejectedThisSample = Math.max(0, run.rejectedCount ?? 0);
+      const skippedThisSample = Math.max(0, run.skippedCount ?? 0);
+      const represented = after.retainedRecordCount > 0;
       results.push({
         sourceSystem,
-        status: 'SAMPLED',
+        status: represented ? 'SAMPLED' : 'EMPTY',
         beforeRetainedRecordCount: before.retainedRecordCount,
         afterRetainedRecordCount: after.retainedRecordCount,
-        acceptedThisSample: Math.max(
-          0,
-          after.retainedRecordCount - before.retainedRecordCount,
-        ),
+        acceptedThisSample,
+        rejectedThisSample,
+        skippedThisSample,
         runId: run.runId ?? null,
         runStatus: run.status ?? null,
         adapterVersion: run.adapterVersion ?? null,
-        detail: `One bounded page requested at pageSize=${pageSize}.`,
+        detail: represented
+          ? `One fresh bounded page requested at pageSize=${pageSize}.`
+          : `Bounded source request completed but retained no records (rejected=${rejectedThisSample}, skipped=${skippedThisSample}); source representation is not established.`,
       });
     } catch (error) {
       results.push({
@@ -94,6 +108,8 @@ export async function sampleAllFederatedSources({
         beforeRetainedRecordCount: before.retainedRecordCount,
         afterRetainedRecordCount: before.retainedRecordCount,
         acceptedThisSample: 0,
+        rejectedThisSample: 0,
+        skippedThisSample: 0,
         detail: error instanceof Error ? error.message : String(error),
       });
     }
@@ -103,9 +119,11 @@ export async function sampleAllFederatedSources({
     capturedAt: now().toISOString(),
     pageSize,
     sources: results,
-    successful: results.every((result) => result.status !== 'FAILED'),
+    successful: results.every(
+      (result) => result.status === 'EXISTING' || result.status === 'SAMPLED',
+    ),
     methodology:
-      'Existing retained sources are observed but not advanced. Empty sources receive one bounded harvest page. No search projection is activated by this sampler.',
+      'Existing retained sources are observed but not advanced. Empty authorities receive one fresh bounded harvest page from source offset zero. No search projection is activated by this sampler.',
   };
 }
 
@@ -117,26 +135,26 @@ export function renderMarkdown(report) {
     '',
     `Overall: **${report.successful ? 'PASS' : 'PARTIAL'}**`,
     '',
-    '| Source | Status | Retained before | Retained after | Accepted now | Adapter/run |',
-    '| --- | --- | ---: | ---: | ---: | --- |',
+    '| Source | Status | Retained before | Retained after | Accepted now | Rejected now | Adapter/run |',
+    '| --- | --- | ---: | ---: | ---: | ---: | --- |',
   ];
   for (const result of report.sources) {
     const evidence = [result.adapterVersion, result.runId]
       .filter(Boolean)
       .join(' / ');
     lines.push(
-      `| ${result.sourceSystem} | ${result.status} | ${result.beforeRetainedRecordCount} | ${result.afterRetainedRecordCount} | ${result.acceptedThisSample} | ${evidence || '—'} |`,
+      `| ${result.sourceSystem} | ${result.status} | ${result.beforeRetainedRecordCount} | ${result.afterRetainedRecordCount} | ${result.acceptedThisSample} | ${result.rejectedThisSample ?? 0} | ${evidence || '—'} |`,
     );
   }
 
-  const failures = report.sources.filter(
-    (result) => result.status === 'FAILED',
+  const issues = report.sources.filter(
+    (result) => result.status !== 'EXISTING' && result.status !== 'SAMPLED',
   );
-  if (failures.length > 0) {
-    lines.push('', '## Failure details', '');
-    for (const failure of failures) {
+  if (issues.length > 0) {
+    lines.push('', '## Sampling issues', '');
+    for (const issue of issues) {
       lines.push(
-        `- **${failure.sourceSystem}:** ${singleLineDetail(failure.detail)}`,
+        `- **${issue.sourceSystem} (${issue.status}):** ${singleLineDetail(issue.detail)}`,
       );
     }
   }
@@ -147,7 +165,7 @@ export function renderMarkdown(report) {
     '',
     report.methodology,
     '',
-    'Sampling is metadata-only. Publisher binaries are not mirrored. A source failure remains visible in this report and does not prevent the sampler from attempting the remaining authorities.',
+    'Sampling is metadata-only. Publisher binaries are not mirrored. HTTP success alone is not sufficient: an empty authority must retain at least one normalized record before it counts as represented. A source issue remains visible in this report and does not prevent the sampler from attempting the remaining authorities.',
     '',
     '## Projection boundary',
     '',
@@ -168,12 +186,15 @@ async function readStatus(fetchImpl, baseUrl, sourceSystem) {
   return response.json();
 }
 
-async function requestSample(fetchImpl, baseUrl, sourceSystem, pageSize) {
-  const response = await fetchImpl(`${baseUrl}/admin/federation/harvest`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sourceSystem, pageSize, maxPages: 1 }),
-  });
+async function requestFreshSample(fetchImpl, baseUrl, sourceSystem, pageSize) {
+  const response = await fetchImpl(
+    `${baseUrl}/admin/federation/harvest/restart`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceSystem, pageSize, maxPages: 1 }),
+    },
+  );
   if (!response.ok) {
     throw new Error(
       `Sample harvest for ${sourceSystem} failed with HTTP ${response.status}: ${await safeBody(response)}`,
@@ -191,7 +212,7 @@ async function safeBody(response) {
 }
 
 function singleLineDetail(detail) {
-  return String(detail ?? '<no failure detail>')
+  return String(detail ?? '<no issue detail>')
     .replace(/\s+/g, ' ')
     .trim();
 }
