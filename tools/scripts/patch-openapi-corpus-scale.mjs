@@ -14,7 +14,7 @@ function replaceRequired(source, before, after, label) {
       `${label} expected exactly one stale contract anchor but found ${occurrences}.`,
     );
   }
-  return source.replace(before, after);
+  return source.replace(before, () => after);
 }
 
 export function upgradeRepositoryApiContract(input) {
