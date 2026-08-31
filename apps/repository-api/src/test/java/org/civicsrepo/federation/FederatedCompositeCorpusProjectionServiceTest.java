@@ -104,6 +104,34 @@ class FederatedCompositeCorpusProjectionServiceTest {
     }
 
     @Test
+    void treatsUnavailableSourceEvidenceAsAConflictForAnExistingComposition() {
+        FederatedCompositeCorpusManifestStore manifestStore = mock(FederatedCompositeCorpusManifestStore.class);
+        FederatedCorpusManifestService corpusManifestService = mock(FederatedCorpusManifestService.class);
+        DiscoveryProjectionService projectionService = mock(DiscoveryProjectionService.class);
+        CorpusProfileActivationService activationService = mock(CorpusProfileActivationService.class);
+        FederatedCompositeCorpusProjectionEvidenceStore evidenceStore =
+                mock(FederatedCompositeCorpusProjectionEvidenceStore.class);
+        FederatedCompositeCorpusManifest composition = composition();
+
+        when(manifestStore.findByCompositionSha256(COMPOSITION_SHA)).thenReturn(Optional.of(composition));
+        when(corpusManifestService.generateBoundedSnapshot("data-run", 500_000L))
+                .thenThrow(new IllegalArgumentException("Unknown harvest run data-run"));
+
+        FederatedCompositeCorpusProjectionService service = new FederatedCompositeCorpusProjectionService(
+                manifestStore,
+                corpusManifestService,
+                projectionService,
+                activationService,
+                evidenceStore);
+
+        assertThatThrownBy(() -> service.project(COMPOSITION_SHA))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("could not be revalidated before projection")
+                .hasMessageContaining("DATA_GOV");
+        verifyNoInteractions(projectionService, activationService, evidenceStore);
+    }
+
+    @Test
     void refusesUnknownCompositionIdentityBeforeProjection() {
         FederatedCompositeCorpusManifestStore manifestStore = mock(FederatedCompositeCorpusManifestStore.class);
         FederatedCorpusManifestService corpusManifestService = mock(FederatedCorpusManifestService.class);
