@@ -46,19 +46,19 @@ Application elapsed time is the primary comparable boundary. Solr `QTime` and Op
 
 ### API elapsed p50 / p95 / p99
 
-| Scenario                    | Solr       | OpenSearch  |
-| --------------------------- | ---------- | ----------- |
-| Full-text relevance         | 6 / 7 / 7  | 11 / 14 / 15 |
-| Faceted search              | 6 / 8 / 14 | 14 / 16 / 18 |
-| Selective program filtering | 4 / 5 / 5  | 10 / 12 / 12 |
+```text
+Full-text relevance          Solr 6 / 7 / 7 ms    OpenSearch 11 / 14 / 15 ms
+Faceted search               Solr 6 / 8 / 14 ms   OpenSearch 14 / 16 / 18 ms
+Selective program filtering  Solr 4 / 5 / 5 ms    OpenSearch 10 / 12 / 12 ms
+```
 
 ### Engine-reported p50 / p95 / p99
 
-| Scenario                    | Solr QTime | OpenSearch took |
-| --------------------------- | ---------- | --------------- |
-| Full-text relevance         | 2 / 2 / 2  | 6 / 9 / 9       |
-| Faceted search              | 3 / 4 / 9  | 9 / 10 / 11     |
-| Selective program filtering | 1 / 1 / 1  | 6 / 6 / 7       |
+```text
+Full-text relevance          Solr QTime 2 / 2 / 2 ms   OpenSearch took 6 / 9 / 9 ms
+Faceted search               Solr QTime 3 / 4 / 9 ms   OpenSearch took 9 / 10 / 11 ms
+Selective program filtering  Solr QTime 1 / 1 / 1 ms   OpenSearch took 6 / 6 / 7 ms
+```
 
 The quick pass already showed Solr ahead at p50 and p95 for all three workloads.
 
@@ -66,19 +66,19 @@ The quick pass already showed Solr ahead at p50 and p95 for all three workloads.
 
 ### API elapsed p50 / p95 / p99
 
-| Scenario                    | Solr        | OpenSearch |
-| --------------------------- | ----------- | ---------- |
-| Full-text relevance         | 3 / 4 / 14  | 6 / 8 / 9  |
-| Faceted search              | 4 / 5 / 5   | 11 / 12 / 13 |
-| Selective program filtering | 3 / 3 / 4   | 7 / 10 / 13 |
+```text
+Full-text relevance          Solr 3 / 4 / 14 ms   OpenSearch 6 / 8 / 9 ms
+Faceted search               Solr 4 / 5 / 5 ms    OpenSearch 11 / 12 / 13 ms
+Selective program filtering  Solr 3 / 3 / 4 ms    OpenSearch 7 / 10 / 13 ms
+```
 
 ### Engine-reported p50 / p95 / p99
 
-| Scenario                    | Solr QTime | OpenSearch took |
-| --------------------------- | ---------- | --------------- |
-| Full-text relevance         | 1 / 1 / 1  | 3 / 3 / 4       |
-| Faceted search              | 2 / 3 / 3  | 8 / 9 / 9       |
-| Selective program filtering | 1 / 1 / 1  | 4 / 5 / 8       |
+```text
+Full-text relevance          Solr QTime 1 / 1 / 1 ms   OpenSearch took 3 / 3 / 4 ms
+Faceted search               Solr QTime 2 / 3 / 3 ms   OpenSearch took 8 / 9 / 9 ms
+Selective program filtering  Solr QTime 1 / 1 / 1 ms   OpenSearch took 4 / 5 / 8 ms
+```
 
 ## Initial interpretation
 
