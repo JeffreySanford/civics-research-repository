@@ -10,13 +10,13 @@ This evidence closes Phase 0 of the federation scale research plan. It demonstra
 
 ## Retained source representation
 
-| Source | Final retained records | Sampling result | Adapter evidence |
-| --- | ---: | --- | --- |
-| Data.gov | 100,000 | Existing proven baseline | existing retained corpus |
-| DOE OSTI.GOV | 25 | Existing live sample | retained from bounded live sample |
-| NASA Earthdata CMR | 25 | Fresh live sample | `nasa-cmr-collections-v3` |
-| PubMed | 25 | Existing live sample | retained from bounded live sample |
-| OpenAlex | 25 | Existing live sample | retained from bounded live sample |
+| Source             | Final retained records | Sampling result          | Adapter evidence                  |
+| ------------------ | ---------------------: | ------------------------ | --------------------------------- |
+| Data.gov           |                100,000 | Existing proven baseline | existing retained corpus          |
+| DOE OSTI.GOV       |                     25 | Existing live sample     | retained from bounded live sample |
+| NASA Earthdata CMR |                     25 | Fresh live sample        | `nasa-cmr-collections-v3`         |
+| PubMed             |                     25 | Existing live sample     | retained from bounded live sample |
+| OpenAlex           |                     25 | Existing live sample     | retained from bounded live sample |
 
 NASA CMR's final bounded sample retained **25 / 25** normalized collection records with **0 rejected records**. The successful NASA run ID was:
 
