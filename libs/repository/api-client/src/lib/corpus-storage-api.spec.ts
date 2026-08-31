@@ -2,6 +2,7 @@ import { firstValueFrom, of } from 'rxjs';
 import {
   RepositoryCorpusStorageApi,
   type CorpusProfileActivationProgress,
+  type CorpusScaleEvidenceReport,
   type CorpusStorageMeasurement,
   type CorpusStorageOverview,
   type DiscoveryProjectionState,
@@ -132,6 +133,40 @@ describe('RepositoryCorpusStorageApi', () => {
     ).resolves.toBe(progress);
     expect(http.get).toHaveBeenCalledWith(
       'http://api.test/api/admin/reindex/progress',
+    );
+  });
+
+  it('loads read-only evidence for a named corpus profile', async () => {
+    const evidence: CorpusScaleEvidenceReport = {
+      profile: 'FEDERATED_100K',
+      valid: true,
+      targetFederatedRecordCount: 100_000,
+      retainedFederatedRecordCount: 100_000,
+      activeProfile: 'FEDERATED_100K',
+      activationProjectionObjectCount: 100_181,
+      activationProjectionId: 'c'.repeat(64),
+      currentProjectionObjectCount: 100_181,
+      currentProjectionId: 'c'.repeat(64),
+      targetParity: true,
+      storageEvidencePresent: true,
+      storageProjectionObjectCount: 100_181,
+      storageRetainedFederatedCount: 100_000,
+      storageProjectionId: 'c'.repeat(64),
+      storageCapturedAt: '2026-08-31T01:11:17Z',
+      violations: [],
+    };
+    const http = { get: vi.fn(() => of(evidence)) };
+    const api = new RepositoryCorpusStorageApi(
+      http as never,
+      'http://api.test/api',
+    );
+
+    await expect(
+      firstValueFrom(api.getCorpusScaleEvidence('FEDERATED_100K')),
+    ).resolves.toBe(evidence);
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/admin/corpus/scale/evidence',
+      { params: { profile: 'FEDERATED_100K' } },
     );
   });
 
