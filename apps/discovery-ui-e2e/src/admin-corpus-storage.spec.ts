@@ -15,6 +15,17 @@ const measurement = {
   capturedAt: '2026-08-29T23:30:00Z',
 };
 
+const hundredKMeasurement = {
+  ...measurement,
+  id: 'measurement-100k',
+  profile: 'FEDERATED_100K',
+  activeProjectionCount: 100_181,
+  retainedFederatedCount: 100_000,
+  projectionId: 'c'.repeat(64),
+  totalMeasuredLocalBytes: 3_200_000,
+  capturedAt: '2026-08-31T00:45:00Z',
+};
+
 const overview = {
   activeProfile: 'CURATED_DEMO',
   profiles: [
@@ -54,11 +65,29 @@ const overview = {
 test.describe('Admin Sync corpus storage evidence', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);
+    let scaleStarted = false;
+    let scalePolls = 0;
+    let scaleCompleted = false;
 
     await page.route(`**/api/admin/corpus/storage`, async (route) => {
+      const response = scaleCompleted
+        ? {
+            ...overview,
+            activeProfile: 'FEDERATED_100K',
+            profiles: overview.profiles.map((profile) => ({
+              ...profile,
+              active: profile.profile === 'FEDERATED_100K',
+              latestMeasurement:
+                profile.profile === 'FEDERATED_100K'
+                  ? hundredKMeasurement
+                  : profile.latestMeasurement,
+            })),
+            history: [hundredKMeasurement, measurement],
+          }
+        : overview;
       await route.fulfill({
         contentType: 'application/json',
-        json: overview,
+        json: response,
       });
     });
 
@@ -75,7 +104,72 @@ test.describe('Admin Sync corpus storage evidence', () => {
       });
     });
 
+    await page.route(`**/api/admin/corpus/scale?profile=FEDERATED_100K`, async (route) => {
+      scaleStarted = true;
+      await route.fulfill({
+        status: 202,
+        contentType: 'application/json',
+        json: {
+          operationId: 'scale-100k',
+          profile: 'FEDERATED_100K',
+          phase: 'PREPARING',
+          processedDocuments: 0,
+          totalDocuments: null,
+          percentComplete: 0,
+          startedAt: '2026-08-31T00:40:00Z',
+          updatedAt: '2026-08-31T00:40:00Z',
+          elapsedMs: 1,
+          message: 'Preparing deterministic corpus projection.',
+        },
+      });
+    });
+
     await page.route(`**/api/admin/reindex/progress`, async (route) => {
+      if (scaleStarted) {
+        scalePolls += 1;
+        if (scalePolls <= 3) {
+          await route.fulfill({
+            contentType: 'application/json',
+            json: {
+              operationId: 'scale-100k',
+              profile: 'FEDERATED_100K',
+              phase: 'HARVESTING',
+              processedDocuments: 42_000,
+              totalDocuments: 100_000,
+              percentComplete: 42,
+              startedAt: '2026-08-31T00:40:00Z',
+              updatedAt: '2026-08-31T00:41:00Z',
+              elapsedMs: 60_000,
+              documentsPerSecond: 533,
+              message:
+                'Harvesting and retaining federated metadata from the authoritative source.',
+            },
+          });
+          return;
+        }
+
+        scaleCompleted = true;
+        await route.fulfill({
+          contentType: 'application/json',
+          json: {
+            operationId: 'scale-100k',
+            profile: 'FEDERATED_100K',
+            phase: 'COMPLETED',
+            processedDocuments: 100_181,
+            totalDocuments: 100_181,
+            percentComplete: 100,
+            startedAt: '2026-08-31T00:40:00Z',
+            updatedAt: '2026-08-31T00:45:00Z',
+            completedAt: '2026-08-31T00:45:00Z',
+            elapsedMs: 300_000,
+            documentsPerSecond: 334,
+            message:
+              'Corpus profile growth, verified projection, and storage evidence capture completed.',
+          },
+        });
+        return;
+      }
+
       await route.fulfill({
         contentType: 'application/json',
         json: {
@@ -177,6 +271,35 @@ test.describe('Admin Sync corpus storage evidence', () => {
       page.getByText(
         'Federated 10K activated with 10,181 searchable documents. Storage footprint captured.',
       ),
+    ).toBeVisible();
+  });
+
+  test('grows and activates the 100K tier through asynchronous guarded progress @storyboard @comparison', async ({
+    page,
+  }) => {
+    await page.goto('/admin/sync');
+
+    await page.getByLabel('View corpus profile').click();
+    await page.getByRole('option', { name: 'Federated 100K' }).click();
+
+    await expect(page.getByText('Ready for guarded growth.')).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Grow & activate Federated 100K' })
+      .click();
+
+    await expect(page.getByText('Harvesting Data.gov metadata')).toBeVisible();
+    await expect(page.getByText('42,000 / 100,000 records')).toBeVisible();
+    await expect(page.getByText('42%')).toBeVisible();
+    await expect(page.getByText('533 records/s')).toBeVisible();
+
+    await expect(
+      page.getByText(/Federated 100K growth and activation completed/),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Active search profile', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Federated 100K', { exact: true }).first(),
     ).toBeVisible();
   });
 });
