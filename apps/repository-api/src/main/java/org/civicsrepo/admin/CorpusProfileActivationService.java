@@ -83,7 +83,7 @@ public class CorpusProfileActivationService {
                 String failedProjectionId = projectionService.currentProjectionId();
                 boolean projectionChanged = !Objects.equals(previousProjectionId, failedProjectionId);
                 if (profile != previousProfile && projectionChanged) {
-                    restorePreviousProfile(previousProfile, fixtureFallback, activationFailure);
+                    restorePreviousProfile(previousProfile, activationFailure);
                 }
             }
             progressTracker.fail(activationFailure);
@@ -124,13 +124,22 @@ public class CorpusProfileActivationService {
                 OffsetDateTime.now(ZoneOffset.UTC)));
     }
 
-    private void restorePreviousProfile(
-            CorpusProfile previousProfile,
-            List<DiscoveryDocument> fixtureFallback,
-            RuntimeException activationFailure) {
+    /**
+     * Rebuild a previously known-good profile without starting a second operator-progress operation.
+     *
+     * <p>This is reserved for compensation inside larger guarded workflows that already own the
+     * progress tracker, such as harvest -> snapshot -> projection activation.
+     */
+    public ProjectionState restoreKnownGoodProfile(CorpusProfile profile) {
+        Objects.requireNonNull(profile, "profile");
+        ProjectionState restored = projectionService.reindex(profile, searchService.fixtureDocuments());
+        recordSuccessfulProjection(profile, restored);
+        return restored;
+    }
+
+    private void restorePreviousProfile(CorpusProfile previousProfile, RuntimeException activationFailure) {
         try {
-            ProjectionState restored = projectionService.reindex(previousProfile, fixtureFallback);
-            recordSuccessfulProjection(previousProfile, restored);
+            restoreKnownGoodProfile(previousProfile);
         } catch (RuntimeException restoreFailure) {
             activationFailure.addSuppressed(restoreFailure);
         }
