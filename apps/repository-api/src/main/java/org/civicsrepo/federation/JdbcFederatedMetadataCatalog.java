@@ -216,6 +216,26 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
     }
 
     @Override
+    public List<FederatedResearchRecord> findSourceAfterId(
+            FederatedSourceSystem sourceSystem, String afterId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 10_000));
+        String cursor = afterId == null || afterId.isBlank() ? sourceSystem.name() + ":" : afterId;
+        return jdbcClient
+                .sql(
+                        """
+                        select * from federated_research_objects
+                        where source_system = :sourceSystem and id > :afterId
+                        order by id
+                        limit :limit
+                        """)
+                .param("sourceSystem", sourceSystem.name())
+                .param("afterId", cursor)
+                .param("limit", safeLimit)
+                .query(this::mapRecord)
+                .list();
+    }
+
+    @Override
     public long count() {
         return jdbcClient.sql("select count(*) from federated_research_objects").query(Long.class).single();
     }
@@ -227,6 +247,12 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
                 .param("sourceSystem", sourceSystem.name())
                 .query(Long.class)
                 .single();
+    }
+
+    @Override
+    @Transactional
+    public void deleteAll() {
+        jdbcClient.sql("delete from federated_research_objects").update();
     }
 
     private FederatedResearchRecord mapRecord(ResultSet resultSet, int rowNumber) throws SQLException {
