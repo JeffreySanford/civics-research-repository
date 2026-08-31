@@ -89,6 +89,24 @@ test('migration adds the proven corpus, progress, harvest, evidence, and executi
   assert.equal(output.split('DeploymentTopology:').length - 1, 1);
 });
 
+test('migration models nullable runtime progress and evidence fields', () => {
+  const output = upgradeRepositoryApiContract(fixture);
+
+  assert.match(output, /operationId:\n\s+type: \[string, 'null'\]/);
+  assert.match(
+    output,
+    /profile:\n\s+oneOf:\n\s+- \$ref: '#\/components\/schemas\/CorpusProfile'\n\s+- type: 'null'/,
+  );
+  assert.match(output, /totalDocuments:\n\s+type: \[integer, 'null'\]/);
+  assert.match(output, /documentsPerSecond:\n\s+type: \[number, 'null'\]/);
+  assert.match(
+    output,
+    /targetFederatedRecordCount:\n\s+type: \[integer, 'null'\]/,
+  );
+  assert.match(output, /currentProjectionId:\n\s+type: \[string, 'null'\]/);
+  assert.match(output, /storageCapturedAt:\n\s+type: \[string, 'null'\]/);
+});
+
 test('migration is idempotent', () => {
   const once = upgradeRepositoryApiContract(fixture);
   const twice = upgradeRepositoryApiContract(once);
