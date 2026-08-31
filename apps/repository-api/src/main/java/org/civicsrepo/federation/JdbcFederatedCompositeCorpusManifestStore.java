@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /** PostgreSQL/H2-compatible durable store for immutable composite corpus evidence. */
 @Component
@@ -61,36 +61,37 @@ public class JdbcFederatedCompositeCorpusManifestStore implements FederatedCompo
     }
 
     @Override
-    @Transactional
     public void save(FederatedCompositeCorpusManifest manifest) {
-        Optional<FederatedCompositeCorpusManifest> existing = findByCompositionSha256(manifest.compositionSha256());
-        if (existing.isPresent()) {
-            if (!sameIdentity(existing.get(), manifest)) {
-                throw new IllegalStateException(
-                        "Composite corpus SHA-256 is already associated with different composition evidence");
-            }
+        try {
+            jdbcClient
+                    .sql(
+                            """
+                            insert into federated_composite_corpus_manifests (
+                                composition_sha256, composition_version, mode, corpus_profile,
+                                sources_json, federated_record_count, captured_at
+                            ) values (
+                                :compositionSha256, :compositionVersion, :mode, :corpusProfile,
+                                :sourcesJson, :federatedRecordCount, :capturedAt
+                            )
+                            """)
+                    .param("compositionSha256", manifest.compositionSha256())
+                    .param("compositionVersion", manifest.compositionVersion())
+                    .param("mode", manifest.mode())
+                    .param("corpusProfile", manifest.corpusProfile().name())
+                    .param("sourcesJson", json(manifest.sources()))
+                    .param("federatedRecordCount", manifest.federatedRecordCount())
+                    .param("capturedAt", manifest.capturedAt())
+                    .update();
             return;
+        } catch (DuplicateKeyException duplicateKey) {
+            FederatedCompositeCorpusManifest existing = findByCompositionSha256(manifest.compositionSha256())
+                    .orElseThrow(() -> duplicateKey);
+            if (!sameIdentity(existing, manifest)) {
+                throw new IllegalStateException(
+                        "Composite corpus SHA-256 is already associated with different composition evidence",
+                        duplicateKey);
+            }
         }
-
-        jdbcClient
-                .sql(
-                        """
-                        insert into federated_composite_corpus_manifests (
-                            composition_sha256, composition_version, mode, corpus_profile,
-                            sources_json, federated_record_count, captured_at
-                        ) values (
-                            :compositionSha256, :compositionVersion, :mode, :corpusProfile,
-                            :sourcesJson, :federatedRecordCount, :capturedAt
-                        )
-                        """)
-                .param("compositionSha256", manifest.compositionSha256())
-                .param("compositionVersion", manifest.compositionVersion())
-                .param("mode", manifest.mode())
-                .param("corpusProfile", manifest.corpusProfile().name())
-                .param("sourcesJson", json(manifest.sources()))
-                .param("federatedRecordCount", manifest.federatedRecordCount())
-                .param("capturedAt", manifest.capturedAt())
-                .update();
     }
 
     @Override
