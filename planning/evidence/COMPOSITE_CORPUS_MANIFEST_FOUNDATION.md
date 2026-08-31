@@ -22,6 +22,7 @@ Implemented evidence primitives:
 - repository API unit/integration tests pass,
 - composite identity remains stable when source request order changes,
 - composite identity remains stable when equivalent source snapshots are supported by different run IDs or capture times,
+- `federated-composition/v1` canonical bytes are pinned by a golden SHA-256 test vector,
 - quota/snapshot mismatches fail closed,
 - duplicate sources fail closed,
 - profile total mismatch fails closed,
