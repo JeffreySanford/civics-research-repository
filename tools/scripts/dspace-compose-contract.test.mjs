@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { resolveStackOptions } from './stack-options.mjs';
 
 const COMPOSE_PATH = new URL('../../docker-compose.yml', import.meta.url);
 
@@ -46,4 +47,21 @@ test('DSpace seed keeps the path contract expected by seed-structure.sh', async 
   assert.match(dspaceSeed, /\.\/tools\/dspace:\/seed:ro/);
   assert.match(dspaceSeed, /dspace-assetstore:\/dspace\/assetstore/);
   assert.doesNotMatch(dspaceSeed, /DSPACE_SEED_SAF_ROOT/);
+});
+
+test('rebuild updates local images without force-recreating healthy datastores', () => {
+  assert.deepEqual(resolveStackOptions(['--rebuild']), {
+    forceRecreate: false,
+    rebuildImages: true,
+    detach: true,
+    stopOnly: false,
+    resetOnly: false,
+  });
+  assert.deepEqual(resolveStackOptions(['--recreate']), {
+    forceRecreate: true,
+    rebuildImages: false,
+    detach: true,
+    stopOnly: false,
+    resetOnly: false,
+  });
 });
