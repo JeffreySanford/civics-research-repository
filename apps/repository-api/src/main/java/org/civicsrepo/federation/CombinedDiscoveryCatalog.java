@@ -86,6 +86,43 @@ public class CombinedDiscoveryCatalog {
         return new DiscoveryPage(List.copyOf(documents), nextCursor, complete);
     }
 
+    /**
+     * Returns one deterministic page from exactly one federated source's stable-ID range.
+     *
+     * <p>This is the projection counterpart to bounded source snapshots. A composite corpus can
+     * therefore stream the exact quota for each source without materializing a corpus-sized ID list
+     * or accidentally taking the first N rows across all retained sources.
+     */
+    public FederatedDiscoveryPage findFederatedAfter(
+            FederatedSourceSystem sourceSystem, String afterId, int limit) {
+        Objects.requireNonNull(sourceSystem, "sourceSystem");
+        int safeLimit = Math.max(1, Math.min(limit, MAX_PAGE_SIZE));
+        String sourcePrefix = sourceSystem.name() + ":";
+        String cursor = afterId == null || afterId.isBlank() ? sourcePrefix : afterId;
+        if (!cursor.startsWith(sourcePrefix)) {
+            throw new IllegalArgumentException(
+                    "Federated cursor does not belong to source " + sourceSystem.name());
+        }
+
+        List<FederatedResearchRecord> page = federatedCatalog.findAfterId(cursor, safeLimit);
+        List<DiscoveryDocument> documents = new ArrayList<>(Math.min(page.size(), safeLimit));
+        String nextAfterId = null;
+        boolean sourceRangeComplete = page.size() < safeLimit;
+        for (FederatedResearchRecord record : page) {
+            if (record.sourceSystem() != sourceSystem || !record.id().startsWith(sourcePrefix)) {
+                sourceRangeComplete = true;
+                break;
+            }
+            documents.add(federatedMapper.toDiscoveryDocument(record));
+            nextAfterId = record.id();
+        }
+
+        if (documents.size() < page.size()) {
+            sourceRangeComplete = true;
+        }
+        return new FederatedDiscoveryPage(List.copyOf(documents), nextAfterId, sourceRangeComplete);
+    }
+
     public long retainedFederatedCount() {
         return federatedCatalog.count();
     }
@@ -113,6 +150,18 @@ public class CombinedDiscoveryCatalog {
             }
             if (!complete && nextCursor == null) {
                 throw new IllegalArgumentException("incomplete discovery page requires a next cursor");
+            }
+        }
+    }
+
+    public record FederatedDiscoveryPage(
+            List<DiscoveryDocument> documents,
+            String nextAfterId,
+            boolean sourceRangeComplete) {
+        public FederatedDiscoveryPage {
+            documents = documents == null ? List.of() : List.copyOf(documents);
+            if (!documents.isEmpty() && (nextAfterId == null || nextAfterId.isBlank())) {
+                throw new IllegalArgumentException("non-empty federated discovery page requires a next cursor");
             }
         }
     }
