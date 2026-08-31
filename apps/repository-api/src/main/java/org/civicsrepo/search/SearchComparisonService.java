@@ -56,7 +56,12 @@ public class SearchComparisonService {
     }
 
     public SearchComparisonResponse run(SearchComparisonRequest request) {
+        return run(request, SearchComparisonExecutionOrder.SOLR_FIRST);
+    }
+
+    public SearchComparisonResponse run(SearchComparisonRequest request, SearchComparisonExecutionOrder executionOrder) {
         SearchComparisonScenarioId scenario = Objects.requireNonNull(request.getScenario(), "scenario is required");
+        SearchComparisonExecutionOrder order = Objects.requireNonNull(executionOrder, "executionOrder is required");
         String query = request.getQuery() == null ? "" : request.getQuery();
         List<String> programs = request.getPrograms() == null ? List.of() : request.getPrograms();
         String geography = request.getGeography();
@@ -69,10 +74,19 @@ public class SearchComparisonService {
                         100,
                         request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize()));
 
-        SearchEngineComparison solrResult = runSolr(
-                query, programs, geography, contentType, vintageYear, page, pageSize);
-        SearchEngineComparison openSearchResult = runOpenSearch(
-                query, programs, geography, contentType, vintageYear, page, pageSize);
+        SearchEngineComparison solrResult;
+        SearchEngineComparison openSearchResult;
+        if (order == SearchComparisonExecutionOrder.OPENSEARCH_FIRST) {
+            openSearchResult = runOpenSearch(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+            solrResult = runSolr(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+        } else {
+            solrResult = runSolr(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+            openSearchResult = runOpenSearch(
+                    query, programs, geography, contentType, vintageYear, page, pageSize);
+        }
 
         ProjectionState projection = projectionService.state();
         SearchComparisonProjection projectionDto =
