@@ -181,16 +181,19 @@ export function classifyPreflight({
     targetEvidence?.activeProfile === profile &&
     targetEvidence?.targetParity === true &&
     (asNumber(targetEvidence?.retainedFederatedRecordCount) ?? 0) >= target;
+  const baselineEvidenceReady =
+    targetEvidenceReady ||
+    (baselineEvidence?.valid === true && baselineEvidence?.targetParity === true);
 
   const checks = [
     check(
       'baseline-evidence',
-      baselineEvidence?.valid === true && baselineEvidence?.targetParity === true
-        ? 'READY'
-        : 'BLOCKED',
-      baselineEvidence?.valid
-        ? `${baselineEvidence.activeProfile ?? 'unknown'} has valid parity evidence.`
-        : 'The proven baseline scale evidence is not valid.',
+      baselineEvidenceReady ? 'READY' : 'BLOCKED',
+      targetEvidenceReady && baselineEvidence?.valid !== true
+        ? `${profile} target evidence is valid and supersedes the active-profile requirement on the historical 100K evidence endpoint.`
+        : baselineEvidence?.valid
+          ? `${baselineEvidence.activeProfile ?? 'unknown'} has valid parity evidence.`
+          : 'The proven baseline scale evidence is not valid.',
     ),
     check(
       'storage-baseline',
