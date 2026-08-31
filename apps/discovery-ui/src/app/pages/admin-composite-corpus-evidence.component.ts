@@ -94,9 +94,14 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
                       </tr>
                     </thead>
                     <tbody>
-                      @for (source of manifest.sources; track source.sourceSystem) {
+                      @for (
+                        source of manifest.sources;
+                        track source.sourceSystem
+                      ) {
                         <tr>
-                          <th scope="row">{{ sourceLabel(source.sourceSystem) }}</th>
+                          <th scope="row">
+                            {{ sourceLabel(source.sourceSystem) }}
+                          </th>
                           <td>{{ source.requestedRecordCount | number }}</td>
                           <td>
                             <code [title]="source.snapshotId">
@@ -105,7 +110,9 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
                           </td>
                           <td><code>{{ source.runId }}</code></td>
                           <td>{{ source.runAdapterVersion }}</td>
-                          <td>{{ source.snapshotCapturedAt | date: 'medium' }}</td>
+                          <td>
+                            {{ source.snapshotCapturedAt | date: 'medium' }}
+                          </td>
                         </tr>
                       }
                     </tbody>
@@ -253,7 +260,7 @@ export class AdminCompositeCorpusEvidenceComponent {
     .pipe(
       catchError(() => {
         this.loadError$.next('Composite corpus evidence could not be loaded.');
-        return of<readonly CompositeCorpusManifest[]>([]);
+        return of<readonly CompositeCorpusManifest[] | null>(null);
       }),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
