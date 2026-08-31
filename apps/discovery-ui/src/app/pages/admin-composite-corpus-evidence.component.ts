@@ -81,7 +81,9 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
                   <table>
                     <caption>
                       Bounded source evidence for composition
-                      {{ shortSha(manifest.compositionSha256) }}
+                      {{
+                        shortSha(manifest.compositionSha256)
+                      }}
                     </caption>
                     <thead>
                       <tr>
@@ -108,7 +110,9 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
                               {{ shortSnapshotId(source.snapshotId) }}
                             </code>
                           </td>
-                          <td><code>{{ source.runId }}</code></td>
+                          <td>
+                            <code>{{ source.runId }}</code>
+                          </td>
                           <td>{{ source.runAdapterVersion }}</td>
                           <td>
                             {{ source.snapshotCapturedAt | date: 'medium' }}
@@ -132,8 +136,8 @@ import { BehaviorSubject, catchError, of, shareReplay } from 'rxjs';
 
       <p class="composite-evidence__boundary">
         Search projection identity is intentionally separate from composition
-        identity. Projection linkage to <code>compositionSha256</code> belongs to
-        the next delivery slice.
+        identity. Projection linkage to <code>compositionSha256</code> belongs
+        to the next delivery slice.
       </p>
     </section>
   `,

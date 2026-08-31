@@ -53,7 +53,9 @@ describe('RepositoryCompositeCorpusApi', () => {
     expect(http.get).toHaveBeenCalledOnce();
     const [url, options] = http.get.mock.calls[0];
     expect(url).toBe('http://api.test/api/admin/federation/compositions');
-    expect(options.params.toString()).toBe('corpusProfile=FEDERATED_1M&limit=20');
+    expect(options.params.toString()).toBe(
+      'corpusProfile=FEDERATED_1M&limit=20',
+    );
   });
 
   it('resolves one exact composition identity', async () => {
@@ -64,7 +66,9 @@ describe('RepositoryCompositeCorpusApi', () => {
     );
 
     await expect(
-      firstValueFrom(api.getCompositeCorpusEvidence(manifest.compositionSha256)),
+      firstValueFrom(
+        api.getCompositeCorpusEvidence(manifest.compositionSha256),
+      ),
     ).resolves.toBe(manifest);
     expect(http.get).toHaveBeenCalledWith(
       `http://api.test/api/admin/federation/compositions/${manifest.compositionSha256}`,

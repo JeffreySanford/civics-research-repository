@@ -2077,6 +2077,7 @@ export interface operations {
           'application/json': components['schemas']['FederatedCompositeCorpusManifest'];
         };
       };
+      400: components['responses']['BadRequest'];
       404: components['responses']['NotFound'];
       500: components['responses']['InternalServerError'];
     };

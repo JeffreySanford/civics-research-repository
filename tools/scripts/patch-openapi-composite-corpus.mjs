@@ -44,7 +44,9 @@ export function upgradeCompositeCorpusContract(input) {
   return source;
 }
 
-export async function patchCompositeCorpusContract(schemaPath = DEFAULT_SCHEMA) {
+export async function patchCompositeCorpusContract(
+  schemaPath = DEFAULT_SCHEMA,
+) {
   const path = resolve(schemaPath);
   const before = await readFile(path, 'utf8');
   const after = upgradeCompositeCorpusContract(before);

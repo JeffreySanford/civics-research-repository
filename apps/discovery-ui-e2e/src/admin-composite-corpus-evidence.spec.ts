@@ -58,19 +58,28 @@ test.describe('Admin composite corpus evidence', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);
     await page.route(`**/api/admin/corpus/storage`, async (route) => {
-      await route.fulfill({ contentType: 'application/json', json: storageOverview });
+      await route.fulfill({
+        contentType: 'application/json',
+        json: storageOverview,
+      });
     });
   });
 
   test('shows source-level provenance for a captured mixed-source identity @storyboard @comparison @wcag @section508', async ({
     page,
   }) => {
-    await page.route(`**/api/admin/federation/compositions**`, async (route) => {
-      const url = new URL(route.request().url());
-      expect(url.searchParams.get('corpusProfile')).toBe('FEDERATED_1M');
-      expect(url.searchParams.get('limit')).toBe('20');
-      await route.fulfill({ contentType: 'application/json', json: [composition] });
-    });
+    await page.route(
+      `**/api/admin/federation/compositions**`,
+      async (route) => {
+        const url = new URL(route.request().url());
+        expect(url.searchParams.get('corpusProfile')).toBe('FEDERATED_1M');
+        expect(url.searchParams.get('limit')).toBe('20');
+        await route.fulfill({
+          contentType: 'application/json',
+          json: [composition],
+        });
+      },
+    );
 
     await page.goto('/admin/sync');
 
@@ -80,19 +89,28 @@ test.describe('Admin composite corpus evidence', () => {
     await expect(page.getByText('1,000,000 federated records')).toBeVisible();
     await expect(page.getByText('Data.gov', { exact: true })).toBeVisible();
     await expect(page.getByText('DOE OSTI', { exact: true })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Exact quota' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: '500,000' }).first()).toBeVisible();
     await expect(
-      page.getByText(/Projection linkage to compositionSha256 belongs to the next delivery slice/),
+      page.getByRole('columnheader', { name: 'Exact quota' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: '500,000' }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        /Projection linkage to compositionSha256 belongs to the next delivery slice/,
+      ),
     ).toBeVisible();
   });
 
   test('does not imply evidence exists before bounded snapshots are composed @storyboard @comparison', async ({
     page,
   }) => {
-    await page.route(`**/api/admin/federation/compositions**`, async (route) => {
-      await route.fulfill({ contentType: 'application/json', json: [] });
-    });
+    await page.route(
+      `**/api/admin/federation/compositions**`,
+      async (route) => {
+        await route.fulfill({ contentType: 'application/json', json: [] });
+      },
+    );
 
     await page.goto('/admin/sync');
 
