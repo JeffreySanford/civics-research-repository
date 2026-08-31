@@ -36,6 +36,7 @@ services:
       CIVICS_SOLR_BASE_URL: http://solr:8983/solr
       CIVICS_OPENSEARCH_BASE_URL: http://opensearch:9200
       CIVICS_STORAGE_ARTIFACTS_PATH: /var/lib/civics/artifacts
+      CIVICS_CORPUS_ARCHIVES_PATH: /var/lib/civics/corpus-archives
       SPRING_DATASOURCE_URL: 'jdbc:postgresql://postgres:5432/${CIVICS_DB_NAME:-civics_ops}'
       SPRING_DATASOURCE_USERNAME: '${CIVICS_DB_USER:-civics}'
       SPRING_DATASOURCE_PASSWORD: '${CIVICS_DB_PASSWORD:-civics}'
@@ -43,6 +44,9 @@ services:
       - '8080:8080'
     volumes:
       - civics-artifacts:/var/lib/civics/artifacts
+      # Large evidence corpora are deliberately host-backed rather than kept only in a named volume.
+      # They therefore survive container recreation and `docker compose down -v`.
+      - ./browser-evidence-artifacts/corpus-archives:/var/lib/civics/corpus-archives
 
   discovery-ui:
     image: node:24-bookworm-slim
