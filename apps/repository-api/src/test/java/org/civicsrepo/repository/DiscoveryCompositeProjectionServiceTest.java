@@ -66,6 +66,8 @@ class DiscoveryCompositeProjectionServiceTest {
         assertThat(service.currentProjectionId()).isEqualTo(expectedProjectionId);
         assertThat(solr.batches).containsExactly(List.of(repository), dataGov, osti);
         assertThat(openSearch.batches).containsExactly(List.of(repository), dataGov, osti);
+        assertThat(solr.aborted).isFalse();
+        assertThat(openSearch.aborted).isFalse();
         assertThat(service.targetState("discovery").projectionId()).isEqualTo(expectedProjectionId);
         assertThat(service.targetState("discovery-comparison").projectionId()).isEqualTo(expectedProjectionId);
         verify(identityStore).recordIndexed(List.of("repo-001"));
@@ -93,6 +95,7 @@ class DiscoveryCompositeProjectionServiceTest {
                 .hasMessageContaining("exhausted source DATA_GOV")
                 .hasMessageContaining("required 2");
         assertThat(target.completed).isFalse();
+        assertThat(target.aborted).isTrue();
     }
 
     private FederatedCompositeCorpusManifest composition(long dataCount, long ostiCount) {
@@ -146,6 +149,7 @@ class DiscoveryCompositeProjectionServiceTest {
         private final String indexName;
         private final List<List<DiscoveryDocument>> batches = new ArrayList<>();
         private boolean completed;
+        private boolean aborted;
         private int count;
 
         private RecordingTarget(String indexName) {
@@ -181,6 +185,7 @@ class DiscoveryCompositeProjectionServiceTest {
         public void beginProjection() {
             count = 0;
             completed = false;
+            aborted = false;
         }
 
         @Override
@@ -195,6 +200,8 @@ class DiscoveryCompositeProjectionServiceTest {
         }
 
         @Override
-        public void abortProjection() {}
+        public void abortProjection() {
+            aborted = true;
+        }
     }
 }
