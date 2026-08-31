@@ -6,8 +6,8 @@ import {
 } from './patch-openapi-corpus-scale.mjs';
 
 const DEFAULT_SCHEMA = 'schemas/openapi/repository-api.yaml';
-const HASH_PATTERN_PREFIX = "          pattern: '^[0-9a-f]{64}";
-const HASH_PATTERN_LITERAL = "          pattern: '^[0-9a-f]{64}$'";
+const HASH_PATTERN_PREFIX = "pattern: '^[0-9a-f]{64}";
+const HASH_PATTERN_LITERAL = "pattern: '^[0-9a-f]{64}$'";
 
 const MIGRATED_MARKERS = [
   'name: order',
@@ -21,18 +21,20 @@ const MIGRATED_MARKERS = [
   'FederationHarvestStatusResponse:',
 ];
 
-function countOccurrences(source, value) {
-  return source.split(value).length - 1;
-}
-
 function hasMigratedMarkers(source) {
   return MIGRATED_MARKERS.every((marker) => source.includes(marker));
 }
 
 function hasOnlyLiteralHashPatterns(source) {
-  const prefixCount = countOccurrences(source, HASH_PATTERN_PREFIX);
-  const literalCount = countOccurrences(source, HASH_PATTERN_LITERAL);
-  return literalCount >= 3 && prefixCount === literalCount;
+  const hashPatternLines = source
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith(HASH_PATTERN_PREFIX));
+
+  return (
+    hashPatternLines.length >= 3 &&
+    hashPatternLines.every((line) => line === HASH_PATTERN_LITERAL)
+  );
 }
 
 function isFullyMigrated(source) {
