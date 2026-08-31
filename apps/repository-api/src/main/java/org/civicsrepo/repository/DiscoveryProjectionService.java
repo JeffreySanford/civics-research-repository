@@ -207,21 +207,26 @@ public class DiscoveryProjectionService {
         List<String> indexedRepositoryIds = new ArrayList<>();
         progress.projectionStarted(plannedDocumentCount);
 
-        projectRepository(
-                repositoryObjects,
-                activeTargets,
-                projectedTargets,
-                digest,
-                indexedRepositoryIds,
-                plannedDocumentCount,
-                progress);
-        projectComposite(
-                composition,
-                activeTargets,
-                projectedTargets,
-                digest,
-                plannedDocumentCount,
-                progress);
+        try {
+            projectRepository(
+                    repositoryObjects,
+                    activeTargets,
+                    projectedTargets,
+                    digest,
+                    indexedRepositoryIds,
+                    plannedDocumentCount,
+                    progress);
+            projectComposite(
+                    composition,
+                    activeTargets,
+                    projectedTargets,
+                    digest,
+                    plannedDocumentCount,
+                    progress);
+        } catch (RuntimeException exception) {
+            abortTargets(activeTargets, exception);
+            throw exception;
+        }
 
         ProjectionState projected = finishProjection(
                 composition.corpusProfile(),
@@ -538,6 +543,12 @@ public class DiscoveryProjectionService {
                                 exception.getMessage()));
                 LOGGER.warn("Discovery projection target {} could not complete: {}", target.indexName(), exception.getMessage());
             }
+        }
+    }
+
+    private void abortTargets(List<DiscoveryProjectionTarget> activeTargets, RuntimeException primaryFailure) {
+        for (DiscoveryProjectionTarget target : new ArrayList<>(activeTargets)) {
+            abortQuietly(target, primaryFailure);
         }
     }
 
