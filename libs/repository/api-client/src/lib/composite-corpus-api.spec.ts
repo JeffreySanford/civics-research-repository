@@ -49,12 +49,9 @@ describe('RepositoryCompositeCorpusApi', () => {
     await expect(
       firstValueFrom(api.getRecentCompositeCorpusEvidence('FEDERATED_1M', 20)),
     ).resolves.toEqual([manifest]);
-
-    expect(http.get).toHaveBeenCalledOnce();
-    const [url, options] = http.get.mock.calls[0];
-    expect(url).toBe('http://api.test/api/admin/federation/compositions');
-    expect(options.params.toString()).toBe(
-      'corpusProfile=FEDERATED_1M&limit=20',
+    expect(http.get).toHaveBeenCalledWith(
+      'http://api.test/api/admin/federation/compositions',
+      { params: { corpusProfile: 'FEDERATED_1M', limit: 20 } },
     );
   });
 
