@@ -23,8 +23,16 @@ services:
       CIVICS_DSPACE_ADMIN_EMAIL: '${CIVICS_DSPACE_ADMIN_EMAIL:-}'
       CIVICS_DSPACE_ADMIN_PASSWORD: '${CIVICS_DSPACE_ADMIN_PASSWORD:-}'
       # Data.gov Catalog API v4 requires X-Api-Key. DEMO_KEY is intentionally sufficient only for
-      # bounded local exploration; use a personal api.data.gov key for 100K-scale harvest proofs.
+      # bounded local exploration; use a personal api.data.gov key for sustained harvest proofs.
       CIVICS_FEDERATION_DATA_GOV_API_KEY: '${CIVICS_FEDERATION_DATA_GOV_API_KEY:-DEMO_KEY}'
+      # DOE OSTI.GOV public metadata requires no API credential.
+      # NASA CMR public collections require no bearer token, but a stable Client-Id is recommended.
+      CIVICS_FEDERATION_NASA_CMR_CLIENT_ID: '${CIVICS_FEDERATION_NASA_CMR_CLIENT_ID:-civics-research-repository}'
+      CIVICS_FEDERATION_NASA_CMR_BEARER_TOKEN: '${CIVICS_FEDERATION_NASA_CMR_BEARER_TOKEN:-}'
+      # PubMed and OpenAlex keys are optional for bounded samples and recommended for sustained API use.
+      CIVICS_FEDERATION_PUBMED_API_KEY: '${CIVICS_FEDERATION_PUBMED_API_KEY:-}'
+      CIVICS_FEDERATION_PUBMED_EMAIL: '${CIVICS_FEDERATION_PUBMED_EMAIL:-}'
+      CIVICS_FEDERATION_OPENALEX_API_KEY: '${CIVICS_FEDERATION_OPENALEX_API_KEY:-}'
       CIVICS_SOLR_BASE_URL: http://solr:8983/solr
       CIVICS_OPENSEARCH_BASE_URL: http://opensearch:9200
       CIVICS_STORAGE_ARTIFACTS_PATH: /var/lib/civics/artifacts
@@ -179,64 +187,6 @@ services:
     volumes:
       - dspace-assetstore:/dspace/assetstore
 
-  # The repository system of record. Owned and migrated by DSpace itself.
-  dspace-postgres:
-    profiles: ['dspace']
-    image: dspace/dspace-postgres-pgcrypto:dspace-9.0
-    environment:
-      POSTGRES_DB: dspace
-      POSTGRES_USER: dspace
-      POSTGRES_PASSWORD: dspace
-    ports:
-      - '5433:5432'
-    volumes:
-      # Must match PGDATA in the dspace-postgres image (/var/lib/postgresql/data). This was
-      # previously mounted at /pgdata, which left the volume empty and kept the entire DSpace
-      # database in the container's writable layer — so removing the container destroyed the
-      # repository, seed and all.
-      - dspace-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U dspace -d dspace']
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  dspace-solr:
-    profiles: ['dspace']
-    image: dspace/dspace-solr:dspace-9.0
-    depends_on:
-      dspace-solr-init:
-        condition: service_completed_successfully
-    ports:
-      - '8984:8983'
-    volumes:
-      - dspace-solr-data:/var/solr
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'curl -fsS http://localhost:8983/solr/search/admin/ping >/dev/null',
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
-  dspace-solr-init:
-    profiles: ['dspace']
-    image: dspace/dspace:dspace-9.0
-    entrypoint:
-      - sh
-      - -c
-      - |
-        set -eu
-        mkdir -p /var/solr/data
-        if [ ! -d /var/solr/data/search ]; then
-          cp -R /dspace/solr/. /var/solr/data/
-        fi
-        chown -R 8983:8983 /var/solr
-    volumes:
-      - dspace-solr-data:/var/solr
-
   dspace-db-init:
     profiles: ['dspace']
     image: dspace/dspace:dspace-9.0
@@ -248,17 +198,15 @@ services:
     entrypoint:
       - sh
       - -c
-      - /dspace/bin/dspace database migrate
+      - |
+        set -eu
+        /dspace/bin/dspace database migrate
+        /dspace/bin/dspace database info
     environment:
-      dspace__P__name: Civics Research Repository DSpace
-      dspace__P__server__P__url: http://localhost:8081/server
-      dspace__P__ui__P__url: http://localhost:4000
       db__P__url: jdbc:postgresql://dspace-postgres:5432/dspace
       db__P__username: dspace
       db__P__password: dspace
       solr__P__server: http://dspace-solr:8983/solr
-    volumes:
-      - dspace-assetstore:/dspace/assetstore
 
   dspace-seed:
     profiles: ['dspace']
@@ -266,35 +214,97 @@ services:
     depends_on:
       dspace-db-init:
         condition: service_completed_successfully
-      dspace-solr:
-        condition: service_healthy
     entrypoint:
-      - sh
-      - -c
-      - sh /seed/seed-structure.sh
+      - /workspace/tools/dspace/seed-structure.sh
     environment:
+      DSPACE_INSTALL: /dspace
       DSPACE_SEED_ADMIN_EMAIL: '${DSPACE_SEED_ADMIN_EMAIL:-admin@civics.local}'
-      DSPACE_SEED_ADMIN_PASSWORD: '${DSPACE_SEED_ADMIN_PASSWORD:-civics-admin}'
-      dspace__P__name: Civics Research Repository DSpace
-      dspace__P__server__P__url: http://localhost:8081/server
-      dspace__P__ui__P__url: http://localhost:4000
+      DSPACE_SEED_ADMIN_PASSWORD: '${DSPACE_SEED_ADMIN_PASSWORD:-local-demo-not-a-secret}'
+      DSPACE_SEED_SAF_ROOT: /workspace/generated/dspace-saf
       db__P__url: jdbc:postgresql://dspace-postgres:5432/dspace
       db__P__username: dspace
       db__P__password: dspace
       solr__P__server: http://dspace-solr:8983/solr
     volumes:
+      - .:/workspace
       - dspace-assetstore:/dspace/assetstore
-      - ./tools/dspace:/seed:ro
+
+  dspace-postgres:
+    profiles: ['dspace']
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: dspace
+      POSTGRES_USER: dspace
+      POSTGRES_PASSWORD: dspace
+    ports:
+      - '5433:5432'
+    volumes:
+      - dspace-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dspace -d dspace']
+      start_interval: 2s
+      start_period: 60s
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+  dspace-solr:
+    profiles: ['dspace']
+    image: solr:9.8.1
+    user: '0:0'
+    command: ['solr', '-f']
+    ports:
+      - '8984:8983'
+    volumes:
+      - dspace-solr-data:/var/solr
+      - ./tools/dspace/solr9:/opt/civics/dspace-solr-config:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl -fsS "http://localhost:8983/solr/admin/cores?action=STATUS&wt=json" | grep -q ''"search"''',
+        ]
+      start_interval: 5s
+      start_period: 180s
+      interval: 60s
+      timeout: 10s
+      retries: 5
+
+  dspace-solr-init:
+    profiles: ['dspace']
+    image: solr:9.8.1
+    user: '0:0'
+    depends_on:
+      dspace-solr:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -eu
+        for core in authority oai search statistics; do
+          if [ ! -d "/var/solr/data/$$core/conf" ]; then
+            echo "Creating DSpace Solr core $$core"
+            mkdir -p "/var/solr/data/$$core"
+            cp -R "/opt/civics/dspace-solr-config/$$core" "/var/solr/data/$$core/conf"
+            touch "/var/solr/data/$$core/core.properties"
+            chown -R 8983:8983 "/var/solr/data/$$core"
+            curl -fsS "http://dspace-solr:8983/solr/admin/cores?action=CREATE&name=$$core&instanceDir=$$core&wt=json" >/dev/null
+          fi
+        done
+    volumes:
+      - dspace-solr-data:/var/solr
+      - ./tools/dspace/solr9:/opt/civics/dspace-solr-config:ro
 
 volumes:
-  civics-artifacts:
-  corepack-cache:
-  dspace-assetstore:
-  dspace-postgres-data:
-  dspace-solr-data:
-  node-modules:
-  nx-cache:
-  opensearch-data:
-  pnpm-store:
   postgres-data:
   solr-data:
+  opensearch-data:
+  dspace-postgres-data:
+  dspace-solr-data:
+  dspace-assetstore:
+  civics-artifacts:
+  pnpm-store:
+  node-modules:
+  corepack-cache:
+  nx-cache:
