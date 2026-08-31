@@ -44,6 +44,34 @@ const progress: CorpusProfileActivationProgress = {
   message: 'Building Solr and OpenSearch projections.',
 };
 
+const scaleStarted: CorpusProfileActivationProgress = {
+  operationId: 'scale-100k',
+  profile: 'FEDERATED_100K',
+  phase: 'HARVESTING',
+  processedDocuments: 10_000,
+  totalDocuments: 100_000,
+  percentComplete: 10,
+  startedAt: '2026-08-31T00:40:00Z',
+  updatedAt: '2026-08-31T00:40:01Z',
+  elapsedMs: 1_000,
+  documentsPerSecond: 100,
+  message: 'Harvesting and retaining federated metadata from the authoritative source.',
+};
+
+const scaleCompleted: CorpusProfileActivationProgress = {
+  ...scaleStarted,
+  phase: 'COMPLETED',
+  processedDocuments: 100_187,
+  totalDocuments: 100_187,
+  percentComplete: 100,
+  completedAt: '2026-08-31T00:45:00Z',
+  updatedAt: '2026-08-31T00:45:00Z',
+  elapsedMs: 300_000,
+  documentsPerSecond: 334,
+  message:
+    'Corpus profile growth, verified projection, and storage evidence capture completed.',
+};
+
 const overview: CorpusStorageOverview = {
   activeProfile: 'CURATED_DEMO',
   profiles: [
@@ -79,11 +107,15 @@ const overview: CorpusStorageOverview = {
 describe('AdminCorpusStorageComponent', () => {
   const render = async (
     activation$: Observable<DiscoveryProjectionState> = of(projection),
+    activationProgress$: Observable<CorpusProfileActivationProgress> = of(
+      progress,
+    ),
   ) => {
     const api = {
       getCorpusStorageOverview: vi.fn(() => of(overview)),
       activateCorpusProfile: vi.fn(() => activation$),
-      getCorpusProfileActivationProgress: vi.fn(() => of(progress)),
+      startCorpusProfileScale: vi.fn(() => of(scaleStarted)),
+      getCorpusProfileActivationProgress: vi.fn(() => activationProgress$),
       captureCorpusStorage: vi.fn(() => of(measurement)),
     };
 
@@ -130,6 +162,28 @@ describe('AdminCorpusStorageComponent', () => {
     );
   });
 
+  it('offers guarded growth for 100k while keeping 1m unavailable', async () => {
+    const { fixture } = await render();
+
+    fixture.componentInstance.selectProfile('FEDERATED_100K');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Ready for guarded growth',
+    );
+    expect(fixture.nativeElement.textContent).toContain(
+      'Grow & activate Federated 100K',
+    );
+
+    fixture.componentInstance.selectProfile('FEDERATED_1M');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Not available yet');
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'Grow & activate Federated 1M',
+    );
+  });
+
   it('activates an already-retained profile, captures its footprint, and refreshes evidence', async () => {
     const { fixture, api } = await render();
 
@@ -170,6 +224,23 @@ describe('AdminCorpusStorageComponent', () => {
     activationSubject.complete();
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
+  });
+
+  it('starts 100k growth asynchronously and completes from backend progress', async () => {
+    const { fixture, api } = await render(of(projection), of(scaleCompleted));
+
+    fixture.componentInstance.selectProfile('FEDERATED_100K');
+    fixture.componentInstance.scaleProfile('FEDERATED_100K');
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    fixture.detectChanges();
+
+    expect(api.startCorpusProfileScale).toHaveBeenCalledWith('FEDERATED_100K');
+    expect(api.getCorpusProfileActivationProgress).toHaveBeenCalled();
+    expect(api.getCorpusStorageOverview).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.textContent).toContain(
+      'Federated 100K growth and activation completed',
+    );
   });
 
   it('captures only the current active footprint and refreshes history', async () => {
