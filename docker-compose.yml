@@ -215,18 +215,19 @@ services:
       dspace-db-init:
         condition: service_completed_successfully
     entrypoint:
-      - /workspace/tools/dspace/seed-structure.sh
+      - /seed/seed-structure.sh
     environment:
       DSPACE_INSTALL: /dspace
       DSPACE_SEED_ADMIN_EMAIL: '${DSPACE_SEED_ADMIN_EMAIL:-admin@civics.local}'
       DSPACE_SEED_ADMIN_PASSWORD: '${DSPACE_SEED_ADMIN_PASSWORD:-local-demo-not-a-secret}'
-      DSPACE_SEED_SAF_ROOT: /workspace/generated/dspace-saf
       db__P__url: jdbc:postgresql://dspace-postgres:5432/dspace
       db__P__username: dspace
       db__P__password: dspace
       solr__P__server: http://dspace-solr:8983/solr
     volumes:
-      - .:/workspace
+      # seed-structure.sh deliberately resolves registry XML, structure XML, and generated SAF
+      # packages below /seed. Keep that path stable rather than teaching the script two host layouts.
+      - ./tools/dspace:/seed:ro
       - dspace-assetstore:/dspace/assetstore
 
   # The DSpace system-of-record database must stay on the DSpace 9 release-matched PostgreSQL image.
