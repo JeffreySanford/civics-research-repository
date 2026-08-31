@@ -11,7 +11,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryCursor;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryPage;
+import org.civicsrepo.federation.CombinedDiscoveryCatalog.FederatedDiscoveryPage;
 import org.civicsrepo.federation.CorpusProfile;
+import org.civicsrepo.federation.FederatedCompositeCorpusManifest;
+import org.civicsrepo.federation.FederatedCompositeCorpusSource;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.SearchResult;
@@ -32,6 +35,11 @@ import org.springframework.stereotype.Service;
  * <p>Corpus profiles select a deterministic prefix of the federated authority without deleting any
  * retained metadata. CURATED_DEMO includes repository records only; named federated profiles add a
  * stable-ID ordered federated prefix; FULL includes all retained federated metadata.
+ *
+ * <p>Evidence-grade composite corpora use a stricter path: each source contributes exactly the
+ * stable-ID prefix and quota captured by its immutable bounded snapshot. This prevents a named
+ * profile such as FEDERATED_1M from being confused with an arbitrary first million rows across all
+ * retained sources.
  *
  * <p>When the selected profile has no authoritative records, the small fixture catalog is projected
  * instead so the demo still functions. That substitution remains explicitly labelled through the
@@ -163,6 +171,96 @@ public class DiscoveryProjectionService {
                     progress);
         }
 
+        return finishProjection(
+                profile,
+                source,
+                repositoryObjects.size(),
+                federatedCount,
+                authorityBacked,
+                activeTargets,
+                projectedTargets,
+                digest,
+                indexedRepositoryIds,
+                plannedDocumentCount,
+                progress);
+    }
+
+    /**
+     * Rebuild from the exact source quotas represented by one immutable composite manifest.
+     *
+     * <p>The curated DSpace slice remains part of the public discovery projection but is not part of
+     * the federated composition digest. Each federated source is streamed independently from its
+     * stable-ID range so the projected sequence is exactly the composition that the manifest names.
+     */
+    public ProjectionState reindex(
+            FederatedCompositeCorpusManifest composition,
+            ProjectionProgressListener progressListener) {
+        Objects.requireNonNull(composition, "composition");
+        ProjectionProgressListener progress = progressListener == null ? NO_PROGRESS : progressListener;
+        repositoryCatalog.invalidate();
+        List<DiscoveryDocument> repositoryObjects = repositoryCatalog.findAllDiscoveryDocuments();
+        long plannedDocumentCount = Math.addExact(repositoryObjects.size(), composition.federatedRecordCount());
+
+        Map<String, ProjectionTargetState> projectedTargets = new LinkedHashMap<>();
+        List<DiscoveryProjectionTarget> activeTargets = beginTargets(projectedTargets);
+        DiscoveryProjectionDigest digest = new DiscoveryProjectionDigest();
+        List<String> indexedRepositoryIds = new ArrayList<>();
+        progress.projectionStarted(plannedDocumentCount);
+
+        projectRepository(
+                repositoryObjects,
+                activeTargets,
+                projectedTargets,
+                digest,
+                indexedRepositoryIds,
+                plannedDocumentCount,
+                progress);
+        projectComposite(
+                composition,
+                activeTargets,
+                projectedTargets,
+                digest,
+                plannedDocumentCount,
+                progress);
+
+        ProjectionState projected = finishProjection(
+                composition.corpusProfile(),
+                RepositorySource.REPOSITORY,
+                repositoryObjects.size(),
+                composition.federatedRecordCount(),
+                true,
+                activeTargets,
+                projectedTargets,
+                digest,
+                indexedRepositoryIds,
+                plannedDocumentCount,
+                progress);
+        LOGGER.info(
+                "Discovery projection rebuilt from composite {} for profile {}: {} objects ({} DSpace, {} federated).",
+                composition.compositionSha256(),
+                composition.corpusProfile(),
+                projected.objectCount(),
+                repositoryObjects.size(),
+                composition.federatedRecordCount());
+        return projected;
+    }
+
+    public ProjectionState reindex(FederatedCompositeCorpusManifest composition) {
+        return reindex(composition, NO_PROGRESS);
+    }
+
+    private ProjectionState finishProjection(
+            CorpusProfile profile,
+            RepositorySource source,
+            int repositoryCount,
+            long federatedCount,
+            boolean authorityBacked,
+            List<DiscoveryProjectionTarget> activeTargets,
+            Map<String, ProjectionTargetState> projectedTargets,
+            DiscoveryProjectionDigest digest,
+            List<String> indexedRepositoryIds,
+            long plannedDocumentCount,
+            ProjectionProgressListener progress) {
         String projectedDocumentSetId = digest.finish();
         progress.verificationStarted(digest.documentCount(), plannedDocumentCount);
         finishTargets(activeTargets, projectedTargets, projectedDocumentSetId);
@@ -178,12 +276,12 @@ public class DiscoveryProjectionService {
         targetStates.set(Map.copyOf(projectedTargets));
 
         if (authorityBacked) {
-            long projectedFederated = Math.max(0L, projectedCount - repositoryObjects.size());
+            long projectedFederated = Math.max(0L, projectedCount - repositoryCount);
             LOGGER.info(
-                    "Discovery projection rebuilt for profile {}: {} objects ({} DSpace, {} federated; {} federated retained).",
+                    "Discovery projection rebuilt for profile {}: {} objects ({} DSpace, {} federated; {} federated retained/selected).",
                     profile,
                     projectedCount,
-                    repositoryObjects.size(),
+                    repositoryCount,
                     projectedFederated,
                     federatedCount);
         } else {
@@ -322,6 +420,49 @@ public class DiscoveryProjectionService {
         }
     }
 
+    private void projectComposite(
+            FederatedCompositeCorpusManifest composition,
+            List<DiscoveryProjectionTarget> activeTargets,
+            Map<String, ProjectionTargetState> projectedTargets,
+            DiscoveryProjectionDigest digest,
+            long totalDocuments,
+            ProjectionProgressListener progress) {
+        for (FederatedCompositeCorpusSource source : composition.sources()) {
+            long projectedForSource = 0;
+            String cursor = null;
+            while (projectedForSource < source.requestedRecordCount()) {
+                long remaining = source.requestedRecordCount() - projectedForSource;
+                int pageLimit = (int) Math.min(PROJECTION_BATCH_SIZE, remaining);
+                FederatedDiscoveryPage page = combinedDiscoveryCatalog.findFederatedAfter(
+                        source.sourceSystem(), cursor, pageLimit);
+                List<DiscoveryDocument> documents = page.documents();
+                if (documents.isEmpty()) {
+                    throw new IllegalStateException("Composite projection could not satisfy source quota for "
+                            + source.sourceSystem().name()
+                            + ": projected "
+                            + projectedForSource
+                            + " of "
+                            + source.requestedRecordCount());
+                }
+
+                digest.updateBatch(documents);
+                projectBatch(documents, activeTargets, projectedTargets);
+                projectedForSource = Math.addExact(projectedForSource, documents.size());
+                progress.documentsProjected(digest.documentCount(), totalDocuments);
+                cursor = page.nextAfterId();
+
+                if (projectedForSource < source.requestedRecordCount() && page.sourceRangeComplete()) {
+                    throw new IllegalStateException("Composite projection exhausted source "
+                            + source.sourceSystem().name()
+                            + " after "
+                            + projectedForSource
+                            + " records; required "
+                            + source.requestedRecordCount());
+                }
+            }
+        }
+    }
+
     private void projectFixtures(
             List<DiscoveryDocument> fixtureFallback,
             List<DiscoveryProjectionTarget> activeTargets,
@@ -366,8 +507,7 @@ public class DiscoveryProjectionService {
                                 exception.getMessage()));
                 LOGGER.warn(
                         "Discovery projection target {} failed during a bounded batch; other targets continue: {}",
-                        target.indexName(),
-                        exception.getMessage());
+                        target.indexName(), exception.getMessage());
             }
         }
     }
