@@ -94,17 +94,38 @@ public class FederatedCorpusManifestService {
      * the same evidence shape can describe a bounded source that happens to exhaust naturally.
      */
     public FederatedBoundedSnapshotManifest generateBoundedSnapshot(String runId) {
-        return generateBoundedSnapshot(runId, OffsetDateTime.now(ZoneOffset.UTC));
+        return generateBoundedSnapshot(runId, Long.MAX_VALUE, OffsetDateTime.now(ZoneOffset.UTC));
+    }
+
+    /**
+     * Captures the deterministic stable-ID prefix used by a named corpus profile.
+     *
+     * <p>The retained source may contain more records than the requested evidence tier. Bounding
+     * the snapshot independently from publisher page boundaries keeps a 100K/1M checkpoint exact
+     * and reproducible even when the final harvest page takes the retained corpus slightly past the
+     * target.
+     */
+    public FederatedBoundedSnapshotManifest generateBoundedSnapshot(String runId, long recordLimit) {
+        return generateBoundedSnapshot(runId, recordLimit, OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     FederatedBoundedSnapshotManifest generateBoundedSnapshot(String runId, OffsetDateTime capturedAt) {
+        return generateBoundedSnapshot(runId, Long.MAX_VALUE, capturedAt);
+    }
+
+    FederatedBoundedSnapshotManifest generateBoundedSnapshot(
+            String runId, long recordLimit, OffsetDateTime capturedAt) {
+        if (recordLimit < 1) {
+            throw new IllegalArgumentException("recordLimit must be at least 1");
+        }
+
         HarvestRun run = requireRun(runId);
         if (run.status() != HarvestRunStatus.PAUSED && run.status() != HarvestRunStatus.COMPLETED) {
             throw new IllegalStateException(
                     "Bounded snapshots require a PAUSED or COMPLETED harvest run: " + run.id());
         }
 
-        SnapshotScan scan = scanSource(run.sourceSystem());
+        SnapshotScan scan = scanSource(run.sourceSystem(), recordLimit);
         String snapshotId = run.sourceSystem().name() + ":" + scan.sha256();
         return new FederatedBoundedSnapshotManifest(
                 BOUNDED_SNAPSHOT_VERSION,
@@ -138,6 +159,10 @@ public class FederatedCorpusManifestService {
     }
 
     private SnapshotScan scanSource(FederatedSourceSystem sourceSystem) {
+        return scanSource(sourceSystem, Long.MAX_VALUE);
+    }
+
+    private SnapshotScan scanSource(FederatedSourceSystem sourceSystem, long recordLimit) {
         MessageDigest digest = sha256();
         digest.update(HASH_VERSION);
 
@@ -151,8 +176,10 @@ public class FederatedCorpusManifestService {
         TreeSet<String> adapterVersions = new TreeSet<>();
         boolean sourceRangeComplete = false;
 
-        while (!sourceRangeComplete) {
-            List<FederatedResearchRecord> page = catalog.findAfterId(cursor, scanPageSize);
+        while (!sourceRangeComplete && retainedRecordCount < recordLimit) {
+            long remaining = recordLimit - retainedRecordCount;
+            int pageLimit = (int) Math.min(scanPageSize, remaining);
+            List<FederatedResearchRecord> page = catalog.findAfterId(cursor, pageLimit);
             if (page.isEmpty()) {
                 break;
             }
@@ -188,9 +215,16 @@ public class FederatedCorpusManifestService {
                         latestSourceUpdatedAt = sourceUpdatedAt;
                     }
                 }
+
+                if (retainedRecordCount >= recordLimit) {
+                    break;
+                }
             }
 
-            if (sourceRangeComplete || page.size() < scanPageSize || sourceRecordsOnPage == 0) {
+            if (sourceRangeComplete
+                    || retainedRecordCount >= recordLimit
+                    || page.size() < pageLimit
+                    || sourceRecordsOnPage == 0) {
                 break;
             }
         }
