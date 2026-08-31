@@ -37,7 +37,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class NasaCmrHarvester implements FederatedSourceHarvester {
     static final int MAX_SOURCE_PAGE_SIZE = 2_000;
-    static final String ADAPTER_VERSION = "nasa-cmr-collections-v1";
+    static final String ADAPTER_VERSION = "nasa-cmr-collections-v2";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
     private static final String DEFAULT_COLLECTIONS_URL = "https://cmr.earthdata.nasa.gov/search/collections.json";
 
@@ -261,7 +261,10 @@ public class NasaCmrHarvester implements FederatedSourceHarvester {
 
     private URI searchUri(int pageSize) {
         String delimiter = collectionsUrl.contains("?") ? "&" : "?";
-        return URI.create(collectionsUrl + delimiter + "page_size=" + pageSize + "&sort_key%5B%5D=concept_id");
+        // CMR Search-After carries the server's ordering state. NASA's collection-harvesting
+        // guidance uses page_size plus the returned CMR-Search-After header, without inventing a
+        // concept-id sort. concept_id is a search parameter, not a valid collection sort key.
+        return URI.create(collectionsUrl + delimiter + "page_size=" + pageSize);
     }
 
     private Duration retryAfter(HttpResponse<?> response) {
