@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { upgradeRepositoryApiContract } from './patch-openapi-corpus-scale.mjs';
+import { upgradeRepositoryApiContract } from './patch-openapi-corpus-scale-idempotent.mjs';
 
 const fixture = `openapi: 3.1.0
 paths:
