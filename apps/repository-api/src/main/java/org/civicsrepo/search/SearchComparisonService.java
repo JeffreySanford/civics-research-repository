@@ -115,14 +115,15 @@ public class SearchComparisonService {
             int page,
             int pageSize) {
         boolean enabled = solr.isEnabled();
-        boolean reachable = enabled && solr.isReachable();
+        Optional<Integer> indexedCount = enabled ? solr.documentCount() : Optional.empty();
+        boolean reachable = enabled && indexedCount.isPresent();
         if (!enabled || !reachable) {
             return unavailable(
                     SearchComparisonEngine.SOLR,
                     enabled,
                     reachable,
                     solr.indexName(),
-                    solr.documentCount(),
+                    indexedCount,
                     enabled ? "Solr discovery core is not reachable." : "Solr discovery is disabled.");
         }
 
@@ -130,11 +131,12 @@ public class SearchComparisonService {
         try {
             SearchExecution execution =
                     solr.searchWithDiagnostics(query, programs, geography, contentType, vintageYear, page, pageSize);
+            long elapsedMs = elapsedMillis(started);
             return completed(
                     SearchComparisonEngine.SOLR,
                     solr.indexName(),
-                    solr.documentCount(),
-                    elapsedMillis(started),
+                    indexedCount,
+                    elapsedMs,
                     execution.response(),
                     execution.engineReportedMs(),
                     targetWarning(solr.indexName()));
@@ -144,7 +146,7 @@ public class SearchComparisonService {
                     true,
                     true,
                     solr.indexName(),
-                    solr.documentCount(),
+                    indexedCount,
                     exception.getMessage(),
                     elapsedMillis(started));
         }
@@ -159,14 +161,15 @@ public class SearchComparisonService {
             int page,
             int pageSize) {
         boolean enabled = openSearch.isEnabled();
-        boolean reachable = enabled && openSearch.isReachable();
+        Optional<Integer> indexedCount = enabled ? openSearch.documentCount() : Optional.empty();
+        boolean reachable = enabled && indexedCount.isPresent();
         if (!enabled || !reachable) {
             return unavailable(
                     SearchComparisonEngine.OPENSEARCH,
                     enabled,
                     reachable,
                     openSearch.indexName(),
-                    openSearch.documentCount(),
+                    indexedCount,
                     enabled ? "OpenSearch is not reachable." : "OpenSearch comparison is disabled.");
         }
 
@@ -174,11 +177,12 @@ public class SearchComparisonService {
         try {
             SearchExecution execution = openSearch.searchWithDiagnostics(
                     query, programs, geography, contentType, vintageYear, page, pageSize);
+            long elapsedMs = elapsedMillis(started);
             return completed(
                     SearchComparisonEngine.OPENSEARCH,
                     openSearch.indexName(),
-                    openSearch.documentCount(),
-                    elapsedMillis(started),
+                    indexedCount,
+                    elapsedMs,
                     execution.response(),
                     execution.engineReportedMs(),
                     targetWarning(openSearch.indexName()));
@@ -188,7 +192,7 @@ public class SearchComparisonService {
                     true,
                     true,
                     openSearch.indexName(),
-                    openSearch.documentCount(),
+                    indexedCount,
                     exception.getMessage(),
                     elapsedMillis(started));
         }
