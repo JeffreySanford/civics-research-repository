@@ -198,7 +198,10 @@ import {
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell no-data" [attr.colspan]="displayedColumns.length">
+            <td
+              class="mat-cell no-data"
+              [attr.colspan]="displayedColumns.length"
+            >
               No historical measurements match the current filter.
             </td>
           </tr>

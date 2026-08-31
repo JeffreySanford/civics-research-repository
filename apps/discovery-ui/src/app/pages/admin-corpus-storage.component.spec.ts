@@ -157,8 +157,12 @@ describe('AdminCorpusStorageComponent', () => {
     fixture.detectChanges();
 
     expect(api.getCorpusProfileActivationProgress).toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('Loading search indexes');
-    expect(fixture.nativeElement.textContent).toContain('4,000 / 10,187 documents');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Loading search indexes',
+    );
+    expect(fixture.nativeElement.textContent).toContain(
+      '4,000 / 10,187 documents',
+    );
     expect(fixture.nativeElement.textContent).toContain('39%');
     expect(fixture.nativeElement.textContent).toContain('4,000 docs/s');
 

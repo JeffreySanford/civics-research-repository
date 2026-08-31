@@ -167,13 +167,10 @@ interface ActivationResult {
                 <strong>Not available yet.</strong>
                 <span>
                   {{ view.viewedProfile.label }} requires
-                  {{
-                    view.viewedProfile.targetFederatedRecordCount | number
-                  }}
+                  {{ view.viewedProfile.targetFederatedRecordCount | number }}
                   retained federated records; the current corpus has
-                  {{ retainedCount(view.activeProfile) | number }}.
-                  Harvesting additional metadata is a separate guarded scale
-                  operation.
+                  {{ retainedCount(view.activeProfile) | number }}. Harvesting
+                  additional metadata is a separate guarded scale operation.
                 </span>
               } @else if (isHeavyProfile(view.viewedProfile.profile)) {
                 <strong>Heavy profile.</strong>
@@ -579,9 +576,9 @@ export class AdminCorpusStorageComponent {
       active
         ? timer(0, 500).pipe(
             switchMap(() =>
-              this.adminApi.getCorpusProfileActivationProgress().pipe(
-                catchError(() => of(null)),
-              ),
+              this.adminApi
+                .getCorpusProfileActivationProgress()
+                .pipe(catchError(() => of(null))),
             ),
           )
         : of(null),
