@@ -85,6 +85,10 @@ test('migration adds the proven corpus, progress, harvest, evidence, and executi
     output,
     /enum: \[RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED\]/,
   );
+  assert.match(
+    output,
+    /FEDERATED_100K and\s+FEDERATED_1M are supported growth targets/,
+  );
   assert.equal(output.split("pattern: '^[0-9a-f]{64}$'").length - 1, 3);
   assert.equal(output.split('DeploymentTopology:').length - 1, 1);
 });
