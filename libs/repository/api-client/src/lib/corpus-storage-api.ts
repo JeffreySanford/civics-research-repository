@@ -15,32 +15,12 @@ export type CorpusProfileSummary =
   components['schemas']['CorpusProfileSummary'];
 export type CorpusStorageOverview =
   components['schemas']['CorpusStorageOverview'];
-
 export type CorpusProfileActivationPhase =
-  | 'IDLE'
-  | 'PREPARING'
-  | 'HARVESTING'
-  | 'SNAPSHOTTING'
-  | 'PROJECTING'
-  | 'VERIFYING'
-  | 'CAPTURING_EVIDENCE'
-  | 'COMPLETED'
-  | 'FAILED';
-
-export interface CorpusProfileActivationProgress {
-  readonly operationId?: string | null;
-  readonly profile?: CorpusProfile | null;
-  readonly phase: CorpusProfileActivationPhase;
-  readonly processedDocuments: number;
-  readonly totalDocuments?: number | null;
-  readonly percentComplete: number;
-  readonly startedAt?: string | null;
-  readonly updatedAt: string;
-  readonly completedAt?: string | null;
-  readonly elapsedMs: number;
-  readonly documentsPerSecond?: number | null;
-  readonly message?: string | null;
-}
+  components['schemas']['CorpusProfileActivationPhase'];
+export type CorpusProfileActivationProgress =
+  components['schemas']['CorpusProfileActivationProgress'];
+export type CorpusScaleEvidenceReport =
+  components['schemas']['CorpusScaleEvidenceReport'];
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryCorpusStorageApi {
@@ -78,6 +58,15 @@ export class RepositoryCorpusStorageApi {
   getCorpusProfileActivationProgress(): Observable<CorpusProfileActivationProgress> {
     return this.http.get<CorpusProfileActivationProgress>(
       `${this.baseUrl}/admin/reindex/progress`,
+    );
+  }
+
+  getCorpusScaleEvidence(
+    profile: CorpusProfile,
+  ): Observable<CorpusScaleEvidenceReport> {
+    return this.http.get<CorpusScaleEvidenceReport>(
+      `${this.baseUrl}/admin/corpus/scale/evidence`,
+      { params: { profile } },
     );
   }
 
