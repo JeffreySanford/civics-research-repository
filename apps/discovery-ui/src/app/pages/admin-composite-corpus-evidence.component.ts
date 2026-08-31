@@ -65,13 +65,11 @@ interface CompositeCorpusEvidenceView {
                 <div class="composite-evidence__manifest-heading">
                   <div>
                     <p class="eyebrow">{{ item.manifest.corpusProfile }}</p>
-                    <h3
-                      [id]="
-                        'composition-' + item.manifest.compositionSha256
-                      "
-                    >
-                      {{ item.manifest.federatedRecordCount | number }} federated
-                      records
+                    <h3 [id]="'composition-' + item.manifest.compositionSha256">
+                      {{
+                        item.manifest.federatedRecordCount | number
+                      }}
+                      federated records
                     </h3>
                   </div>
                   <span>{{ item.manifest.capturedAt | date: 'medium' }}</span>
@@ -101,7 +99,9 @@ interface CompositeCorpusEvidenceView {
                     class="composite-evidence__projection composite-evidence__projection--warning"
                     role="status"
                   >
-                    <strong>Projection linkage evidence could not be loaded.</strong>
+                    <strong
+                      >Projection linkage evidence could not be loaded.</strong
+                    >
                     <p>
                       No claim is made about whether this composition has been
                       projected. The composition identity above remains valid.
@@ -138,7 +138,9 @@ interface CompositeCorpusEvidenceView {
                       </div>
                       <div>
                         <dt>Projection rebuilt</dt>
-                        <dd>{{ projection.projectionRebuiltAt | date: 'medium' }}</dd>
+                        <dd>
+                          {{ projection.projectionRebuiltAt | date: 'medium' }}
+                        </dd>
                       </div>
                       <div>
                         <dt>Evidence linked</dt>
@@ -170,7 +172,9 @@ interface CompositeCorpusEvidenceView {
                   <table>
                     <caption>
                       Bounded source evidence for composition
-                      {{ shortSha(item.manifest.compositionSha256) }}
+                      {{
+                        shortSha(item.manifest.compositionSha256)
+                      }}
                     </caption>
                     <thead>
                       <tr>

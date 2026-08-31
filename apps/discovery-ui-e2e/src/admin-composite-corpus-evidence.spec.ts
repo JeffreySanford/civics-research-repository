@@ -125,10 +125,14 @@ test.describe('Admin composite corpus evidence', () => {
     await expect(page.getByText('1,000,181')).toBeVisible();
     await expect(page.getByText('181', { exact: true })).toBeVisible();
     await expect(
-      page.getByText(`${projectionSha.slice(0, 12)}…${projectionSha.slice(-8)}`),
+      page.getByText(
+        `${projectionSha.slice(0, 12)}…${projectionSha.slice(-8)}`,
+      ),
     ).toBeVisible();
     await expect(
-      page.getByText(/projection identity covers those records plus the curated DSpace repository slice/i),
+      page.getByText(
+        /projection identity covers those records plus the curated DSpace repository slice/i,
+      ),
     ).toBeVisible();
   });
 
@@ -160,7 +164,9 @@ test.describe('Admin composite corpus evidence', () => {
       page.getByText('Composition captured; search projection not linked yet.'),
     ).toBeVisible();
     await expect(
-      page.getByText(/profile name or document count alone is not treated as projection evidence/i),
+      page.getByText(
+        /profile name or document count alone is not treated as projection evidence/i,
+      ),
     ).toBeVisible();
     await expect(page.getByText('Search projection linked')).toHaveCount(0);
   });
