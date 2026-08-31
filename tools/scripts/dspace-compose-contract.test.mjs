@@ -30,7 +30,10 @@ test('DSpace datastores remain release-matched and separate from application dat
     /image: dspace\/dspace-postgres-pgcrypto:dspace-9\.0/,
   );
   assert.doesNotMatch(dspacePostgres, /image: postgres:17/);
-  assert.match(dspacePostgres, /dspace-postgres-data:\/var\/lib\/postgresql\/data/);
+  assert.match(
+    dspacePostgres,
+    /dspace-postgres-data:\/var\/lib\/postgresql\/data/,
+  );
   assert.match(dspaceSolr, /image: dspace\/dspace-solr:dspace-9\.0/);
   assert.match(dspaceSolr, /dspace-solr-data:\/var\/solr/);
 });

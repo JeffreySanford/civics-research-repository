@@ -129,7 +129,9 @@ export function renderMarkdown(report) {
     );
   }
 
-  const failures = report.sources.filter((result) => result.status === 'FAILED');
+  const failures = report.sources.filter(
+    (result) => result.status === 'FAILED',
+  );
   if (failures.length > 0) {
     lines.push('', '## Failure details', '');
     for (const failure of failures) {
