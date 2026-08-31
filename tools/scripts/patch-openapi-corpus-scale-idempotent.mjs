@@ -30,11 +30,14 @@ function hasMigratedMarkers(source) {
   return MIGRATED_MARKERS.every((marker) => source.includes(marker));
 }
 
+function hasOnlyLiteralHashPatterns(source) {
+  const prefixCount = countOccurrences(source, HASH_PATTERN_PREFIX);
+  const literalCount = countOccurrences(source, HASH_PATTERN_LITERAL);
+  return literalCount >= 3 && prefixCount === literalCount;
+}
+
 function isFullyMigrated(source) {
-  return (
-    hasMigratedMarkers(source) &&
-    countOccurrences(source, HASH_PATTERN_LITERAL) === 3
-  );
+  return hasMigratedMarkers(source) && hasOnlyLiteralHashPatterns(source);
 }
 
 function repairLiteralReplacementExpansion(input, migrated) {
