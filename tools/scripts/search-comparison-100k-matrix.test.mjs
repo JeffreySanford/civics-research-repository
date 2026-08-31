@@ -104,6 +104,7 @@ test('100K matrix requires valid evidence and keeps every scenario on one projec
     baseUrl: 'http://repository.test/api/',
     warmupRuns: 1,
     measuredRuns: 2,
+    executionOrder: 'OPENSEARCH_FIRST',
     now: () => new Date('2026-08-31T02:00:00Z'),
     hostContext: {
       logicalCpuCount: 24,
@@ -115,7 +116,13 @@ test('100K matrix requires valid evidence and keeps every scenario on one projec
 
   assert.equal(calls.length, 1 + DEFAULT_SCENARIOS.length * 3);
   assert.match(calls[0].url, /profile=FEDERATED_100K/);
+  assert.ok(
+    calls
+      .slice(1)
+      .every((call) => call.url.endsWith('?order=OPENSEARCH_FIRST')),
+  );
   assert.equal(result.profile, 'FEDERATED_100K');
+  assert.equal(result.executionOrder, 'OPENSEARCH_FIRST');
   assert.equal(result.evidence.currentProjectionId, PROJECTION_ID);
   assert.equal(result.scenarios.length, 3);
   assert.deepEqual(
@@ -130,7 +137,7 @@ test('100K matrix requires valid evidence and keeps every scenario on one projec
   assert.equal(result.warmupRuns, 1);
   assert.equal(result.measuredRuns, 2);
   assert.equal(result.comparativeClaimAllowed, false);
-  assert.match(result.methodology, /diagnostic rather than proof/);
+  assert.match(result.methodology, /reversed-order passes/);
 });
 
 test('100K matrix refuses to benchmark when live scale evidence is invalid', async () => {
@@ -168,7 +175,7 @@ test('host context records reproducibility facts without inventing Docker limits
   });
 });
 
-test('CLI parser accepts bounded sample controls and output path', () => {
+test('CLI parser accepts bounded sample controls, order, and output path', () => {
   const options = parseArguments([
     '--',
     '--warmups',
@@ -177,6 +184,8 @@ test('CLI parser accepts bounded sample controls and output path', () => {
     '50',
     '--profile',
     'FEDERATED_100K',
+    '--order',
+    'OPENSEARCH_FIRST',
     '--output',
     'evidence/100k.json',
   ]);
@@ -184,5 +193,6 @@ test('CLI parser accepts bounded sample controls and output path', () => {
   assert.equal(options.warmupRuns, 3);
   assert.equal(options.measuredRuns, 50);
   assert.equal(options.profile, 'FEDERATED_100K');
+  assert.equal(options.executionOrder, 'OPENSEARCH_FIRST');
   assert.equal(options.output, 'evidence/100k.json');
 });
