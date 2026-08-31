@@ -31,6 +31,7 @@ tools/dspace/saf/
 data/raw/
 data/downloads/
 data/generated/
+browser-evidence-artifacts/
 tmp/
 .tmp-*/
 
