@@ -36,8 +36,20 @@ function scenario(id, solrApi, openSearchApi, solrNative, openSearchNative) {
 function report(profile = 'FEDERATED_100K') {
   const solrFirst = {
     scenarios: [
-      scenario('FULL_TEXT_RELEVANCE', [4, 5, 6], [9, 12, 12], [1, 2, 2], [6, 9, 9]),
-      scenario('FACETED_SEARCH', [5, 6, 14], [11, 12, 12], [3, 3, 11], [8, 9, 10]),
+      scenario(
+        'FULL_TEXT_RELEVANCE',
+        [4, 5, 6],
+        [9, 12, 12],
+        [1, 2, 2],
+        [6, 9, 9],
+      ),
+      scenario(
+        'FACETED_SEARCH',
+        [5, 6, 14],
+        [11, 12, 12],
+        [3, 3, 11],
+        [8, 9, 10],
+      ),
       scenario(
         'FILTERING_SELECTIVE_PROGRAM',
         [3, 3, 3],
@@ -49,8 +61,20 @@ function report(profile = 'FEDERATED_100K') {
   };
   const openSearchFirst = {
     scenarios: [
-      scenario('FULL_TEXT_RELEVANCE', [2, 3, 3], [5, 6, 6], [1, 1, 1], [3, 3, 4]),
-      scenario('FACETED_SEARCH', [4, 5, 6], [9, 10, 11], [3, 3, 4], [7, 8, 8]),
+      scenario(
+        'FULL_TEXT_RELEVANCE',
+        [2, 3, 3],
+        [5, 6, 6],
+        [1, 1, 1],
+        [3, 3, 4],
+      ),
+      scenario(
+        'FACETED_SEARCH',
+        [4, 5, 6],
+        [9, 10, 11],
+        [3, 3, 4],
+        [7, 8, 8],
+      ),
       scenario(
         'FILTERING_SELECTIVE_PROGRAM',
         [2, 3, 3],
@@ -155,5 +179,6 @@ test('1M report uses the same research protocol instead of a separate methodolog
   assert.match(markdown, /1,000,181/);
   assert.match(markdown, /1,000,000/);
   assert.match(markdown, /same scenario definitions/);
-  assert.match(markdown, /Aggregation-shape diagnostics are planned/);
+  assert.match(markdown, /same .*aggregation-shape experiments/);
+  assert.match(markdown, /Aggregation-shape diagnostics were not executed/);
 });
