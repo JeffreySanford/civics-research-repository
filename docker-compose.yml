@@ -119,7 +119,7 @@ services:
           'CMD-SHELL',
           'curl -fsS "http://localhost:8983/solr/discovery/admin/ping?wt=json" | grep -q ''"status":"OK"''',
         ]
-      # start_interval applies only while the container is still starting, so Solr is probed every
+      # start_interval applies only while a container is still starting, so Solr is probed every
       # 2s until it is healthy and then once a minute. A flat 5s interval kept probing forever, and
       # Solr logs every /admin/ping at INFO, so an attached `start:all` filled with ping lines long
       # after startup finished and buried anything worth reading.
@@ -229,9 +229,12 @@ services:
       - .:/workspace
       - dspace-assetstore:/dspace/assetstore
 
+  # The DSpace system-of-record database must stay on the DSpace 9 release-matched PostgreSQL image.
+  # That image is PostgreSQL 15 with pgcrypto installed. The persistent volume was initialized by it;
+  # starting the same data directory under PostgreSQL 17 is an unsupported major-version jump.
   dspace-postgres:
     profiles: ['dspace']
-    image: postgres:17-alpine
+    image: dspace/dspace-postgres-pgcrypto:dspace-9.0
     environment:
       POSTGRES_DB: dspace
       POSTGRES_USER: dspace
@@ -248,21 +251,23 @@ services:
       timeout: 5s
       retries: 3
 
+  # DSpace's internal search service. Keep it on the release-matched image because its core
+  # configuration is part of DSpace, unlike the separate application-owned discovery Solr above.
   dspace-solr:
     profiles: ['dspace']
-    image: solr:9.8.1
-    user: '0:0'
-    command: ['solr', '-f']
+    image: dspace/dspace-solr:dspace-9.0
+    depends_on:
+      dspace-solr-init:
+        condition: service_completed_successfully
     ports:
       - '8984:8983'
     volumes:
       - dspace-solr-data:/var/solr
-      - ./tools/dspace/solr9:/opt/civics/dspace-solr-config:ro
     healthcheck:
       test:
         [
           'CMD-SHELL',
-          'curl -fsS "http://localhost:8983/solr/admin/cores?action=STATUS&wt=json" | grep -q ''"search"''',
+          'curl -fsS http://localhost:8983/solr/search/admin/ping >/dev/null',
         ]
       start_interval: 5s
       start_period: 180s
@@ -272,29 +277,19 @@ services:
 
   dspace-solr-init:
     profiles: ['dspace']
-    image: solr:9.8.1
-    user: '0:0'
-    depends_on:
-      dspace-solr:
-        condition: service_healthy
+    image: dspace/dspace:dspace-9.0
     entrypoint:
       - sh
       - -c
       - |
         set -eu
-        for core in authority oai search statistics; do
-          if [ ! -d "/var/solr/data/$$core/conf" ]; then
-            echo "Creating DSpace Solr core $$core"
-            mkdir -p "/var/solr/data/$$core"
-            cp -R "/opt/civics/dspace-solr-config/$$core" "/var/solr/data/$$core/conf"
-            touch "/var/solr/data/$$core/core.properties"
-            chown -R 8983:8983 "/var/solr/data/$$core"
-            curl -fsS "http://dspace-solr:8983/solr/admin/cores?action=CREATE&name=$$core&instanceDir=$$core&wt=json" >/dev/null
-          fi
-        done
+        mkdir -p /var/solr/data
+        if [ ! -d /var/solr/data/search ]; then
+          cp -R /dspace/solr/. /var/solr/data/
+        fi
+        chown -R 8983:8983 /var/solr
     volumes:
       - dspace-solr-data:/var/solr
-      - ./tools/dspace/solr9:/opt/civics/dspace-solr-config:ro
 
 volumes:
   postgres-data:
