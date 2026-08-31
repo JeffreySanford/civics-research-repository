@@ -129,7 +129,7 @@ test('preflight blocks growth when measured disk headroom is insufficient', () =
   );
 });
 
-test('preflight reports ready to measure only with a real parity-valid 1M corpus', () => {
+test('preflight reports ready to measure when valid 1M evidence supersedes active 100K evidence', () => {
   const storageEstimate = estimateStorageAtTarget({
     lowerMeasurement: MEASURE_10K,
     upperMeasurement: MEASURE_100K,
@@ -139,13 +139,21 @@ test('preflight reports ready to measure only with a real parity-valid 1M corpus
     profile: 'FEDERATED_1M',
     storageEstimate,
     freeDiskBytes: storageEstimate.recommendedFreeBytes * 2,
-    baselineEvidence: { valid: true, targetParity: true },
+    baselineEvidence: {
+      valid: false,
+      activeProfile: 'FEDERATED_1M',
+      targetParity: false,
+    },
     targetEvidence: evidence('FEDERATED_1M', true),
     harvestStatus: harvest(1000000),
   });
 
   assert.equal(result.overallStatus, 'READY_TO_MEASURE');
   assert.equal(result.remainingRecordCount, 0);
+  assert.equal(
+    result.checks.find((entry) => entry.id === 'baseline-evidence').status,
+    'READY',
+  );
   assert.equal(
     result.checks.find((entry) => entry.id === 'active-target-evidence').status,
     'READY',
