@@ -3,16 +3,21 @@ package org.civicsrepo.admin;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.civicsrepo.federation.FederatedHarvestException;
 import org.civicsrepo.federation.FederatedHarvestRunService;
+import org.civicsrepo.federation.FederatedMetadataCatalog;
 import org.civicsrepo.federation.FederatedSourceSystem;
 import org.civicsrepo.federation.HarvestRun;
 import org.civicsrepo.federation.HarvestRunStatus;
+import org.civicsrepo.federation.HarvestRunStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -27,6 +32,60 @@ class FederationHarvestAdminControllerTest {
 
     @MockitoBean
     private FederatedHarvestRunService harvestRunService;
+
+    @MockitoBean
+    private HarvestRunStore harvestRunStore;
+
+    @MockitoBean
+    private FederatedMetadataCatalog metadataCatalog;
+
+    @Test
+    void reportsTheExactRunAndCheckpointThatScaleGrowthWouldResume() throws Exception {
+        HarvestRun paused = new HarvestRun(
+                "run-data-gov-10k",
+                FederatedSourceSystem.DATA_GOV,
+                "data-gov-catalog-v4-v2",
+                HarvestRunStatus.PAUSED,
+                100,
+                100,
+                10_000,
+                0,
+                0,
+                "10000",
+                OffsetDateTime.parse("2026-08-30T17:00:00Z"),
+                OffsetDateTime.parse("2026-08-30T17:23:18Z"),
+                null,
+                null);
+        given(metadataCatalog.count(FederatedSourceSystem.DATA_GOV)).willReturn(10_000L);
+        given(harvestRunStore.findResumable(FederatedSourceSystem.DATA_GOV)).willReturn(Optional.of(paused));
+        given(harvestRunStore.findRecent(FederatedSourceSystem.DATA_GOV, 1)).willReturn(List.of(paused));
+
+        mockMvc.perform(get("/admin/federation/harvest/status").param("sourceSystem", "DATA_GOV"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sourceSystem").value("DATA_GOV"))
+                .andExpect(jsonPath("$.retainedRecordCount").value(10_000))
+                .andExpect(jsonPath("$.resumableRun.runId").value("run-data-gov-10k"))
+                .andExpect(jsonPath("$.resumableRun.status").value("PAUSED"))
+                .andExpect(jsonPath("$.resumableRun.pageSize").value(100))
+                .andExpect(jsonPath("$.resumableRun.pageCount").value(100))
+                .andExpect(jsonPath("$.resumableRun.acceptedCount").value(10_000))
+                .andExpect(jsonPath("$.resumableRun.cursor").value("10000"))
+                .andExpect(jsonPath("$.latestRun.runId").value("run-data-gov-10k"));
+    }
+
+    @Test
+    void defaultsHarvestStatusToDataGovAndAllowsNoExistingRun() throws Exception {
+        given(metadataCatalog.count(FederatedSourceSystem.DATA_GOV)).willReturn(0L);
+        given(harvestRunStore.findResumable(FederatedSourceSystem.DATA_GOV)).willReturn(Optional.empty());
+        given(harvestRunStore.findRecent(FederatedSourceSystem.DATA_GOV, 1)).willReturn(List.of());
+
+        mockMvc.perform(get("/admin/federation/harvest/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sourceSystem").value("DATA_GOV"))
+                .andExpect(jsonPath("$.retainedRecordCount").value(0))
+                .andExpect(jsonPath("$.resumableRun").doesNotExist())
+                .andExpect(jsonPath("$.latestRun").doesNotExist());
+    }
 
     @Test
     void runsOneBoundedDataGovPageAndReturnsDurableEvidence() throws Exception {
