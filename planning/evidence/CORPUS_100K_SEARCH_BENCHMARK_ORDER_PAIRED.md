@@ -55,19 +55,19 @@ Application elapsed time is the primary comparable boundary. Solr `QTime` and Op
 
 ### SOLR_FIRST — API elapsed p50 / p95 / p99
 
-| Scenario                    | Solr       | OpenSearch  |
-| --------------------------- | ---------- | ----------- |
+| Scenario                    | Solr       | OpenSearch   |
+| --------------------------- | ---------- | ------------ |
 | Full-text relevance         | 6 / 7 / 7  | 11 / 13 / 15 |
 | Faceted search              | 6 / 8 / 16 | 13 / 14 / 14 |
 | Selective program filtering | 4 / 5 / 5  | 10 / 11 / 12 |
 
 ### OPENSEARCH_FIRST — API elapsed p50 / p95 / p99
 
-| Scenario                    | Solr      | OpenSearch |
-| --------------------------- | --------- | ---------- |
-| Full-text relevance         | 4 / 5 / 6 | 7 / 9 / 9  |
+| Scenario                    | Solr      | OpenSearch   |
+| --------------------------- | --------- | ------------ |
+| Full-text relevance         | 4 / 5 / 6 | 7 / 9 / 9    |
 | Faceted search              | 5 / 6 / 6 | 11 / 12 / 13 |
-| Selective program filtering | 4 / 5 / 5 | 8 / 9 / 9  |
+| Selective program filtering | 4 / 5 / 5 | 8 / 9 / 9    |
 
 The quick pass showed Solr leading p50 and p95 in all three workloads under both execution orders.
 
@@ -75,19 +75,19 @@ The quick pass showed Solr leading p50 and p95 in all three workloads under both
 
 ### SOLR_FIRST — API elapsed p50 / p95 / p99
 
-| Scenario                    | Solr      | OpenSearch |
-| --------------------------- | --------- | ---------- |
-| Full-text relevance         | 3 / 3 / 4 | 6 / 6 / 6  |
+| Scenario                    | Solr      | OpenSearch   |
+| --------------------------- | --------- | ------------ |
+| Full-text relevance         | 3 / 3 / 4 | 6 / 6 / 6    |
 | Faceted search              | 4 / 5 / 5 | 11 / 12 / 13 |
-| Selective program filtering | 2 / 3 / 3 | 7 / 8 / 9  |
+| Selective program filtering | 2 / 3 / 3 | 7 / 8 / 9    |
 
 ### OPENSEARCH_FIRST — API elapsed p50 / p95 / p99
 
-| Scenario                    | Solr      | OpenSearch |
-| --------------------------- | --------- | ---------- |
-| Full-text relevance         | 2 / 2 / 2 | 4 / 5 / 6  |
+| Scenario                    | Solr      | OpenSearch  |
+| --------------------------- | --------- | ----------- |
+| Full-text relevance         | 2 / 2 / 2 | 4 / 5 / 6   |
 | Faceted search              | 4 / 4 / 5 | 9 / 10 / 12 |
-| Selective program filtering | 2 / 2 / 3 | 6 / 6 / 7  |
+| Selective program filtering | 2 / 2 / 3 | 6 / 6 / 7   |
 
 ## Order robustness
 
