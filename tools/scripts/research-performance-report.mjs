@@ -204,7 +204,7 @@ function timingRows(pass) {
 
 function aggregationRows(aggregationDiagnostic) {
   if (!aggregationDiagnostic) {
-    return 'Aggregation-shape diagnostics are planned for this scale but were not executed in this report.';
+    return 'Aggregation-shape diagnostics were not executed in this report.';
   }
 
   const unfiltered = aggregationDiagnostic.experiments.unfilteredDirectTerms;
@@ -235,9 +235,9 @@ function aggregationRows(aggregationDiagnostic) {
 
 function scalePlan(profile) {
   if (profile === 'FEDERATED_1M') {
-    return 'This run is the 1M scale execution. Results should be compared with the 100K report using the same scenario definitions, warmup/sample policy, semantic-parity gates, and paired execution orders.';
+    return 'This run is the 1M scale execution. Results should be compared with the 100K report using the same scenario definitions, warmup/sample policy, semantic-parity gates, paired execution orders, and aggregation-shape experiments.';
   }
-  return 'The 1M phase uses this same runner with `--profile FEDERATED_1M`. It must not run until the 1M corpus is retained, projected, parity-verified, and exposed by a valid scale-evidence report. The 1M run keeps the same scenarios and paired execution orders so scale, rather than methodology drift, is the independent variable.';
+  return 'The 1M phase uses this same runner with `--profile FEDERATED_1M`. It must not run until the 1M corpus is retained, projected, parity-verified, and exposed by a valid scale-evidence report. The 1M run keeps the same scenarios, paired execution orders, and aggregation-shape experiments so scale, rather than methodology drift, is the independent variable.';
 }
 
 export function renderResearchMarkdown(result) {
@@ -349,10 +349,11 @@ export async function runResearchPerformanceReport({
   });
 
   let aggregationDiagnostic = null;
-  if (includeAggregationDiagnostic && profile === 'FEDERATED_100K') {
+  if (includeAggregationDiagnostic) {
     aggregationDiagnostic = await runOpenSearchAggregationShapeDiagnostic({
       fetchImpl,
       apiBaseUrl: baseUrl,
+      profile,
       warmupRuns: aggregationWarmupRuns,
       measuredRuns: aggregationMeasuredRuns,
       now,
