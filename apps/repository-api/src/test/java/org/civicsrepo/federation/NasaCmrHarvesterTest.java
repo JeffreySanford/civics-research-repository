@@ -36,22 +36,25 @@ class NasaCmrHarvesterTest {
 
     @BeforeEach
     void startServer() throws IOException {
+        // Mirrors the documented collections.json shape: snake_case metadata with `id` as the
+        // CMR collection concept identifier.
         responseBody.set("""
                 {
                   "feed": {
                     "entry": [
                       {
-                        "concept-id": "C12345-TEST",
-                        "native-id": "native-12345",
-                        "short-name": "WORKFORCE",
-                        "version-id": "1",
-                        "dataset-id": "NASA Workforce Earth Observation Collection",
-                        "entry-title": "NASA Workforce Earth Observation Collection",
+                        "id": "C12345-TEST",
+                        "short_name": "WORKFORCE",
+                        "version_id": "1",
+                        "dataset_id": "NASA Workforce Earth Observation Collection",
+                        "title": "NASA Workforce Earth Observation Collection",
                         "summary": "A public Earth science collection used to exercise federated discovery.",
-                        "data-center": "NASA Test Data Center",
-                        "collection-data-type": "SCIENCE_QUALITY",
+                        "data_center": "NASA Test Data Center",
+                        "archive_center": "NASA Test Archive",
+                        "collection_data_type": "SCIENCE_QUALITY",
+                        "time_start": "2020-01-01T00:00:00.000Z",
                         "updated": "2026-08-20T14:30:00Z",
-                        "keywords": ["EARTH SCIENCE", "OPEN SCIENCE"],
+                        "organizations": ["NASA Test Data Center", "NASA/IMPACT"],
                         "platforms": ["SATELLITE"],
                         "links": [
                           {
@@ -83,10 +86,10 @@ class NasaCmrHarvesterTest {
     }
 
     @Test
-    void normalizesPublicCollectionAndUsesSearchAfterCursor() {
+    void normalizesDocumentedPublicCollectionJsonAndUsesSearchAfterCursor() {
         HarvestPage first = harvester.fetch(null, 5_000);
 
-        assertThat(harvester.adapterVersion()).isEqualTo("nasa-cmr-collections-v2");
+        assertThat(harvester.adapterVersion()).isEqualTo("nasa-cmr-collections-v3");
         assertThat(first.complete()).isFalse();
         assertThat(first.nextCursor()).isEqualTo("[\"cursor-value\",12345]");
         assertThat(first.records()).hasSize(1);
@@ -105,17 +108,39 @@ class NasaCmrHarvesterTest {
         assertThat(record.contentType()).isEqualTo(ResearchObjectType.DATASET);
         assertThat(record.sourceUrl().toString())
                 .isEqualTo("https://cmr.earthdata.nasa.gov/search/concepts/C12345-TEST");
-        assertThat(record.subjects()).containsExactly("EARTH SCIENCE", "OPEN SCIENCE", "SATELLITE");
+        assertThat(record.subjects()).containsExactly("SATELLITE");
         assertThat(record.sourceMetadata())
                 .containsEntry("shortName", "WORKFORCE")
                 .containsEntry("versionId", "1")
-                .containsEntry("collectionDataType", "SCIENCE_QUALITY");
+                .containsEntry("datasetId", "NASA Workforce Earth Observation Collection")
+                .containsEntry("collectionDataType", "SCIENCE_QUALITY")
+                .containsEntry("archiveCenter", "NASA Test Archive")
+                .containsEntry("timeStart", "2020-01-01T00:00:00.000Z");
 
         nextCursor.set(null);
         HarvestPage second = harvester.fetch(first.nextCursor(), 25);
         assertThat(requestSearchAfter.get()).isEqualTo("[\"cursor-value\",12345]");
         assertThat(second.complete()).isTrue();
         assertThat(second.nextCursor()).isNull();
+    }
+
+    @Test
+    void acceptsLegacyHyphenatedAliasesWithoutMakingThemThePrimaryContract() {
+        responseBody.set("""
+                {"feed":{"entry":[{
+                  "concept-id":"C999-LEGACY",
+                  "entry-title":"Legacy collection",
+                  "short-name":"LEGACY",
+                  "data-center":"LEGACY_PROVIDER"
+                }]}}
+                """);
+        nextCursor.set(null);
+
+        HarvestPage page = harvester.fetch(null, 25);
+
+        assertThat(page.records()).hasSize(1);
+        assertThat(page.rejections()).isEmpty();
+        assertThat(page.records().getFirst().id()).isEqualTo("NASA_CMR:C999-LEGACY");
     }
 
     @Test
@@ -135,13 +160,13 @@ class NasaCmrHarvesterTest {
 
     @Test
     void quarantinesMalformedCollectionAndKeepsSearchAfter() {
-        responseBody.set("{\"feed\":{\"entry\":[{\"entry-title\":\"Missing concept id\"}]}}");
+        responseBody.set("{\"feed\":{\"entry\":[{\"title\":\"Missing concept id\"}]}}");
 
         HarvestPage page = harvester.fetch(null, 100);
 
         assertThat(page.records()).isEmpty();
         assertThat(page.rejections()).hasSize(1);
-        assertThat(page.rejections().getFirst().message()).contains("required field 'concept-id'");
+        assertThat(page.rejections().getFirst().message()).contains("required field 'id'");
         assertThat(page.nextCursor()).isEqualTo("[\"cursor-value\",12345]");
     }
 
