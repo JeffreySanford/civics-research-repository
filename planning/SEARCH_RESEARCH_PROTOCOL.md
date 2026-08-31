@@ -20,7 +20,8 @@ It covers:
 - OpenSearch aggregation-shape semantic equivalence,
 - research-report rendering,
 - 100K and 1M profile protocol support,
-- 1M scale-preflight estimation and readiness classification.
+- 1M scale-preflight estimation and readiness classification,
+- guarded 1M scale-run progress identity and terminal-state handling.
 
 These checks belong in normal CI because they are fast and deterministic.
 
@@ -100,6 +101,25 @@ Preflight states:
 - `READY_TO_MEASURE`: the requested 1M corpus is active, target-complete, and parity-valid.
 
 `research:full:1m` uses the stricter `--require-ready-to-measure` gate and stops before the expensive quality/report sequence unless the preflight reaches `READY_TO_MEASURE`.
+
+## Observable 1M scale transition
+
+Run `pnpm research:scale:1m` only after the repository API has been rebuilt with guarded `FEDERATED_1M` support and the preflight reports `READY_TO_GROW`.
+
+The operator runner:
+
+1. runs the read-only 1M preflight,
+2. refuses to mutate when the preflight is `BLOCKED`,
+3. no-ops when the profile is already `READY_TO_MEASURE`,
+4. starts one guarded `FEDERATED_1M` scale operation,
+5. polls `/admin/reindex/progress`,
+6. refuses to mix progress from a different `operationId`,
+7. records changed progress observations in a local JSON journal,
+8. waits for `COMPLETED` or `FAILED`,
+9. reruns the 1M preflight after completion,
+10. succeeds only when the post-run state is `READY_TO_MEASURE`.
+
+The scale journal is written under `browser-evidence-artifacts/research-performance/` and remains disposable run output unless explicitly curated later. The runner does not replace the backend's durable checkpoint, snapshot, projection-parity, rollback, or storage-evidence controls; it only makes the long transition observable and preserves operator-side evidence.
 
 ## 1M plan
 
