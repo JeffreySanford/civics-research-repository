@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import type { components } from '../generated/repository-api.types';
@@ -27,12 +27,9 @@ export class RepositoryCompositeCorpusApi {
     corpusProfile: CompositeCorpusProfile,
     limit = 20,
   ): Observable<readonly CompositeCorpusManifest[]> {
-    const params = new HttpParams()
-      .set('corpusProfile', corpusProfile)
-      .set('limit', limit);
     return this.http.get<readonly CompositeCorpusManifest[]>(
       `${this.baseUrl}/admin/federation/compositions`,
-      { params },
+      { params: { corpusProfile, limit } },
     );
   }
 
