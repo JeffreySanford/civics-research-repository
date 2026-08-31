@@ -2,11 +2,13 @@ package org.civicsrepo.federation;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Objects;
 import org.civicsrepo.admin.CorpusProfileActivationService;
 import org.civicsrepo.repository.DiscoveryProjectionService;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionProgressListener;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
+import org.civicsrepo.search.DiscoveryDocument;
 import org.civicsrepo.search.SearchService;
 import org.springframework.stereotype.Service;
 
@@ -73,8 +75,10 @@ public class FederatedSnapshotProjectionCaptureService {
             CorpusProfile profile,
             FederatedBoundedSnapshotManifest before,
             ProjectionProgressListener progressListener) {
-        ProjectionState projected =
-                projectionService.reindex(profile, searchService.fixtureDocuments(), progressListener);
+        List<DiscoveryDocument> fixtureFallback = searchService.fixtureDocuments();
+        ProjectionState projected = progressListener == null
+                ? projectionService.reindex(profile, fixtureFallback)
+                : projectionService.reindex(profile, fixtureFallback, progressListener);
         String projectionId = projectionService.currentProjectionId();
         if (projectionId == null || projectionId.isBlank()) {
             throw new IllegalStateException("Discovery projection completed without a projectionId");
