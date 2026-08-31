@@ -555,6 +555,86 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /admin/federation/compositions:
+    get:
+      tags: [Admin]
+      operationId: listFederatedCompositeCorpusEvidence
+      summary: List recent immutable mixed-source corpus composition evidence.
+      parameters:
+        - name: corpusProfile
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CorpusProfile'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 20
+      responses:
+        '200':
+          description: Recent immutable composition manifests for the requested profile.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FederatedCompositeCorpusManifest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Admin]
+      operationId: captureFederatedCompositeCorpusEvidence
+      summary: Compose existing bounded source snapshots into one durable corpus identity.
+      description: >-
+        Captures composition evidence only from already-persisted bounded snapshots. Each requested
+        source quota must exactly match its selected snapshot and all quotas must sum to the named
+        corpus profile target. This does not activate a search projection.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FederatedCompositeCorpusCaptureRequest'
+      responses:
+        '200':
+          description: Durable immutable composite corpus evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FederatedCompositeCorpusManifest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/federation/compositions/{compositionSha256}:
+    get:
+      tags: [Admin]
+      operationId: getFederatedCompositeCorpusEvidence
+      summary: Resolve one exact immutable composition identity.
+      parameters:
+        - name: compositionSha256
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+      responses:
+        '200':
+          description: Exact immutable composite corpus evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FederatedCompositeCorpusManifest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /admin/federation/harvest/status:
     get:
       tags: [Admin]
@@ -941,6 +1021,102 @@ components:
           type: array
           items:
             type: string
+    FederatedCompositeCorpusSourceRequest:
+      type: object
+      required: [sourceSystem, requestedRecordCount, snapshotId]
+      properties:
+        sourceSystem:
+          $ref: '#/components/schemas/FederatedSourceSystem'
+        requestedRecordCount:
+          type: integer
+          format: int64
+          minimum: 1
+        snapshotId:
+          type: string
+          minLength: 1
+    FederatedCompositeCorpusCaptureRequest:
+      type: object
+      required: [corpusProfile, sources]
+      properties:
+        corpusProfile:
+          $ref: '#/components/schemas/CorpusProfile'
+        sources:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/FederatedCompositeCorpusSourceRequest'
+    FederatedCompositeCorpusSource:
+      type: object
+      required:
+        - sourceSystem
+        - requestedRecordCount
+        - snapshotId
+        - runId
+        - runAdapterVersion
+        - recordAdapterVersions
+        - retainedRecordCount
+        - sha256
+        - snapshotCapturedAt
+      properties:
+        sourceSystem:
+          $ref: '#/components/schemas/FederatedSourceSystem'
+        requestedRecordCount:
+          type: integer
+          format: int64
+          minimum: 1
+        snapshotId:
+          type: string
+        runId:
+          type: string
+        runAdapterVersion:
+          type: string
+        recordAdapterVersions:
+          type: array
+          items:
+            type: string
+        retainedRecordCount:
+          type: integer
+          format: int64
+          minimum: 1
+        sha256:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        snapshotCapturedAt:
+          type: string
+          format: date-time
+    FederatedCompositeCorpusManifest:
+      type: object
+      required:
+        - compositionVersion
+        - mode
+        - corpusProfile
+        - sources
+        - federatedRecordCount
+        - compositionSha256
+        - capturedAt
+      properties:
+        compositionVersion:
+          type: string
+        mode:
+          type: string
+          enum: [COMPOSITE_SNAPSHOT]
+        corpusProfile:
+          $ref: '#/components/schemas/CorpusProfile'
+        sources:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/FederatedCompositeCorpusSource'
+        federatedRecordCount:
+          type: integer
+          format: int64
+          minimum: 2
+        compositionSha256:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        capturedAt:
+          type: string
+          format: date-time
     FederatedSourceSystem:
       type: string
       enum: [DATA_GOV, DOE_OSTI, NASA_CMR, PUBMED, OPENALEX]

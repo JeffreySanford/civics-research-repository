@@ -364,6 +364,44 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/federation/compositions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List recent immutable mixed-source corpus composition evidence. */
+    get: operations['listFederatedCompositeCorpusEvidence'];
+    put?: never;
+    /**
+     * Compose existing bounded source snapshots into one durable corpus identity.
+     * @description Captures composition evidence only from already-persisted bounded snapshots. Each requested source quota must exactly match its selected snapshot and all quotas must sum to the named corpus profile target. This does not activate a search projection.
+     */
+    post: operations['captureFederatedCompositeCorpusEvidence'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/federation/compositions/{compositionSha256}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Resolve one exact immutable composition identity. */
+    get: operations['getFederatedCompositeCorpusEvidence'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/federation/harvest/status': {
     parameters: {
       query?: never;
@@ -563,6 +601,42 @@ export interface components {
       /** Format: date-time */
       storageCapturedAt?: string | null;
       violations: string[];
+    };
+    FederatedCompositeCorpusSourceRequest: {
+      sourceSystem: components['schemas']['FederatedSourceSystem'];
+      /** Format: int64 */
+      requestedRecordCount: number;
+      snapshotId: string;
+    };
+    FederatedCompositeCorpusCaptureRequest: {
+      corpusProfile: components['schemas']['CorpusProfile'];
+      sources: components['schemas']['FederatedCompositeCorpusSourceRequest'][];
+    };
+    FederatedCompositeCorpusSource: {
+      sourceSystem: components['schemas']['FederatedSourceSystem'];
+      /** Format: int64 */
+      requestedRecordCount: number;
+      snapshotId: string;
+      runId: string;
+      runAdapterVersion: string;
+      recordAdapterVersions: string[];
+      /** Format: int64 */
+      retainedRecordCount: number;
+      sha256: string;
+      /** Format: date-time */
+      snapshotCapturedAt: string;
+    };
+    FederatedCompositeCorpusManifest: {
+      compositionVersion: string;
+      /** @enum {string} */
+      mode: 'COMPOSITE_SNAPSHOT';
+      corpusProfile: components['schemas']['CorpusProfile'];
+      sources: components['schemas']['FederatedCompositeCorpusSource'][];
+      /** Format: int64 */
+      federatedRecordCount: number;
+      compositionSha256: string;
+      /** Format: date-time */
+      capturedAt: string;
     };
     /** @enum {string} */
     FederatedSourceSystem:
@@ -1929,6 +2003,81 @@ export interface operations {
         };
       };
       400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  listFederatedCompositeCorpusEvidence: {
+    parameters: {
+      query: {
+        corpusProfile: components['schemas']['CorpusProfile'];
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recent immutable composition manifests for the requested profile. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FederatedCompositeCorpusManifest'][];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  captureFederatedCompositeCorpusEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FederatedCompositeCorpusCaptureRequest'];
+      };
+    };
+    responses: {
+      /** @description Durable immutable composite corpus evidence. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FederatedCompositeCorpusManifest'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  getFederatedCompositeCorpusEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        compositionSha256: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Exact immutable composite corpus evidence. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FederatedCompositeCorpusManifest'];
+        };
+      };
+      404: components['responses']['NotFound'];
       500: components['responses']['InternalServerError'];
     };
   };
