@@ -78,6 +78,34 @@ describe('RepositoryCorpusStorageApi', () => {
     );
   });
 
+  it('starts guarded corpus growth without holding the scale request open', async () => {
+    const progress: CorpusProfileActivationProgress = {
+      operationId: 'scale-100k',
+      profile: 'FEDERATED_100K',
+      phase: 'HARVESTING',
+      processedDocuments: 10_000,
+      totalDocuments: 100_000,
+      percentComplete: 10,
+      updatedAt: '2026-08-31T00:40:00Z',
+      elapsedMs: 25,
+      message: 'Harvesting and retaining federated metadata from the authoritative source.',
+    };
+    const http = { post: vi.fn(() => of(progress)) };
+    const api = new RepositoryCorpusStorageApi(
+      http as never,
+      'http://api.test/api',
+    );
+
+    await expect(
+      firstValueFrom(api.startCorpusProfileScale('FEDERATED_100K')),
+    ).resolves.toBe(progress);
+    expect(http.post).toHaveBeenCalledWith(
+      'http://api.test/api/admin/corpus/scale',
+      null,
+      { params: { profile: 'FEDERATED_100K' } },
+    );
+  });
+
   it('polls exact backend activation progress', async () => {
     const progress: CorpusProfileActivationProgress = {
       operationId: 'activation-1',
