@@ -9,6 +9,8 @@ import { summarizeTimingSamples } from './search-comparison-benchmark.mjs';
 const DEFAULT_API_BASE_URL = 'http://localhost:8080/api';
 const DEFAULT_OPENSEARCH_BASE_URL = 'http://localhost:9200';
 const DEFAULT_INDEX = 'discovery-comparison';
+const DEFAULT_PROFILE = 'FEDERATED_100K';
+const SUPPORTED_PROFILES = new Set(['FEDERATED_100K', 'FEDERATED_1M']);
 const DEFAULT_OUTPUT =
   'browser-evidence-artifacts/opensearch-aggregation-shape-diagnostic.json';
 
@@ -25,6 +27,15 @@ function requireBoundedInteger(value, label, minimum, maximum) {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
     throw new Error(
       `${label} must be an integer from ${minimum} to ${maximum}.`,
+    );
+  }
+  return value;
+}
+
+function requireProfile(value) {
+  if (!SUPPORTED_PROFILES.has(value)) {
+    throw new Error(
+      `profile must be one of ${[...SUPPORTED_PROFILES].join(', ')}.`,
     );
   }
   return value;
@@ -246,14 +257,14 @@ async function compareShapes({
   };
 }
 
-async function fetchEvidence(fetchImpl, apiBaseUrl) {
-  const endpoint = `${apiBaseUrl.replace(/\/$/, '')}/admin/corpus/scale/evidence?profile=FEDERATED_100K`;
+async function fetchEvidence(fetchImpl, apiBaseUrl, profile) {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, '')}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`;
   const evidence = await fetchJson(fetchImpl, endpoint);
-  if (!evidence?.valid || evidence.activeProfile !== 'FEDERATED_100K') {
-    throw new Error('FEDERATED_100K evidence is not valid and active.');
+  if (!evidence?.valid || evidence.activeProfile !== profile) {
+    throw new Error(`${profile} evidence is not valid and active.`);
   }
   if (!evidence.targetParity) {
-    throw new Error('FEDERATED_100K evidence reports target parity false.');
+    throw new Error(`${profile} evidence reports target parity false.`);
   }
   return evidence;
 }
@@ -269,14 +280,16 @@ export async function runOpenSearchAggregationShapeDiagnostic({
   apiBaseUrl = DEFAULT_API_BASE_URL,
   openSearchBaseUrl = DEFAULT_OPENSEARCH_BASE_URL,
   index = DEFAULT_INDEX,
+  profile = DEFAULT_PROFILE,
   warmupRuns = 3,
   measuredRuns = 20,
   now = () => new Date(),
 } = {}) {
+  requireProfile(profile);
   requireBoundedInteger(warmupRuns, 'warmupRuns', 0, 20);
   requireBoundedInteger(measuredRuns, 'measuredRuns', 1, 100);
 
-  const evidence = await fetchEvidence(fetchImpl, apiBaseUrl);
+  const evidence = await fetchEvidence(fetchImpl, apiBaseUrl, profile);
   const openSearchCount = await fetchOpenSearchCount(
     fetchImpl,
     openSearchBaseUrl,
@@ -325,7 +338,7 @@ export async function runOpenSearchAggregationShapeDiagnostic({
   return {
     kind: 'opensearch-aggregation-shape-diagnostic',
     capturedAt: now().toISOString(),
-    profile: 'FEDERATED_100K',
+    profile,
     projection: {
       projectionId: evidence.currentProjectionId,
       objectCount: evidence.currentProjectionObjectCount,
@@ -348,6 +361,7 @@ export function parseArguments(argv) {
     apiBaseUrl: DEFAULT_API_BASE_URL,
     openSearchBaseUrl: DEFAULT_OPENSEARCH_BASE_URL,
     index: DEFAULT_INDEX,
+    profile: DEFAULT_PROFILE,
     warmupRuns: 3,
     measuredRuns: 20,
     output: DEFAULT_OUTPUT,
@@ -368,6 +382,10 @@ export function parseArguments(argv) {
         break;
       case '--index':
         options.index = value;
+        index += 1;
+        break;
+      case '--profile':
+        options.profile = requireProfile(value);
         index += 1;
         break;
       case '--warmups':
@@ -405,6 +423,7 @@ async function main() {
     apiBaseUrl: options.apiBaseUrl,
     openSearchBaseUrl: options.openSearchBaseUrl,
     index: options.index,
+    profile: options.profile,
     warmupRuns: options.warmupRuns,
     measuredRuns: options.measuredRuns,
   });
@@ -414,6 +433,7 @@ async function main() {
   await writeFile(outputPath, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
 
   console.log(`OpenSearch aggregation diagnostic written to ${outputPath}`);
+  console.log(`Profile: ${result.profile}`);
   console.log(
     `Projection: ${result.projection.projectionId} (${result.projection.objectCount} documents)`,
   );
