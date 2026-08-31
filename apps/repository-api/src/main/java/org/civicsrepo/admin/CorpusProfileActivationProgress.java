@@ -21,13 +21,21 @@ public record CorpusProfileActivationProgress(
     public enum Phase {
         IDLE,
         PREPARING,
+        HARVESTING,
+        SNAPSHOTTING,
         PROJECTING,
         VERIFYING,
+        CAPTURING_EVIDENCE,
         COMPLETED,
         FAILED;
 
         public boolean active() {
-            return this == PREPARING || this == PROJECTING || this == VERIFYING;
+            return this == PREPARING
+                    || this == HARVESTING
+                    || this == SNAPSHOTTING
+                    || this == PROJECTING
+                    || this == VERIFYING
+                    || this == CAPTURING_EVIDENCE;
         }
     }
 }
