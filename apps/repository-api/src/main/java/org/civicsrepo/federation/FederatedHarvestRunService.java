@@ -6,6 +6,7 @@ import java.time.ZoneOffset;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class FederatedHarvestRunService {
     private static final int MAX_PAGES_PER_INVOCATION = 100_000;
+    private static final HarvestProgressListener NOOP_PROGRESS = run -> {};
 
     private final FederatedHarvestService harvestService;
     private final HarvestRunStore runStore;
@@ -82,7 +84,17 @@ public class FederatedHarvestRunService {
     }
 
     public HarvestRun runBounded(FederatedSourceSystem sourceSystem, int pageSize, int maxPages) {
+        return runBounded(sourceSystem, pageSize, maxPages, NOOP_PROGRESS);
+    }
+
+    /** Runs a bounded harvest and reports each page only after its durable run state has been saved. */
+    public HarvestRun runBounded(
+            FederatedSourceSystem sourceSystem,
+            int pageSize,
+            int maxPages,
+            HarvestProgressListener progressListener) {
         validateBounds(pageSize, maxPages);
+        Objects.requireNonNull(progressListener, "progressListener");
 
         FederatedSourceHarvester harvester = requireHarvester(sourceSystem);
         String adapterVersion = harvester.adapterVersion();
@@ -123,6 +135,7 @@ public class FederatedHarvestRunService {
                             afterPage.completedAt() == null ? now : afterPage.completedAt(),
                             null);
                     runStore.save(cancelled);
+                    progressListener.pageCompleted(cancelled);
                     return cancelled;
                 }
 
@@ -142,6 +155,7 @@ public class FederatedHarvestRunService {
                         result.complete() ? now : null,
                         null);
                 runStore.save(run);
+                progressListener.pageCompleted(run);
                 if (result.complete()) {
                     completedRun = run;
                 }
@@ -383,5 +397,10 @@ public class FederatedHarvestRunService {
 
     private OffsetDateTime now() {
         return OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+    }
+
+    @FunctionalInterface
+    public interface HarvestProgressListener {
+        void pageCompleted(HarvestRun run);
     }
 }
