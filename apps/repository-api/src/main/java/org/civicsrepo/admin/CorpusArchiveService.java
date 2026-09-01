@@ -51,6 +51,7 @@ import org.civicsrepo.federation.HarvestRun;
 import org.civicsrepo.federation.HarvestRunStatus;
 import org.civicsrepo.federation.HarvestRunStore;
 import org.civicsrepo.repository.DiscoveryProjectionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -86,6 +87,7 @@ public class CorpusArchiveService {
     private final String dataGovApiKey;
     private final String ostiRecordsUrl;
 
+    @Autowired
     public CorpusArchiveService(
             FederatedMetadataCatalog catalog,
             FederatedCompositeCorpusManifestStore compositeManifestStore,
@@ -93,7 +95,6 @@ public class CorpusArchiveService {
             HarvestCheckpointStore checkpointStore,
             HarvestRunStore runStore,
             CorpusProfileActivationService activationService,
-            ObjectMapper objectMapper,
             @Value("${civics.storage.corpus-archives-path:/var/lib/civics/corpus-archives}") String archivePath,
             @Value("${civics.federation.data-gov.search-url:" + DATA_GOV_DEFAULT_URL + "}") String dataGovSearchUrl,
             @Value("${civics.federation.data-gov.api-key:DEMO_KEY}") String dataGovApiKey,
@@ -105,7 +106,7 @@ public class CorpusArchiveService {
                 checkpointStore,
                 runStore,
                 activationService,
-                objectMapper,
+                new ObjectMapper().findAndRegisterModules(),
                 Path.of(archivePath),
                 HttpClient.newBuilder().build(),
                 Clock.systemUTC(),
@@ -227,29 +228,41 @@ public class CorpusArchiveService {
 
     public synchronized CorpusArchiveSummary verify(String archiveId) {
         ArchiveManifest manifest = readManifest(archiveId);
-        Path records = archiveDirectory(archiveId).resolve(RECORDS_FILE);
+        Path directory = archiveDirectory(archiveId);
+        Path records = directory.resolve(RECORDS_FILE);
         if (!Files.isRegularFile(records)) {
             ArchiveState failed = readState(archiveId).withIntegrity(
                     IntegrityStatus.FAILED, now(), "Archive payload is missing.");
-            writeState(archiveDirectory(archiveId), failed);
+            writeState(directory, failed);
             return summary(manifest, failed);
         }
 
         try {
             String physicalSha = sha256(records);
+            if (!physicalSha.equals(manifest.archiveSha256())) {
+                ArchiveState failed = readState(archiveId).withIntegrity(
+                        IntegrityStatus.FAILED,
+                        now(),
+                        "Physical SHA-256 does not match the immutable archive manifest.");
+                writeState(directory, failed);
+                return summary(manifest, failed);
+            }
+
             LogicalVerification logical = logicalVerification(records);
-            boolean valid = physicalSha.equals(manifest.archiveSha256())
-                    && logical.sha256().equals(manifest.logicalSha256())
+            boolean valid = logical.sha256().equals(manifest.logicalSha256())
                     && logical.recordCount() == manifest.recordCount();
             String detail = valid
                     ? "Physical and logical SHA-256 checks match the immutable archive manifest."
-                    : "Archive checksum, logical checksum, or record count does not match the immutable manifest.";
+                    : "Logical checksum or record count does not match the immutable archive manifest.";
             ArchiveState state = readState(archiveId).withIntegrity(
                     valid ? IntegrityStatus.VERIFIED : IntegrityStatus.FAILED, now(), detail);
-            writeState(archiveDirectory(archiveId), state);
+            writeState(directory, state);
             return summary(manifest, state);
         } catch (IOException exception) {
-            throw storageFailure("Corpus archive could not be verified", exception);
+            ArchiveState failed = readState(archiveId).withIntegrity(
+                    IntegrityStatus.FAILED, now(), "Archive payload could not be read for verification.");
+            writeState(directory, failed);
+            return summary(manifest, failed);
         }
     }
 
@@ -319,7 +332,7 @@ public class CorpusArchiveService {
         restoreCompositionEvidence(manifest, restoredAt);
 
         CorpusProfile activatedProfile = activateProfileAfterRestore == null ? manifest.profile() : activateProfileAfterRestore;
-        String projectionId = null;
+        String projectionId;
         if (activatedProfile == CorpusProfile.FEDERATED_1M) {
             if (manifest.composition() == null || manifest.compositionSha256() == null) {
                 throw new IllegalStateException("FEDERATED_1M restore requires archived composite-corpus evidence");
