@@ -55,19 +55,13 @@
 
         <details
           class="layer-category"
-          data-testid="map-layer-category-census-community"
+          data-testid="map-layer-category-geography-boundaries"
           open
         >
-          <summary data-testid="map-layer-category-census-community-summary">
-            <span class="layer-category-title">Census &amp; Community</span>
-            <span class="layer-category-count">
-              {{
-                ((tigerVisible$ | async) ? 1 : 0) +
-                  ((workplaceVisible$ | async) ? 1 : 0) +
-                  ((lodesVisible$ | async) ? 1 : 0) +
-                  ((saipeVisible$ | async) ? 1 : 0)
-              }}
-              of 4 visible
+          <summary data-testid="map-layer-category-geography-boundaries-summary">
+            <span class="layer-category-summary-content">
+              <span class="layer-category-title">Geography &amp; Boundaries</span>
+              <span class="layer-category-count">1 layer</span>
             </span>
           </summary>
 
@@ -94,6 +88,22 @@
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
             </span>
+          </div>
+        </details>
+
+        <details
+          class="layer-category"
+          data-testid="map-layer-category-community-economy"
+          open
+        >
+          <summary data-testid="map-layer-category-community-economy-summary">
+            <span class="layer-category-summary-content">
+              <span class="layer-category-title">Community &amp; Economy</span>
+              <span class="layer-category-count">3 layers</span>
+            </span>
+          </summary>
+
+          <div class="layer-category-items">
             <span class="layer-toggle-row">
               <label class="layer-toggle">
                 <input
@@ -169,13 +179,9 @@
           open
         >
           <summary data-testid="map-layer-category-environment-hazards-summary">
-            <span class="layer-category-title">Environment &amp; Hazards</span>
-            <span class="layer-category-count">
-              {{
-                ((hydrographyVisible$ | async) ? 1 : 0) +
-                  ((earthquakeVisible$ | async) ? 1 : 0)
-              }}
-              of 2 visible
+            <span class="layer-category-summary-content">
+              <span class="layer-category-title">Environment &amp; Hazards</span>
+              <span class="layer-category-count">2 layers</span>
             </span>
           </summary>
 
