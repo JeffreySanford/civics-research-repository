@@ -67,7 +67,12 @@ function requireMatrix(matrix) {
         `Query ${query.id} has unsupported scenario ${query?.request?.scenario ?? 'missing'}.`,
       );
     }
-    requireInteger(query?.request?.page ?? 0, `${query.id}.request.page`, 0, 10000);
+    requireInteger(
+      query?.request?.page ?? 0,
+      `${query.id}.request.page`,
+      0,
+      10000,
+    );
     requireInteger(
       query?.request?.pageSize ?? 10,
       `${query.id}.request.pageSize`,
@@ -201,7 +206,9 @@ export function summarizeRankMovement(solr, openSearch) {
 export function summarizeFacetDifferences(solr, openSearch) {
   const solrFacets = facetMap(solr);
   const openSearchFacets = facetMap(openSearch);
-  const fields = [...new Set([...solrFacets.keys(), ...openSearchFacets.keys()])]
+  const fields = [
+    ...new Set([...solrFacets.keys(), ...openSearchFacets.keys()]),
+  ]
     .filter(Boolean)
     .sort();
   let differingBucketCount = 0;
@@ -263,15 +270,15 @@ export function summarizeSemanticComparison(response) {
     rankMovement: rank,
     facetDifferences: facets,
     semanticParity:
-      solrTotal === openSearchTotal &&
-      overlap.exactOrder &&
-      facets.exact,
+      solrTotal === openSearchTotal && overlap.exactOrder && facets.exact,
   };
 }
 
 function validateEngineAvailability(engine, label) {
   if (!engine?.enabled || !engine?.reachable) {
-    throw new Error(`${label} is unavailable during semantic evidence capture.`);
+    throw new Error(
+      `${label} is unavailable during semantic evidence capture.`,
+    );
   }
 }
 
@@ -388,7 +395,9 @@ export async function runSearchSemanticMatrix({
       .filter((entry) => entry.status !== 'PASS')
       .map((entry) => entry.id)
       .join(', ');
-    throw new Error(`Scale evidence is not PASS: ${failures || 'unknown failure'}.`);
+    throw new Error(
+      `Scale evidence is not PASS: ${failures || 'unknown failure'}.`,
+    );
   }
   const expectedProjectionId = requireProjectionId(
     scaleEvidence.projectionId,

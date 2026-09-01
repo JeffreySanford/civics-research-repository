@@ -75,7 +75,9 @@ test('facet differences report missing and count-drifted buckets', () => {
     }),
     engine({
       ids: [],
-      facets: [facet('sourceSystem', { DATA_GOV: 499999, DOE_OSTI: 500000, OTHER: 1 })],
+      facets: [
+        facet('sourceSystem', { DATA_GOV: 499999, DOE_OSTI: 500000, OTHER: 1 }),
+      ],
     }),
   );
 
@@ -83,7 +85,12 @@ test('facet differences report missing and count-drifted buckets', () => {
   assert.equal(summary.differingBucketCount, 2);
   assert.equal(summary.fields[0].field, 'sourceSystem');
   assert.deepEqual(summary.fields[0].differences, [
-    { value: 'DATA_GOV', solrCount: 500000, openSearchCount: 499999, delta: -1 },
+    {
+      value: 'DATA_GOV',
+      solrCount: 500000,
+      openSearchCount: 499999,
+      delta: -1,
+    },
     { value: 'OTHER', solrCount: 0, openSearchCount: 1, delta: 1 },
   ]);
 });
@@ -92,7 +99,11 @@ test('semantic summary distinguishes total-hit, rank, and facet parity', () => {
   const sharedFacets = [facet('type', { DATASET: 12 })];
   const parity = summarizeSemanticComparison({
     solr: engine({ ids: ['a', 'b'], totalHits: 12, facets: sharedFacets }),
-    openSearch: engine({ ids: ['a', 'b'], totalHits: 12, facets: sharedFacets }),
+    openSearch: engine({
+      ids: ['a', 'b'],
+      totalHits: 12,
+      facets: sharedFacets,
+    }),
   });
   assert.equal(parity.semanticParity, true);
 
