@@ -86,11 +86,11 @@
     {
       "id": "program-filter",
       "class": "PROGRAM_FILTER",
-      "description": "Stable curated program filter with self-excluding facet behavior.",
+      "description": "Stable curated ACS program filter using the canonical indexed program value.",
       "request": {
         "scenario": "FILTERING",
         "query": "",
-        "programs": ["American Community Survey"],
+        "programs": ["ACS"],
         "page": 0,
         "pageSize": 25
       },
