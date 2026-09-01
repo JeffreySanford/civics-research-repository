@@ -14,19 +14,29 @@
   border: 1px solid var(--civics-border);
   border-radius: var(--civics-radius-sm);
   background: var(--civics-surface-panel);
+  // Older engines that do not support overflow: clip still need the rounded panel to contain its
+  // children. Browsers that support clip use it without creating a scrolling container.
+  overflow: hidden;
   overflow: clip;
 }
 
 .layer-category > summary {
-  display: flex;
   min-height: 2.75rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
   padding: 0.65rem 0.8rem;
   cursor: pointer;
   color: var(--civics-text-primary);
   font-weight: 800;
+}
+
+// Keep summary itself as the browser-native list item so the disclosure marker remains visible.
+// The inner wrapper owns layout instead of replacing summary's native display semantics.
+.layer-category-summary-content {
+  display: inline-flex;
+  width: calc(100% - 1.5rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  vertical-align: middle;
 }
 
 .layer-category > summary:focus-visible {
@@ -61,7 +71,7 @@
 }
 
 @media (max-width: 40rem) {
-  .layer-category > summary {
+  .layer-category-summary-content {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.25rem;
