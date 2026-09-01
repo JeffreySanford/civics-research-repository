@@ -2,78 +2,65 @@
 
 ## Purpose
 
-The Maps workspace has grown from a small demo into a multi-source research surface. A flat list of six independent layer controls is becoming difficult to scan and will not scale when research-coverage layers arrive.
+The Maps workspace has grown beyond a flat six-toggle demo. This workstream organizes existing layers by research purpose while preserving the rendering contract: every layer remains independently checkable, URL-addressable, NgRx-backed and MapLibre-renderable.
 
-This workstream groups layers into expandable categories without changing the underlying rendering contract: every layer remains independently checkable, URL-addressable and MapLibre-renderable.
+## Stable taxonomy
 
-## Category model
-
-### Census & Community
+### Geography & Boundaries
 
 - TIGER/Line boundary
+
+Geometry and administrative reference layers belong here. Future shared county/PUMA/tract geometry can extend this category without mixing geometry with measures.
+
+### Community & Economy
+
 - LODES workplace employment
 - LODES commuting flows
 - SAIPE county poverty
 
-These layers describe official Census geography, workforce movement/employment and socioeconomic context.
+Future thematic layers such as Population Estimates, County Business Patterns, Business Dynamics Statistics and Building Permits belong here.
 
 ### Environment & Hazards
 
 - USGS 3HP hydrography
 - USGS earthquake overlay
 
-These layers provide environmental/reference context and event/hazard information from USGS.
+Future 3DEP terrain belongs here.
 
-### Research Coverage — reserved next
+### Research Coverage — future
 
-A future category will contain spatial representations of filtered research objects. It is intentionally not mixed with Census or USGS reference layers because research coverage has different provenance and semantics.
+Do not render an empty category. Add it only when its first backed child exists, beginning with repository research-by-area and later explicit Data.gov/NASA spatial coverage.
 
 ## Interaction design
 
-Use native expandable disclosure semantics (`details` / `summary`) or an equivalent accessible disclosure pattern.
+Use native `details` / `summary` disclosure semantics. Category disclosure owns presentation only; child checkboxes remain authoritative for layer visibility.
 
 Requirements:
 
-- each category can expand/collapse independently;
-- each existing layer remains an ordinary labelled checkbox;
-- collapsing a category never disables or hides the rendering state from the application;
-- a category summary reports the number of visible child layers so active state is not hidden when collapsed;
-- info/help controls remain keyboard reachable when the category is expanded;
-- no positive tabindex or custom keyboard trap is introduced;
-- category disclosure itself works with keyboard and screen readers;
-- layer URL state and NgRx state stay authoritative for rendering.
+- categories expand/collapse independently;
+- every existing layer remains an ordinary labelled checkbox;
+- collapsing a category never changes checked or rendered state;
+- summaries keep the browser-native disclosure marker;
+- summary metadata is static category size (`1 layer`, `3 layers`, `2 layers`) rather than recomputing visibility with additional template subscriptions;
+- no positive tabindex or custom disclosure keyboard handling is introduced;
+- info/help controls remain keyboard reachable when expanded.
 
 ## Accessibility
 
-The canvas is not the information model. Category controls only organize the controls; they do not change the equivalent semantic layer list/tables already used for WCAG/Section 508-oriented evidence.
+The MapLibre canvas is not the information model. Existing semantic layer lists/tables, status text and selection state remain the accessible equivalents.
 
-Evidence should cover:
-
-- category summaries have meaningful accessible names;
-- expand/collapse works with keyboard;
-- every child checkbox remains independently operable;
-- collapsing a category with checked children does not turn layers off;
-- visible-layer count remains textual and does not depend on color;
-- info buttons retain names/descriptions;
-- focus indicators are not obscured;
-- targets meet the WCAG 2.2 minimum-size/spacing intent;
-- 320 px reflow, 200% zoom, dark mode and forced colors remain usable.
+Evidence covers keyboard disclosure behavior, independently operable child controls, collapse-with-active-layer behavior, native focus indication, forced colors, responsive layout and unchanged semantic/map visibility parity.
 
 ## Non-goals
 
-This workstream does not:
-
-- add new map data;
-- change Census/USGS APIs;
-- merge independent layer toggles into one category toggle;
-- make categories control MapLibre visibility directly;
-- infer research geography.
+This workstream does not add new map data, alter Census/USGS APIs, make categories toggle children, infer research geography, or render an empty Research Coverage category.
 
 ## Exit criteria
 
-1. The six existing layers are grouped under the two categories above.
-2. All six layer checkboxes remain independent.
+1. The six current layers are organized under the three implemented categories above.
+2. All child checkboxes remain independent.
 3. Category collapse never changes layer visibility.
-4. Category summaries expose active child-layer counts.
-5. Browser/accessibility evidence covers disclosure and child controls.
-6. The structure leaves a clear insertion point for the future Research Coverage category.
+4. Native disclosure affordance remains visible.
+5. The template does not create extra subscriptions merely to count visible children.
+6. Browser evidence addresses categories by stable identifiers rather than array position.
+7. The structure leaves a clean insertion point for Research Coverage.
