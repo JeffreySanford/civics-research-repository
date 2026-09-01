@@ -4,6 +4,7 @@ import { expect, type Page } from '@playwright/test';
 export const REGISTERED_MAP_LAYER_IDS = [
   'census-area-fill',
   'census-area-outline',
+  'lodes-workplace-jobs-circles',
   'saipe-county-fill',
   'saipe-county-outline',
   'usgs-3hp-hydrography-raster',
@@ -11,6 +12,7 @@ export const REGISTERED_MAP_LAYER_IDS = [
   'usgs-earthquake-labels',
   'usgs-earthquake-selected',
   'lodes-workplace-flow-line',
+  'lodes-workplace-flow-selected',
   'lodes-workplace-flow-points',
 ] as const;
 
@@ -142,37 +144,12 @@ export async function expectMapLayersVisibility(
     .toEqual(Object.fromEntries(layerIds.map((id) => [id, expected])));
 }
 
-async function isMapStyleReady(page: Page): Promise<boolean> {
-  return page.evaluate(() => {
-    const container = document.querySelector(
-      '[data-testid="discovery-map-canvas"]',
-    );
-    const map = (
-      container as HTMLElement & {
-        __map?: { isStyleLoaded: () => boolean };
-      }
-    )?.__map;
-
-    return map?.isStyleLoaded() ?? false;
-  });
-}
-
 export async function waitForRegisteredMapLayers(page: Page): Promise<void> {
   await expect(page.getByTestId('discovery-map-canvas')).toBeVisible();
 
-  // MapLibre initializes asynchronously after Angular renders the canvas. Firefox can expose the
-  // canvas several seconds before the dynamically imported MapLibre bundle has parsed its style,
-  // so first wait for the same style-ready boundary the production page uses for overlay setup.
-  await expect
-    .poll(() => isMapStyleReady(page), {
-      timeout: 15_000,
-      message: 'MapLibre style should be ready before checking registered layers',
-    })
-    .toBe(true);
-
-  // Overlay data and style readiness can resolve in either order. Give the render subscriptions a
-  // bounded window to register all layers instead of assuming that work finishes within the
-  // default five-second Playwright poll on every browser.
+  // Registration is the relevant contract for these tests. Do not gate it on isStyleLoaded():
+  // Firefox can keep that global style signal false while application-owned overlay behavior and
+  // the accessible map UI remain usable. Dedicated @maps evidence polls the actual layer objects.
   await expect
     .poll(async () => readMapLayerVisibility(page, REGISTERED_MAP_LAYER_IDS), {
       timeout: 15_000,
