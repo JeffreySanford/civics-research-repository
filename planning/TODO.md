@@ -8,7 +8,7 @@ The repository follows an evidence-first rule: define or extend unit/use-case/co
 
 - `codex/deep-pagination-runtime-hardening` — opaque cursor/search-after discovery, large-result keyboard behavior and WCAG 2.2 engineering uplift. See [documentation/workstreams/deep-pagination-runtime-hardening](../documentation/workstreams/deep-pagination-runtime-hardening/README.md).
 - `codex/map-layer-categories` — group the growing Maps layer controls into expandable, accessible categories while every child layer remains independently renderable.
-- `codex/research-spatial-coverage` — define authoritative spatial coverage for research objects without inferring research geography from publisher location.
+- `codex/research-spatial-coverage` — define authoritative spatial coverage for research objects without inferring research geography from publisher location. See its [data-to-map layer matrix](../documentation/workstreams/research-spatial-coverage/DATA_LAYER_MATRIX.md) after that workstream lands.
 - `codex/searchable-research-map-coverage` — connect filtered Discovery results to bounded map summaries/features and accessible result equivalents.
 
 ## PI-1 — Close reusable federation/search evidence
@@ -36,9 +36,35 @@ Open follow-through:
 
 ### Maps and spatial research coverage
 
-- [ ] Group current Maps controls into expandable categories without changing the independent layer/rendering contract.
-- [ ] Add an engine-neutral research spatial-coverage model supporting authoritative admin areas, points, bounding boxes and later polygons.
+Target the Maps control taxonomy by reader purpose rather than agency:
+
+```text
+Geography & Boundaries
+Community & Economy
+Environment & Hazards
+Research Coverage
+```
+
+A category owns presentation only. Every child layer remains independently checkable/renderable, and a collapsed category reports active child state.
+
+- [ ] Evolve the map-category implementation so TIGER/Line sits under **Geography & Boundaries**, LODES/SAIPE under **Community & Economy**, and USGS hydrography/earthquakes under **Environment & Hazards**.
+- [ ] Do not show an empty **Research Coverage** category until its first backed capability exists.
+- [ ] Add reusable authoritative administrative geometry for state/territory, county/county-equivalent and later PUMA/tract joins using stable FIPS/PUMA/GEOID identifiers.
+- [ ] Migrate SAIPE away from generated rectangular county cells before using that geometry pattern for additional choropleths.
+- [ ] Add **Repository research by area** from already-retained curated geography metadata as the first Research Coverage layer; label values as matching research-object counts, not inferred scientific footprints.
+- [ ] Add a reusable thematic-area value contract that joins measures to shared geometry instead of embedding polygons in each service.
+- [ ] Add **Population Estimates** county population/change as the first new Community & Economy measure.
+- [ ] Add **County Business Patterns** with a single checkable layer and measure/industry configuration for employment, establishments and payroll rather than separate permanent checkboxes.
+- [ ] Add **Business Dynamics Statistics** county/state measures such as job creation/destruction and establishment births/deaths after the common county layer contract is proven.
+- [ ] Add **Building Permits** county totals, with place-level symbols only after place geometry/coordinates have an authoritative shared representation.
+- [ ] Evaluate **Economic Census** county/industry measures after CBP/BDS prove the economic-layer configuration model.
+- [ ] Treat **ACS PUMS** only as weighted aggregate state/PUMA measures; never render raw person/household points.
+- [ ] Evaluate one configurable **USGS 3DEP terrain** layer (hillshade/tinted hillshade/slope mode) rather than multiple permanent terrain checkboxes.
+- [ ] Add an engine-neutral research spatial-coverage sidecar supporting authoritative admin areas, points, bounding boxes and later polygons.
 - [ ] Preserve spatial provenance/derivation method and never infer research coverage from publisher/institution location.
+- [ ] Add a deterministic **Data.gov spatial-availability probe** over retained records before a large enrichment run.
+- [ ] Use retained Data.gov `harvestRecordRaw` references for targeted explicit-DCAT-spatial enrichment where practical; keep enrichment sidecar/versioned so C2 Gold Master identity is unchanged.
+- [ ] Extend NASA CMR collection mapping with explicit spatial extent using a pinned/documented publisher representation, then add granule coverage as a distinct bounded semantic.
 - [ ] Add bounded spatial summary/feature APIs so million-record search results never become million browser features.
 - [ ] Connect Discovery query/filter context to research coverage on Maps.
 - [ ] Provide semantic list/table equivalents for every meaningful research-coverage map value.
@@ -53,6 +79,7 @@ Open follow-through:
 - [ ] Implement PubMed fixture/bounded API ingestion with PMID/title/abstract/authors/journal/date/type/identifier mapping.
 - [ ] Evaluate PubMed bulk/baseline/update files for large reproducible ingestion rather than millions of individual API calls.
 - [ ] Implement OpenAlex bounded ingestion for works/authors/institutions/topics/funders/DOI/citation relationships after the federal-source path remains stable.
+- [ ] If institution/affiliation geography is later exposed from PubMed/OpenAlex, name it as a separate relationship/location analytic concept rather than research coverage.
 - [ ] Render Data.gov + DOE OSTI + at least one additional source together in normal Discovery with unchanged provenance rules.
 
 ### Provenance and research-object language
