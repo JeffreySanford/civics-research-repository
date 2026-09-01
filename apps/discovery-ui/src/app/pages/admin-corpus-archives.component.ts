@@ -105,20 +105,19 @@ interface PendingArchiveAction {
 
       <p class="corpus-archives__note">
         FEDERATED_1M archives require the exact 500K Data.gov + 500K DOE OSTI
-        composition evidence. Archive creation is blocked while either source
-        is actively harvesting.
+        composition evidence. Archive creation is blocked while either source is
+        actively harvesting.
       </p>
 
       @if (status$ | async; as status) {
-        <p class="inline-status" role="status" aria-live="polite">{{ status }}</p>
+        <p class="inline-status" role="status" aria-live="polite">
+          {{ status }}
+        </p>
       }
 
       @if (busy$ | async; as busy) {
         <div class="inline-status" role="status">
-          <mat-spinner
-            diameter="20"
-            [attr.aria-label]="busy"
-          ></mat-spinner>
+          <mat-spinner diameter="20" [attr.aria-label]="busy"></mat-spinner>
           <span>{{ busy }}</span>
         </div>
       }
@@ -132,13 +131,19 @@ interface PendingArchiveAction {
           aria-describedby="archive-confirm-description"
         >
           <h3 id="archive-confirm-heading">
-            {{ pending.kind === 'RESTORE' ? 'Restore archive?' : 'Delete archive?' }}
+            {{
+              pending.kind === 'RESTORE'
+                ? 'Restore archive?'
+                : 'Delete archive?'
+            }}
           </h3>
           <p id="archive-confirm-description">
             <strong>{{ pending.archive.label }}</strong> was created
             {{ pending.archive.createdAt | date: 'medium' }} and contains
             {{ pending.archive.recordCount | number }} federated records.
-            Archive SHA-256: <code>{{ shortSha(pending.archive.archiveSha256) }}</code>.
+            Archive SHA-256:
+            <code>{{ shortSha(pending.archive.archiveSha256) }}</code
+            >.
           </p>
           @if (pending.kind === 'RESTORE') {
             <p>
@@ -161,7 +166,11 @@ interface PendingArchiveAction {
               (click)="confirmPendingAction()"
               [disabled]="(busy$ | async) !== null"
             >
-              {{ pending.kind === 'RESTORE' ? 'Restore archive' : 'Delete archive' }}
+              {{
+                pending.kind === 'RESTORE'
+                  ? 'Restore archive'
+                  : 'Delete archive'
+              }}
             </button>
             <button
               mat-stroked-button
@@ -218,25 +227,37 @@ interface PendingArchiveAction {
                     <td>
                       <span
                         class="corpus-archives__badge"
-                        [class.corpus-archives__badge--good]="archive.integrityStatus === 'VERIFIED'"
-                        [class.corpus-archives__badge--bad]="archive.integrityStatus === 'FAILED'"
+                        [class.corpus-archives__badge--good]="
+                          archive.integrityStatus === 'VERIFIED'
+                        "
+                        [class.corpus-archives__badge--bad]="
+                          archive.integrityStatus === 'FAILED'
+                        "
                       >
                         {{ integrityLabel(archive.integrityStatus) }}
                       </span>
                       @if (archive.integrityCheckedAt) {
-                        <small>{{ archive.integrityCheckedAt | date: 'short' }}</small>
+                        <small>{{
+                          archive.integrityCheckedAt | date: 'short'
+                        }}</small>
                       }
                     </td>
                     <td>
                       <span
                         class="corpus-archives__badge"
-                        [class.corpus-archives__badge--good]="archive.freshnessStatus === 'NO_NEWER_MARKER'"
-                        [class.corpus-archives__badge--warn]="archive.freshnessStatus === 'UPDATE_AVAILABLE'"
+                        [class.corpus-archives__badge--good]="
+                          archive.freshnessStatus === 'NO_NEWER_MARKER'
+                        "
+                        [class.corpus-archives__badge--warn]="
+                          archive.freshnessStatus === 'UPDATE_AVAILABLE'
+                        "
                       >
                         {{ freshnessLabel(archive.freshnessStatus) }}
                       </span>
                       @if (archive.freshnessCheckedAt) {
-                        <small>{{ archive.freshnessCheckedAt | date: 'short' }}</small>
+                        <small>{{
+                          archive.freshnessCheckedAt | date: 'short'
+                        }}</small>
                       }
                     </td>
                     <td>
@@ -261,7 +282,10 @@ interface PendingArchiveAction {
                           mat-stroked-button
                           type="button"
                           (click)="requestRestore(archive)"
-                          [disabled]="(busy$ | async) !== null || archive.integrityStatus === 'FAILED'"
+                          [disabled]="
+                            (busy$ | async) !== null ||
+                            archive.integrityStatus === 'FAILED'
+                          "
                         >
                           Restore
                         </button>
@@ -547,7 +571,9 @@ export class AdminCorpusArchivesComponent {
   }
 
   protected shortSha(value: string): string {
-    return value.length <= 16 ? value : `${value.slice(0, 12)}…${value.slice(-4)}`;
+    return value.length <= 16
+      ? value
+      : `${value.slice(0, 12)}…${value.slice(-4)}`;
   }
 
   protected formatBytes(bytes: number): string {

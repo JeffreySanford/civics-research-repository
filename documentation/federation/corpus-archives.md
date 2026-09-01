@@ -19,19 +19,19 @@ The existing **Admin → Corpus scale & local storage** panel owns archive manag
 
 The panel should list every saved archive with:
 
-| Field | Meaning |
-| --- | --- |
-| Name | Operator-friendly archive label |
-| Profile | Corpus profile represented by the archive |
-| Created | Immutable archive creation time |
-| Records | Exact archived federated record count |
-| Sources | Per-source record counts |
-| Size | Compressed archive bytes |
-| Archive SHA-256 | Physical archive integrity checksum |
-| Corpus/composition SHA-256 | Logical evidence identity when available |
-| Integrity | Not checked, verified or failed |
-| Freshness | Not checked, no newer marker detected, update available or unknown |
-| Last checked | Most recent integrity/freshness check time |
+| Field                      | Meaning                                                            |
+| -------------------------- | ------------------------------------------------------------------ |
+| Name                       | Operator-friendly archive label                                    |
+| Profile                    | Corpus profile represented by the archive                          |
+| Created                    | Immutable archive creation time                                    |
+| Records                    | Exact archived federated record count                              |
+| Sources                    | Per-source record counts                                           |
+| Size                       | Compressed archive bytes                                           |
+| Archive SHA-256            | Physical archive integrity checksum                                |
+| Corpus/composition SHA-256 | Logical evidence identity when available                           |
+| Integrity                  | Not checked, verified or failed                                    |
+| Freshness                  | Not checked, no newer marker detected, update available or unknown |
+| Last checked               | Most recent integrity/freshness check time                         |
 
 ## Actions
 
