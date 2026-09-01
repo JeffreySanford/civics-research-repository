@@ -232,9 +232,14 @@ services:
       db__P__password: dspace
       solr__P__server: http://dspace-solr:8983/solr
     volumes:
-      - dspace-assetstore:/dspace/assetstore
+      # seed-structure.sh deliberately resolves registry XML, structure XML, and generated SAF
+      # packages below /seed. Keep that path stable rather than teaching the script two host layouts.
       - ./tools/dspace:/seed:ro
+      - dspace-assetstore:/dspace/assetstore
 
+  # The DSpace system-of-record database must stay on the DSpace 9 release-matched PostgreSQL image.
+  # That image is PostgreSQL 15 with pgcrypto installed. The persistent volume was initialized by it;
+  # starting the same data directory under PostgreSQL 17 is an unsupported major-version jump.
   dspace-postgres:
     profiles: ['dspace']
     image: dspace/dspace-postgres-pgcrypto:dspace-9.0
@@ -248,37 +253,60 @@ services:
       - dspace-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U dspace -d dspace']
-      interval: 5s
+      start_interval: 2s
+      start_period: 60s
+      interval: 60s
       timeout: 5s
-      retries: 20
+      retries: 3
 
+  # DSpace's internal search service. Keep it on the release-matched image because its core
+  # configuration is part of DSpace, unlike the separate application-owned discovery Solr above.
   dspace-solr:
     profiles: ['dspace']
     image: dspace/dspace-solr:dspace-9.0
+    depends_on:
+      dspace-solr-init:
+        condition: service_completed_successfully
     ports:
       - '8984:8983'
     volumes:
-      - dspace-solr-data:/var/solr/data
+      - dspace-solr-data:/var/solr
     healthcheck:
       test:
         [
           'CMD-SHELL',
-          'curl -fsS http://localhost:8983/solr/admin/cores?action=STATUS >/dev/null',
+          'curl -fsS http://localhost:8983/solr/search/admin/ping >/dev/null',
         ]
       start_interval: 5s
-      start_period: 120s
+      start_period: 180s
       interval: 60s
       timeout: 10s
       retries: 5
+
+  dspace-solr-init:
+    profiles: ['dspace']
+    image: dspace/dspace:dspace-9.0
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -eu
+        mkdir -p /var/solr/data
+        if [ ! -d /var/solr/data/search ]; then
+          cp -R /dspace/solr/. /var/solr/data/
+        fi
+        chown -R 8983:8983 /var/solr
+    volumes:
+      - dspace-solr-data:/var/solr
 
 volumes:
   postgres-data:
   solr-data:
   opensearch-data:
-  civics-artifacts:
   dspace-postgres-data:
   dspace-solr-data:
   dspace-assetstore:
+  civics-artifacts:
   pnpm-store:
   node-modules:
   corepack-cache:
