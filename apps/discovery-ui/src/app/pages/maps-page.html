@@ -50,139 +50,182 @@
         </select>
       </label>
 
-      <fieldset class="layer-controls" aria-label="Map layer controls">
-        <span class="layer-toggle-row">
-          <label class="layer-toggle">
-            <input
-              type="checkbox"
-              data-testid="map-layer-tiger"
-              [checked]="tigerVisible$ | async"
-              (change)="toggleTigerLayer($any($event.target).checked)"
-            />
-            <span class="layer-toggle-label">TIGER/Line boundary</span>
-          </label>
-          <button
-            type="button"
-            class="layer-info-button"
-            mat-icon-button
-            data-testid="map-layer-tiger-info"
-            [matTooltip]="layerTooltips.tiger"
-            matTooltipPosition="above"
-            aria-label="About TIGER/Line boundary layer"
-          >
-            <mat-icon aria-hidden="true">info_outline</mat-icon>
-          </button>
-        </span>
-        <span class="layer-toggle-row">
-          <label class="layer-toggle">
-            <input
-              type="checkbox"
-              data-testid="map-layer-workplace"
-              [checked]="workplaceVisible$ | async"
-              (change)="toggleWorkplaceLayer($any($event.target).checked)"
-            />
-            <span class="layer-toggle-label">LODES workplace employment</span>
-          </label>
-          <button
-            type="button"
-            class="layer-info-button"
-            mat-icon-button
-            data-testid="map-layer-workplace-info"
-            [matTooltip]="layerTooltips.workplace"
-            matTooltipPosition="above"
-            aria-label="About LODES workplace employment layer"
-          >
-            <mat-icon aria-hidden="true">info_outline</mat-icon>
-          </button>
-        </span>
-        <span class="layer-toggle-row">
-          <label class="layer-toggle">
-            <input
-              type="checkbox"
-              data-testid="map-layer-lodes"
-              [checked]="lodesVisible$ | async"
-              (change)="toggleLodesLayer($any($event.target).checked)"
-            />
-            <span class="layer-toggle-label">LODES commuting flows</span>
-          </label>
-          <button
-            type="button"
-            class="layer-info-button"
-            mat-icon-button
-            data-testid="map-layer-lodes-info"
-            [matTooltip]="layerTooltips.lodes"
-            matTooltipPosition="above"
-            aria-label="About LODES commuting flows layer"
-          >
-            <mat-icon aria-hidden="true">info_outline</mat-icon>
-          </button>
-        </span>
-        <span class="layer-toggle-row">
-          <label class="layer-toggle">
-            <input
-              type="checkbox"
-              data-testid="map-layer-saipe"
-              [checked]="saipeVisible$ | async"
-              (change)="toggleSaipeLayer($any($event.target).checked)"
-            />
-            <span class="layer-toggle-label">SAIPE county poverty</span>
-          </label>
-          <button
-            type="button"
-            class="layer-info-button"
-            mat-icon-button
-            data-testid="map-layer-saipe-info"
-            [matTooltip]="layerTooltips.saipe"
-            matTooltipPosition="above"
-            aria-label="About SAIPE county poverty layer"
-          >
-            <mat-icon aria-hidden="true">info_outline</mat-icon>
-          </button>
-        </span>
-        <span class="layer-toggle-row">
-          <label class="layer-toggle">
-            <input
-              type="checkbox"
-              data-testid="map-layer-hydrography"
-              [checked]="hydrographyVisible$ | async"
-              (change)="toggleHydrographyLayer($any($event.target).checked)"
-            />
-            <span class="layer-toggle-label">USGS 3HP hydrography</span>
-          </label>
-          <button
-            type="button"
-            class="layer-info-button"
-            mat-icon-button
-            data-testid="map-layer-hydrography-info"
-            [matTooltip]="layerTooltips.hydrography"
-            matTooltipPosition="above"
-            aria-label="About USGS 3HP hydrography layer"
-          >
-            <mat-icon aria-hidden="true">info_outline</mat-icon>
-          </button>
-        </span>
-        <span class="layer-toggle-row">
-          <label class="layer-toggle">
-            <input
-              type="checkbox"
-              data-testid="map-layer-earthquake"
-              [checked]="earthquakeVisible$ | async"
-              (change)="toggleEarthquakeLayer($any($event.target).checked)"
-            />
-            <span class="layer-toggle-label">USGS earthquake overlay</span>
-          </label>
-          <button
-            type="button"
-            class="layer-info-button"
-            mat-icon-button
-            data-testid="map-layer-earthquake-info"
-            [matTooltip]="layerTooltips.earthquake"
-            matTooltipPosition="above"
-            aria-label="About USGS earthquake overlay layer"
-          >
-            <mat-icon aria-hidden="true">info_outline</mat-icon>
-          </button>
-        </span>
+      <fieldset class="layer-controls">
+        <legend class="visually-hidden">Map layer controls</legend>
+
+        <details
+          class="layer-category"
+          data-testid="map-layer-category-census-community"
+          open
+        >
+          <summary data-testid="map-layer-category-census-community-summary">
+            <span class="layer-category-title">Census &amp; Community</span>
+            <span class="layer-category-count">
+              {{
+                ((tigerVisible$ | async) ? 1 : 0) +
+                  ((workplaceVisible$ | async) ? 1 : 0) +
+                  ((lodesVisible$ | async) ? 1 : 0) +
+                  ((saipeVisible$ | async) ? 1 : 0)
+              }}
+              of 4 visible
+            </span>
+          </summary>
+
+          <div class="layer-category-items">
+            <span class="layer-toggle-row">
+              <label class="layer-toggle">
+                <input
+                  type="checkbox"
+                  data-testid="map-layer-tiger"
+                  [checked]="tigerVisible$ | async"
+                  (change)="toggleTigerLayer($any($event.target).checked)"
+                />
+                <span class="layer-toggle-label">TIGER/Line boundary</span>
+              </label>
+              <button
+                type="button"
+                class="layer-info-button"
+                mat-icon-button
+                data-testid="map-layer-tiger-info"
+                [matTooltip]="layerTooltips.tiger"
+                matTooltipPosition="above"
+                aria-label="About TIGER/Line boundary layer"
+              >
+                <mat-icon aria-hidden="true">info_outline</mat-icon>
+              </button>
+            </span>
+            <span class="layer-toggle-row">
+              <label class="layer-toggle">
+                <input
+                  type="checkbox"
+                  data-testid="map-layer-workplace"
+                  [checked]="workplaceVisible$ | async"
+                  (change)="toggleWorkplaceLayer($any($event.target).checked)"
+                />
+                <span class="layer-toggle-label">LODES workplace employment</span>
+              </label>
+              <button
+                type="button"
+                class="layer-info-button"
+                mat-icon-button
+                data-testid="map-layer-workplace-info"
+                [matTooltip]="layerTooltips.workplace"
+                matTooltipPosition="above"
+                aria-label="About LODES workplace employment layer"
+              >
+                <mat-icon aria-hidden="true">info_outline</mat-icon>
+              </button>
+            </span>
+            <span class="layer-toggle-row">
+              <label class="layer-toggle">
+                <input
+                  type="checkbox"
+                  data-testid="map-layer-lodes"
+                  [checked]="lodesVisible$ | async"
+                  (change)="toggleLodesLayer($any($event.target).checked)"
+                />
+                <span class="layer-toggle-label">LODES commuting flows</span>
+              </label>
+              <button
+                type="button"
+                class="layer-info-button"
+                mat-icon-button
+                data-testid="map-layer-lodes-info"
+                [matTooltip]="layerTooltips.lodes"
+                matTooltipPosition="above"
+                aria-label="About LODES commuting flows layer"
+              >
+                <mat-icon aria-hidden="true">info_outline</mat-icon>
+              </button>
+            </span>
+            <span class="layer-toggle-row">
+              <label class="layer-toggle">
+                <input
+                  type="checkbox"
+                  data-testid="map-layer-saipe"
+                  [checked]="saipeVisible$ | async"
+                  (change)="toggleSaipeLayer($any($event.target).checked)"
+                />
+                <span class="layer-toggle-label">SAIPE county poverty</span>
+              </label>
+              <button
+                type="button"
+                class="layer-info-button"
+                mat-icon-button
+                data-testid="map-layer-saipe-info"
+                [matTooltip]="layerTooltips.saipe"
+                matTooltipPosition="above"
+                aria-label="About SAIPE county poverty layer"
+              >
+                <mat-icon aria-hidden="true">info_outline</mat-icon>
+              </button>
+            </span>
+          </div>
+        </details>
+
+        <details
+          class="layer-category"
+          data-testid="map-layer-category-environment-hazards"
+          open
+        >
+          <summary data-testid="map-layer-category-environment-hazards-summary">
+            <span class="layer-category-title">Environment &amp; Hazards</span>
+            <span class="layer-category-count">
+              {{
+                ((hydrographyVisible$ | async) ? 1 : 0) +
+                  ((earthquakeVisible$ | async) ? 1 : 0)
+              }}
+              of 2 visible
+            </span>
+          </summary>
+
+          <div class="layer-category-items">
+            <span class="layer-toggle-row">
+              <label class="layer-toggle">
+                <input
+                  type="checkbox"
+                  data-testid="map-layer-hydrography"
+                  [checked]="hydrographyVisible$ | async"
+                  (change)="toggleHydrographyLayer($any($event.target).checked)"
+                />
+                <span class="layer-toggle-label">USGS 3HP hydrography</span>
+              </label>
+              <button
+                type="button"
+                class="layer-info-button"
+                mat-icon-button
+                data-testid="map-layer-hydrography-info"
+                [matTooltip]="layerTooltips.hydrography"
+                matTooltipPosition="above"
+                aria-label="About USGS 3HP hydrography layer"
+              >
+                <mat-icon aria-hidden="true">info_outline</mat-icon>
+              </button>
+            </span>
+            <span class="layer-toggle-row">
+              <label class="layer-toggle">
+                <input
+                  type="checkbox"
+                  data-testid="map-layer-earthquake"
+                  [checked]="earthquakeVisible$ | async"
+                  (change)="toggleEarthquakeLayer($any($event.target).checked)"
+                />
+                <span class="layer-toggle-label">USGS earthquake overlay</span>
+              </label>
+              <button
+                type="button"
+                class="layer-info-button"
+                mat-icon-button
+                data-testid="map-layer-earthquake-info"
+                [matTooltip]="layerTooltips.earthquake"
+                matTooltipPosition="above"
+                aria-label="About USGS earthquake overlay layer"
+              >
+                <mat-icon aria-hidden="true">info_outline</mat-icon>
+              </button>
+            </span>
+          </div>
+        </details>
       </fieldset>
     </div>
 
