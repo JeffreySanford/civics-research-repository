@@ -99,9 +99,7 @@ export class ActiveCorpusIdentityComponent {
   private readonly adminApi = inject(RepositoryAdminApi);
 
   protected readonly identity$ = combineLatest([
-    this.storageApi
-      .getCorpusStorageOverview()
-      .pipe(catchError(() => of(null))),
+    this.storageApi.getCorpusStorageOverview().pipe(catchError(() => of(null))),
     this.adminApi
       .getDiscoveryProjectionState()
       .pipe(catchError(() => of(null))),
