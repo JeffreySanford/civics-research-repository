@@ -34,10 +34,9 @@ test.describe('map layer MapLibre visibility', () => {
     await expect(page.getByText('Loading map data from the API')).toHaveCount(
       0,
     );
-    await waitForRegisteredMapLayers(page);
   });
 
-  test('layer categories organize controls without owning render state @maps @wcag @section508', async ({
+  test('layer categories organize controls without owning selection state @wcag @section508', async ({
     page,
   }) => {
     const geographyCategory = page.getByTestId(
@@ -71,12 +70,28 @@ test.describe('map layer MapLibre visibility', () => {
     const tiger = page.getByTestId('map-layer-tiger');
     await tiger.check();
 
-    // Collapse is presentation-only. The checked layer remains selected and rendered even though
-    // its controls are hidden inside the native disclosure.
+    const featureList = page.locator(
+      'section[aria-labelledby="features-heading"]',
+    );
+    const legend = page.getByLabel('Visible map layer legend');
+    const tigerGroup = groupFor('map-layer-tiger');
+
+    await expect(
+      featureList.getByText(tigerGroup.accessibleListText),
+    ).toBeVisible();
+    await expect(legend.getByText(tigerGroup.legendText)).toBeVisible();
+
+    // Collapse is presentation-only. The checked selection and its semantic map evidence remain
+    // active even though the checkbox itself is hidden inside the native disclosure. Dedicated
+    // @maps tests below cover MapLibre layout visibility without making cross-browser WCAG evidence
+    // depend on Firefox/WebGL style readiness.
     await geographySummary.click();
     await expect(geographyCategory).not.toHaveAttribute('open', '');
     await expect(tiger).toBeChecked();
-    await expectLayerEvidenceVisible(page, groupFor('map-layer-tiger'));
+    await expect(
+      featureList.getByText(tigerGroup.accessibleListText),
+    ).toBeVisible();
+    await expect(legend.getByText(tigerGroup.legendText)).toBeVisible();
 
     await geographySummary.click();
     await expect(geographyCategory).toHaveAttribute('open', '');
@@ -87,6 +102,7 @@ test.describe('map layer MapLibre visibility', () => {
     test(`${group.name} toggle syncs legend, URL, and MapLibre visibility @maps`, async ({
       page,
     }) => {
+      await waitForRegisteredMapLayers(page);
       const toggle = page.getByTestId(group.toggleTestId);
 
       // Every layer starts off. There used to be a branch here for layers that started on; it has
@@ -108,6 +124,8 @@ test.describe('map layer MapLibre visibility', () => {
   test('turning one layer off leaves the other MapLibre groups visible @maps', async ({
     page,
   }) => {
+    await waitForRegisteredMapLayers(page);
+
     for (const group of MAP_LAYER_VISIBILITY_GROUPS) {
       await page.getByTestId(group.toggleTestId).check();
     }
