@@ -2,6 +2,7 @@ package org.civicsrepo.search;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -95,7 +96,7 @@ public class SearchCursorCodec {
         try {
             byte[] decoded = Base64.getUrlDecoder().decode(segments[1]);
             payload = objectMapper.readValue(decoded, CursorPayload.class);
-        } catch (IllegalArgumentException | JsonProcessingException exception) {
+        } catch (IllegalArgumentException | IOException exception) {
             throw new SearchCursorException("Search cursor payload is not valid.", exception);
         }
 
