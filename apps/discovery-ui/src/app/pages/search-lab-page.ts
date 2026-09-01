@@ -21,6 +21,7 @@ import {
   type SearchComparisonScenario,
   type SearchComparisonScenarioId,
   type SearchEngineComparison,
+  type SourceSystem,
 } from 'repository-api-client';
 import { finalize } from 'rxjs';
 
@@ -57,6 +58,19 @@ export class SearchLabPage implements OnInit {
     nonNullable: true,
   });
   protected readonly geographyControl = new FormControl('North Dakota', {
+    nonNullable: true,
+  });
+  protected readonly publisherControl = new FormControl('', {
+    nonNullable: true,
+  });
+  protected readonly sourceSystemControl = new FormControl<SourceSystem | ''>(
+    '',
+    { nonNullable: true },
+  );
+  protected readonly localIdControl = new FormControl('', {
+    nonNullable: true,
+  });
+  protected readonly doiControl = new FormControl('', {
     nonNullable: true,
   });
   protected readonly programControl = new FormControl<ResearchProgram | ''>(
@@ -98,6 +112,17 @@ export class SearchLabPage implements OnInit {
     'PROJECT',
   ];
 
+  protected readonly sourceSystems: readonly SourceSystem[] = [
+    'CENSUS',
+    'USGS',
+    'DATA_GOV',
+    'DOE_OSTI',
+    'NASA_CMR',
+    'PUBMED',
+    'OPENALEX',
+    'OTHER',
+  ];
+
   ngOnInit(): void {
     this.loadScenarios();
   }
@@ -110,6 +135,18 @@ export class SearchLabPage implements OnInit {
       pageSize: 10,
       ...(this.programControl.value
         ? { programs: [this.programControl.value] }
+        : {}),
+      ...(this.publisherControl.value.trim()
+        ? { publisher: this.publisherControl.value.trim() }
+        : {}),
+      ...(this.sourceSystemControl.value
+        ? { sourceSystem: this.sourceSystemControl.value }
+        : {}),
+      ...(this.localIdControl.value.trim()
+        ? { localId: this.localIdControl.value.trim() }
+        : {}),
+      ...(this.doiControl.value.trim()
+        ? { doi: this.doiControl.value.trim() }
         : {}),
       ...(this.geographyControl.value.trim()
         ? { geography: this.geographyControl.value.trim() }
@@ -151,6 +188,10 @@ export class SearchLabPage implements OnInit {
 
   protected clearFilters(): void {
     this.geographyControl.setValue('');
+    this.publisherControl.setValue('');
+    this.sourceSystemControl.setValue('');
+    this.localIdControl.setValue('');
+    this.doiControl.setValue('');
     this.programControl.setValue('');
     this.contentTypeControl.setValue('');
     this.vintageYearControl.setValue(null);

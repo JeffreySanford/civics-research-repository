@@ -214,16 +214,18 @@ public class SolrSearchClient implements DiscoveryIndex {
             Integer vintageYear,
             int page,
             int pageSize) {
-        return searchWithDiagnostics(
+        return searchWithDiagnostics(new SearchComparisonCriteria(
                         query,
                         programs,
                         publisher,
                         sourceSystem,
+                        null,
+                        null,
                         geography,
                         contentType,
                         vintageYear,
                         page,
-                        pageSize)
+                        pageSize))
                 .response();
     }
 
@@ -236,31 +238,24 @@ public class SolrSearchClient implements DiscoveryIndex {
             Integer vintageYear,
             int page,
             int pageSize) {
-        return searchWithDiagnostics(
-                query, programs, null, null, geography, contentType, vintageYear, page, pageSize);
+        return searchWithDiagnostics(new SearchComparisonCriteria(
+                query,
+                programs,
+                null,
+                null,
+                null,
+                null,
+                geography,
+                contentType,
+                vintageYear,
+                page,
+                pageSize));
     }
 
-    private SearchExecution searchWithDiagnostics(
-            String query,
-            List<String> programs,
-            String publisher,
-            SourceSystem sourceSystem,
-            String geography,
-            ResearchObjectType contentType,
-            Integer vintageYear,
-            int page,
-            int pageSize) {
+    @Override
+    public SearchExecution searchWithDiagnostics(SearchComparisonCriteria criteria) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(selectUri(
-                            query,
-                            programs,
-                            publisher,
-                            sourceSystem,
-                            geography,
-                            contentType,
-                            vintageYear,
-                            page,
-                            pageSize))
+            HttpRequest request = HttpRequest.newBuilder(selectUri(criteria))
                     .timeout(REQUEST_TIMEOUT)
                     .GET()
                     .build();
@@ -273,15 +268,7 @@ public class SolrSearchClient implements DiscoveryIndex {
             String responseBody = response.body();
             return new SearchExecution(
                     toSearchResponse(
-                            query,
-                            page,
-                            pageSize,
-                            programs,
-                            publisher,
-                            sourceSystem,
-                            geography,
-                            contentType,
-                            vintageYear,
+                            criteria,
                             responseBody),
                     engineReportedMillis(responseBody));
         } catch (IOException exception) {
@@ -332,15 +319,7 @@ public class SolrSearchClient implements DiscoveryIndex {
     }
 
     private SearchResponse toSearchResponse(
-            String query,
-            int page,
-            int pageSize,
-            List<String> selectedPrograms,
-            String selectedPublisher,
-            SourceSystem selectedSourceSystem,
-            String selectedGeography,
-            ResearchObjectType selectedContentType,
-            Integer selectedVintageYear,
+            SearchComparisonCriteria criteria,
             String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
@@ -366,9 +345,9 @@ public class SolrSearchClient implements DiscoveryIndex {
 
             return new SearchResponse(
                     RepositorySource.FIXTURE,
-                    query == null ? "" : query,
-                    Math.max(0, page),
-                    Math.max(1, Math.min(pageSize, 100)),
+                    criteria.query(),
+                    criteria.page(),
+                    criteria.pageSize(),
                     Math.toIntExact(response.path("numFound").asLong()),
                     results,
                     List.of(
@@ -376,44 +355,44 @@ public class SolrSearchClient implements DiscoveryIndex {
                                     "program",
                                     "Program",
                                     root.path("facet_counts").path("facet_fields").path("programName_s"),
-                                    selectedPrograms.stream()
+                                    criteria.programs().stream()
                                             .map(this::normalize)
                                             .collect(Collectors.toSet())),
                             facetGroup(
                                     "publisher",
                                     "Publisher",
                                     root.path("facet_counts").path("facet_fields").path("publisher_s"),
-                                    normalize(selectedPublisher).isBlank()
+                                    criteria.publisher() == null
                                             ? Set.of()
-                                            : Set.of(normalize(selectedPublisher))),
+                                            : Set.of(normalize(criteria.publisher()))),
                             facetGroup(
                                     "sourceSystem",
                                     "Source",
                                     root.path("facet_counts").path("facet_fields").path("sourceSystem_s"),
-                                    selectedSourceSystem == null
+                                    criteria.sourceSystem() == null
                                             ? Set.of()
-                                            : Set.of(normalize(selectedSourceSystem.getValue()))),
+                                            : Set.of(normalize(criteria.sourceSystem().getValue()))),
                             facetGroup(
                                     "geography",
                                     "Geography",
                                     root.path("facet_counts").path("facet_fields").path("geography_s"),
-                                    normalize(selectedGeography).isBlank()
+                                    criteria.geography() == null
                                             ? Set.of()
-                                            : Set.of(normalize(selectedGeography))),
+                                            : Set.of(normalize(criteria.geography()))),
                             facetGroup(
                                     "type",
                                     "Type",
                                     root.path("facet_counts").path("facet_fields").path("contentType_s"),
-                                    selectedContentType == null
+                                    criteria.contentType() == null
                                             ? Set.of()
-                                            : Set.of(normalize(selectedContentType.getValue()))),
+                                            : Set.of(normalize(criteria.contentType().getValue()))),
                             descending(facetGroup(
                                     "vintageYear",
                                     "Year",
                                     root.path("facet_counts").path("facet_fields").path("vintageYear_i"),
-                                    selectedVintageYear == null
+                                    criteria.vintageYear() == null
                                             ? Set.of()
-                                            : Set.of(normalize(String.valueOf(selectedVintageYear)))))));
+                                            : Set.of(normalize(String.valueOf(criteria.vintageYear())))))));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Solr search response could not be parsed.", exception);
         }
@@ -469,18 +448,7 @@ public class SolrSearchClient implements DiscoveryIndex {
         return URI.create(baseUrl + "/" + encode(core) + "/select?q=*:*&rows=0&wt=json");
     }
 
-    private URI selectUri(
-            String query,
-            List<String> programs,
-            String publisher,
-            SourceSystem sourceSystem,
-            String geography,
-            ResearchObjectType contentType,
-            Integer vintageYear,
-            int page,
-            int pageSize) {
-        int safePage = Math.max(0, page);
-        int safePageSize = Math.max(1, Math.min(pageSize, 100));
+    private URI selectUri(SearchComparisonCriteria criteria) {
         List<String> params = new ArrayList<>();
         params.add("wt=json");
         params.add("defType=edismax");
@@ -490,9 +458,9 @@ public class SolrSearchClient implements DiscoveryIndex {
         params.add("pf=" + encode("title_txt^8 geography_txt^6 summary_txt^2"));
         params.add("pf2=" + encode("title_txt^4 geography_txt^4"));
         params.add("mm=" + encode("2<67%"));
-        params.add("q=" + encode(normalize(query).isBlank() ? "*:*" : query));
-        params.add("start=" + encode(Integer.toString(safePage * safePageSize)));
-        params.add("rows=" + encode(Integer.toString(safePageSize)));
+        params.add("q=" + encode(criteria.query().isBlank() ? "*:*" : criteria.query()));
+        params.add("start=" + encode(Integer.toString(criteria.page() * criteria.pageSize())));
+        params.add("rows=" + encode(Integer.toString(criteria.pageSize())));
         params.add("facet=true");
         params.add("facet.mincount=1");
         params.add("facet.field=" + encode("{!ex=programFilter}programName_s"));
@@ -503,38 +471,51 @@ public class SolrSearchClient implements DiscoveryIndex {
         params.add("facet.field=" + encode("{!ex=vintageFilter}vintageYear_i"));
         params.add("f.vintageYear_i.facet.sort=" + encode("index"));
 
-        if (programs != null && !programs.isEmpty()) {
+        if (!criteria.programs().isEmpty()) {
             params.add("fq="
-                    + encode(programs.stream()
-                            .filter((program) -> program != null && !program.isBlank())
+                    + encode(criteria.programs().stream()
                             .map((program) -> "programName_s:\"" + escapeQueryValue(program.trim()) + "\"")
                             .collect(Collectors.joining(" OR ", "{!tag=programFilter}(", ")"))));
         }
 
-        if (!normalize(publisher).isBlank()) {
+        if (criteria.publisher() != null) {
             params.add("fq="
-                    + encode("{!tag=publisherFilter}publisher_s:\"" + escapeQueryValue(publisher.trim()) + "\""));
-        }
-
-        if (sourceSystem != null) {
-            params.add("fq="
-                    + encode("{!tag=sourceSystemFilter}sourceSystem_s:\""
-                            + escapeQueryValue(sourceSystem.getValue())
+                    + encode("{!tag=publisherFilter}publisher_s:\""
+                            + escapeQueryValue(criteria.publisher())
                             + "\""));
         }
 
-        if (!normalize(geography).isBlank()) {
+        if (criteria.sourceSystem() != null) {
             params.add("fq="
-                    + encode("{!tag=geographyFilter}geography_s:\"" + escapeQueryValue(geography) + "\""));
+                    + encode("{!tag=sourceSystemFilter}sourceSystem_s:\""
+                            + escapeQueryValue(criteria.sourceSystem().getValue())
+                            + "\""));
         }
 
-        if (vintageYear != null) {
-            params.add("fq=" + encode("{!tag=vintageFilter}vintageYear_i:" + vintageYear));
+        if (criteria.localId() != null) {
+            params.add("fq=" + encode("id:\"" + escapeQueryValue(criteria.localId()) + "\""));
         }
 
-        if (contentType != null) {
+        if (criteria.doi() != null) {
+            params.add("fq=" + encode("doi_s:\"" + escapeQueryValue(criteria.doi()) + "\""));
+        }
+
+        if (criteria.geography() != null) {
             params.add("fq="
-                    + encode("{!tag=typeFilter}contentType_s:\"" + escapeQueryValue(contentType.getValue()) + "\""));
+                    + encode("{!tag=geographyFilter}geography_s:\""
+                            + escapeQueryValue(criteria.geography())
+                            + "\""));
+        }
+
+        if (criteria.vintageYear() != null) {
+            params.add("fq=" + encode("{!tag=vintageFilter}vintageYear_i:" + criteria.vintageYear()));
+        }
+
+        if (criteria.contentType() != null) {
+            params.add("fq="
+                    + encode("{!tag=typeFilter}contentType_s:\""
+                            + escapeQueryValue(criteria.contentType().getValue())
+                            + "\""));
         }
 
         return URI.create(baseUrl + "/" + encode(core) + "/select?" + String.join("&", params));

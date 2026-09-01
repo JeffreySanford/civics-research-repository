@@ -40,6 +40,44 @@
 
       <div class="search-lab-filter-grid">
         <label>
+          <span>Exact local ID</span>
+          <input
+            type="text"
+            autocomplete="off"
+            [formControl]="localIdControl"
+          />
+        </label>
+
+        <label>
+          <span>Exact DOI</span>
+          <input
+            type="text"
+            autocomplete="off"
+            placeholder="10.xxxx/identifier"
+            [formControl]="doiControl"
+          />
+        </label>
+
+        <label>
+          <span>Publisher</span>
+          <input
+            type="text"
+            autocomplete="off"
+            [formControl]="publisherControl"
+          />
+        </label>
+
+        <label>
+          <span>Source system</span>
+          <select [formControl]="sourceSystemControl">
+            <option value="">All sources</option>
+            @for (sourceSystem of sourceSystems; track sourceSystem) {
+            <option [value]="sourceSystem">{{ sourceSystem }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
           <span>Geography</span>
           <input
             type="text"

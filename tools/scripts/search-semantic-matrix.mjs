@@ -7,9 +7,9 @@ import { runScaleEvidenceCheck } from './scale-evidence-check.mjs';
 import { runSearchComparisonBenchmark } from './search-comparison-benchmark.mjs';
 
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
-const DEFAULT_MATRIX = 'planning/evidence/SEARCH_SEMANTIC_MATRIX_V1.json';
+const DEFAULT_MATRIX = 'planning/evidence/SEARCH_SEMANTIC_MATRIX_V2.json';
 const DEFAULT_OUTPUT =
-  'browser-evidence-artifacts/search-semantic/c2-search-semantic-v1.json';
+  'browser-evidence-artifacts/search-semantic/c2-search-semantic-v2.json';
 const DEFAULT_WARMUPS = 2;
 const DEFAULT_SAMPLES = 20;
 const EXECUTION_ORDERS = Object.freeze(['SOLR_FIRST', 'OPENSEARCH_FIRST']);
@@ -18,6 +18,7 @@ const SCENARIOS = new Set([
   'FACETED_SEARCH',
   'FILTERING',
 ]);
+const SUPPORTED_MATRIX_VERSIONS = new Set(['1.0.0', '2.0.0']);
 
 function sha256(text) {
   return createHash('sha256').update(text).digest('hex');
@@ -43,11 +44,11 @@ function requireMatrix(matrix) {
   if (!matrix || typeof matrix !== 'object') {
     throw new Error('Semantic matrix must be a JSON object.');
   }
-  if (matrix.schemaVersion !== '1.0.0') {
-    throw new Error('Semantic matrix schemaVersion must be 1.0.0.');
+  if (!SUPPORTED_MATRIX_VERSIONS.has(matrix.schemaVersion)) {
+    throw new Error('Semantic matrix schemaVersion must be 1.0.0 or 2.0.0.');
   }
   if (matrix.profile !== 'FEDERATED_1M') {
-    throw new Error('Semantic matrix v1 is bound to FEDERATED_1M.');
+    throw new Error('Semantic matrices are bound to FEDERATED_1M.');
   }
   if (!Array.isArray(matrix.queries) || matrix.queries.length === 0) {
     throw new Error('Semantic matrix must contain at least one query.');
@@ -129,10 +130,16 @@ function facetMap(engine) {
 function facetSnapshot(engine) {
   const mapped = facetMap(engine);
   return Object.fromEntries(
-    [...mapped.entries()].map(([field, values]) => [
-      field,
-      Object.fromEntries([...values.entries()]),
-    ]),
+    [...mapped.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([field, values]) => [
+        field,
+        Object.fromEntries(
+          [...values.entries()].sort(([left], [right]) =>
+            left.localeCompare(right),
+          ),
+        ),
+      ]),
   );
 }
 
@@ -146,7 +153,7 @@ export function summarizeReturnedResultOverlap(solr, openSearch) {
   const openSearchIds = resultIds(openSearch);
   const solrSet = new Set(solrIds);
   const openSearchSet = new Set(openSearchIds);
-  const shared = [...solrSet].filter((id) => openSearchSet.has(id));
+  const shared = setIntersection([...solrSet], [...openSearchSet]);
   const union = new Set([...solrSet, ...openSearchSet]);
   const exactOrder =
     solrIds.length === openSearchIds.length &&
@@ -330,7 +337,7 @@ function verifyDefinitionExpectations(definition, response) {
   }
 }
 
-function canonicalEngineSignature(engine) {
+export function canonicalEngineSignature(engine) {
   return JSON.stringify({
     totalHits: Number(engine?.totalHits ?? 0),
     resultIds: resultIds(engine),
@@ -524,10 +531,15 @@ export function renderSemanticMatrixMarkdown(result) {
     );
   }
 
-  return `# C2 Search Semantic Matrix — ${result.matrix.id}\n\nCaptured: ${result.capturedAt}\n\n- Profile: \`${result.profile}\`\n- Retained federated records: **${result.retainedFederatedRecordCount.toLocaleString('en-US')}**\n- Projection objects: **${result.projectionObjectCount.toLocaleString('en-US')}**\n- Composition: \`${result.compositionSha256}\`\n- Projection: \`${result.projectionId}\`\n- Matrix SHA-256: \`${result.matrix.sha256}\`\n- Warmups / measured samples per query/order: **${result.warmupRuns} / ${result.measuredRuns}**\n\n| Query | total hits Solr / OpenSearch | top-window Jaccard | max rank Δ | facet bucket Δ | order invariant | Solr API p50/p95/p99 | OpenSearch API p50/p95/p99 |\n| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: |\n${rows.join('\n')}\n\n## Capability gaps recorded by v1\n\n${result.matrix.unsupportedCapabilities.map((item) => `- ${item}`).join('\n')}\n\n${result.methodology}\n`;
+  const capabilityNotes = result.matrix.unsupportedCapabilities.length
+    ? `\n\n## Remaining capability notes\n\n${result.matrix.unsupportedCapabilities.map((item) => `- ${item}`).join('\n')}`
+    : '';
+
+  return `# C2 Search Semantic Matrix — ${result.matrix.id}\n\nCaptured: ${result.capturedAt}\n\n- Profile: \`${result.profile}\`\n- Retained federated records: **${result.retainedFederatedRecordCount.toLocaleString('en-US')}**\n- Projection objects: **${result.projectionObjectCount.toLocaleString('en-US')}**\n- Composition: \`${result.compositionSha256}\`\n- Projection: \`${result.projectionId}\`\n- Matrix SHA-256: \`${result.matrix.sha256}\`\n- Warmups / measured samples per query/order: **${result.warmupRuns} / ${result.measuredRuns}**\n\n| Query | total hits Solr / OpenSearch | top-window Jaccard | max rank Δ | facet bucket Δ | order invariant | Solr API p50/p95/p99 | OpenSearch API p50/p95/p99 |\n| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: |\n${rows.join('\n')}${capabilityNotes}\n\n${result.methodology}\n`;
 }
 
 export function parseArguments(argv) {
+  const args = argv[0] === '--' ? argv.slice(1) : argv;
   const options = {
     baseUrl: DEFAULT_BASE_URL,
     matrixPath: DEFAULT_MATRIX,
@@ -535,12 +547,12 @@ export function parseArguments(argv) {
     warmupRuns: DEFAULT_WARMUPS,
     measuredRuns: DEFAULT_SAMPLES,
   };
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    const value = argv[index + 1];
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    const value = args[index + 1];
     switch (argument) {
       case '--':
-        break;
+        return options;
       case '--base-url':
         options.baseUrl = value;
         index += 1;

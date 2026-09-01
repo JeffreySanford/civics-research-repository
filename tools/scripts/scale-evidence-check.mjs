@@ -5,8 +5,7 @@ import { runResearchScalePreflight } from './research-scale-preflight.mjs';
 
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
 const DEFAULT_PROFILE = 'FEDERATED_1M';
-const DEFAULT_OUTPUT =
-  'browser-evidence-artifacts/scale-evidence/federated-1m-check.json';
+const DEFAULT_OUTPUT_DIRECTORY = 'browser-evidence-artifacts/scale-evidence';
 
 const PROFILE_REQUIREMENTS = Object.freeze({
   FEDERATED_100K: Object.freeze({
@@ -301,17 +300,18 @@ export function renderScaleEvidenceMarkdown(result) {
 }
 
 export function parseArguments(argv) {
+  const args = argv[0] === '--' ? argv.slice(1) : argv;
   const options = {
     baseUrl: DEFAULT_BASE_URL,
     profile: DEFAULT_PROFILE,
-    output: DEFAULT_OUTPUT,
+    output: null,
   };
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    const value = argv[index + 1];
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    const value = args[index + 1];
     switch (argument) {
       case '--':
-        break;
+        return withDefaultOutput(options);
       case '--base-url':
         options.baseUrl = value;
         index += 1;
@@ -328,7 +328,16 @@ export function parseArguments(argv) {
         throw new Error(`Unknown scale evidence argument: ${argument}`);
     }
   }
-  return options;
+  return withDefaultOutput(options);
+}
+
+function withDefaultOutput(options) {
+  return {
+    ...options,
+    output:
+      options.output ??
+      `${DEFAULT_OUTPUT_DIRECTORY}/${options.profile.toLowerCase().replaceAll('_', '-')}-check.json`,
+  };
 }
 
 export async function main(argv = process.argv.slice(2)) {

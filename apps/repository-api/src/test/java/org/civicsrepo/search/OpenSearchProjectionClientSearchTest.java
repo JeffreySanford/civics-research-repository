@@ -11,8 +11,8 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import org.civicsrepo.generated.dto.FacetValue;
 import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,14 +39,18 @@ class OpenSearchProjectionClientSearchTest {
 
     @Test
     void searchUsesDataDrivenProgramAndComparableSelfExcludingAggregations() throws Exception {
-        SearchExecution execution = client.searchWithDiagnostics(
+        SearchExecution execution = client.searchWithDiagnostics(new SearchComparisonCriteria(
                 "reactor materials",
                 List.of("Office of Science"),
+                "Office of Science",
+                SourceSystem.DOE_OSTI,
+                "DOE_OSTI:12345",
+                "10.11578/12345",
                 null,
                 ResearchObjectType.PUBLICATION,
                 null,
                 0,
-                10);
+                10));
 
         assertThat(execution.engineReportedMs()).isEqualTo(11L);
 
@@ -79,10 +83,34 @@ class OpenSearchProjectionClientSearchTest {
                 .isEqualTo("sourceSystem");
 
         String programScope = aggregations.path("program_scope").path("filter").toString();
-        assertThat(programScope).doesNotContain("programName").contains("contentType");
+        assertThat(programScope)
+                .doesNotContain("programName")
+                .contains("publisher.keyword", "sourceSystem", "id", "doi", "contentType");
+
+        String publisherScope = aggregations.path("publisher_scope").path("filter").toString();
+        assertThat(publisherScope)
+                .doesNotContain("publisher.keyword")
+                .contains("sourceSystem", "id", "doi", "contentType");
+
+        String sourceSystemScope = aggregations.path("sourceSystem_scope").path("filter").toString();
+        assertThat(sourceSystemScope)
+                .doesNotContain("sourceSystem")
+                .contains("publisher.keyword", "id", "doi", "contentType");
 
         String postFilter = request.path("post_filter").toString();
-        assertThat(postFilter).contains("programName", "Office of Science", "contentType", "PUBLICATION");
+        assertThat(postFilter)
+                .contains(
+                        "programName",
+                        "Office of Science",
+                        "publisher.keyword",
+                        "sourceSystem",
+                        "DOE_OSTI",
+                        "id",
+                        "DOE_OSTI:12345",
+                        "doi",
+                        "10.11578/12345",
+                        "contentType",
+                        "PUBLICATION");
 
         String query = request.path("query").toString();
         assertThat(query).contains("programName^3");
@@ -92,8 +120,10 @@ class OpenSearchProjectionClientSearchTest {
                 .singleElement()
                 .satisfies((facet) -> assertThat(facet.getValues())
                         .singleElement()
-                        .extracting(FacetValue::getValue)
-                        .isEqualTo("Office of Science"));
+                        .satisfies((value) -> {
+                            assertThat(value.getValue()).isEqualTo("Office of Science");
+                            assertThat(value.getSelected()).isTrue();
+                        }));
         assertThat(execution.response().getFacets())
                 .filteredOn((facet) -> facet.getField().equals("sourceSystem"))
                 .singleElement()
@@ -102,6 +132,7 @@ class OpenSearchProjectionClientSearchTest {
                         .satisfies((value) -> {
                             assertThat(value.getValue()).isEqualTo("DOE_OSTI");
                             assertThat(value.getCount()).isEqualTo(2);
+                            assertThat(value.getSelected()).isTrue();
                         }));
     }
 
