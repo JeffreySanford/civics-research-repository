@@ -84,7 +84,8 @@ class CorpusArchiveServiceTest {
         Path records = tempDir.resolve(created.archiveId()).resolve("federated-records.jsonl.gz");
         Files.write(records, new byte[] {1, 2, 3, 4});
 
-        assertThrows(IllegalStateException.class, () -> service.verify(created.archiveId()));
+        CorpusArchiveService.CorpusArchiveSummary failed = service.verify(created.archiveId());
+        assertEquals(IntegrityStatus.FAILED, failed.integrityStatus());
     }
 
     private CorpusArchiveService service(FederatedMetadataCatalog catalog) {
