@@ -4,33 +4,50 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
  * Encodes backend continuation state into an opaque request-bound cursor.
  *
  * <p>The token is intentionally not an authorization boundary: search filters still govern what a
- * caller can see. The digest detects corruption and casual token editing, while explicit validation
- * binds continuation to the active projection, normalized criteria, page size, sort contract and
- * backend. A stale or incompatible cursor fails instead of silently restarting from page zero.
+ * caller can see. HMAC-SHA256 protects the backend position and request-binding metadata from client
+ * editing, while explicit validation binds continuation to the active projection, normalized
+ * criteria, page size, sort contract and backend. A stale or incompatible cursor fails instead of
+ * silently restarting from page zero.
  */
 @Component
 public class SearchCursorCodec {
     static final int FORMAT_VERSION = 1;
     static final String SORT_VERSION = "relevance-id-v1";
     private static final String TOKEN_PREFIX = "v1";
-    private static final String DIGEST_CONTEXT = "civics-search-cursor-v1\n";
+    private static final String SIGNATURE_CONTEXT = "civics-search-cursor-v1\n";
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final String TEST_SECRET = "test-search-cursor-secret-32-bytes";
 
     private final ObjectMapper objectMapper;
+    private final byte[] signingKey;
 
-    public SearchCursorCodec(ObjectMapper objectMapper) {
+    @Autowired
+    public SearchCursorCodec(
+            ObjectMapper objectMapper,
+            @Value("${civics.search.cursor-secret}") String cursorSecret) {
         this.objectMapper = objectMapper;
+        this.signingKey = requireSecret(cursorSecret).getBytes(StandardCharsets.UTF_8);
+    }
+
+    SearchCursorCodec(ObjectMapper objectMapper) {
+        this(objectMapper, TEST_SECRET);
     }
 
     public String criteriaFingerprint(SearchComparisonCriteria criteria) {
@@ -56,19 +73,23 @@ public class SearchCursorCodec {
             String projectionId,
             String criteriaFingerprint,
             String backend,
+            int page,
             String position) {
+        if (page < 0) {
+            throw new IllegalArgumentException("page must be non-negative");
+        }
         CursorPayload payload = new CursorPayload(
                 FORMAT_VERSION,
                 requireText(projectionId, "projectionId"),
                 requireText(criteriaFingerprint, "criteriaFingerprint"),
                 requireText(backend, "backend"),
+                page,
                 requireText(position, "position"));
         try {
             String encodedPayload = Base64.getUrlEncoder()
                     .withoutPadding()
                     .encodeToString(objectMapper.writeValueAsBytes(payload));
-            String digest = sha256Hex(DIGEST_CONTEXT + encodedPayload);
-            return TOKEN_PREFIX + "." + encodedPayload + "." + digest;
+            return TOKEN_PREFIX + "." + encodedPayload + "." + signature(encodedPayload);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Search cursor payload could not be encoded.", exception);
         }
@@ -85,11 +106,11 @@ public class SearchCursorCodec {
             throw new SearchCursorException("Search cursor format is not supported.");
         }
 
-        String expectedDigest = sha256Hex(DIGEST_CONTEXT + segments[1]);
+        String expectedSignature = signature(segments[1]);
         if (!MessageDigest.isEqual(
-                expectedDigest.getBytes(StandardCharsets.US_ASCII),
+                expectedSignature.getBytes(StandardCharsets.US_ASCII),
                 segments[2].getBytes(StandardCharsets.US_ASCII))) {
-            throw new SearchCursorException("Search cursor integrity check failed.");
+            throw new SearchCursorException("Search cursor signature is not valid.");
         }
 
         CursorPayload payload;
@@ -114,12 +135,27 @@ public class SearchCursorCodec {
         if (!Objects.equals(payload.backend(), requireText(expectedBackend, "expectedBackend"))) {
             throw new SearchCursorException("Search cursor belongs to a different search backend.");
         }
+        if (payload.page() < 0) {
+            throw new SearchCursorException("Search cursor page is not valid.");
+        }
 
         return new SearchCursorState(
                 payload.projectionId(),
                 payload.criteriaFingerprint(),
                 payload.backend(),
+                payload.page(),
                 requireCursorPosition(payload.position()));
+    }
+
+    private String signature(String encodedPayload) {
+        try {
+            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+            mac.init(new SecretKeySpec(signingKey, HMAC_ALGORITHM));
+            return HexFormat.of().formatHex(mac.doFinal(
+                    (SIGNATURE_CONTEXT + encodedPayload).getBytes(StandardCharsets.UTF_8)));
+        } catch (GeneralSecurityException exception) {
+            throw new IllegalStateException("HMAC-SHA256 is not available.", exception);
+        }
     }
 
     private String requireCursorToken(String value) {
@@ -143,6 +179,13 @@ public class SearchCursorCodec {
         return value.trim();
     }
 
+    private String requireSecret(String value) {
+        if (value == null || value.length() < 16) {
+            throw new IllegalArgumentException("civics.search.cursor-secret must contain at least 16 characters");
+        }
+        return value;
+    }
+
     private String text(String value) {
         return value == null ? "" : value;
     }
@@ -161,5 +204,6 @@ public class SearchCursorCodec {
             String projectionId,
             String criteriaFingerprint,
             String backend,
+            int page,
             String position) {}
 }
