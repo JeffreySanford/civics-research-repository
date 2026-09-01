@@ -13,6 +13,7 @@ import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryCursor;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.DiscoveryPage;
 import org.civicsrepo.federation.CombinedDiscoveryCatalog.FederatedDiscoveryPage;
 import org.civicsrepo.federation.CorpusProfile;
+import org.civicsrepo.federation.CorpusProfileActivation;
 import org.civicsrepo.federation.FederatedCompositeCorpusManifest;
 import org.civicsrepo.federation.FederatedCompositeCorpusSource;
 import org.civicsrepo.generated.dto.RepositorySource;
@@ -95,6 +96,70 @@ public class DiscoveryProjectionService {
     /** Source of the data currently searchable, used to label compatibility-level API responses. */
     public RepositorySource currentSource() {
         return state.get().source();
+    }
+
+    /**
+     * Rehydrate runtime projection identity from durable activation evidence without rebuilding
+     * Solr or OpenSearch.
+     *
+     * <p>Every enabled target must be reachable and still report the persisted document count before
+     * the in-memory state is trusted. The projection ID comes from the durable activation because
+     * the target engines do not expose the application projection digest. A mismatch fails fast and
+     * leaves the derived indexes untouched for explicit operator recovery.
+     */
+    public ProjectionState rehydrate(CorpusProfileActivation activation) {
+        Objects.requireNonNull(activation, "activation");
+        int expectedCount = Math.toIntExact(activation.projectionObjectCount());
+        Map<String, ProjectionTargetState> verifiedTargets = new LinkedHashMap<>();
+
+        for (DiscoveryProjectionTarget target : projectionTargets) {
+            if (!target.isEnabled()) {
+                verifiedTargets.put(
+                        target.indexName(),
+                        new ProjectionTargetState(target.indexName(), false, false, null, null, "Target is disabled."));
+                continue;
+            }
+            if (!target.isReachable()) {
+                throw new IllegalStateException(
+                        "Persisted projection target " + target.indexName() + " is not reachable during startup rehydration.");
+            }
+
+            Integer count = target.documentCount()
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Persisted projection target " + target.indexName() + " did not report a document count."));
+            if (count != expectedCount) {
+                throw new IllegalStateException("Persisted projection target "
+                        + target.indexName()
+                        + " document-count mismatch: expected "
+                        + expectedCount
+                        + " but found "
+                        + count
+                        + ".");
+            }
+            verifiedTargets.put(
+                    target.indexName(),
+                    new ProjectionTargetState(
+                            target.indexName(), true, true, activation.projectionId(), count, null));
+        }
+
+        repositoryCatalog.invalidate();
+        boolean repositoryBacked = !repositoryCatalog.findAllDiscoveryDocuments().isEmpty();
+        boolean includesFederated = activation.profile() != CorpusProfile.CURATED_DEMO;
+        boolean federatedBacked = includesFederated && combinedDiscoveryCatalog.retainedFederatedCount() > 0;
+        RepositorySource source = repositoryBacked || federatedBacked
+                ? RepositorySource.REPOSITORY
+                : RepositorySource.FIXTURE;
+
+        ProjectionState rehydrated = new ProjectionState(source, expectedCount, null);
+        state.set(rehydrated);
+        projectionId.set(activation.projectionId());
+        targetStates.set(Map.copyOf(verifiedTargets));
+        LOGGER.info(
+                "Rehydrated persisted discovery profile {} on projection {} with {} objects; search targets were verified but not rebuilt.",
+                activation.profile(),
+                activation.projectionId(),
+                expectedCount);
+        return rehydrated;
     }
 
     /**
