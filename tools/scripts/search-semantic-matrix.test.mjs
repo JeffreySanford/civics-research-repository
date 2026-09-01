@@ -183,7 +183,10 @@ test('canonical engine signatures ignore facet and bucket response ordering', ()
     ],
   });
 
-  assert.equal(canonicalEngineSignature(left), canonicalEngineSignature(right));
+  assert.equal(
+    canonicalEngineSignature(left),
+    canonicalEngineSignature(right),
+  );
 });
 
 test('CLI parser supports bounded timing controls and alternate paths', () => {
@@ -212,14 +215,17 @@ test('CLI parser supports bounded timing controls and alternate paths', () => {
 });
 
 test('CLI stops parsing at an in-band end-of-options marker', () => {
-  assert.deepEqual(parseArguments(['--warmups', '3', '--', 'ignored']), {
-    baseUrl: 'http://localhost:8080/api',
-    matrixPath: 'planning/evidence/SEARCH_SEMANTIC_MATRIX_V2.json',
-    output:
-      'browser-evidence-artifacts/search-semantic/c2-search-semantic-v2.json',
-    warmupRuns: 3,
-    measuredRuns: 20,
-  });
+  assert.deepEqual(
+    parseArguments(['--warmups', '3', '--', 'ignored']),
+    {
+      baseUrl: 'http://localhost:8080/api',
+      matrixPath: 'planning/evidence/SEARCH_SEMANTIC_MATRIX_V2.json',
+      output:
+        'browser-evidence-artifacts/search-semantic/c2-search-semantic-v2.json',
+      warmupRuns: 3,
+      measuredRuns: 20,
+    },
+  );
 });
 
 test('Markdown keeps semantic and timing evidence visibly separate', () => {
