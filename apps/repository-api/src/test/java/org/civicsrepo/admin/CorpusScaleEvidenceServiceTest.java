@@ -89,7 +89,7 @@ class CorpusScaleEvidenceServiceTest {
 
         assertThat(report.valid()).isTrue();
         assertThat(report.violations()).isEmpty();
-        assertThat(report.targetRecordCount()).isEqualTo(1_000_000);
+        assertThat(report.targetFederatedRecordCount()).isEqualTo(1_000_000);
         assertThat(report.retainedFederatedRecordCount()).isEqualTo(1_000_000);
         assertThat(report.currentProjectionObjectCount()).isEqualTo(1_000_181);
         assertThat(report.currentProjectionId()).isEqualTo(PROJECTION_1M_ID);
