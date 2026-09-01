@@ -6,11 +6,11 @@ This document records the durable research milestone established by PR #9 and ha
 
 The first controlled million-record federated corpus uses an exact source recipe:
 
-| Source | Retained records |
-| --- | ---: |
-| Data.gov | 500,000 |
-| DOE OSTI | 500,000 |
-| **Federated total** | **1,000,000** |
+| Source              | Retained records |
+| ------------------- | ---------------: |
+| Data.gov            |          500,000 |
+| DOE OSTI            |          500,000 |
+| **Federated total** |    **1,000,000** |
 
 Curated DSpace objects are intentionally excluded from the federated composition digest and included later in the search projection.
 
@@ -29,12 +29,12 @@ The composition identity answers **which federated source records were retained*
 
 The exact C2 projection was measured on the Docker Compose research topology:
 
-| Component | Measured bytes |
-| --- | ---: |
-| Application PostgreSQL | 2,488,071,859 |
-| DSpace stored data | 1,073,739,747 |
-| Solr index | 805,116,078 |
-| OpenSearch index | 824,051,017 |
+| Component                |    Measured bytes |
+| ------------------------ | ----------------: |
+| Application PostgreSQL   |     2,488,071,859 |
+| DSpace stored data       |     1,073,739,747 |
+| Solr index               |       805,116,078 |
+| OpenSearch index         |       824,051,017 |
 | **Measured local total** | **5,190,978,701** |
 
 The two search engines are parallel derived projections for comparison research. A deployment that selected one engine would not normally pay both derived-index footprints, but production sizing still requires operational headroom, replicas, backups, observability and topology-specific measurement.

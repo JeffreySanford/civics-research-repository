@@ -518,20 +518,22 @@ export async function runResearchScalePreflight({
   let readiness;
   let evidence;
   if (!recipe.composite) {
-    const [baselineEvidence, targetEvidence, harvestStatus] = await Promise.all([
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/corpus/scale/evidence?profile=FEDERATED_100K`,
-      ),
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`,
-      ),
-      fetchJson(
-        fetchImpl,
-        `${root}/admin/federation/harvest/status?sourceSystem=DATA_GOV`,
-      ),
-    ]);
+    const [baselineEvidence, targetEvidence, harvestStatus] = await Promise.all(
+      [
+        fetchJson(
+          fetchImpl,
+          `${root}/admin/corpus/scale/evidence?profile=FEDERATED_100K`,
+        ),
+        fetchJson(
+          fetchImpl,
+          `${root}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`,
+        ),
+        fetchJson(
+          fetchImpl,
+          `${root}/admin/federation/harvest/status?sourceSystem=DATA_GOV`,
+        ),
+      ],
+    );
     readiness = legacyClassify({
       profile,
       storageEstimate,
@@ -663,7 +665,11 @@ export async function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${resolve(process.argv[1]).replace(/\\/g, '/')}`).href) {
+if (
+  process.argv[1] &&
+  import.meta.url ===
+    new URL(`file://${resolve(process.argv[1]).replace(/\\/g, '/')}`).href
+) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;
