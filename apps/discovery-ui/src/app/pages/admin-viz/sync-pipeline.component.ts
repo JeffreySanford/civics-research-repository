@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { AdminCompositeCorpusEvidenceComponent } from '../admin-composite-corpus-evidence.component';
 import { AdminCorpusArchivesComponent } from '../admin-corpus-archives.component';
+import { AdminCorpusIdentitySummaryComponent } from '../admin-corpus-identity-summary.component';
 import { AdminCorpusStorageComponent } from '../admin-corpus-storage.component';
 import { adminFlowStepEnter } from './admin-viz.animations';
 
@@ -16,6 +17,7 @@ export type PipelineStage =
   selector: 'app-admin-sync-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    AdminCorpusIdentitySummaryComponent,
     AdminCorpusStorageComponent,
     AdminCompositeCorpusEvidenceComponent,
     AdminCorpusArchivesComponent,
@@ -52,6 +54,7 @@ export type PipelineStage =
         {{ activeStageLabel() }}.
       </figcaption>
     </figure>
+    <app-admin-corpus-identity-summary />
     <app-admin-corpus-storage />
     <app-admin-composite-corpus-evidence />
     <app-admin-corpus-archives />
@@ -75,18 +78,18 @@ export class AdminSyncPipelineComponent {
     {
       id: 'dspace' as const,
       label: 'DSpace REST',
-      detail: 'Communities, collections, items, and crr metadata.',
+      detail: 'Curated communities, collections, items, and crr metadata.',
     },
     {
       id: 'solr' as const,
       label: 'Search projections',
       detail:
-        'One normalized document set is projected to Solr and OpenSearch.',
+        'One selected normalized corpus is projected to Solr and OpenSearch.',
     },
     {
       id: 'postgres' as const,
       label: 'Postgres civics_ops',
-      detail: 'Sync job history and operational state.',
+      detail: 'Durable federated metadata, evidence, and operational state.',
     },
   ] as const;
 
