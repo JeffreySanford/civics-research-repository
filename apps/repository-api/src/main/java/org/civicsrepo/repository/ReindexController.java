@@ -2,6 +2,7 @@ package org.civicsrepo.repository;
 
 import org.civicsrepo.admin.CorpusProfileActivationProgress;
 import org.civicsrepo.admin.CorpusProfileActivationService;
+import org.civicsrepo.admin.ExactCompositeCorpusActivationService;
 import org.civicsrepo.federation.CorpusProfile;
 import org.civicsrepo.generated.dto.DiscoveryProjectionState;
 import org.civicsrepo.repository.DiscoveryProjectionService.ProjectionState;
@@ -18,8 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>The projection remains reconstructible from authoritative metadata. A requested profile is
  * recorded as active only after every enabled search target completes on the same deterministic
- * projection identity and count. When no profile is supplied, the currently active profile is
- * rebuilt; before any activation has been persisted that defaults to CURATED_DEMO.
+ * projection identity and count. FEDERATED_1M is stricter: it is activated only through the exact
+ * C2 composite evidence path rather than a generic first-million retained prefix. When no profile
+ * is supplied, the currently active profile is rebuilt; before any activation has been persisted
+ * that defaults to CURATED_DEMO.
  *
  * <p>Unauthenticated for the same deliberate local-demo reasons as the sync endpoints; see
  * planning/DECISIONS.md under "Admin API Authentication".
@@ -29,20 +32,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReindexController {
     private final DiscoveryProjectionService discoveryProjectionService;
     private final CorpusProfileActivationService activationService;
+    private final ExactCompositeCorpusActivationService exactCompositeActivationService;
 
     public ReindexController(
             DiscoveryProjectionService discoveryProjectionService,
-            CorpusProfileActivationService activationService) {
+            CorpusProfileActivationService activationService,
+            ExactCompositeCorpusActivationService exactCompositeActivationService) {
         this.discoveryProjectionService = discoveryProjectionService;
         this.activationService = activationService;
+        this.exactCompositeActivationService = exactCompositeActivationService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
     public DiscoveryProjectionState reindex(@RequestParam(required = false) CorpusProfile profile) {
-        ProjectionState projected = profile == null
-                ? activationService.rebuildActiveProfile()
-                : activationService.activate(profile);
+        ProjectionState projected;
+        if (profile == null) {
+            projected = activationService.rebuildActiveProfile();
+        } else if (profile == CorpusProfile.FEDERATED_1M) {
+            projected = exactCompositeActivationService.activate(profile);
+        } else {
+            projected = activationService.activate(profile);
+        }
         return response(projected);
     }
 
