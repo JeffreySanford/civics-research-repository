@@ -30,6 +30,7 @@ import {
   selectSearchResults,
   selectSearchTotalResults,
 } from '../state/search/search.selectors';
+import { ActiveCorpusIdentityComponent } from './active-corpus-identity.component';
 
 const PAGE_SIZE = 25;
 
@@ -37,6 +38,7 @@ const PAGE_SIZE = 25;
   selector: 'app-discovery-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ActiveCorpusIdentityComponent,
     AsyncPipe,
     ReactiveFormsModule,
     MatButtonModule,
