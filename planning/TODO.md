@@ -6,13 +6,6 @@ The repository follows an evidence-first rule: define or extend unit/use-case/co
 
 ## PI-1 — Close reusable federation/search evidence
 
-### Live scale validation
-
-- [ ] Add a non-mutating named-profile checker, conceptually `quality:scale` / `scale:evidence:check`.
-- [ ] For `FEDERATED_1M`, verify exact 500K Data.gov + 500K DOE OSTI composition, retained count, composition -> projection linkage, active projection identity/count, Solr/OpenSearch parity, storage evidence and public-search provenance.
-- [ ] Verify restart-safe persisted activation as part of the live scale check.
-- [ ] Keep 1M/FULL checks explicit/manual or scheduled rather than ordinary PR CI.
-
 ### Stable large-corpus query evidence
 
 - [ ] Version a stable query set covering exact identifier, rare phrase, common multi-term, author, publisher, source, type, date/year, high/low-cardinality facets and empty/broad queries.
@@ -57,7 +50,6 @@ The repository follows an evidence-first rule: define or extend unit/use-case/co
 
 - [ ] Every planned source adapter has a reproducible bounded harvest path and fixture coverage.
 - [ ] Stable corpus/query definitions are versioned for PI-2.
-- [ ] Live scale validation is repeatable from one command rather than a manual curl sequence.
 - [ ] Semantic Solr/OpenSearch difference evidence is versioned alongside latency evidence.
 
 ## PI-2 — Local Kubernetes Search Laboratory
