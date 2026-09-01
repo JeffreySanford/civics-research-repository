@@ -38,13 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: |
-          pnpm exec prettier --write apps/discovery-ui/src/app/pages/maps-page.html
-          echo 'FORMATTED_MAPS_PAGE_BASE64_BEGIN'
-          base64 -w0 apps/discovery-ui/src/app/pages/maps-page.html
-          echo
-          echo 'FORMATTED_MAPS_PAGE_BASE64_END'
-          exit 1
+        run: pnpm exec nx format:check --all
 
       - name: Lint the OpenAPI contract
         run: pnpm run openapi:lint
