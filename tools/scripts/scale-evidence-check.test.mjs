@@ -195,10 +195,13 @@ test('CLI derives a profile-specific output path and accepts a leading package-m
 });
 
 test('CLI stops parsing at an in-band end-of-options marker', () => {
-  assert.deepEqual(parseArguments(['--profile', 'FEDERATED_100K', '--', 'ignored']), {
-    baseUrl: 'http://localhost:8080/api',
-    profile: 'FEDERATED_100K',
-    output:
-      'browser-evidence-artifacts/scale-evidence/federated-100k-check.json',
-  });
+  assert.deepEqual(
+    parseArguments(['--profile', 'FEDERATED_100K', '--', 'ignored']),
+    {
+      baseUrl: 'http://localhost:8080/api',
+      profile: 'FEDERATED_100K',
+      output:
+        'browser-evidence-artifacts/scale-evidence/federated-100k-check.json',
+    },
+  );
 });
