@@ -50,6 +50,14 @@ class JdbcFederatedMetadataCatalogTest {
     }
 
     @Test
+    void coalescesDuplicateIdsWithinOneBatchUsingLastOccurrence() {
+        catalog.upsertBatch(List.of(record("001", "First version"), record("001", "Last version")));
+
+        assertEquals(1, catalog.count());
+        assertEquals("Last version", catalog.findById("DOE_OSTI:001").orElseThrow().title());
+    }
+
+    @Test
     void batchesThousandsOfRecordsAndRemainsIdempotentAcrossBatchBoundaries() {
         List<FederatedResearchRecord> initial = IntStream.range(0, 2_505)
                 .mapToObj(index -> record(String.format("%05d", index), "Initial " + index))
