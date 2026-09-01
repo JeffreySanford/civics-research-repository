@@ -19,17 +19,28 @@ Maps: Research Coverage
 semantic area/feature results
 ```
 
-## UX direction
+## Stable Maps taxonomy
 
-Add a third expandable layer category:
+Maps should be organized by what a reader is trying to understand rather than by publisher:
 
-### Research Coverage
+1. **Geography & Boundaries** — TIGER/Line and shared administrative geometry.
+2. **Community & Economy** — LODES, SAIPE and future population/business/housing measures.
+3. **Environment & Hazards** — USGS hydrography, earthquakes and future terrain context.
+4. **Research Coverage** — where repository/search research objects explicitly say they apply.
 
-Potential child layers:
+Only categories and children with implemented backing capabilities should be shown. Do not keep disabled placeholders in the UI merely to advertise future work.
 
-- Matching research by administrative area — count/summary choropleth;
-- Explicit research footprints — source-supplied point/bbox/polygon coverage;
-- Selected research object — focused footprint/area when navigating from detail.
+A checkbox controls whether a conceptual layer is rendered. Measure/year/industry/time-window/source are parameters inside that layer rather than additional permanent checkboxes.
+
+## Research Coverage children
+
+Potential independently checkable children are:
+
+- **Repository research by area** — count/summary choropleth from explicit curated geography metadata; this is the first implementation candidate because it needs no new external crawl.
+- **Data.gov spatial datasets** — explicit DCAT spatial coverage after sidecar enrichment.
+- **NASA collection coverage** — authoritative collection-level spatial extent.
+- **NASA granule coverage** — bounded viewport/time-filtered granules for selected collections.
+- **Selected research object** — focused footprint/area when navigating from detail.
 
 Each child remains independently checkable and uses the same category/disclosure pattern introduced by the map-layer-categories workstream.
 
@@ -61,11 +72,13 @@ Prefer two bounded API shapes:
 
 The API should report truncation/aggregation behavior explicitly.
 
+A first repository summary can aggregate curated objects by their explicit administrative geography. It should label the value as a **matching research-object count** rather than implying that every record covers every point inside the area.
+
 ## Map rendering
 
 ### Administrative summaries
 
-Render research count/intensity by state/county/other supported area with a textual table containing the same values.
+Render research count/intensity by state/county/other supported area with a textual table containing the same values. Reuse shared authoritative administrative geometry rather than creating geometry inside the research-coverage service.
 
 ### Explicit footprints
 
@@ -85,6 +98,10 @@ Map selection and accessible list/table selection must share application state.
 The cursor/search-after workstream should be reused for associated research-object lists.
 
 Map APIs should use aggregation and viewport bounds rather than deep offset scans. Server caps, truncation metadata and projection identity must be visible in evidence.
+
+For Data.gov, prefer a deterministic availability probe followed by a targeted spatial-enrichment pass using retained raw-harvest references. Do not rewrite the certified 500K corpus merely to add a map sidecar.
+
+For NASA, keep collection and granule semantics separate. Collection coverage can summarize the product's overall extent; granule coverage must be bounded by collection, viewport and/or time before reaching the browser.
 
 ## Accessibility
 
@@ -112,7 +129,9 @@ Required evidence:
 - keyboard category/layer tests;
 - trusted map-click-to-list manual evidence;
 - axe/WCAG 2.2-oriented browser evidence;
-- forced-colors and dark-mode checks.
+- forced-colors and dark-mode checks;
+- proof that category collapse never mutates child rendering state;
+- proof that publisher/institution locations cannot enter Research Coverage through an implicit fallback.
 
 ## Non-goals
 
@@ -122,13 +141,15 @@ This workstream does not:
 - geocode publisher addresses as research coverage;
 - make MapLibre authoritative for spatial state;
 - replace Discovery with a map-first search engine;
-- weaken the accessible HTML equivalent to accommodate canvas behavior.
+- weaken the accessible HTML equivalent to accommodate canvas behavior;
+- create one checkbox per metric/year/filter combination.
 
 ## Exit criteria
 
 1. Discovery criteria can drive a bounded Research Coverage map request.
-2. Administrative summaries and explicit footprints use authoritative spatial evidence.
-3. The browser never receives an unbounded research result set for mapping.
-4. Every meaningful mapped value has a semantic equivalent.
-5. Research Coverage fits the same expandable category model as existing map layers.
-6. Search/list traversal reuses cursor semantics where deep result navigation is needed.
+2. Curated repository geography produces a truthful first administrative-area research summary.
+3. Administrative summaries and explicit footprints use authoritative spatial evidence.
+4. The browser never receives an unbounded research result set for mapping.
+5. Every meaningful mapped value has a semantic equivalent.
+6. Research Coverage fits the same expandable category model as existing map layers.
+7. Search/list traversal reuses cursor semantics where deep result navigation is needed.
