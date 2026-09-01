@@ -91,6 +91,29 @@ If target counts disagree with persisted activation evidence, startup fails fast
 
 `FEDERATED_1M` activation is not defined as merely “any one million retained rows.” The API requires the exact C2 recipe of 500,000 Data.gov plus 500,000 DOE OSTI records and projects the associated composite evidence. A 600,000 / 400,000 split is not equivalent and is rejected.
 
+## Repeatable live certification
+
+With the million-record stack already present, run:
+
+```bash
+pnpm quality:scale
+```
+
+`pnpm scale:evidence:check` is the explicit equivalent. The command is read-only with respect to retained corpus data, activation state, and search indexes. It writes JSON and Markdown evidence under `browser-evidence-artifacts/scale-evidence/` and exits non-zero when the live contract is not satisfied.
+
+For `FEDERATED_1M`, the checker requires all of the following to agree at the same time:
+
+- the research preflight is `READY_TO_MEASURE`;
+- the exact source recipe is 500,000 Data.gov plus 500,000 DOE OSTI;
+- retained federated metadata meets the one-million target;
+- exact composition and composition-to-projection linkage are present;
+- persisted activation profile, projection ID and object count match live runtime state;
+- Solr/OpenSearch target parity is true;
+- storage evidence points to the same projection and retained corpus;
+- public `/search` exposes exactly 500,000 Data.gov and 500,000 DOE OSTI results with `FEDERATED` origin, matching `sourceSystem`, and authoritative source URLs.
+
+The standard `quality:all` command intentionally does **not** invoke this live check. Million-record validation remains an explicit research/operator action rather than an ordinary pull-request prerequisite. `research:full` does invoke `quality:scale` before the ordinary repository quality suite and performance report.
+
 ## Architecture proven at scale
 
 ```text
@@ -111,9 +134,8 @@ The million-record run validates the ownership model already used by the smaller
 
 ## What remains
 
-The next scale work is no longer “prove that one million records can exist.” The remaining work is to make the evidence more reusable and semantically richer:
+The next scale work is no longer “prove that one million records can exist.” The remaining work is to make the evidence semantically richer and operationally broader:
 
-- add a named live `quality:scale` / `scale:evidence:check` command;
 - version a stable large-corpus query matrix;
 - add result-set, top-N, rank and facet-difference evidence;
 - capture reusable projection throughput and host/container/JVM context;
