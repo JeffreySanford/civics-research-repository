@@ -1,11 +1,13 @@
 # Acceptance Criteria
 
-- `Census & Community` contains TIGER/Line, LODES workplace, LODES commuting and SAIPE.
+- `Geography & Boundaries` contains TIGER/Line boundary.
+- `Community & Economy` contains LODES workplace employment, LODES commuting flows and SAIPE county poverty.
 - `Environment & Hazards` contains USGS 3HP hydrography and USGS earthquakes.
 - Every child remains an independent checkbox backed by existing URL/NgRx state.
 - Category expand/collapse never changes a child's checked/rendered state.
-- Category summaries report visible child-layer counts in text.
-- Disclosure summaries and child controls are keyboard accessible.
+- The browser-native disclosure marker remains visible.
+- Summary layout remains usable at narrow widths and in forced colors.
+- Summary metadata does not add multiple `async` subscriptions or timing-dependent visible-count arithmetic.
+- Browser evidence selects visibility groups by stable toggle ID rather than array position.
 - Existing accessible layer lists/tables and MapLibre visibility evidence remain synchronized.
-- Forced-colors, reflow, zoom and tooltip/name/description evidence are not weakened.
-- The structure leaves a clear future insertion point for a `Research Coverage` category.
+- No empty `Research Coverage` category is rendered before its first implemented child exists.
