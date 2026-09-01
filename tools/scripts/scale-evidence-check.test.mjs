@@ -3,8 +3,10 @@ import test from 'node:test';
 
 import { classifyScaleEvidence } from './scale-evidence-check.mjs';
 
-const COMPOSITION = 'e2c7cceb641589715a6390cb35846a67d7361fb15ec00fe3445a3e0036a5524b';
-const PROJECTION = '3d461a9feb49f7239f3f6aaacb0c90f1ff43d0c683238acc2202c841154db44d';
+const COMPOSITION =
+  'e2c7cceb641589715a6390cb35846a67d7361fb15ec00fe3445a3e0036a5524b';
+const PROJECTION =
+  '3d461a9feb49f7239f3f6aaacb0c90f1ff43d0c683238acc2202c841154db44d';
 
 function preflight() {
   return {
@@ -131,9 +133,8 @@ test('rejects persisted activation and runtime projection drift', () => {
     'FAIL',
   );
   assert.equal(
-    result.checks.find(
-      (entry) => entry.id === 'composition-projection-linkage',
-    )?.status,
+    result.checks.find((entry) => entry.id === 'composition-projection-linkage')
+      ?.status,
     'FAIL',
   );
 });

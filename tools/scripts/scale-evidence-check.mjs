@@ -74,7 +74,8 @@ function exactRecipeMatches(progress, requirements) {
     progress.some(
       (actual) =>
         actual?.sourceSystem === required.sourceSystem &&
-        asNumber(actual?.requestedRecordCount) === required.requestedRecordCount &&
+        asNumber(actual?.requestedRecordCount) ===
+          required.requestedRecordCount &&
         (asNumber(actual?.retainedRecordCount) ?? 0) >=
           required.requestedRecordCount,
     ),
@@ -89,7 +90,8 @@ function publicProvenanceCheck(source, response) {
   const sourceMatches = sample?.sourceSystem === source.sourceSystem;
   const originMatches = sample?.origin === 'FEDERATED';
   const sourceUrlPresent =
-    typeof sample?.sourceUrl === 'string' && /^https?:\/\//u.test(sample.sourceUrl);
+    typeof sample?.sourceUrl === 'string' &&
+    /^https?:\/\//u.test(sample.sourceUrl);
   const pass =
     totalResults === expectedTotal &&
     sample != null &&
@@ -204,7 +206,10 @@ export function classifyScaleEvidence({
 
   for (const source of requirements.sources) {
     checks.push(
-      publicProvenanceCheck(source, publicSearchBySource?.[source.sourceSystem]),
+      publicProvenanceCheck(
+        source,
+        publicSearchBySource?.[source.sourceSystem],
+      ),
     );
   }
 
