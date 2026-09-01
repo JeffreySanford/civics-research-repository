@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,7 +107,7 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
         }
 
         OffsetDateTime updatedAt = OffsetDateTime.now();
-        List<PersistedRecord> persistedRecords = records.stream()
+        List<PersistedRecord> persistedRecords = coalesceById(records).stream()
                 .map(record -> new PersistedRecord(
                         record,
                         json(record.authors()),
@@ -122,6 +123,14 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
         if (!inserts.isEmpty()) {
             jdbcTemplate.batchUpdate(INSERT_SQL, inserts, WRITE_BATCH_SIZE, this::bindInsert);
         }
+    }
+
+    private List<FederatedResearchRecord> coalesceById(List<FederatedResearchRecord> records) {
+        Map<String, FederatedResearchRecord> byId = new LinkedHashMap<>();
+        for (FederatedResearchRecord record : records) {
+            byId.put(record.id(), record);
+        }
+        return List.copyOf(byId.values());
     }
 
     private List<PersistedRecord> recordsWithNoUpdate(List<PersistedRecord> records, int[][] updateCounts) {
