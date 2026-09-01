@@ -27,6 +27,45 @@ test.describe('map layer MapLibre visibility', () => {
     await waitForRegisteredMapLayers(page);
   });
 
+  test('layer categories organize controls without owning render state @maps @wcag @section508', async ({
+    page,
+  }) => {
+    const censusCategory = page.getByTestId(
+      'map-layer-category-census-community',
+    );
+    const censusSummary = page.getByTestId(
+      'map-layer-category-census-community-summary',
+    );
+    const environmentCategory = page.getByTestId(
+      'map-layer-category-environment-hazards',
+    );
+
+    await expect(censusSummary).toContainText('Census & Community');
+    await expect(censusSummary).toContainText('0 of 4 visible');
+    await expect(environmentCategory.locator('summary')).toContainText(
+      'Environment & Hazards',
+    );
+    await expect(environmentCategory.locator('summary')).toContainText(
+      '0 of 2 visible',
+    );
+
+    const tiger = page.getByTestId('map-layer-tiger');
+    await tiger.check();
+    await expect(censusSummary).toContainText('1 of 4 visible');
+
+    // Collapse is presentation-only. The checked layer remains selected and rendered, and the
+    // category summary still tells the reader that an active child is inside the closed group.
+    await censusSummary.click();
+    await expect(censusCategory).not.toHaveAttribute('open', '');
+    await expect(censusSummary).toContainText('1 of 4 visible');
+    await expect(tiger).toBeChecked();
+    await expectLayerEvidenceVisible(page, MAP_LAYER_VISIBILITY_GROUPS[0]);
+
+    await censusSummary.click();
+    await expect(censusCategory).toHaveAttribute('open', '');
+    await expect(tiger).toBeVisible();
+  });
+
   for (const group of MAP_LAYER_VISIBILITY_GROUPS) {
     test(`${group.name} toggle syncs legend, URL, and MapLibre visibility @maps`, async ({
       page,
