@@ -142,11 +142,40 @@ export async function expectMapLayersVisibility(
     .toEqual(Object.fromEntries(layerIds.map((id) => [id, expected])));
 }
 
+async function isMapStyleReady(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const container = document.querySelector(
+      '[data-testid="discovery-map-canvas"]',
+    );
+    const map = (
+      container as HTMLElement & {
+        __map?: { isStyleLoaded: () => boolean };
+      }
+    )?.__map;
+
+    return map?.isStyleLoaded() ?? false;
+  });
+}
+
 export async function waitForRegisteredMapLayers(page: Page): Promise<void> {
   await expect(page.getByTestId('discovery-map-canvas')).toBeVisible();
 
+  // MapLibre initializes asynchronously after Angular renders the canvas. Firefox can expose the
+  // canvas several seconds before the dynamically imported MapLibre bundle has parsed its style,
+  // so first wait for the same style-ready boundary the production page uses for overlay setup.
+  await expect
+    .poll(() => isMapStyleReady(page), {
+      timeout: 15_000,
+      message: 'MapLibre style should be ready before checking registered layers',
+    })
+    .toBe(true);
+
+  // Overlay data and style readiness can resolve in either order. Give the render subscriptions a
+  // bounded window to register all layers instead of assuming that work finishes within the
+  // default five-second Playwright poll on every browser.
   await expect
     .poll(async () => readMapLayerVisibility(page, REGISTERED_MAP_LAYER_IDS), {
+      timeout: 15_000,
       message:
         'Registered MapLibre layers should exist but stay hidden by default',
     })
