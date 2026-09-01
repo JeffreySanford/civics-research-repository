@@ -38,7 +38,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: pnpm exec nx format:check --all
+        run: |
+          pnpm exec prettier --write apps/discovery-ui/src/app/pages/maps-page.html
+          git diff -- apps/discovery-ui/src/app/pages/maps-page.html
+          exit 1
 
       - name: Lint the OpenAPI contract
         run: pnpm run openapi:lint
