@@ -60,8 +60,18 @@ public class JdbcFederatedCompositeCorpusManifestStore implements FederatedCompo
     }
 
     @Override
-    public void save(FederatedCompositeCorpusManifest manifest) {
-        int inserted = jdbcClient
+    public synchronized void save(FederatedCompositeCorpusManifest manifest) {
+        Optional<FederatedCompositeCorpusManifest> existing =
+                findByCompositionSha256(manifest.compositionSha256());
+        if (existing.isPresent()) {
+            if (!sameIdentity(existing.orElseThrow(), manifest)) {
+                throw new IllegalStateException(
+                        "Composite corpus SHA-256 is already associated with different composition evidence");
+            }
+            return;
+        }
+
+        jdbcClient
                 .sql(
                         """
                         insert into federated_composite_corpus_manifests (
@@ -71,7 +81,6 @@ public class JdbcFederatedCompositeCorpusManifestStore implements FederatedCompo
                             :compositionSha256, :compositionVersion, :mode, :corpusProfile,
                             :sourcesJson, :federatedRecordCount, :capturedAt
                         )
-                        on conflict (composition_sha256) do nothing
                         """)
                 .param("compositionSha256", manifest.compositionSha256())
                 .param("compositionVersion", manifest.compositionVersion())
@@ -81,17 +90,6 @@ public class JdbcFederatedCompositeCorpusManifestStore implements FederatedCompo
                 .param("federatedRecordCount", manifest.federatedRecordCount())
                 .param("capturedAt", manifest.capturedAt())
                 .update();
-        if (inserted > 0) {
-            return;
-        }
-
-        FederatedCompositeCorpusManifest existing = findByCompositionSha256(manifest.compositionSha256())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Composite corpus SHA-256 conflicted but existing evidence could not be resolved"));
-        if (!sameIdentity(existing, manifest)) {
-            throw new IllegalStateException(
-                    "Composite corpus SHA-256 is already associated with different composition evidence");
-        }
     }
 
     @Override
