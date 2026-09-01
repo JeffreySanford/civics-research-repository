@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 public class SolrSearchClient implements DiscoveryIndex {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final String PHRASE_SYNTAX_CHARACTERS = "\\\"";
+    private static final String CURSOR_SORT = "score desc,id asc";
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -267,15 +268,53 @@ public class SolrSearchClient implements DiscoveryIndex {
 
             String responseBody = response.body();
             return new SearchExecution(
-                    toSearchResponse(
-                            criteria,
-                            responseBody),
+                    toSearchResponse(criteria, responseBody),
                     engineReportedMillis(responseBody));
         } catch (IOException exception) {
             throw new IllegalStateException("Solr search request failed.", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Solr search request was interrupted.", exception);
+        }
+    }
+
+    /**
+     * Executes deterministic forward traversal using Solr cursorMark.
+     *
+     * <p>The normal offset path remains unchanged during migration. Cursor traversal adds a stable
+     * unique-ID tie breaker because Solr requires the unique key in the cursor sort to guarantee
+     * that equal-score documents are neither skipped nor repeated across pages.
+     */
+    public SearchContinuationExecution searchWithContinuation(
+            SearchComparisonCriteria criteria,
+            String cursorMark) {
+        String currentCursorMark = cursorMark == null || cursorMark.isBlank() ? "*" : cursorMark;
+        try {
+            HttpRequest request = HttpRequest.newBuilder(selectUri(criteria, currentCursorMark))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 300) {
+                throw new IllegalStateException("Solr cursor search failed with HTTP " + response.statusCode());
+            }
+
+            String responseBody = response.body();
+            SearchResponse searchResponse = toSearchResponse(criteria, responseBody);
+            String nextCursorMark = nextCursorMark(responseBody);
+            boolean exhausted = searchResponse.getResults().size() < criteria.pageSize()
+                    || nextCursorMark == null
+                    || nextCursorMark.equals(currentCursorMark);
+            return new SearchContinuationExecution(
+                    searchResponse,
+                    engineReportedMillis(responseBody),
+                    exhausted ? null : nextCursorMark);
+        } catch (IOException exception) {
+            throw new IllegalStateException("Solr cursor search request failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Solr cursor search request was interrupted.", exception);
         }
     }
 
@@ -407,6 +446,15 @@ public class SolrSearchClient implements DiscoveryIndex {
         }
     }
 
+    private String nextCursorMark(String responseBody) {
+        try {
+            JsonNode value = objectMapper.readTree(responseBody).path("nextCursorMark");
+            return value.isTextual() && !value.asText().isBlank() ? value.asText() : null;
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Solr cursor response could not be parsed.", exception);
+        }
+    }
+
     private AccessLevel accessLevel(JsonNode document) {
         String value = text(document, "accessLevel_s");
         if (value == null || value.isBlank()) {
@@ -449,6 +497,10 @@ public class SolrSearchClient implements DiscoveryIndex {
     }
 
     private URI selectUri(SearchComparisonCriteria criteria) {
+        return selectUri(criteria, null);
+    }
+
+    private URI selectUri(SearchComparisonCriteria criteria, String cursorMark) {
         List<String> params = new ArrayList<>();
         params.add("wt=json");
         params.add("defType=edismax");
@@ -459,7 +511,12 @@ public class SolrSearchClient implements DiscoveryIndex {
         params.add("pf2=" + encode("title_txt^4 geography_txt^4"));
         params.add("mm=" + encode("2<67%"));
         params.add("q=" + encode(criteria.query().isBlank() ? "*:*" : criteria.query()));
-        params.add("start=" + encode(Integer.toString(criteria.page() * criteria.pageSize())));
+        if (cursorMark == null) {
+            params.add("start=" + encode(Integer.toString(criteria.page() * criteria.pageSize())));
+        } else {
+            params.add("cursorMark=" + encode(cursorMark));
+            params.add("sort=" + encode(CURSOR_SORT));
+        }
         params.add("rows=" + encode(Integer.toString(criteria.pageSize())));
         params.add("facet=true");
         params.add("facet.mincount=1");
