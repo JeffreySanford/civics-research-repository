@@ -11,12 +11,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Activates the quick-start discovery profile after startup sync has populated DSpace.
+ * Ensures discovery has a usable search profile after startup sync has populated DSpace.
  *
- * <p>Ordered behind {@code StartupSyncRunner} so a freshly synchronized curated item is projected
- * in the same boot rather than on the next one. Startup deliberately resets the active search
- * profile to CURATED_DEMO; larger retained federated corpora remain in PostgreSQL until an operator
- * activates another named profile through Admin.
+ * <p>Ordered behind {@code StartupSyncRunner} so a fresh installation can still build the curated
+ * quick-start projection in the same boot. Once an operator has durably activated another corpus
+ * profile, ordinary application restart preserves that activation and leaves the existing derived
+ * search indexes untouched rather than silently replacing them with CURATED_DEMO.
  */
 @Component
 @Order(20)
@@ -41,7 +41,18 @@ public class SearchIndexStartupRunner implements CommandLineRunner {
             return;
         }
 
-        LOGGER.info("Activating CURATED_DEMO as the startup discovery profile.");
+        var persistedActivation = activationService.currentActivation();
+        if (persistedActivation.isPresent()) {
+            var activation = persistedActivation.orElseThrow();
+            LOGGER.info(
+                    "Preserving persisted discovery profile {} on projection {} ({} objects); startup will not rebuild search indexes.",
+                    activation.profile(),
+                    activation.projectionId(),
+                    activation.projectionObjectCount());
+            return;
+        }
+
+        LOGGER.info("No persisted discovery activation exists; activating CURATED_DEMO for quick start.");
         activationService.activate(CorpusProfile.CURATED_DEMO);
     }
 }
