@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  canonicalEngineSignature,
   loadSemanticMatrix,
   parseArguments,
   renderSemanticMatrixMarkdown,
@@ -122,11 +123,11 @@ test('semantic summary distinguishes total-hit, rank, and facet parity', () => {
   assert.equal(drift.facetDifferences.differingBucketCount, 1);
 });
 
-test('versioned v1 matrix binds broad source facets to exact C2 counts', async () => {
+test('versioned v2 matrix closes identifier and structured-filter gaps', async () => {
   const loaded = await loadSemanticMatrix();
-  assert.equal(loaded.matrix.matrixId, 'c2-search-semantic-v1');
+  assert.equal(loaded.matrix.matrixId, 'c2-search-semantic-v2');
   assert.equal(loaded.matrix.profile, 'FEDERATED_1M');
-  assert.equal(loaded.matrix.queries.length, 9);
+  assert.equal(loaded.matrix.queries.length, 13);
   assert.match(loaded.sha256, /^[0-9a-f]{64}$/u);
 
   const broad = loaded.matrix.queries.find(
@@ -137,11 +138,52 @@ test('versioned v1 matrix binds broad source facets to exact C2 counts', async (
     DATA_GOV: 500000,
     DOE_OSTI: 500000,
   });
-  assert.ok(
-    loaded.matrix.unsupportedCapabilities.some((entry) =>
-      entry.includes('Exact local ID and DOI'),
-    ),
+  assert.deepEqual(loaded.matrix.unsupportedCapabilities, []);
+  assert.deepEqual(
+    loaded.matrix.queries.find((entry) => entry.id === 'local-id-exact')
+      .request,
+    {
+      scenario: 'FILTERING',
+      query: '',
+      localId: 'ces-wp-25-23-spatial-mismatch',
+      page: 0,
+      pageSize: 25,
+    },
   );
+  assert.equal(
+    loaded.matrix.queries.find((entry) => entry.id === 'doi-exact').request
+      .doi,
+    '10.3386/w32252',
+  );
+});
+
+test('historical v1 matrix remains runnable by explicit path', async () => {
+  const loaded = await loadSemanticMatrix(
+    'planning/evidence/SEARCH_SEMANTIC_MATRIX_V1.json',
+  );
+
+  assert.equal(loaded.matrix.schemaVersion, '1.0.0');
+  assert.equal(loaded.matrix.matrixId, 'c2-search-semantic-v1');
+  assert.equal(loaded.matrix.queries.length, 9);
+});
+
+test('canonical engine signatures ignore facet and bucket response ordering', () => {
+  const left = engine({
+    ids: ['a'],
+    facets: [
+      facet('sourceSystem', { DOE_OSTI: 2, DATA_GOV: 3 }),
+      facet('publisher', { Census: 1 }),
+    ],
+  });
+  const right = engine({
+    ids: ['a'],
+    facets: [
+      facet('publisher', { Census: 1 }),
+      facet('sourceSystem', { DATA_GOV: 3, DOE_OSTI: 2 }),
+    ],
+  });
+
+  assert.equal(canonicalEngineSignature(left), canonicalEngineSignature(right));
 });
 
 test('CLI parser supports bounded timing controls and alternate paths', () => {
@@ -169,10 +211,21 @@ test('CLI parser supports bounded timing controls and alternate paths', () => {
   );
 });
 
+test('CLI stops parsing at an in-band end-of-options marker', () => {
+  assert.deepEqual(parseArguments(['--warmups', '3', '--', 'ignored']), {
+    baseUrl: 'http://localhost:8080/api',
+    matrixPath: 'planning/evidence/SEARCH_SEMANTIC_MATRIX_V2.json',
+    output:
+      'browser-evidence-artifacts/search-semantic/c2-search-semantic-v2.json',
+    warmupRuns: 3,
+    measuredRuns: 20,
+  });
+});
+
 test('Markdown keeps semantic and timing evidence visibly separate', () => {
   const markdown = renderSemanticMatrixMarkdown({
     matrix: {
-      id: 'c2-search-semantic-v1',
+      id: 'c2-search-semantic-v2',
       sha256: 'a'.repeat(64),
       unsupportedCapabilities: ['identifier lookup gap'],
     },

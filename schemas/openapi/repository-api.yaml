@@ -1558,6 +1558,23 @@ components:
             type: string
             minLength: 1
             maxLength: 200
+        publisher:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Exact publisher facet value from the shared projection.
+        sourceSystem:
+          $ref: '#/components/schemas/SourceSystem'
+        localId:
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: Exact canonical research-object identifier stored in both projections.
+        doi:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Exact DOI value stored in both projections, without a doi.org URL prefix.
         geography:
           type: string
         contentType:

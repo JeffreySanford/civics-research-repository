@@ -71,6 +71,10 @@ interface SearchLabHarness {
   };
   readonly queryControl: { setValue(value: string): void };
   readonly geographyControl: { setValue(value: string): void };
+  readonly publisherControl: { setValue(value: string): void };
+  readonly sourceSystemControl: { setValue(value: 'DOE_OSTI' | ''): void };
+  readonly localIdControl: { setValue(value: string): void };
+  readonly doiControl: { setValue(value: string): void };
   readonly programControl: { setValue(value: 'LODES' | ''): void };
   readonly contentTypeControl: { setValue(value: 'DATASET' | ''): void };
   readonly vintageYearControl: { setValue(value: number | null): void };
@@ -130,6 +134,10 @@ describe('SearchLabPage', () => {
     component.scenarioControl.setValue('FILTERING');
     component.queryControl.setValue('  North Dakota workforce  ');
     component.geographyControl.setValue('  North Dakota  ');
+    component.publisherControl.setValue('  Office of Science  ');
+    component.sourceSystemControl.setValue('DOE_OSTI');
+    component.localIdControl.setValue('  DOE_OSTI:12345  ');
+    component.doiControl.setValue('  10.11578/12345  ');
     component.programControl.setValue('LODES');
     component.contentTypeControl.setValue('DATASET');
     component.vintageYearControl.setValue(2023);
@@ -140,6 +148,10 @@ describe('SearchLabPage', () => {
       scenario: 'FILTERING',
       query: 'North Dakota workforce',
       programs: ['LODES'],
+      publisher: 'Office of Science',
+      sourceSystem: 'DOE_OSTI',
+      localId: 'DOE_OSTI:12345',
+      doi: '10.11578/12345',
       geography: 'North Dakota',
       contentType: 'DATASET',
       vintageYear: 2023,
@@ -205,6 +217,10 @@ describe('SearchLabPage', () => {
     component.scenarioControl.setValue('FULL_TEXT_RELEVANCE');
     component.queryControl.setValue('workforce mobility');
     component.geographyControl.setValue('North Dakota');
+    component.publisherControl.setValue('Office of Science');
+    component.sourceSystemControl.setValue('DOE_OSTI');
+    component.localIdControl.setValue('DOE_OSTI:12345');
+    component.doiControl.setValue('10.11578/12345');
     component.programControl.setValue('LODES');
     component.contentTypeControl.setValue('DATASET');
     component.vintageYearControl.setValue(2023);

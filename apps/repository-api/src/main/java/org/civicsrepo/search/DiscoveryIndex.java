@@ -67,4 +67,24 @@ public interface DiscoveryIndex extends DiscoveryProjectionTarget {
             int pageSize) {
         return new SearchExecution(search(query, programs, geography, contentType, vintageYear, page, pageSize), null);
     }
+
+    /**
+     * Runs the normalized comparison-only filter surface. Implementations participating in the
+     * dual-engine lab must override this method when exact identifiers or mixed-authority filters
+     * are supplied; silently dropping those filters would produce invalid parity evidence.
+     */
+    default SearchExecution searchWithDiagnostics(SearchComparisonCriteria criteria) {
+        if (criteria.hasComparisonOnlyFilters()) {
+            throw new UnsupportedOperationException(
+                    "This discovery index does not implement comparison-only structured filters.");
+        }
+        return searchWithDiagnostics(
+                criteria.query(),
+                criteria.programs(),
+                criteria.geography(),
+                criteria.contentType(),
+                criteria.vintageYear(),
+                criteria.page(),
+                criteria.pageSize());
+    }
 }

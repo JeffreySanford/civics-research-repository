@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.civicsrepo.generated.dto.FacetGroup;
 import org.civicsrepo.generated.dto.RepositorySource;
-import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.SearchComparisonEngine;
 import org.civicsrepo.generated.dto.SearchComparisonProjection;
 import org.civicsrepo.generated.dto.SearchComparisonRequest;
@@ -52,7 +51,7 @@ public class SearchComparisonService {
                 new SearchComparisonScenario(
                         SearchComparisonScenarioId.FILTERING,
                         "Filtering",
-                        "Compare data-driven program, geography, research-object type and vintage filters while preserving self-excluding facets."));
+                        "Compare exact identifiers plus publisher, source, program, geography, research-object type and vintage filters while preserving self-excluding facets."));
     }
 
     public SearchComparisonResponse run(SearchComparisonRequest request) {
@@ -62,30 +61,27 @@ public class SearchComparisonService {
     public SearchComparisonResponse run(SearchComparisonRequest request, SearchComparisonExecutionOrder executionOrder) {
         SearchComparisonScenarioId scenario = Objects.requireNonNull(request.getScenario(), "scenario is required");
         SearchComparisonExecutionOrder order = Objects.requireNonNull(executionOrder, "executionOrder is required");
-        String query = request.getQuery() == null ? "" : request.getQuery();
-        List<String> programs = request.getPrograms() == null ? List.of() : request.getPrograms();
-        String geography = request.getGeography();
-        ResearchObjectType contentType = request.getContentType();
-        Integer vintageYear = request.getVintageYear();
-        int page = Math.max(0, request.getPage() == null ? 0 : request.getPage());
-        int pageSize = Math.max(
-                1,
-                Math.min(
-                        100,
-                        request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize()));
+        SearchComparisonCriteria criteria = new SearchComparisonCriteria(
+                request.getQuery(),
+                request.getPrograms(),
+                request.getPublisher(),
+                request.getSourceSystem(),
+                request.getLocalId(),
+                request.getDoi(),
+                request.getGeography(),
+                request.getContentType(),
+                request.getVintageYear(),
+                request.getPage() == null ? 0 : request.getPage(),
+                request.getPageSize() == null ? DEFAULT_PAGE_SIZE : request.getPageSize());
 
         SearchEngineComparison solrResult;
         SearchEngineComparison openSearchResult;
         if (order == SearchComparisonExecutionOrder.OPENSEARCH_FIRST) {
-            openSearchResult = runOpenSearch(
-                    query, programs, geography, contentType, vintageYear, page, pageSize);
-            solrResult = runSolr(
-                    query, programs, geography, contentType, vintageYear, page, pageSize);
+            openSearchResult = runOpenSearch(criteria);
+            solrResult = runSolr(criteria);
         } else {
-            solrResult = runSolr(
-                    query, programs, geography, contentType, vintageYear, page, pageSize);
-            openSearchResult = runOpenSearch(
-                    query, programs, geography, contentType, vintageYear, page, pageSize);
+            solrResult = runSolr(criteria);
+            openSearchResult = runOpenSearch(criteria);
         }
 
         ProjectionState projection = projectionService.state();
@@ -106,14 +102,7 @@ public class SearchComparisonService {
                 openSearchResult);
     }
 
-    private SearchEngineComparison runSolr(
-            String query,
-            List<String> programs,
-            String geography,
-            ResearchObjectType contentType,
-            Integer vintageYear,
-            int page,
-            int pageSize) {
+    private SearchEngineComparison runSolr(SearchComparisonCriteria criteria) {
         boolean enabled = solr.isEnabled();
         Optional<Integer> indexedCount = enabled ? solr.documentCount() : Optional.empty();
         boolean reachable = enabled && indexedCount.isPresent();
@@ -129,8 +118,7 @@ public class SearchComparisonService {
 
         long started = System.nanoTime();
         try {
-            SearchExecution execution =
-                    solr.searchWithDiagnostics(query, programs, geography, contentType, vintageYear, page, pageSize);
+            SearchExecution execution = solr.searchWithDiagnostics(criteria);
             long elapsedMs = elapsedMillis(started);
             return completed(
                     SearchComparisonEngine.SOLR,
@@ -152,14 +140,7 @@ public class SearchComparisonService {
         }
     }
 
-    private SearchEngineComparison runOpenSearch(
-            String query,
-            List<String> programs,
-            String geography,
-            ResearchObjectType contentType,
-            Integer vintageYear,
-            int page,
-            int pageSize) {
+    private SearchEngineComparison runOpenSearch(SearchComparisonCriteria criteria) {
         boolean enabled = openSearch.isEnabled();
         Optional<Integer> indexedCount = enabled ? openSearch.documentCount() : Optional.empty();
         boolean reachable = enabled && indexedCount.isPresent();
@@ -175,8 +156,7 @@ public class SearchComparisonService {
 
         long started = System.nanoTime();
         try {
-            SearchExecution execution = openSearch.searchWithDiagnostics(
-                    query, programs, geography, contentType, vintageYear, page, pageSize);
+            SearchExecution execution = openSearch.searchWithDiagnostics(criteria);
             long elapsedMs = elapsedMillis(started);
             return completed(
                     SearchComparisonEngine.OPENSEARCH,

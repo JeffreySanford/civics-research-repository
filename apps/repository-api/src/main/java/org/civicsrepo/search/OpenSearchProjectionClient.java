@@ -209,14 +209,26 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             Integer vintageYear,
             int page,
             int pageSize) {
+        return searchWithDiagnostics(new SearchComparisonCriteria(
+                query,
+                programs,
+                null,
+                null,
+                null,
+                null,
+                geography,
+                contentType,
+                vintageYear,
+                page,
+                pageSize));
+    }
+
+    public SearchExecution searchWithDiagnostics(SearchComparisonCriteria criteria) {
         if (!isEnabled()) {
             throw new IllegalStateException("OpenSearch comparison is disabled.");
         }
 
-        int safePage = Math.max(0, page);
-        int safePageSize = Math.max(1, Math.min(pageSize, 100));
-        Map<String, Object> requestBody = searchRequest(
-                query, programs, geography, contentType, vintageYear, safePage, safePageSize);
+        Map<String, Object> requestBody = searchRequest(criteria);
 
         try {
             HttpRequest request = HttpRequest.newBuilder(indexUri(index, "/_search"))
@@ -231,13 +243,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             String responseBody = response.body();
             return new SearchExecution(
                     toSearchResponse(
-                            query,
-                            programs,
-                            geography,
-                            contentType,
-                            vintageYear,
-                            safePage,
-                            safePageSize,
+                            criteria,
                             responseBody),
                     engineReportedMillis(responseBody));
         } catch (IOException exception) {
@@ -248,21 +254,14 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
     }
 
-    private Map<String, Object> searchRequest(
-            String query,
-            List<String> programs,
-            String geography,
-            ResearchObjectType contentType,
-            Integer vintageYear,
-            int page,
-            int pageSize) {
+    private Map<String, Object> searchRequest(SearchComparisonCriteria criteria) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("from", page * pageSize);
-        body.put("size", pageSize);
+        body.put("from", criteria.page() * criteria.pageSize());
+        body.put("size", criteria.pageSize());
         body.put("track_total_hits", true);
-        body.put("query", queryClause(query));
+        body.put("query", queryClause(criteria.query()));
 
-        List<Map<String, Object>> allFilters = filterClauses(programs, geography, contentType, vintageYear, null);
+        List<Map<String, Object>> allFilters = filterClauses(criteria, null);
         if (!allFilters.isEmpty()) {
             body.put("post_filter", Map.of("bool", Map.of("filter", allFilters)));
         }
@@ -272,37 +271,37 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                 "program_scope",
                 scopedTermsAggregation(
                         "programName",
-                        filterClauses(programs, geography, contentType, vintageYear, "programName"),
+                        filterClauses(criteria, "programName"),
                         100));
         aggregations.put(
                 "publisher_scope",
                 scopedTermsAggregation(
                         "publisher",
-                        filterClauses(programs, geography, contentType, vintageYear, null),
+                        filterClauses(criteria, "publisher"),
                         100));
         aggregations.put(
                 "sourceSystem_scope",
                 scopedTermsAggregation(
                         "sourceSystem",
-                        filterClauses(programs, geography, contentType, vintageYear, null),
+                        filterClauses(criteria, "sourceSystem"),
                         25));
         aggregations.put(
                 "geography_scope",
                 scopedTermsAggregation(
                         "geography",
-                        filterClauses(programs, geography, contentType, vintageYear, "geography"),
+                        filterClauses(criteria, "geography"),
                         100));
         aggregations.put(
                 "contentType_scope",
                 scopedTermsAggregation(
                         "contentType",
-                        filterClauses(programs, geography, contentType, vintageYear, "contentType"),
+                        filterClauses(criteria, "contentType"),
                         25));
         aggregations.put(
                 "vintageYear_scope",
                 scopedTermsAggregation(
                         "vintageYear",
-                        filterClauses(programs, geography, contentType, vintageYear, "vintageYear"),
+                        filterClauses(criteria, "vintageYear"),
                         50));
         body.put("aggs", aggregations);
         return body;
@@ -338,30 +337,32 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
     }
 
     private List<Map<String, Object>> filterClauses(
-            List<String> programs,
-            String geography,
-            ResearchObjectType contentType,
-            Integer vintageYear,
-            String excludedField) {
+            SearchComparisonCriteria criteria, String excludedField) {
         List<Map<String, Object>> filters = new ArrayList<>();
 
-        if (!"programName".equals(excludedField) && programs != null && !programs.isEmpty()) {
-            List<String> selectedPrograms = programs.stream()
-                    .filter((program) -> program != null && !program.isBlank())
-                    .map(String::trim)
-                    .toList();
-            if (!selectedPrograms.isEmpty()) {
-                filters.add(Map.of("terms", Map.of("programName", selectedPrograms)));
-            }
+        if (!"programName".equals(excludedField) && !criteria.programs().isEmpty()) {
+            filters.add(Map.of("terms", Map.of("programName", criteria.programs())));
         }
-        if (!"geography".equals(excludedField) && !normalize(geography).isBlank()) {
-            filters.add(Map.of("term", Map.of("geography.keyword", geography)));
+        if (!"publisher".equals(excludedField) && criteria.publisher() != null) {
+            filters.add(Map.of("term", Map.of("publisher.keyword", criteria.publisher())));
         }
-        if (!"contentType".equals(excludedField) && contentType != null) {
-            filters.add(Map.of("term", Map.of("contentType", contentType.getValue())));
+        if (!"sourceSystem".equals(excludedField) && criteria.sourceSystem() != null) {
+            filters.add(Map.of("term", Map.of("sourceSystem", criteria.sourceSystem().getValue())));
         }
-        if (!"vintageYear".equals(excludedField) && vintageYear != null) {
-            filters.add(Map.of("term", Map.of("vintageYear", vintageYear)));
+        if (criteria.localId() != null) {
+            filters.add(Map.of("term", Map.of("id", criteria.localId())));
+        }
+        if (criteria.doi() != null) {
+            filters.add(Map.of("term", Map.of("doi", criteria.doi())));
+        }
+        if (!"geography".equals(excludedField) && criteria.geography() != null) {
+            filters.add(Map.of("term", Map.of("geography.keyword", criteria.geography())));
+        }
+        if (!"contentType".equals(excludedField) && criteria.contentType() != null) {
+            filters.add(Map.of("term", Map.of("contentType", criteria.contentType().getValue())));
+        }
+        if (!"vintageYear".equals(excludedField) && criteria.vintageYear() != null) {
+            filters.add(Map.of("term", Map.of("vintageYear", criteria.vintageYear())));
         }
 
         return filters;
@@ -388,13 +389,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
     }
 
     private SearchResponse toSearchResponse(
-            String query,
-            List<String> selectedPrograms,
-            String selectedGeography,
-            ResearchObjectType selectedContentType,
-            Integer selectedVintageYear,
-            int page,
-            int pageSize,
+            SearchComparisonCriteria criteria,
             String responseBody)
             throws IOException {
         JsonNode root = objectMapper.readTree(responseBody);
@@ -418,15 +413,13 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
 
         int totalResults = Math.toIntExact(root.path("hits").path("total").path("value").asLong(0));
-        Set<String> programs = selectedPrograms == null
-                ? Set.of()
-                : selectedPrograms.stream().map(this::normalize).collect(Collectors.toSet());
+        Set<String> programs = criteria.programs().stream().map(this::normalize).collect(Collectors.toSet());
 
         return new SearchResponse(
                 RepositorySource.FIXTURE,
-                query == null ? "" : query,
-                page,
-                pageSize,
+                criteria.query(),
+                criteria.page(),
+                criteria.pageSize(),
                 totalResults,
                 results,
                 List.of(
@@ -439,7 +432,9 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                 "publisher",
                                 "Publisher",
                                 root.path("aggregations").path("publisher_scope").path("values").path("buckets"),
-                                Set.of()),
+                                criteria.publisher() == null
+                                        ? Set.of()
+                                        : Set.of(normalize(criteria.publisher()))),
                         facetGroup(
                                 "sourceSystem",
                                 "Source",
@@ -447,14 +442,16 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                         .path("sourceSystem_scope")
                                         .path("values")
                                         .path("buckets"),
-                                Set.of()),
+                                criteria.sourceSystem() == null
+                                        ? Set.of()
+                                        : Set.of(normalize(criteria.sourceSystem().getValue()))),
                         facetGroup(
                                 "geography",
                                 "Geography",
                                 root.path("aggregations").path("geography_scope").path("values").path("buckets"),
-                                normalize(selectedGeography).isBlank()
+                                criteria.geography() == null
                                         ? Set.of()
-                                        : Set.of(normalize(selectedGeography))),
+                                        : Set.of(normalize(criteria.geography()))),
                         facetGroup(
                                 "type",
                                 "Type",
@@ -462,16 +459,16 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                                         .path("contentType_scope")
                                         .path("values")
                                         .path("buckets"),
-                                selectedContentType == null
+                                criteria.contentType() == null
                                         ? Set.of()
-                                        : Set.of(normalize(selectedContentType.getValue()))),
+                                        : Set.of(normalize(criteria.contentType().getValue()))),
                         facetGroup(
                                 "vintageYear",
                                 "Year",
                                 root.path("aggregations").path("vintageYear_scope").path("values").path("buckets"),
-                                selectedVintageYear == null
+                                criteria.vintageYear() == null
                                         ? Set.of()
-                                        : Set.of(normalize(String.valueOf(selectedVintageYear))))));
+                                        : Set.of(normalize(String.valueOf(criteria.vintageYear()))))));
     }
 
     private Long engineReportedMillis(String responseBody) throws IOException {

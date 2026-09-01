@@ -10,7 +10,8 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import org.civicsrepo.generated.dto.FacetValue;
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.SourceSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,18 @@ class SolrSearchClientFacetTest {
 
     @Test
     void returnsPublisherAndSourceSystemFacetsFromIndexedFields() {
-        SearchExecution execution = client.searchWithDiagnostics("", List.of(), null, null, null, 0, 10);
+        SearchExecution execution = client.searchWithDiagnostics(new SearchComparisonCriteria(
+                "",
+                List.of("Office of Science"),
+                "Office of Science",
+                SourceSystem.DOE_OSTI,
+                "DOE_OSTI:12345",
+                "10.11578/12345",
+                null,
+                ResearchObjectType.PUBLICATION,
+                null,
+                0,
+                10));
 
         assertThat(execution.engineReportedMs()).isEqualTo(7L);
         assertThat(execution.response().getFacets())
@@ -47,19 +59,27 @@ class SolrSearchClientFacetTest {
                         .satisfies((value) -> {
                             assertThat(value.getValue()).isEqualTo("Office of Science");
                             assertThat(value.getCount()).isEqualTo(2);
+                            assertThat(value.getSelected()).isTrue();
                         }));
         assertThat(execution.response().getFacets())
                 .filteredOn((facet) -> facet.getField().equals("sourceSystem"))
                 .singleElement()
                 .satisfies((facet) -> assertThat(facet.getValues())
-                        .extracting(FacetValue::getValue)
-                        .containsExactly("DOE_OSTI"));
+                        .singleElement()
+                        .satisfies((value) -> {
+                            assertThat(value.getValue()).isEqualTo("DOE_OSTI");
+                            assertThat(value.getSelected()).isTrue();
+                        }));
 
         String decodedQuery = URLDecoder.decode(requestQuery.get(), StandardCharsets.UTF_8);
         assertThat(decodedQuery)
                 .contains(
                         "facet.field={!ex=publisherFilter}publisher_s",
-                        "facet.field={!ex=sourceSystemFilter}sourceSystem_s");
+                        "facet.field={!ex=sourceSystemFilter}sourceSystem_s",
+                        "fq={!tag=publisherFilter}publisher_s:\"Office of Science\"",
+                        "fq={!tag=sourceSystemFilter}sourceSystem_s:\"DOE_OSTI\"",
+                        "fq=id:\"DOE_OSTI:12345\"",
+                        "fq=doi_s:\"10.11578/12345\"");
     }
 
     private void handleSearch(HttpExchange exchange) throws IOException {

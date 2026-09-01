@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { classifyScaleEvidence } from './scale-evidence-check.mjs';
+import {
+  classifyScaleEvidence,
+  parseArguments,
+} from './scale-evidence-check.mjs';
 
 const COMPOSITION =
   'e2c7cceb641589715a6390cb35846a67d7361fb15ec00fe3445a3e0036a5524b';
@@ -180,4 +183,22 @@ test('rejects public source totals that do not match the exact projected recipe'
     )?.status,
     'FAIL',
   );
+});
+
+test('CLI derives a profile-specific output path and accepts a leading package-manager separator', () => {
+  assert.deepEqual(parseArguments(['--', '--profile', 'FEDERATED_100K']), {
+    baseUrl: 'http://localhost:8080/api',
+    profile: 'FEDERATED_100K',
+    output:
+      'browser-evidence-artifacts/scale-evidence/federated-100k-check.json',
+  });
+});
+
+test('CLI stops parsing at an in-band end-of-options marker', () => {
+  assert.deepEqual(parseArguments(['--profile', 'FEDERATED_100K', '--', 'ignored']), {
+    baseUrl: 'http://localhost:8080/api',
+    profile: 'FEDERATED_100K',
+    output:
+      'browser-evidence-artifacts/scale-evidence/federated-100k-check.json',
+  });
 });

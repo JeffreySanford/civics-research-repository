@@ -84,7 +84,7 @@
     "research:preflight:100k": "node tools/scripts/research-scale-preflight-cli.mjs --profile FEDERATED_100K",
     "research:preflight:1m": "pnpm run research:preflight",
     "research:semantic": "node tools/scripts/search-semantic-matrix.mjs",
-    "research:semantic:smoke": "pnpm run research:semantic -- --warmups 0 --samples 1",
+    "research:semantic:smoke": "node tools/scripts/search-semantic-matrix.mjs --warmups 0 --samples 1",
     "research:report": "node tools/scripts/research-performance-report.mjs --profile FEDERATED_1M",
     "research:report:100k": "node tools/scripts/research-performance-report.mjs --profile FEDERATED_100K",
     "research:report:1m": "pnpm run research:report",

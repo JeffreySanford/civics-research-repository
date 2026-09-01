@@ -890,6 +890,13 @@ export interface components {
       /** @default  */
       query: string;
       programs?: string[];
+      /** @description Exact publisher facet value from the shared projection. */
+      publisher?: string;
+      sourceSystem?: components['schemas']['SourceSystem'];
+      /** @description Exact canonical research-object identifier stored in both projections. */
+      localId?: string;
+      /** @description Exact DOI value stored in both projections, without a doi.org URL prefix. */
+      doi?: string;
       geography?: string;
       contentType?: components['schemas']['ResearchObjectType'];
       /** Format: int32 */
