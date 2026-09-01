@@ -261,7 +261,10 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
     @Override
     @Transactional
     public void deleteAll() {
-        jdbcClient.sql("delete from federated_research_objects").update();
+        // Archive replacement is a whole-corpus operation. TRUNCATE preserves transactional rollback
+        // semantics in PostgreSQL/H2 while releasing the old table pages immediately, so a restored
+        // smaller corpus does not inherit the storage footprint of the larger corpus it replaced.
+        jdbcClient.sql("truncate table federated_research_objects").update();
     }
 
     private FederatedResearchRecord mapRecord(ResultSet resultSet, int rowNumber) throws SQLException {
