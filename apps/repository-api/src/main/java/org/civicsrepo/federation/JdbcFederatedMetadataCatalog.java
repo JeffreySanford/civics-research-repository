@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,7 +107,7 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
         }
 
         OffsetDateTime updatedAt = OffsetDateTime.now();
-        List<PersistedRecord> persistedRecords = records.stream()
+        List<PersistedRecord> persistedRecords = coalesceById(records).stream()
                 .map(record -> new PersistedRecord(
                         record,
                         json(record.authors()),
@@ -122,6 +123,14 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
         if (!inserts.isEmpty()) {
             jdbcTemplate.batchUpdate(INSERT_SQL, inserts, WRITE_BATCH_SIZE, this::bindInsert);
         }
+    }
+
+    private List<FederatedResearchRecord> coalesceById(List<FederatedResearchRecord> records) {
+        Map<String, FederatedResearchRecord> byId = new LinkedHashMap<>();
+        for (FederatedResearchRecord record : records) {
+            byId.put(record.id(), record);
+        }
+        return List.copyOf(byId.values());
     }
 
     private List<PersistedRecord> recordsWithNoUpdate(List<PersistedRecord> records, int[][] updateCounts) {
@@ -216,6 +225,26 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
     }
 
     @Override
+    public List<FederatedResearchRecord> findSourceAfterId(
+            FederatedSourceSystem sourceSystem, String afterId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 10_000));
+        String cursor = afterId == null || afterId.isBlank() ? sourceSystem.name() + ":" : afterId;
+        return jdbcClient
+                .sql(
+                        """
+                        select * from federated_research_objects
+                        where source_system = :sourceSystem and id > :afterId
+                        order by id
+                        limit :limit
+                        """)
+                .param("sourceSystem", sourceSystem.name())
+                .param("afterId", cursor)
+                .param("limit", safeLimit)
+                .query(this::mapRecord)
+                .list();
+    }
+
+    @Override
     public long count() {
         return jdbcClient.sql("select count(*) from federated_research_objects").query(Long.class).single();
     }
@@ -227,6 +256,15 @@ public class JdbcFederatedMetadataCatalog implements FederatedMetadataCatalog {
                 .param("sourceSystem", sourceSystem.name())
                 .query(Long.class)
                 .single();
+    }
+
+    @Override
+    @Transactional
+    public void deleteAll() {
+        // Archive replacement is a whole-corpus operation. TRUNCATE preserves transactional rollback
+        // semantics in PostgreSQL/H2 while releasing the old table pages immediately, so a restored
+        // smaller corpus does not inherit the storage footprint of the larger corpus it replaced.
+        jdbcClient.sql("truncate table federated_research_objects").update();
     }
 
     private FederatedResearchRecord mapRecord(ResultSet resultSet, int rowNumber) throws SQLException {

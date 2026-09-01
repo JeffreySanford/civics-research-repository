@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { AdminCompositeCorpusEvidenceComponent } from '../admin-composite-corpus-evidence.component';
+import { AdminCorpusArchivesComponent } from '../admin-corpus-archives.component';
 import { AdminCorpusStorageComponent } from '../admin-corpus-storage.component';
 import { adminFlowStepEnter } from './admin-viz.animations';
 
@@ -14,7 +15,11 @@ export type PipelineStage =
 @Component({
   selector: 'app-admin-sync-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AdminCorpusStorageComponent, AdminCompositeCorpusEvidenceComponent],
+  imports: [
+    AdminCorpusStorageComponent,
+    AdminCompositeCorpusEvidenceComponent,
+    AdminCorpusArchivesComponent,
+  ],
   animations: [adminFlowStepEnter],
   template: `
     <figure class="admin-viz-pipeline">
@@ -49,6 +54,7 @@ export type PipelineStage =
     </figure>
     <app-admin-corpus-storage />
     <app-admin-composite-corpus-evidence />
+    <app-admin-corpus-archives />
   `,
   styleUrl: './admin-viz.scss',
 })

@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class CorpusScaleEvidenceService {
     private static final FederatedSourceSystem SCALE_SOURCE = FederatedSourceSystem.DATA_GOV;
+    private static final long FEDERATED_1M_DATA_GOV_QUOTA = 500_000L;
+    private static final long FEDERATED_1M_OSTI_QUOTA = 500_000L;
 
     private final FederatedMetadataCatalog metadataCatalog;
     private final CorpusProfileActivationService activationService;
@@ -45,7 +47,7 @@ public class CorpusScaleEvidenceService {
         Long target = profile.targetRecordCount().isPresent()
                 ? profile.targetRecordCount().getAsLong()
                 : null;
-        long retained = metadataCatalog.count(SCALE_SOURCE);
+        long retained = retainedTowardProfile(profile, target, violations);
         CorpusProfile activeProfile = activationService.currentProfile();
         Optional<CorpusProfileActivation> activation = activationService.currentActivation();
         ProjectionState projection = projectionService.state();
@@ -53,9 +55,6 @@ public class CorpusScaleEvidenceService {
         Optional<CorpusStorageMeasurement> storage = measurementStore.findRecentByProfile(profile, 1).stream()
                 .findFirst();
 
-        if (target != null && retained < target) {
-            violations.add("Retained Data.gov metadata is below the profile target: " + retained + " < " + target + ".");
-        }
         if (activeProfile != profile) {
             violations.add("Requested profile is not active; active profile is " + activeProfile + ".");
         }
@@ -114,6 +113,29 @@ public class CorpusScaleEvidenceService {
                 storageEvidence == null ? null : storageEvidence.projectionId(),
                 storageEvidence == null ? null : storageEvidence.capturedAt(),
                 violations);
+    }
+
+    private long retainedTowardProfile(CorpusProfile profile, Long target, List<String> violations) {
+        long dataGovRetained = metadataCatalog.count(FederatedSourceSystem.DATA_GOV);
+        if (profile == CorpusProfile.FEDERATED_1M) {
+            long ostiRetained = metadataCatalog.count(FederatedSourceSystem.DOE_OSTI);
+            if (dataGovRetained < FEDERATED_1M_DATA_GOV_QUOTA) {
+                violations.add("Retained Data.gov metadata is below the FEDERATED_1M source quota: "
+                        + dataGovRetained + " < " + FEDERATED_1M_DATA_GOV_QUOTA + ".");
+            }
+            if (ostiRetained < FEDERATED_1M_OSTI_QUOTA) {
+                violations.add("Retained DOE OSTI metadata is below the FEDERATED_1M source quota: "
+                        + ostiRetained + " < " + FEDERATED_1M_OSTI_QUOTA + ".");
+            }
+            return Math.min(dataGovRetained, FEDERATED_1M_DATA_GOV_QUOTA)
+                    + Math.min(ostiRetained, FEDERATED_1M_OSTI_QUOTA);
+        }
+
+        if (target != null && dataGovRetained < target) {
+            violations.add("Retained Data.gov metadata is below the profile target: "
+                    + dataGovRetained + " < " + target + ".");
+        }
+        return target == null ? dataGovRetained : Math.min(dataGovRetained, target);
     }
 
     private boolean targetParity(

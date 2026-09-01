@@ -3,4 +3,5 @@ export * from './lib/repository-error';
 export * from './lib/search-comparison-api';
 export * from './lib/corpus-storage-api';
 export * from './lib/composite-corpus-api';
+export * from './lib/corpus-archive-api';
 export type * from './generated/repository-api.types';

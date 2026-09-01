@@ -30,11 +30,14 @@ public class FederationSnapshotAdminController {
         this.manifestStore = manifestStore;
     }
 
-    /** Persist the current retained source state for a PAUSED or COMPLETED harvest run. */
+    /** Persist the current retained source state, optionally bounded to an exact stable-ID prefix. */
     @PostMapping("/runs/{runId}")
-    public FederatedBoundedSnapshotManifest capture(@PathVariable String runId) {
+    public FederatedBoundedSnapshotManifest capture(
+            @PathVariable String runId, @RequestParam(required = false) Long recordLimit) {
         try {
-            return captureService.capture(runId);
+            return recordLimit == null
+                    ? captureService.capture(runId)
+                    : captureService.capture(runId, recordLimit);
         } catch (IllegalArgumentException | IllegalStateException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
         }

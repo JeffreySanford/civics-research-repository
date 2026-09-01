@@ -50,6 +50,14 @@ class JdbcFederatedMetadataCatalogTest {
     }
 
     @Test
+    void coalescesDuplicateIdsWithinOneBatchUsingLastOccurrence() {
+        catalog.upsertBatch(List.of(record("001", "First version"), record("001", "Last version")));
+
+        assertEquals(1, catalog.count());
+        assertEquals("Last version", catalog.findById("DOE_OSTI:001").orElseThrow().title());
+    }
+
+    @Test
     void batchesThousandsOfRecordsAndRemainsIdempotentAcrossBatchBoundaries() {
         List<FederatedResearchRecord> initial = IntStream.range(0, 2_505)
                 .mapToObj(index -> record(String.format("%05d", index), "Initial " + index))
@@ -65,6 +73,18 @@ class JdbcFederatedMetadataCatalogTest {
         assertEquals("Updated 0", catalog.findById("DOE_OSTI:00000").orElseThrow().title());
         assertEquals("Updated 1000", catalog.findById("DOE_OSTI:01000").orElseThrow().title());
         assertEquals("Updated 2504", catalog.findById("DOE_OSTI:02504").orElseThrow().title());
+    }
+
+    @Test
+    void clearsAllRowsForArchiveReplacementAndAcceptsFreshRows() {
+        catalog.upsertBatch(List.of(record("001", "Before one"), record("002", "Before two")));
+
+        catalog.deleteAll();
+
+        assertEquals(0, catalog.count());
+        catalog.upsertBatch(List.of(record("003", "After restore")));
+        assertEquals(1, catalog.count());
+        assertEquals("After restore", catalog.findById("DOE_OSTI:003").orElseThrow().title());
     }
 
     @Test

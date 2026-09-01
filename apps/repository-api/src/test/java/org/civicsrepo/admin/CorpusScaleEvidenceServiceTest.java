@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 class CorpusScaleEvidenceServiceTest {
     private static final String PROJECTION_ID =
             "125fc791065fd8c68806f62a52c2203c2ce74a083954ce469f3e0cd627015024";
+    private static final String PROJECTION_1M_ID =
+            "3d461a9feb49f7239f3f6aaacb0c90f1ff43d0c683238acc2202c841154db44d";
     private static final OffsetDateTime NOW = OffsetDateTime.parse("2026-08-31T01:11:17.904261Z");
 
     @Test
@@ -41,14 +43,10 @@ class CorpusScaleEvidenceServiceTest {
         when(projectionService.state()).thenReturn(new ProjectionState(RepositorySource.REPOSITORY, 100_181, NOW));
         when(projectionService.currentProjectionId()).thenReturn(PROJECTION_ID);
         when(projectionService.currentTargetStates())
-                .thenReturn(Map.of(
-                        "discovery",
-                        new ProjectionTargetState("discovery", true, true, PROJECTION_ID, 100_181, null),
-                        "discovery-comparison",
-                        new ProjectionTargetState(
-                                "discovery-comparison", true, true, PROJECTION_ID, 100_181, null)));
+                .thenReturn(targetStates(PROJECTION_ID, 100_181));
         when(measurementStore.findRecentByProfile(CorpusProfile.FEDERATED_100K, 1))
-                .thenReturn(List.of(measurement(PROJECTION_ID, 100_181, 100_000)));
+                .thenReturn(List.of(measurement(
+                        CorpusProfile.FEDERATED_100K, PROJECTION_ID, 100_181, 100_000)));
 
         CorpusScaleEvidenceReport report = new CorpusScaleEvidenceService(
                         metadataCatalog, activationService, projectionService, measurementStore)
@@ -62,6 +60,73 @@ class CorpusScaleEvidenceServiceTest {
         assertThat(report.targetParity()).isTrue();
         assertThat(report.storageEvidencePresent()).isTrue();
         assertThat(report.storageProjectionId()).isEqualTo(PROJECTION_ID);
+    }
+
+    @Test
+    void verifiesCompositeMillionCheckpointByExactSourceQuotas() {
+        FederatedMetadataCatalog metadataCatalog = mock(FederatedMetadataCatalog.class);
+        CorpusProfileActivationService activationService = mock(CorpusProfileActivationService.class);
+        DiscoveryProjectionService projectionService = mock(DiscoveryProjectionService.class);
+        CorpusStorageMeasurementStore measurementStore = mock(CorpusStorageMeasurementStore.class);
+
+        when(metadataCatalog.count(FederatedSourceSystem.DATA_GOV)).thenReturn(500_000L);
+        when(metadataCatalog.count(FederatedSourceSystem.DOE_OSTI)).thenReturn(500_000L);
+        when(activationService.currentProfile()).thenReturn(CorpusProfile.FEDERATED_1M);
+        when(activationService.currentActivation())
+                .thenReturn(Optional.of(new CorpusProfileActivation(
+                        CorpusProfile.FEDERATED_1M, PROJECTION_1M_ID, 1_000_181, NOW.minusSeconds(8))));
+        when(projectionService.state()).thenReturn(new ProjectionState(RepositorySource.REPOSITORY, 1_000_181, NOW));
+        when(projectionService.currentProjectionId()).thenReturn(PROJECTION_1M_ID);
+        when(projectionService.currentTargetStates())
+                .thenReturn(targetStates(PROJECTION_1M_ID, 1_000_181));
+        when(measurementStore.findRecentByProfile(CorpusProfile.FEDERATED_1M, 1))
+                .thenReturn(List.of(measurement(
+                        CorpusProfile.FEDERATED_1M, PROJECTION_1M_ID, 1_000_181, 1_000_000)));
+
+        CorpusScaleEvidenceReport report = new CorpusScaleEvidenceService(
+                        metadataCatalog, activationService, projectionService, measurementStore)
+                .verify(CorpusProfile.FEDERATED_1M);
+
+        assertThat(report.valid()).isTrue();
+        assertThat(report.violations()).isEmpty();
+        assertThat(report.targetFederatedRecordCount()).isEqualTo(1_000_000);
+        assertThat(report.retainedFederatedRecordCount()).isEqualTo(1_000_000);
+        assertThat(report.currentProjectionObjectCount()).isEqualTo(1_000_181);
+        assertThat(report.currentProjectionId()).isEqualTo(PROJECTION_1M_ID);
+        assertThat(report.targetParity()).isTrue();
+        assertThat(report.storageEvidencePresent()).isTrue();
+    }
+
+    @Test
+    void doesNotLetDataGovExcessReplaceMissingOstiQuota() {
+        FederatedMetadataCatalog metadataCatalog = mock(FederatedMetadataCatalog.class);
+        CorpusProfileActivationService activationService = mock(CorpusProfileActivationService.class);
+        DiscoveryProjectionService projectionService = mock(DiscoveryProjectionService.class);
+        CorpusStorageMeasurementStore measurementStore = mock(CorpusStorageMeasurementStore.class);
+
+        when(metadataCatalog.count(FederatedSourceSystem.DATA_GOV)).thenReturn(1_000_000L);
+        when(metadataCatalog.count(FederatedSourceSystem.DOE_OSTI)).thenReturn(499_999L);
+        when(activationService.currentProfile()).thenReturn(CorpusProfile.FEDERATED_1M);
+        when(activationService.currentActivation())
+                .thenReturn(Optional.of(new CorpusProfileActivation(
+                        CorpusProfile.FEDERATED_1M, PROJECTION_1M_ID, 1_000_181, NOW.minusSeconds(8))));
+        when(projectionService.state()).thenReturn(new ProjectionState(RepositorySource.REPOSITORY, 1_000_181, NOW));
+        when(projectionService.currentProjectionId()).thenReturn(PROJECTION_1M_ID);
+        when(projectionService.currentTargetStates())
+                .thenReturn(targetStates(PROJECTION_1M_ID, 1_000_181));
+        when(measurementStore.findRecentByProfile(CorpusProfile.FEDERATED_1M, 1))
+                .thenReturn(List.of(measurement(
+                        CorpusProfile.FEDERATED_1M, PROJECTION_1M_ID, 1_000_181, 1_000_000)));
+
+        CorpusScaleEvidenceReport report = new CorpusScaleEvidenceService(
+                        metadataCatalog, activationService, projectionService, measurementStore)
+                .verify(CorpusProfile.FEDERATED_1M);
+
+        assertThat(report.valid()).isFalse();
+        assertThat(report.retainedFederatedRecordCount()).isEqualTo(999_999);
+        assertThat(report.violations())
+                .anyMatch(message -> message.contains("DOE OSTI"))
+                .anyMatch(message -> message.contains("499999 < 500000"));
     }
 
     @Test
@@ -87,7 +152,8 @@ class CorpusScaleEvidenceServiceTest {
                         new ProjectionTargetState(
                                 "discovery-comparison", true, true, staleProjectionId, 99_999, null)));
         when(measurementStore.findRecentByProfile(CorpusProfile.FEDERATED_100K, 1))
-                .thenReturn(List.of(measurement(staleProjectionId, 100_000, 99_999)));
+                .thenReturn(List.of(measurement(
+                        CorpusProfile.FEDERATED_100K, staleProjectionId, 100_000, 99_999)));
 
         CorpusScaleEvidenceReport report = new CorpusScaleEvidenceService(
                         metadataCatalog, activationService, projectionService, measurementStore)
@@ -103,10 +169,19 @@ class CorpusScaleEvidenceServiceTest {
                 .anyMatch(message -> message.contains("storage measurement projection ID"));
     }
 
-    private CorpusStorageMeasurement measurement(String projectionId, long projected, long retained) {
+    private Map<String, ProjectionTargetState> targetStates(String projectionId, int projected) {
+        return Map.of(
+                "discovery",
+                new ProjectionTargetState("discovery", true, true, projectionId, projected, null),
+                "discovery-comparison",
+                new ProjectionTargetState("discovery-comparison", true, true, projectionId, projected, null));
+    }
+
+    private CorpusStorageMeasurement measurement(
+            CorpusProfile profile, String projectionId, long projected, long retained) {
         return new CorpusStorageMeasurement(
-                "measurement-100k",
-                CorpusProfile.FEDERATED_100K,
+                "measurement-" + profile.name().toLowerCase(),
+                profile,
                 DeploymentTopology.DOCKER_COMPOSE,
                 projected,
                 retained,
