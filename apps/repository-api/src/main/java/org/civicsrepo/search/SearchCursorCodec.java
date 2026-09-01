@@ -39,15 +39,17 @@ public class SearchCursorCodec {
     private final byte[] signingKey;
 
     @Autowired
-    public SearchCursorCodec(
-            ObjectMapper objectMapper,
-            @Value("${civics.search.cursor-secret}") String cursorSecret) {
-        this.objectMapper = objectMapper;
-        this.signingKey = requireSecret(cursorSecret).getBytes(StandardCharsets.UTF_8);
+    public SearchCursorCodec(@Value("${civics.search.cursor-secret}") String cursorSecret) {
+        this(new ObjectMapper(), cursorSecret);
     }
 
     SearchCursorCodec(ObjectMapper objectMapper) {
         this(objectMapper, TEST_SECRET);
+    }
+
+    SearchCursorCodec(ObjectMapper objectMapper, String cursorSecret) {
+        this.objectMapper = objectMapper;
+        this.signingKey = requireSecret(cursorSecret).getBytes(StandardCharsets.UTF_8);
     }
 
     public String criteriaFingerprint(SearchComparisonCriteria criteria) {
