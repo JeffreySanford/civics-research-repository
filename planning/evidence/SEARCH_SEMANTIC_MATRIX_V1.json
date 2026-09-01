@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "1.0.0",
+  "matrixId": "c2-search-semantic-v1",
+  "profile": "FEDERATED_1M",
+  "description": "Stable lexical/facet query definitions for Solr/OpenSearch semantic and timing comparison on the exact C2 million-record corpus.",
+  "unsupportedCapabilities": [
+    "Exact local ID and DOI lookup are indexed but are not part of the current full-text comparison query fields.",
+    "SearchComparisonRequest does not yet expose structured publisher or sourceSystem filters; publisher is exercised as full text and sourceSystem is verified through facets."
+  ],
+  "queries": [
+    {
+      "id": "broad-corpus-facets",
+      "class": "EMPTY_BROAD",
+      "description": "Unqualified corpus-wide facet/aggregation workload.",
+      "request": {
+        "scenario": "FACETED_SEARCH",
+        "query": "",
+        "page": 0,
+        "pageSize": 25
+      },
+      "expectedTotalHits": 1000181,
+      "minimumReturnedHits": 1,
+      "requiredFacetFields": [
+        "program",
+        "publisher",
+        "sourceSystem",
+        "geography",
+        "type",
+        "vintageYear"
+      ],
+      "expectedFacetBuckets": {
+        "sourceSystem": {
+          "DATA_GOV": 500000,
+          "DOE_OSTI": 500000
+        }
+      }
+    },
+    {
+      "id": "common-multi-term",
+      "class": "COMMON_MULTI_TERM",
+      "description": "Long-lived demo/research relevance query used by the existing benchmark protocol.",
+      "request": {
+        "scenario": "FULL_TEXT_RELEVANCE",
+        "query": "North Dakota workforce",
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    },
+    {
+      "id": "rare-methodology-phrase",
+      "class": "RARE_PHRASE",
+      "description": "Curated methodology phrase expected to remain selective within the mixed corpus.",
+      "request": {
+        "scenario": "FULL_TEXT_RELEVANCE",
+        "query": "LODES Design and Methodology Report Methodology Version 7",
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    },
+    {
+      "id": "author-text",
+      "class": "AUTHOR_TEXT",
+      "description": "Named researcher exercised through the full-text authors field.",
+      "request": {
+        "scenario": "FULL_TEXT_RELEVANCE",
+        "query": "Andrew D. Foote",
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    },
+    {
+      "id": "publisher-text",
+      "class": "PUBLISHER_TEXT",
+      "description": "Publisher exercised through the weighted full-text publisher field.",
+      "request": {
+        "scenario": "FULL_TEXT_RELEVANCE",
+        "query": "U.S. Census Bureau",
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    },
+    {
+      "id": "program-filter",
+      "class": "PROGRAM_FILTER",
+      "description": "Stable curated program filter with self-excluding facet behavior.",
+      "request": {
+        "scenario": "FILTERING",
+        "query": "",
+        "programs": ["American Community Survey"],
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    },
+    {
+      "id": "geography-filter",
+      "class": "GEOGRAPHY_FILTER",
+      "description": "Stable curated geography filter.",
+      "request": {
+        "scenario": "FILTERING",
+        "query": "",
+        "geography": "North Dakota",
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    },
+    {
+      "id": "type-filter",
+      "class": "TYPE_FILTER",
+      "description": "Research-object type filter across the mixed projection.",
+      "request": {
+        "scenario": "FILTERING",
+        "query": "",
+        "contentType": "PUBLICATION",
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    },
+    {
+      "id": "vintage-year-filter",
+      "class": "VINTAGE_YEAR_FILTER",
+      "description": "Stable year filter across curated and federated metadata.",
+      "request": {
+        "scenario": "FILTERING",
+        "query": "",
+        "vintageYear": 2024,
+        "page": 0,
+        "pageSize": 25
+      },
+      "minimumReturnedHits": 1
+    }
+  ]
+}
