@@ -76,6 +76,18 @@ class JdbcFederatedMetadataCatalogTest {
     }
 
     @Test
+    void clearsAllRowsForArchiveReplacementAndAcceptsFreshRows() {
+        catalog.upsertBatch(List.of(record("001", "Before one"), record("002", "Before two")));
+
+        catalog.deleteAll();
+
+        assertEquals(0, catalog.count());
+        catalog.upsertBatch(List.of(record("003", "After restore")));
+        assertEquals(1, catalog.count());
+        assertEquals("After restore", catalog.findById("DOE_OSTI:003").orElseThrow().title());
+    }
+
+    @Test
     void persistsAndClearsHarvestCheckpoint() {
         OffsetDateTime now = OffsetDateTime.now();
         checkpoints.save(new HarvestCheckpoint(FederatedSourceSystem.DOE_OSTI, "cursor-2", 200, now));
