@@ -2,6 +2,7 @@ package org.civicsrepo.search;
 
 import org.civicsrepo.admin.CorpusProfileActivationService;
 import org.civicsrepo.federation.CorpusProfile;
+import org.civicsrepo.repository.DiscoveryProjectionService;
 import org.civicsrepo.sync.SyncProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +16,8 @@ import org.springframework.stereotype.Component;
  *
  * <p>Ordered behind {@code StartupSyncRunner} so a fresh installation can still build the curated
  * quick-start projection in the same boot. Once an operator has durably activated another corpus
- * profile, ordinary application restart preserves that activation and leaves the existing derived
- * search indexes untouched rather than silently replacing them with CURATED_DEMO.
+ * profile, ordinary application restart verifies the existing search targets and rehydrates runtime
+ * projection identity without rewriting either derived index.
  */
 @Component
 @Order(20)
@@ -25,12 +26,15 @@ public class SearchIndexStartupRunner implements CommandLineRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchIndexStartupRunner.class);
 
     private final CorpusProfileActivationService activationService;
+    private final DiscoveryProjectionService projectionService;
     private final SyncProperties syncProperties;
 
     public SearchIndexStartupRunner(
             CorpusProfileActivationService activationService,
+            DiscoveryProjectionService projectionService,
             SyncProperties syncProperties) {
         this.activationService = activationService;
+        this.projectionService = projectionService;
         this.syncProperties = syncProperties;
     }
 
@@ -44,8 +48,9 @@ public class SearchIndexStartupRunner implements CommandLineRunner {
         var persistedActivation = activationService.currentActivation();
         if (persistedActivation.isPresent()) {
             var activation = persistedActivation.orElseThrow();
+            projectionService.rehydrate(activation);
             LOGGER.info(
-                    "Preserving persisted discovery profile {} on projection {} ({} objects); startup will not rebuild search indexes.",
+                    "Preserved persisted discovery profile {} on projection {} ({} objects); startup verified existing search indexes without rebuilding them.",
                     activation.profile(),
                     activation.projectionId(),
                     activation.projectionObjectCount());
