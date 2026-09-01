@@ -10,9 +10,11 @@ import { catchError, map, of, shareReplay } from 'rxjs';
 
 interface CorpusIdentityView {
   readonly profile: CorpusProfileSummary;
-  readonly measurement: CorpusStorageMeasurement;
   readonly curatedRepositoryCount: number;
+  readonly retainedFederatedCount: number;
   readonly projectedFederatedCount: number;
+  readonly retainedOutsideProjection: number;
+  readonly activeProjectionCount: number;
 }
 
 @Component({
@@ -45,14 +47,14 @@ interface CorpusIdentityView {
           <article>
             <span class="corpus-identity__step">2</span>
             <p class="eyebrow">Federated retention</p>
-            <strong>{{ view.measurement.retainedFederatedCount | number }}</strong>
+            <strong>{{ view.retainedFederatedCount | number }}</strong>
             <span>metadata records in application PostgreSQL</span>
           </article>
           <span class="corpus-identity__arrow" aria-hidden="true">→</span>
           <article>
             <span class="corpus-identity__step">3</span>
             <p class="eyebrow">Search projection</p>
-            <strong>{{ view.measurement.activeProjectionCount | number }}</strong>
+            <strong>{{ view.activeProjectionCount | number }}</strong>
             <span>documents in both Solr and OpenSearch</span>
           </article>
         </div>
@@ -68,12 +70,7 @@ interface CorpusIdentityView {
           </div>
           <div>
             <dt>Retained but not projected</dt>
-            <dd>
-              {{
-                retainedOutsideProjection(view.measurement, view.projectedFederatedCount)
-                  | number
-              }}
-            </dd>
+            <dd>{{ view.retainedOutsideProjection | number }}</dd>
           </div>
         </dl>
 
@@ -83,8 +80,8 @@ interface CorpusIdentityView {
             <span>500,000 Data.gov + 500,000 DOE OSTI</span>
             <span>
               1,000,000 federated + {{ view.curatedRepositoryCount | number }}
-              curated = {{ view.measurement.activeProjectionCount | number }}
-              searchable documents
+              curated = {{ view.activeProjectionCount | number }} searchable
+              documents
             </span>
           </div>
         }
@@ -119,7 +116,7 @@ interface CorpusIdentityView {
 
     .corpus-identity__layers {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-columns: 1fr auto 1fr auto 1fr;
       align-items: stretch;
       gap: 0.75rem;
       margin-top: 1.5rem;
@@ -234,16 +231,6 @@ export class AdminCorpusIdentitySummaryComponent {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
-  protected retainedOutsideProjection(
-    measurement: CorpusStorageMeasurement,
-    projectedFederatedCount: number,
-  ): number {
-    return Math.max(
-      0,
-      measurement.retainedFederatedCount - projectedFederatedCount,
-    );
-  }
-
   private toView(overview: CorpusStorageOverview): CorpusIdentityView | null {
     const profile = overview.profiles.find(
       (candidate) => candidate.profile === overview.activeProfile,
@@ -253,17 +240,24 @@ export class AdminCorpusIdentitySummaryComponent {
       return null;
     }
 
+    const retainedFederatedCount = measurement.retainedFederatedCount;
+    const activeProjectionCount = measurement.activeProjectionCount;
     const projectedFederatedCount = this.projectedFederatedCount(
       profile,
       measurement,
     );
     return {
       profile,
-      measurement,
+      retainedFederatedCount,
+      activeProjectionCount,
       projectedFederatedCount,
+      retainedOutsideProjection: Math.max(
+        0,
+        retainedFederatedCount - projectedFederatedCount,
+      ),
       curatedRepositoryCount: Math.max(
         0,
-        measurement.activeProjectionCount - projectedFederatedCount,
+        activeProjectionCount - projectedFederatedCount,
       ),
     };
   }
