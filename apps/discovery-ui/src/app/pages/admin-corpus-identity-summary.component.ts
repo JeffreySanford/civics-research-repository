@@ -26,7 +26,9 @@ interface CorpusIdentityView {
       <div class="corpus-identity__heading">
         <div>
           <p class="eyebrow">Active corpus identity</p>
-          <h2 id="corpus-identity-heading">Authority, retention & projection</h2>
+          <h2 id="corpus-identity-heading">
+            Authority, retention & projection
+          </h2>
         </div>
         <p>
           Changing search profiles selects a deterministic projection. It does
@@ -79,9 +81,9 @@ interface CorpusIdentityView {
             <strong>C2 exact composite</strong>
             <span>500,000 Data.gov + 500,000 DOE OSTI</span>
             <span>
-              1,000,000 federated + {{ view.curatedRepositoryCount | number }}
-              curated = {{ view.activeProjectionCount | number }} searchable
-              documents
+              1,000,000 federated +
+              {{ view.curatedRepositoryCount | number }} curated =
+              {{ view.activeProjectionCount | number }} searchable documents
             </span>
           </div>
         }
