@@ -49,6 +49,18 @@ class FederationSnapshotAdminControllerTest {
     }
 
     @Test
+    void capturesAnExactStablePrefixWhenRecordLimitIsProvided() throws Exception {
+        FederatedBoundedSnapshotManifest manifest = manifest("run-500k", "b".repeat(64));
+        given(captureService.capture("run-500k", 500_000L)).willReturn(manifest);
+
+        mockMvc.perform(post("/admin/federation/snapshots/runs/run-500k").param("recordLimit", "500000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.runId").value("run-500k"));
+
+        verify(captureService).capture("run-500k", 500_000L);
+    }
+
+    @Test
     void rejectsSnapshotCaptureForAnInvalidRunState() throws Exception {
         given(captureService.capture("run-running"))
                 .willThrow(new IllegalStateException("Bounded snapshots require a PAUSED or COMPLETED harvest run"));
