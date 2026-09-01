@@ -16,7 +16,7 @@ class SearchCursorCodecTest {
     void roundTripsOpaqueBackendPositionBoundToProjectionAndCriteria() {
         SearchComparisonCriteria criteria = criteria("climate", List.of("NASA", "ACS"), 0, 25);
         String fingerprint = codec.criteriaFingerprint(criteria);
-        String token = codec.encode("a".repeat(64), fingerprint, "SOLR", "AoE_123==");
+        String token = codec.encode("a".repeat(64), fingerprint, "SOLR", 3, "AoE_123==");
 
         SearchCursorState state =
                 codec.decodeAndValidate(token, "a".repeat(64), fingerprint, "SOLR");
@@ -24,6 +24,7 @@ class SearchCursorCodecTest {
         assertThat(token).startsWith("v1.");
         assertThat(token).doesNotContain("AoE_123");
         assertThat(state.position()).isEqualTo("AoE_123==");
+        assertThat(state.page()).isEqualTo(3);
         assertThat(state.projectionId()).isEqualTo("a".repeat(64));
         assertThat(state.criteriaFingerprint()).isEqualTo(fingerprint);
         assertThat(state.backend()).isEqualTo("SOLR");
@@ -45,19 +46,32 @@ class SearchCursorCodecTest {
     void rejectsEditedTokenBeforeParsingBackendPosition() {
         SearchComparisonCriteria criteria = criteria("climate", List.of("NASA"), 0, 25);
         String fingerprint = codec.criteriaFingerprint(criteria);
-        String token = codec.encode("b".repeat(64), fingerprint, "SOLR", "cursor-mark");
+        String token = codec.encode("b".repeat(64), fingerprint, "SOLR", 1, "cursor-mark");
         String corrupted = token.substring(0, token.length() - 1) + (token.endsWith("0") ? "1" : "0");
 
         assertThatThrownBy(() -> codec.decodeAndValidate(corrupted, "b".repeat(64), fingerprint, "SOLR"))
                 .isInstanceOf(SearchCursorException.class)
-                .hasMessageContaining("integrity");
+                .hasMessageContaining("signature");
+    }
+
+    @Test
+    void rejectsTokenSignedByAnotherApplicationSecret() {
+        SearchComparisonCriteria criteria = criteria("climate", List.of("NASA"), 0, 25);
+        String fingerprint = codec.criteriaFingerprint(criteria);
+        String token = codec.encode("b".repeat(64), fingerprint, "SOLR", 1, "cursor-mark");
+        SearchCursorCodec otherCodec =
+                new SearchCursorCodec(new ObjectMapper(), "another-search-cursor-secret-32-bytes");
+
+        assertThatThrownBy(() -> otherCodec.decodeAndValidate(token, "b".repeat(64), fingerprint, "SOLR"))
+                .isInstanceOf(SearchCursorException.class)
+                .hasMessageContaining("signature");
     }
 
     @Test
     void rejectsCursorWhenProjectionChanges() {
         SearchComparisonCriteria criteria = criteria("climate", List.of(), 0, 25);
         String fingerprint = codec.criteriaFingerprint(criteria);
-        String token = codec.encode("c".repeat(64), fingerprint, "SOLR", "cursor-mark");
+        String token = codec.encode("c".repeat(64), fingerprint, "SOLR", 1, "cursor-mark");
 
         assertThatThrownBy(() -> codec.decodeAndValidate(token, "d".repeat(64), fingerprint, "SOLR"))
                 .isInstanceOf(SearchCursorException.class)
@@ -68,7 +82,7 @@ class SearchCursorCodecTest {
     void rejectsCursorWhenSearchCriteriaChange() {
         String originalFingerprint = codec.criteriaFingerprint(criteria("climate", List.of(), 0, 25));
         String changedFingerprint = codec.criteriaFingerprint(criteria("climate change", List.of(), 0, 25));
-        String token = codec.encode("e".repeat(64), originalFingerprint, "SOLR", "cursor-mark");
+        String token = codec.encode("e".repeat(64), originalFingerprint, "SOLR", 1, "cursor-mark");
 
         assertThatThrownBy(() ->
                         codec.decodeAndValidate(token, "e".repeat(64), changedFingerprint, "SOLR"))
@@ -80,12 +94,19 @@ class SearchCursorCodecTest {
     void rejectsCursorOwnedByAnotherBackend() {
         SearchComparisonCriteria criteria = criteria("", List.of(), 0, 25);
         String fingerprint = codec.criteriaFingerprint(criteria);
-        String token = codec.encode("f".repeat(64), fingerprint, "SOLR", "cursor-mark");
+        String token = codec.encode("f".repeat(64), fingerprint, "SOLR", 1, "cursor-mark");
 
         assertThatThrownBy(() ->
                         codec.decodeAndValidate(token, "f".repeat(64), fingerprint, "OPENSEARCH"))
                 .isInstanceOf(SearchCursorException.class)
                 .hasMessageContaining("different search backend");
+    }
+
+    @Test
+    void rejectsTooShortSigningSecret() {
+        assertThatThrownBy(() -> new SearchCursorCodec(new ObjectMapper(), "too-short"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("at least 16 characters");
     }
 
     private SearchComparisonCriteria criteria(String query, List<String> programs, int page, int pageSize) {
