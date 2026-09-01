@@ -74,6 +74,17 @@ export interface SearchQuery {
   readonly pageSize?: number;
 }
 
+/**
+ * Transitional typed view of `/search/cursor` while the OpenAPI contract is being updated.
+ *
+ * The nested search payload remains the existing SearchResponse. `nextCursor` is opaque and must
+ * only be resent with the same effective query/filter/page-size state.
+ */
+export interface SearchCursorPage {
+  readonly search: SearchResponse;
+  readonly nextCursor: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RepositoryAdminApi {
   constructor(
@@ -236,6 +247,29 @@ export class RepositorySearchApi {
   ) {}
 
   searchResearchObjects(query: SearchQuery): Observable<SearchResponse> {
+    return this.http.get<SearchResponse>(`${this.baseUrl}/search`, {
+      params: this.searchParams(query, true),
+    });
+  }
+
+  searchResearchObjectsWithCursor(
+    query: SearchQuery,
+    cursor: string | null = null,
+  ): Observable<SearchCursorPage> {
+    const params = this.searchParams(query, false);
+    if (cursor) {
+      params['cursor'] = cursor;
+    }
+
+    return this.http.get<SearchCursorPage>(`${this.baseUrl}/search/cursor`, {
+      params,
+    });
+  }
+
+  private searchParams(
+    query: SearchQuery,
+    includePage: boolean,
+  ): Record<string, string | number | readonly string[]> {
     const params: Record<string, string | number | readonly string[]> = {};
 
     if (query.q) {
@@ -267,7 +301,7 @@ export class RepositorySearchApi {
       params['vintageYear'] = query.vintageYear;
     }
 
-    if (query.page !== undefined) {
+    if (includePage && query.page !== undefined) {
       params['page'] = query.page;
     }
 
@@ -275,8 +309,6 @@ export class RepositorySearchApi {
       params['pageSize'] = query.pageSize;
     }
 
-    return this.http.get<SearchResponse>(`${this.baseUrl}/search`, {
-      params,
-    });
+    return params;
   }
 }
