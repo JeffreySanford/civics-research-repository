@@ -2,6 +2,7 @@ package org.civicsrepo.search;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -32,6 +33,7 @@ public class SearchCursorCodec {
     static final String SORT_VERSION = "relevance-id-v1";
     private static final String TOKEN_PREFIX = "v1";
     private static final String SIGNATURE_CONTEXT = "civics-search-cursor-v1\n";
+    private static final String CRITERIA_FINGERPRINT_VERSION = "criteria-json-v2";
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final String TEST_SECRET = "test-search-cursor-secret-32-bytes";
 
@@ -55,20 +57,32 @@ public class SearchCursorCodec {
     public String criteriaFingerprint(SearchComparisonCriteria criteria) {
         Objects.requireNonNull(criteria, "criteria");
         List<String> programs = criteria.programs().stream().sorted().toList();
-        String canonical = String.join(
-                "\n",
-                "sort=" + SORT_VERSION,
-                "query=" + criteria.query(),
-                "programs=" + String.join("\u001f", programs),
-                "publisher=" + text(criteria.publisher()),
-                "sourceSystem=" + (criteria.sourceSystem() == null ? "" : criteria.sourceSystem().getValue()),
-                "localId=" + text(criteria.localId()),
-                "doi=" + text(criteria.doi()),
-                "geography=" + text(criteria.geography()),
-                "contentType=" + (criteria.contentType() == null ? "" : criteria.contentType().getValue()),
-                "vintageYear=" + (criteria.vintageYear() == null ? "" : criteria.vintageYear()),
-                "pageSize=" + criteria.pageSize());
-        return sha256Hex(canonical);
+
+        ObjectNode canonical = objectMapper.createObjectNode();
+        canonical.put("fingerprintVersion", CRITERIA_FINGERPRINT_VERSION);
+        canonical.put("sort", SORT_VERSION);
+        canonical.put("query", criteria.query());
+        programs.forEach(canonical.putArray("programs")::add);
+        canonical.put("publisher", text(criteria.publisher()));
+        canonical.put(
+                "sourceSystem",
+                criteria.sourceSystem() == null ? "" : criteria.sourceSystem().getValue());
+        canonical.put("localId", text(criteria.localId()));
+        canonical.put("doi", text(criteria.doi()));
+        canonical.put("geography", text(criteria.geography()));
+        canonical.put(
+                "contentType",
+                criteria.contentType() == null ? "" : criteria.contentType().getValue());
+        canonical.put(
+                "vintageYear",
+                criteria.vintageYear() == null ? "" : criteria.vintageYear().toString());
+        canonical.put("pageSize", criteria.pageSize());
+
+        try {
+            return sha256Hex(objectMapper.writeValueAsBytes(canonical));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Search cursor criteria could not be canonicalized.", exception);
+        }
     }
 
     public String encode(
@@ -192,10 +206,10 @@ public class SearchCursorCodec {
         return value == null ? "" : value;
     }
 
-    private String sha256Hex(String value) {
+    private String sha256Hex(byte[] value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(digest.digest(value));
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is not available.", exception);
         }
