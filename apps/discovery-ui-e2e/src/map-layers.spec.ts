@@ -121,6 +121,83 @@ test.describe('map layer controls', () => {
     ).toHaveCount(0);
   });
 
+  test('unsupported SAIPE capability removes the control and skips the request @maps', async ({
+    page,
+  }) => {
+    const community = page.getByTestId(
+      'map-layer-category-community-economy',
+    );
+    await expect(community).toContainText('3 layers');
+    await expect(page.getByTestId('map-layer-saipe')).toBeVisible();
+
+    let floridaSaipeRequests = 0;
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (
+        url.pathname.endsWith('/api/overlays/census/saipe-counties') &&
+        url.searchParams.get('geography') === 'Florida'
+      ) {
+        floridaSaipeRequests += 1;
+      }
+    });
+
+    // Registered after the shared fixture, so this handler owns only the unsupported Florida
+    // dataset. All other geography fixtures keep using the normal mockRepositoryApi contract.
+    await page.route('**/api/datasets/*/map-layers', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (!pathname.includes('tiger-line-florida-2025')) {
+        await route.fallback();
+        return;
+      }
+
+      await route.fulfill({
+        contentType: 'application/json',
+        json: [
+          {
+            id: 'tiger-line-florida-boundary',
+            label: '2025 TIGER/Line Census area preview - Florida',
+            layerType: 'CENSUS_BOUNDARY',
+            sourceUrl: 'https://www.census.gov/geographies/',
+            attribution: 'U.S. Census Bureau TIGER/Line',
+            visibleByDefault: true,
+          },
+          {
+            id: 'lodes-workplace-flow-florida',
+            label: '2023 LODES commuting flows - Florida',
+            layerType: 'CENSUS_DATA',
+            sourceUrl: 'https://lehd.ces.census.gov/data/',
+            attribution: 'U.S. Census Bureau LEHD',
+            visibleByDefault: true,
+          },
+          {
+            id: 'usgs-3hp-hydrography',
+            label: 'USGS 3D Hydrography Program reference',
+            layerType: 'USGS_REFERENCE',
+            sourceUrl: 'https://hydro.nationalmap.gov/',
+            attribution: 'U.S. Geological Survey 3D Hydrography Program',
+            visibleByDefault: false,
+          },
+          {
+            id: 'usgs-earthquakes-florida',
+            label: 'USGS earthquake overlay',
+            layerType: 'USGS_EARTHQUAKE',
+            sourceUrl: 'https://earthquake.usgs.gov/',
+            attribution: 'U.S. Geological Survey Earthquake Hazards Program',
+            visibleByDefault: true,
+          },
+        ],
+      });
+    });
+
+    await page.goto('/maps?area=Florida');
+
+    await expect(community).toContainText('2 layers');
+    await expect(page.getByTestId('map-layer-saipe')).toHaveCount(0);
+    await expect(page.getByTestId('map-layer-saipe-info')).toHaveCount(0);
+    await expect(page.getByText('Loading map data from the API')).toHaveCount(0);
+    expect(floridaSaipeRequests).toBe(0);
+  });
+
   /**
    * The debug panel is the tool for answering "is this layer actually drawn?", so it has to
    * account for every layer group and follow the toggles. It previously kept its own layer list
