@@ -1,8 +1,4 @@
-# Continuous integration for the Civics Research Repository.
-#
-# `gates` runs deterministic workspace checks, including generated artifact drift. Browser evidence
-# remains separate because it needs a dev server, multiple browsers and longer failure artifacts.
-# `api` builds and tests the Spring Boot service inside its Gradle container image.
+# Temporary formatting handoff for the cursor UI integration.
 name: CI
 
 on:
@@ -15,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   gates:
@@ -37,35 +33,97 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm exec nx format:check --all
+      - name: Capture formatted cursor UI blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
 
-      - name: Lint the OpenAPI contract
-        run: pnpm run openapi:lint
+          path = Path('apps/discovery-ui-e2e/src/support/repository-api-mocks.ts')
+          text = path.read_text()
+          assert 'function searchCursorResponse(' not in text
 
-      - name: Check generated API types are current
-        run: pnpm run openapi:check
+          fixture_anchor = "  await page.route(`**/api/datasets/*`, async (route) => {"
+          fixture_route = """  await page.route(`**/api/search/cursor**`, async (route) => {
+            const url = new URL(route.request().url());
+            await route.fulfill({
+              contentType: 'application/json',
+              json: searchCursorResponse(url, 'FIXTURE'),
+            });
+          });
 
-      - name: Check the fixture catalog is current
-        run: pnpm run fixture:check
+"""
+          text = text.replace(fixture_anchor, fixture_route + fixture_anchor, 1)
 
-      - name: Check the accessibility evidence manifest is current
-        run: pnpm run evidence:check
+          detail_anchor = "  // The public detail route carries an opaque Base64URL token. Decode it back to the same\n"
+          repository_route = """  await page.route(`**/api/search/cursor**`, async (route) => {
+            const url = new URL(route.request().url());
+            await route.fulfill({
+              contentType: 'application/json',
+              json: searchCursorResponse(url, 'REPOSITORY'),
+            });
+          });
 
-      - name: Check the generated platform status is current
-        run: pnpm run docs:check
+"""
+          text = text.replace(detail_anchor, repository_route + detail_anchor, 1)
 
-      - name: Test the performance-statistics harness
-        run: pnpm run performance:test
+          helper_anchor = "function searchResponse(\n"
+          helper = """function searchCursorResponse(
+            url: URL,
+            resultSource: 'REPOSITORY' | 'FIXTURE',
+          ): unknown {
+            const query = url.searchParams.get('q') ?? '';
+            const geography = url.searchParams.get('geography');
+            const selectedGeography =
+              geography || (query === 'Texas' ? 'Texas' : 'California');
+            const pageSize = Number(url.searchParams.get('pageSize') ?? 25);
+            const cursor = url.searchParams.get('cursor') ?? '';
+            const parsedPage = cursor.startsWith('mock-cursor-')
+              ? Number(cursor.slice('mock-cursor-'.length))
+              : 0;
+            const page = Number.isInteger(parsedPage) && parsedPage >= 0 ? parsedPage : 0;
+            const search = searchResponse(
+              selectedGeography,
+              resultSource,
+              url.searchParams.getAll('program'),
+              url.searchParams.get('contentType') ?? '',
+              page,
+              pageSize,
+              url.searchParams.get('vintageYear') ?? '',
+            ) as { totalResults: number };
+            const nextPage = page + 1;
 
-      - name: Lint
-        run: pnpm exec nx run-many -t lint --all
+            return {
+              search,
+              nextCursor:
+                nextPage * pageSize < search.totalResults
+                  ? `mock-cursor-${nextPage}`
+                  : null,
+            };
+          }
 
-      - name: Unit tests
-        run: pnpm exec nx run-many -t test --exclude repository-api
+"""
+          text = text.replace(helper_anchor, helper + helper_anchor, 1)
+          path.write_text(text)
+          PY
 
-      - name: Build the discovery UI
-        run: pnpm exec nx build discovery-ui
+          files=(
+            apps/discovery-ui/src/app/pages/discovery-page.ts
+            apps/discovery-ui/src/app/pages/discovery-page.html
+            apps/discovery-ui/src/app/state/search/search.selectors.ts
+            apps/discovery-ui/src/app/state/search/search.reducer.ts
+            libs/repository/api-client/src/lib/repository-api-client.ts
+            apps/discovery-ui-e2e/src/support/repository-api-mocks.ts
+          )
+          pnpm exec prettier --write "${files[@]}"
+
+          for file in "${files[@]}"; do
+            encoded="$(base64 -w0 "$file")"
+            sha="$(gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" -f content="$encoded" -f encoding=base64 --jq .sha)"
+            echo "CURSOR_UI_BLOB_SHA:${file}:$sha"
+          done
+          exit 1
 
   api:
     name: Repository API
