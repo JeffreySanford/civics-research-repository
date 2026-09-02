@@ -1,0 +1,43 @@
+name: PR 24 spatial probe formatter
+
+on:
+  push:
+    branches:
+      - codex/c2-datagov-spatial-source-probe
+    paths:
+      - tools/scripts/data-gov-spatial-availability.mjs
+      - tools/scripts/data-gov-spatial-availability.test.mjs
+      - .github/workflows/pr24-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/c2-datagov-spatial-source-probe
+          persist-credentials: true
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format spatial probe
+        run: pnpm exec prettier --write tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+      - name: Verify focused tests
+        run: node --test tools/scripts/data-gov-spatial-availability.test.mjs
+      - name: Commit formatter output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git add tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+          git commit -m "style: format Data.gov spatial source probe"
+          git push origin HEAD:codex/c2-datagov-spatial-source-probe
