@@ -37,11 +37,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Preview spatial evidence formatting
-        run: |
-          pnpm exec prettier --write tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
-          git diff -- tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
-
       - name: Check formatting
         run: pnpm exec nx format:check --all
 
