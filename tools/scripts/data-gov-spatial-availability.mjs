@@ -1,9 +1,24 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DEFAULT_OUTPUT_DIR = 'browser-evidence-artifacts/spatial-availability';
+const C2_PROFILE = 'FEDERATED_1M';
+const C2_TARGET_RECORDS = 1_000_000;
+const SHA256 = /^[0-9a-f]{64}$/u;
+const REQUIRED_SCALE_CHECKS = [
+  'preflight-ready-to-measure',
+  'exact-source-recipe',
+  'scale-evidence-valid',
+  'active-profile',
+  'persisted-activation-runtime-identity',
+  'search-target-parity',
+  'storage-evidence',
+  'composition-projection-linkage',
+  'public-search-data_gov-provenance',
+  'public-search-doe_osti-provenance',
+];
 
 export function buildProbeSql() {
   return `
@@ -39,7 +54,105 @@ from raw;
 `.trim();
 }
 
-export function normalizeProbe(raw, capturedAt = new Date().toISOString()) {
+/**
+ * Reduces the canonical quality:scale artifact to the identity needed by spatial evidence.
+ *
+ * Count-only evidence is not enough for C2: any arbitrary 500K Data.gov rows could satisfy the
+ * probe. Requiring the canonical scale checker to pass binds this report to the exact mixed-source
+ * composition and active search projection already certified elsewhere in the repository.
+ */
+export function normalizeScaleCertification(raw) {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Scale evidence must be a JSON object.');
+  }
+  if (raw.kind !== 'civics-scale-evidence-check') {
+    throw new Error('Scale evidence kind must be civics-scale-evidence-check.');
+  }
+  if (raw.profile !== C2_PROFILE) {
+    throw new Error(`Scale evidence profile must be ${C2_PROFILE}.`);
+  }
+  if (raw.status !== 'PASS') {
+    throw new Error('Scale evidence must be PASS before spatial evidence is captured.');
+  }
+
+  const targetFederatedRecordCount = nonNegativeInteger(
+    raw.targetFederatedRecordCount,
+    'scale targetFederatedRecordCount',
+  );
+  if (targetFederatedRecordCount !== C2_TARGET_RECORDS) {
+    throw new Error(
+      `Scale evidence must target exactly ${C2_TARGET_RECORDS.toLocaleString('en-US')} federated records.`,
+    );
+  }
+
+  const retainedFederatedRecordCount = nonNegativeInteger(
+    raw.retainedFederatedRecordCount,
+    'scale retainedFederatedRecordCount',
+  );
+  if (retainedFederatedRecordCount < C2_TARGET_RECORDS) {
+    throw new Error(
+      `Scale evidence retained count must be at least ${C2_TARGET_RECORDS.toLocaleString('en-US')}.`,
+    );
+  }
+
+  const compositionSha256 = sha256(
+    raw.compositionSha256,
+    'scale compositionSha256',
+  );
+  const projectionId = sha256(raw.projectionId, 'scale projectionId');
+  const projectionObjectCount = nonNegativeInteger(
+    raw.projectionObjectCount,
+    'scale projectionObjectCount',
+  );
+  if (projectionObjectCount === 0) {
+    throw new Error('Scale projectionObjectCount must be greater than zero.');
+  }
+
+  const capturedAt = requiredText(raw.capturedAt, 'scale capturedAt');
+  const checks = new Map(
+    (Array.isArray(raw.checks) ? raw.checks : []).map((entry) => [
+      entry?.id,
+      entry?.status,
+    ]),
+  );
+  const missingPassChecks = REQUIRED_SCALE_CHECKS.filter(
+    (id) => checks.get(id) !== 'PASS',
+  );
+  if (missingPassChecks.length > 0) {
+    throw new Error(
+      `Scale evidence is missing required PASS checks: ${missingPassChecks.join(', ')}.`,
+    );
+  }
+
+  return {
+    kind: 'c2-scale-certification',
+    profile: C2_PROFILE,
+    capturedAt,
+    compositionSha256,
+    projectionId,
+    projectionObjectCount,
+    retainedFederatedRecordCount,
+  };
+}
+
+export async function loadScaleCertification(scaleEvidencePath) {
+  const resolved = path.resolve(scaleEvidencePath);
+  let raw;
+  try {
+    raw = JSON.parse(await readFile(resolved, 'utf8'));
+  } catch (error) {
+    throw new Error(`Unable to read valid scale evidence JSON: ${resolved}`, {
+      cause: error,
+    });
+  }
+  return normalizeScaleCertification(raw);
+}
+
+export function normalizeProbe(
+  raw,
+  capturedAt = new Date().toISOString(),
+  scaleCertification = null,
+) {
   const totalRecords = nonNegativeInteger(raw.totalRecords, 'totalRecords');
   const harvestRecordPresent = nonNegativeInteger(
     raw.harvestRecordPresent,
@@ -75,6 +188,7 @@ export function normalizeProbe(raw, capturedAt = new Date().toISOString()) {
   return {
     sourceSystem: 'DATA_GOV',
     capturedAt,
+    ...(scaleCertification ? { scaleCertification } : {}),
     totalRecords,
     harvestRecordPresent,
     harvestRecordRawPresent,
@@ -126,6 +240,10 @@ export function formatMarkdown(report, expectedCount = null) {
     expectedCount === null
       ? ''
       : `\n- Expected retained Data.gov records: **${expectedCount.toLocaleString()}** (${report.totalRecords === expectedCount ? 'MATCH' : 'MISMATCH'})`;
+  const certification = report.scaleCertification;
+  const certificationBlock = certification
+    ? `\n## Certified C2 binding\n\n- Profile: \`${certification.profile}\`\n- Scale evidence captured: ${certification.capturedAt}\n- Composition SHA-256: \`${certification.compositionSha256}\`\n- Projection ID: \`${certification.projectionId}\`\n- Projection objects: **${certification.projectionObjectCount.toLocaleString()}**\n- Retained federated records: **${certification.retainedFederatedRecordCount.toLocaleString()}**\n`
+    : '';
   return `# Data.gov spatial availability evidence
 
 - Captured: ${report.capturedAt}
@@ -133,7 +251,7 @@ export function formatMarkdown(report, expectedCount = null) {
 - Raw harvest metadata retained: **${report.harvestRecordRawPresent.toLocaleString()}**
 - Explicit \`spatial\` token present: **${report.explicitSpatialTokenRecords.toLocaleString()}** (${report.explicitSpatialTokenPercent}%)
 - Raw harvest metadata unavailable: **${report.rawHarvestUnavailable.toLocaleString()}**
-
+${certificationBlock}
 ## Observed spatial value shapes
 
 | Shape | Records |
@@ -152,7 +270,11 @@ This probe is read-only. It does not mutate the certified corpus, search project
 }
 
 export function parseArgs(argv) {
-  const args = { expectedCount: null, outputDir: DEFAULT_OUTPUT_DIR };
+  const args = {
+    expectedCount: null,
+    outputDir: DEFAULT_OUTPUT_DIR,
+    scaleEvidencePath: null,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === '--expect') {
@@ -170,6 +292,15 @@ export function parseArgs(argv) {
         throw new Error('--output-dir requires a path.');
       }
       args.outputDir = value;
+      index += 1;
+      continue;
+    }
+    if (argument === '--scale-evidence') {
+      const value = argv[index + 1]?.trim();
+      if (!value) {
+        throw new Error('--scale-evidence requires a JSON evidence path.');
+      }
+      args.scaleEvidencePath = value;
       index += 1;
       continue;
     }
@@ -220,8 +351,15 @@ export function runPsql(sql, env = process.env) {
 }
 
 export async function run(argv = process.argv.slice(2)) {
-  const { expectedCount, outputDir } = parseArgs(argv);
-  const report = normalizeProbe(parsePsqlJson(runPsql(buildProbeSql())));
+  const { expectedCount, outputDir, scaleEvidencePath } = parseArgs(argv);
+  const scaleCertification = scaleEvidencePath
+    ? await loadScaleCertification(scaleEvidencePath)
+    : null;
+  const report = normalizeProbe(
+    parsePsqlJson(runPsql(buildProbeSql())),
+    new Date().toISOString(),
+    scaleCertification,
+  );
   const resolvedOutputDir = path.resolve(outputDir);
   await mkdir(resolvedOutputDir, { recursive: true });
   const jsonPath = path.join(
@@ -251,6 +389,20 @@ function nonNegativeInteger(value, name) {
     throw new Error(`${name} must be a non-negative integer.`);
   }
   return parsed;
+}
+
+function requiredText(value, name) {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`${name} must be a non-empty string.`);
+  }
+  return value;
+}
+
+function sha256(value, name) {
+  if (typeof value !== 'string' || !SHA256.test(value)) {
+    throw new Error(`${name} must be a lowercase SHA-256 value.`);
+  }
+  return value;
 }
 
 const invokedDirectly =
