@@ -48,7 +48,10 @@ class JdbcResearchSpatialSidecarStoreTest {
         store.beginBuild(build);
 
         int retained = store.upsertRetainedBatch(
-                build.buildId(), List.of(record("retained-1", SpatialGeometryStatus.VALID), record("not-retained", SpatialGeometryStatus.VALID)));
+                build.buildId(),
+                List.of(
+                        record("retained-1", SpatialGeometryStatus.VALID),
+                        record("not-retained", SpatialGeometryStatus.VALID)));
 
         assertEquals(1, retained);
         assertEquals(1, store.countBuildRows(build.buildId()));
@@ -70,7 +73,8 @@ class JdbcResearchSpatialSidecarStoreTest {
         ResearchSpatialSidecarBuild replacement = runningBuild("build-failed");
         store.beginBuild(replacement);
         store.upsertRetainedBatch(
-                replacement.buildId(), List.of(record("retained-1", SpatialGeometryStatus.ANTIMERIDIAN_CANDIDATE)));
+                replacement.buildId(),
+                List.of(record("retained-1", SpatialGeometryStatus.ANTIMERIDIAN_CANDIDATE)));
         ResearchSpatialSidecarBuild failed = store.failBuild(replacement.buildId(), "source traversal failed");
 
         assertEquals(ResearchSpatialSidecarBuild.Status.FAILED, failed.status());
@@ -115,6 +119,10 @@ class JdbcResearchSpatialSidecarStoreTest {
     }
 
     private ResearchSpatialSidecarRecord record(String identifier, SpatialGeometryStatus status) {
+        boolean antimeridian = status == SpatialGeometryStatus.ANTIMERIDIAN_CANDIDATE;
+        String geometryJson = antimeridian
+                ? "{\"type\":\"Polygon\",\"coordinates\":[[[-170,50],[170,50],[170,60],[-170,60],[-170,50]]]}"
+                : "{\"type\":\"Polygon\",\"coordinates\":[[[-101,46],[-99,46],[-99,48],[-101,48],[-101,46]]]}";
         return new ResearchSpatialSidecarRecord(
                 FederatedSourceSystem.DATA_GOV,
                 identifier,
@@ -123,22 +131,22 @@ class JdbcResearchSpatialSidecarStoreTest {
                 SNAPSHOT,
                 COMPOSITION,
                 PROJECTION,
-                "{\"type\":\"Polygon\",\"coordinates\":[[[-101,46],[-99,46],[-99,48],[-101,48],[-101,46]]]}",
+                geometryJson,
                 "Polygon",
                 status,
-                -101.0,
-                46.0,
-                99.0,
-                48.0,
-                -100.0,
-                47.0,
+                antimeridian ? -170.0 : -101.0,
+                antimeridian ? 50.0 : 46.0,
+                antimeridian ? 170.0 : -99.0,
+                antimeridian ? 60.0 : 48.0,
+                antimeridian ? 179.0 : -100.0,
+                antimeridian ? 55.0 : 47.0,
                 "DATA_GOV_VERTEX_MEAN",
-                -100.0,
-                47.0,
-                status == SpatialGeometryStatus.ANTIMERIDIAN_CANDIDATE
+                antimeridian ? 179.0 : -100.0,
+                antimeridian ? 55.0 : 47.0,
+                antimeridian
                         ? "DATA_GOV_SOURCE_POINT_FOR_ANTIMERIDIAN_CANDIDATE"
                         : "SHAPE_BOUNDS_CENTER",
-                "-101,46,-99,48",
+                antimeridian ? "-170,50,170,60" : "-101,46,-99,48",
                 "{}",
                 "{}");
     }
