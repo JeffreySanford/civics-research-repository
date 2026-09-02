@@ -105,10 +105,10 @@
               <span class="layer-category-title">Community &amp; Economy</span>
               <!-- The API has one shared LODES metadata capability for the two LODES controls,
                    plus optional SAIPE. With boundary + two environmental entries outside this
-                   category, the current control count is the returned metadata count minus two. -->
+                   category, the control count is two baseline LODES controls plus optional SAIPE. -->
               @if (layers$ | async; as layers) {
               <span class="layer-category-count"
-                >{{ layers.length > 0 ? layers.length - 2 : 2 }} layers</span
+                >{{ (saipeAvailable$ | async) ? 3 : 2 }} layers</span
               >
               } @else {
               <span class="layer-category-count">2 layers</span>

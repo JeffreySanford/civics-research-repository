@@ -212,6 +212,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected mapDebugSnapshot: MapDebugSnapshot | null = null;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
+  protected readonly saipeAvailable$ = this.layers$.pipe(
+    map((layers) =>
+      layers.some((layer) => layer.layerType === 'CENSUS_CHOROPLETH'),
+    ),
+  );
   protected readonly hydrographyLayer$ = this.store.select(
     selectHydrographyLayer,
   );
