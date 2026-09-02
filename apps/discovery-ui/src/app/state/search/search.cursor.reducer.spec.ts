@@ -28,6 +28,7 @@ describe('searchReducer cursor traversal', () => {
         cursorMode: true,
         cursorByPage: [null, 'old-page-1'],
         nextCursor: 'old-next',
+        paginationNotice: 'old notice',
       },
       SearchActions.cursorSearchSubmitted({
         query: { q: 'tracts', page: 7, pageSize: 25 },
@@ -38,6 +39,7 @@ describe('searchReducer cursor traversal', () => {
     expect(state.cursorMode).toBe(false);
     expect(state.cursorByPage).toEqual([]);
     expect(state.nextCursor).toBeNull();
+    expect(state.paginationNotice).toBeNull();
     expect(state.loading).toBe(true);
   });
 
@@ -72,6 +74,22 @@ describe('searchReducer cursor traversal', () => {
     expect(second.nextCursor).toBe('page-2');
   });
 
+  it('records the explicit offset-compatible fallback notice', () => {
+    const state = searchReducer(
+      initialSearchState,
+      SearchActions.cursorCompatibilityLoaded({
+        response: response(0),
+        notice: 'Using offset-compatible paging.',
+      }),
+    );
+
+    expect(state.response).toEqual(response(0));
+    expect(state.cursorMode).toBe(false);
+    expect(state.cursorByPage).toEqual([]);
+    expect(state.nextCursor).toBeNull();
+    expect(state.paginationNotice).toBe('Using offset-compatible paging.');
+  });
+
   it('clears cursor history when an offset-compatible response takes over', () => {
     const state = searchReducer(
       {
@@ -79,6 +97,7 @@ describe('searchReducer cursor traversal', () => {
         cursorMode: true,
         cursorByPage: [null, 'page-1'],
         nextCursor: 'page-2',
+        paginationNotice: 'old notice',
       },
       SearchActions.searchLoaded({ response: response(4) }),
     );
@@ -86,6 +105,7 @@ describe('searchReducer cursor traversal', () => {
     expect(state.cursorMode).toBe(false);
     expect(state.cursorByPage).toEqual([]);
     expect(state.nextCursor).toBeNull();
+    expect(state.paginationNotice).toBeNull();
     expect(state.query.page).toBe(4);
   });
 });
