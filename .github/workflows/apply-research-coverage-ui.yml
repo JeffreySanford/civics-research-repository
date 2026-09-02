@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Harden staged HTML warning anchor
+      - name: Align staged HTML anchors with current Maps template
         shell: bash
         run: |
           python - <<'PY'
@@ -38,21 +38,44 @@ jobs:
 
           path = Path('tools/scripts/apply-research-coverage-ui.mjs')
           source = path.read_text()
-          before = r"""  source = replaceOnce(
+
+          warning_before = r"""  source = replaceOnce(
               source,
               `    } @if (earthquakeStale$ | async) {`,
               `    } @if (researchCoverageError$ | async; as researchCoverageError) {\n    <p class="warning-message" role="status">\n      Repository research coverage unavailable: {{ researchCoverageError }}\n    </p>\n    } @if (earthquakeStale$ | async) {`,
               'research coverage warning',
             );"""
-          after = r"""  source = replaceOnce(
+          warning_after = r"""  source = replaceOnce(
               source,
               `      SAIPE county choropleth unavailable: {{ saipeError }}\n    </p>\n    } @if (earthquakeStale$ | async) {`,
               `      SAIPE county choropleth unavailable: {{ saipeError }}\n    </p>\n    } @if (researchCoverageError$ | async; as researchCoverageError) {\n    <p class="warning-message" role="status">\n      Repository research coverage unavailable: {{ researchCoverageError }}\n    </p>\n    } @if (earthquakeStale$ | async) {`,
               'research coverage warning',
             );"""
-          if source.count(before) != 1:
-              raise SystemExit(f'Expected one staged warning patch; found {source.count(before)}')
-          path.write_text(source.replace(before, after))
+          if source.count(warning_before) != 1:
+              raise SystemExit(
+                  f'Expected one staged warning patch; found {source.count(warning_before)}'
+              )
+          source = source.replace(warning_before, warning_after)
+
+          table_before = r"""  source = replaceOnce(
+              source,
+              `      @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {`,
+              `${tableBlock}\n      @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {`,
+              'research coverage semantic table insertion point',
+            );"""
+          table_after = r"""  source = replaceOnce(
+              source,
+              `      } } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as\n      saipe) {`,
+              `      } } }${tableBlock}\n      @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as\n      saipe) {`,
+              'research coverage semantic table insertion point',
+            );"""
+          if source.count(table_before) != 1:
+              raise SystemExit(
+                  f'Expected one staged table patch; found {source.count(table_before)}'
+              )
+          source = source.replace(table_before, table_after)
+
+          path.write_text(source)
           PY
 
       - name: Apply staged UI transformation
