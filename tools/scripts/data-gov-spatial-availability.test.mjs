@@ -4,9 +4,51 @@ import {
   buildProbeSql,
   formatMarkdown,
   normalizeProbe,
+  normalizeScaleCertification,
   parseArgs,
   parsePsqlJson,
 } from './data-gov-spatial-availability.mjs';
+
+const REQUIRED_SCALE_CHECKS = [
+  'preflight-ready-to-measure',
+  'exact-source-recipe',
+  'scale-evidence-valid',
+  'active-profile',
+  'persisted-activation-runtime-identity',
+  'search-target-parity',
+  'storage-evidence',
+  'composition-projection-linkage',
+  'public-search-data_gov-provenance',
+  'public-search-doe_osti-provenance',
+];
+
+function passingScaleEvidence(overrides = {}) {
+  return {
+    kind: 'civics-scale-evidence-check',
+    profile: 'FEDERATED_1M',
+    status: 'PASS',
+    targetFederatedRecordCount: 1_000_000,
+    retainedFederatedRecordCount: 1_000_000,
+    compositionSha256: 'a'.repeat(64),
+    projectionId: 'b'.repeat(64),
+    projectionObjectCount: 1_000_181,
+    capturedAt: '2026-09-02T16:00:00.000Z',
+    checks: REQUIRED_SCALE_CHECKS.map((id) => ({ id, status: 'PASS' })),
+    ...overrides,
+  };
+}
+
+function probeCounts() {
+  return {
+    totalRecords: 500000,
+    harvestRecordPresent: 499900,
+    harvestRecordRawPresent: 499000,
+    explicitSpatialTokenRecords: 125000,
+    spatialTextRecords: 100000,
+    spatialObjectRecords: 20000,
+    spatialArrayRecords: 4000,
+  };
+}
 
 test('probe SQL is read-only and scopes the retained Data.gov corpus', () => {
   const sql = buildProbeSql();
@@ -20,15 +62,7 @@ test('probe SQL is read-only and scopes the retained Data.gov corpus', () => {
 
 test('normalizes counts and makes the unmapped/raw gap explicit', () => {
   const report = normalizeProbe(
-    {
-      totalRecords: 500000,
-      harvestRecordPresent: 499900,
-      harvestRecordRawPresent: 499000,
-      explicitSpatialTokenRecords: 125000,
-      spatialTextRecords: 100000,
-      spatialObjectRecords: 20000,
-      spatialArrayRecords: 4000,
-    },
+    probeCounts(),
     '2026-09-02T16:00:00.000Z',
   );
 
@@ -42,6 +76,63 @@ test('normalizes counts and makes the unmapped/raw gap explicit', () => {
     array: 4000,
     other: 1000,
   });
+});
+
+test('binds a passing canonical C2 scale artifact to spatial evidence', () => {
+  const certification = normalizeScaleCertification(passingScaleEvidence());
+  const report = normalizeProbe(
+    probeCounts(),
+    '2026-09-02T16:05:00.000Z',
+    certification,
+  );
+
+  assert.deepEqual(certification, {
+    kind: 'c2-scale-certification',
+    profile: 'FEDERATED_1M',
+    capturedAt: '2026-09-02T16:00:00.000Z',
+    compositionSha256: 'a'.repeat(64),
+    projectionId: 'b'.repeat(64),
+    projectionObjectCount: 1_000_181,
+    retainedFederatedRecordCount: 1_000_000,
+  });
+  assert.deepEqual(report.scaleCertification, certification);
+
+  const markdown = formatMarkdown(report, 500000);
+  assert.match(markdown, /Certified C2 binding/u);
+  assert.match(markdown, new RegExp(`Composition SHA-256: \\`${'a'.repeat(64)}\\``));
+  assert.match(markdown, new RegExp(`Projection ID: \\`${'b'.repeat(64)}\\``));
+});
+
+test('rejects scale evidence that is not the certified C2 contract', () => {
+  assert.throws(
+    () => normalizeScaleCertification(passingScaleEvidence({ status: 'FAIL' })),
+    /must be PASS/u,
+  );
+  assert.throws(
+    () =>
+      normalizeScaleCertification(
+        passingScaleEvidence({ profile: 'FEDERATED_100K' }),
+      ),
+    /profile must be FEDERATED_1M/u,
+  );
+  assert.throws(
+    () =>
+      normalizeScaleCertification(
+        passingScaleEvidence({ compositionSha256: 'not-a-sha' }),
+      ),
+    /compositionSha256 must be a lowercase SHA-256/u,
+  );
+  assert.throws(
+    () =>
+      normalizeScaleCertification(
+        passingScaleEvidence({
+          checks: REQUIRED_SCALE_CHECKS.filter(
+            (id) => id !== 'composition-projection-linkage',
+          ).map((id) => ({ id, status: 'PASS' })),
+        }),
+      ),
+    /composition-projection-linkage/u,
+  );
 });
 
 test('rejects impossible spatial counts', () => {
@@ -86,9 +177,20 @@ test('markdown distinguishes token availability from validated geometry', () => 
   assert.match(markdown, /\(MATCH\)/u);
 });
 
-test('argument parser supports an exact C2 expectation and output directory', () => {
+test('argument parser supports exact C2 count, output and scale evidence', () => {
   assert.deepEqual(
-    parseArgs(['--expect', '500000', '--output-dir', 'tmp/spatial']),
-    { expectedCount: 500000, outputDir: 'tmp/spatial' },
+    parseArgs([
+      '--expect',
+      '500000',
+      '--output-dir',
+      'tmp/spatial',
+      '--scale-evidence',
+      'tmp/scale.json',
+    ]),
+    {
+      expectedCount: 500000,
+      outputDir: 'tmp/spatial',
+      scaleEvidencePath: 'tmp/scale.json',
+    },
   );
 });
