@@ -1,0 +1,44 @@
+name: Patch Storybook static evidence server
+
+on:
+  push:
+    branches: [codex/layered-test-coverage-foundation]
+    paths: [.github/workflows/patch-storybook-static-server.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/layered-test-coverage-foundation
+          fetch-depth: 0
+
+      - name: Replace Storybook dev server with generated static server target
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/apply-storybook-test-foundation-v3.yml')
+          source = path.read_text()
+          old = 'pnpm exec nx storybook discovery-ui --configuration=ci'
+          new = 'pnpm exec nx static-storybook discovery-ui --configuration=ci --port=4400'
+          occurrences = source.count(old)
+          if occurrences != 2:
+              raise SystemExit(f'expected 2 Storybook dev-server commands, found {occurrences}')
+          path.write_text(source.replace(old, new))
+          PY
+
+      - name: Commit patch and remove patcher
+        shell: bash
+        run: |
+          git config user.name 'Jeffrey Sanford'
+          git config user.email 'jeffrey_sanford@hotmail.com'
+          git rm .github/workflows/patch-storybook-static-server.yml
+          git add .github/workflows/apply-storybook-test-foundation-v3.yml
+          git commit -m 'ci: serve built Storybook for accessibility evidence'
+          git push origin HEAD:codex/layered-test-coverage-foundation
