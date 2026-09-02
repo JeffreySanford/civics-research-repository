@@ -43,7 +43,7 @@ jobs:
         run: >-
           pnpm exec playwright test
           --config=apps/discovery-ui-e2e/playwright.config.mts
-          --grep '@comparison|@wcag|@section508'
+          --grep '@comparison|@wcag|@section508|@maps'
           --reporter=html,line
 
       - name: Upload Playwright report and failure evidence
