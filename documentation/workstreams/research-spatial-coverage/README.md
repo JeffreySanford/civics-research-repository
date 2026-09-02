@@ -2,141 +2,137 @@
 
 ## Purpose
 
-The million-record C2 corpus gives Civics Research Repository broad research metadata, but most federated records are not yet modeled with first-class spatial coverage. This workstream introduces a provenance-preserving spatial model before the UI begins drawing research objects on Maps.
+This workstream establishes the authoritative geography boundary needed before Civics Research Repository expands its thematic and research-coverage maps.
 
-The governing rule is simple:
+The governing rule is:
 
-> Map where the research says it applies, not where its publisher happens to live.
+> Map where the data or research says it applies, not where its publisher happens to live.
 
-Publisher, laboratory, author or institution location must never be silently substituted for research coverage.
+Publisher, laboratory, author, or institution location must never be silently substituted for research coverage.
 
-The source-by-source map opportunity analysis and recommended layer taxonomy are maintained in [DATA_LAYER_MATRIX.md](DATA_LAYER_MATRIX.md). That matrix separates administrative geometry, thematic measures, environmental context and research-object coverage so adding new sources does not recreate a flat agency-oriented toolbar.
+## Implemented in this pull request
 
-## Proposed domain model
+### Shared county geometry
 
-Introduce an engine-neutral spatial sidecar keyed by stable research-object identity. Keeping spatial enrichment separate from the immutable C2 composition prevents an enrichment pass from changing the already-certified corpus identity.
+`AdministrativeGeometryService` provides reusable Census TIGERweb county geometry keyed by stable Census GEOIDs.
 
-A coverage record should support:
+The service:
 
-- `ADMIN_AREA` — named/state/county/FIPS or another authoritative administrative geography;
-- `POINT` — explicit publisher/source coordinates;
-- `BBOX` — west/south/east/north bounds;
-- `POLYGON` — later, when source semantics justify geometry storage.
+- supports explicit county geometry vintages instead of silently using the newest boundaries;
+- currently supports January 1, 2023 and January 1, 2025 county geometry;
+- requests GeoJSON in WGS84 (`outSR=4326`);
+- validates state FIPS, county GEOIDs, duplicate GEOIDs, and Polygon/MultiPolygon geometry;
+- returns counties in deterministic GEOID order;
+- caches successful responses by `(vintage, stateFips)`;
+- returns defensive copies from the cache;
+- never falls back to generated rectangles when authoritative geometry is unavailable.
 
-Each coverage record should include:
+### SAIPE geometry hardening
 
-- research object ID;
-- coverage type;
-- label;
-- normalized geometry or administrative identifier;
-- source system;
-- source field/evidence reference;
-- derivation method;
-- source/update timestamp when available;
-- enrichment timestamp/version;
-- confidence/authority classification where useful.
+`SaipeCountyChoroplethService` now joins retained 2023 SAIPE values to matching 2023 Census county geometry by GEOID.
 
-## Derivation methods
+The service no longer generates rectangular county cells. A retained SAIPE value without matching authoritative county geometry fails explicitly instead of being dropped or rendered with invented geometry.
 
-At minimum distinguish:
+The response records both thematic and geometry provenance, including:
 
-- `PUBLISHER_SUPPLIED` — explicit spatial metadata from the authoritative source;
-- `AUTHORITATIVE_GAZETTEER_MATCH` — a named geography resolved against an approved gazetteer/reference dataset;
-- `DERIVED` — an explicit transformation with documented rules.
+- thematic vintage;
+- geometry vintage;
+- Census geometry source URL;
+- Census geometry attribution;
+- SAIPE source URL and attribution.
 
-Do not add a generic title-text geocoder that silently turns arbitrary words into locations.
+### Capability truth
+
+`MapLayerService` advertises the SAIPE layer only where this repository actually retains SAIPE values. The current retained fixture supports North Dakota, California, and Texas; other geographies are not presented as SAIPE-capable merely because the upstream program exists.
+
+## Architectural boundaries
+
+Thematic values and geometry remain separate authorities:
+
+- thematic services own measures and value provenance;
+- `AdministrativeGeometryService` owns administrative geometry retrieval and validation;
+- joins happen through stable geography identifiers such as state FIPS and county GEOID.
+
+This boundary is intended to be reused by Population Estimates, County Business Patterns, Business Dynamics Statistics, Building Permits, and later administrative research-coverage summaries.
+
+The application must not create a separate polygon implementation for every thematic measure.
+
+## Research coverage semantics
+
+The broader spatial roadmap still distinguishes thematic geography from research-object coverage.
+
+A future application-owned spatial sidecar may represent explicit research coverage such as:
+
+- authoritative administrative areas;
+- publisher-supplied points;
+- bounding boxes;
+- polygons when source semantics justify them.
+
+That future model must preserve source evidence and derivation method and must not mutate the certified C2 corpus identity merely because spatial enrichment evolves.
+
+Useful derivation classes include:
+
+- `PUBLISHER_SUPPLIED`;
+- `AUTHORITATIVE_GAZETTEER_MATCH`;
+- explicitly documented `DERIVED` transformations.
+
+Do not add a generic title-text geocoder that turns arbitrary words into locations.
 
 ## Source strategy
 
 ### Curated repository metadata
 
-The existing DSpace catalog already carries explicit administrative geography for area-scoped TIGER/Line, ACS PUMS and LODES research objects. That makes **Repository research by area** the first spatial research-coverage layer that can be implemented without a new publisher crawl or geocoding step. It is an aggregation of explicit catalog metadata, not an inferred subject footprint.
+Existing area-scoped TIGER/Line, ACS PUMS, and LODES metadata can support a first **Repository research by area** summary without a new publisher crawl. The value means matching repository/search objects whose metadata explicitly names the area; it does not claim that every publication scientifically covers the entire administrative area.
 
 ### Data.gov
 
-Retain and normalize explicit DCAT spatial coverage where the source publishes it. Do not infer coverage from the publishing agency address.
-
-The current retained Data.gov records preserve `harvestRecordRaw` references but the current adapter does not normalize `dcat.spatial`. Add a deterministic spatial-availability probe first, then use the retained raw-record references for a targeted enrichment pass rather than replaying the entire 500K catalog cursor crawl. Keep that enrichment in the spatial sidecar so the certified C2 corpus identity does not change accidentally.
+Use explicit DCAT spatial metadata when present. The current retained records preserve raw-harvest references, so a future deterministic spatial-availability probe and targeted enrichment can use those references without replaying the entire certified 500K catalog crawl.
 
 ### DOE OSTI
 
-Keep bibliographic records unmapped unless a record contains authoritative research/site/geospatial coverage. DOE laboratory location is not a substitute for the content's coverage.
+Do not map laboratory, sponsor, or publisher location as research coverage. OSTI records should remain unmapped unless authoritative content/site/spatial coverage is actually supplied.
 
-### NASA Earthdata CMR
+### NASA CMR
 
-CMR is the strongest near-term federated spatial source. Build on the existing collection harvester and add collection/granule spatial and temporal semantics deliberately. Granules should be modeled distinctly rather than silently changing collection semantics. Prefer a pinned/documented UMM JSON representation when extending the adapter so collection spatial geometry has an explicit publisher contract.
+CMR is a strong future federated spatial source because collection and granule records have explicit spatial semantics. Collection coverage and granule coverage must remain distinct concepts and should use a pinned/documented publisher representation.
 
-### PubMed / OpenAlex
+### PubMed and OpenAlex
 
-Institution/affiliation geography may be useful as a separate relationship dimension later, but it must not be labeled as research coverage unless the source actually provides research geography.
+Institution or affiliation geography may become a separate analytic relationship view later, but it must not be labeled research coverage unless the source actually provides research geography.
 
-## Shared administrative geometry
+## Maps taxonomy
 
-Before multiplying county choropleths, introduce a reusable administrative-geometry boundary backed by authoritative TIGER/Line or Census cartographic geometry.
+The stable research-purpose taxonomy is:
 
-It should support stable join keys for:
+1. **Geography & Boundaries** — administrative geometry used to orient and join measures.
+2. **Community & Economy** — workforce, poverty, population, business, and housing measures.
+3. **Environment & Hazards** — hydrography, terrain, and event/hazard context.
+4. **Research Coverage** — where research objects explicitly say they apply and administrative summaries of matching repository/search objects.
 
-- state/territory FIPS;
-- county/county-equivalent FIPS;
-- PUMA code;
-- tract GEOID for bounded/on-demand cases.
-
-Thematic services should return values keyed by those identifiers rather than constructing their own polygons. This allows SAIPE, Population Estimates, County Business Patterns, Business Dynamics Statistics, Building Permits and later ACS-derived measures to share the same geometry, accessibility and selection behavior.
-
-The existing generated county rectangles used as SAIPE fallback are demo scaffolding, not the geometry contract for future layers.
-
-## Storage and projection
-
-Spatial coverage should be durable application-owned metadata/evidence, not search-engine authority.
-
-Search indexes may project spatial fields for filtering/aggregation, but the application-owned coverage record remains the evidence source.
-
-The existing C2 retained corpus/composition/projection identities should remain unchanged unless a future explicitly versioned research corpus chooses to make spatial coverage part of its semantic identity.
-
-## API direction
-
-Provide typed read APIs suitable for the following workstream without sending unbounded research objects to the browser:
-
-- coverage by research-object ID;
-- bounded coverage summaries by query/filter/admin area;
-- viewport/bounds-limited feature retrieval;
-- source/type/provenance breakdowns.
-
-Thematic county/PUMA measures should use a separate reusable value contract joined to shared administrative geometry; do not force population/payroll/poverty values and research-object footprints into one ambiguous schema.
+Only show a child layer when its backing capability is actually available. Planned layers should not appear as permanently disabled advertising.
 
 ## Accessibility
 
-Spatial coverage is not complete merely because geometry draws in MapLibre.
+Authoritative geometry does not remove the existing map-equivalence requirements. Every meaningful map value must remain available through semantic HTML and shared application state.
 
-Every meaningful map value must have a semantic equivalent through shared application state:
+New layers must preserve:
 
-- area/count summaries in lists/tables;
-- research-object links;
-- provenance/derivation text;
-- stale/unavailable state where applicable;
-- keyboard selection that does not require canvas interaction.
+- keyboard-operable controls;
+- textual measure, vintage, source, and provenance;
+- semantic table/list equivalents for mapped values;
+- color-independent meaning and selection;
+- access that does not require panning, dragging, or canvas hit-testing;
+- focus stability when selection changes.
 
-## Evidence
+## Next implementation sequence
 
-Required evidence includes:
+1. Make the Maps control surface capability-aware so unsupported SAIPE controls are hidden for the selected geography.
+2. Add **Repository research by area** using already-retained explicit administrative metadata.
+3. Reuse shared county geometry for Population Estimates.
+4. Add County Business Patterns with measure/industry configuration.
+5. Add Business Dynamics Statistics and Building Permits.
+6. Add a deterministic Data.gov spatial-availability probe and targeted sidecar enrichment.
+7. Extend NASA CMR collection mapping with explicit spatial extent, followed by bounded granule coverage.
+8. Consider 3DEP terrain and PUMA/ACS-derived measures after the common geometry/value contracts are proven.
 
-- domain validation tests for each coverage type;
-- rejection of invalid coordinate/bbox shapes;
-- provenance/derivation preservation;
-- deterministic gazetteer resolution where used;
-- proof that publisher location is not silently mapped as coverage;
-- source-specific fixture tests;
-- OpenAPI/generated-contract checks;
-- accessibility tests for exposed spatial metadata;
-- geometry/value join tests using stable administrative identifiers;
-- proof that fallback/demo geometry is visibly disclosed and cannot masquerade as authoritative boundary geometry.
-
-## Exit criteria
-
-1. Spatial coverage has a typed, provenance-preserving model.
-2. Spatial enrichment can evolve without mutating the certified C2 composition by accident.
-3. Shared authoritative administrative geometry exists for the first thematic layers.
-4. Curated repository geography can drive a bounded research-by-area summary.
-5. Data.gov/NASA source-specific mappings have committed fixtures and explicit rules.
-6. Research coverage can be queried in bounded form for Maps.
-7. No source is mapped from publisher/institution location without explicit semantics.
+See [DATA_LAYER_MATRIX.md](DATA_LAYER_MATRIX.md) for the source-by-source rationale and sequencing.

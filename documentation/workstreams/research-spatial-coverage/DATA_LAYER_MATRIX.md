@@ -2,238 +2,213 @@
 
 ## Decision
 
-Organize the Maps workspace by **research purpose**, not by publisher. The stable top-level taxonomy is:
+Organize Maps by **research purpose**, not by publisher.
+
+The stable top-level taxonomy is:
 
 1. **Geography & Boundaries** — geometry used to orient or join other measures.
-2. **Community & Economy** — demographic, workforce, poverty, business, housing and population measures.
-3. **Environment & Hazards** — terrain, water and event/hazard context.
+2. **Community & Economy** — demographic, workforce, poverty, business, housing, and population measures.
+3. **Environment & Hazards** — terrain, water, and event/hazard context.
 4. **Research Coverage** — where research objects explicitly say they apply, plus administrative summaries of matching repository/search objects.
 
-This taxonomy should survive the addition of new Census, USGS and federated sources without creating an agency-by-agency toolbar.
+A category owns presentation only. Every child remains independently checkable and renderable. Closing a category never disables checked children.
 
-A category owns presentation only. Every child remains independently checkable and independently renderable. Closing a category never disables its checked children, and the closed summary reports the number of active children.
+Only show a child when its backing capability is actually available. Do not expose permanently disabled future layers merely to advertise planned work.
 
-## Current curated catalog
+## Current catalog and map value
 
-The committed source inventory contains 181 research objects across 15 program values. The largest existing groups are ACS (56), TIGER/Line (56) and LODES (53). The remaining Census/USGS programs are mostly national catalog objects plus five LEHD research-package objects.
+The committed curated inventory contains 181 research objects. The major area-scoped groups are TIGER/Line, ACS PUMS, and LODES; the repository also retains national Census/USGS catalog objects and LEHD research-package metadata.
 
-| Current program/data | Existing scope | Recommended category | Map use | Priority |
-| --- | --- | --- | --- | --- |
-| TIGER/Line | 56 area-scoped research objects; tract source archives | Geography & Boundaries | authoritative state/county/tract/PUMA geometry and joins | **P0 foundation** |
-| LODES WAC | 53 area-scoped objects | Community & Economy | workplace jobs / employment intensity | already implemented |
-| LODES/LEHD OD | bounded map flow service | Community & Economy | commuting origin-destination lines | already implemented |
-| SAIPE | county data, one national catalog object | Community & Economy | poverty / median-income county choropleth | implemented, geometry hardening needed |
-| Population Estimates | county-capable source | Community & Economy | population, change and growth-rate choropleths | **P1** |
-| County Business Patterns | county-capable source | Community & Economy | establishments, employment, payroll; optional industry filter | **P1** |
-| Business Dynamics Statistics | state/county-capable source/API | Community & Economy | job creation/destruction, establishment births/deaths | **P1/P2** |
-| Building Permits Survey | county/place source | Community & Economy | housing units authorized; county choropleth or place circles | **P2** |
-| Economic Census | source supports subnational business statistics | Community & Economy | establishments/employment/payroll/sales by county/industry | **P2** |
-| ACS PUMS | 56 area-scoped objects; PUMA-capable microdata | Community & Economy | derived PUMA/state indicators, never raw-person points | **P2** |
-| SIPP | national | Research Coverage only | national research-object coverage; no meaningful thematic geometry today | no thematic layer |
-| CPS | national | Research Coverage only | national research-object coverage; no meaningful thematic geometry today | no thematic layer |
-| USGS 3HP | national hydrography | Environment & Hazards | hydrography raster/reference | already implemented |
-| USGS earthquakes | point events | Environment & Hazards | recent event points with magnitude/time | already implemented |
-| USGS 3DEP | national elevation program; current catalog references a sample DEM | Environment & Hazards | hillshade/elevation reference through 3DEP dynamic service | **P2** |
-| LEHD publications/methodology/project objects | national research package | Research Coverage | research-object relationships and linked LODES context, not invented local footprints | metadata layer only |
+### Geography & Boundaries
 
-## Immediate map value from data already retained
+**TIGER/Line**
 
-### Repository research coverage by area
+- Existing scope: area-scoped research objects and tract source archives.
+- Map role: authoritative state/county/tract/PUMA geometry and stable joins.
+- Priority: foundation.
+- Current status: state-level preview exists; shared authoritative county geometry is implemented in this workstream.
 
-This needs no new publisher crawl.
+### Community & Economy
 
-The curated catalog already carries geography on its area-scoped objects. TIGER/Line and ACS are seeded across all configured areas; LODES is seeded for 53 areas, with Alaska, Michigan and Puerto Rico intentionally excluded for the selected vintage because the publisher does not provide the required file.
+**LODES workplace employment**
 
-A first **Repository research coverage** layer can therefore aggregate matching curated research objects by administrative area:
+- Existing scope: retained area-scoped LODES WAC objects.
+- Map role: workplace jobs/employment intensity.
+- Current status: implemented.
+
+**LODES commuting flows**
+
+- Existing scope: bounded flow service.
+- Map role: origin-destination lines and selected flow context.
+- Current status: implemented.
+
+**SAIPE**
+
+- Existing scope: retained county-value fixture for North Dakota, California, and Texas plus repository catalog metadata.
+- Map role: poverty/median-income county choropleth.
+- Current status: implemented and migrated to authoritative 2023 county geometry in this workstream.
+- Capability rule: do not advertise SAIPE where no retained values exist.
+
+**Population Estimates**
+
+- Existing source capability: county-level population measures.
+- First map role: population, annual change, and growth-rate county choropleth.
+- Priority: next county thematic layer after capability-aware Maps controls.
+- Geometry: reuse `AdministrativeGeometryService`.
+
+**County Business Patterns**
+
+- Existing source capability: county establishments, employment, first-quarter payroll, annual payroll, and industry detail.
+- First map role: business employment by county.
+- Priority: high.
+- UI model: one conceptual layer with measure and industry parameters rather than separate checkboxes for every metric.
+
+**Business Dynamics Statistics**
+
+- Existing source capability: state/county/metro measures such as job creation/destruction and establishment births/deaths.
+- First map role: job creation rate by county.
+- Priority: high after Population Estimates/CBP.
+
+**Building Permits**
+
+- Existing source capability: national, state, CBSA, county, and place statistics.
+- First map role: housing units authorized by county.
+- Priority: later county layer; place symbols can follow when place geometry/coordinates are available.
+
+**Economic Census**
+
+- Existing source capability: subnational establishments/employment/payroll/sales by industry.
+- Map role: later configurable county/business layer.
+- Priority: later.
+
+**ACS PUMS**
+
+- Existing scope: area-scoped metadata with PUMA-capable microdata.
+- Map rule: never draw person-level microdata points.
+- Future role: weighted PUMA/state indicators only, with explicit survey-weight methodology and authoritative PUMA geometry.
+
+### Environment & Hazards
+
+**USGS 3HP hydrography**
+
+- Map role: hydrography reference.
+- Current status: implemented.
+
+**USGS earthquakes**
+
+- Map role: recent event points with magnitude/time context.
+- Current status: implemented.
+
+**USGS 3DEP**
+
+- Current catalog representation includes a sample DEM reference.
+- Future map role: terrain/hillshade through an authoritative rendering service while repository metadata continues to document provenance.
+- UI model: one 3DEP terrain layer with visualization mode, not separate permanent checkboxes for hillshade/slope/aspect variants.
+
+## Immediate research-coverage value from retained metadata
+
+### Repository research by area
+
+This is the first Research Coverage child that can be implemented without a new publisher crawl.
+
+Area-scoped curated objects already carry explicit administrative geography. A map summary can aggregate matching repository/search objects by area.
+
+The value means:
+
+> count of matching research objects whose metadata explicitly names this administrative area
+
+It does **not** mean that every publication scientifically studies or covers every location inside that area.
+
+Selection should expose the corresponding research objects in semantic HTML and reuse bounded/cursor search behavior where result sets become large.
+
+## Shared administrative geometry
+
+Do not add a separate polygon implementation for each thematic measure.
+
+The shared geometry boundary should expose stable join identifiers such as:
 
 ```text
-North Dakota       3 matching area-scoped objects
-California         3 matching area-scoped objects
-Alaska             2 matching area-scoped objects
-Michigan           2 matching area-scoped objects
-Puerto Rico        2 matching area-scoped objects
+state / territory -> state FIPS
+county / county-equivalent -> county GEOID
+PUMA -> PUMA code
+tract -> tract GEOID
 ```
 
-The exact count depends on the active Discovery criteria. The map value is a count of repository/search objects whose metadata explicitly names the area — not a claim that every publication studies the whole area.
-
-Selecting an area should expose the corresponding research objects in semantic HTML and reuse the normal search/list cursor contract where the result set becomes large.
-
-## Shared administrative geometry before more choropleths
-
-Do not add a separate geometry implementation for every measure.
-
-The current SAIPE service demonstrates why: it can fall back to generated rectangular county cells inside a state extent. That is acceptable scaffolding but should not become the geometry foundation for additional economic layers.
-
-Introduce one reusable administrative-geometry boundary:
+Current county implementation:
 
 ```text
 AdministrativeGeometryService
-  state / territory
-  county / county-equivalent
-  PUMA
-  tract (bounded/on demand)
-
-stable join keys
-  state FIPS
-  county FIPS
-  PUMA code
-  tract GEOID
+  -> explicit geometry vintage
+  -> Census TIGERweb GeoJSON
+  -> WGS84
+  -> deterministic GEOID order
+  -> validated Polygon/MultiPolygon features
+  -> cache by vintage/state FIPS
+  -> no synthetic fallback
 ```
 
-Use authoritative TIGER/Line-derived geometry or a Census cartographic boundary representation. The thematic services should provide values keyed by geography ID; the map joins those values to the shared geometry.
+Thematic services provide values keyed by geography identifier. Geometry is authoritative Census geometry and is joined separately.
 
-This unlocks SAIPE, Population Estimates, CBP, BDS, Building Permits and Economic Census without duplicating geometry or accessibility logic.
-
-## Recommended Community & Economy layer sequence
-
-### P1A — Population change
-
-The catalog already references the 2025 Population Estimates county file. Census Population Estimates cover states, counties, cities and towns. Start with county population and annual change/growth.
-
-Why first:
-
-- intuitive measure;
-- small data footprint compared with microdata;
-- same county geometry needed by SAIPE;
-- straightforward accessible table: County / Population / Change / Growth rate.
-
-### P1B — County Business Patterns
-
-CBP is an especially strong layer because the 2023 source is already in the catalog and Census publishes county-level establishments, employment, first-quarter payroll and annual payroll, with industry detail.
-
-Initial child layer:
-
-- **Business employment by county**
-
-Then allow a measure selector rather than creating four permanent checkboxes:
-
-```text
-Measure
-  Employment
-  Establishments
-  Annual payroll
-
-Industry
-  All industries
-  selected NAICS sector
-```
-
-The layer remains one renderable checkbox; measure/industry are layer parameters.
-
-### P1C — Business dynamics
-
-BDS now has a Census API with state, county and metro geography and measures such as job creation/destruction and establishment births/deaths.
-
-A useful first layer is **Job creation rate by county**. Keep the year and measure inside the layer configuration rather than producing a checkbox for every indicator.
-
-### P2 — Building permits
-
-The current 2025 Building Permits source supports national, state, CBSA, county and place statistics. A county choropleth of housing units authorized is the cleanest first implementation; place-level symbols can follow after place geometry/coordinates are available.
-
-### P2 — ACS PUMS-derived measures
-
-ACS PUMS supports state and PUMA geography. Never draw person-level microdata points. Any map layer must aggregate with survey weights and disclose the statistic/methodology.
-
-A later layer might show a PUMA-level labor-force or housing indicator, but this requires a PUMA geometry source and explicit weighted aggregation evidence. It is downstream of simpler published aggregate products.
-
-## Environment & Hazards
-
-Keep the existing USGS hydrography and earthquake children in this category.
-
-Add **3DEP terrain/hillshade** only after the current sample-TIFF catalog representation is separated from the rendering source. USGS provides a national 3DEP dynamic elevation ImageServer capable of hillshade, slope, aspect and tinted-hillshade rendering. The map should use the service as a reference layer while the repository object continues to document provenance.
-
-Do not expose hillshade, slope, aspect and tinted hillshade as four permanent checkboxes. Prefer one **3DEP terrain** child with a visualization-mode selector.
+This boundary is intended to unlock SAIPE, Population Estimates, County Business Patterns, Business Dynamics Statistics, Building Permits, and Economic Census without duplicating geometry or accessibility logic.
 
 ## Federated Research Coverage
 
-### Data.gov — high value, requires enrichment
+### Data.gov
 
-DCAT-US includes an explicit `spatial` field for spatial datasets. It can represent named geography, bounding coordinates, points or GeoJSON-style geometry depending on the source/version.
+DCAT-US can carry explicit spatial metadata. The current normalized adapter does not yet retain `dcat.spatial`, while retained records may preserve a raw-harvest reference.
 
-The current `DataGovHarvester` does **not** normalize `dcat.spatial`; therefore the certified 500K Data.gov checkpoint cannot currently be mapped from local normalized metadata alone.
+Do not replay the entire 500K certified catalog merely to discover spatial fields.
 
-However, each retained record may contain `harvestRecordRaw`, which is a URL to the source/raw harvest record. Use that as a targeted enrichment entry point rather than replaying the whole catalog cursor crawl.
-
-Recommended flow:
+Recommended sequence:
 
 ```text
 retained Data.gov record
-  -> retained harvestRecordRaw reference
-  -> bounded spatial enrichment fetch
+  -> retained raw-harvest reference
+  -> deterministic spatial-availability probe
+  -> bounded targeted enrichment
   -> parse explicit DCAT spatial
-  -> ResearchSpatialCoverage sidecar
+  -> application-owned spatial sidecar
 ```
 
-The enrichment has its own version/evidence and does not mutate the C2 Gold Master identity.
+The probe should record:
 
-Before a large enrichment run, add a read-only probe that samples a deterministic slice and records:
-
-- records with spatial present;
+- sampled record count;
+- records with spatial metadata;
 - parseable admin area / point / bbox / polygon counts;
 - malformed/unsupported values;
 - source/publisher distribution;
-- sample evidence IDs.
+- representative evidence IDs.
 
-### DOE OSTI — do not force onto the map
+Spatial enrichment should have its own version/evidence and should not silently mutate the certified C2 Gold Master identity.
 
-The current OSTI mapping is bibliographic/research metadata. Publisher, sponsor or laboratory location is not research coverage. Keep OSTI out of Research Coverage unless an authoritative record explicitly supplies content/site/spatial coverage.
+### DOE OSTI
 
-### NASA CMR — strongest federated spatial layer
+Do not force bibliographic records onto the map. Laboratory, sponsor, or publisher location is not research coverage.
 
-NASA CMR explicitly models collection and granule spatial extent. CMR supports point, bounding rectangle, polygon and line semantics, and spatial search is a first-class API capability.
+Only map OSTI records when an authoritative record explicitly supplies content/site/spatial coverage.
 
-The current collection adapter does not yet retain those geometry fields. For the spatial workstream, prefer a documented UMM JSON response/version so the adapter receives explicit collection spatial metadata rather than relying on a minimal legacy JSON projection.
+### NASA CMR
 
-Two distinct map children can eventually exist:
+NASA CMR is the strongest future federated spatial source because collection and granule records have explicit spatial semantics.
 
-- **NASA collection coverage** — collection-level footprints/bounds;
+Keep two concepts distinct:
+
+- **NASA collection coverage** — collection-level footprints or bounds;
 - **NASA granule coverage** — bounded viewport/time-filtered granules for selected collections.
 
-Never silently make granules the same research-object type as collections.
+Do not silently make granules the same research-object type as collections. Prefer a pinned/documented publisher representation when extending the adapter.
 
-### PubMed / OpenAlex
+### PubMed and OpenAlex
 
 Do not label author or institution location as research coverage.
 
-If institution geography is added later, expose it as a separately named analytic concept such as **Research institutions / affiliations**, with its own semantics. That is a relationship/location view, not a statement about where the research subject applies.
+If affiliation geography is added later, expose it under a separate analytic concept such as **Research institutions / affiliations**.
 
-## Final control taxonomy
-
-```text
-Layers
-
-▾ Geography & Boundaries          1 of 1 visible
-   ☑ TIGER/Line boundary
-
-▾ Community & Economy             3 of N visible
-   ☑ LODES workplace employment
-   ☑ LODES commuting flows
-   ☑ SAIPE county poverty
-   ☐ Population change
-   ☐ Business employment
-   ☐ Business dynamics
-   ☐ Building permits
-   ☐ ACS PUMS-derived measure
-
-▾ Environment & Hazards           2 of N visible
-   ☑ USGS 3HP hydrography
-   ☑ USGS earthquake overlay
-   ☐ USGS 3DEP terrain
-
-▾ Research Coverage               0 of N visible
-   ☐ Repository research by area
-   ☐ Data.gov spatial datasets
-   ☐ NASA collection coverage
-   ☐ NASA granule coverage
-```
-
-Only show a child when its backing capability is actually available. A planned layer must not appear disabled indefinitely merely to advertise future work.
-
-## Avoid checkbox explosion
+## Control model
 
 A checkbox answers one question: **is this conceptual layer rendered?**
 
-Variables belong inside a layer configuration:
+Variables belong inside layer configuration:
 
 - measure;
 - year/vintage;
@@ -242,11 +217,11 @@ Variables belong inside a layer configuration:
 - source system;
 - aggregation level.
 
-For example, CBP should be one checkable layer with `Employment / Establishments / Payroll` as a measure selector, not three permanent top-level children.
+For example, County Business Patterns should be one checkable layer with `Employment / Establishments / Payroll` as a measure selector, not three permanent top-level children.
 
-## API shape
+## Thematic API direction
 
-Prefer a common thematic response contract where practical:
+Prefer a common thematic value contract where practical:
 
 ```text
 ThematicAreaLayer
@@ -266,39 +241,39 @@ ThematicAreaLayer
 
 Geometry is fetched/shared separately by geography level and joined by stable IDs.
 
-For research coverage use separate bounded contracts because the semantics are different:
+Research coverage should use separate bounded contracts because its semantics are different from population/payroll/poverty values.
+
+Possible future contracts:
 
 ```text
 ResearchCoverageSummary
 ResearchCoverageFeaturePage
 ```
 
-Do not force research footprints into the same model as county poverty or payroll.
+Do not force research footprints into the same model as county thematic measures.
 
 ## Accessibility contract
 
-Every new layer inherits the existing map-equivalence rules:
+Every new layer inherits the map-equivalence rules:
 
-- category summary remains keyboard operable and exposes active-child state;
+- category summary remains keyboard operable and exposes meaningful child state;
 - every child is independently operable;
-- a collapsed category never disables a checked child;
-- every mapped numeric value exists in a semantic table/list;
-- measure/year/source/provenance are textual;
+- collapsing a category never disables a checked child;
+- mapped numeric values have a semantic table/list equivalent;
+- measure, year, source, and provenance are textual;
 - color is not the only representation of value or selection;
-- panning, dragging or canvas hit-testing is never required to obtain the information;
+- panning, dragging, and canvas hit-testing are never required to obtain the information;
 - selection is synchronized through application state without stealing focus;
 - large matching research lists use bounded/cursor traversal.
 
 ## Recommended implementation order
 
-1. Finish the category/disclosure PR with the four-category taxonomy, showing only the three categories that currently have implemented children.
-2. Add authoritative shared county geometry and migrate SAIPE off generated rectangular cells.
-3. Add Repository research-by-area coverage from already-retained curated metadata.
-4. Add Population Estimates county layer.
-5. Add CBP county layer with measure/industry configuration.
-6. Add BDS, then Building Permits.
+1. Complete authoritative shared county geometry and SAIPE migration. **Implemented in this workstream.**
+2. Make Maps controls capability-aware for the selected geography.
+3. Add Repository research-by-area coverage from retained explicit administrative metadata.
+4. Add Population Estimates county values.
+5. Add County Business Patterns with measure/industry configuration.
+6. Add Business Dynamics Statistics, then Building Permits.
 7. Add a deterministic Data.gov spatial-availability probe and targeted sidecar enrichment.
-8. Extend NASA CMR collection mapping with explicit spatial extent; then bounded granule coverage.
-9. Consider 3DEP terrain and PUMA/ACS layers after the common geometry/value contracts are proven.
-
-This sequence creates visible product value early while preserving the evidence-first and accessibility boundaries.
+8. Extend NASA CMR collection mapping with explicit spatial extent, then bounded granule coverage.
+9. Consider 3DEP terrain and PUMA/ACS-derived measures after the common geometry/value contracts are proven.

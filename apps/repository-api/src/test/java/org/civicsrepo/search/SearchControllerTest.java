@@ -33,6 +33,9 @@ class SearchControllerTest {
     @MockitoBean
     private SearchService searchService;
 
+    @MockitoBean
+    private SearchCursorService searchCursorService;
+
     @Test
     void acceptsADataDrivenProgramOutsideTheLegacyEnum() throws Exception {
         given(searchService.search(
@@ -175,6 +178,58 @@ class SearchControllerTest {
 
         verify(searchService)
                 .search(null, List.of(), null, null, "North \"Dakota\"", null, null, 0, 25);
+    }
+
+    @Test
+    void exposesCursorTraversalWithoutChangingTheOffsetEndpoint() throws Exception {
+        given(searchCursorService.search(
+                        eq("climate"),
+                        eq(List.of("Office of Science")),
+                        eq("DOE Office of Scientific and Technical Information"),
+                        eq(SourceSystem.DOE_OSTI),
+                        eq("North Dakota"),
+                        eq(ResearchObjectType.PUBLICATION),
+                        eq(2025),
+                        eq("opaque-current"),
+                        eq(10)))
+                .willReturn(new SearchCursorPage(response(), "opaque-next"));
+
+        mockMvc.perform(get("/search/cursor")
+                        .param("q", "climate")
+                        .param("program", "Office of Science")
+                        .param("publisher", "DOE Office of Scientific and Technical Information")
+                        .param("sourceSystem", "DOE_OSTI")
+                        .param("geography", "North Dakota")
+                        .param("contentType", "PUBLICATION")
+                        .param("vintageYear", "2025")
+                        .param("cursor", "opaque-current")
+                        .param("pageSize", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.search.resultSource").value("REPOSITORY"))
+                .andExpect(jsonPath("$.nextCursor").value("opaque-next"));
+
+        verify(searchCursorService)
+                .search(
+                        "climate",
+                        List.of("Office of Science"),
+                        "DOE Office of Scientific and Technical Information",
+                        SourceSystem.DOE_OSTI,
+                        "North Dakota",
+                        ResearchObjectType.PUBLICATION,
+                        2025,
+                        "opaque-current",
+                        10);
+    }
+
+    @Test
+    void returnsTypedBadRequestForInvalidCursor() throws Exception {
+        given(searchCursorService.search(any(), anyList(), any(), any(), any(), any(), any(), any(), anyInt()))
+                .willThrow(new SearchCursorException("Search cursor signature is not valid."));
+
+        mockMvc.perform(get("/search/cursor").param("cursor", "edited"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Search cursor signature is not valid."));
     }
 
     private SearchResponse response() {

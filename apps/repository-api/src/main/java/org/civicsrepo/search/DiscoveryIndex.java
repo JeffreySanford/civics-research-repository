@@ -87,4 +87,14 @@ public interface DiscoveryIndex extends DiscoveryProjectionTarget {
                 criteria.page(),
                 criteria.pageSize());
     }
+
+    /**
+     * Performs deterministic forward traversal for deep discovery. The live Solr index implements
+     * this with cursorMark; alternate discovery indexes must opt in explicitly rather than silently
+     * falling back to an offset and weakening the cursor contract.
+     */
+    default SearchContinuationExecution searchWithContinuation(
+            SearchComparisonCriteria criteria, String continuationPosition) {
+        throw new UnsupportedOperationException("This discovery index does not support cursor traversal.");
+    }
 }

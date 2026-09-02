@@ -1,0 +1,94 @@
+// Expandable organization for the Maps layer controls.
+//
+// Native details/summary keeps disclosure keyboard behavior in the platform instead of recreating
+// an accordion state machine beside the URL/NgRx layer state. Collapsing a category is presentation
+// only: checked child layers continue to render until their own checkbox changes.
+
+.layer-controls {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.layer-category {
+  min-width: 0;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+  // Older engines that do not support overflow: clip still need the rounded panel to contain its
+  // children. Browsers that support clip use it without creating a scrolling container.
+  overflow: hidden;
+  overflow: clip;
+}
+
+.layer-category > summary {
+  min-height: 2.75rem;
+  padding: 0.65rem 0.8rem;
+  cursor: pointer;
+  color: var(--civics-text-primary);
+  font-weight: 800;
+}
+
+// Keep summary itself as the browser-native list item so the disclosure marker remains visible.
+// The inner wrapper owns layout instead of replacing summary's native display semantics.
+.layer-category-summary-content {
+  display: inline-flex;
+  width: calc(100% - 1.5rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  vertical-align: middle;
+}
+
+.layer-category > summary:focus-visible {
+  outline: 3px solid var(--civics-focus);
+  outline-offset: -3px;
+}
+
+.layer-category[open] > summary {
+  border-bottom: 1px solid var(--civics-border);
+  background: var(--civics-surface-muted);
+}
+
+.layer-category-title {
+  min-width: 0;
+}
+
+.layer-category-count {
+  flex: 0 0 auto;
+  color: var(--civics-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.layer-category-items {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.layer-category-items .layer-toggle-row {
+  width: 100%;
+}
+
+@media (max-width: 40rem) {
+  .layer-category-summary-content {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .layer-category-count {
+    flex-basis: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .layer-category,
+  .layer-category[open] > summary {
+    border-color: CanvasText;
+  }
+
+  .layer-category > summary:focus-visible {
+    outline-color: Highlight;
+  }
+}

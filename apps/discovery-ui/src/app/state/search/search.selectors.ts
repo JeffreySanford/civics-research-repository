@@ -39,6 +39,11 @@ export const selectSearchError = createSelector(
   (state) => state.error,
 );
 
+export const selectSearchPaginationNotice = createSelector(
+  selectSearchState,
+  (state) => state.paginationNotice,
+);
+
 /**
  * Whether the current results came from DSpace or from the fixture catalog.
  *
@@ -56,11 +61,16 @@ export const selectSearchResultSource = createSelector(
  * while a request is in flight and briefly again if the API clamps a page beyond the end. The
  * response is what the reader is actually looking at.
  *
+ * Cursor traversal additionally trusts the continuation returned by the backend for Next. Total
+ * result arithmetic remains useful for the visible range/page count, but it must not invent a
+ * continuation when the cursor service says traversal is exhausted.
+ *
  * `firstResult` and `lastResult` are 1-indexed for display. Humans do not read "showing 0-24".
  */
 export const selectSearchPagination = createSelector(
-  selectSearchResponse,
-  (response) => {
+  selectSearchState,
+  (state) => {
+    const response = state.response;
     const totalResults = response?.totalResults ?? 0;
     const pageSize = Math.max(1, response?.pageSize ?? 25);
     const page = Math.max(0, response?.page ?? 0);
@@ -77,7 +87,9 @@ export const selectSearchPagination = createSelector(
       firstResult: totalResults === 0 ? 0 : page * pageSize + 1,
       lastResult: totalResults === 0 ? 0 : page * pageSize + shown,
       hasPrevious: page > 0,
-      hasNext: page + 1 < pageCount,
+      hasNext: state.cursorMode
+        ? state.nextCursor !== null
+        : page + 1 < pageCount,
       // One page of results is not a pager, it is a decoration.
       visible: totalResults > pageSize,
     };
