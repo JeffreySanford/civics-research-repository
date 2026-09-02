@@ -1,0 +1,131 @@
+name: Spatial probe progress adoption
+
+on:
+  push:
+    branches:
+      - codex/spatial-probe-progress
+    paths:
+      - .github/workflows/spatial-progress-adopt.yml
+
+permissions:
+  contents: write
+
+jobs:
+  adopt:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/spatial-probe-progress
+          persist-credentials: true
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Add operator progress reporting
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          function replaceExact(file, before, after) {
+            const source = fs.readFileSync(file, 'utf8');
+            if (!source.includes(before)) {
+              throw new Error(`Missing expected text in ${file}:\n${before}`);
+            }
+            fs.writeFileSync(file, source.replace(before, after));
+          }
+
+          const script = 'tools/scripts/data-gov-spatial-availability.mjs';
+          const test = 'tools/scripts/data-gov-spatial-availability.test.mjs';
+
+          replaceExact(
+            script,
+            "const DEFAULT_MAX_PAGES = 2_000;",
+            "const DEFAULT_MAX_PAGES = 2_000;\nconst DEFAULT_PROGRESS_EVERY_PAGES = 10;",
+          );
+
+          replaceExact(
+            script,
+            "  maxPages = DEFAULT_MAX_PAGES,\n  sampleLimit = 10,\n}) {",
+            "  maxPages = DEFAULT_MAX_PAGES,\n  progressEveryPages = DEFAULT_PROGRESS_EVERY_PAGES,\n  onProgress = null,\n  sampleLimit = 10,\n}) {",
+          );
+
+          replaceExact(
+            script,
+            "  if (typeof fetchImpl !== 'function') {\n    throw new Error('fetchImpl must be a function.');\n  }\n\n  const safePageSize = positiveInteger(pageSize, 'pageSize', DEFAULT_PAGE_SIZE);\n  const safeMaxPages = positiveInteger(maxPages, 'maxPages', DEFAULT_MAX_PAGES);",
+            "  if (typeof fetchImpl !== 'function') {\n    throw new Error('fetchImpl must be a function.');\n  }\n  if (onProgress !== null && typeof onProgress !== 'function') {\n    throw new Error('onProgress must be a function when provided.');\n  }\n\n  const safePageSize = positiveInteger(pageSize, 'pageSize', DEFAULT_PAGE_SIZE);\n  const safeMaxPages = positiveInteger(maxPages, 'maxPages', DEFAULT_MAX_PAGES);\n  const safeProgressEveryPages = positiveInteger(\n    progressEveryPages,\n    'progressEveryPages',\n    DEFAULT_MAX_PAGES,\n  );",
+          );
+
+          replaceExact(
+            script,
+            "    const nextCursor = textValue(page?.after);\n    if (!nextCursor) {\n      break;\n    }\n    if (results.length === 0) {\n      throw new Error(\n        'Data.gov spatial search returned an empty page with a continuation cursor.',\n      );\n    }\n    cursor = nextCursor;",
+            "    const nextCursor = textValue(page?.after);\n    if (nextCursor && results.length === 0) {\n      throw new Error(\n        'Data.gov spatial search returned an empty page with a continuation cursor.',\n      );\n    }\n\n    const done = !nextCursor;\n    if (\n      onProgress &&\n      (pages === 1 || pages % safeProgressEveryPages === 0 || done)\n    ) {\n      onProgress({\n        pagesFetched: pages,\n        sourceSpatialRecordCount: seenSourceIdentifiers.size,\n        retainedSpatialRecordCount: matchedIdentifiers.size,\n        done,\n      });\n    }\n\n    if (done) {\n      break;\n    }\n    cursor = nextCursor;",
+          );
+
+          replaceExact(
+            script,
+            "    pageSize: DEFAULT_PAGE_SIZE,\n    maxPages: DEFAULT_MAX_PAGES,",
+            "    pageSize: DEFAULT_PAGE_SIZE,\n    maxPages: DEFAULT_MAX_PAGES,\n    progressEveryPages: DEFAULT_PROGRESS_EVERY_PAGES,",
+          );
+
+          replaceExact(
+            script,
+            "    if (argument === '--max-pages') {\n      args.maxPages = positiveInteger(\n        argv[index + 1],\n        '--max-pages',\n        DEFAULT_MAX_PAGES,\n      );\n      index += 1;\n      continue;\n    }",
+            "    if (argument === '--max-pages') {\n      args.maxPages = positiveInteger(\n        argv[index + 1],\n        '--max-pages',\n        DEFAULT_MAX_PAGES,\n      );\n      index += 1;\n      continue;\n    }\n    if (argument === '--progress-every') {\n      args.progressEveryPages = positiveInteger(\n        argv[index + 1],\n        '--progress-every',\n        DEFAULT_MAX_PAGES,\n      );\n      index += 1;\n      continue;\n    }",
+          );
+
+          replaceExact(
+            script,
+            "    pageSize,\n    maxPages,\n  } = parseArgs(argv);",
+            "    pageSize,\n    maxPages,\n    progressEveryPages,\n  } = parseArgs(argv);",
+          );
+
+          replaceExact(
+            script,
+            "  const retainedIdentifiers = parsePsqlIdentifiers(\n    runPsqlIdentifiers(buildRetainedIdentifiersSql(), env),\n  );",
+            "  console.log('[spatial] Loading retained Data.gov identifiers from C2...');\n  const identifierLoadStartedAt = Date.now();\n  const retainedIdentifiers = parsePsqlIdentifiers(\n    runPsqlIdentifiers(buildRetainedIdentifiersSql(), env),\n  );\n  console.log(\n    `[spatial] Loaded ${retainedIdentifiers.size.toLocaleString()} retained identifiers in ${formatElapsed(Date.now() - identifierLoadStartedAt)}.`,\n  );",
+          );
+
+          replaceExact(
+            script,
+            "  const apiKey = requirePersonalDataGovApiKey(env);\n  const probe = await probeDataGovSpatialSource({\n    retainedIdentifiers,\n    apiKey,\n    searchUrl,\n    pageSize,\n    maxPages,\n  });",
+            "  const apiKey = requirePersonalDataGovApiKey(env);\n  console.log(\n    `[spatial] Starting Data.gov geospatial traversal (pageSize=${pageSize.toLocaleString()}, progressEvery=${progressEveryPages} pages)...`,\n  );\n  const traversalStartedAt = Date.now();\n  const probe = await probeDataGovSpatialSource({\n    retainedIdentifiers,\n    apiKey,\n    searchUrl,\n    pageSize,\n    maxPages,\n    progressEveryPages,\n    onProgress: (progress) => {\n      const elapsedMs = Date.now() - traversalStartedAt;\n      const elapsedSeconds = Math.max(elapsedMs / 1000, 0.001);\n      const rate = Math.round(\n        progress.sourceSpatialRecordCount / elapsedSeconds,\n      );\n      console.log(\n        `[spatial] page=${progress.pagesFetched.toLocaleString()} source=${progress.sourceSpatialRecordCount.toLocaleString()} C2-matches=${progress.retainedSpatialRecordCount.toLocaleString()} elapsed=${formatElapsed(elapsedMs)} rate=${rate.toLocaleString()} rec/s${progress.done ? ' complete' : ''}`,\n      );\n    },\n  });",
+          );
+
+          replaceExact(
+            script,
+            "function sourceIdentifier(dataset) {",
+            "function formatElapsed(elapsedMs) {\n  return `${(Math.max(0, elapsedMs) / 1000).toFixed(1)}s`;\n}\n\nfunction sourceIdentifier(dataset) {",
+          );
+
+          replaceExact(
+            test,
+            "  assert.equal(result.samples.length, 2);\n});",
+            "  assert.equal(result.samples.length, 2);\n});\n\ntest('reports first, periodic, and completion progress without changing results', async () => {\n  const progress = [];\n  const pages = [\n    { after: 'two', results: [{ identifier: 'a' }] },\n    { after: 'three', results: [{ identifier: 'outside' }] },\n    { results: [{ identifier: 'b' }] },\n  ];\n\n  const result = await probeDataGovSpatialSource({\n    retainedIdentifiers: new Set(['a', 'b']),\n    apiKey: 'personal',\n    progressEveryPages: 2,\n    onProgress: (entry) => progress.push(entry),\n    fetchImpl: async () => jsonResponse(pages.shift()),\n  });\n\n  assert.equal(result.sourceSpatialRecordCount, 3);\n  assert.equal(result.retainedSpatialRecordCount, 2);\n  assert.deepEqual(progress, [\n    {\n      pagesFetched: 1,\n      sourceSpatialRecordCount: 1,\n      retainedSpatialRecordCount: 1,\n      done: false,\n    },\n    {\n      pagesFetched: 2,\n      sourceSpatialRecordCount: 2,\n      retainedSpatialRecordCount: 1,\n      done: false,\n    },\n    {\n      pagesFetched: 3,\n      sourceSpatialRecordCount: 3,\n      retainedSpatialRecordCount: 2,\n      done: true,\n    },\n  ]);\n});",
+          );
+
+          replaceExact(
+            test,
+            "      '--max-pages',\n      '900',",
+            "      '--max-pages',\n      '900',\n      '--progress-every',\n      '5',",
+          );
+
+          replaceExact(
+            test,
+            "      pageSize: 1000,\n      maxPages: 900,",
+            "      pageSize: 1000,\n      maxPages: 900,\n      progressEveryPages: 5,",
+          );
+          NODE
+          pnpm exec prettier --write tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+      - name: Verify focused progress suite
+        run: node --test tools/scripts/data-gov-spatial-availability.test.mjs
+      - name: Commit progress reporting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: report spatial probe progress"
+          git push origin HEAD:codex/spatial-probe-progress
