@@ -36,12 +36,10 @@ jobs:
       - name: Regenerate API client
         run: pnpm run openapi:generate
 
-      - name: Verify contract
-        run: |
-          pnpm run openapi:lint
-          pnpm run openapi:check
+      - name: Lint OpenAPI contract
+        run: pnpm run openapi:lint
 
-      - name: Commit wired sidecar changes
+      - name: Commit wired sidecar changes locally
         shell: bash
         run: |
           if git diff --quiet; then
@@ -56,4 +54,15 @@ jobs:
             schemas/openapi/repository-api.yaml \
             libs/repository/api-client/src/generated/repository-api.types.ts
           git commit -m "feat: retain unmapped Data.gov spatial evidence"
+
+      - name: Verify generated contract is stable
+        run: pnpm run openapi:check
+
+      - name: Push wired sidecar changes
+        shell: bash
+        run: |
+          if [ "$(git rev-parse HEAD)" = "${GITHUB_SHA}" ]; then
+            echo "No wiring commit to push."
+            exit 0
+          fi
           git push origin HEAD:codex/data-gov-spatial-sidecar
