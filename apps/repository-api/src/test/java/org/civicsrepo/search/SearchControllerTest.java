@@ -1,5 +1,7 @@
 package org.civicsrepo.search;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -22,8 +24,10 @@ import org.civicsrepo.generated.dto.SourceSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 @WebMvcTest(SearchController.class)
 class SearchControllerTest {
@@ -230,6 +234,18 @@ class SearchControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("Search cursor signature is not valid."));
+    }
+
+    @Test
+    void reportsMissingCursorServiceAsServiceUnavailable() {
+        SearchController controller = new SearchController(searchService);
+
+        assertThatThrownBy(() -> controller.searchResearchObjectsWithCursor(
+                        null, null, null, null, null, null, null, null, 25))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(exception -> assertThat(((ResponseStatusException) exception).getStatusCode())
+                        .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE))
+                .hasMessageContaining("Cursor search service is not configured");
     }
 
     private SearchResponse response() {
