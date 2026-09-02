@@ -1,4 +1,5 @@
 name: Apply staged research coverage UI
+# One-shot runner for finalizing the draft Research Coverage UI; removed after a green generated commit.
 
 on:
   push:
