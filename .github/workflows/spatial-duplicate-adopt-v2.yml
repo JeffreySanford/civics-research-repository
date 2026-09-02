@@ -1,0 +1,197 @@
+name: Spatial duplicate handling adoption v2
+
+on:
+  push:
+    branches:
+      - codex/spatial-probe-progress
+    paths:
+      - .github/workflows/spatial-duplicate-adopt-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  adopt:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/spatial-probe-progress
+          persist-credentials: true
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Collapse duplicate source rows
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          sp = Path('tools/scripts/data-gov-spatial-availability.mjs')
+          tp = Path('tools/scripts/data-gov-spatial-availability.test.mjs')
+          s = sp.read_text()
+          t = tp.read_text()
+
+          def sub_once(pattern, replacement, text, label, flags=0):
+              out, count = re.subn(pattern, replacement, text, count=1, flags=flags)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 replacement, got {count}')
+              return out
+
+          s = sub_once(
+              r"  const seenSourceIdentifiers = new Set\(\);\n  const matchedIdentifiers = new Set\(\);\n  const samples = \[\];\n  let cursor = null;\n  let pages = 0;\n  let dcatSpatialMatches = 0;\n  let spatialShapeMatches = 0;\n  let spatialCentroidMatches = 0;\n  let hasSpatialTrueMatches = 0;\n",
+              """  const seenSourceIdentifiers = new Set();
+          const duplicateSourceIdentifiers = new Set();
+          const matchedIdentifiers = new Set();
+          const dcatSpatialIdentifiers = new Set();
+          const spatialShapeIdentifiers = new Set();
+          const spatialCentroidIdentifiers = new Set();
+          const hasSpatialTrueIdentifiers = new Set();
+          const sampleIdentifiers = new Set();
+          const samples = [];
+          let cursor = null;
+          let pages = 0;
+          let sourceSpatialRowCount = 0;
+          let duplicateSourceRowCount = 0;
+          """,
+              s,
+              'counter block',
+          )
+
+          s = sub_once(
+              r"      if \(seenSourceIdentifiers\.has\(identifier\)\) \{\n        throw new Error\(\n          `Data\.gov spatial search repeated identifier \$\{identifier\}\.`,\n        \);\n      \}\n      seenSourceIdentifiers\.add\(identifier\);\n",
+              """      sourceSpatialRowCount += 1;
+              if (seenSourceIdentifiers.has(identifier)) {
+                duplicateSourceRowCount += 1;
+                duplicateSourceIdentifiers.add(identifier);
+              } else {
+                seenSourceIdentifiers.add(identifier);
+              }
+          """,
+              s,
+              'duplicate guard',
+          )
+
+          s = sub_once(
+              r"      if \(dcatSpatial\) dcatSpatialMatches \+= 1;\n      if \(shape\) spatialShapeMatches \+= 1;\n      if \(centroid\) spatialCentroidMatches \+= 1;\n      if \(dataset\?\.has_spatial === true\) hasSpatialTrueMatches \+= 1;\n\n      if \(samples\.length < sampleLimit\) \{\n        samples\.push\(\{\n          identifier,\n          title: textValue\(dataset\?\.title\) \?\? null,\n          dcatSpatial: dcatSpatial \?\? null,\n          spatialShapeType: textValue\(shape\?\.type\) \?\? null,\n          spatialCentroidType: textValue\(centroid\?\.type\) \?\? null,\n          hasSpatial: dataset\?\.has_spatial === true,\n        \}\);\n      \}\n",
+              """      if (dcatSpatial) dcatSpatialIdentifiers.add(identifier);
+              if (shape) spatialShapeIdentifiers.add(identifier);
+              if (centroid) spatialCentroidIdentifiers.add(identifier);
+              if (dataset?.has_spatial === true) hasSpatialTrueIdentifiers.add(identifier);
+
+              if (!sampleIdentifiers.has(identifier) && samples.length < sampleLimit) {
+                sampleIdentifiers.add(identifier);
+                samples.push({
+                  identifier,
+                  title: textValue(dataset?.title) ?? null,
+                  dcatSpatial: dcatSpatial ?? null,
+                  spatialShapeType: textValue(shape?.type) ?? null,
+                  spatialCentroidType: textValue(centroid?.type) ?? null,
+                  hasSpatial: dataset?.has_spatial === true,
+                });
+              }
+          """,
+              s,
+              'signal block',
+          )
+
+          s = s.replace(
+              "    pagesFetched: pages,\n    sourceSpatialRecordCount: seenSourceIdentifiers.size,\n    retainedRecordCount,\n",
+              "    pagesFetched: pages,\n    sourceSpatialRowCount,\n    sourceSpatialRecordCount: seenSourceIdentifiers.size,\n    duplicateSourceRowCount,\n    duplicateSourceIdentifierCount: duplicateSourceIdentifiers.size,\n    retainedRecordCount,\n",
+              1,
+          )
+          s = s.replace(
+              "      hasSpatialTrue: hasSpatialTrueMatches,\n      dcatSpatial: dcatSpatialMatches,\n      spatialShape: spatialShapeMatches,\n      spatialCentroid: spatialCentroidMatches,\n",
+              "      hasSpatialTrue: hasSpatialTrueIdentifiers.size,\n      dcatSpatial: dcatSpatialIdentifiers.size,\n      spatialShape: spatialShapeIdentifiers.size,\n      spatialCentroid: spatialCentroidIdentifiers.size,\n",
+              1,
+          )
+          s = s.replace(
+              "- Current Data.gov geospatial records traversed: **${report.sourceSpatialRecordCount.toLocaleString()}**\\n- Retained C2 identifiers with current explicit geospatial metadata: **${report.retainedSpatialRecordCount.toLocaleString()}** (${report.retainedSpatialPercent}%)\\n",
+              "- Current Data.gov geospatial rows traversed: **${report.sourceSpatialRowCount.toLocaleString()}**\\n- Unique current Data.gov geospatial identifiers: **${report.sourceSpatialRecordCount.toLocaleString()}**\\n- Duplicate source rows collapsed by C2 identifier: **${report.duplicateSourceRowCount.toLocaleString()}** across **${report.duplicateSourceIdentifierCount.toLocaleString()}** identifiers\\n- Retained C2 identifiers with current explicit geospatial metadata: **${report.retainedSpatialRecordCount.toLocaleString()}** (${report.retainedSpatialPercent}%)\\n",
+              1,
+          )
+
+          t = t.replace(
+              "  assert.equal(result.sourceSpatialRecordCount, 3);\n  assert.equal(result.retainedRecordCount, 3);\n",
+              "  assert.equal(result.sourceSpatialRowCount, 3);\n  assert.equal(result.sourceSpatialRecordCount, 3);\n  assert.equal(result.duplicateSourceRowCount, 0);\n  assert.equal(result.duplicateSourceIdentifierCount, 0);\n  assert.equal(result.retainedRecordCount, 3);\n",
+              1,
+          )
+
+          t = sub_once(
+              r"test\('rejects duplicate source identifiers across cursor pages', async \(\) => \{.*?\n\}\);\n",
+              """test('collapses repeated source rows onto one C2 identifier and merges spatial signals', async () => {
+            const pages = [
+              {
+                after: 'next',
+                results: [{ identifier: 'same', dcat: { spatial: 'United States' } }],
+              },
+              {
+                results: [
+                  {
+                    identifier: 'same',
+                    has_spatial: true,
+                    spatial_shape: { type: 'Polygon', coordinates: [] },
+                    spatial_centroid: { type: 'Point', coordinates: [-100, 40] },
+                  },
+                ],
+              },
+            ];
+            const result = await probeDataGovSpatialSource({
+              retainedIdentifiers: new Set(['same']),
+              apiKey: 'personal',
+              fetchImpl: async () => jsonResponse(pages.shift()),
+            });
+
+            assert.equal(result.sourceSpatialRowCount, 2);
+            assert.equal(result.sourceSpatialRecordCount, 1);
+            assert.equal(result.duplicateSourceRowCount, 1);
+            assert.equal(result.duplicateSourceIdentifierCount, 1);
+            assert.equal(result.retainedSpatialRecordCount, 1);
+            assert.deepEqual(result.matchedMetadataSignals, {
+              hasSpatialTrue: 1,
+              dcatSpatial: 1,
+              spatialShape: 1,
+              spatialCentroid: 1,
+            });
+            assert.equal(result.samples.length, 1);
+          });
+          """,
+              t,
+              'duplicate regression test',
+              re.S,
+          )
+
+          t = t.replace(
+              "    sourceSpatialRecordCount: 100,\n    retainedSpatialRecordCount: 25,\n",
+              "    sourceSpatialRowCount: 104,\n    sourceSpatialRecordCount: 100,\n    duplicateSourceRowCount: 4,\n    duplicateSourceIdentifierCount: 2,\n    retainedSpatialRecordCount: 25,\n",
+              1,
+          )
+          t = t.replace(
+              "  assert.match(markdown, /harvest_record_raw.*URL/u);\n",
+              "  assert.match(markdown, /harvest_record_raw.*URL/u);\n  assert.match(markdown, /Duplicate source rows collapsed by C2 identifier.*4/u);\n",
+              1,
+          )
+
+          sp.write_text(s)
+          tp.write_text(t)
+          PY
+          pnpm exec prettier --write tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+
+      - name: Verify focused suite
+        run: |
+          node --test tools/scripts/data-gov-spatial-availability.test.mjs
+          pnpm exec prettier --check tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+
+      - name: Commit duplicate handling
+        shell: bash
+        run: |
+          git config user.name "Jeffrey Sanford"
+          git config user.email "jeffrey_sanford@hotmail.com"
+          git add tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+          git commit -m "fix: collapse duplicate Data.gov spatial rows" || true
+          git push origin HEAD:codex/spatial-probe-progress
