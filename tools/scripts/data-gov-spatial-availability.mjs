@@ -189,16 +189,8 @@ export async function probeDataGovSpatialSource({
     throw new Error('fetchImpl must be a function.');
   }
 
-  const safePageSize = positiveInteger(
-    pageSize,
-    'pageSize',
-    DEFAULT_PAGE_SIZE,
-  );
-  const safeMaxPages = positiveInteger(
-    maxPages,
-    'maxPages',
-    DEFAULT_MAX_PAGES,
-  );
+  const safePageSize = positiveInteger(pageSize, 'pageSize', DEFAULT_PAGE_SIZE);
+  const safeMaxPages = positiveInteger(maxPages, 'maxPages', DEFAULT_MAX_PAGES);
   const seenSourceIdentifiers = new Set();
   const matchedIdentifiers = new Set();
   const samples = [];

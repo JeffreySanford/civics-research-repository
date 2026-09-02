@@ -179,8 +179,7 @@ test('rejects empty continuation pages and bounded traversal overflow', async ()
     probeDataGovSpatialSource({
       retainedIdentifiers: new Set(),
       apiKey: 'personal',
-      fetchImpl: async () =>
-        jsonResponse({ after: 'still-more', results: [] }),
+      fetchImpl: async () => jsonResponse({ after: 'still-more', results: [] }),
     }),
     /empty page with a continuation cursor/u,
   );
@@ -206,10 +205,7 @@ test('surfaces Data.gov rate limiting with retry context', async () => {
       retainedIdentifiers: new Set(),
       apiKey: 'personal',
       fetchImpl: async () =>
-        jsonResponse(
-          {},
-          { status: 429, headers: { 'retry-after': '3600' } },
-        ),
+        jsonResponse({}, { status: 429, headers: { 'retry-after': '3600' } }),
     }),
     /HTTP 429.*retry after 3600/u,
   );
