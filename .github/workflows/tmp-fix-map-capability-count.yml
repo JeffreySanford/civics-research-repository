@@ -1,0 +1,73 @@
+name: Temporary Map Capability Count Fix
+
+on:
+  push:
+    branches:
+      - codex/map-capability-controls
+    paths:
+      - .github/workflows/tmp-fix-map-capability-count.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply capability count fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          ts_path = Path('apps/discovery-ui/src/app/pages/maps-page.ts')
+          ts = ts_path.read_text()
+          old_ts = "  protected readonly layers$ = this.store.select(selectMapLayers);\n"
+          new_ts = old_ts + "  protected readonly saipeAvailable$ = this.layers$.pipe(\n    map((layers) =>\n      layers.some((layer) => layer.layerType === 'CENSUS_CHOROPLETH'),\n    ),\n  );\n"
+          if old_ts not in ts:
+              raise SystemExit('maps-page.ts anchor not found')
+          ts_path.write_text(ts.replace(old_ts, new_ts, 1))
+
+          html_path = Path('apps/discovery-ui/src/app/pages/maps-page.html')
+          html = html_path.read_text()
+          old_html = '''              <!-- The API has one shared LODES metadata capability for the two LODES controls,
+                   plus optional SAIPE. With boundary + two environmental entries outside this
+                   category, the current control count is the returned metadata count minus two. -->
+              @if (layers$ | async; as layers) {
+              <span class="layer-category-count"
+                >{{ layers.length > 0 ? layers.length - 2 : 2 }} layers</span
+              >
+              } @else {
+              <span class="layer-category-count">2 layers</span>
+              }
+'''
+          new_html = '''              <!-- Workplace and commuting are the two baseline controls; SAIPE adds one only
+                   when the selected geography advertises the choropleth capability. -->
+              @if (saipeAvailable$ | async) {
+              <span class="layer-category-count">3 layers</span>
+              } @else {
+              <span class="layer-category-count">2 layers</span>
+              }
+'''
+          if old_html not in html:
+              raise SystemExit('maps-page.html count block not found')
+          html_path.write_text(html.replace(old_html, new_html, 1))
+          PY
+          pnpm exec prettier --write \
+            apps/discovery-ui/src/app/pages/maps-page.ts \
+            apps/discovery-ui/src/app/pages/maps-page.html
+      - name: Commit review fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            apps/discovery-ui/src/app/pages/maps-page.ts \
+            apps/discovery-ui/src/app/pages/maps-page.html
+          git commit -m "fix: derive map category count from capability" || exit 0
+          git push
