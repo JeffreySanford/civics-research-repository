@@ -17,6 +17,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/admin/spatial/datagov")
 public class DataGovSpatialSidecarAdminController {
+    private static final int DEFAULT_PAGE_SIZE = 1_000;
+    private static final int DEFAULT_MAX_PAGES = 2_000;
+
     private final DataGovSpatialSidecarService sidecarService;
     private final ResearchSpatialSidecarStore sidecarStore;
 
@@ -38,9 +41,9 @@ public class DataGovSpatialSidecarAdminController {
 
     @PostMapping("/rebuild")
     public DataGovSpatialSidecarRefreshResult rebuild(@RequestBody(required = false) RebuildRequest request) {
-        RebuildRequest effective = request == null ? new RebuildRequest(1_000, 2_000) : request;
+        RebuildRequest effective = request == null ? new RebuildRequest(null, null) : request;
         try {
-            return sidecarService.rebuild(effective.pageSize(), effective.maxPages());
+            return sidecarService.rebuild(effective.effectivePageSize(), effective.effectiveMaxPages());
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
         } catch (IllegalStateException exception) {
@@ -48,7 +51,15 @@ public class DataGovSpatialSidecarAdminController {
         }
     }
 
-    public record RebuildRequest(int pageSize, int maxPages) {}
+    public record RebuildRequest(Integer pageSize, Integer maxPages) {
+        int effectivePageSize() {
+            return pageSize == null ? DEFAULT_PAGE_SIZE : pageSize;
+        }
+
+        int effectiveMaxPages() {
+            return maxPages == null ? DEFAULT_MAX_PAGES : maxPages;
+        }
+    }
 
     public record StatusResponse(ResearchSpatialSidecarBuild activeBuild, long activeRowCount) {}
 }
