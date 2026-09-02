@@ -20,6 +20,11 @@ export const SearchActions = createActionGroup({
       cursorPage: SearchCursorPage;
       cursorUsed: string | null;
     }>(),
+    /** Explicit page-zero fallback when cursor traversal cannot establish a trusted projection. */
+    'Cursor Compatibility Loaded': props<{
+      response: SearchResponse;
+      notice: string;
+    }>(),
     'Search Failed': props<{ error: RepositoryError }>(),
   },
 });
