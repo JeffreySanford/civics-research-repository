@@ -75,7 +75,7 @@ test.describe('repository research coverage', () => {
 
     const legend = page.getByLabel('Visible map layer legend');
     await expect(legend.getByText(/Repository research by area/)).toContainText(
-      '3 mapped of 32 matching',
+      '3 mapped of 33 matching',
     );
 
     const featureList = page.locator(
@@ -88,10 +88,10 @@ test.describe('repository research coverage', () => {
       }),
     ).toBeVisible();
     await expect(researchSummary).toContainText(
-      '3 of 32 matching research objects explicitly name a supported Census area',
+      '3 of 33 matching research objects explicitly name a supported Census area',
     );
     await expect(researchSummary).toContainText(
-      '29 matching objects are not drawn',
+      '30 matching objects are not drawn',
     );
     await expect(researchSummary).toContainText(
       'publisher, laboratory, author, and institution locations are not substituted',
