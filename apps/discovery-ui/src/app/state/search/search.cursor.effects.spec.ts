@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { provideMockStore } from '@ngrx/store/testing';
-import { firstValueFrom, of, type Observable } from 'rxjs';
+import { firstValueFrom, of, throwError, type Observable } from 'rxjs';
 import {
   RepositorySearchApi,
   type SearchCursorPage,
@@ -64,6 +64,81 @@ describe('SearchEffects cursor traversal', () => {
     );
     expect(emitted).toEqual(
       SearchActions.cursorSearchLoaded({ cursorPage, cursorUsed: null }),
+    );
+  });
+
+  it('announces an offset-compatible fallback when cursor startup cannot verify a projection', async () => {
+    const searchResearchObjectsWithCursor = vi.fn().mockReturnValue(
+      throwError(() => ({
+        status: 503,
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'No active discovery projection is available for cursor search.',
+        },
+      })),
+    );
+    const searchResearchObjects = vi.fn().mockReturnValue(of(response(0)));
+    const effects = setup(
+      {
+        searchResearchObjectsWithCursor,
+        searchResearchObjects,
+      } as unknown as RepositorySearchApi,
+      of(
+        SearchActions.cursorSearchSubmitted({
+          query: { q: 'tracts', page: 0, pageSize: 25 },
+        }),
+      ),
+    );
+
+    const emitted = await firstValueFrom(effects.submitCursorSearch$);
+
+    expect(searchResearchObjects).toHaveBeenCalledWith({
+      q: 'tracts',
+      page: 0,
+      pageSize: 25,
+    });
+    expect(emitted.type).toBe(SearchActions.cursorCompatibilityLoaded.type);
+    if (SearchActions.cursorCompatibilityLoaded.match(emitted)) {
+      expect(emitted.response).toEqual(response(0));
+      expect(emitted.notice).toContain('offset-compatible paging');
+    }
+  });
+
+  it('does not fall back when cursor startup rejects an invalid cursor request', async () => {
+    const searchResearchObjectsWithCursor = vi.fn().mockReturnValue(
+      throwError(() => ({
+        status: 400,
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Search cursor signature is not valid.',
+        },
+      })),
+    );
+    const searchResearchObjects = vi.fn();
+    const effects = setup(
+      {
+        searchResearchObjectsWithCursor,
+        searchResearchObjects,
+      } as unknown as RepositorySearchApi,
+      of(
+        SearchActions.cursorSearchSubmitted({
+          query: { q: 'tracts', page: 0, pageSize: 25 },
+        }),
+      ),
+    );
+
+    const emitted = await firstValueFrom(effects.submitCursorSearch$);
+
+    expect(searchResearchObjects).not.toHaveBeenCalled();
+    expect(emitted).toEqual(
+      SearchActions.searchFailed({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Search cursor signature is not valid.',
+          details: undefined,
+          traceId: undefined,
+        },
+      }),
     );
   });
 
