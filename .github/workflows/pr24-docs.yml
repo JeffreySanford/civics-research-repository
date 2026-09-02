@@ -1,0 +1,87 @@
+name: PR 24 spatial evidence docs
+
+on:
+  push:
+    branches:
+      - codex/c2-datagov-spatial-source-probe
+    paths:
+      - .github/workflows/pr24-docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/c2-datagov-spatial-source-probe
+          persist-credentials: true
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Correct spatial evidence wording
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          function replaceExact(file, before, after) {
+            const source = fs.readFileSync(file, 'utf8');
+            if (!source.includes(before)) {
+              throw new Error(`Missing expected text in ${file}: ${before}`);
+            }
+            fs.writeFileSync(file, source.replace(before, after));
+          }
+
+          const readme = 'documentation/workstreams/searchable-research-map-coverage/README.md';
+          replaceExact(
+            readme,
+            '- The Data.gov spatial-availability probe inspects retained raw-harvest metadata read-only and measures candidate spatial availability without rewriting the certified 500K Data.gov corpus.',
+            '- The Data.gov spatial-availability probe reads the exact retained C2 Data.gov identifier set, traverses the current Data.gov v4 `spatial_filter=geospatial` source subset, and measures their intersection without rewriting the certified 500K Data.gov corpus. `harvestRecordRaw` is retained only as a source-reference URL; it is not raw JSON.'
+          );
+          replaceExact(
+            readme,
+            'For Data.gov, use the deterministic availability probe followed by a targeted spatial-enrichment pass using retained raw-harvest references. Do not rewrite the certified 500K corpus merely to add a map sidecar.',
+            'For Data.gov, use the deterministic source-aware availability probe followed by a targeted spatial-enrichment pass. The probe intersects the current v4 geospatial subset with exact retained C2 identifiers; it does not claim the current publisher snapshot is byte-for-byte historical C2 metadata. Treat `harvestRecordRaw` as a source-reference URL, and use raw/transformed source endpoints only for bounded follow-up validation of selected candidates. Do not rewrite the certified 500K corpus merely to add a map sidecar.'
+          );
+          replaceExact(
+            readme,
+            '- deterministic Data.gov spatial-availability probe tests, including the distinction between candidate spatial tokens and validated geometry.',
+            '- deterministic Data.gov source-aware spatial-availability tests covering geospatial cursor traversal, exact retained-C2 identifier intersection, rate limiting, duplicate/continuation guards, certification binding, and the distinction between current source candidates and validated sidecar geometry.'
+          );
+          replaceExact(
+            readme,
+            '7. Data.gov spatial availability can be measured independently of the certified C2 corpus before a spatial sidecar is introduced.',
+            '7. Data.gov spatial availability can be measured by intersecting the current publisher geospatial subset with certified C2 identifiers before a spatial sidecar is introduced, without mutating C2 or misrepresenting current source metadata as historical retained bytes.'
+          );
+
+          const todo = 'planning/TODO.md';
+          replaceExact(
+            todo,
+            '- [ ] Run the deterministic **Data.gov spatial-availability probe** against the certified 500K retained Data.gov corpus and capture the measured evidence artifact.',
+            '- [ ] Run the corrected deterministic **Data.gov spatial-availability probe** by intersecting the current Data.gov v4 geospatial subset with the certified 500K retained C2 Data.gov identifiers, and capture the measured evidence artifact.'
+          );
+          replaceExact(
+            todo,
+            '- [ ] Use the measured probe result to scope a versioned, engine-neutral research spatial sidecar supporting authoritative admin areas, points, bounding boxes and later polygons.',
+            '- [ ] Use the measured current-source/C2 intersection to scope a versioned, engine-neutral research spatial sidecar supporting authoritative admin areas, points, bounding boxes and later polygons.'
+          );
+          replaceExact(
+            todo,
+            '- [ ] Use retained Data.gov `harvestRecordRaw` metadata for targeted explicit-DCAT-spatial enrichment where practical; keep enrichment sidecar/versioned so C2 Gold Master identity is unchanged.',
+            '- [ ] Treat retained Data.gov `harvestRecordRaw` as a source-reference URL, not retained raw metadata. Use current v4 `dcat.spatial` / `spatial_shape` / `spatial_centroid` signals and only bounded raw/transformed endpoint reads for selected-candidate validation; keep enrichment sidecar/versioned so C2 Gold Master identity is unchanged.'
+          );
+          NODE
+          pnpm exec prettier --write documentation/workstreams/searchable-research-map-coverage/README.md planning/TODO.md
+      - name: Commit documentation correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add documentation/workstreams/searchable-research-map-coverage/README.md planning/TODO.md
+          git diff --cached --quiet && exit 0
+          git commit -m "docs: correct Data.gov spatial source semantics"
+          git push origin HEAD:codex/c2-datagov-spatial-source-probe
