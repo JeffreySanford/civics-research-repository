@@ -482,7 +482,9 @@ export async function verifyStartupProfile(profile = 'CURATED_DEMO') {
         const progress = await response.json();
         if (progress.profile === profile) {
           if (progress.phase === 'FAILED') {
-            throw new Error(progress.message || `${profile} activation failed.`);
+            throw new Error(
+              progress.message || `${profile} activation failed.`,
+            );
           }
           if (progress.phase === 'COMPLETED') {
             terminalProgress = progress;

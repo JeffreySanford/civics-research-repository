@@ -398,7 +398,9 @@ export function parseArguments(argv) {
 
 export async function main(argv = process.argv.slice(2)) {
   const options = parseArguments(argv);
-  console.log(`Waiting for repository API readiness at ${options.baseUrl}/health...`);
+  console.log(
+    `Waiting for repository API readiness at ${options.baseUrl}/health...`,
+  );
   const result = await runCursorTraversalEvidence(options);
   const outputPath = resolve(options.output);
   await mkdir(dirname(outputPath), { recursive: true });
