@@ -50,7 +50,9 @@ test.describe('Discovery cursor pagination', () => {
     expect(firstRequest.searchParams.get('pageSize')).toBe('25');
     expect(offsetRequests(requests)).toHaveLength(0);
 
-    const pager = page.getByRole('navigation', { name: 'Search results pages' });
+    const pager = page.getByRole('navigation', {
+      name: 'Search results pages',
+    });
     await expect(pager.getByText('Page 1 of 2')).toHaveAttribute(
       'aria-current',
       'page',
@@ -70,9 +72,9 @@ test.describe('Discovery cursor pagination', () => {
     const headingBox = await resultsHeading.boundingBox();
     const viewport = page.viewportSize();
     expect(headingBox?.y ?? -1).toBeGreaterThanOrEqual(0);
-    expect((headingBox?.y ?? 0) + (headingBox?.height ?? 0)).toBeLessThanOrEqual(
-      viewport?.height ?? 0,
-    );
+    expect(
+      (headingBox?.y ?? 0) + (headingBox?.height ?? 0),
+    ).toBeLessThanOrEqual(viewport?.height ?? 0);
     await expect(pager.getByText('Page 2 of 2')).toHaveAttribute(
       'aria-current',
       'page',
@@ -106,9 +108,9 @@ test.describe('Discovery cursor pagination', () => {
       page.getByRole('heading', { name: '35 research objects' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('navigation', { name: 'Search results pages' }).getByText(
-        'Page 2 of 2',
-      ),
+      page
+        .getByRole('navigation', { name: 'Search results pages' })
+        .getByText('Page 2 of 2'),
     ).toBeVisible();
 
     await expect.poll(() => offsetRequests(requests).length).toBe(1);
@@ -136,7 +138,9 @@ test.describe('Discovery cursor pagination', () => {
     ).toBeVisible();
     await expect.poll(() => offsetRequests(requests).length).toBe(1);
 
-    const pager = page.getByRole('navigation', { name: 'Search results pages' });
+    const pager = page.getByRole('navigation', {
+      name: 'Search results pages',
+    });
     await pager.getByRole('button', { name: 'Next' }).click();
 
     await expect(page).toHaveURL(/(?:\?|&)page=1(?:&|$)/);

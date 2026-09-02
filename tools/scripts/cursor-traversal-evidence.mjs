@@ -70,7 +70,9 @@ export async function traverseCursor({
     );
     const search = cursorPage?.search;
     if (!search || !Array.isArray(search.results)) {
-      throw new Error('Cursor search returned an invalid SearchCursorPage payload.');
+      throw new Error(
+        'Cursor search returned an invalid SearchCursorPage payload.',
+      );
     }
 
     const logicalPage = asInteger(search.page);
@@ -96,7 +98,9 @@ export async function traverseCursor({
     for (const result of search.results) {
       const id = typeof result?.id === 'string' ? result.id : '';
       if (!id) {
-        throw new Error(`Cursor page ${pageCount} contains a result without an id.`);
+        throw new Error(
+          `Cursor page ${pageCount} contains a result without an id.`,
+        );
       }
       returnedCount += 1;
       orderedIdHash.update(id);
@@ -116,7 +120,9 @@ export async function traverseCursor({
       throw new Error('Cursor search returned an invalid nextCursor value.');
     }
     if (seenCursors.has(nextCursor)) {
-      throw new Error('Cursor traversal returned a repeated continuation token.');
+      throw new Error(
+        'Cursor traversal returned a repeated continuation token.',
+      );
     }
     seenCursors.add(nextCursor);
     cursor = nextCursor;
