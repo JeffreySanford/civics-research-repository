@@ -103,7 +103,16 @@
           <summary data-testid="map-layer-category-community-economy-summary">
             <span class="layer-category-summary-content">
               <span class="layer-category-title">Community &amp; Economy</span>
-              <span class="layer-category-count">3 layers</span>
+              <!-- The API has one shared LODES metadata capability for the two LODES controls,
+                   plus optional SAIPE. With boundary + two environmental entries outside this
+                   category, the control count is two baseline LODES controls plus optional SAIPE. -->
+              @if (layers$ | async; as layers) {
+              <span class="layer-category-count"
+                >{{ (saipeAvailable$ | async) ? 3 : 2 }} layers</span
+              >
+              } @else {
+              <span class="layer-category-count">2 layers</span>
+              }
             </span>
           </summary>
 
@@ -154,6 +163,8 @@
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
             </span>
+            @for (layer of layers$ | async; track layer.id) { @if
+            (layer.layerType === 'CENSUS_CHOROPLETH') {
             <span class="layer-toggle-row">
               <label class="layer-toggle">
                 <input
@@ -176,6 +187,7 @@
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
             </span>
+            } }
           </div>
         </details>
 
@@ -265,7 +277,8 @@
         <div>
           <dt>Active data</dt>
           <dd>
-            LODES workplace flows, TIGER/Line geography, SAIPE county context
+            LODES workplace flows and TIGER/Line geography, with SAIPE county
+            context where retained for the selected area
           </dd>
         </div>
       </dl>
