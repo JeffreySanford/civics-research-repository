@@ -28,22 +28,18 @@ jobs:
       - name: Wire semantics command and format
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('package.json')
-          text = path.read_text()
-          old = 'tools/scripts/data-gov-spatial-geometry-census.test.mjs\\",'
-          new = 'tools/scripts/data-gov-spatial-geometry-census.test.mjs tools/scripts/data-gov-spatial-source-semantics.test.mjs\\",'
-          if text.count(old) != 1:
-              raise SystemExit(f'performance:test anchor: expected 1 match, found {text.count(old)}')
-          text = text.replace(old, new, 1)
-          old = '    \\"research:spatial:geometry\\": \\"node --env-file-if-exists=.env tools/scripts/data-gov-spatial-geometry-census.mjs --expect 500000\\",\\n'
-          new = old + '    \\"research:spatial:semantics\\": \\"node --env-file-if-exists=.env tools/scripts/data-gov-spatial-source-semantics.mjs --expect 500000\\",\\n'
-          if text.count(old) != 1:
-              raise SystemExit(f'semantics script anchor: expected 1 match, found {text.count(old)}')
-          text = text.replace(old, new, 1)
-          path.write_text(text)
-          PY
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path = 'package.json';
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const semanticsTest = 'tools/scripts/data-gov-spatial-source-semantics.test.mjs';
+          if (!pkg.scripts['performance:test'].includes(semanticsTest)) {
+            pkg.scripts['performance:test'] += ` ${semanticsTest}`;
+          }
+          pkg.scripts['research:spatial:semantics'] =
+            'node --env-file-if-exists=.env tools/scripts/data-gov-spatial-source-semantics.mjs --expect 500000';
+          fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
 
           pnpm exec prettier --write \
             package.json \
