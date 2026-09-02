@@ -24,11 +24,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Preserve no-shape spatial evidence
+        run: node tools/scripts/patch-data-gov-spatial-sidecar-no-shape.mjs
+
       - name: Patch OpenAPI contract
         run: node tools/scripts/patch-openapi-data-gov-spatial-sidecar.mjs
 
-      - name: Format OpenAPI contract
-        run: pnpm exec prettier --write schemas/openapi/repository-api.yaml
+      - name: Format sidecar and OpenAPI changes
+        run: |
+          pnpm exec prettier --write schemas/openapi/repository-api.yaml
+          ./mvnw -q -pl apps/repository-api spotless:apply
 
       - name: Regenerate API client
         run: pnpm run openapi:generate
@@ -38,15 +43,19 @@ jobs:
           pnpm run openapi:lint
           pnpm run openapi:check
 
-      - name: Commit generated contract changes
+      - name: Commit wired sidecar changes
         shell: bash
         run: |
           if git diff --quiet; then
-            echo "No contract changes to commit."
+            echo "No wiring changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add schemas/openapi/repository-api.yaml libs/repository/api-client/src/generated/repository-api.types.ts
-          git commit -m "feat: wire spatial sidecar OpenAPI contract"
+          git add \
+            apps/repository-api/src/main/java/org/civicsrepo/spatial/JdbcResearchSpatialSidecarStore.java \
+            apps/repository-api/src/main/java/org/civicsrepo/spatial/DataGovSpatialSidecarService.java \
+            schemas/openapi/repository-api.yaml \
+            libs/repository/api-client/src/generated/repository-api.types.ts
+          git commit -m "feat: retain unmapped Data.gov spatial evidence"
           git push origin HEAD:codex/data-gov-spatial-sidecar
