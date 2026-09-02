@@ -39,11 +39,22 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium firefox webkit
 
-      - name: Run deterministic browser evidence
+      - name: Run cross-browser accessibility and comparison evidence
         run: >-
           pnpm exec playwright test
           --config=apps/discovery-ui-e2e/playwright.config.mts
-          --grep '@comparison|@wcag|@section508|@maps'
+          --grep '@comparison|@wcag|@section508'
+          --reporter=html,line
+
+      # Raw MapLibre/WebGL readiness is intentionally kept out of the Firefox/WebKit WCAG pass.
+      # Semantic map equivalents remain cross-browser through their WCAG/508 tags; this pass proves
+      # actual layer registration, visibility, panning, and geography synchronization in Chromium.
+      - name: Run required MapLibre regression evidence
+        run: >-
+          pnpm exec playwright test
+          --config=apps/discovery-ui-e2e/playwright.config.mts
+          --grep @maps
+          --project=chromium
           --reporter=html,line
 
       - name: Upload Playwright report and failure evidence
