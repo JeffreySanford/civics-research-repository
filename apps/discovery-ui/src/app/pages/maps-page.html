@@ -711,56 +711,58 @@
       </li>
       } } } @if (researchCoverageVisible$ | async) { @if
       (researchCoverageSummary$ | async; as researchCoverage) {
-      <section
-        class="research-coverage-summary"
-        aria-labelledby="research-coverage-summary-heading"
-      >
-        <h3 id="research-coverage-summary-heading">
-          Repository research by area
-        </h3>
-        <p>
-          {{ researchCoverage.mappedResults | number }} of {{
-          researchCoverage.totalResults | number }} matching research objects
-          explicitly name a supported Census area. {{
-          researchCoverage.unmappedResults | number }} matching objects are not
-          drawn; publisher, laboratory, author, and institution locations are
-          not substituted for research geography.
-        </p>
-        @if (researchCoverage.areas.length) {
-        <table class="county-value-table">
-          <caption>
-            Matching research objects with explicit administrative geography
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Census area</th>
-              <th scope="col">Matching research objects</th>
-              <th scope="col">Discovery</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (area of researchCoverage.areas; track area.id) {
-            <tr>
-              <th scope="row">{{ area.geography }}</th>
-              <td>{{ area.count | number }}</td>
-              <td>
-                <a
-                  [routerLink]="['/discovery']"
-                  [queryParams]="researchAreaSearchParams(area.geography)"
-                  >View matching research</a
-                >
-              </td>
-            </tr>
-            }
-          </tbody>
-        </table>
-        } @else {
-        <p class="feature-hint">
-          No matching records currently expose supported explicit administrative
-          geography for this search.
-        </p>
-        }
-      </section>
+      <li>
+        <section
+          class="research-coverage-summary"
+          aria-labelledby="research-coverage-summary-heading"
+        >
+          <h3 id="research-coverage-summary-heading">
+            Repository research by area
+          </h3>
+          <p>
+            {{ researchCoverage.mappedResults | number }} of {{
+            researchCoverage.totalResults | number }} matching research objects
+            explicitly name a supported Census area. {{
+            researchCoverage.unmappedResults | number }} matching objects are
+            not drawn; publisher, laboratory, author, and institution locations
+            are not substituted for research geography.
+          </p>
+          @if (researchCoverage.areas.length) {
+          <table class="county-value-table">
+            <caption>
+              Matching research objects with explicit administrative geography
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Census area</th>
+                <th scope="col">Matching research objects</th>
+                <th scope="col">Discovery</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (area of researchCoverage.areas; track area.id) {
+              <tr>
+                <th scope="row">{{ area.geography }}</th>
+                <td>{{ area.count | number }}</td>
+                <td>
+                  <a
+                    [routerLink]="['/discovery']"
+                    [queryParams]="researchAreaSearchParams(area.geography)"
+                    >View matching research</a
+                  >
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+          } @else {
+          <p class="feature-hint">
+            No matching records currently expose supported explicit
+            administrative geography for this search.
+          </p>
+          }
+        </section>
+      </li>
       } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe)
       {
       <li>

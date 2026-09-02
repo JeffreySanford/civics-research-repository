@@ -48,9 +48,7 @@ test.describe('repository research coverage', () => {
       'TIGER_LINE',
       'LODES',
     ]);
-    expect(requestUrl.searchParams.get('publisher')).toBe(
-      'U.S. Census Bureau',
-    );
+    expect(requestUrl.searchParams.get('publisher')).toBe('U.S. Census Bureau');
     expect(requestUrl.searchParams.get('sourceSystem')).toBe('DATA_GOV');
     expect(requestUrl.searchParams.get('geography')).toBe('California');
     expect(requestUrl.searchParams.get('contentType')).toBe('DATASET');
@@ -104,9 +102,9 @@ test.describe('repository research coverage', () => {
     });
     const california = table.getByRole('row').filter({ hasText: 'California' });
     await expect(california).toContainText('3');
-    await expect(table.getByRole('row').filter({ hasText: 'Texas' })).toHaveCount(
-      0,
-    );
+    await expect(
+      table.getByRole('row').filter({ hasText: 'Texas' }),
+    ).toHaveCount(0);
 
     const discoveryLink = california.getByRole('link', {
       name: 'View matching research',
@@ -142,7 +140,9 @@ test.describe('repository research coverage', () => {
     await toggle.uncheck();
     await expect(toggle).not.toBeChecked();
     await expect(page).toHaveURL(/research=off/);
-    await expect(legend.getByText(/Repository research by area/)).toHaveCount(0);
+    await expect(legend.getByText(/Repository research by area/)).toHaveCount(
+      0,
+    );
     await expect(researchSummary).toHaveCount(0);
     await expectMapLayersVisibility(page, RESEARCH_LAYER_IDS, 'none');
   });
