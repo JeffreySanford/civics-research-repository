@@ -43,6 +43,14 @@ class SearchCursorCodecTest {
     }
 
     @Test
+    void criteriaFingerprintCannotCollapseProgramValuesContainingLegacyDelimiters() {
+        String oneProgram = codec.criteriaFingerprint(criteria("climate", List.of("ACS\u001fNASA"), 0, 25));
+        String twoPrograms = codec.criteriaFingerprint(criteria("climate", List.of("ACS", "NASA"), 0, 25));
+
+        assertThat(oneProgram).isNotEqualTo(twoPrograms);
+    }
+
+    @Test
     void rejectsEditedTokenBeforeParsingBackendPosition() {
         SearchComparisonCriteria criteria = criteria("climate", List.of("NASA"), 0, 25);
         String fingerprint = codec.criteriaFingerprint(criteria);
