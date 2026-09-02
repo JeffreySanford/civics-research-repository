@@ -75,11 +75,24 @@ export const mapsReducer = createReducer(
     ...state,
     censusAreaBoundaries,
   })),
-  on(MapsActions.mapLayersLoaded, (state, { layers }) => ({
-    ...state,
-    layers,
-    loading: false,
-  })),
+  on(MapsActions.mapLayersLoaded, (state, { layers }) => {
+    const saipeAvailable = layers.some(
+      (layer) => layer.layerType === 'CENSUS_CHOROPLETH',
+    );
+
+    return {
+      ...state,
+      layers,
+      loading: false,
+      // Capability metadata owns whether SAIPE may exist for this geography. Once a newly loaded
+      // area says it does not, stale visibility/data/errors from the previous area must disappear.
+      saipeVisible: saipeAvailable ? state.saipeVisible : false,
+      saipeChoropleth: saipeAvailable ? state.saipeChoropleth : null,
+      saipeChoroplethError: saipeAvailable
+        ? state.saipeChoroplethError
+        : null,
+    };
+  }),
   on(MapsActions.earthquakeOverlayLoaded, (state, { earthquakeOverlay }) => ({
     ...state,
     earthquakeOverlay,
@@ -139,6 +152,10 @@ export const mapsReducer = createReducer(
     selectedGeography: geography,
     loading: true,
     error: null,
+    // The old choropleth belongs to the old geography. Keep the user's toggle preference until
+    // capability metadata lands, but never display stale SAIPE values while the new area loads.
+    saipeChoropleth: null,
+    saipeChoroplethError: null,
   })),
   on(MapsActions.mapDataFailed, (state, { error }) => ({
     ...state,
