@@ -38,9 +38,10 @@ test.describe('Discovery cursor pagination', () => {
     const requests = searchRequests(page);
 
     await page.goto('/discovery');
-    await expect(
-      page.getByRole('heading', { name: '35 research objects' }),
-    ).toBeVisible();
+    const resultsHeading = page.getByRole('heading', {
+      name: '35 research objects',
+    });
+    await expect(resultsHeading).toBeVisible();
 
     await expect.poll(() => cursorRequests(requests).length).toBe(1);
     const firstRequest = cursorRequests(requests)[0];
@@ -55,13 +56,23 @@ test.describe('Discovery cursor pagination', () => {
       'page',
     );
 
+    for (const name of ['Previous', 'Next']) {
+      const box = await pager.getByRole('button', { name }).boundingBox();
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(24);
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
+    }
+
     await pager.getByRole('button', { name: 'Next' }).click();
 
     await expect(page).toHaveURL(/(?:\?|&)page=1(?:&|$)/);
     expect(new URL(page.url()).searchParams.has('cursor')).toBe(false);
-    await expect(
-      page.getByRole('heading', { name: '35 research objects' }),
-    ).toBeFocused();
+    await expect(resultsHeading).toBeFocused();
+    const headingBox = await resultsHeading.boundingBox();
+    const viewport = page.viewportSize();
+    expect(headingBox?.y ?? -1).toBeGreaterThanOrEqual(0);
+    expect((headingBox?.y ?? 0) + (headingBox?.height ?? 0)).toBeLessThanOrEqual(
+      viewport?.height ?? 0,
+    );
     await expect(pager.getByText('Page 2 of 2')).toHaveAttribute(
       'aria-current',
       'page',
