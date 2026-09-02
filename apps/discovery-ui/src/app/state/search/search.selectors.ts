@@ -39,6 +39,11 @@ export const selectSearchError = createSelector(
   (state) => state.error,
 );
 
+export const selectSearchPaginationNotice = createSelector(
+  selectSearchState,
+  (state) => state.paginationNotice,
+);
+
 /**
  * Whether the current results came from DSpace or from the fixture catalog.
  *
