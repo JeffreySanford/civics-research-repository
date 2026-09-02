@@ -26,6 +26,13 @@ function check(id, pass, detail) {
 async function fetchJson(fetchImpl, url) {
   const response = await fetchImpl(url);
   if (!response.ok) {
+    if (response.status === 404 && url.includes('/search/cursor')) {
+      throw new Error(
+        `Cursor endpoint returned HTTP 404: ${url}. ` +
+          'The running repository-api image is likely older than this branch. ' +
+          'Rebuild/recreate the API with `docker compose build repository-api && docker compose up -d repository-api`, then rerun `pnpm research:cursor:evidence`.',
+      );
+    }
     throw new Error(`Request failed with HTTP ${response.status}: ${url}`);
   }
   return response.json();
