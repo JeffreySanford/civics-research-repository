@@ -82,7 +82,7 @@ jobs:
         run: node tools/scripts/apply-research-coverage-ui.mjs
 
       - name: Remove one-shot transformation helper
-        run: git rm tools/scripts/apply-research-coverage-ui.mjs
+        run: git rm -f tools/scripts/apply-research-coverage-ui.mjs
 
       - name: Format changed implementation
         run: |
