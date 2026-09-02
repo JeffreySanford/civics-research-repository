@@ -99,13 +99,16 @@ describe('selectSearchPagination', () => {
     pageSize = 25,
   ) =>
     ({
-      page,
-      pageSize,
-      totalResults,
-      results: Array.from({ length: resultCount }, (_, index) => ({
-        id: `item-${index}`,
-      })),
-      facets: [],
+      ...initialSearchState,
+      response: {
+        page,
+        pageSize,
+        totalResults,
+        results: Array.from({ length: resultCount }, (_, index) => ({
+          id: `item-${index}`,
+        })),
+        facets: [],
+      },
     }) as unknown as Parameters<typeof selectSearchPagination.projector>[0];
 
   it('reports a one-based range on the first page', () => {
@@ -148,7 +151,7 @@ describe('selectSearchPagination', () => {
   });
 
   it('falls back to one page before anything has loaded', () => {
-    const pagination = selectSearchPagination.projector(null);
+    const pagination = selectSearchPagination.projector(initialSearchState);
 
     expect(pagination.page).toBe(0);
     expect(pagination.pageCount).toBe(1);
