@@ -159,6 +159,46 @@ test('intersects current Data.gov geospatial pages with the retained C2 identifi
   assert.equal(result.samples.length, 2);
 });
 
+test('reports first, periodic, and completion progress without changing results', async () => {
+  const progress = [];
+  const pages = [
+    { after: 'two', results: [{ identifier: 'a' }] },
+    { after: 'three', results: [{ identifier: 'outside' }] },
+    { results: [{ identifier: 'b' }] },
+  ];
+
+  const result = await probeDataGovSpatialSource({
+    retainedIdentifiers: new Set(['a', 'b']),
+    apiKey: 'personal',
+    progressEveryPages: 2,
+    onProgress: (entry) => progress.push(entry),
+    fetchImpl: async () => jsonResponse(pages.shift()),
+  });
+
+  assert.equal(result.sourceSpatialRecordCount, 3);
+  assert.equal(result.retainedSpatialRecordCount, 2);
+  assert.deepEqual(progress, [
+    {
+      pagesFetched: 1,
+      sourceSpatialRecordCount: 1,
+      retainedSpatialRecordCount: 1,
+      done: false,
+    },
+    {
+      pagesFetched: 2,
+      sourceSpatialRecordCount: 2,
+      retainedSpatialRecordCount: 1,
+      done: false,
+    },
+    {
+      pagesFetched: 3,
+      sourceSpatialRecordCount: 3,
+      retainedSpatialRecordCount: 2,
+      done: true,
+    },
+  ]);
+});
+
 test('rejects duplicate source identifiers across cursor pages', async () => {
   const pages = [
     { after: 'next', results: [{ identifier: 'same' }] },
@@ -337,6 +377,8 @@ test('argument parser supports pnpm separator and source traversal controls', ()
       '1000',
       '--max-pages',
       '900',
+      '--progress-every',
+      '5',
     ]),
     {
       expectedCount: 500000,
@@ -345,6 +387,7 @@ test('argument parser supports pnpm separator and source traversal controls', ()
       searchUrl: 'https://api.gsa.gov/technology/datagov/v4/search',
       pageSize: 1000,
       maxPages: 900,
+      progressEveryPages: 5,
     },
   );
 });

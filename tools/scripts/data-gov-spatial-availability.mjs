@@ -7,6 +7,7 @@ const DEFAULT_OUTPUT_DIR = 'browser-evidence-artifacts/spatial-availability';
 const DEFAULT_SEARCH_URL = 'https://api.gsa.gov/technology/datagov/v4/search';
 const DEFAULT_PAGE_SIZE = 1_000;
 const DEFAULT_MAX_PAGES = 2_000;
+const DEFAULT_PROGRESS_EVERY_PAGES = 10;
 const C2_PROFILE = 'FEDERATED_1M';
 const C2_TARGET_RECORDS = 1_000_000;
 const SHA256 = /^[0-9a-f]{64}$/u;
@@ -177,6 +178,8 @@ export async function probeDataGovSpatialSource({
   searchUrl = DEFAULT_SEARCH_URL,
   pageSize = DEFAULT_PAGE_SIZE,
   maxPages = DEFAULT_MAX_PAGES,
+  progressEveryPages = DEFAULT_PROGRESS_EVERY_PAGES,
+  onProgress = null,
   sampleLimit = 10,
 }) {
   if (!(retainedIdentifiers instanceof Set)) {
@@ -188,9 +191,17 @@ export async function probeDataGovSpatialSource({
   if (typeof fetchImpl !== 'function') {
     throw new Error('fetchImpl must be a function.');
   }
+  if (onProgress !== null && typeof onProgress !== 'function') {
+    throw new Error('onProgress must be a function when provided.');
+  }
 
   const safePageSize = positiveInteger(pageSize, 'pageSize', DEFAULT_PAGE_SIZE);
   const safeMaxPages = positiveInteger(maxPages, 'maxPages', DEFAULT_MAX_PAGES);
+  const safeProgressEveryPages = positiveInteger(
+    progressEveryPages,
+    'progressEveryPages',
+    DEFAULT_MAX_PAGES,
+  );
   const seenSourceIdentifiers = new Set();
   const matchedIdentifiers = new Set();
   const samples = [];
@@ -278,13 +289,27 @@ export async function probeDataGovSpatialSource({
     }
 
     const nextCursor = textValue(page?.after);
-    if (!nextCursor) {
-      break;
-    }
-    if (results.length === 0) {
+    if (nextCursor && results.length === 0) {
       throw new Error(
         'Data.gov spatial search returned an empty page with a continuation cursor.',
       );
+    }
+
+    const done = !nextCursor;
+    if (
+      onProgress &&
+      (pages === 1 || pages % safeProgressEveryPages === 0 || done)
+    ) {
+      onProgress({
+        pagesFetched: pages,
+        sourceSpatialRecordCount: seenSourceIdentifiers.size,
+        retainedSpatialRecordCount: matchedIdentifiers.size,
+        done,
+      });
+    }
+
+    if (done) {
+      break;
     }
     cursor = nextCursor;
   }
@@ -350,6 +375,7 @@ export function parseArgs(argv) {
     searchUrl: DEFAULT_SEARCH_URL,
     pageSize: DEFAULT_PAGE_SIZE,
     maxPages: DEFAULT_MAX_PAGES,
+    progressEveryPages: DEFAULT_PROGRESS_EVERY_PAGES,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -390,6 +416,15 @@ export function parseArgs(argv) {
       args.maxPages = positiveInteger(
         argv[index + 1],
         '--max-pages',
+        DEFAULT_MAX_PAGES,
+      );
+      index += 1;
+      continue;
+    }
+    if (argument === '--progress-every') {
+      args.progressEveryPages = positiveInteger(
+        argv[index + 1],
+        '--progress-every',
         DEFAULT_MAX_PAGES,
       );
       index += 1;
@@ -447,12 +482,18 @@ export async function run(argv = process.argv.slice(2), env = process.env) {
     searchUrl,
     pageSize,
     maxPages,
+    progressEveryPages,
   } = parseArgs(argv);
   const scaleCertification = scaleEvidencePath
     ? await loadScaleCertification(scaleEvidencePath)
     : null;
+  console.log('[spatial] Loading retained Data.gov identifiers from C2...');
+  const identifierLoadStartedAt = Date.now();
   const retainedIdentifiers = parsePsqlIdentifiers(
     runPsqlIdentifiers(buildRetainedIdentifiersSql(), env),
+  );
+  console.log(
+    `[spatial] Loaded ${retainedIdentifiers.size.toLocaleString()} retained identifiers in ${formatElapsed(Date.now() - identifierLoadStartedAt)}.`,
   );
   if (expectedCount !== null && retainedIdentifiers.size !== expectedCount) {
     throw new Error(
@@ -461,12 +502,27 @@ export async function run(argv = process.argv.slice(2), env = process.env) {
   }
 
   const apiKey = requirePersonalDataGovApiKey(env);
+  console.log(
+    `[spatial] Starting Data.gov geospatial traversal (pageSize=${pageSize.toLocaleString()}, progressEvery=${progressEveryPages} pages)...`,
+  );
+  const traversalStartedAt = Date.now();
   const probe = await probeDataGovSpatialSource({
     retainedIdentifiers,
     apiKey,
     searchUrl,
     pageSize,
     maxPages,
+    progressEveryPages,
+    onProgress: (progress) => {
+      const elapsedMs = Date.now() - traversalStartedAt;
+      const elapsedSeconds = Math.max(elapsedMs / 1000, 0.001);
+      const rate = Math.round(
+        progress.sourceSpatialRecordCount / elapsedSeconds,
+      );
+      console.log(
+        `[spatial] page=${progress.pagesFetched.toLocaleString()} source=${progress.sourceSpatialRecordCount.toLocaleString()} C2-matches=${progress.retainedSpatialRecordCount.toLocaleString()} elapsed=${formatElapsed(elapsedMs)} rate=${rate.toLocaleString()} rec/s${progress.done ? ' complete' : ''}`,
+      );
+    },
   });
   const report = {
     ...probe,
@@ -491,6 +547,10 @@ export async function run(argv = process.argv.slice(2), env = process.env) {
   console.log(`JSON evidence: ${jsonPath}`);
   console.log(`Markdown evidence: ${markdownPath}`);
   return report;
+}
+
+function formatElapsed(elapsedMs) {
+  return `${(Math.max(0, elapsedMs) / 1000).toFixed(1)}s`;
 }
 
 function sourceIdentifier(dataset) {
