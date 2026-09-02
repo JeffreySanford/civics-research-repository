@@ -59,6 +59,18 @@ test('flags invalid rings and coordinate-domain anomalies without claiming topol
   assert.equal(result.longitudeSpanOver180, true);
 });
 
+test('marks empty polygon families structurally invalid', () => {
+  for (const geometry of [
+    { type: 'Polygon', coordinates: [] },
+    { type: 'MultiPolygon', coordinates: [] },
+  ]) {
+    const result = analyzeGeoJsonGeometry(geometry);
+    assert.equal(result.structurallyValid, false);
+    assert.equal(result.empty, true);
+    assert.equal(result.insufficientElementCount, 1);
+  }
+});
+
 test('validates centroids as GeoJSON points', () => {
   assert.equal(
     analyzeCentroid({ type: 'Point', coordinates: [-100, 40] }).validPoint,
@@ -78,10 +90,7 @@ test('classifies dcat spatial text and exposes ordering anomalies', () => {
   const bbox = classifyDcatSpatial('-83.1,32.0,-121.9,48.0');
   assert.equal(bbox.family, 'comma-bbox-four-numeric');
   assert.deepEqual(bbox.anomalies, ['west-greater-than-east']);
-  assert.equal(
-    classifyDcatSpatial('{"type":"Polygon"}').family,
-    'json-object',
-  );
+  assert.equal(classifyDcatSpatial('{"type":"Polygon"}').family, 'json-object');
   assert.equal(classifyDcatSpatial('United States').family, 'free-text');
 });
 

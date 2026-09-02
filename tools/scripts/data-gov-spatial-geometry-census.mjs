@@ -37,7 +37,8 @@ export function analyzeGeoJsonGeometry(value) {
   const serialized = JSON.stringify(value);
   const state = newGeometryState();
   inspectGeometry(value, state);
-  const hasBounds = Number.isFinite(state.minLon) && Number.isFinite(state.maxLon);
+  const hasBounds =
+    Number.isFinite(state.minLon) && Number.isFinite(state.maxLon);
   return {
     type: textValue(value.type) ?? 'UNKNOWN',
     recognizedType: GEOJSON_TYPES.has(textValue(value.type) ?? ''),
@@ -50,8 +51,7 @@ export function analyzeGeoJsonGeometry(value) {
     ringClosureFailureCount: state.ringClosureFailureCount,
     insufficientElementCount: state.insufficientElementCount,
     longitudeSpanDegrees: hasBounds ? state.maxLon - state.minLon : null,
-    longitudeSpanOver180:
-      hasBounds && state.maxLon - state.minLon > 180,
+    longitudeSpanOver180: hasBounds && state.maxLon - state.minLon > 180,
     bounds: hasBounds
       ? {
           minLon: state.minLon,
@@ -320,7 +320,8 @@ export function summarizeGeometryCensus({
       increment(shape.types, observation.shape.type);
       if (observation.shape.recognizedType) shape.recognizedTypeCount += 1;
       else shape.unrecognizedTypeCount += 1;
-      if (observation.shape.structurallyValid) shape.structurallyValidCount += 1;
+      if (observation.shape.structurallyValid)
+        shape.structurallyValidCount += 1;
       else shape.structurallyInvalidCount += 1;
       if (observation.shape.empty) shape.emptyCount += 1;
       if (observation.shape.invalidPositionCount > 0)
@@ -389,7 +390,8 @@ export function summarizeGeometryCensus({
 
   shape.absentCount = retainedObservations.size - shape.presentCount;
   centroid.absentCount = retainedObservations.size - centroid.presentCount;
-  dcatSpatial.absentCount = retainedObservations.size - dcatSpatial.presentCount;
+  dcatSpatial.absentCount =
+    retainedObservations.size - dcatSpatial.presentCount;
   shape.positionCountPercentiles = percentiles(shapePositionCounts);
   shape.serializedBytesPercentiles = percentiles(shapeSerializedBytes);
 
@@ -479,10 +481,7 @@ export function parseArgs(argv = []) {
       continue;
     }
     if (argument === '--sample-limit') {
-      args.sampleLimit = nonNegativeInteger(
-        argv[index + 1],
-        '--sample-limit',
-      );
+      args.sampleLimit = nonNegativeInteger(argv[index + 1], '--sample-limit');
       index += 1;
       continue;
     }
@@ -605,7 +604,8 @@ export function formatMarkdown(report) {
     '| Geometry type | Records |',
     '| --- | ---: |',
     ...sortedEntries(report.shape.types).map(
-      ([type, count]) => `| \`${escapeMarkdown(type)}\` | ${formatNumber(count)} |`,
+      ([type, count]) =>
+        `| \`${escapeMarkdown(type)}\` | ${formatNumber(count)} |`,
     ),
     '',
     '### Shape complexity',
@@ -833,7 +833,10 @@ function inspectGeometry(geometry, state) {
         state.structurallyValid = false;
         return;
       }
-      if (coordinates.length === 0) state.insufficientElementCount += 1;
+      if (coordinates.length === 0) {
+        state.insufficientElementCount += 1;
+        state.structurallyValid = false;
+      }
       for (const polygon of coordinates) inspectPolygon(polygon, state);
       break;
     default:
@@ -852,7 +855,10 @@ function inspectNestedPositionArrays(
     state.structurallyValid = false;
     return;
   }
-  if (value.length < minimumOuter) state.insufficientElementCount += 1;
+  if (value.length < minimumOuter) {
+    state.insufficientElementCount += 1;
+    state.structurallyValid = false;
+  }
   for (const item of value) {
     inspectPositionArray(item, minimumInner, state, ring);
   }
@@ -925,7 +931,8 @@ function differenceSnapshot(current, previous) {
     retainedShapeRecordCount:
       current.retainedShapeRecordCount - previous.retainedShapeRecordCount,
     retainedCentroidRecordCount:
-      current.retainedCentroidRecordCount - previous.retainedCentroidRecordCount,
+      current.retainedCentroidRecordCount -
+      previous.retainedCentroidRecordCount,
   };
 }
 
@@ -1129,7 +1136,8 @@ function requiredText(value, name) {
 
 const invokedDirectly =
   process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+  path.resolve(process.argv[1]) ===
+    path.resolve(fileURLToPath(import.meta.url));
 if (invokedDirectly) {
   await run();
 }
