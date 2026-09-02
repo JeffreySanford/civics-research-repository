@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 import org.civicsrepo.federation.FederatedSourceSystem;
 
-/** One publisher-supplied spatial observation associated with a retained federated research object. */
+/** One spatial-source observation associated with a retained federated research object. */
 public record ResearchSpatialSidecarRecord(
         FederatedSourceSystem sourceSystem,
         String sourceIdentifier,
@@ -40,8 +40,6 @@ public record ResearchSpatialSidecarRecord(
         Objects.requireNonNull(capturedAt, "capturedAt");
         compositionSha256 = requireSha(compositionSha256, "compositionSha256");
         projectionId = requireSha(projectionId, "projectionId");
-        geometryJson = requireText(geometryJson, "geometryJson");
-        geometryType = requireText(geometryType, "geometryType");
         Objects.requireNonNull(geometryStatus, "geometryStatus");
         provenanceJson = requireText(provenanceJson, "provenanceJson");
         validationJson = requireText(validationJson, "validationJson");
@@ -64,10 +62,29 @@ public record ResearchSpatialSidecarRecord(
         if (renderLon != null) {
             renderPointMethod = requireText(renderPointMethod, "renderPointMethod");
         }
+
+        boolean geometryAbsent = geometryJson == null && geometryType == null;
+        boolean geometryPresent = geometryJson != null && geometryType != null;
+        if (!geometryAbsent && !geometryPresent) {
+            throw new IllegalArgumentException("geometryJson and geometryType must either both be present or both be absent");
+        }
+        if (geometryPresent) {
+            geometryJson = requireText(geometryJson, "geometryJson");
+            geometryType = requireText(geometryType, "geometryType");
+        }
+        if (geometryStatus == SpatialGeometryStatus.NO_PUBLISHER_GEOMETRY) {
+            if (!geometryAbsent || minLon != null || renderLon != null) {
+                throw new IllegalArgumentException("NO_PUBLISHER_GEOMETRY rows must not expose canonical geometry or render bounds");
+            }
+        } else if (geometryAbsent) {
+            throw new IllegalArgumentException("publisher geometry is required unless status is NO_PUBLISHER_GEOMETRY");
+        }
     }
 
     public boolean queryableGeometry() {
-        return geometryStatus != SpatialGeometryStatus.QUARANTINED
+        return (geometryStatus == SpatialGeometryStatus.VALID
+                        || geometryStatus == SpatialGeometryStatus.ANTIMERIDIAN_CANDIDATE)
+                && geometryJson != null
                 && minLon != null
                 && minLat != null
                 && maxLon != null
