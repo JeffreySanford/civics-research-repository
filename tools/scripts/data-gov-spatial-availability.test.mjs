@@ -145,7 +145,10 @@ test('intersects current Data.gov geospatial pages with the retained C2 identifi
   assert.equal(requests[0].apiKey, 'personal-key');
   assert.match(requests[0].url, /spatial_filter=geospatial/u);
   assert.match(requests[1].url, /after=next-token/u);
+  assert.equal(result.sourceSpatialRowCount, 3);
   assert.equal(result.sourceSpatialRecordCount, 3);
+  assert.equal(result.duplicateSourceRowCount, 0);
+  assert.equal(result.duplicateSourceIdentifierCount, 0);
   assert.equal(result.retainedRecordCount, 3);
   assert.equal(result.retainedSpatialRecordCount, 2);
   assert.equal(result.retainedSpatialPercent, 66.6667);
@@ -199,19 +202,41 @@ test('reports first, periodic, and completion progress without changing results'
   ]);
 });
 
-test('rejects duplicate source identifiers across cursor pages', async () => {
+test('collapses repeated source rows onto one C2 identifier and merges spatial signals', async () => {
   const pages = [
-    { after: 'next', results: [{ identifier: 'same' }] },
-    { results: [{ identifier: 'same' }] },
+    {
+      after: 'next',
+      results: [{ identifier: 'same', dcat: { spatial: 'United States' } }],
+    },
+    {
+      results: [
+        {
+          identifier: 'same',
+          has_spatial: true,
+          spatial_shape: { type: 'Polygon', coordinates: [] },
+          spatial_centroid: { type: 'Point', coordinates: [-100, 40] },
+        },
+      ],
+    },
   ];
-  await assert.rejects(
-    probeDataGovSpatialSource({
-      retainedIdentifiers: new Set(['same']),
-      apiKey: 'personal',
-      fetchImpl: async () => jsonResponse(pages.shift()),
-    }),
-    /repeated identifier same/u,
-  );
+  const result = await probeDataGovSpatialSource({
+    retainedIdentifiers: new Set(['same']),
+    apiKey: 'personal',
+    fetchImpl: async () => jsonResponse(pages.shift()),
+  });
+
+  assert.equal(result.sourceSpatialRowCount, 2);
+  assert.equal(result.sourceSpatialRecordCount, 1);
+  assert.equal(result.duplicateSourceRowCount, 1);
+  assert.equal(result.duplicateSourceIdentifierCount, 1);
+  assert.equal(result.retainedSpatialRecordCount, 1);
+  assert.deepEqual(result.matchedMetadataSignals, {
+    hasSpatialTrue: 1,
+    dcatSpatial: 1,
+    spatialShape: 1,
+    spatialCentroid: 1,
+  });
+  assert.equal(result.samples.length, 1);
 });
 
 test('rejects empty continuation pages and bounded traversal overflow', async () => {
@@ -341,7 +366,10 @@ test('markdown states the source-intersection method and supersedes the URL-stri
   const report = {
     capturedAt: '2026-09-02T20:00:00.000Z',
     retainedRecordCount: 500000,
+    sourceSpatialRowCount: 104,
     sourceSpatialRecordCount: 100,
+    duplicateSourceRowCount: 4,
+    duplicateSourceIdentifierCount: 2,
     retainedSpatialRecordCount: 25,
     retainedSpatialPercent: 0.005,
     unmatchedCurrentSourceSpatialRecords: 75,
@@ -361,6 +389,10 @@ test('markdown states the source-intersection method and supersedes the URL-stri
     /geospatial search intersected with certified retained C2 identifiers/u,
   );
   assert.match(markdown, /harvest_record_raw.*URL/u);
+  assert.match(
+    markdown,
+    /Duplicate source rows collapsed by C2 identifier.*4/u,
+  );
   assert.match(markdown, /not.*byte-for-byte historical C2 metadata/u);
   assert.match(markdown, /\(MATCH\)/u);
 });
