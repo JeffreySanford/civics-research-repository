@@ -61,8 +61,11 @@ jobs:
           path.write_text(source[:start_index] + wrapped + source[close_end:])
           PY
 
-      - name: Format template
-        run: pnpm exec prettier --write apps/discovery-ui/src/app/pages/maps-page.html
+      - name: Format changed files
+        run: |
+          pnpm exec prettier --write \
+            apps/discovery-ui/src/app/pages/maps-page.html \
+            apps/discovery-ui-e2e/src/research-coverage.spec.ts
 
       - name: Check formatting
         run: pnpm exec nx format:check --all
@@ -80,6 +83,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git rm .github/workflows/fix-research-coverage-list-semantics.yml
-          git add apps/discovery-ui/src/app/pages/maps-page.html
-          git commit -m 'fix: keep Research Coverage inside semantic list structure'
+          git add \
+            apps/discovery-ui/src/app/pages/maps-page.html \
+            apps/discovery-ui-e2e/src/research-coverage.spec.ts
+          git commit -m 'fix: keep Research Coverage semantic evidence valid'
           git push origin HEAD:codex/searchable-research-map-coverage
