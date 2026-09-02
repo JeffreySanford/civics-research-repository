@@ -34,6 +34,7 @@ export type SaipeCountyChoropleth =
   components['schemas']['SaipeCountyChoropleth'];
 export type SaipeCountyValue = components['schemas']['SaipeCountyValue'];
 export type SearchResponse = components['schemas']['SearchResponse'];
+export type SearchCursorPage = components['schemas']['SearchCursorPage'];
 export type SearchResult = components['schemas']['SearchResult'];
 export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
@@ -72,17 +73,6 @@ export interface SearchQuery {
   readonly vintageYear?: number;
   readonly page?: number;
   readonly pageSize?: number;
-}
-
-/**
- * Transitional typed view of `/search/cursor` while the OpenAPI contract is being updated.
- *
- * The nested search payload remains the existing SearchResponse. `nextCursor` is opaque and must
- * only be resent with the same effective query/filter/page-size state.
- */
-export interface SearchCursorPage {
-  readonly search: SearchResponse;
-  readonly nextCursor: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
