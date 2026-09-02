@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { axeEngineeringTags } from './support/axe-tags';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 import { mockSearchComparisonApi } from './support/search-comparison-mocks';
 import { waitForStablePage } from './support/wait-for-stable-page';
 
-const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 const federatedResearchId =
   'REFUQV9HT1Y6aHR0cHM6Ly9jYXRhbG9nLmRhdGEuZ292L2RhdGFzZXQvd29ya2ZvcmNlLWV4YW1wbGU';
 const curatedResearchId = 'dGlnZXJfbGluZS1jYWxpZm9ybmlh';
@@ -77,7 +77,7 @@ test.describe('accessibility evidence', () => {
       await waitForStablePage(page);
 
       const results = await new AxeBuilder({ page })
-        .withTags(axeTags)
+        .withTags(axeEngineeringTags)
         .analyze();
 
       expect(results.violations).toEqual([]);

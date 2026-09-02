@@ -1,5 +1,7 @@
 package org.civicsrepo.search;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -242,9 +244,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
             }
             String responseBody = response.body();
             return new SearchExecution(
-                    toSearchResponse(
-                            criteria,
-                            responseBody),
+                    toSearchResponse(criteria, responseBody),
                     engineReportedMillis(responseBody));
         } catch (IOException exception) {
             throw new IllegalStateException("OpenSearch search request failed.", exception);
@@ -254,9 +254,63 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
         }
     }
 
+    /**
+     * Executes deterministic forward traversal using OpenSearch search_after.
+     *
+     * <p>The existing comparison path keeps offset pagination during migration. Continuation adds a
+     * stable ID tie breaker and feeds the last hit's returned sort tuple back to OpenSearch without
+     * exposing that tuple outside the signed engine-neutral cursor envelope.
+     */
+    public SearchContinuationExecution searchWithContinuation(
+            SearchComparisonCriteria criteria, String searchAfterPosition) {
+        if (!isEnabled()) {
+            throw new IllegalStateException("OpenSearch comparison is disabled.");
+        }
+
+        Map<String, Object> requestBody = continuationSearchRequest(criteria, searchAfterPosition);
+        try {
+            HttpRequest request = HttpRequest.newBuilder(indexUri(index, "/_search"))
+                    .timeout(REQUEST_TIMEOUT)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
+                    .build();
+            HttpResponse<String> response = send(request);
+            if (response.statusCode() >= 300) {
+                throw new IllegalStateException("OpenSearch continuation search failed with HTTP " + response.statusCode());
+            }
+
+            String responseBody = response.body();
+            SearchResponse searchResponse = toSearchResponse(criteria, responseBody);
+            return new SearchContinuationExecution(
+                    searchResponse,
+                    engineReportedMillis(responseBody),
+                    nextSearchAfterPosition(criteria, searchResponse, responseBody));
+        } catch (IOException exception) {
+            throw new IllegalStateException("OpenSearch continuation search request failed.", exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("OpenSearch continuation search request was interrupted.", exception);
+        }
+    }
+
     private Map<String, Object> searchRequest(SearchComparisonCriteria criteria) {
-        Map<String, Object> body = new LinkedHashMap<>();
+        Map<String, Object> body = searchRequestBase(criteria);
         body.put("from", criteria.page() * criteria.pageSize());
+        return body;
+    }
+
+    private Map<String, Object> continuationSearchRequest(
+            SearchComparisonCriteria criteria, String searchAfterPosition) {
+        Map<String, Object> body = searchRequestBase(criteria);
+        body.put("sort", List.of(Map.of("_score", "desc"), Map.of("id", "asc")));
+        if (searchAfterPosition != null && !searchAfterPosition.isBlank()) {
+            body.put("search_after", decodeSearchAfterPosition(searchAfterPosition));
+        }
+        return body;
+    }
+
+    private Map<String, Object> searchRequestBase(SearchComparisonCriteria criteria) {
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put("size", criteria.pageSize());
         body.put("track_total_hits", true);
         body.put("query", queryClause(criteria.query()));
@@ -305,6 +359,37 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                         50));
         body.put("aggs", aggregations);
         return body;
+    }
+
+    private List<Object> decodeSearchAfterPosition(String position) {
+        try {
+            List<Object> values = objectMapper.readValue(position, new TypeReference<List<Object>>() {});
+            if (values.isEmpty()) {
+                throw new IllegalArgumentException("OpenSearch search_after position must not be empty.");
+            }
+            return values;
+        } catch (JsonProcessingException exception) {
+            throw new IllegalArgumentException("OpenSearch search_after position must be a JSON array.", exception);
+        }
+    }
+
+    private String nextSearchAfterPosition(
+            SearchComparisonCriteria criteria,
+            SearchResponse searchResponse,
+            String responseBody)
+            throws IOException {
+        if (searchResponse.getResults().isEmpty()
+                || searchResponse.getResults().size() < criteria.pageSize()
+                || ((long) criteria.page() + 1L) * criteria.pageSize() >= searchResponse.getTotalResults()) {
+            return null;
+        }
+
+        JsonNode hits = objectMapper.readTree(responseBody).path("hits").path("hits");
+        JsonNode lastSort = hits.path(hits.size() - 1).path("sort");
+        if (!lastSort.isArray() || lastSort.isEmpty()) {
+            throw new IllegalStateException("OpenSearch continuation response did not include sort values.");
+        }
+        return objectMapper.writeValueAsString(lastSort);
     }
 
     private Map<String, Object> queryClause(String query) {

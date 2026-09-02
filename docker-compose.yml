@@ -22,6 +22,9 @@ services:
       # Blank by default: without .env the API runs diff-only and never authenticates to DSpace.
       CIVICS_DSPACE_ADMIN_EMAIL: '${CIVICS_DSPACE_ADMIN_EMAIL:-}'
       CIVICS_DSPACE_ADMIN_PASSWORD: '${CIVICS_DSPACE_ADMIN_PASSWORD:-}'
+      # Cursor tokens are navigation state, not authorization, but this stable HMAC key prevents a
+      # caller from editing backend-native continuation positions. Override it in deployed environments.
+      CIVICS_SEARCH_CURSOR_SECRET: '${CIVICS_SEARCH_CURSOR_SECRET:-local-development-search-cursor-secret-change-me}'
       # Data.gov Catalog API v4 requires X-Api-Key. DEMO_KEY is intentionally sufficient only for
       # bounded local exploration; use a personal api.data.gov key for sustained harvest proofs.
       CIVICS_FEDERATION_DATA_GOV_API_KEY: '${CIVICS_FEDERATION_DATA_GOV_API_KEY:-DEMO_KEY}'

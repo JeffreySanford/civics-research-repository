@@ -1,5 +1,7 @@
 package org.civicsrepo.search;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -22,8 +24,10 @@ import org.civicsrepo.generated.dto.SourceSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 @WebMvcTest(SearchController.class)
 class SearchControllerTest {
@@ -32,6 +36,9 @@ class SearchControllerTest {
 
     @MockitoBean
     private SearchService searchService;
+
+    @MockitoBean
+    private SearchCursorService searchCursorService;
 
     @Test
     void acceptsADataDrivenProgramOutsideTheLegacyEnum() throws Exception {
@@ -175,6 +182,70 @@ class SearchControllerTest {
 
         verify(searchService)
                 .search(null, List.of(), null, null, "North \"Dakota\"", null, null, 0, 25);
+    }
+
+    @Test
+    void exposesCursorTraversalWithoutChangingTheOffsetEndpoint() throws Exception {
+        given(searchCursorService.search(
+                        eq("climate"),
+                        eq(List.of("Office of Science")),
+                        eq("DOE Office of Scientific and Technical Information"),
+                        eq(SourceSystem.DOE_OSTI),
+                        eq("North Dakota"),
+                        eq(ResearchObjectType.PUBLICATION),
+                        eq(2025),
+                        eq("opaque-current"),
+                        eq(10)))
+                .willReturn(new SearchCursorPage(response(), "opaque-next"));
+
+        mockMvc.perform(get("/search/cursor")
+                        .param("q", "climate")
+                        .param("program", "Office of Science")
+                        .param("publisher", "DOE Office of Scientific and Technical Information")
+                        .param("sourceSystem", "DOE_OSTI")
+                        .param("geography", "North Dakota")
+                        .param("contentType", "PUBLICATION")
+                        .param("vintageYear", "2025")
+                        .param("cursor", "opaque-current")
+                        .param("pageSize", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.search.resultSource").value("REPOSITORY"))
+                .andExpect(jsonPath("$.nextCursor").value("opaque-next"));
+
+        verify(searchCursorService)
+                .search(
+                        "climate",
+                        List.of("Office of Science"),
+                        "DOE Office of Scientific and Technical Information",
+                        SourceSystem.DOE_OSTI,
+                        "North Dakota",
+                        ResearchObjectType.PUBLICATION,
+                        2025,
+                        "opaque-current",
+                        10);
+    }
+
+    @Test
+    void returnsTypedBadRequestForInvalidCursor() throws Exception {
+        given(searchCursorService.search(any(), anyList(), any(), any(), any(), any(), any(), any(), anyInt()))
+                .willThrow(new SearchCursorException("Search cursor signature is not valid."));
+
+        mockMvc.perform(get("/search/cursor").param("cursor", "edited"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Search cursor signature is not valid."));
+    }
+
+    @Test
+    void reportsMissingCursorServiceAsServiceUnavailable() {
+        SearchController controller = new SearchController(searchService);
+
+        assertThatThrownBy(() -> controller.searchResearchObjectsWithCursor(
+                        null, null, null, null, null, null, null, null, 25))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(exception -> assertThat(((ResponseStatusException) exception).getStatusCode())
+                        .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE))
+                .hasMessageContaining("Cursor search service is not configured");
     }
 
     private SearchResponse response() {

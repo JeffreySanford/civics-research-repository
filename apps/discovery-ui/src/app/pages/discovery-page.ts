@@ -26,6 +26,7 @@ import {
   selectMapExploreGeography,
   selectSearchLoading,
   selectSearchPagination,
+  selectSearchPaginationNotice,
   selectSearchResultSource,
   selectSearchResults,
   selectSearchTotalResults,
@@ -113,6 +114,9 @@ export class DiscoveryPage implements OnInit {
     selectSearchTotalResults,
   );
   protected readonly pagination$ = this.store.select(selectSearchPagination);
+  protected readonly paginationNotice$ = this.store.select(
+    selectSearchPaginationNotice,
+  );
   protected readonly exploreGeography$ = this.store.select(
     selectMapExploreGeography,
   );
@@ -156,7 +160,7 @@ export class DiscoveryPage implements OnInit {
   protected goToPage(page: number): void {
     this.page = Math.max(0, page);
     this.updateSearchUrl();
-    this.dispatchSearch();
+    this.store.dispatch(SearchActions.searchPageRequested({ page: this.page }));
 
     // Paging replaces the whole list. Without moving focus, a keyboard or screen-reader user is
     // left on a button whose surrounding content silently changed underneath them.
@@ -189,7 +193,11 @@ export class DiscoveryPage implements OnInit {
         : {}),
     };
 
-    this.store.dispatch(SearchActions.searchSubmitted({ query }));
+    this.store.dispatch(
+      this.page === 0
+        ? SearchActions.cursorSearchSubmitted({ query })
+        : SearchActions.searchSubmitted({ query }),
+    );
   }
 
   /** Toggles one data-driven program name in or out of the selection. */
