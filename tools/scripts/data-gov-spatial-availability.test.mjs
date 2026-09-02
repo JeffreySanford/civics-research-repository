@@ -162,44 +162,138 @@ test('intersects current Data.gov geospatial pages with the retained C2 identifi
   assert.equal(result.samples.length, 2);
 });
 
-test('reports first, periodic, and completion progress without changing results', async () => {
+test('reports combined progress windows and cumulative totals without changing results', async () => {
   const progress = [];
   const pages = [
-    { after: 'two', results: [{ identifier: 'a' }] },
+    {
+      after: 'two',
+      results: [
+        {
+          identifier: 'a',
+          has_spatial: true,
+          dcat: { spatial: 'United States' },
+        },
+      ],
+    },
     { after: 'three', results: [{ identifier: 'outside' }] },
-    { results: [{ identifier: 'b' }] },
+    {
+      after: 'four',
+      results: [{ identifier: 'b', dcat: { spatial: 'Alaska' } }],
+    },
+    {
+      after: 'five',
+      results: [
+        {
+          identifier: 'b',
+          spatial_shape: { type: 'Polygon', coordinates: [] },
+        },
+      ],
+    },
+    {
+      results: [
+        {
+          identifier: 'c',
+          spatial_centroid: { type: 'Point', coordinates: [-100, 40] },
+        },
+      ],
+    },
   ];
 
   const result = await probeDataGovSpatialSource({
-    retainedIdentifiers: new Set(['a', 'b']),
+    retainedIdentifiers: new Set(['a', 'b', 'c']),
     apiKey: 'personal',
     progressEveryPages: 2,
     onProgress: (entry) => progress.push(entry),
     fetchImpl: async () => jsonResponse(pages.shift()),
   });
 
-  assert.equal(result.sourceSpatialRecordCount, 3);
-  assert.equal(result.retainedSpatialRecordCount, 2);
-  assert.deepEqual(progress, [
-    {
-      pagesFetched: 1,
-      sourceSpatialRecordCount: 1,
-      retainedSpatialRecordCount: 1,
-      done: false,
-    },
-    {
-      pagesFetched: 2,
-      sourceSpatialRecordCount: 2,
-      retainedSpatialRecordCount: 1,
-      done: false,
-    },
-    {
-      pagesFetched: 3,
-      sourceSpatialRecordCount: 3,
-      retainedSpatialRecordCount: 2,
-      done: true,
-    },
-  ]);
+  assert.equal(result.sourceSpatialRowCount, 5);
+  assert.equal(result.sourceSpatialRecordCount, 4);
+  assert.equal(result.duplicateSourceRowCount, 1);
+  assert.equal(result.retainedSpatialRecordCount, 3);
+  assert.equal(progress.length, 3);
+  assert.deepEqual(
+    progress.map((entry) => ({
+      pagesFetched: entry.pagesFetched,
+      sourceSpatialRowCount: entry.sourceSpatialRowCount,
+      sourceSpatialRecordCount: entry.sourceSpatialRecordCount,
+      duplicateSourceRowCount: entry.duplicateSourceRowCount,
+      retainedSpatialRecordCount: entry.retainedSpatialRecordCount,
+      window: entry.window,
+      done: entry.done,
+    })),
+    [
+      {
+        pagesFetched: 2,
+        sourceSpatialRowCount: 2,
+        sourceSpatialRecordCount: 2,
+        duplicateSourceRowCount: 0,
+        retainedSpatialRecordCount: 1,
+        window: {
+          startPage: 1,
+          endPage: 2,
+          pagesFetched: 2,
+          sourceSpatialRowCount: 2,
+          sourceSpatialRecordCount: 2,
+          duplicateSourceRowCount: 0,
+          retainedSpatialRecordCount: 1,
+          matchedMetadataSignals: {
+            hasSpatialTrue: 1,
+            dcatSpatial: 1,
+            spatialShape: 0,
+            spatialCentroid: 0,
+          },
+        },
+        done: false,
+      },
+      {
+        pagesFetched: 4,
+        sourceSpatialRowCount: 4,
+        sourceSpatialRecordCount: 3,
+        duplicateSourceRowCount: 1,
+        retainedSpatialRecordCount: 2,
+        window: {
+          startPage: 3,
+          endPage: 4,
+          pagesFetched: 2,
+          sourceSpatialRowCount: 2,
+          sourceSpatialRecordCount: 1,
+          duplicateSourceRowCount: 1,
+          retainedSpatialRecordCount: 1,
+          matchedMetadataSignals: {
+            hasSpatialTrue: 0,
+            dcatSpatial: 1,
+            spatialShape: 1,
+            spatialCentroid: 0,
+          },
+        },
+        done: false,
+      },
+      {
+        pagesFetched: 5,
+        sourceSpatialRowCount: 5,
+        sourceSpatialRecordCount: 4,
+        duplicateSourceRowCount: 1,
+        retainedSpatialRecordCount: 3,
+        window: {
+          startPage: 5,
+          endPage: 5,
+          pagesFetched: 1,
+          sourceSpatialRowCount: 1,
+          sourceSpatialRecordCount: 1,
+          duplicateSourceRowCount: 0,
+          retainedSpatialRecordCount: 1,
+          matchedMetadataSignals: {
+            hasSpatialTrue: 0,
+            dcatSpatial: 0,
+            spatialShape: 0,
+            spatialCentroid: 1,
+          },
+        },
+        done: true,
+      },
+    ],
+  );
 });
 
 test('collapses repeated source rows onto one C2 identifier and merges spatial signals', async () => {
@@ -398,6 +492,7 @@ test('markdown states the source-intersection method and supersedes the URL-stri
 });
 
 test('argument parser supports pnpm separator and source traversal controls', () => {
+  assert.equal(parseArgs([]).progressEveryPages, 100);
   assert.deepEqual(
     parseArgs([
       '--expect',
