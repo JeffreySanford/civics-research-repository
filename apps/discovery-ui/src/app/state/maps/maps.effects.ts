@@ -1,7 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { catchError, map, mergeMap, of, switchMap, withLatestFrom } from 'rxjs';
+import {
+  catchError,
+  filter,
+  map,
+  mergeMap,
+  of,
+  switchMap,
+  withLatestFrom,
+} from 'rxjs';
 import { parseRepositoryError, RepositoryMapsApi } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { selectSelectedGeography } from './maps.selectors';
@@ -135,9 +143,17 @@ export class MapsEffects {
     ),
   );
 
+  /**
+   * SAIPE is a geography capability, not a universal Maps dependency. The backend layer metadata
+   * is the authoritative statement that retained SAIPE values exist for the selected area, so do
+   * not call the choropleth endpoint until that capability is advertised.
+   */
   readonly loadSaipeChoroplethForSelectedArea$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(MapsActions.mapOpened, MapsActions.censusAreaSelected),
+      ofType(MapsActions.mapLayersLoaded),
+      filter(({ layers }) =>
+        layers.some((layer) => layer.layerType === 'CENSUS_CHOROPLETH'),
+      ),
       withLatestFrom(this.store.select(selectSelectedGeography)),
       switchMap(([, geography]) =>
         this.mapsApi.getSaipeCountyChoropleth(geography).pipe(
