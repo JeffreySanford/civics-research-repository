@@ -65,15 +65,16 @@ class DataGovSpatialSidecarServiceTest {
     }
 
     @Test
-    void rebuildsCurrentPublisherShapesButPersistsOnlyRetainedC2Identities() {
+    void rebuildsAllGeospatialEvidenceButPersistsOnlyRetainedC2Identities() {
         DataGovSpatialSidecarRefreshResult result = service.rebuild(1_000, 10);
 
         assertThat(result.pagesFetched()).isEqualTo(1);
-        assertThat(result.sourceRowsFetched()).isEqualTo(2);
+        assertThat(result.sourceRowsFetched()).isEqualTo(3);
         assertThat(result.publisherShapeRows()).isEqualTo(2);
-        assertThat(result.retainedRows()).isEqualTo(1);
+        assertThat(result.retainedRows()).isEqualTo(2);
+        assertThat(result.sourceQuarantinedShapeRows()).isZero();
         assertThat(result.build().status()).isEqualTo(ResearchSpatialSidecarBuild.Status.COMPLETE);
-        assertThat(store.countActive(FederatedSourceSystem.DATA_GOV)).isEqualTo(1);
+        assertThat(store.countActive(FederatedSourceSystem.DATA_GOV)).isEqualTo(2);
 
         ResearchSpatialSidecarRecord retained = store
                 .findActive(FederatedSourceSystem.DATA_GOV, "retained-1")
@@ -87,6 +88,21 @@ class DataGovSpatialSidecarServiceTest {
         assertThat(retained.renderLat()).isEqualTo(47.0);
         assertThat(retained.rawDcatSpatial()).isEqualTo("-101,46,-99,48");
         assertThat(retained.provenanceJson()).contains("spatial_shape", "spatial_centroid");
+        assertThat(retained.queryableGeometry()).isTrue();
+
+        ResearchSpatialSidecarRecord unmapped = store
+                .findActive(FederatedSourceSystem.DATA_GOV, "retained-no-shape")
+                .orElseThrow();
+        assertThat(unmapped.geometryStatus()).isEqualTo(SpatialGeometryStatus.NO_PUBLISHER_GEOMETRY);
+        assertThat(unmapped.geometryJson()).isNull();
+        assertThat(unmapped.geometryType()).isNull();
+        assertThat(unmapped.sourceCentroidLon()).isEqualTo(-96.8);
+        assertThat(unmapped.sourceCentroidLat()).isEqualTo(46.9);
+        assertThat(unmapped.renderLon()).isNull();
+        assertThat(unmapped.rawDcatSpatial()).isEqualTo("North Dakota");
+        assertThat(unmapped.provenanceJson()).contains("DATA_GOV_GEOSPATIAL_FILTER", "NONE", "dcat.spatial");
+        assertThat(unmapped.queryableGeometry()).isFalse();
+
         assertThat(store.findActive(FederatedSourceSystem.DATA_GOV, "not-retained")).isEmpty();
     }
 
@@ -201,6 +217,9 @@ class DataGovSpatialSidecarServiceTest {
         jdbcClient
                 .sql("insert into federated_research_objects (id, source_system, source_identifier) values ('DATA_GOV:retained-1', 'DATA_GOV', 'retained-1')")
                 .update();
+        jdbcClient
+                .sql("insert into federated_research_objects (id, source_system, source_identifier) values ('DATA_GOV:retained-no-shape', 'DATA_GOV', 'retained-no-shape')")
+                .update();
     }
 
     private void handleSearch(HttpExchange exchange) throws IOException {
@@ -217,6 +236,11 @@ class DataGovSpatialSidecarServiceTest {
                       },
                       "spatial_centroid": {"lat":47,"lon":-100},
                       "dcat": {"spatial":"-101,46,-99,48"}
+                    },
+                    {
+                      "identifier": "retained-no-shape",
+                      "spatial_centroid": {"lat":46.9,"lon":-96.8},
+                      "dcat": {"spatial":"North Dakota"}
                     },
                     {
                       "identifier": "not-retained",
