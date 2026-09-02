@@ -2,21 +2,40 @@ package org.civicsrepo.maps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.http.HttpClient;
+import java.util.Map;
 import org.civicsrepo.generated.dto.MapLayer;
 import org.civicsrepo.generated.dto.MapLayerType;
 import org.junit.jupiter.api.Test;
 
 class MapLayerServiceTest {
-    private final MapLayerService mapLayerService = new MapLayerService(new CensusAreaBoundaryService());
+    private final CensusAreaBoundaryService boundaries = new CensusAreaBoundaryService();
+    private final SaipeCountyChoroplethService saipe = new SaipeCountyChoroplethService(
+            boundaries,
+            new AdministrativeGeometryService(
+                    Map.of(
+                            2023, "https://example.test/2023/counties/query",
+                            2025, "https://example.test/2025/counties/query"),
+                    HttpClient.newHttpClient(),
+                    new ObjectMapper()));
+    private final MapLayerService mapLayerService = new MapLayerService(boundaries, saipe);
 
     @Test
-    void includesReferenceAndChoroplethLayers() {
+    void includesReferenceAndChoroplethLayersWhereSaipeValuesExist() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
                 .extracting(MapLayer::getLayerType)
                 .contains(
                         MapLayerType.CENSUS_CHOROPLETH,
                         MapLayerType.USGS_REFERENCE,
                         MapLayerType.USGS_EARTHQUAKE);
+    }
+
+    @Test
+    void omitsSaipeLayerWhereNoValuesAreRetained() {
+        assertThat(mapLayerService.findDatasetLayers("tiger-line-florida-2025"))
+                .extracting(MapLayer::getId)
+                .doesNotContain("saipe-county-poverty-florida");
     }
 
     @Test
