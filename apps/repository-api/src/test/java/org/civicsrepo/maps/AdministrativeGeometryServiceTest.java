@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,10 +26,14 @@ class AdministrativeGeometryServiceTest {
     @BeforeEach
     void startServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/counties/query", this::handleCountyQuery);
+        server.createContext("/counties-2023/query", this::handleCountyQuery);
+        server.createContext("/counties-2025/query", this::handleCountyQuery);
         server.start();
+        String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
         service = new AdministrativeGeometryService(
-                "http://127.0.0.1:" + server.getAddress().getPort() + "/counties/query",
+                Map.of(
+                        2023, baseUrl + "/counties-2023/query",
+                        2025, baseUrl + "/counties-2025/query"),
                 HttpClient.newHttpClient(),
                 new ObjectMapper());
     }
@@ -44,7 +49,7 @@ class AdministrativeGeometryServiceTest {
 
         assertThat(geometry.vintage()).isEqualTo(2025);
         assertThat(geometry.attribution()).isEqualTo("U.S. Census Bureau TIGERweb");
-        assertThat(geometry.sourceUrl().toString()).endsWith("/counties");
+        assertThat(geometry.sourceUrl().toString()).endsWith("/counties-2025");
         assertThat(geometry.geoJson().path("features"))
                 .extracting((feature) -> feature.path("properties").path("GEOID").asText())
                 .containsExactly("38001", "38017");
@@ -58,14 +63,17 @@ class AdministrativeGeometryServiceTest {
     }
 
     @Test
-    void cachesOnlySuccessfulStateGeometry() {
-        var first = service.countiesForState("38");
-        first.geoJson().withArray("features").removeAll();
+    void keepsVintageSpecificGeometryInSeparateCacheEntries() {
+        var current = service.countiesForState("38", 2025);
+        current.geoJson().withArray("features").removeAll();
 
-        var second = service.countiesForState("38");
+        var currentAgain = service.countiesForState("38", 2025);
+        var historical = service.countiesForState("38", 2023);
 
-        assertThat(requests).hasValue(1);
-        assertThat(second.geoJson().path("features")).hasSize(2);
+        assertThat(requests).hasValue(2);
+        assertThat(currentAgain.geoJson().path("features")).hasSize(2);
+        assertThat(historical.vintage()).isEqualTo(2023);
+        assertThat(historical.sourceUrl().toString()).endsWith("/counties-2023");
     }
 
     @Test
@@ -73,6 +81,14 @@ class AdministrativeGeometryServiceTest {
         assertThatThrownBy(() -> service.countiesForState("North Dakota"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("two digits");
+        assertThat(requests).hasValue(0);
+    }
+
+    @Test
+    void rejectsUnsupportedGeometryVintageBeforeCallingCensus() {
+        assertThatThrownBy(() -> service.countiesForState("38", 2022))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported county geometry vintage");
         assertThat(requests).hasValue(0);
     }
 
