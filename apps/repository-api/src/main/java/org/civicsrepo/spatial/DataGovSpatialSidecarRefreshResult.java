@@ -7,4 +7,4 @@ public record DataGovSpatialSidecarRefreshResult(
         long sourceRowsFetched,
         long publisherShapeRows,
         long retainedRows,
-        long quarantinedRows) {}
+        long sourceQuarantinedShapeRows) {}
