@@ -2,23 +2,31 @@
 
 ## Purpose
 
-Million-record discovery must not depend on increasingly expensive deep offsets. This workstream adds an opaque, request-bound continuation path while preserving the existing page/offset contract during migration.
+Million-record discovery must not depend on increasingly expensive deep offsets. This workstream adds a projection-bound opaque continuation path while preserving the existing offset contract for shared/deep-linked pages during migration.
 
 It also advances the engineering accessibility target to WCAG 2.2 A/AA while preserving the project's separate Section 508 legal-baseline language.
 
-## Cursor contract
+## Public cursor contract
 
-The public contract will eventually expose an opaque continuation token:
+Cursor traversal is a separate public endpoint:
 
 ```text
-GET /search?q=climate&pageSize=25&cursor=<opaque-token>
+GET /search/cursor?q=climate&pageSize=25&cursor=<opaque-token>
 ```
 
-Callers never inspect backend continuation state.
+The first request omits `cursor`. The response is:
 
-The implemented cursor envelope is bound to:
+```text
+SearchCursorPage
+  search: SearchResponse
+  nextCursor: string | null
+```
 
-- deterministic active projection identity;
+Callers never inspect or synthesize backend continuation state. Cursor requests do not send the legacy offset `page` parameter.
+
+The signed cursor is bound to:
+
+- active deterministic projection identity;
 - normalized query and filters;
 - page size;
 - search/sort contract version;
@@ -28,86 +36,58 @@ The implemented cursor envelope is bound to:
 
 The payload is HMAC-SHA256 signed with `CIVICS_SEARCH_CURSOR_SECRET`. Search authorization never depends on the cursor, but signing prevents callers from editing engine-native positions or request-binding metadata. Changing the configured secret intentionally invalidates outstanding cursors.
 
-## Current implementation status
+## Implemented runtime behavior
 
-Implemented:
+- `SearchCursorCodec`, `SearchCursorState`, `SearchCursorService` and controlled cursor errors.
+- HMAC-signed opaque continuation tokens bound to projection/query/filter/page-size/sort/backend state.
+- `/search/cursor` in the OpenAPI contract with generated TypeScript client types.
+- Solr public traversal through `cursorMark` with deterministic `score desc,id asc` ordering and no `start` parameter.
+- OpenSearch comparison-client parity through `_score desc,id asc` plus `search_after`; OpenSearch remains a comparison projection rather than the public browser backend.
+- Controlled rejection of malformed, edited, wrong-query, wrong-page-size, wrong-backend and stale-projection cursors.
+- NgRx-owned cursor history: Next consumes only the returned `nextCursor`; Previous replays the retained cursor for a visited logical page.
+- Established cursor traversal never falls back to offsets.
+- Page-zero cursor startup may use the legacy offset path only when the active projection cannot be verified (`SERVICE_UNAVAILABLE`), and that compatibility mode is announced to the reader.
+- New page-zero searches use cursor mode. A direct/reloaded `?page=N` URL remains offset compatible.
+- Opaque cursors never enter the browser URL/history.
 
-- `SearchCursorCodec`, `SearchCursorState` and controlled `SearchCursorException`;
-- HMAC-signed opaque tokens;
-- criteria fingerprints that are invariant to offset page number but include page size and search semantics;
-- projection/query/backend mismatch rejection;
-- logical page retained inside the continuation state;
-- `SearchContinuationExecution` for engine-native continuation results;
-- Solr `cursorMark` traversal using `score desc,id asc` so the unique key breaks equal-score ties;
-- Solr continuation reuses the existing query/filter/facet/result mapping rather than creating a second search implementation;
-- existing offset Solr behavior remains unchanged.
+## Browser and accessibility behavior
 
-Still required:
+The Discovery pager keeps native Previous/Next controls and an `aria-current="page"` position. Browser evidence verifies:
 
-- OpenSearch `search_after` parity using the same engine-neutral ordering contract;
-- public OpenAPI/controller/service continuation contract;
-- binding public cursor validation to `DiscoveryProjectionService.currentProjectionId()`;
-- controlled HTTP 400 responses for malformed/stale/mismatched cursors;
-- Angular Previous/Next cursor history and focus/status behavior;
-- WCAG 2.2 axe/manual evidence uplift;
-- bounded live C2 traversal evidence for both engines.
+- cursor request transport for Next/Previous;
+- no offset `page` parameter in cursor requests;
+- no cursor token in the URL;
+- reloadable offset deep links;
+- polite compatibility-status announcement;
+- intentional focus placement on the results heading after a page change;
+- focused heading remains inside the viewport;
+- Previous/Next targets are at least 24 × 24 CSS pixels.
 
-## Engine mapping
+Shared Axe scans include `wcag22aa` alongside the existing WCAG 2.0/2.1 and best-practice tags. Automated scans support the WCAG 2.2 engineering target; they do not constitute a Section 508 certification claim or replace dated manual keyboard/AT evidence.
 
-### Solr
+## C2 traversal evidence
 
-Cursor mode uses:
+Ordinary PR CI tests the harness with small deterministic fixtures. The full million-record traversal remains explicit/manual or scheduled.
 
-```text
-cursorMark=<position>
-sort=score desc,id asc
-rows=<pageSize>
+Run:
+
+```bash
+pnpm research:cursor:evidence
 ```
 
-The normal offset path continues to use `start` during migration. Cursor mode never sends `start`.
+The default evidence run performs two complete passes through the active `FEDERATED_1M` projection at page size 100 and records:
 
-### OpenSearch
+- starting and ending projection identity/object count;
+- cursor page count and returned count;
+- unique-ID and duplicate-ID counts;
+- ordered-ID SHA-256 for each pass;
+- deterministic-order equality across passes;
+- active scale-evidence/profile validity.
 
-Planned cursor mode uses the equivalent ordered pair:
+The evidence passes only when the projection remains unchanged, every projected object is returned exactly once per pass, and both ordered-ID hashes are identical.
 
-```text
-sort: [_score desc, id asc]
-search_after: [lastScore, lastId]
-```
+## Compatibility and non-goals
 
-OpenSearch remains the comparison projection rather than being mislabeled as a second public browser backend.
+Offset paging is not removed in this PR. Existing shared links and offset consumers remain valid. Incompatible continuation is rejected rather than silently restarting.
 
-## Compatibility
-
-Offset paging is not removed in this PR. Existing bookmarks and consumers remain valid while the UI moves to cursor traversal for deep result sets.
-
-A continuation token is valid only for the request/projection state it was created for. The API must reject incompatible continuation rather than restarting silently.
-
-## Accessibility
-
-Pagination is a user workflow, not merely a backend optimization. The final UI must provide:
-
-- keyboard-operable Previous/Next controls;
-- meaningful accessible names and disabled states;
-- sensible focus placement after page changes;
-- polite result-range/status announcements without stealing focus;
-- visible focus that is not obscured;
-- WCAG 2.2 target-size treatment;
-- no drag/pointer-only dependency.
-
-## C2 evidence boundary
-
-Ordinary PR CI proves deterministic fixtures and contracts. It must not rebuild or traverse the entire million-record corpus on every pull request.
-
-Manual/evidence-grade C2 validation will record:
-
-- exact active projection identity;
-- criteria and page size;
-- page/window count;
-- duplicate-ID count;
-- skipped-ID/order evidence where independently checkable;
-- Solr and OpenSearch continuation behavior separately.
-
-## Non-goals
-
-This workstream does not remove offset pagination immediately, mutate the C2 Gold Master, add Kubernetes, add vector/hybrid search, make search indexes authoritative, or claim Section 508 certification from automated scans.
+This workstream does not mutate the C2 Gold Master, make a search index authoritative, make OpenSearch the public browser backend, add Kubernetes/vector search, or claim legal conformance from automated scans.
