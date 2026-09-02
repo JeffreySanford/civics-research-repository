@@ -258,7 +258,7 @@ jobs:
           };
           EOF
 
-      - name: Replace draft CI probes with permanent gates
+      - name: Prepare permanent CI gates for validation
         shell: bash
         run: |
           node <<'EOF'
@@ -290,7 +290,7 @@ jobs:
           fs.writeFileSync(path, source);
           EOF
 
-      - name: Add Storybook interaction and axe browser evidence
+      - name: Prepare Storybook interaction and axe browser evidence for validation
         shell: bash
         run: |
           node <<'EOF'
@@ -326,7 +326,7 @@ jobs:
                 shell: bash
                 run: |
                   set -euo pipefail
-                  pnpm exec nx storybook discovery-ui --configuration=ci > storybook-ci.log 2>&1 &
+                  pnpm exec nx static-storybook discovery-ui --configuration=ci --port=4400 > storybook-ci.log 2>&1 &
                   storybook_pid=$!
                   trap 'kill "$storybook_pid" 2>/dev/null || true' EXIT
 
@@ -389,7 +389,7 @@ jobs:
           pnpm exec nx build-storybook discovery-ui --configuration=ci
 
           pnpm exec playwright install --with-deps chromium
-          pnpm exec nx storybook discovery-ui --configuration=ci > /tmp/storybook-foundation.log 2>&1 &
+          pnpm exec nx static-storybook discovery-ui --configuration=ci --port=4400 > /tmp/storybook-foundation.log 2>&1 &
           storybook_pid=$!
           trap 'kill "$storybook_pid" 2>/dev/null || true' EXIT
 
@@ -410,18 +410,12 @@ jobs:
           kill "$storybook_pid" 2>/dev/null || true
           trap - EXIT
 
-      - name: Commit proven foundation and remove one-shot workflows
+      - name: Commit proven generated foundation
         shell: bash
         run: |
           git config user.name 'Jeffrey Sanford'
           git config user.email 'jeffrey_sanford@hotmail.com'
-          git rm \
-            .github/workflows/apply-storybook-test-foundation.yml \
-            .github/workflows/apply-storybook-test-foundation-v2.yml \
-            .github/workflows/apply-storybook-test-foundation-v3.yml
           git add \
-            .github/workflows/ci.yml \
-            .github/workflows/browser-evidence.yml \
             package.json \
             pnpm-lock.yaml \
             nx.json \
