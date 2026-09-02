@@ -31,6 +31,12 @@ civics:
     # Solr remains separate and is never replaced by this setting.
     base-url: ${CIVICS_OPENSEARCH_BASE_URL:http://opensearch:9200}
     index: ${CIVICS_OPENSEARCH_INDEX:discovery-comparison}
+  search:
+    # Continuation tokens are navigation state, not authorization. HMAC still prevents clients from
+    # editing engine-native cursor positions or request-binding metadata. Production deployments
+    # should override this local-development default with a stable secret so cursors survive API
+    # restarts without exposing a shared signing key.
+    cursor-secret: ${CIVICS_SEARCH_CURSOR_SECRET:local-development-search-cursor-secret-change-me}
   storage:
     artifacts-path: ${CIVICS_STORAGE_ARTIFACTS_PATH:/var/lib/civics/artifacts}
     corpus-archives-path: ${CIVICS_CORPUS_ARCHIVES_PATH:/var/lib/civics/artifacts/corpus-archives}

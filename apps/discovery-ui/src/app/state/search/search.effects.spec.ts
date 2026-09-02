@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
+import { provideMockStore } from '@ngrx/store/testing';
 import { firstValueFrom, of, throwError, type Observable } from 'rxjs';
 import {
   RepositorySearchApi,
@@ -8,6 +9,7 @@ import {
 } from 'repository-api-client';
 import { SearchActions } from './search.actions';
 import { SearchEffects } from './search.effects';
+import { initialSearchState } from './search.reducer';
 
 const response: SearchResponse = {
   resultSource: 'REPOSITORY',
@@ -41,6 +43,7 @@ function setup(
     providers: [
       SearchEffects,
       provideMockActions(() => actions$),
+      provideMockStore({ initialState: { search: initialSearchState } }),
       { provide: RepositorySearchApi, useValue: searchApi },
     ],
   });

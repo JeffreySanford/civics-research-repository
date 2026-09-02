@@ -1,5 +1,6 @@
 # Active Workstreams
 
 - [Map Layer Categories](map-layer-categories/README.md)
+- [Deep Pagination Runtime Hardening](deep-pagination-runtime-hardening/README.md)
 
-The global workstream index will be reconciled after the active implementation branches merge to avoid cross-branch documentation conflicts.
+Other workstream folders are introduced on their respective feature branches so each pull request owns its own implementation documentation.

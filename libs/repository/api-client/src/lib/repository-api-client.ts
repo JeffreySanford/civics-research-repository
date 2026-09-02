@@ -34,6 +34,7 @@ export type SaipeCountyChoropleth =
   components['schemas']['SaipeCountyChoropleth'];
 export type SaipeCountyValue = components['schemas']['SaipeCountyValue'];
 export type SearchResponse = components['schemas']['SearchResponse'];
+export type SearchCursorPage = components['schemas']['SearchCursorPage'];
 export type SearchResult = components['schemas']['SearchResult'];
 export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
@@ -236,6 +237,29 @@ export class RepositorySearchApi {
   ) {}
 
   searchResearchObjects(query: SearchQuery): Observable<SearchResponse> {
+    return this.http.get<SearchResponse>(`${this.baseUrl}/search`, {
+      params: this.searchParams(query, true),
+    });
+  }
+
+  searchResearchObjectsWithCursor(
+    query: SearchQuery,
+    cursor: string | null = null,
+  ): Observable<SearchCursorPage> {
+    const params = this.searchParams(query, false);
+    if (cursor) {
+      params['cursor'] = cursor;
+    }
+
+    return this.http.get<SearchCursorPage>(`${this.baseUrl}/search/cursor`, {
+      params,
+    });
+  }
+
+  private searchParams(
+    query: SearchQuery,
+    includePage: boolean,
+  ): Record<string, string | number | readonly string[]> {
     const params: Record<string, string | number | readonly string[]> = {};
 
     if (query.q) {
@@ -267,7 +291,7 @@ export class RepositorySearchApi {
       params['vintageYear'] = query.vintageYear;
     }
 
-    if (query.page !== undefined) {
+    if (includePage && query.page !== undefined) {
       params['page'] = query.page;
     }
 
@@ -275,8 +299,6 @@ export class RepositorySearchApi {
       params['pageSize'] = query.pageSize;
     }
 
-    return this.http.get<SearchResponse>(`${this.baseUrl}/search`, {
-      params,
-    });
+    return params;
   }
 }

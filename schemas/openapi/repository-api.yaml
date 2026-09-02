@@ -50,6 +50,39 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /search/cursor:
+    get:
+      tags: [Search]
+      operationId: searchResearchObjectsWithCursor
+      summary: Continue public research discovery with an opaque cursor.
+      description: >-
+        Starts a deterministic traversal at logical page zero when cursor is omitted. Returned
+        cursors are opaque, signed navigation state bound to the active discovery projection,
+        effective query/filter set, page size, sort contract, and public search backend. A stale,
+        edited, or incompatible cursor is rejected instead of silently restarting with offsets.
+      parameters:
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/Program'
+        - $ref: '#/components/parameters/Publisher'
+        - $ref: '#/components/parameters/SourceSystemFilter'
+        - $ref: '#/components/parameters/Geography'
+        - $ref: '#/components/parameters/ContentType'
+        - $ref: '#/components/parameters/VintageYear'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: One deterministic result page plus the opaque continuation for the next page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchCursorPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /research/{researchId}:
     get:
       tags: [Datasets]
@@ -919,6 +952,18 @@ components:
         minimum: 1
         maximum: 100
         default: 25
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: >-
+        Opaque signed continuation returned by the previous cursor search page. The token must be
+        resent unchanged with the same effective discovery criteria and page size.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 8192
+        pattern: '^v1\.[A-Za-z0-9_-]+\.[0-9a-f]{64}$'
     ResearchId:
       name: researchId
       in: path
@@ -1462,6 +1507,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FacetGroup'
+    SearchCursorPage:
+      type: object
+      required: [search, nextCursor]
+      properties:
+        search:
+          $ref: '#/components/schemas/SearchResponse'
+        nextCursor:
+          type: [string, 'null']
+          description: >-
+            Opaque signed continuation for the next logical page, or null when traversal is
+            exhausted. Clients must not decode, edit, or synthesize this value.
     SearchResult:
       type: object
       required:

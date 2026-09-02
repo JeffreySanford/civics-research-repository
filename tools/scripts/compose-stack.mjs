@@ -465,26 +465,57 @@ export async function runReindex(profile) {
 }
 
 /**
- * Waits for the Java startup runner to finish its guarded quick-start activation. Java is the
- * single startup owner; this wrapper verifies the result instead of racing it with a second POST.
+ * Waits for Java startup search initialization. A fresh install activates the requested quick-start
+ * profile. Ordinary restarts intentionally preserve a durably activated operator profile instead;
+ * in that case Java rehydrates the existing projection identity without rebuilding either index.
  */
 export async function verifyStartupProfile(profile = 'CURATED_DEMO') {
   let terminalProgress;
+  let preservedProfile = null;
+
   await waitFor(
-    `${profile} startup projection`,
+    'startup search projection',
     `${API_URL}/admin/reindex/progress`,
     {
       intervalMs: 500,
       check: async (response) => {
         const progress = await response.json();
-        if (progress.profile !== profile) {
+        if (progress.profile === profile) {
+          if (progress.phase === 'FAILED') {
+            throw new Error(
+              progress.message || `${profile} activation failed.`,
+            );
+          }
+          if (progress.phase === 'COMPLETED') {
+            terminalProgress = progress;
+            return true;
+          }
           return false;
         }
-        if (progress.phase === 'FAILED') {
-          throw new Error(progress.message || `${profile} activation failed.`);
+
+        // A durable non-demo activation is deliberately preserved by SearchIndexStartupRunner.
+        // Verify the persisted active profile and the rehydrated non-empty repository projection
+        // instead of waiting forever for a CURATED_DEMO activation Java correctly never started.
+        const [storageResponse, projectionResponse] = await Promise.all([
+          fetch(`${API_URL}/admin/corpus/storage`),
+          fetch(`${API_URL}/admin/reindex`),
+        ]);
+        if (!storageResponse.ok || !projectionResponse.ok) {
+          return false;
         }
-        if (progress.phase === 'COMPLETED') {
-          terminalProgress = progress;
+
+        const storage = await storageResponse.json();
+        const projection = await projectionResponse.json();
+        const activeProfile = storage?.activeProfile;
+        const projectionReady =
+          projection?.source === 'REPOSITORY' &&
+          Number.isInteger(projection?.objectCount) &&
+          projection.objectCount > 0 &&
+          typeof projection?.projectionId === 'string' &&
+          /^[0-9a-f]{64}$/u.test(projection.projectionId);
+
+        if (activeProfile && activeProfile !== profile && projectionReady) {
+          preservedProfile = activeProfile;
           return true;
         }
         return false;
@@ -503,9 +534,15 @@ export async function verifyStartupProfile(profile = 'CURATED_DEMO') {
   }
 
   const projection = await projectionResponse.json();
+  const verifiedProfile = preservedProfile ?? profile;
   console.log(
-    `    Verified ${profile}: ${projection.objectCount} searchable research objects (source: ${projection.source}).`,
+    `    Verified ${verifiedProfile}: ${projection.objectCount} searchable research objects (source: ${projection.source}).`,
   );
+  if (preservedProfile) {
+    console.log(
+      `    Preserved durable ${preservedProfile} activation; startup did not replace it with ${profile}.`,
+    );
+  }
   if (terminalProgress?.elapsedMs !== undefined) {
     console.log(
       `    Startup projection completed in ${terminalProgress.elapsedMs} ms.`,
@@ -533,8 +570,9 @@ The stack is running.
   OpenSearch        http://localhost:9200
   DSpace Solr       http://localhost:8984/solr
 
-Default search profile: CURATED_DEMO (fast curated repository projection).
-Retained federated metadata is preserved independently for Admin-selected scale profiles.
+Fresh-install search profile: CURATED_DEMO (fast curated repository projection).
+A durably activated operator profile is preserved across ordinary application restarts.
+Retained federated metadata remains preserved independently in application PostgreSQL.
 
 Worth showing, in order:
 
@@ -562,9 +600,9 @@ export function resetAnnouncements() {
 }
 
 /**
- * Brings up DSpace, seeds, starts the application stack, verifies Java's CURATED_DEMO startup
- * activation, and waits for the UI. Larger retained federated corpora remain in PostgreSQL but are
- * not projected by default.
+ * Brings up DSpace, seeds, starts the application stack, verifies Java's startup search state, and
+ * waits for the UI. Fresh installs use CURATED_DEMO; ordinary restarts preserve a durable operator
+ * activation such as FEDERATED_1M without rebuilding its derived indexes.
  */
 export async function runFullStartup({
   forceRecreate = false,
@@ -618,7 +656,7 @@ export async function runFullStartup({
     announce('Waiting for the repository API');
     await waitFor('Repository API', `${API_URL}/health`);
 
-    announce('Verifying the CURATED_DEMO quick-start search profile');
+    announce('Verifying the startup search profile');
     await verifyStartupProfile('CURATED_DEMO');
 
     announce(

@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { axeEngineeringTags } from './support/axe-tags';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 import { waitForStablePage } from './support/wait-for-stable-page';
-
-const axeTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'];
 
 const AXE_ROUTES = [
   { path: '/', heading: 'Census geospatial discovery with repository sync' },
@@ -126,7 +125,7 @@ test.describe('forced-colors mode', () => {
       await waitForStablePage(page);
 
       const results = await new AxeBuilder({ page })
-        .withTags(axeTags)
+        .withTags(axeEngineeringTags)
         .analyze();
 
       expect(results.violations).toEqual([]);
@@ -155,7 +154,7 @@ test.describe('dark color scheme', () => {
       await waitForStablePage(page);
 
       const results = await new AxeBuilder({ page })
-        .withTags(axeTags)
+        .withTags(axeEngineeringTags)
         .analyze();
 
       expect(results.violations).toEqual([]);

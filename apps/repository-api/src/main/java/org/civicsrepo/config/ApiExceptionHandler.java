@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.civicsrepo.dspace.AmbiguousDspaceItemException;
 import org.civicsrepo.dspace.DspaceUnavailableException;
 import org.civicsrepo.generated.dto.ErrorResponse;
+import org.civicsrepo.search.SearchCursorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,13 @@ public class ApiExceptionHandler {
         HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
         return ResponseEntity.status(status)
                 .body(error(codeFor(status), messageOrDefault(exception, status), null, traceId(request)));
+    }
+
+    @ExceptionHandler(SearchCursorException.class)
+    public ResponseEntity<ErrorResponse> handleSearchCursor(
+            SearchCursorException exception, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(error("BAD_REQUEST", exception.getMessage(), null, traceId(request)));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
