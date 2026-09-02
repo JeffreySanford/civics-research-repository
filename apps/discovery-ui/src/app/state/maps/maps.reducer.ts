@@ -88,9 +88,7 @@ export const mapsReducer = createReducer(
       // area says it does not, stale visibility/data/errors from the previous area must disappear.
       saipeVisible: saipeAvailable ? state.saipeVisible : false,
       saipeChoropleth: saipeAvailable ? state.saipeChoropleth : null,
-      saipeChoroplethError: saipeAvailable
-        ? state.saipeChoroplethError
-        : null,
+      saipeChoroplethError: saipeAvailable ? state.saipeChoroplethError : null,
     };
   }),
   on(MapsActions.earthquakeOverlayLoaded, (state, { earthquakeOverlay }) => ({

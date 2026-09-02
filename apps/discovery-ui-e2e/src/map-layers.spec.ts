@@ -124,9 +124,7 @@ test.describe('map layer controls', () => {
   test('unsupported SAIPE capability removes the control and skips the request @maps', async ({
     page,
   }) => {
-    const community = page.getByTestId(
-      'map-layer-category-community-economy',
-    );
+    const community = page.getByTestId('map-layer-category-community-economy');
     await expect(community).toContainText('3 layers');
     await expect(page.getByTestId('map-layer-saipe')).toBeVisible();
 
@@ -194,7 +192,9 @@ test.describe('map layer controls', () => {
     await expect(community).toContainText('2 layers');
     await expect(page.getByTestId('map-layer-saipe')).toHaveCount(0);
     await expect(page.getByTestId('map-layer-saipe-info')).toHaveCount(0);
-    await expect(page.getByText('Loading map data from the API')).toHaveCount(0);
+    await expect(page.getByText('Loading map data from the API')).toHaveCount(
+      0,
+    );
     expect(floridaSaipeRequests).toBe(0);
   });
 
