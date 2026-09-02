@@ -62,21 +62,23 @@ export class SearchEffects {
               }
 
               const compatibilityQuery: SearchQuery = { ...query, page: 0 };
-              return this.searchApi.searchResearchObjects(compatibilityQuery).pipe(
-                map((response) =>
-                  SearchActions.cursorCompatibilityLoaded({
-                    response,
-                    notice: CURSOR_COMPATIBILITY_NOTICE,
-                  }),
-                ),
-                catchError((fallbackError: unknown) =>
-                  of(
-                    SearchActions.searchFailed({
-                      error: this.searchError(fallbackError),
+              return this.searchApi
+                .searchResearchObjects(compatibilityQuery)
+                .pipe(
+                  map((response) =>
+                    SearchActions.cursorCompatibilityLoaded({
+                      response,
+                      notice: CURSOR_COMPATIBILITY_NOTICE,
                     }),
                   ),
-                ),
-              );
+                  catchError((fallbackError: unknown) =>
+                    of(
+                      SearchActions.searchFailed({
+                        error: this.searchError(fallbackError),
+                      }),
+                    ),
+                  ),
+                );
             }),
           ),
       ),
