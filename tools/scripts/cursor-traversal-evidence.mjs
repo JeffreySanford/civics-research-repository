@@ -7,6 +7,8 @@ const DEFAULT_PROFILE = 'FEDERATED_1M';
 const DEFAULT_PAGE_SIZE = 100;
 const DEFAULT_PASSES = 2;
 const DEFAULT_MAX_PAGES = 20000;
+const DEFAULT_READY_ATTEMPTS = 240;
+const DEFAULT_READY_INTERVAL_MS = 500;
 const DEFAULT_OUTPUT =
   'browser-evidence-artifacts/cursor-traversal/federated-1m-cursor-traversal.json';
 
@@ -36,6 +38,40 @@ async function fetchJson(fetchImpl, url) {
     throw new Error(`Request failed with HTTP ${response.status}: ${url}`);
   }
   return response.json();
+}
+
+export async function waitForApiReady({
+  fetchImpl = globalThis.fetch,
+  baseUrl = DEFAULT_BASE_URL,
+  attempts = DEFAULT_READY_ATTEMPTS,
+  intervalMs = DEFAULT_READY_INTERVAL_MS,
+  sleepImpl = (milliseconds) =>
+    new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds)),
+} = {}) {
+  const root = baseUrl.replace(/\/$/u, '');
+  const healthUrl = `${root}/health`;
+  let lastFailure = 'no response yet';
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetchImpl(healthUrl);
+      if (response.ok) {
+        return;
+      }
+      lastFailure = `HTTP ${response.status}`;
+    } catch (error) {
+      lastFailure = error instanceof Error ? error.message : String(error);
+    }
+
+    if (attempt < attempts) {
+      await sleepImpl(intervalMs);
+    }
+  }
+
+  throw new Error(
+    `Repository API was not ready at ${healthUrl} after ${attempts} attempts (${lastFailure}). ` +
+      'Check `docker compose logs --tail=100 repository-api` before rerunning the cursor evidence command.',
+  );
 }
 
 function cursorUrl(root, pageSize, cursor) {
@@ -256,6 +292,8 @@ export async function runCursorTraversalEvidence({
   now = () => new Date(),
 } = {}) {
   const root = baseUrl.replace(/\/$/u, '');
+  await waitForApiReady({ fetchImpl, baseUrl: root });
+
   const scaleEvidenceUrl = `${root}/admin/corpus/scale/evidence?profile=${encodeURIComponent(profile)}`;
   const startProjection = projectionSnapshot(
     await fetchJson(fetchImpl, scaleEvidenceUrl),
@@ -360,6 +398,7 @@ export function parseArguments(argv) {
 
 export async function main(argv = process.argv.slice(2)) {
   const options = parseArguments(argv);
+  console.log(`Waiting for repository API readiness at ${options.baseUrl}/health...`);
   const result = await runCursorTraversalEvidence(options);
   const outputPath = resolve(options.output);
   await mkdir(dirname(outputPath), { recursive: true });
