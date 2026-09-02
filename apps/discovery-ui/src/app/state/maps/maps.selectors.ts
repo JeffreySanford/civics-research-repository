@@ -1,5 +1,6 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { mapsFeatureKey, type MapsState } from './maps.reducer';
+import { buildResearchCoverageSummary } from './research-coverage';
 
 export const selectMapsState = createFeatureSelector<MapsState>(mapsFeatureKey);
 
@@ -56,6 +57,31 @@ export const selectSaipeChoroplethError = createSelector(
   (state) => state.saipeChoroplethError,
 );
 
+export const selectResearchCoverageQuery = createSelector(
+  selectMapsState,
+  (state) => state.researchCoverageQuery,
+);
+
+export const selectResearchCoverageResponse = createSelector(
+  selectMapsState,
+  (state) => state.researchCoverageResponse,
+);
+
+export const selectResearchCoverageError = createSelector(
+  selectMapsState,
+  (state) => state.researchCoverageError,
+);
+
+export const selectResearchCoverageSummary = createSelector(
+  selectResearchCoverageResponse,
+  selectCensusAreaBoundaries,
+  selectResearchCoverageQuery,
+  (response, boundaries, query) =>
+    response && query
+      ? buildResearchCoverageSummary(response, boundaries, query)
+      : null,
+);
+
 export const selectTigerVisible = createSelector(
   selectMapsState,
   (state) => state.tigerVisible,
@@ -79,6 +105,11 @@ export const selectHydrographyVisible = createSelector(
 export const selectSaipeVisible = createSelector(
   selectMapsState,
   (state) => state.saipeVisible,
+);
+
+export const selectResearchCoverageVisible = createSelector(
+  selectMapsState,
+  (state) => state.researchCoverageVisible,
 );
 
 export const selectHydrographyLayer = createSelector(
