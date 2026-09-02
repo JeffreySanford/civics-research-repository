@@ -1,44 +1,72 @@
 # Implementation
 
-## Completed foundation
+## Backend and contract
 
-1. Added an engine-neutral cursor envelope and controlled `SearchCursorException`.
-2. Bound cursor state to normalized query/filter/page-size/sort semantics plus active projection and backend identity.
-3. HMAC-SHA256 signed the opaque payload with `CIVICS_SEARCH_CURSOR_SECRET` so callers cannot edit backend-native positions or request-binding metadata.
-4. Added logical page state to the continuation envelope while deliberately excluding legacy offset page from the criteria fingerprint.
-5. Added `SearchContinuationExecution` as a continuation-only result type without changing existing comparison timing contracts.
-6. Implemented Solr `cursorMark` traversal in the existing `SolrSearchClient` using `score desc,id asc` and the same filters/facets/result mapper as offset search.
-7. Preserved the current Solr offset path unchanged during migration.
-8. Added deterministic HTTP-fixture tests proving cursor mode omits `start`, advances `cursorMark`, uses the unique-ID tie breaker and terminates on a partial or repeated-mark final page.
+1. `SearchCursorCodec` signs opaque HMAC-SHA256 tokens and binds them to normalized criteria, page size, sort contract, backend and active projection identity.
+2. `SearchCursorService` resolves the current projection through `DiscoveryProjectionService.currentProjectionId()` before cursor traversal can begin.
+3. `/search/cursor` is declared in OpenAPI and returns `SearchCursorPage { search, nextCursor }`; generated TypeScript types are the client source of truth.
+4. Cursor-mode requests never accept/send the legacy offset `page` parameter. Logical page remains inside the signed continuation state for response/navigation semantics.
+5. Invalid signatures, stale projections, criteria mismatch and backend mismatch fail explicitly instead of restarting.
 
-## Next implementation slices
+## Engine mapping
+
+### Solr public discovery
+
+Public cursor traversal reuses the existing Solr query/filter/facet/result mapper with:
+
+```text
+cursorMark=<position>
+sort=score desc,id asc
+rows=<pageSize>
+```
+
+The unique `id` tie breaker stabilizes equal-score ordering. Cursor mode does not send `start`; the legacy `/search` offset path remains available for compatibility.
 
 ### OpenSearch comparison parity
 
-- Add `search_after` continuation to the existing `OpenSearchProjectionClient` rather than creating a second query mapper.
-- Use the engine-neutral order `_score desc, id asc`.
-- Serialize only the last hit's returned `sort` array as the backend-native cursor position.
-- Keep OpenSearch explicitly a comparison projection, not a second public browser backend.
+The existing OpenSearch comparison client implements:
 
-### Public API/service contract
+```text
+sort: [_score desc, id asc]
+search_after: [lastScore, lastId]
+```
 
-- Add optional cursor-mode request semantics without breaking existing `page`/`pageSize` bookmarks.
-- Return opaque `nextCursor`/`hasMore` metadata.
-- Bind token validation to `DiscoveryProjectionService.currentProjectionId()`.
-- Reject malformed, wrong-query, wrong-page-size, wrong-backend and stale-projection cursors with HTTP 400; never silently restart traversal.
-- Define and test the migration rule that decides when an initial request uses cursor-compatible ordering versus legacy offset ordering.
+Only the returned hit `sort` tuple becomes continuation state. OpenSearch remains a comparison projection; `/search/cursor` is intentionally the public Solr path.
 
-### Angular workflow
+## Angular / NgRx workflow
 
-- Treat cursors as opaque strings.
-- Keep a browser-side history stack for Previous while Next consumes `nextCursor`.
-- Preserve filters/query when paging.
-- Announce result-range changes politely without moving focus.
-- Keep visible/keyboard focus on the paging control or an intentional results heading according to the tested workflow.
+Cursor mechanics live in NgRx rather than component-local state:
 
-### Accessibility/evidence
+- page-zero search/filter submissions dispatch `cursorSearchSubmitted`;
+- successful cursor pages retain the opaque cursor used to enter each visited logical page plus the current `nextCursor`;
+- Next can use only the current backend-provided continuation;
+- Previous can replay only a retained visited-page cursor;
+- requests outside retained cursor history fail explicitly;
+- direct/reloaded `?page=N` links dispatch the offset-compatible search path;
+- pager clicks are mode-neutral `searchPageRequested` actions;
+- cursor tokens never enter Angular router query parameters.
 
-- Add `wcag22aa` to the centralized axe tag set where supported.
-- Add deterministic/browser checks for focus not obscured, target size and large-result keyboard flow.
-- Preserve 320 px reflow, 200% zoom and forced-colors evidence.
-- Run bounded C2 traversal evidence separately from normal CI and record projection identity, criteria, page size, duplicate count and engine continuation behavior.
+A page-zero cursor startup `SERVICE_UNAVAILABLE` may explicitly fall back to offset paging. The fallback has its own NgRx action and persistent user-visible status. Invalid/stale cursors and established cursor traversal never use that fallback.
+
+## Browser fixture architecture
+
+The pre-existing large repository API fixture is reused unchanged as `repository-api-mocks-base.ts`. The stable `repository-api-mocks.ts` facade preserves existing test imports and adds the more-specific `/api/search/cursor` transport fixture after the legacy handlers so Playwright route precedence matches production semantics.
+
+## Accessibility uplift
+
+- Shared Axe engineering tags now include `wcag22aa`.
+- Cursor-browser evidence verifies keyboard-operable native buttons, `aria-current`, target size, intentional focus movement and focus remaining inside the viewport.
+- The fallback explanation uses a polite status region rather than an alert.
+- Existing reflow, zoom, forced-colors and Section 508 evidence remain separate evidence streams.
+
+## C2 evidence harness
+
+`tools/scripts/cursor-traversal-evidence.mjs` is a read-only explicit evidence command exposed as:
+
+```bash
+pnpm research:cursor:evidence
+```
+
+For the default `FEDERATED_1M` run it performs two complete cursor passes, keeps a Set of visited IDs per pass for duplicate detection, computes an ordered-ID SHA-256 instead of writing a million IDs to disk, compares returned/unique counts to the active projection object count, and verifies projection identity did not change during the run.
+
+The harness implementation is covered by small Node fixtures in normal CI. The full C2 traversal is intentionally not part of ordinary PR CI.
