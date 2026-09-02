@@ -26,7 +26,7 @@ class SaipeCountyChoroplethServiceTest {
         assertThat(choropleth.getCounties()).hasSize(53);
         assertThat(choropleth.getCounties().getFirst().getPovertyRate()).isPositive();
 
-        Map<?, ?> geoJson = choropleth.getGeoJson();
+        Map<String, Object> geoJson = choropleth.getGeoJson();
         assertThat(geoJson).containsEntry("geometryVintage", 2023);
         assertThat(geoJson).containsEntry("thematicVintage", 2023);
         assertThat(geoJson.get("geometrySourceUrl")).isEqualTo("https://example.test/tigerweb/2023/counties");
