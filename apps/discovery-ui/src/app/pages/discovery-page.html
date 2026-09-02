@@ -149,7 +149,11 @@
         }
       </div>
 
-      @if (error$ | async; as error) {
+      @if (paginationNotice$ | async; as paginationNotice) {
+      <p class="fixture-notice" role="status" aria-live="polite">
+        {{ paginationNotice }}
+      </p>
+      } @if (error$ | async; as error) {
       <p class="error-message" role="alert">{{ error }}</p>
       } @if ((resultSource$ | async) === 'FIXTURE') {
       <p class="fixture-notice" role="status">
