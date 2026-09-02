@@ -2,5 +2,6 @@
 
 - [Map Layer Categories](map-layer-categories/README.md)
 - [Deep Pagination Runtime Hardening](deep-pagination-runtime-hardening/README.md)
+- [Research Spatial Coverage Foundation](research-spatial-coverage/README.md)
 
-Other workstream folders are introduced on their respective feature branches so each pull request owns its own implementation documentation.
+Each workstream keeps a small canonical documentation set focused on implementation, acceptance, testing, and durable architecture/evidence.
