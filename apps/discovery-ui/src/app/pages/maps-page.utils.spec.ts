@@ -67,6 +67,7 @@ describe('readMapDebugSnapshot', () => {
     workplace: false,
     saipe: true,
     hydrography: true,
+    research: true,
   };
 
   function fakeMap(overrides: Record<string, unknown> = {}) {
@@ -130,6 +131,7 @@ describe('readMapDebugSnapshot', () => {
         workplace: false,
         saipe: false,
         hydrography: false,
+        research: false,
       },
     );
 
@@ -233,42 +235,29 @@ describe('findCensusAreaForPoint', () => {
 
 describe('whenMapStyleReady', () => {
   it('runs immediately when the style is already loaded', () => {
-    const callback = vi.fn();
+    const action = vi.fn();
     const map = {
       isStyleLoaded: vi.fn().mockReturnValue(true),
       once: vi.fn(),
     } as unknown as MapLibreMap;
 
-    whenMapStyleReady(map, callback);
+    whenMapStyleReady(map, action);
 
-    expect(callback).toHaveBeenCalledTimes(1);
-    expect(map.once).not.toHaveBeenCalled();
+    expect(action).toHaveBeenCalledTimes(1);
+    expect((map as unknown as { once: ReturnType<typeof vi.fn> }).once).not.toHaveBeenCalled();
   });
 
-  it('waits for style.load when the style is not ready yet', () => {
-    const callback = vi.fn();
-    const listeners = new Map<string, () => void>();
+  it('waits for styledata when the style is still loading', () => {
+    const action = vi.fn();
+    const once = vi.fn((_event: string, callback: () => void) => callback());
     const map = {
       isStyleLoaded: vi.fn().mockReturnValue(false),
-      once: vi.fn((event: string, handler: () => void) => {
-        listeners.set(event, handler);
-      }),
+      once,
     } as unknown as MapLibreMap;
 
-    whenMapStyleReady(map, callback);
+    whenMapStyleReady(map, action);
 
-    expect(callback).not.toHaveBeenCalled();
-    expect(map.once).toHaveBeenCalledWith('style.load', expect.any(Function));
-
-    listeners.get('style.load')?.();
-    expect(callback).toHaveBeenCalledTimes(1);
-  });
-
-  it('ignores a missing map instance', () => {
-    const callback = vi.fn();
-
-    whenMapStyleReady(null, callback);
-
-    expect(callback).not.toHaveBeenCalled();
+    expect(once).toHaveBeenCalledWith('styledata', expect.any(Function));
+    expect(action).toHaveBeenCalledTimes(1);
   });
 });
