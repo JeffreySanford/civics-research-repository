@@ -67,42 +67,46 @@ describe('SearchEffects cursor traversal', () => {
     );
   });
 
-  it('announces an offset-compatible fallback when cursor startup cannot verify a projection', async () => {
-    const searchResearchObjectsWithCursor = vi.fn().mockReturnValue(
-      throwError(() => ({
-        status: 503,
-        error: {
-          code: 'SERVICE_UNAVAILABLE',
-          message: 'No active discovery projection is available for cursor search.',
-        },
-      })),
-    );
-    const searchResearchObjects = vi.fn().mockReturnValue(of(response(0)));
-    const effects = setup(
-      {
-        searchResearchObjectsWithCursor,
-        searchResearchObjects,
-      } as unknown as RepositorySearchApi,
-      of(
-        SearchActions.cursorSearchSubmitted({
-          query: { q: 'tracts', page: 0, pageSize: 25 },
-        }),
-      ),
-    );
+  it(
+    'announces an offset-compatible fallback when cursor startup cannot verify a projection',
+    async () => {
+      const searchResearchObjectsWithCursor = vi.fn().mockReturnValue(
+        throwError(() => ({
+          status: 503,
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message:
+              'No active discovery projection is available for cursor search.',
+          },
+        })),
+      );
+      const searchResearchObjects = vi.fn().mockReturnValue(of(response(0)));
+      const effects = setup(
+        {
+          searchResearchObjectsWithCursor,
+          searchResearchObjects,
+        } as unknown as RepositorySearchApi,
+        of(
+          SearchActions.cursorSearchSubmitted({
+            query: { q: 'tracts', page: 0, pageSize: 25 },
+          }),
+        ),
+      );
 
-    const emitted = await firstValueFrom(effects.submitCursorSearch$);
+      const emitted = await firstValueFrom(effects.submitCursorSearch$);
 
-    expect(searchResearchObjects).toHaveBeenCalledWith({
-      q: 'tracts',
-      page: 0,
-      pageSize: 25,
-    });
-    expect(emitted.type).toBe(SearchActions.cursorCompatibilityLoaded.type);
-    if (SearchActions.cursorCompatibilityLoaded.match(emitted)) {
-      expect(emitted.response).toEqual(response(0));
-      expect(emitted.notice).toContain('offset-compatible paging');
-    }
-  });
+      expect(searchResearchObjects).toHaveBeenCalledWith({
+        q: 'tracts',
+        page: 0,
+        pageSize: 25,
+      });
+      expect(emitted.type).toBe(SearchActions.cursorCompatibilityLoaded.type);
+      if (SearchActions.cursorCompatibilityLoaded.match(emitted)) {
+        expect(emitted.response).toEqual(response(0));
+        expect(emitted.notice).toContain('offset-compatible paging');
+      }
+    },
+  );
 
   it('does not fall back when cursor startup rejects an invalid cursor request', async () => {
     const searchResearchObjectsWithCursor = vi.fn().mockReturnValue(
