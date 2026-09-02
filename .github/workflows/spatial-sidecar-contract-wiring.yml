@@ -30,10 +30,8 @@ jobs:
       - name: Patch OpenAPI contract
         run: node tools/scripts/patch-openapi-data-gov-spatial-sidecar.mjs
 
-      - name: Format sidecar and OpenAPI changes
-        run: |
-          pnpm exec prettier --write schemas/openapi/repository-api.yaml
-          ./mvnw -q -pl apps/repository-api spotless:apply
+      - name: Format OpenAPI contract
+        run: pnpm exec prettier --write schemas/openapi/repository-api.yaml
 
       - name: Regenerate API client
         run: pnpm run openapi:generate
