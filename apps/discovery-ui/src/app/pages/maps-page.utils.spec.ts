@@ -247,7 +247,7 @@ describe('whenMapStyleReady', () => {
     expect((map as unknown as { once: ReturnType<typeof vi.fn> }).once).not.toHaveBeenCalled();
   });
 
-  it('waits for styledata when the style is still loading', () => {
+  it('waits for style.load when the style is still loading', () => {
     const action = vi.fn();
     const once = vi.fn((_event: string, callback: () => void) => callback());
     const map = {
@@ -257,7 +257,7 @@ describe('whenMapStyleReady', () => {
 
     whenMapStyleReady(map, action);
 
-    expect(once).toHaveBeenCalledWith('styledata', expect.any(Function));
+    expect(once).toHaveBeenCalledWith('style.load', expect.any(Function));
     expect(action).toHaveBeenCalledTimes(1);
   });
 });
