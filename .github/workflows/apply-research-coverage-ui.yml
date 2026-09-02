@@ -91,6 +91,7 @@ jobs:
             apps/discovery-ui/src/app/pages/maps-page.ts \
             apps/discovery-ui/src/app/pages/maps-page.html \
             apps/discovery-ui/src/app/pages/maps-page.utils.ts \
+            apps/discovery-ui/src/app/pages/maps-page.utils.spec.ts \
             apps/discovery-ui/src/app/state/maps/maps.actions.ts \
             apps/discovery-ui/src/app/state/maps/maps.effects.ts \
             apps/discovery-ui/src/app/state/maps/maps.effects.spec.ts \
