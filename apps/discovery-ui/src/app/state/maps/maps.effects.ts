@@ -1,8 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { catchError, map, mergeMap, of, switchMap, withLatestFrom } from 'rxjs';
-import { parseRepositoryError, RepositoryMapsApi } from 'repository-api-client';
+import {
+  catchError,
+  filter,
+  map,
+  mergeMap,
+  of,
+  switchMap,
+  withLatestFrom,
+} from 'rxjs';
+import {
+  parseRepositoryError,
+  RepositoryMapsApi,
+  RepositorySearchApi,
+} from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { selectSelectedGeography } from './maps.selectors';
 
@@ -20,6 +32,7 @@ function datasetIdForGeography(geography: string): string {
 export class MapsEffects {
   private readonly actions$ = inject(Actions);
   private readonly mapsApi = inject(RepositoryMapsApi);
+  private readonly searchApi = inject(RepositorySearchApi);
   private readonly store = inject(Store);
 
   readonly loadMapData$ = createEffect(() =>
@@ -135,9 +148,17 @@ export class MapsEffects {
     ),
   );
 
+  /**
+   * SAIPE is a geography capability, not a universal Maps dependency. The backend layer metadata
+   * is the authoritative statement that retained SAIPE values exist for the selected area, so do
+   * not call the choropleth endpoint until that capability is advertised.
+   */
   readonly loadSaipeChoroplethForSelectedArea$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(MapsActions.mapOpened, MapsActions.censusAreaSelected),
+      ofType(MapsActions.mapLayersLoaded),
+      filter(({ layers }) =>
+        layers.some((layer) => layer.layerType === 'CENSUS_CHOROPLETH'),
+      ),
       withLatestFrom(this.store.select(selectSelectedGeography)),
       switchMap(([, geography]) =>
         this.mapsApi.getSaipeCountyChoropleth(geography).pipe(
@@ -155,6 +176,36 @@ export class MapsEffects {
             ),
           ),
         ),
+      ),
+    ),
+  );
+
+  /**
+   * Research Coverage reuses the public search aggregation rather than transferring matching hits
+   * to the browser. A one-result page is sufficient because the geography facet is computed over
+   * the full effective result set in the active projection.
+   */
+  readonly loadResearchCoverage$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.researchCoverageRequested),
+      switchMap(({ query }) =>
+        this.searchApi
+          .searchResearchObjects({ ...query, page: 0, pageSize: 1 })
+          .pipe(
+            map((response) =>
+              MapsActions.researchCoverageLoaded({ response }),
+            ),
+            catchError((error: unknown) =>
+              of(
+                MapsActions.researchCoverageFailed({
+                  error: parseRepositoryError(
+                    error,
+                    'Repository research coverage failed to load.',
+                  ),
+                }),
+              ),
+            ),
+          ),
       ),
     ),
   );
