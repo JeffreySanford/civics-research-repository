@@ -86,7 +86,7 @@ test.describe('map layer MapLibre visibility', () => {
     // @maps tests below cover MapLibre layout visibility without making cross-browser WCAG evidence
     // depend on Firefox/WebGL style readiness.
     await geographySummary.click();
-    await expect(geographyCategory).not.toHaveAttribute('open', '');
+    await expect(geographyCategory).toHaveJSProperty('open', false);
     await expect(tiger).toBeChecked();
     await expect(
       featureList.getByText(tigerGroup.accessibleListText),
@@ -94,7 +94,7 @@ test.describe('map layer MapLibre visibility', () => {
     await expect(legend.getByText(tigerGroup.legendText)).toBeVisible();
 
     await geographySummary.click();
-    await expect(geographyCategory).toHaveAttribute('open', '');
+    await expect(geographyCategory).toHaveJSProperty('open', true);
     await expect(tiger).toBeVisible();
   });
 
