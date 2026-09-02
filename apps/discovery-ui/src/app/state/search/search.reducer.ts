@@ -71,7 +71,10 @@ export const searchReducer = createReducer(
     cursorMode: false,
     cursorByPage: [],
     nextCursor: null,
-    paginationNotice: null,
+    // A direct/deep-linked search already cleared this in Search Submitted. Keeping the current
+    // value here lets an explicitly announced page-zero compatibility traversal stay announced
+    // while its later pages continue through the offset path.
+    paginationNotice: state.paginationNotice,
   })),
   on(SearchActions.cursorSearchLoaded, (state, { cursorPage, cursorUsed }) => {
     const logicalPage = Math.max(0, cursorPage.search.page);
