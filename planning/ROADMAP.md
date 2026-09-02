@@ -6,7 +6,7 @@ The repository-wide rule remains: **testing and evidence precede feature expansi
 
 ## Current position
 
-PI-1 has already established the standalone control baseline:
+PI-1 has established the standalone control baseline:
 
 ```text
 DSpace curated authority: 181
@@ -18,37 +18,34 @@ Solr:       1,000,181
 OpenSearch: 1,000,181
 ```
 
-The exact C2 composition and normalized search projection have separate deterministic identities. Solr/OpenSearch parity is proven at 1M-class scale, the retained corpus has a verified Gold Master archive, active projection identity survives ordinary API restarts without reindexing, and `quality:scale` now certifies the live C2 contract from one command.
+The exact C2 composition and normalized search projection have separate deterministic identities. Solr/OpenSearch parity is proven at 1M-class scale, the retained corpus has a verified Gold Master archive, active projection identity survives ordinary API restarts without reindexing, and `quality:scale` certifies the live C2 contract from one command.
 
-PRs #13 and #14 also delivered a versioned semantic matrix with result overlap, rank movement, facet differences, exact identifier probes, execution-order evidence, latency distributions and the structured comparison filters required by that matrix.
+PRs #13 and #14 delivered the versioned semantic matrix, exact identifier probes and structured comparison filters. PRs #16 and #19 then made opaque cursor/search-after traversal the deep-discovery path and certified two complete 1,000,181-result traversals with no gaps or duplicates while retaining offset compatibility for migration.
 
-The remaining PI-1 work is therefore runtime hardening, resource evidence, spatial/federation expansion and handoff—not rebuilding the already-proven 1M comparison baseline.
+The Maps foundation has also moved past planning. The workspace now has purpose-oriented categories, capability-aware SAIPE controls, shared authoritative county geometry joined by GEOID, and the first **Research Coverage** child: bounded **Repository research by area** driven by the effective Discovery criteria with a semantic table equivalent. PR #18 also added the deterministic Data.gov spatial-availability probe needed for the next enrichment decision.
+
+The remaining PI-1 work is therefore **projection/resource evidence, durable identity reconciliation, measured spatial enrichment/federation expansion, and handoff**—not rebuilding the cursor, map-control or million-record comparison foundations.
 
 ## PI-1 — Reusable federation and search evidence
 
-### 1. Finish deep-discovery runtime hardening
-
-- Add opaque cursor/search-after pagination while retaining the current offset contract during migration.
-- Bind continuation tokens to query/filter/sort/projection identity and reject stale or tampered cursors safely.
-- Prove deterministic no-duplicate/no-gap traversal against the active C2 projection for both engines.
-- Verify keyboard paging, result announcements, focus restoration, reflow and forced-colors behavior with large result counts.
-
-### 2. Capture reusable projection/resource evidence
+### 1. Capture reusable projection/resource evidence
 
 - Add reusable projection elapsed-time and documents/second evidence.
 - Record accepted/rejected/skipped/indexed counts with each large projection.
 - Capture host/container/JVM CPU and memory context with heavy runs.
-- Keep resource/progress evidence tied to corpus and projection identity so PI-2 can compare topology rather than undocumented machines.
+- Keep resource/progress evidence tied to corpus and projection identity so PI-2 compares topology rather than undocumented machines.
+- Add configurable per-source request concurrency and explicit rate-limit policy where publisher behavior requires it.
 
-### 3. Define durable identity reconciliation
+### 2. Define durable identity reconciliation
 
 - Define DOI/PMID/other durable-identifier reconciliation rules.
 - Never silently merge by title.
-- Distinguish source record identity, intellectual-work identity, versions/relationships and duplicate projection entries.
+- Distinguish source-record identity, intellectual-work identity, versions/relationships and duplicate projection entries.
+- Review UUID/source-identifier route stability so future PubMed/OpenAlex/NASA relationships can resolve without changing existing local IDs casually.
 
-### 4. Make Maps scale with the research model
+### 3. Extend research spatial coverage and thematic Maps deliberately
 
-The Maps workspace should be organized by the reader's analytic purpose rather than by publisher:
+The delivered Maps taxonomy remains stable:
 
 ```text
 Geography & Boundaries
@@ -65,40 +62,43 @@ Environment & Hazards
 
 Research Coverage
   repository research by area
-  Data.gov spatial datasets
-  NASA collection / bounded granule coverage
+  future Data.gov spatial datasets
+  future NASA collection / bounded granule coverage
 ```
 
-Categories are presentation only. Every child remains independently checkable/renderable, collapsing a category never changes its active children, and an empty future category should not be displayed until it has a backed capability.
+The next research-coverage milestone is evidence, not another speculative layer: run the deterministic Data.gov spatial-availability probe against the certified 500K retained Data.gov corpus and capture the measured artifact. Use that result to decide the enrichment scope before adding a versioned, engine-neutral spatial sidecar. The sidecar may hold authoritative administrative areas, points, bounding boxes and later polygons while preserving source evidence and derivation method. Publisher, laboratory, author or institution location is never silently substituted for research coverage.
 
-Before adding several new choropleths, establish reusable authoritative administrative geometry with stable state/county/PUMA/tract identifiers. Migrate SAIPE away from generated rectangular county cells, then make thematic services return values keyed to the shared geometry rather than constructing their own polygons.
+Use retained Data.gov `harvestRecordRaw` metadata for targeted explicit-DCAT-spatial enrichment where practical. The enrichment remains sidecar/versioned so the C2 Gold Master and its projection identity are not rewritten merely to make records mappable.
 
-That common boundary unlocks the strongest already-cataloged map additions in this order:
+Before adding many more thematic choropleths, generalize the existing shared-geometry/value pattern so new services return values keyed by stable identifiers rather than embedding their own polygons. Extend authoritative administrative geometry only when a concrete state/territory, PUMA, tract or place use case requires it.
 
-1. **Repository research by area** — aggregate explicit curated geography metadata; no new publisher crawl required.
-2. **Population Estimates** — county population, change and growth.
-3. **County Business Patterns** — county employment/establishments/payroll with measure and industry parameters inside one conceptual layer.
-4. **Business Dynamics Statistics** — job creation/destruction and establishment births/deaths after the county-value contract is proven.
-5. **Building Permits** — county totals first; place-level symbols only after authoritative place geometry/coordinates exist.
-6. **Economic Census** — county/industry measures after the economic layer configuration model has evidence.
-7. **ACS PUMS-derived measures** — weighted PUMA/state aggregates only; never person/household points.
-8. **3DEP terrain** — one configurable terrain/reference child rather than checkbox proliferation for hillshade/slope/aspect modes.
+The strongest next thematic additions remain:
 
-Research-object coverage remains a different semantic from thematic statistics. Introduce a typed spatial sidecar for authoritative administrative areas, points, bounding boxes and later polygons. It retains provenance and derivation method; publisher, laboratory, author or institution location is never silently substituted for research coverage.
+1. **Population Estimates** — county population, change and growth.
+2. **County Business Patterns** — county employment/establishments/payroll with measure and industry parameters inside one conceptual layer.
+3. **Business Dynamics Statistics** — job creation/destruction and establishment births/deaths after the county-value contract is proven.
+4. **Building Permits** — county totals first; place-level symbols only after authoritative place geometry/coordinates exist.
+5. **Economic Census** — county/industry measures after the economic-layer configuration model has evidence.
+6. **ACS PUMS-derived measures** — weighted PUMA/state aggregates only; never person/household points.
+7. **3DEP terrain** — one configurable terrain/reference child rather than checkbox proliferation for hillshade/slope/aspect modes.
 
-The retained Data.gov records do not currently normalize DCAT `spatial`, although they retain raw-harvest references. First run a deterministic spatial-availability probe, then perform targeted explicit-spatial enrichment into the sidecar rather than mutating the certified C2 corpus merely to make it mappable.
+The current Repository research-by-area layer can continue using its bounded search geography facet. Rich explicit spatial footprints require dedicated bounded summary/feature APIs with viewport/time/result caps and explicit truncation semantics before the browser renders them. Million-record search results must never become million MapLibre features.
 
 NASA CMR remains the strongest federated spatial source. Extend the existing collection adapter with an explicit/pinned spatial metadata representation, then model bounded granule coverage separately so collection and granule semantics never collapse into one type.
 
-Discovery-to-map integration should use bounded summary/feature APIs rather than sending unbounded search hits to MapLibre. Every meaningful mapped value remains available in semantic HTML through the same shared application state, and associated large research lists reuse cursor traversal from the deep-pagination workstream.
+Every new research-coverage child must preserve semantic list/table equivalence, keyboard operation, provenance, and the existing automated/manual accessibility evidence split.
 
-### 5. Extend the federation portfolio deliberately
+### 4. Extend the federation portfolio deliberately
 
 The evidence-first source order remains:
 
 1. NASA Earthdata CMR — build on the existing collection harvester, then add controlled granule semantics and spatial/temporal coverage;
 2. PubMed — bibliographic/abstract relevance scale after DOI/PMID reconciliation rules exist;
 3. OpenAlex — broad scholarly/citation coverage after the federal-source story is stable.
+
+For NASA CMR, reconcile planning language with the collection harvester/tests already in the repository, add committed canonical collection fixtures/evidence where needed, then prove bounded 10K/100K granule slices before any larger corpus.
+
+For PubMed, prefer a reproducible bounded fixture/API path first and evaluate baseline/update files before millions of individual requests. OpenAlex follows only after the federal-source and durable-identity stories remain stable.
 
 PubMed/OpenAlex affiliation or institution geography, if later useful, is a separately named relationship/location analytic dimension. It is not research coverage unless the underlying source explicitly states research geography.
 
@@ -108,10 +108,9 @@ Another million-record run is justified only when it answers a new source, seman
 
 PI-1 is ready to hand off when:
 
-- deep discovery no longer depends on unbounded offsets;
-- large-projection resource/progress evidence is captured consistently;
-- identifier reconciliation rules are explicit;
-- planned source adapters have reproducible bounded harvest paths;
+- large-projection resource/progress evidence is captured consistently and tied to corpus/projection identity;
+- durable identifier reconciliation rules are explicit;
+- planned source adapters have reproducible bounded harvest paths and fixture coverage;
 - stable corpus/query definitions remain versioned for PI-2;
 - semantic Solr/OpenSearch evidence remains reproducible when topology becomes the experimental variable.
 
@@ -149,7 +148,7 @@ Implement the documented AWS target or a justified alternative with:
 - deployment and rollback procedures;
 - explicit reasoning about whether both search engines are required outside the comparison laboratory.
 
-## PI-4 — Manual accessibility evidence
+## PI-4 — Manual Accessibility Evidence
 
 The federal Section 508 baseline and the project's engineering target remain separate. The project continues to track Section 508-oriented evidence while advancing the engineering target to WCAG 2.2 A/AA.
 
@@ -193,8 +192,10 @@ These remain downstream of the reproducible lexical baseline.
 - Record source freshness per research object where reliable publisher dates exist.
 - Expose projection/index timestamps consistently across Admin, Evidence, Discovery and Search Lab.
 - Distinguish stored sample, stale and unavailable data where those states apply.
-- Review UUID/source-identifier route stability and relationship resolution.
+- Add regression coverage for LODES fallback provenance.
 - Replace remaining dataset-shaped copy where the object may be a publication, report, software item, methodology, project or granule.
+- Improve presentation of opaque publisher program values such as Data.gov codes without replacing raw metadata with a fixed UI allowlist.
+- Clarify projection-level authority terminology where compatibility `REPOSITORY` is too coarse for mixed DSpace + federated search state.
 - Move NgRx dependencies from release candidates to stable versions after validation.
 
 ## Non-goals

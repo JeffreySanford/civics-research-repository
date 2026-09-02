@@ -6,27 +6,27 @@ The repository follows an evidence-first rule: define or extend unit/use-case/co
 
 ## Active workstreams
 
-- `codex/deep-pagination-runtime-hardening` — opaque cursor/search-after discovery, large-result keyboard behavior and WCAG 2.2 engineering uplift. See [documentation/workstreams/deep-pagination-runtime-hardening](../documentation/workstreams/deep-pagination-runtime-hardening/README.md).
-- `codex/map-layer-categories` — group the growing Maps layer controls into expandable, accessible categories while every child layer remains independently renderable.
-- `codex/research-spatial-coverage` — define authoritative spatial coverage for research objects without inferring research geography from publisher location. See its [data-to-map layer matrix](../documentation/workstreams/research-spatial-coverage/DATA_LAYER_MATRIX.md) after that workstream lands.
-- `codex/searchable-research-map-coverage` — connect filtered Discovery results to bounded map summaries/features and accessible result equivalents.
+The merged cursor, map-category, authoritative-county-geometry, capability-aware SAIPE and first Research Coverage slices are no longer active backlog items. Current PI-1 work is concentrated in:
+
+- **projection/resource evidence** — reusable elapsed-time, throughput and host/container/JVM resource evidence tied to corpus/projection identity;
+- **durable identity reconciliation** — DOI/PMID/other identifier rules and explicit source-record/work/version relationships;
+- **research spatial enrichment** — measure the retained Data.gov corpus, then add explicit authoritative spatial sidecar data without mutating the C2 Gold Master;
+- **federation portfolio** — build on NASA CMR, then add PubMed/OpenAlex only after the identity and bounded-harvest contracts are ready.
 
 ## PI-1 — Close reusable federation/search evidence
 
 ### Large-corpus search evidence follow-through
 
-PRs #12-#14 delivered the named 1M scale checker, versioned semantic matrix, API/native p50/p95/p99 evidence, result/top-N overlap, rank movement, facet-bucket differences, execution-order evidence, exact local-ID/DOI probes and structured publisher/source-system filters.
+PRs #12-#14 delivered the named 1M scale checker, versioned semantic matrix, API/native p50/p95/p99 evidence, result/top-N overlap, rank movement, facet-bucket differences, execution-order evidence, exact local-ID/DOI probes and structured publisher/source-system filters. PRs #16 and #19 then made cursor traversal the deep-discovery path and certified deterministic C2 traversal without gaps or duplicates.
 
 Open follow-through:
 
-- [ ] Verify accessibility and keyboard behavior with large facet/result counts.
+- [ ] Verify accessibility and keyboard behavior with large facet/result counts where manual evidence is still required.
 - [ ] Keep the V2 semantic matrix stable while topology/runtime variables change.
 - [ ] Add richer phrase/highlighting/geo/vector scenarios only after PI-1 handoff criteria are satisfied.
 
 ### Scale-sensitive runtime hardening
 
-- [ ] Add opaque cursor/search-after pagination for deep discovery while retaining offset compatibility during migration.
-- [ ] Bind cursors to query/filter/sort/projection identity and reject stale/tampered cursors safely.
 - [ ] Record reusable projection elapsed time, documents/second and accepted/rejected/skipped/indexed counts for large projections.
 - [ ] Capture host/container/JVM CPU and memory context with heavy evidence runs.
 - [ ] Add configurable per-source request concurrency and explicit rate-limit policy.
@@ -36,7 +36,7 @@ Open follow-through:
 
 ### Maps and spatial research coverage
 
-Target the Maps control taxonomy by reader purpose rather than agency:
+The delivered control taxonomy is:
 
 ```text
 Geography & Boundaries
@@ -45,14 +45,12 @@ Environment & Hazards
 Research Coverage
 ```
 
-A category owns presentation only. Every child layer remains independently checkable/renderable, and a collapsed category reports active child state.
+Categories own presentation only; child layers remain independently checkable/renderable. The current foundation includes capability-aware controls, authoritative county geometry, SAIPE joined by GEOID, and **Repository research by area** driven by bounded Discovery criteria.
 
-- [ ] Evolve the map-category implementation so TIGER/Line sits under **Geography & Boundaries**, LODES/SAIPE under **Community & Economy**, and USGS hydrography/earthquakes under **Environment & Hazards**.
-- [ ] Do not show an empty **Research Coverage** category until its first backed capability exists.
-- [ ] Add reusable authoritative administrative geometry for state/territory, county/county-equivalent and later PUMA/tract joins using stable FIPS/PUMA/GEOID identifiers.
-- [ ] Migrate SAIPE away from generated rectangular county cells before using that geometry pattern for additional choropleths.
-- [ ] Add **Repository research by area** from already-retained curated geography metadata as the first Research Coverage layer; label values as matching research-object counts, not inferred scientific footprints.
-- [ ] Add a reusable thematic-area value contract that joins measures to shared geometry instead of embedding polygons in each service.
+Open follow-through:
+
+- [ ] Extend the shared administrative-geometry foundation beyond the current county implementation to the state/territory and later PUMA/tract joins that need authoritative stable identifiers.
+- [ ] Generalize the thematic-area value contract so additional measures join values to shared geometry instead of embedding polygons in each service.
 - [ ] Add **Population Estimates** county population/change as the first new Community & Economy measure.
 - [ ] Add **County Business Patterns** with a single checkable layer and measure/industry configuration for employment, establishments and payroll rather than separate permanent checkboxes.
 - [ ] Add **Business Dynamics Statistics** county/state measures such as job creation/destruction and establishment births/deaths after the common county layer contract is proven.
@@ -60,15 +58,13 @@ A category owns presentation only. Every child layer remains independently check
 - [ ] Evaluate **Economic Census** county/industry measures after CBP/BDS prove the economic-layer configuration model.
 - [ ] Treat **ACS PUMS** only as weighted aggregate state/PUMA measures; never render raw person/household points.
 - [ ] Evaluate one configurable **USGS 3DEP terrain** layer (hillshade/tinted hillshade/slope mode) rather than multiple permanent terrain checkboxes.
-- [ ] Add an engine-neutral research spatial-coverage sidecar supporting authoritative admin areas, points, bounding boxes and later polygons.
+- [ ] Run the deterministic **Data.gov spatial-availability probe** against the certified 500K retained Data.gov corpus and capture the measured evidence artifact.
+- [ ] Use the measured probe result to scope a versioned, engine-neutral research spatial sidecar supporting authoritative admin areas, points, bounding boxes and later polygons.
 - [ ] Preserve spatial provenance/derivation method and never infer research coverage from publisher/institution location.
-- [ ] Add a deterministic **Data.gov spatial-availability probe** over retained records before a large enrichment run.
-- [ ] Use retained Data.gov `harvestRecordRaw` references for targeted explicit-DCAT-spatial enrichment where practical; keep enrichment sidecar/versioned so C2 Gold Master identity is unchanged.
+- [ ] Use retained Data.gov `harvestRecordRaw` metadata for targeted explicit-DCAT-spatial enrichment where practical; keep enrichment sidecar/versioned so C2 Gold Master identity is unchanged.
+- [ ] Add bounded dedicated spatial summary/feature APIs before explicit sidecar footprints can grow beyond the current bounded geography-facet summary; million-record search results must never become million browser features.
 - [ ] Extend NASA CMR collection mapping with explicit spatial extent using a pinned/documented publisher representation, then add granule coverage as a distinct bounded semantic.
-- [ ] Add bounded spatial summary/feature APIs so million-record search results never become million browser features.
-- [ ] Connect Discovery query/filter context to research coverage on Maps.
-- [ ] Provide semantic list/table equivalents for every meaningful research-coverage map value.
-- [ ] Keep category/layer controls keyboard operable and test WCAG 2.2 focus-not-obscured, target-size and non-drag alternatives.
+- [ ] Preserve semantic list/table equivalents, keyboard operation and WCAG 2.2 evidence as each new research-coverage child is added.
 
 ### Federation portfolio
 
@@ -94,8 +90,8 @@ A category owns presentation only. Every child layer remains independently check
 
 ### PI-1 handoff
 
-- [ ] Deep discovery no longer depends on unbounded offsets.
-- [ ] Large-projection resource/progress evidence is captured consistently.
+- [ ] Large-projection resource/progress evidence is captured consistently and tied to corpus/projection identity.
+- [ ] Durable identifier reconciliation rules are explicit.
 - [ ] Every planned source adapter has a reproducible bounded harvest path and fixture coverage.
 - [ ] Stable corpus/query definitions are versioned for PI-2.
 - [ ] Semantic Solr/OpenSearch difference evidence remains versioned alongside latency evidence.

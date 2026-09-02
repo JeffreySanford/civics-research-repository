@@ -132,12 +132,12 @@ Solr                         OpenSearch
 
 The million-record run validates the ownership model already used by the smaller demo: DSpace remains authoritative for curated repository objects, external publishers remain authoritative for federated source metadata and resources, application PostgreSQL retains reproducible federated metadata/evidence, and search engines remain rebuildable derived state.
 
-## What remains
+## What remains after the C2 baseline
 
-The next scale work is no longer “prove that one million records can exist.” The remaining work is to make the evidence semantically richer and operationally broader:
+The C2 milestone is no longer waiting on a semantic matrix or deep pagination: those were delivered later by PRs #13-#14 and #16/#19 respectively. The remaining scale work is to reuse this certified corpus for new questions rather than repeat the same one-million-record proof:
 
-- version a stable large-corpus query matrix;
-- add result-set, top-N, rank and facet-difference evidence;
-- capture reusable projection throughput and host/container/JVM context;
-- harden deep pagination with an opaque cursor/search-after path while preserving offset compatibility;
-- extend the same bounded/evidence-first model to additional federation sources and later clustered topologies.
+- capture reusable projection throughput plus host/container/JVM CPU and memory context tied to corpus/projection identity;
+- define durable DOI/PMID/other identifier reconciliation rules before bibliographic federation expands;
+- run the deterministic Data.gov spatial-availability probe against the certified 500K Data.gov half of C2, then scope explicit spatial sidecar enrichment from the measured result;
+- extend bounded/evidence-first federation to NASA CMR and later PubMed/OpenAlex without weakening provenance rules;
+- carry the same stable corpus/query identities into the PI-2 clustered SolrCloud/OpenSearch topology comparison.
