@@ -68,6 +68,66 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  storybook-accessibility:
+    name: Storybook interactions + axe
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build accessibility Storybook
+        run: pnpm exec nx build-storybook discovery-ui --configuration=ci
+
+      - name: Run Storybook interaction and WCAG axe evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec http-server dist/storybook/discovery-ui \
+            -p 4400 -c-1 --cors > storybook-ci.log 2>&1 &
+          storybook_pid=$!
+          trap 'kill "$storybook_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for attempt in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4400/index.json >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != "true" ]]; then
+            cat storybook-ci.log
+            exit 1
+          fi
+
+          pnpm exec nx test-storybook discovery-ui
+
+      - name: Upload Storybook diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: storybook-accessibility-${{ github.run_id }}
+          path: storybook-ci.log
+          if-no-files-found: ignore
+          retention-days: 14
+
   real-stack-search-comparison:
     name: Live Solr + OpenSearch smoke
     runs-on: ubuntu-latest
