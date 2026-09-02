@@ -37,6 +37,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Temporary draft-only capture. Remove after the generated files are committed.
+      - name: Generate Nx Angular Storybook scaffold
+        env:
+          NX_INTERACTIVE: 'false'
+        run: >-
+          pnpm exec nx g @nx/angular:storybook-configuration discovery-ui
+          --interactionTests=true
+          --generateStories=false
+          --configureStaticServe=true
+
+      - name: Upload generated Storybook scaffold
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: storybook-scaffold-${{ github.run_id }}
+          path: |
+            package.json
+            pnpm-lock.yaml
+            nx.json
+            apps/discovery-ui/project.json
+            apps/discovery-ui/tsconfig.app.json
+            apps/discovery-ui/tsconfig.json
+            apps/discovery-ui/.storybook
+          if-no-files-found: error
+          retention-days: 2
+
       - name: Check formatting
         run: pnpm exec nx format:check --all
 
