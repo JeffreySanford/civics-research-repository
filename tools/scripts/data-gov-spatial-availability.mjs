@@ -7,6 +7,7 @@ const DEFAULT_OUTPUT_DIR = 'browser-evidence-artifacts/spatial-availability';
 const DEFAULT_SEARCH_URL = 'https://api.gsa.gov/technology/datagov/v4/search';
 const DEFAULT_PAGE_SIZE = 1_000;
 const DEFAULT_MAX_PAGES = 2_000;
+const DEFAULT_PROGRESS_EVERY_PAGES = 10;
 const C2_PROFILE = 'FEDERATED_1M';
 const C2_TARGET_RECORDS = 1_000_000;
 const SHA256 = /^[0-9a-f]{64}$/u;
@@ -177,6 +178,8 @@ export async function probeDataGovSpatialSource({
   searchUrl = DEFAULT_SEARCH_URL,
   pageSize = DEFAULT_PAGE_SIZE,
   maxPages = DEFAULT_MAX_PAGES,
+  progressEveryPages = DEFAULT_PROGRESS_EVERY_PAGES,
+  onProgress = null,
   sampleLimit = 10,
 }) {
   if (!(retainedIdentifiers instanceof Set)) {
@@ -188,18 +191,30 @@ export async function probeDataGovSpatialSource({
   if (typeof fetchImpl !== 'function') {
     throw new Error('fetchImpl must be a function.');
   }
+  if (onProgress !== null && typeof onProgress !== 'function') {
+    throw new Error('onProgress must be a function when provided.');
+  }
 
   const safePageSize = positiveInteger(pageSize, 'pageSize', DEFAULT_PAGE_SIZE);
   const safeMaxPages = positiveInteger(maxPages, 'maxPages', DEFAULT_MAX_PAGES);
+  const safeProgressEveryPages = positiveInteger(
+    progressEveryPages,
+    'progressEveryPages',
+    DEFAULT_MAX_PAGES,
+  );
   const seenSourceIdentifiers = new Set();
+  const duplicateSourceIdentifiers = new Set();
   const matchedIdentifiers = new Set();
+  const dcatSpatialIdentifiers = new Set();
+  const spatialShapeIdentifiers = new Set();
+  const spatialCentroidIdentifiers = new Set();
+  const hasSpatialTrueIdentifiers = new Set();
+  const sampleIdentifiers = new Set();
   const samples = [];
   let cursor = null;
   let pages = 0;
-  let dcatSpatialMatches = 0;
-  let spatialShapeMatches = 0;
-  let spatialCentroidMatches = 0;
-  let hasSpatialTrueMatches = 0;
+  let sourceSpatialRowCount = 0;
+  let duplicateSourceRowCount = 0;
 
   while (true) {
     if (pages >= safeMaxPages) {
@@ -246,12 +261,13 @@ export async function probeDataGovSpatialSource({
           'Data.gov spatial search returned a record without a stable identifier.',
         );
       }
+      sourceSpatialRowCount += 1;
       if (seenSourceIdentifiers.has(identifier)) {
-        throw new Error(
-          `Data.gov spatial search repeated identifier ${identifier}.`,
-        );
+        duplicateSourceRowCount += 1;
+        duplicateSourceIdentifiers.add(identifier);
+      } else {
+        seenSourceIdentifiers.add(identifier);
       }
-      seenSourceIdentifiers.add(identifier);
 
       if (!retainedIdentifiers.has(identifier)) {
         continue;
@@ -260,12 +276,14 @@ export async function probeDataGovSpatialSource({
       const dcatSpatial = textValue(dataset?.dcat?.spatial);
       const shape = objectValue(dataset?.spatial_shape);
       const centroid = objectValue(dataset?.spatial_centroid);
-      if (dcatSpatial) dcatSpatialMatches += 1;
-      if (shape) spatialShapeMatches += 1;
-      if (centroid) spatialCentroidMatches += 1;
-      if (dataset?.has_spatial === true) hasSpatialTrueMatches += 1;
+      if (dcatSpatial) dcatSpatialIdentifiers.add(identifier);
+      if (shape) spatialShapeIdentifiers.add(identifier);
+      if (centroid) spatialCentroidIdentifiers.add(identifier);
+      if (dataset?.has_spatial === true)
+        hasSpatialTrueIdentifiers.add(identifier);
 
-      if (samples.length < sampleLimit) {
+      if (!sampleIdentifiers.has(identifier) && samples.length < sampleLimit) {
+        sampleIdentifiers.add(identifier);
         samples.push({
           identifier,
           title: textValue(dataset?.title) ?? null,
@@ -278,13 +296,27 @@ export async function probeDataGovSpatialSource({
     }
 
     const nextCursor = textValue(page?.after);
-    if (!nextCursor) {
-      break;
-    }
-    if (results.length === 0) {
+    if (nextCursor && results.length === 0) {
       throw new Error(
         'Data.gov spatial search returned an empty page with a continuation cursor.',
       );
+    }
+
+    const done = !nextCursor;
+    if (
+      onProgress &&
+      (pages === 1 || pages % safeProgressEveryPages === 0 || done)
+    ) {
+      onProgress({
+        pagesFetched: pages,
+        sourceSpatialRecordCount: seenSourceIdentifiers.size,
+        retainedSpatialRecordCount: matchedIdentifiers.size,
+        done,
+      });
+    }
+
+    if (done) {
+      break;
     }
     cursor = nextCursor;
   }
@@ -297,7 +329,10 @@ export async function probeDataGovSpatialSource({
     spatialFilter: 'geospatial',
     pageSize: Math.min(safePageSize, DEFAULT_PAGE_SIZE),
     pagesFetched: pages,
+    sourceSpatialRowCount,
     sourceSpatialRecordCount: seenSourceIdentifiers.size,
+    duplicateSourceRowCount,
+    duplicateSourceIdentifierCount: duplicateSourceIdentifiers.size,
     retainedRecordCount,
     retainedSpatialRecordCount,
     retainedSpatialPercent:
@@ -311,10 +346,10 @@ export async function probeDataGovSpatialSource({
     unmatchedCurrentSourceSpatialRecords:
       seenSourceIdentifiers.size - retainedSpatialRecordCount,
     matchedMetadataSignals: {
-      hasSpatialTrue: hasSpatialTrueMatches,
-      dcatSpatial: dcatSpatialMatches,
-      spatialShape: spatialShapeMatches,
-      spatialCentroid: spatialCentroidMatches,
+      hasSpatialTrue: hasSpatialTrueIdentifiers.size,
+      dcatSpatial: dcatSpatialIdentifiers.size,
+      spatialShape: spatialShapeIdentifiers.size,
+      spatialCentroid: spatialCentroidIdentifiers.size,
     },
     samples,
   };
@@ -339,7 +374,7 @@ export function formatMarkdown(report, expectedCount = null) {
         .join('\n')
     : '| _none_ |  |  |  |';
 
-  return `# Data.gov spatial availability evidence\n\n- Captured: ${report.capturedAt}\n- Method: **Data.gov v4 geospatial search intersected with certified retained C2 identifiers**\n- Retained Data.gov identifiers: **${report.retainedRecordCount.toLocaleString()}**${expectedLine}\n- Current Data.gov geospatial records traversed: **${report.sourceSpatialRecordCount.toLocaleString()}**\n- Retained C2 identifiers with current explicit geospatial metadata: **${report.retainedSpatialRecordCount.toLocaleString()}** (${report.retainedSpatialPercent}%)\n- Current geospatial source records outside retained C2: **${report.unmatchedCurrentSourceSpatialRecords.toLocaleString()}**\n- Data.gov pages fetched: **${report.pagesFetched.toLocaleString()}**\n${certificationBlock}\n## Matched metadata signals\n\n| Signal | Retained C2 matches |\n| --- | ---: |\n| \`has_spatial = true\` | ${report.matchedMetadataSignals.hasSpatialTrue.toLocaleString()} |\n| \`dcat.spatial\` | ${report.matchedMetadataSignals.dcatSpatial.toLocaleString()} |\n| \`spatial_shape\` | ${report.matchedMetadataSignals.spatialShape.toLocaleString()} |\n| \`spatial_centroid\` | ${report.matchedMetadataSignals.spatialCentroid.toLocaleString()} |\n\n## Bounded samples\n\n| Identifier | Title | DCAT spatial | Shape type |\n| --- | --- | --- | --- |\n${sampleRows}\n\n## Interpretation\n\nThis measurement uses the current Data.gov Catalog API v4 source representation and intersects those geospatial results with the exact Data.gov identifiers retained in certified C2. It does **not** claim the current source snapshot is byte-for-byte historical C2 metadata. Spatial values still require validation and typed, versioned sidecar enrichment before map rendering.\n\nThe prior retained-link probe is intentionally superseded: Data.gov v4 \`harvest_record_raw\` is a URL to a separate raw-record endpoint, not retained raw JSON, so searching that URL string for a \`spatial\` token cannot measure spatial availability.\n\nThis probe is read-only. It does not mutate the certified corpus, activation state, search projection, or Data.gov source metadata.\n`;
+  return `# Data.gov spatial availability evidence\n\n- Captured: ${report.capturedAt}\n- Method: **Data.gov v4 geospatial search intersected with certified retained C2 identifiers**\n- Retained Data.gov identifiers: **${report.retainedRecordCount.toLocaleString()}**${expectedLine}\n- Current Data.gov geospatial rows traversed: **${report.sourceSpatialRowCount.toLocaleString()}**\n- Unique current Data.gov geospatial identifiers: **${report.sourceSpatialRecordCount.toLocaleString()}**\n- Duplicate source rows collapsed by C2 identifier: **${report.duplicateSourceRowCount.toLocaleString()}** across **${report.duplicateSourceIdentifierCount.toLocaleString()}** identifiers\n- Retained C2 identifiers with current explicit geospatial metadata: **${report.retainedSpatialRecordCount.toLocaleString()}** (${report.retainedSpatialPercent}%)\n- Current geospatial source records outside retained C2: **${report.unmatchedCurrentSourceSpatialRecords.toLocaleString()}**\n- Data.gov pages fetched: **${report.pagesFetched.toLocaleString()}**\n${certificationBlock}\n## Matched metadata signals\n\n| Signal | Retained C2 matches |\n| --- | ---: |\n| \`has_spatial = true\` | ${report.matchedMetadataSignals.hasSpatialTrue.toLocaleString()} |\n| \`dcat.spatial\` | ${report.matchedMetadataSignals.dcatSpatial.toLocaleString()} |\n| \`spatial_shape\` | ${report.matchedMetadataSignals.spatialShape.toLocaleString()} |\n| \`spatial_centroid\` | ${report.matchedMetadataSignals.spatialCentroid.toLocaleString()} |\n\n## Bounded samples\n\n| Identifier | Title | DCAT spatial | Shape type |\n| --- | --- | --- | --- |\n${sampleRows}\n\n## Interpretation\n\nThis measurement uses the current Data.gov Catalog API v4 source representation and intersects those geospatial results with the exact Data.gov identifiers retained in certified C2. It does **not** claim the current source snapshot is byte-for-byte historical C2 metadata. Spatial values still require validation and typed, versioned sidecar enrichment before map rendering.\n\nThe prior retained-link probe is intentionally superseded: Data.gov v4 \`harvest_record_raw\` is a URL to a separate raw-record endpoint, not retained raw JSON, so searching that URL string for a \`spatial\` token cannot measure spatial availability.\n\nThis probe is read-only. It does not mutate the certified corpus, activation state, search projection, or Data.gov source metadata.\n`;
 }
 
 export function parseArgs(argv) {
@@ -350,6 +385,7 @@ export function parseArgs(argv) {
     searchUrl: DEFAULT_SEARCH_URL,
     pageSize: DEFAULT_PAGE_SIZE,
     maxPages: DEFAULT_MAX_PAGES,
+    progressEveryPages: DEFAULT_PROGRESS_EVERY_PAGES,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -390,6 +426,15 @@ export function parseArgs(argv) {
       args.maxPages = positiveInteger(
         argv[index + 1],
         '--max-pages',
+        DEFAULT_MAX_PAGES,
+      );
+      index += 1;
+      continue;
+    }
+    if (argument === '--progress-every') {
+      args.progressEveryPages = positiveInteger(
+        argv[index + 1],
+        '--progress-every',
         DEFAULT_MAX_PAGES,
       );
       index += 1;
@@ -447,12 +492,18 @@ export async function run(argv = process.argv.slice(2), env = process.env) {
     searchUrl,
     pageSize,
     maxPages,
+    progressEveryPages,
   } = parseArgs(argv);
   const scaleCertification = scaleEvidencePath
     ? await loadScaleCertification(scaleEvidencePath)
     : null;
+  console.log('[spatial] Loading retained Data.gov identifiers from C2...');
+  const identifierLoadStartedAt = Date.now();
   const retainedIdentifiers = parsePsqlIdentifiers(
     runPsqlIdentifiers(buildRetainedIdentifiersSql(), env),
+  );
+  console.log(
+    `[spatial] Loaded ${retainedIdentifiers.size.toLocaleString()} retained identifiers in ${formatElapsed(Date.now() - identifierLoadStartedAt)}.`,
   );
   if (expectedCount !== null && retainedIdentifiers.size !== expectedCount) {
     throw new Error(
@@ -461,12 +512,27 @@ export async function run(argv = process.argv.slice(2), env = process.env) {
   }
 
   const apiKey = requirePersonalDataGovApiKey(env);
+  console.log(
+    `[spatial] Starting Data.gov geospatial traversal (pageSize=${pageSize.toLocaleString()}, progressEvery=${progressEveryPages} pages)...`,
+  );
+  const traversalStartedAt = Date.now();
   const probe = await probeDataGovSpatialSource({
     retainedIdentifiers,
     apiKey,
     searchUrl,
     pageSize,
     maxPages,
+    progressEveryPages,
+    onProgress: (progress) => {
+      const elapsedMs = Date.now() - traversalStartedAt;
+      const elapsedSeconds = Math.max(elapsedMs / 1000, 0.001);
+      const rate = Math.round(
+        progress.sourceSpatialRecordCount / elapsedSeconds,
+      );
+      console.log(
+        `[spatial] page=${progress.pagesFetched.toLocaleString()} source=${progress.sourceSpatialRecordCount.toLocaleString()} C2-matches=${progress.retainedSpatialRecordCount.toLocaleString()} elapsed=${formatElapsed(elapsedMs)} rate=${rate.toLocaleString()} rec/s${progress.done ? ' complete' : ''}`,
+      );
+    },
   });
   const report = {
     ...probe,
@@ -491,6 +557,10 @@ export async function run(argv = process.argv.slice(2), env = process.env) {
   console.log(`JSON evidence: ${jsonPath}`);
   console.log(`Markdown evidence: ${markdownPath}`);
   return report;
+}
+
+function formatElapsed(elapsedMs) {
+  return `${(Math.max(0, elapsedMs) / 1000).toFixed(1)}s`;
 }
 
 function sourceIdentifier(dataset) {
