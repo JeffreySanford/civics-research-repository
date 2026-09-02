@@ -58,10 +58,10 @@ Open follow-through:
 - [ ] Evaluate **Economic Census** county/industry measures after CBP/BDS prove the economic-layer configuration model.
 - [ ] Treat **ACS PUMS** only as weighted aggregate state/PUMA measures; never render raw person/household points.
 - [ ] Evaluate one configurable **USGS 3DEP terrain** layer (hillshade/tinted hillshade/slope mode) rather than multiple permanent terrain checkboxes.
-- [ ] Run the deterministic **Data.gov spatial-availability probe** against the certified 500K retained Data.gov corpus and capture the measured evidence artifact.
-- [ ] Use the measured probe result to scope a versioned, engine-neutral research spatial sidecar supporting authoritative admin areas, points, bounding boxes and later polygons.
+- [ ] Run the corrected deterministic **Data.gov spatial-availability probe** by intersecting the current Data.gov v4 geospatial subset with the certified 500K retained C2 Data.gov identifiers, and capture the measured evidence artifact.
+- [ ] Use the measured current-source/C2 intersection to scope a versioned, engine-neutral research spatial sidecar supporting authoritative admin areas, points, bounding boxes and later polygons.
 - [ ] Preserve spatial provenance/derivation method and never infer research coverage from publisher/institution location.
-- [ ] Use retained Data.gov `harvestRecordRaw` metadata for targeted explicit-DCAT-spatial enrichment where practical; keep enrichment sidecar/versioned so C2 Gold Master identity is unchanged.
+- [ ] Treat retained Data.gov `harvestRecordRaw` as a source-reference URL, not retained raw metadata. Use current v4 `dcat.spatial` / `spatial_shape` / `spatial_centroid` signals and only bounded raw/transformed endpoint reads for selected-candidate validation; keep enrichment sidecar/versioned so C2 Gold Master identity is unchanged.
 - [ ] Add bounded dedicated spatial summary/feature APIs before explicit sidecar footprints can grow beyond the current bounded geography-facet summary; million-record search results must never become million browser features.
 - [ ] Extend NASA CMR collection mapping with explicit spatial extent using a pinned/documented publisher representation, then add granule coverage as a distinct bounded semantic.
 - [ ] Preserve semantic list/table equivalents, keyboard operation and WCAG 2.2 evidence as each new research-coverage child is added.
