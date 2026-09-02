@@ -2,6 +2,7 @@ package org.civicsrepo.search;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -62,7 +63,8 @@ public class SearchCursorCodec {
         canonical.put("fingerprintVersion", CRITERIA_FINGERPRINT_VERSION);
         canonical.put("sort", SORT_VERSION);
         canonical.put("query", criteria.query());
-        programs.forEach(canonical.putArray("programs")::add);
+        ArrayNode canonicalPrograms = canonical.putArray("programs");
+        programs.forEach(canonicalPrograms::add);
         canonical.put("publisher", text(criteria.publisher()));
         canonical.put(
                 "sourceSystem",
