@@ -90,14 +90,14 @@ describe('searchReducer cursor traversal', () => {
     expect(state.paginationNotice).toBe('Using offset-compatible paging.');
   });
 
-  it('clears cursor history when an offset-compatible response takes over', () => {
+  it('clears cursor history while preserving an announced offset-compatible traversal', () => {
     const state = searchReducer(
       {
         ...initialSearchState,
         cursorMode: true,
         cursorByPage: [null, 'page-1'],
         nextCursor: 'page-2',
-        paginationNotice: 'old notice',
+        paginationNotice: 'Using offset-compatible paging.',
       },
       SearchActions.searchLoaded({ response: response(4) }),
     );
@@ -105,7 +105,7 @@ describe('searchReducer cursor traversal', () => {
     expect(state.cursorMode).toBe(false);
     expect(state.cursorByPage).toEqual([]);
     expect(state.nextCursor).toBeNull();
-    expect(state.paginationNotice).toBeNull();
+    expect(state.paginationNotice).toBe('Using offset-compatible paging.');
     expect(state.query.page).toBe(4);
   });
 });
