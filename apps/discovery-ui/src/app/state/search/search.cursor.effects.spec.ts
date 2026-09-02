@@ -98,11 +98,11 @@ describe('SearchEffects cursor traversal', () => {
       page: 0,
       pageSize: 25,
     });
-    expect(emitted.type).toBe(SearchActions.cursorCompatibilityLoaded.type);
-    if (SearchActions.cursorCompatibilityLoaded.match(emitted)) {
-      expect(emitted.response).toEqual(response(0));
-      expect(emitted.notice).toContain('offset-compatible paging');
-    }
+    expect(emitted).toMatchObject({
+      type: SearchActions.cursorCompatibilityLoaded.type,
+      response: response(0),
+      notice: expect.stringContaining('offset-compatible paging'),
+    });
   });
 
   it('does not fall back when cursor startup rejects an invalid cursor request', async () => {
