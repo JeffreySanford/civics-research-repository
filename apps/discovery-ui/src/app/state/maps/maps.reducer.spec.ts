@@ -171,12 +171,47 @@ describe('mapsReducer', () => {
     );
 
     expect(loaded.loading).toBe(false);
-    expect(loaded.layers.map((layer) => layer.id)).toEqual([
+    expect(loaded.layers.map((loadedLayer) => loadedLayer.id)).toEqual([
       'tiger-line-california-boundary',
     ]);
     expect(loaded.censusAreaBoundaries).toEqual(
       initialMapsState.censusAreaBoundaries,
     );
+  });
+
+  it('clears SAIPE state when the selected area does not advertise SAIPE', () => {
+    const withSaipe = {
+      ...initialMapsState,
+      saipeVisible: true,
+      saipeChoropleth: { geography: 'North Dakota' } as never,
+      saipeChoroplethError: 'Old SAIPE warning',
+    };
+
+    const loaded = mapsReducer(
+      withSaipe,
+      MapsActions.mapLayersLoaded({ layers: [layer] }),
+    );
+
+    expect(loaded.saipeVisible).toBe(false);
+    expect(loaded.saipeChoropleth).toBeNull();
+    expect(loaded.saipeChoroplethError).toBeNull();
+  });
+
+  it('clears old SAIPE data immediately while a new geography capability loads', () => {
+    const selected = mapsReducer(
+      {
+        ...initialMapsState,
+        saipeVisible: true,
+        saipeChoropleth: { geography: 'North Dakota' } as never,
+        saipeChoroplethError: 'Old SAIPE warning',
+      },
+      MapsActions.censusAreaSelected({ geography: 'Florida' }),
+    );
+
+    expect(selected.selectedGeography).toBe('Florida');
+    expect(selected.saipeVisible).toBe(true);
+    expect(selected.saipeChoropleth).toBeNull();
+    expect(selected.saipeChoroplethError).toBeNull();
   });
 
   it('selects the earthquake overlay', () => {

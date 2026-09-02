@@ -1,7 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { provideMockStore } from '@ngrx/store/testing';
-import { firstValueFrom, of, throwError, type Observable } from 'rxjs';
+import {
+  firstValueFrom,
+  lastValueFrom,
+  of,
+  throwError,
+  toArray,
+  type Observable,
+} from 'rxjs';
 import {
   RepositoryMapsApi,
   type CensusAreaBoundary,
@@ -22,6 +29,16 @@ const layers = [
     visibleByDefault: true,
   },
 ] as unknown as MapLayer[];
+
+const saipeLayer = {
+  id: 'saipe-county-poverty-north-dakota',
+  label: '2023 SAIPE county poverty - North Dakota',
+  layerType: 'CENSUS_CHOROPLETH',
+  sourceUrl:
+    'https://www.census.gov/data/datasets/2023/demo-saipe/2023-state-and-county.html',
+  attribution: 'U.S. Census Bureau Small Area Income and Poverty Estimates',
+  visibleByDefault: true,
+} as unknown as MapLayer;
 
 const censusAreaBoundaries = [
   {
@@ -236,6 +253,42 @@ describe('MapsEffects', () => {
         },
       }),
     );
+  });
+
+  it('loads SAIPE only after the selected area advertises that capability', async () => {
+    const saipeChoropleth = { geography: 'North Dakota' } as never;
+    const getSaipeCountyChoropleth = vi
+      .fn()
+      .mockReturnValue(of(saipeChoropleth));
+    const effects = setup(
+      { getSaipeCountyChoropleth } as unknown as RepositoryMapsApi,
+      of(MapsActions.mapLayersLoaded({ layers: [...layers, saipeLayer] })),
+    );
+
+    const emitted = await firstValueFrom(
+      effects.loadSaipeChoroplethForSelectedArea$,
+    );
+
+    expect(getSaipeCountyChoropleth).toHaveBeenCalledWith('North Dakota');
+    expect(emitted).toEqual(
+      MapsActions.saipeChoroplethLoaded({ saipeChoropleth }),
+    );
+  });
+
+  it('does not request SAIPE when the selected area does not advertise it', async () => {
+    const getSaipeCountyChoropleth = vi.fn();
+    const effects = setup(
+      { getSaipeCountyChoropleth } as unknown as RepositoryMapsApi,
+      of(MapsActions.mapLayersLoaded({ layers })),
+      'Florida',
+    );
+
+    const emitted = await lastValueFrom(
+      effects.loadSaipeChoroplethForSelectedArea$.pipe(toArray()),
+    );
+
+    expect(emitted).toEqual([]);
+    expect(getSaipeCountyChoropleth).not.toHaveBeenCalled();
   });
 
   /** The Census layers must survive an overlay outage; the two effects are independent. */
