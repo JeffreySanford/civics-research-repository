@@ -353,14 +353,17 @@ export class DiscoveryPage implements OnInit {
    * Query parameters for the workforce map, built here so the link is a real href.
    *
    * The layers are chosen for the research question rather than turned on wholesale: TIGER gives
-   * the geography, LODES the workers, SAIPE the socioeconomic context. Hydrography and earthquakes
-   * are explicitly off — they are reference layers with nothing to say about workforce, and
-   * carrying them in would make the workspace a GIS sampler again.
+   * the geography, LODES the workers, SAIPE the socioeconomic context, and Research Coverage shows
+   * which matching research objects explicitly name a supported Census area. Hydrography and
+   * earthquakes are explicitly off because they do not answer this workforce question.
    *
-   * The query is passed along so the map can say what search the reader arrived from and offer a
-   * way back, not so the map can re-run it.
+   * Every effective Discovery criterion is carried forward. Maps reuses the same search contract
+   * for its bounded geography-facet summary, so the geographic view and the result list cannot
+   * silently drift into different searches.
    */
-  protected exploreMapParams(geography: string): Record<string, string> {
+  protected exploreMapParams(
+    geography: string,
+  ): Record<string, string | string[]> {
     return {
       area: geography,
       view: 'workforce',
@@ -368,9 +371,24 @@ export class DiscoveryPage implements OnInit {
       lodes: 'on',
       workplace: 'on',
       saipe: 'on',
+      research: 'on',
       hydrography: 'off',
       earthquakes: 'off',
       ...(this.searchControl.value ? { q: this.searchControl.value } : {}),
+      ...(this.selectedPrograms.length
+        ? { program: [...this.selectedPrograms] }
+        : {}),
+      ...(this.selectedPublisher ? { publisher: this.selectedPublisher } : {}),
+      ...(this.selectedSourceSystem
+        ? { sourceSystem: this.selectedSourceSystem }
+        : {}),
+      ...(this.geographyControl.value
+        ? { geography: this.geographyControl.value }
+        : {}),
+      ...(this.selectedContentType ? { type: this.selectedContentType } : {}),
+      ...(this.selectedVintageYear !== null
+        ? { vintageYear: String(this.selectedVintageYear) }
+        : {}),
     };
   }
 

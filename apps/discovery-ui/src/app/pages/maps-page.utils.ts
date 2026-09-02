@@ -83,6 +83,7 @@ export type MapLayerGroupId =
   | 'lodes'
   | 'workplace'
   | 'saipe'
+  | 'research'
   | 'hydrography';
 
 export type MapLayerGroup = {
@@ -140,6 +141,15 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
     label: 'SAIPE county choropleth',
     sourceId: 'saipe-county-choropleth',
     layerIds: ['saipe-county-fill', 'saipe-county-outline'],
+  },
+  {
+    id: 'research',
+    label: 'Repository research by area',
+    sourceId: 'repository-research-coverage',
+    layerIds: [
+      'repository-research-coverage-circles',
+      'repository-research-coverage-labels',
+    ],
   },
   {
     id: 'hydrography',

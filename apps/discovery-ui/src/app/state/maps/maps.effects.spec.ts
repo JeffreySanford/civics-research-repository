@@ -11,7 +11,9 @@ import {
 } from 'rxjs';
 import {
   RepositoryMapsApi,
+  RepositorySearchApi,
   type CensusAreaBoundary,
+  type SearchResponse,
   type MapLayer,
   type UsgsEarthquakeOverlay,
 } from 'repository-api-client';
@@ -55,6 +57,16 @@ const censusAreaBoundaries = [
   },
 ] as unknown as CensusAreaBoundary[];
 
+const searchResponse = {
+  resultSource: 'REPOSITORY',
+  query: 'climate',
+  page: 0,
+  pageSize: 1,
+  totalResults: 8,
+  results: [],
+  facets: [],
+} as unknown as SearchResponse;
+
 const earthquakeOverlay = {
   source: 'USGS Earthquake Catalog',
   sourceUrl: 'https://earthquake.usgs.gov/',
@@ -77,6 +89,9 @@ function setup(
   mapsApi: Partial<RepositoryMapsApi>,
   actions$: Observable<unknown>,
   selectedGeography = 'North Dakota',
+  searchApi: Partial<RepositorySearchApi> = {
+    searchResearchObjects: vi.fn().mockReturnValue(of(searchResponse)),
+  },
 ) {
   TestBed.configureTestingModule({
     providers: [
@@ -88,6 +103,7 @@ function setup(
         ],
       }),
       { provide: RepositoryMapsApi, useValue: mapsApi },
+      { provide: RepositorySearchApi, useValue: searchApi },
     ],
   });
 
@@ -313,6 +329,36 @@ describe('MapsEffects', () => {
       MapsActions.earthquakeOverlayFailed({
         error: { code: 'UNKNOWN', message: 'USGS feed down' },
       }),
+    );
+  });
+
+  it('loads Research Coverage through one bounded search facet request', async () => {
+    const searchResearchObjects = vi.fn().mockReturnValue(of(searchResponse));
+    const query = {
+      q: 'climate',
+      programs: ['NASA'],
+      publisher: 'NASA',
+      sourceSystem: 'DATA_GOV' as const,
+      geography: 'California',
+      page: 7,
+      pageSize: 25,
+    };
+    const effects = setup(
+      {},
+      of(MapsActions.researchCoverageRequested({ query })),
+      'North Dakota',
+      { searchResearchObjects } as unknown as RepositorySearchApi,
+    );
+
+    const emitted = await firstValueFrom(effects.loadResearchCoverage$);
+
+    expect(searchResearchObjects).toHaveBeenCalledWith({
+      ...query,
+      page: 0,
+      pageSize: 1,
+    });
+    expect(emitted).toEqual(
+      MapsActions.researchCoverageLoaded({ response: searchResponse }),
     );
   });
 });

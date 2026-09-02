@@ -10,7 +10,11 @@ import {
   switchMap,
   withLatestFrom,
 } from 'rxjs';
-import { parseRepositoryError, RepositoryMapsApi } from 'repository-api-client';
+import {
+  parseRepositoryError,
+  RepositoryMapsApi,
+  RepositorySearchApi,
+} from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { selectSelectedGeography } from './maps.selectors';
 
@@ -28,6 +32,7 @@ function datasetIdForGeography(geography: string): string {
 export class MapsEffects {
   private readonly actions$ = inject(Actions);
   private readonly mapsApi = inject(RepositoryMapsApi);
+  private readonly searchApi = inject(RepositorySearchApi);
   private readonly store = inject(Store);
 
   readonly loadMapData$ = createEffect(() =>
@@ -171,6 +176,34 @@ export class MapsEffects {
             ),
           ),
         ),
+      ),
+    ),
+  );
+
+  /**
+   * Research Coverage reuses the public search aggregation rather than transferring matching hits
+   * to the browser. A one-result page is sufficient because the geography facet is computed over
+   * the full effective result set in the active projection.
+   */
+  readonly loadResearchCoverage$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.researchCoverageRequested),
+      switchMap(({ query }) =>
+        this.searchApi
+          .searchResearchObjects({ ...query, page: 0, pageSize: 1 })
+          .pipe(
+            map((response) => MapsActions.researchCoverageLoaded({ response })),
+            catchError((error: unknown) =>
+              of(
+                MapsActions.researchCoverageFailed({
+                  error: parseRepositoryError(
+                    error,
+                    'Repository research coverage failed to load.',
+                  ),
+                }),
+              ),
+            ),
+          ),
       ),
     ),
   );

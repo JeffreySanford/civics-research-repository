@@ -7,6 +7,8 @@ export const REGISTERED_MAP_LAYER_IDS = [
   'lodes-workplace-jobs-circles',
   'saipe-county-fill',
   'saipe-county-outline',
+  'repository-research-coverage-circles',
+  'repository-research-coverage-labels',
   'usgs-3hp-hydrography-raster',
   'usgs-earthquake-points',
   'usgs-earthquake-labels',
@@ -66,6 +68,17 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
     accessibleListText: 'SAIPE 2023 county poverty - North Dakota',
     legendText: /SAIPE county poverty/,
     urlOffPattern: /saipe=off/,
+  },
+  {
+    name: 'Repository research by area',
+    toggleTestId: 'map-layer-research-coverage',
+    mapLayerIds: [
+      'repository-research-coverage-circles',
+      'repository-research-coverage-labels',
+    ],
+    accessibleListText: 'Repository research by area',
+    legendText: /Repository research by area/,
+    urlOffPattern: /research=off/,
   },
   {
     name: 'USGS 3HP hydrography',
