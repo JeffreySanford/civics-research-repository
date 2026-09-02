@@ -1,0 +1,52 @@
+name: Spatial Sidecar Contract Wiring
+
+on:
+  push:
+    branches: [codex/data-gov-spatial-sidecar]
+
+permissions:
+  contents: write
+
+jobs:
+  wire-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Patch OpenAPI contract
+        run: node tools/scripts/patch-openapi-data-gov-spatial-sidecar.mjs
+
+      - name: Format OpenAPI contract
+        run: pnpm exec prettier --write schemas/openapi/repository-api.yaml
+
+      - name: Regenerate API client
+        run: pnpm run openapi:generate
+
+      - name: Verify contract
+        run: |
+          pnpm run openapi:lint
+          pnpm run openapi:check
+
+      - name: Commit generated contract changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No contract changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schemas/openapi/repository-api.yaml libs/repository/api-client/src/generated/repository-api.types.ts
+          git commit -m "feat: wire spatial sidecar OpenAPI contract"
+          git push origin HEAD:codex/data-gov-spatial-sidecar
