@@ -1,0 +1,69 @@
+name: Apply spatial semantics wiring
+
+on:
+  push:
+    branches:
+      - codex/data-gov-spatial-source-semantics
+    paths:
+      - .github/workflows/apply-spatial-semantics-wiring.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/data-gov-spatial-source-semantics
+          persist-credentials: true
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Wire semantics command and format
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('package.json')
+          text = path.read_text()
+          old = 'tools/scripts/data-gov-spatial-geometry-census.test.mjs\\",'
+          new = 'tools/scripts/data-gov-spatial-geometry-census.test.mjs tools/scripts/data-gov-spatial-source-semantics.test.mjs\\",'
+          if text.count(old) != 1:
+              raise SystemExit(f'performance:test anchor: expected 1 match, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+          old = '    \\"research:spatial:geometry\\": \\"node --env-file-if-exists=.env tools/scripts/data-gov-spatial-geometry-census.mjs --expect 500000\\",\\n'
+          new = old + '    \\"research:spatial:semantics\\": \\"node --env-file-if-exists=.env tools/scripts/data-gov-spatial-source-semantics.mjs --expect 500000\\",\\n'
+          if text.count(old) != 1:
+              raise SystemExit(f'semantics script anchor: expected 1 match, found {text.count(old)}')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+
+          pnpm exec prettier --write \
+            package.json \
+            tools/scripts/data-gov-spatial-source-semantics.mjs \
+            tools/scripts/data-gov-spatial-source-semantics.test.mjs
+
+      - name: Verify semantics research harness
+        run: |
+          node --test tools/scripts/data-gov-spatial-source-semantics.test.mjs
+          pnpm performance:test
+          pnpm exec prettier --check \
+            package.json \
+            tools/scripts/data-gov-spatial-source-semantics.mjs \
+            tools/scripts/data-gov-spatial-source-semantics.test.mjs
+
+      - name: Commit semantics wiring
+        shell: bash
+        run: |
+          git config user.name "Jeffrey Sanford"
+          git config user.email "jeffrey_sanford@hotmail.com"
+          git add package.json tools/scripts/data-gov-spatial-source-semantics.mjs tools/scripts/data-gov-spatial-source-semantics.test.mjs
+          git commit -m "research: wire Data.gov spatial source semantics" || true
+          git push origin HEAD:codex/data-gov-spatial-source-semantics
