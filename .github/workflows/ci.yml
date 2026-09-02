@@ -1,7 +1,8 @@
 # Continuous integration for the Civics Research Repository.
 #
-# `gates` runs deterministic workspace checks, including generated artifact drift. Browser evidence
-# remains separate because it needs a dev server, multiple browsers and longer failure artifacts.
+# `gates` runs deterministic workspace checks, including generated artifact drift, measured
+# frontend coverage, and a production Storybook build. Browser accessibility evidence remains
+# separate because it needs real browsers and longer failure artifacts.
 # `api` builds and tests the Spring Boot service inside its Gradle container image.
 name: CI
 
@@ -21,7 +22,7 @@ jobs:
   gates:
     name: Workspace gates
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -64,8 +65,14 @@ jobs:
       - name: Unit tests
         run: pnpm exec nx run-many -t test --exclude repository-api
 
+      - name: Enforce discovery UI coverage baseline
+        run: pnpm exec nx run discovery-ui:test-coverage
+
       - name: Build the discovery UI
         run: pnpm exec nx build discovery-ui
+
+      - name: Build accessibility Storybook
+        run: pnpm exec nx build-storybook discovery-ui --configuration=ci
 
   api:
     name: Repository API
