@@ -61,6 +61,7 @@ jobs:
             apps/discovery-ui/.storybook
           if-no-files-found: error
           retention-days: 2
+          include-hidden-files: true
 
       - name: Check formatting
         run: pnpm exec nx format:check --all
