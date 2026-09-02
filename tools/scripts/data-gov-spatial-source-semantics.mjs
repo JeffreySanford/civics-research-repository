@@ -209,11 +209,7 @@ export function inferFourNumberOrdering(
   };
 }
 
-export function pointWithinBounds(
-  point,
-  bounds,
-  tolerance = BOUNDS_TOLERANCE,
-) {
+export function pointWithinBounds(point, bounds, tolerance = BOUNDS_TOLERANCE) {
   if (!validPoint(point) || !validBounds(bounds)) return false;
   return (
     point.lon >= bounds.minLon - tolerance &&
@@ -230,16 +226,8 @@ export function pointMatchesBoundsCenter(
 ) {
   if (!validPoint(point) || !validBounds(bounds)) return false;
   return (
-    approximately(
-      point.lon,
-      (bounds.minLon + bounds.maxLon) / 2,
-      tolerance,
-    ) &&
-    approximately(
-      point.lat,
-      (bounds.minLat + bounds.maxLat) / 2,
-      tolerance,
-    )
+    approximately(point.lon, (bounds.minLon + bounds.maxLon) / 2, tolerance) &&
+    approximately(point.lat, (bounds.minLat + bounds.maxLat) / 2, tolerance)
   );
 }
 
@@ -263,11 +251,7 @@ export async function probeDataGovSpatialSemantics({
   }
 
   const safePageSize = positiveInteger(pageSize, 'pageSize', MAX_PAGE_SIZE);
-  const safeMaxPages = positiveInteger(
-    maxPages,
-    'maxPages',
-    DEFAULT_MAX_PAGES,
-  );
+  const safeMaxPages = positiveInteger(maxPages, 'maxPages', DEFAULT_MAX_PAGES);
   const safeProgressEveryPages = positiveInteger(
     progressEveryPages,
     'progressEveryPages',
@@ -582,10 +566,7 @@ export function parseArgs(argv = []) {
       continue;
     }
     if (argument === '--sample-limit') {
-      args.sampleLimit = nonNegativeInteger(
-        argv[index + 1],
-        '--sample-limit',
-      );
+      args.sampleLimit = nonNegativeInteger(argv[index + 1], '--sample-limit');
       index += 1;
       continue;
     }
@@ -772,7 +753,10 @@ function semanticsObservation(dataset) {
   const shapeBounds =
     shape?.structurallyValid && shape.bounds ? shape.bounds : null;
   const centroid = classifyCentroid(dataset?.spatial_centroid);
-  const dcat = classifyDcatSpatialSemantics(dataset?.dcat?.spatial, shapeBounds);
+  const dcat = classifyDcatSpatialSemantics(
+    dataset?.dcat?.spatial,
+    shapeBounds,
+  );
   return {
     title: textValue(dataset?.title),
     shapeBounds,
@@ -992,7 +976,9 @@ function formatNumber(value) {
 }
 
 function escapeMarkdown(value) {
-  return String(value ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ');
+  return String(value ?? '')
+    .replaceAll('|', '\\|')
+    .replaceAll('\n', ' ');
 }
 
 function formatElapsed(milliseconds) {
@@ -1002,5 +988,6 @@ function formatElapsed(milliseconds) {
 
 const isMain =
   process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+  path.resolve(process.argv[1]) ===
+    path.resolve(fileURLToPath(import.meta.url));
 if (isMain) await run();

@@ -14,17 +14,11 @@ import {
 
 test('classifies and normalizes supported centroid representations', () => {
   const cases = [
-    [
-      { type: 'Point', coordinates: [-77.1, 38.9] },
-      'geojson-point-object',
-    ],
+    [{ type: 'Point', coordinates: [-77.1, 38.9] }, 'geojson-point-object'],
     [{ coordinates: [-77.1, 38.9] }, 'coordinates-object'],
     [{ lat: 38.9, lon: -77.1 }, 'lat-lon-object'],
     [{ lat: 38.9, lng: -77.1 }, 'lat-lng-object'],
-    [
-      { latitude: 38.9, longitude: -77.1 },
-      'latitude-longitude-object',
-    ],
+    [{ latitude: 38.9, longitude: -77.1 }, 'latitude-longitude-object'],
     [[-77.1, 38.9], 'coordinate-array'],
     ['POINT(-77.1 38.9)', 'wkt-point-string'],
   ];
@@ -65,10 +59,7 @@ test('infers four-number DCAT ordering against independent shape bounds', () => 
     bounds,
   );
   assert.equal(eastSouthWestNorth.family, 'comma-four-numeric');
-  assert.equal(
-    eastSouthWestNorth.inferredOrdering,
-    'east-south-west-north',
-  );
+  assert.equal(eastSouthWestNorth.inferredOrdering, 'east-south-west-north');
   assert.deepEqual(eastSouthWestNorth.orderingMatches, [
     'east-south-west-north',
   ]);
@@ -77,10 +68,7 @@ test('infers four-number DCAT ordering against independent shape bounds', () => 
     '-121.97222,32.082294,-83.157821,48.078465',
     bounds,
   );
-  assert.equal(
-    westSouthEastNorth.inferredOrdering,
-    'west-south-east-north',
-  );
+  assert.equal(westSouthEastNorth.inferredOrdering, 'west-south-east-north');
 });
 
 test('keeps four-number DCAT values ambiguous when shape evidence is not decisive', () => {
@@ -88,10 +76,12 @@ test('keeps four-number DCAT values ambiguous when shape evidence is not decisiv
   assert.equal(noShape.inferredOrdering, null);
   assert.deepEqual(noShape.orderingMatches, []);
 
-  const symmetric = inferFourNumberOrdering(
-    [-10, -10, 10, 10],
-    { minLon: -10, minLat: -10, maxLon: 10, maxLat: 10 },
-  );
+  const symmetric = inferFourNumberOrdering([-10, -10, 10, 10], {
+    minLon: -10,
+    minLat: -10,
+    maxLon: 10,
+    maxLat: 10,
+  });
   assert.equal(symmetric.inferredOrdering, null);
   assert.ok(symmetric.matches.length > 1);
 });
