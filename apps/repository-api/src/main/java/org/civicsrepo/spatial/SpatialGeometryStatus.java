@@ -4,5 +4,6 @@ package org.civicsrepo.spatial;
 public enum SpatialGeometryStatus {
     VALID,
     ANTIMERIDIAN_CANDIDATE,
+    NO_PUBLISHER_GEOMETRY,
     QUARANTINED
 }
