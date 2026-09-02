@@ -11,6 +11,9 @@ import {
 import { SearchActions } from './search.actions';
 import { selectSearchState } from './search.selectors';
 
+const CURSOR_COMPATIBILITY_NOTICE =
+  'Deep pagination is temporarily unavailable because the active search projection could not be verified. Results are using offset-compatible paging for this search.';
+
 @Injectable()
 export class SearchEffects {
   private readonly actions$ = inject(Actions);
@@ -32,7 +35,13 @@ export class SearchEffects {
     ),
   );
 
-  /** Starts a new forward cursor traversal without carrying offset page state. */
+  /**
+   * Starts a new forward cursor traversal without carrying offset page state.
+   *
+   * A page-zero start may explicitly use the compatibility search if the runtime cannot establish a
+   * trustworthy active projection. This is intentionally different from continuation: once cursor
+   * mode exists, it never degrades to offsets.
+   */
   readonly submitCursorSearch$ = createEffect(() =>
     this.actions$.pipe(
       ofType(SearchActions.cursorSearchSubmitted),
@@ -46,11 +55,29 @@ export class SearchEffects {
                 cursorUsed: null,
               }),
             ),
-            catchError((error: unknown) =>
-              of(
-                SearchActions.searchFailed({ error: this.searchError(error) }),
-              ),
-            ),
+            catchError((error: unknown) => {
+              const cursorError = this.searchError(error);
+              if (cursorError.code !== 'SERVICE_UNAVAILABLE') {
+                return of(SearchActions.searchFailed({ error: cursorError }));
+              }
+
+              const compatibilityQuery: SearchQuery = { ...query, page: 0 };
+              return this.searchApi.searchResearchObjects(compatibilityQuery).pipe(
+                map((response) =>
+                  SearchActions.cursorCompatibilityLoaded({
+                    response,
+                    notice: CURSOR_COMPATIBILITY_NOTICE,
+                  }),
+                ),
+                catchError((fallbackError: unknown) =>
+                  of(
+                    SearchActions.searchFailed({
+                      error: this.searchError(fallbackError),
+                    }),
+                  ),
+                ),
+              );
+            }),
           ),
       ),
     ),
