@@ -58,10 +58,10 @@ jobs:
           replaceExact(
             'tools/scripts/data-gov-spatial-availability.test.mjs',
             "test('requires a personal Data.gov API key for full traversal', () => {",
-            "test('research spatial probe loads repo-local .env without overriding exported environment', async () => {\n  const packageJson = JSON.parse(\n    await readFile(new URL('../../package.json', import.meta.url), 'utf8'),\n  );\n  assert.equal(\n    packageJson.scripts['research:spatial:probe'],\n    'node --env-file-if-exists=.env tools/scripts/data-gov-spatial-availability.mjs --expect 500000',\n  );\n});\n\ntest('requires a personal Data.gov API key for full traversal', () => {"
+            "test('research spatial probe auto-loads repo-local .env', async () => {\n  const packageJson = JSON.parse(\n    await readFile(new URL('../../package.json', import.meta.url), 'utf8'),\n  );\n  assert.equal(\n    packageJson.scripts['research:spatial:probe'],\n    'node --env-file-if-exists=.env tools/scripts/data-gov-spatial-availability.mjs --expect 500000',\n  );\n});\n\ntest('requires a personal Data.gov API key for full traversal', () => {"
           );
           NODE
-          pnpm exec prettier --write package.json .env.sample tools/scripts/data-gov-spatial-availability.test.mjs
+          pnpm exec prettier --write package.json tools/scripts/data-gov-spatial-availability.test.mjs
       - name: Verify focused suite
         run: node --test tools/scripts/data-gov-spatial-availability.test.mjs
       - name: Commit hardening
