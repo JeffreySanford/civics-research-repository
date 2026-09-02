@@ -6,6 +6,8 @@ import type {
   MapLayer,
   RepositoryError,
   SaipeCountyChoropleth,
+  SearchQuery,
+  SearchResponse,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 
@@ -34,6 +36,9 @@ export const MapsActions = createActionGroup({
       saipeChoropleth: SaipeCountyChoropleth;
     }>(),
     'Saipe Choropleth Failed': props<{ error: RepositoryError }>(),
+    'Research Coverage Requested': props<{ query: SearchQuery }>(),
+    'Research Coverage Loaded': props<{ response: SearchResponse }>(),
+    'Research Coverage Failed': props<{ error: RepositoryError }>(),
     'Census Area Selected': props<{ geography: string }>(),
     'Tiger Layer Toggled': props<{ visible: boolean }>(),
     'Earthquake Layer Toggled': props<{ visible: boolean }>(),
@@ -41,6 +46,7 @@ export const MapsActions = createActionGroup({
     'Workplace Layer Toggled': props<{ visible: boolean }>(),
     'Hydrography Layer Toggled': props<{ visible: boolean }>(),
     'Saipe Layer Toggled': props<{ visible: boolean }>(),
+    'Research Coverage Layer Toggled': props<{ visible: boolean }>(),
     'Map Feature Selected': props<{ featureId: string }>(),
     /** A commuting flow, chosen from either the map or the accessible table. */
     'Lodes Flow Selected': props<{ flowId: string }>(),
