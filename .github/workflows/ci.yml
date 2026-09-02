@@ -46,7 +46,7 @@ jobs:
             --interactionTests=true \
             --generateStories=false \
             --configureStaticServe=true
-          pnpm add -D @storybook/addon-a11y@^10.5.0 @storybook/test-runner@^0.24.0
+          pnpm add -Dw @storybook/addon-a11y@^10.5.0 @storybook/test-runner@^0.24.0
 
       - name: Upload generated Storybook scaffold
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
