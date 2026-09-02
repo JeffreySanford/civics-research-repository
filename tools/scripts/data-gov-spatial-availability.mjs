@@ -83,7 +83,9 @@ export function normalizeProbe(raw, capturedAt = new Date().toISOString()) {
     explicitSpatialTokenPercent:
       totalRecords === 0
         ? 0
-        : Number(((explicitSpatialTokenRecords / totalRecords) * 100).toFixed(4)),
+        : Number(
+            ((explicitSpatialTokenRecords / totalRecords) * 100).toFixed(4),
+          ),
     spatialRepresentations: {
       text: spatialTextRecords,
       object: spatialObjectRecords,
@@ -202,9 +204,12 @@ export function runPsql(sql, env = process.env) {
   );
 
   if (result.error) {
-    throw new Error(`Unable to run Docker/PostgreSQL spatial probe: ${result.error.message}`, {
-      cause: result.error,
-    });
+    throw new Error(
+      `Unable to run Docker/PostgreSQL spatial probe: ${result.error.message}`,
+      {
+        cause: result.error,
+      },
+    );
   }
   if (result.status !== 0) {
     throw new Error(
@@ -219,7 +224,10 @@ export async function run(argv = process.argv.slice(2)) {
   const report = normalizeProbe(parsePsqlJson(runPsql(buildProbeSql())));
   const resolvedOutputDir = path.resolve(outputDir);
   await mkdir(resolvedOutputDir, { recursive: true });
-  const jsonPath = path.join(resolvedOutputDir, 'data-gov-spatial-availability.json');
+  const jsonPath = path.join(
+    resolvedOutputDir,
+    'data-gov-spatial-availability.json',
+  );
   const markdownPath = path.join(
     resolvedOutputDir,
     'data-gov-spatial-availability.md',
@@ -247,7 +255,8 @@ function nonNegativeInteger(value, name) {
 
 const invokedDirectly =
   process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+  path.resolve(process.argv[1]) ===
+    path.resolve(fileURLToPath(import.meta.url));
 if (invokedDirectly) {
   await run();
 }

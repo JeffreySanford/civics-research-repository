@@ -244,7 +244,9 @@ describe('whenMapStyleReady', () => {
     whenMapStyleReady(map, action);
 
     expect(action).toHaveBeenCalledTimes(1);
-    expect((map as unknown as { once: ReturnType<typeof vi.fn> }).once).not.toHaveBeenCalled();
+    expect(
+      (map as unknown as { once: ReturnType<typeof vi.fn> }).once,
+    ).not.toHaveBeenCalled();
   });
 
   it('waits for style.load when the style is still loading', () => {

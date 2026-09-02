@@ -192,9 +192,7 @@ export class MapsEffects {
         this.searchApi
           .searchResearchObjects({ ...query, page: 0, pageSize: 1 })
           .pipe(
-            map((response) =>
-              MapsActions.researchCoverageLoaded({ response }),
-            ),
+            map((response) => MapsActions.researchCoverageLoaded({ response })),
             catchError((error: unknown) =>
               of(
                 MapsActions.researchCoverageFailed({

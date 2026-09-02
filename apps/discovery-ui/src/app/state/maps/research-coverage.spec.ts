@@ -73,13 +73,11 @@ function response(totalResults = 20): SearchResponse {
 describe('buildResearchCoverageSummary', () => {
   it('joins only explicit geography facet values that match supported Census areas', () => {
     const query: SearchQuery = { q: 'climate', pageSize: 1 };
-    const summary = buildResearchCoverageSummary(
-      response(),
-      boundaries,
-      query,
-    );
+    const summary = buildResearchCoverageSummary(response(), boundaries, query);
 
-    expect(summary.areas.map(({ geography, count }) => ({ geography, count }))).toEqual([
+    expect(
+      summary.areas.map(({ geography, count }) => ({ geography, count })),
+    ).toEqual([
       { geography: 'North Dakota', count: 5 },
       { geography: 'California', count: 3 },
     ]);

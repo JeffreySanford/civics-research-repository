@@ -69,7 +69,8 @@ export function buildResearchCoverageSummary(
     })
     .sort(
       (left, right) =>
-        right.count - left.count || left.geography.localeCompare(right.geography),
+        right.count - left.count ||
+        left.geography.localeCompare(right.geography),
     );
 
   const mappedResults = areas.reduce((total, area) => total + area.count, 0);

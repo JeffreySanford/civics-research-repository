@@ -37,7 +37,10 @@ import type {
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
+  ResearchObjectType,
   SaipeCountyChoropleth,
+  SearchQuery,
+  SourceSystem,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { REPOSITORY_API_BASE_URL } from 'repository-api-client';
@@ -55,6 +58,9 @@ import {
   selectMapLayers,
   selectMapsError,
   selectMapsLoading,
+  selectResearchCoverageError,
+  selectResearchCoverageSummary,
+  selectResearchCoverageVisible,
   selectSaipeChoropleth,
   selectSaipeChoroplethError,
   selectSaipeVisible,
@@ -69,6 +75,7 @@ import {
   selectSelectedLodesFlowId,
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
+import type { ResearchCoverageSummary } from '../state/maps/research-coverage';
 import {
   configureMapLibreWorker,
   findCensusAreaForPoint,
@@ -120,6 +127,22 @@ type GeoJsonFeatureCollection = {
   features: unknown[];
 };
 
+type ResearchCoverageFeatureCollection = {
+  type: 'FeatureCollection';
+  features: {
+    type: 'Feature';
+    properties: {
+      geography: string;
+      count: number;
+      radius: number;
+    };
+    geometry: {
+      type: 'Point';
+      coordinates: [number, number];
+    };
+  }[];
+};
+
 @Component({
   selector: 'app-maps-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -152,6 +175,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingLodesWorkplaceOverlay: LodesWorkplaceOverlay | null = null;
   private pendingSaipeChoropleth: SaipeCountyChoropleth | null = null;
   private pendingHydrographyLayer: MapLayer | null = null;
+  private pendingResearchCoverage: ResearchCoverageSummary | null = null;
   /** True once the MapLibre style is parsed; overlays must not wait for raster tiles. */
   private mapStyleReady = false;
   private tigerVisible = false;
@@ -159,11 +183,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private lodesVisible = false;
   private hydrographyVisible = false;
   private saipeVisible = false;
+  private researchCoverageVisible = false;
   private selectedFeatureId: string | null = null;
   private selectedLodesFlowId: string | null = null;
   private workplaceVisible = false;
   private censusAreaBoundaries: readonly CensusAreaBoundary[] = [];
   private selectedGeography = 'North Dakota';
+  private researchCoverageCriteria: SearchQuery = { page: 0, pageSize: 1 };
+  private researchCoverageFingerprint = '';
   /** Skips pan-driven area sync while fitBounds runs after a dropdown change. */
   private skipPanAreaSync = false;
   /** Skips fitBounds while pan-driven area sync updates boundary data in place. */
@@ -194,6 +221,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       'Jobs counted where they are worked, from LEHD LODES Workplace Area Characteristics. Circle area is proportional to the county job count, so a circle twice the area holds twice the jobs. Pairs with the commuting flows: one shows where the work is, the other who travels to it.',
     saipe:
       'Colors counties by SAIPE poverty rate for the selected state. The county value table below lists the same statistics shown on the map.',
+    research:
+      'Shows matching research-object counts only where retained metadata explicitly names a supported Census area. Records without explicit research geography are counted as not mapped; publisher or institution locations are never substituted.',
     hydrography:
       'Adds USGS 3D Hydrography Program surface-water context from The National Map. Environmental geography, not Census boundaries.',
     earthquake:
@@ -229,6 +258,15 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   );
   protected readonly saipeChoroplethError$ = this.store.select(
     selectSaipeChoroplethError,
+  );
+  protected readonly researchCoverageSummary$ = this.store.select(
+    selectResearchCoverageSummary,
+  );
+  protected readonly researchCoverageError$ = this.store.select(
+    selectResearchCoverageError,
+  );
+  protected readonly researchCoverageVisible$ = this.store.select(
+    selectResearchCoverageVisible,
   );
   /**
    * The layers currently drawn, for the accessible layer list.
@@ -366,6 +404,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         this.renderSaipeChoropleth();
       });
 
+    this.researchCoverageSummary$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((summary) => {
+        this.pendingResearchCoverage = summary;
+        this.renderResearchCoverage();
+      });
+
     this.hydrographyLayer$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((layer) => {
@@ -425,6 +470,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.workplaceVisible$,
       this.hydrographyVisible$,
       this.saipeVisible$,
+      this.researchCoverageVisible$,
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(
@@ -435,6 +481,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           workplaceVisible,
           hydrographyVisible,
           saipeVisible,
+          researchCoverageVisible,
         ]) => {
           this.tigerVisible = tigerVisible;
           this.workplaceVisible = workplaceVisible;
@@ -442,6 +489,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           this.lodesVisible = lodesVisible;
           this.hydrographyVisible = hydrographyVisible;
           this.saipeVisible = saipeVisible;
+          this.researchCoverageVisible = researchCoverageVisible;
           this.applyLayerVisibility();
         },
       );
@@ -490,6 +538,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected toggleSaipeLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.saipeLayerToggled({ visible }));
     this.updateMapUrl({ saipeVisible: visible });
+  }
+
+  protected toggleResearchCoverageLayer(visible: boolean): void {
+    this.store.dispatch(MapsActions.researchCoverageLayerToggled({ visible }));
+    this.updateMapUrl({ researchCoverageVisible: visible });
   }
 
   /** Called when a feature-list entry is activated or focused. */
@@ -615,11 +668,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Research context carried in from discovery.
+   * Research context carried in from Discovery.
    *
-   * The map does not re-run the search and does not read anything out of it: this is only enough
-   * to say why the reader is looking at this extent, and to offer a way back. The overlay data
-   * still comes from the Maps API, which is the part that has to be authoritative.
+   * Unlike the original decorative query label, Maps now reuses the exact effective search
+   * criteria for one bounded facet request. Solr/OpenSearch aggregate geography over the complete
+   * result set; the browser never receives the matching result list just to draw coverage.
    */
   protected readonly workforceView = signal(false);
   protected readonly researchQuery = signal<string | null>(null);
@@ -629,15 +682,67 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
         this.workforceView.set(params.get('view') === 'workforce');
-        const query = params.get('q');
-        this.researchQuery.set(query && query.trim() ? query.trim() : null);
+        const q = params.get('q')?.trim() ?? '';
+        this.researchQuery.set(q || null);
+        const programs = params
+          .getAll('program')
+          .map((value) => value.trim())
+          .filter(Boolean);
+        const publisher = params.get('publisher')?.trim() ?? '';
+        const sourceSystem = params.get('sourceSystem')?.trim() ?? '';
+        const geography = params.get('geography')?.trim() ?? '';
+        const contentType = params.get('type')?.trim() ?? '';
+        const vintageYearValue = Number(params.get('vintageYear'));
+        const vintageYear =
+          Number.isInteger(vintageYearValue) && vintageYearValue > 0
+            ? vintageYearValue
+            : null;
+
+        const query: SearchQuery = {
+          q,
+          page: 0,
+          pageSize: 1,
+          ...(programs.length ? { programs } : {}),
+          ...(publisher ? { publisher } : {}),
+          ...(sourceSystem
+            ? { sourceSystem: sourceSystem as SourceSystem }
+            : {}),
+          ...(geography ? { geography } : {}),
+          ...(contentType
+            ? { contentType: contentType as ResearchObjectType }
+            : {}),
+          ...(vintageYear !== null ? { vintageYear } : {}),
+        };
+
+        this.researchCoverageCriteria = query;
+        const fingerprint = JSON.stringify(query);
+        if (fingerprint !== this.researchCoverageFingerprint) {
+          this.researchCoverageFingerprint = fingerprint;
+          this.store.dispatch(MapsActions.researchCoverageRequested({ query }));
+        }
       });
   }
 
-  /** Query parameters that reconstruct the discovery search this map was opened from. */
-  protected backToSearchParams(): Record<string, string> {
-    const query = this.researchQuery();
-    return query ? { q: query } : {};
+  /** Query parameters that reconstruct the effective Discovery search. */
+  protected backToSearchParams(): Record<string, string | string[]> {
+    const query = this.researchCoverageCriteria;
+    return {
+      ...(query.q ? { q: query.q } : {}),
+      ...(query.programs?.length ? { program: [...query.programs] } : {}),
+      ...(query.publisher ? { publisher: query.publisher } : {}),
+      ...(query.sourceSystem ? { sourceSystem: query.sourceSystem } : {}),
+      ...(query.geography ? { geography: query.geography } : {}),
+      ...(query.contentType ? { type: query.contentType } : {}),
+      ...(query.vintageYear !== undefined
+        ? { vintageYear: String(query.vintageYear) }
+        : {}),
+    };
+  }
+
+  protected researchAreaSearchParams(
+    geography: string,
+  ): Record<string, string | string[]> {
+    return { ...this.backToSearchParams(), geography };
   }
 
   private bindUrlState(): void {
@@ -651,6 +756,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           workplaceVisible: this.toVisibleState(params.get('workplace')),
           hydrographyVisible: this.toVisibleState(params.get('hydrography')),
           saipeVisible: this.toVisibleState(params.get('saipe')),
+          researchCoverageVisible: this.toVisibleState(params.get('research')),
           featureId: params.get('feature'),
         })),
         distinctUntilChanged(
@@ -662,6 +768,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             previous.workplaceVisible === current.workplaceVisible &&
             previous.hydrographyVisible === current.hydrographyVisible &&
             previous.saipeVisible === current.saipeVisible &&
+            previous.researchCoverageVisible ===
+              current.researchCoverageVisible &&
             previous.featureId === current.featureId,
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -675,6 +783,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           workplaceVisible,
           hydrographyVisible,
           saipeVisible,
+          researchCoverageVisible,
           featureId,
         }) => {
           if (area) {
@@ -723,6 +832,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             );
           }
 
+          if (researchCoverageVisible !== null) {
+            this.store.dispatch(
+              MapsActions.researchCoverageLayerToggled({
+                visible: researchCoverageVisible,
+              }),
+            );
+          }
+
           if (featureId) {
             this.store.dispatch(MapsActions.mapFeatureSelected({ featureId }));
           }
@@ -738,6 +855,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     workplaceVisible?: boolean;
     hydrographyVisible?: boolean;
     saipeVisible?: boolean;
+    researchCoverageVisible?: boolean;
     featureId?: string | null;
   }): void {
     void this.router.navigate([], {
@@ -772,6 +890,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           options.saipeVisible === undefined
             ? undefined
             : this.toLayerParam(options.saipeVisible),
+        research:
+          options.researchCoverageVisible === undefined
+            ? undefined
+            : options.researchCoverageVisible
+              ? 'on'
+              : 'off',
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,
@@ -922,6 +1046,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.renderLodesSampleLayer();
     this.renderWorkplaceLayer();
     this.renderSaipeChoropleth();
+    this.renderResearchCoverage();
     this.renderHydrographyLayer();
     this.renderEarthquakeOverlay();
     this.applyLayerVisibility();
@@ -1403,6 +1528,75 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.applyLayerVisibility();
   }
 
+  /**
+   * Bounded repository research-by-area summary.
+   *
+   * These are state-summary symbols, not scientific footprints. Each symbol exists only when the
+   * normalized research metadata explicitly names a supported Census area; unmapped matches stay
+   * visible in the semantic summary instead of being assigned a publisher location.
+   */
+  private renderResearchCoverage(): void {
+    if (!this.map || !this.mapStyleReady || !this.pendingResearchCoverage) {
+      return;
+    }
+
+    const data = this.createResearchCoverageGeoJson(
+      this.pendingResearchCoverage,
+    );
+    const existingSource = this.map.getSource(
+      'repository-research-coverage',
+    ) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+      this.applyLayerVisibility();
+      return;
+    }
+
+    this.map.addSource('repository-research-coverage', {
+      type: 'geojson',
+      data,
+    });
+
+    this.map.addLayer({
+      id: 'repository-research-coverage-circles',
+      type: 'circle',
+      source: 'repository-research-coverage',
+      layout: {
+        visibility: this.researchCoverageVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'circle-color': '#0f766e',
+        'circle-opacity': 0.72,
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 2,
+        'circle-radius': [
+          'to-number',
+          ['get', 'radius'],
+        ] as DataDrivenPropertyValueSpecification<number>,
+      },
+    });
+
+    this.map.addLayer({
+      id: 'repository-research-coverage-labels',
+      type: 'symbol',
+      source: 'repository-research-coverage',
+      layout: {
+        visibility: this.researchCoverageVisible ? 'visible' : 'none',
+        'text-field': ['to-string', ['get', 'count']],
+        'text-size': 12,
+        'text-allow-overlap': false,
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': '#134e4a',
+        'text-halo-width': 1,
+      },
+    });
+
+    this.applyLayerVisibility();
+  }
+
   private renderHydrographyLayer(): void {
     if (!this.map || !this.mapStyleReady || !this.pendingHydrographyLayer) {
       return;
@@ -1453,6 +1647,28 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     return undefined;
+  }
+
+  private createResearchCoverageGeoJson(
+    summary: ResearchCoverageSummary,
+  ): ResearchCoverageFeatureCollection {
+    const largest = Math.max(1, ...summary.areas.map((area) => area.count));
+
+    return {
+      type: 'FeatureCollection',
+      features: summary.areas.map((area) => ({
+        type: 'Feature',
+        properties: {
+          geography: area.geography,
+          count: area.count,
+          radius: 7 + 21 * Math.sqrt(area.count / largest),
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [area.centerLongitude, area.centerLatitude],
+        },
+      })),
+    };
   }
 
   private createEarthquakeGeoJson(
@@ -1588,6 +1804,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       lodes: this.lodesVisible,
       workplace: this.workplaceVisible,
       saipe: this.saipeVisible,
+      research: this.researchCoverageVisible,
       hydrography: this.hydrographyVisible,
     };
   }
