@@ -7,7 +7,7 @@ const DEFAULT_OUTPUT_DIR = 'browser-evidence-artifacts/spatial-availability';
 const DEFAULT_SEARCH_URL = 'https://api.gsa.gov/technology/datagov/v4/search';
 const DEFAULT_PAGE_SIZE = 1_000;
 const DEFAULT_MAX_PAGES = 2_000;
-const DEFAULT_PROGRESS_EVERY_PAGES = 10;
+const DEFAULT_PROGRESS_EVERY_PAGES = 100;
 const C2_PROFILE = 'FEDERATED_1M';
 const C2_TARGET_RECORDS = 1_000_000;
 const SHA256 = /^[0-9a-f]{64}$/u;
@@ -215,6 +215,19 @@ export async function probeDataGovSpatialSource({
   let pages = 0;
   let sourceSpatialRowCount = 0;
   let duplicateSourceRowCount = 0;
+  let previousProgressSnapshot = {
+    pagesFetched: 0,
+    sourceSpatialRowCount: 0,
+    sourceSpatialRecordCount: 0,
+    duplicateSourceRowCount: 0,
+    retainedSpatialRecordCount: 0,
+    matchedMetadataSignals: {
+      hasSpatialTrue: 0,
+      dcatSpatial: 0,
+      spatialShape: 0,
+      spatialCentroid: 0,
+    },
+  };
 
   while (true) {
     if (pages >= safeMaxPages) {
@@ -303,16 +316,56 @@ export async function probeDataGovSpatialSource({
     }
 
     const done = !nextCursor;
-    if (
-      onProgress &&
-      (pages === 1 || pages % safeProgressEveryPages === 0 || done)
-    ) {
-      onProgress({
+    if (onProgress && (pages % safeProgressEveryPages === 0 || done)) {
+      const currentProgressSnapshot = {
         pagesFetched: pages,
+        sourceSpatialRowCount,
         sourceSpatialRecordCount: seenSourceIdentifiers.size,
+        duplicateSourceRowCount,
         retainedSpatialRecordCount: matchedIdentifiers.size,
+        matchedMetadataSignals: {
+          hasSpatialTrue: hasSpatialTrueIdentifiers.size,
+          dcatSpatial: dcatSpatialIdentifiers.size,
+          spatialShape: spatialShapeIdentifiers.size,
+          spatialCentroid: spatialCentroidIdentifiers.size,
+        },
+      };
+      onProgress({
+        ...currentProgressSnapshot,
+        window: {
+          startPage: previousProgressSnapshot.pagesFetched + 1,
+          endPage: pages,
+          pagesFetched: pages - previousProgressSnapshot.pagesFetched,
+          sourceSpatialRowCount:
+            sourceSpatialRowCount -
+            previousProgressSnapshot.sourceSpatialRowCount,
+          sourceSpatialRecordCount:
+            seenSourceIdentifiers.size -
+            previousProgressSnapshot.sourceSpatialRecordCount,
+          duplicateSourceRowCount:
+            duplicateSourceRowCount -
+            previousProgressSnapshot.duplicateSourceRowCount,
+          retainedSpatialRecordCount:
+            matchedIdentifiers.size -
+            previousProgressSnapshot.retainedSpatialRecordCount,
+          matchedMetadataSignals: {
+            hasSpatialTrue:
+              hasSpatialTrueIdentifiers.size -
+              previousProgressSnapshot.matchedMetadataSignals.hasSpatialTrue,
+            dcatSpatial:
+              dcatSpatialIdentifiers.size -
+              previousProgressSnapshot.matchedMetadataSignals.dcatSpatial,
+            spatialShape:
+              spatialShapeIdentifiers.size -
+              previousProgressSnapshot.matchedMetadataSignals.spatialShape,
+            spatialCentroid:
+              spatialCentroidIdentifiers.size -
+              previousProgressSnapshot.matchedMetadataSignals.spatialCentroid,
+          },
+        },
         done,
       });
+      previousProgressSnapshot = currentProgressSnapshot;
     }
 
     if (done) {
@@ -526,11 +579,23 @@ export async function run(argv = process.argv.slice(2), env = process.env) {
     onProgress: (progress) => {
       const elapsedMs = Date.now() - traversalStartedAt;
       const elapsedSeconds = Math.max(elapsedMs / 1000, 0.001);
-      const rate = Math.round(
-        progress.sourceSpatialRecordCount / elapsedSeconds,
+      const rate = Math.round(progress.sourceSpatialRowCount / elapsedSeconds);
+      const window = progress.window;
+      const windowMatchPercent =
+        window.sourceSpatialRecordCount === 0
+          ? 0
+          : Number(
+              (
+                (window.retainedSpatialRecordCount /
+                  window.sourceSpatialRecordCount) *
+                100
+              ).toFixed(2),
+            );
+      console.log(
+        `[spatial] pages=${window.startPage.toLocaleString()}-${window.endPage.toLocaleString()} block rows=${window.sourceSpatialRowCount.toLocaleString()} unique=${window.sourceSpatialRecordCount.toLocaleString()} dup-rows=${window.duplicateSourceRowCount.toLocaleString()} C2-matches=${window.retainedSpatialRecordCount.toLocaleString()} match=${windowMatchPercent}% signals[dcat=${window.matchedMetadataSignals.dcatSpatial.toLocaleString()} shape=${window.matchedMetadataSignals.spatialShape.toLocaleString()} centroid=${window.matchedMetadataSignals.spatialCentroid.toLocaleString()}]`,
       );
       console.log(
-        `[spatial] page=${progress.pagesFetched.toLocaleString()} source=${progress.sourceSpatialRecordCount.toLocaleString()} C2-matches=${progress.retainedSpatialRecordCount.toLocaleString()} elapsed=${formatElapsed(elapsedMs)} rate=${rate.toLocaleString()} rec/s${progress.done ? ' complete' : ''}`,
+        `[spatial] cumulative pages=${progress.pagesFetched.toLocaleString()} rows=${progress.sourceSpatialRowCount.toLocaleString()} unique=${progress.sourceSpatialRecordCount.toLocaleString()} dup-rows=${progress.duplicateSourceRowCount.toLocaleString()} C2-matches=${progress.retainedSpatialRecordCount.toLocaleString()} elapsed=${formatElapsed(elapsedMs)} rate=${rate.toLocaleString()} rows/s${progress.done ? ' complete' : ''}`,
       );
     },
   });
