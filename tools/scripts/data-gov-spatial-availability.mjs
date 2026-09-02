@@ -72,7 +72,9 @@ export function normalizeScaleCertification(raw) {
     throw new Error(`Scale evidence profile must be ${C2_PROFILE}.`);
   }
   if (raw.status !== 'PASS') {
-    throw new Error('Scale evidence must be PASS before spatial evidence is captured.');
+    throw new Error(
+      'Scale evidence must be PASS before spatial evidence is captured.',
+    );
   }
 
   const targetFederatedRecordCount = nonNegativeInteger(
@@ -277,6 +279,9 @@ export function parseArgs(argv) {
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
+    if (argument === '--') {
+      continue;
+    }
     if (argument === '--expect') {
       const value = Number(argv[index + 1]);
       if (!Number.isSafeInteger(value) || value < 0) {
