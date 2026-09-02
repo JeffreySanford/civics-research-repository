@@ -43,9 +43,11 @@ describe('AdminDonutChartComponent', () => {
       'Curated DSpace',
     );
     expect(rows[2]?.querySelector('td')?.textContent?.trim()).toBe('181');
-    expect(root.querySelector('.admin-viz-donut__legend')?.getAttribute('aria-hidden')).toBe(
-      'true',
-    );
+    expect(
+      root
+        .querySelector('.admin-viz-donut__legend')
+        ?.getAttribute('aria-hidden'),
+    ).toBe('true');
 
     await expectNoAxeViolations(root);
   });
@@ -58,9 +60,9 @@ describe('AdminDonutChartComponent', () => {
     expect(root.querySelector('svg')?.getAttribute('aria-label')).toBe(
       'No indexed research objects',
     );
-    expect(root.querySelector('.admin-viz-donut__total')?.textContent?.trim()).toBe(
-      '0',
-    );
+    expect(
+      root.querySelector('.admin-viz-donut__total')?.textContent?.trim(),
+    ).toBe('0');
 
     await expectNoAxeViolations(root);
   });

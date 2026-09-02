@@ -37,7 +37,9 @@ describe('AdminBarChartComponent', () => {
     expect(rows[0]?.querySelector('th')?.textContent?.trim()).toBe('Data.gov');
     expect(rows[0]?.querySelector('td')?.textContent?.trim()).toBe('500000');
     expect(
-      root.querySelector('.admin-viz-bar-chart__bars')?.getAttribute('aria-hidden'),
+      root
+        .querySelector('.admin-viz-bar-chart__bars')
+        ?.getAttribute('aria-hidden'),
     ).toBe('true');
 
     await expectNoAxeViolations(root);
