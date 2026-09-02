@@ -58,13 +58,9 @@
           data-testid="map-layer-category-geography-boundaries"
           open
         >
-          <summary
-            data-testid="map-layer-category-geography-boundaries-summary"
-          >
+          <summary data-testid="map-layer-category-geography-boundaries-summary">
             <span class="layer-category-summary-content">
-              <span class="layer-category-title"
-                >Geography &amp; Boundaries</span
-              >
+              <span class="layer-category-title">Geography &amp; Boundaries</span>
               <span class="layer-category-count">1 layer</span>
             </span>
           </summary>
@@ -116,9 +112,7 @@
                   [checked]="workplaceVisible$ | async"
                   (change)="toggleWorkplaceLayer($any($event.target).checked)"
                 />
-                <span class="layer-toggle-label"
-                  >LODES workplace employment</span
-                >
+                <span class="layer-toggle-label">LODES workplace employment</span>
               </label>
               <button
                 type="button"
@@ -186,9 +180,7 @@
         >
           <summary data-testid="map-layer-category-environment-hazards-summary">
             <span class="layer-category-summary-content">
-              <span class="layer-category-title"
-                >Environment &amp; Hazards</span
-              >
+              <span class="layer-category-title">Environment &amp; Hazards</span>
               <span class="layer-category-count">2 layers</span>
             </span>
           </summary>
@@ -699,7 +691,7 @@
           (focus)="selectFeature(feature.id)"
         >
           <strong>{{ feature.place }}</strong>
-          <span
+          <span>
             Magnitude {{ feature.magnitude }} on {{ feature.occurredAt | date:
             'medium' }}
           </span>
