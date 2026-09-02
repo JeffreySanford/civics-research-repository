@@ -1,6 +1,7 @@
 @use '../../../libs/shared/material/src/lib/theme/civics-theme';
 @use '../../../libs/shared/material/src/lib/theme/civics-tokens';
 @use '../../../libs/shared/material/src/lib/theme/civics-layout';
+@use '../../../libs/shared/material/src/lib/theme/map-layer-groups';
 
 // @use, not @import: Sass @import is deprecated and removed in Dart Sass 3. Both of these are
 // plain rule sets with nothing to export, so they load for their side effects only.

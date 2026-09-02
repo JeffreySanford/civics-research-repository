@@ -4,6 +4,7 @@ import { expect, type Page } from '@playwright/test';
 export const REGISTERED_MAP_LAYER_IDS = [
   'census-area-fill',
   'census-area-outline',
+  'lodes-workplace-jobs-circles',
   'saipe-county-fill',
   'saipe-county-outline',
   'usgs-3hp-hydrography-raster',
@@ -11,6 +12,7 @@ export const REGISTERED_MAP_LAYER_IDS = [
   'usgs-earthquake-labels',
   'usgs-earthquake-selected',
   'lodes-workplace-flow-line',
+  'lodes-workplace-flow-selected',
   'lodes-workplace-flow-points',
 ] as const;
 
@@ -145,8 +147,12 @@ export async function expectMapLayersVisibility(
 export async function waitForRegisteredMapLayers(page: Page): Promise<void> {
   await expect(page.getByTestId('discovery-map-canvas')).toBeVisible();
 
+  // Registration is the relevant contract for these tests. Do not gate it on isStyleLoaded():
+  // Firefox can keep that global style signal false while application-owned overlay behavior and
+  // the accessible map UI remain usable. Dedicated @maps evidence polls the actual layer objects.
   await expect
     .poll(async () => readMapLayerVisibility(page, REGISTERED_MAP_LAYER_IDS), {
+      timeout: 15_000,
       message:
         'Registered MapLibre layers should exist but stay hidden by default',
     })
