@@ -28,46 +28,31 @@ jobs:
 
           ts_path = Path('apps/discovery-ui/src/app/pages/maps-page.ts')
           ts = ts_path.read_text()
-          old_ts = "  protected readonly layers$ = this.store.select(selectMapLayers);\n"
-          new_ts = old_ts + "  protected readonly saipeAvailable$ = this.layers$.pipe(\n    map((layers) =>\n      layers.some((layer) => layer.layerType === 'CENSUS_CHOROPLETH'),\n    ),\n  );\n"
-          if old_ts not in ts:
+          anchor = "  protected readonly layers$ = this.store.select(selectMapLayers);\n"
+          addition = "  protected readonly saipeAvailable$ = this.layers$.pipe(\n    map((layers) =>\n      layers.some((layer) => layer.layerType === 'CENSUS_CHOROPLETH'),\n    ),\n  );\n"
+          if anchor not in ts:
               raise SystemExit('maps-page.ts anchor not found')
-          ts_path.write_text(ts.replace(old_ts, new_ts, 1))
+          ts_path.write_text(ts.replace(anchor, anchor + addition, 1))
 
           html_path = Path('apps/discovery-ui/src/app/pages/maps-page.html')
           html = html_path.read_text()
-          old_html = '''              <!-- The API has one shared LODES metadata capability for the two LODES controls,
-                   plus optional SAIPE. With boundary + two environmental entries outside this
-                   category, the current control count is the returned metadata count minus two. -->
-              @if (layers$ | async; as layers) {
-              <span class="layer-category-count"
-                >{{ layers.length > 0 ? layers.length - 2 : 2 }} layers</span
-              >
-              } @else {
-              <span class="layer-category-count">2 layers</span>
-              }
-'''
-          new_html = '''              <!-- Workplace and commuting are the two baseline controls; SAIPE adds one only
-                   when the selected geography advertises the choropleth capability. -->
-              @if (saipeAvailable$ | async) {
-              <span class="layer-category-count">3 layers</span>
-              } @else {
-              <span class="layer-category-count">2 layers</span>
-              }
-'''
-          if old_html not in html:
-              raise SystemExit('maps-page.html count block not found')
-          html_path.write_text(html.replace(old_html, new_html, 1))
+          old_expr = "{{ layers.length > 0 ? layers.length - 2 : 2 }} layers"
+          new_expr = "{{ (saipeAvailable$ | async) ? 3 : 2 }} layers"
+          if old_expr not in html:
+              raise SystemExit('maps-page.html expression not found')
+          html = html.replace(old_expr, new_expr, 1)
+          html = html.replace(
+              'the current control count is the returned metadata count minus two.',
+              'the control count is two baseline LODES controls plus optional SAIPE.',
+              1,
+          )
+          html_path.write_text(html)
           PY
-          pnpm exec prettier --write \
-            apps/discovery-ui/src/app/pages/maps-page.ts \
-            apps/discovery-ui/src/app/pages/maps-page.html
+          pnpm exec prettier --write apps/discovery-ui/src/app/pages/maps-page.ts apps/discovery-ui/src/app/pages/maps-page.html
       - name: Commit review fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            apps/discovery-ui/src/app/pages/maps-page.ts \
-            apps/discovery-ui/src/app/pages/maps-page.html
+          git add apps/discovery-ui/src/app/pages/maps-page.ts apps/discovery-ui/src/app/pages/maps-page.html
           git commit -m "fix: derive map category count from capability" || exit 0
           git push
