@@ -1,0 +1,397 @@
+name: Apply Storybook test foundation
+
+on:
+  push:
+    branches: [codex/layered-test-coverage-foundation]
+    paths: [.github/workflows/apply-storybook-test-foundation.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/layered-test-coverage-foundation
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install current workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Storybook and install accessibility dependencies
+        env:
+          NX_INTERACTIVE: 'false'
+        run: |
+          pnpm exec nx g @nx/angular:storybook-configuration discovery-ui \
+            --interactionTests=true \
+            --generateStories=false \
+            --configureStaticServe=true
+          pnpm add -Dw @storybook/addon-a11y@^10.5.0 @storybook/test-runner@^0.24.0
+
+      - name: Configure Storybook accessibility and measured coverage
+        shell: bash
+        run: |
+          cat > apps/discovery-ui/.storybook/main.ts <<'EOF'
+          import type { StorybookConfig } from '@storybook/angular';
+
+          const config: StorybookConfig = {
+            stories: ['../src/app/**/*.@(mdx|stories.@(js|jsx|ts|tsx))'],
+            addons: ['@storybook/addon-a11y'],
+            framework: {
+              name: '@storybook/angular',
+              options: {},
+            },
+          };
+
+          export default config;
+          EOF
+
+          cat > apps/discovery-ui/.storybook/preview.ts <<'EOF'
+          import type { Preview } from '@storybook/angular';
+          import '../src/styles.scss';
+
+          const preview: Preview = {
+            parameters: {
+              a11y: {
+                test: 'error',
+                options: {
+                  runOnly: {
+                    type: 'tag',
+                    values: [
+                      'wcag2a',
+                      'wcag2aa',
+                      'wcag21a',
+                      'wcag21aa',
+                      'wcag22aa',
+                      'best-practice',
+                    ],
+                  },
+                },
+              },
+            },
+          };
+
+          export default preview;
+          EOF
+
+          node <<'EOF'
+          const fs = require('node:fs');
+          const path = 'apps/discovery-ui/project.json';
+          const project = JSON.parse(fs.readFileSync(path, 'utf8'));
+          project.targets['test-coverage'] = {
+            executor: '@angular/build:unit-test',
+            options: {
+              watch: false,
+              coverage: true,
+              coverageReporters: ['text-summary', 'json-summary', 'lcov'],
+              coverageThresholds: {
+                statements: 69,
+                branches: 67,
+                functions: 65,
+                lines: 70,
+              },
+            },
+          };
+          fs.writeFileSync(path, `${JSON.stringify(project, null, 2)}\n`);
+          EOF
+
+      - name: Add curated accessibility stories
+        shell: bash
+        run: |
+          cat > apps/discovery-ui/src/app/pages/admin-viz/bar-chart.component.stories.ts <<'EOF'
+          import type { Meta, StoryObj } from '@storybook/angular';
+          import { expect, within } from 'storybook/test';
+          import { AdminBarChartComponent } from './bar-chart.component';
+
+          const meta: Meta<AdminBarChartComponent> = {
+            title: 'Accessibility/Admin visualizations/Bar chart',
+            component: AdminBarChartComponent,
+            parameters: { layout: 'padded' },
+          };
+
+          export default meta;
+          type Story = StoryObj<AdminBarChartComponent>;
+
+          export const CertifiedC2Composition: Story = {
+            args: {
+              caption: 'Certified C2 corpus by source',
+              items: [
+                { label: 'Data.gov', value: 500_000 },
+                { label: 'DOE OSTI', value: 500_000 },
+                { label: 'Curated DSpace', value: 181 },
+              ],
+            },
+            play: async ({ canvasElement }) => {
+              const canvas = within(canvasElement);
+              const table = canvas.getByRole('table', {
+                name: 'Certified C2 corpus by source',
+              });
+              const semanticTable = within(table);
+
+              await expect(
+                semanticTable.getByRole('rowheader', { name: 'Data.gov' }),
+              ).toBeInTheDocument();
+              await expect(
+                semanticTable.getAllByRole('cell', { name: '500000' }),
+              ).toHaveLength(2);
+              await expect(
+                semanticTable.getByRole('cell', { name: '181' }),
+              ).toBeInTheDocument();
+            },
+          };
+
+          export const LongLabelsAndReflow: Story = {
+            args: {
+              caption: 'Long source labels for reflow and zoom review',
+              items: [
+                {
+                  label:
+                    'Data.gov retained federal research metadata with an intentionally long source label',
+                  value: 500_000,
+                },
+                {
+                  label:
+                    'Department of Energy Office of Scientific and Technical Information retained metadata',
+                  value: 500_000,
+                },
+              ],
+            },
+          };
+
+          export const Empty: Story = {
+            args: {
+              caption: 'No indexed research objects',
+              items: [],
+            },
+            play: async ({ canvasElement }) => {
+              const canvas = within(canvasElement);
+              await expect(
+                canvas.getByRole('table', { name: 'No indexed research objects' }),
+              ).toBeInTheDocument();
+            },
+          };
+          EOF
+
+          cat > apps/discovery-ui/src/app/pages/admin-viz/donut-chart.component.stories.ts <<'EOF'
+          import type { Meta, StoryObj } from '@storybook/angular';
+          import { expect, within } from 'storybook/test';
+          import { AdminDonutChartComponent } from './donut-chart.component';
+
+          const meta: Meta<AdminDonutChartComponent> = {
+            title: 'Accessibility/Admin visualizations/Donut chart',
+            component: AdminDonutChartComponent,
+            parameters: { layout: 'padded' },
+          };
+
+          export default meta;
+          type Story = StoryObj<AdminDonutChartComponent>;
+
+          export const CertifiedC2Composition: Story = {
+            args: {
+              caption: 'Certified C2 corpus by source',
+              segments: [
+                { label: 'Data.gov', value: 500_000, color: '#315da8' },
+                { label: 'DOE OSTI', value: 500_000, color: '#8a4f12' },
+                { label: 'Curated DSpace', value: 181, color: '#5b5f63' },
+              ],
+            },
+            play: async ({ canvasElement }) => {
+              const canvas = within(canvasElement);
+              await expect(
+                canvas.getByRole('img', { name: 'Certified C2 corpus by source' }),
+              ).toBeInTheDocument();
+              const table = canvas.getByRole('table', {
+                name: 'Certified C2 corpus by source',
+              });
+              const semanticTable = within(table);
+              await expect(
+                semanticTable.getByRole('rowheader', { name: 'Curated DSpace' }),
+              ).toBeInTheDocument();
+              await expect(
+                semanticTable.getByRole('cell', { name: '181' }),
+              ).toBeInTheDocument();
+            },
+          };
+
+          export const UnevenAndLongLabels: Story = {
+            args: {
+              caption: 'Uneven source distribution with long labels',
+              segments: [
+                {
+                  label:
+                    'Data.gov retained federal research metadata with an intentionally long source label',
+                  value: 999_999,
+                  color: '#315da8',
+                },
+                {
+                  label: 'Curated repository authority records',
+                  value: 1,
+                  color: '#5b5f63',
+                },
+              ],
+            },
+          };
+
+          export const Empty: Story = {
+            args: {
+              caption: 'No indexed research objects',
+              segments: [],
+            },
+            play: async ({ canvasElement }) => {
+              const canvas = within(canvasElement);
+              await expect(
+                canvas.getByRole('img', { name: 'No indexed research objects' }),
+              ).toBeInTheDocument();
+              await expect(
+                canvas.getByRole('table', { name: 'No indexed research objects' }),
+              ).toBeInTheDocument();
+            },
+          };
+          EOF
+
+      - name: Replace temporary CI probe with permanent gates
+        shell: bash
+        run: |
+          cat > .github/workflows/ci.yml <<'EOF'
+          # Continuous integration for the Civics Research Repository.
+          #
+          # `gates` runs deterministic workspace checks, including generated artifact drift, measured
+          # frontend coverage, and a production Storybook build. Browser/Storybook a11y evidence remains
+          # separate because it needs real browsers and longer failure artifacts.
+          name: CI
+
+          on:
+            push:
+              branches: [main]
+            pull_request:
+
+          concurrency:
+            group: ci-${{ github.ref }}
+            cancel-in-progress: true
+
+          permissions:
+            contents: read
+
+          jobs:
+            gates:
+              name: Workspace gates
+              runs-on: ubuntu-latest
+              timeout-minutes: 25
+              steps:
+                - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+                  with:
+                    persist-credentials: false
+
+                - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+                - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+                  with:
+                    node-version: 22
+                    cache: pnpm
+
+                - name: Install dependencies
+                  run: pnpm install --frozen-lockfile
+
+                - name: Check formatting
+                  run: pnpm exec nx format:check --all
+
+                - name: Lint the OpenAPI contract
+                  run: pnpm run openapi:lint
+
+                - name: Check generated API types are current
+                  run: pnpm run openapi:check
+
+                - name: Check the fixture catalog is current
+                  run: pnpm run fixture:check
+
+                - name: Check the accessibility evidence manifest is current
+                  run: pnpm run evidence:check
+
+                - name: Check the generated platform status is current
+                  run: pnpm run docs:check
+
+                - name: Test the performance-statistics harness
+                  run: pnpm run performance:test
+
+                - name: Lint
+                  run: pnpm exec nx run-many -t lint --all
+
+                - name: Unit tests
+                  run: pnpm exec nx run-many -t test --exclude repository-api
+
+                - name: Enforce discovery UI coverage baseline
+                  run: pnpm exec nx run discovery-ui:test-coverage
+
+                - name: Build the discovery UI
+                  run: pnpm exec nx build discovery-ui
+
+                - name: Build accessibility Storybook
+                  run: pnpm exec nx build-storybook discovery-ui --configuration=ci
+
+            api:
+              name: Repository API
+              runs-on: ubuntu-latest
+              timeout-minutes: 25
+              steps:
+                - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+                  with:
+                    persist-credentials: false
+
+                - name: Test
+                  run: docker build -f apps/repository-api/Dockerfile --target test .
+
+                - name: Build the runtime image
+                  run: docker build -f apps/repository-api/Dockerfile --target runtime -t civics-repository-api:ci .
+          EOF
+
+      - name: Format and prove the permanent test foundation
+        run: |
+          pnpm exec prettier --write \
+            .github/workflows/ci.yml \
+            apps/discovery-ui/project.json \
+            apps/discovery-ui/tsconfig.app.json \
+            apps/discovery-ui/tsconfig.json \
+            apps/discovery-ui/.storybook/main.ts \
+            apps/discovery-ui/.storybook/preview.ts \
+            apps/discovery-ui/.storybook/tsconfig.json \
+            apps/discovery-ui/src/app/pages/admin-viz/bar-chart.component.spec.ts \
+            apps/discovery-ui/src/app/pages/admin-viz/donut-chart.component.spec.ts \
+            apps/discovery-ui/src/app/pages/admin-viz/bar-chart.component.stories.ts \
+            apps/discovery-ui/src/app/pages/admin-viz/donut-chart.component.stories.ts \
+            documentation/testing/TEST_STRATEGY.md
+          pnpm exec nx test discovery-ui
+          pnpm exec nx run discovery-ui:test-coverage
+          pnpm exec nx build-storybook discovery-ui --configuration=ci
+
+      - name: Commit proven foundation and remove one-shot workflow
+        shell: bash
+        run: |
+          git config user.name 'Jeffrey Sanford'
+          git config user.email 'jeffrey_sanford@hotmail.com'
+          git rm .github/workflows/apply-storybook-test-foundation.yml
+          git add \
+            .github/workflows/ci.yml \
+            package.json \
+            pnpm-lock.yaml \
+            nx.json \
+            apps/discovery-ui/project.json \
+            apps/discovery-ui/tsconfig.app.json \
+            apps/discovery-ui/tsconfig.json \
+            apps/discovery-ui/.storybook \
+            apps/discovery-ui/src/app/pages/admin-viz/bar-chart.component.spec.ts \
+            apps/discovery-ui/src/app/pages/admin-viz/donut-chart.component.spec.ts \
+            apps/discovery-ui/src/app/pages/admin-viz/bar-chart.component.stories.ts \
+            apps/discovery-ui/src/app/pages/admin-viz/donut-chart.component.stories.ts \
+            documentation/testing/TEST_STRATEGY.md
+          git commit -m 'test: add Storybook WCAG and coverage foundation'
+          git push origin HEAD:codex/layered-test-coverage-foundation
