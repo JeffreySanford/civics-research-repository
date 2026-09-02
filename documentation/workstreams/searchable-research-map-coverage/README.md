@@ -60,7 +60,7 @@ PR #18 establishes the first executable Discovery-to-Maps research path:
 - Publisher, author, laboratory and institution locations are never substituted for research geography.
 - MapLibre draws bounded count symbols at Census-area centers; the accessible feature region exposes the same counts in a semantic table with links back to the corresponding Discovery criteria.
 - The Research Coverage disclosure is presentation-only: collapsing it does not turn off its checked child layer.
-- The Data.gov spatial-availability probe inspects retained raw-harvest metadata read-only and measures candidate spatial availability without rewriting the certified 500K Data.gov corpus.
+- The Data.gov spatial-availability probe reads the exact retained C2 Data.gov identifier set, traverses the current Data.gov v4 `spatial_filter=geospatial` source subset, and measures their intersection without rewriting the certified 500K Data.gov corpus. `harvestRecordRaw` is retained only as a source-reference URL; it is not raw JSON.
 
 This first slice is an administrative research-summary layer, not a claim that each research object covers every point inside the named area. Rich point/bounds/polygon footprint rendering remains a later sidecar/API concern.
 
@@ -125,7 +125,7 @@ The cursor/search-after workstream should be reused for associated research-obje
 
 Map APIs use aggregation and bounds rather than deep offset scans. The current summary is independent of result-list depth: the browser receives a one-record page plus aggregate facet values even when the effective search matches the million-record C2 projection.
 
-For Data.gov, use the deterministic availability probe followed by a targeted spatial-enrichment pass using retained raw-harvest references. Do not rewrite the certified 500K corpus merely to add a map sidecar.
+For Data.gov, use the deterministic source-aware availability probe followed by a targeted spatial-enrichment pass. The probe intersects the current v4 geospatial subset with exact retained C2 identifiers; it does not claim the current publisher snapshot is byte-for-byte historical C2 metadata. Treat `harvestRecordRaw` as a source-reference URL, and use raw/transformed source endpoints only for bounded follow-up validation of selected candidates. Do not rewrite the certified 500K corpus merely to add a map sidecar.
 
 For NASA, keep collection and granule semantics separate. Collection coverage can summarize the product's overall extent; granule coverage must be bounded by collection, viewport and/or time before reaching the browser.
 
@@ -157,7 +157,7 @@ Implemented/focused evidence in this slice includes:
 - browser evidence that a selected geography excludes alternative self-excluding facet areas from the rendered summary;
 - browser evidence that table links reconstruct the effective Discovery criteria;
 - browser evidence that collapsing the Research Coverage category preserves checked/rendered state;
-- deterministic Data.gov spatial-availability probe tests, including the distinction between candidate spatial tokens and validated geometry.
+- deterministic Data.gov source-aware spatial-availability tests covering geospatial cursor traversal, exact retained-C2 identifier intersection, rate limiting, duplicate/continuation guards, certification binding, and the distinction between current source candidates and validated sidecar geometry.
 
 Still required before richer explicit-spatial children are considered complete:
 
@@ -188,4 +188,4 @@ For the first administrative-summary slice:
 4. Every mapped administrative count has a semantic equivalent.
 5. Research Coverage fits the same expandable category model as existing map layers without category collapse mutating selection.
 6. Deep associated result navigation continues to reuse the existing cursor semantics rather than inventing map-specific offsets.
-7. Data.gov spatial availability can be measured independently of the certified C2 corpus before a spatial sidecar is introduced.
+7. Data.gov spatial availability can be measured by intersecting the current publisher geospatial subset with certified C2 identifiers before a spatial sidecar is introduced, without mutating C2 or misrepresenting current source metadata as historical retained bytes.
