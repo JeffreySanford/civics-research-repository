@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -208,6 +208,16 @@ test('surfaces Data.gov rate limiting with retry context', async () => {
         jsonResponse({}, { status: 429, headers: { 'retry-after': '3600' } }),
     }),
     /HTTP 429.*retry after 3600/u,
+  );
+});
+
+test('research spatial probe auto-loads repo-local .env', async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+  );
+  assert.equal(
+    packageJson.scripts['research:spatial:probe'],
+    'node --env-file-if-exists=.env tools/scripts/data-gov-spatial-availability.mjs --expect 500000',
   );
 });
 
