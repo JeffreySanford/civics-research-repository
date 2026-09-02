@@ -5,6 +5,8 @@ import type {
   LodesWorkplaceOverlay,
   MapLayer,
   SaipeCountyChoropleth,
+  SearchQuery,
+  SearchResponse,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
@@ -23,12 +25,16 @@ export interface MapsState {
   readonly lodesWorkplaceError: string | null;
   readonly saipeChoropleth: SaipeCountyChoropleth | null;
   readonly saipeChoroplethError: string | null;
+  readonly researchCoverageQuery: SearchQuery | null;
+  readonly researchCoverageResponse: SearchResponse | null;
+  readonly researchCoverageError: string | null;
   readonly tigerVisible: boolean;
   readonly earthquakeVisible: boolean;
   readonly lodesVisible: boolean;
   readonly workplaceVisible: boolean;
   readonly hydrographyVisible: boolean;
   readonly saipeVisible: boolean;
+  readonly researchCoverageVisible: boolean;
   /** Feature shared by the map and the accessible list; either view can set it. */
   readonly selectedFeatureId: string | null;
   /** Commuting flow shared by the map and the accessible table; either view can set it. */
@@ -49,12 +55,16 @@ export const initialMapsState: MapsState = {
   lodesWorkplaceError: null,
   saipeChoropleth: null,
   saipeChoroplethError: null,
+  researchCoverageQuery: null,
+  researchCoverageResponse: null,
+  researchCoverageError: null,
   tigerVisible: false,
   earthquakeVisible: false,
   lodesVisible: false,
   workplaceVisible: false,
   hydrographyVisible: false,
   saipeVisible: false,
+  researchCoverageVisible: false,
   selectedFeatureId: null,
   selectedLodesFlowId: null,
   loading: false,
@@ -70,16 +80,28 @@ export const mapsReducer = createReducer(
     earthquakeError: null,
     lodesFlowError: null,
     saipeChoroplethError: null,
+    researchCoverageError: null,
   })),
   on(MapsActions.mapDataLoaded, (state, { censusAreaBoundaries }) => ({
     ...state,
     censusAreaBoundaries,
   })),
-  on(MapsActions.mapLayersLoaded, (state, { layers }) => ({
-    ...state,
-    layers,
-    loading: false,
-  })),
+  on(MapsActions.mapLayersLoaded, (state, { layers }) => {
+    const saipeAvailable = layers.some(
+      (layer) => layer.layerType === 'CENSUS_CHOROPLETH',
+    );
+
+    return {
+      ...state,
+      layers,
+      loading: false,
+      // Capability metadata owns whether SAIPE may exist for this geography. Once a newly loaded
+      // area says it does not, stale visibility/data/errors from the previous area must disappear.
+      saipeVisible: saipeAvailable ? state.saipeVisible : false,
+      saipeChoropleth: saipeAvailable ? state.saipeChoropleth : null,
+      saipeChoroplethError: saipeAvailable ? state.saipeChoroplethError : null,
+    };
+  }),
   on(MapsActions.earthquakeOverlayLoaded, (state, { earthquakeOverlay }) => ({
     ...state,
     earthquakeOverlay,
@@ -134,11 +156,33 @@ export const mapsReducer = createReducer(
     saipeChoropleth: null,
     saipeChoroplethError: error.message,
   })),
+  on(MapsActions.researchCoverageRequested, (state, { query }) => ({
+    ...state,
+    researchCoverageQuery: query,
+    // The previous response belongs to a different effective search. Clearing it prevents the map
+    // from showing a stale spatial summary while the new bounded facet request is in flight.
+    researchCoverageResponse: null,
+    researchCoverageError: null,
+  })),
+  on(MapsActions.researchCoverageLoaded, (state, { response }) => ({
+    ...state,
+    researchCoverageResponse: response,
+    researchCoverageError: null,
+  })),
+  on(MapsActions.researchCoverageFailed, (state, { error }) => ({
+    ...state,
+    researchCoverageResponse: null,
+    researchCoverageError: error.message,
+  })),
   on(MapsActions.censusAreaSelected, (state, { geography }) => ({
     ...state,
     selectedGeography: geography,
     loading: true,
     error: null,
+    // The old choropleth belongs to the old geography. Keep the user's toggle preference until
+    // capability metadata lands, but never display stale SAIPE values while the new area loads.
+    saipeChoropleth: null,
+    saipeChoroplethError: null,
   })),
   on(MapsActions.mapDataFailed, (state, { error }) => ({
     ...state,
@@ -176,6 +220,10 @@ export const mapsReducer = createReducer(
   on(MapsActions.saipeLayerToggled, (state, { visible }) => ({
     ...state,
     saipeVisible: visible,
+  })),
+  on(MapsActions.researchCoverageLayerToggled, (state, { visible }) => ({
+    ...state,
+    researchCoverageVisible: visible,
   })),
   on(MapsActions.mapFeatureSelected, (state, { featureId }) => ({
     ...state,
