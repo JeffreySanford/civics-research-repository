@@ -1,0 +1,404 @@
+name: Apply spatial 100-page checkpoints
+
+on:
+  push:
+    branches:
+      - codex/spatial-probe-100-page-checkpoints
+    paths:
+      - .github/workflows/apply-spatial-100-page-checkpoints.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/spatial-probe-100-page-checkpoints
+          persist-credentials: true
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply 100-page window summaries
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          script_path = Path('tools/scripts/data-gov-spatial-availability.mjs')
+          test_path = Path('tools/scripts/data-gov-spatial-availability.test.mjs')
+          script = script_path.read_text()
+          tests = test_path.read_text()
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              return text.replace(old, new, 1)
+
+          script = replace_once(
+              script,
+              "const DEFAULT_PROGRESS_EVERY_PAGES = 10;",
+              "const DEFAULT_PROGRESS_EVERY_PAGES = 100;",
+              'default progress cadence',
+          )
+
+          script = replace_once(
+              script,
+              """  let cursor = null;
+          let pages = 0;
+          let sourceSpatialRowCount = 0;
+          let duplicateSourceRowCount = 0;
+          """,
+              """  let cursor = null;
+          let pages = 0;
+          let sourceSpatialRowCount = 0;
+          let duplicateSourceRowCount = 0;
+          let previousProgressSnapshot = {
+            pagesFetched: 0,
+            sourceSpatialRowCount: 0,
+            sourceSpatialRecordCount: 0,
+            duplicateSourceRowCount: 0,
+            retainedSpatialRecordCount: 0,
+            matchedMetadataSignals: {
+              hasSpatialTrue: 0,
+              dcatSpatial: 0,
+              spatialShape: 0,
+              spatialCentroid: 0,
+            },
+          };
+          """,
+              'progress snapshot state',
+          )
+
+          script = replace_once(
+              script,
+              """    const done = !nextCursor;
+              if (
+                onProgress &&
+                (pages === 1 || pages % safeProgressEveryPages === 0 || done)
+              ) {
+                onProgress({
+                  pagesFetched: pages,
+                  sourceSpatialRecordCount: seenSourceIdentifiers.size,
+                  retainedSpatialRecordCount: matchedIdentifiers.size,
+                  done,
+                });
+              }
+          """,
+              """    const done = !nextCursor;
+              if (onProgress && (pages % safeProgressEveryPages === 0 || done)) {
+                const currentProgressSnapshot = {
+                  pagesFetched: pages,
+                  sourceSpatialRowCount,
+                  sourceSpatialRecordCount: seenSourceIdentifiers.size,
+                  duplicateSourceRowCount,
+                  retainedSpatialRecordCount: matchedIdentifiers.size,
+                  matchedMetadataSignals: {
+                    hasSpatialTrue: hasSpatialTrueIdentifiers.size,
+                    dcatSpatial: dcatSpatialIdentifiers.size,
+                    spatialShape: spatialShapeIdentifiers.size,
+                    spatialCentroid: spatialCentroidIdentifiers.size,
+                  },
+                };
+                onProgress({
+                  ...currentProgressSnapshot,
+                  window: {
+                    startPage: previousProgressSnapshot.pagesFetched + 1,
+                    endPage: pages,
+                    pagesFetched:
+                      pages - previousProgressSnapshot.pagesFetched,
+                    sourceSpatialRowCount:
+                      sourceSpatialRowCount -
+                      previousProgressSnapshot.sourceSpatialRowCount,
+                    sourceSpatialRecordCount:
+                      seenSourceIdentifiers.size -
+                      previousProgressSnapshot.sourceSpatialRecordCount,
+                    duplicateSourceRowCount:
+                      duplicateSourceRowCount -
+                      previousProgressSnapshot.duplicateSourceRowCount,
+                    retainedSpatialRecordCount:
+                      matchedIdentifiers.size -
+                      previousProgressSnapshot.retainedSpatialRecordCount,
+                    matchedMetadataSignals: {
+                      hasSpatialTrue:
+                        hasSpatialTrueIdentifiers.size -
+                        previousProgressSnapshot.matchedMetadataSignals
+                          .hasSpatialTrue,
+                      dcatSpatial:
+                        dcatSpatialIdentifiers.size -
+                        previousProgressSnapshot.matchedMetadataSignals.dcatSpatial,
+                      spatialShape:
+                        spatialShapeIdentifiers.size -
+                        previousProgressSnapshot.matchedMetadataSignals.spatialShape,
+                      spatialCentroid:
+                        spatialCentroidIdentifiers.size -
+                        previousProgressSnapshot.matchedMetadataSignals
+                          .spatialCentroid,
+                    },
+                  },
+                  done,
+                });
+                previousProgressSnapshot = currentProgressSnapshot;
+              }
+          """,
+              'progress callback payload',
+          )
+
+          script = replace_once(
+              script,
+              """    onProgress: (progress) => {
+                const elapsedMs = Date.now() - traversalStartedAt;
+                const elapsedSeconds = Math.max(elapsedMs / 1000, 0.001);
+                const rate = Math.round(
+                  progress.sourceSpatialRecordCount / elapsedSeconds,
+                );
+                console.log(
+                  `[spatial] page=${progress.pagesFetched.toLocaleString()} source=${progress.sourceSpatialRecordCount.toLocaleString()} C2-matches=${progress.retainedSpatialRecordCount.toLocaleString()} elapsed=${formatElapsed(elapsedMs)} rate=${rate.toLocaleString()} rec/s${progress.done ? ' complete' : ''}`,
+                );
+              },
+          """,
+              """    onProgress: (progress) => {
+                const elapsedMs = Date.now() - traversalStartedAt;
+                const elapsedSeconds = Math.max(elapsedMs / 1000, 0.001);
+                const rate = Math.round(
+                  progress.sourceSpatialRowCount / elapsedSeconds,
+                );
+                const window = progress.window;
+                const windowMatchPercent =
+                  window.sourceSpatialRecordCount === 0
+                    ? 0
+                    : Number(
+                        (
+                          (window.retainedSpatialRecordCount /
+                            window.sourceSpatialRecordCount) *
+                          100
+                        ).toFixed(2),
+                      );
+                console.log(
+                  `[spatial] pages=${window.startPage.toLocaleString()}-${window.endPage.toLocaleString()} block rows=${window.sourceSpatialRowCount.toLocaleString()} unique=${window.sourceSpatialRecordCount.toLocaleString()} dup-rows=${window.duplicateSourceRowCount.toLocaleString()} C2-matches=${window.retainedSpatialRecordCount.toLocaleString()} match=${windowMatchPercent}% signals[dcat=${window.matchedMetadataSignals.dcatSpatial.toLocaleString()} shape=${window.matchedMetadataSignals.spatialShape.toLocaleString()} centroid=${window.matchedMetadataSignals.spatialCentroid.toLocaleString()}]`,
+                );
+                console.log(
+                  `[spatial] cumulative pages=${progress.pagesFetched.toLocaleString()} rows=${progress.sourceSpatialRowCount.toLocaleString()} unique=${progress.sourceSpatialRecordCount.toLocaleString()} dup-rows=${progress.duplicateSourceRowCount.toLocaleString()} C2-matches=${progress.retainedSpatialRecordCount.toLocaleString()} elapsed=${formatElapsed(elapsedMs)} rate=${rate.toLocaleString()} rows/s${progress.done ? ' complete' : ''}`,
+                );
+              },
+          """,
+              'operator progress output',
+          )
+
+          tests = replace_once(
+              tests,
+              """test('reports first, periodic, and completion progress without changing results', async () => {
+            const progress = [];
+            const pages = [
+              { after: 'two', results: [{ identifier: 'a' }] },
+              { after: 'three', results: [{ identifier: 'outside' }] },
+              { results: [{ identifier: 'b' }] },
+            ];
+
+            const result = await probeDataGovSpatialSource({
+              retainedIdentifiers: new Set(['a', 'b']),
+              apiKey: 'personal',
+              progressEveryPages: 2,
+              onProgress: (entry) => progress.push(entry),
+              fetchImpl: async () => jsonResponse(pages.shift()),
+            });
+
+            assert.equal(result.sourceSpatialRecordCount, 3);
+            assert.equal(result.retainedSpatialRecordCount, 2);
+            assert.deepEqual(progress, [
+              {
+                pagesFetched: 1,
+                sourceSpatialRecordCount: 1,
+                retainedSpatialRecordCount: 1,
+                done: false,
+              },
+              {
+                pagesFetched: 2,
+                sourceSpatialRecordCount: 2,
+                retainedSpatialRecordCount: 1,
+                done: false,
+              },
+              {
+                pagesFetched: 3,
+                sourceSpatialRecordCount: 3,
+                retainedSpatialRecordCount: 2,
+                done: true,
+              },
+            ]);
+          });
+          """,
+              """test('reports combined progress windows and cumulative totals without changing results', async () => {
+            const progress = [];
+            const pages = [
+              {
+                after: 'two',
+                results: [
+                  {
+                    identifier: 'a',
+                    has_spatial: true,
+                    dcat: { spatial: 'United States' },
+                  },
+                ],
+              },
+              { after: 'three', results: [{ identifier: 'outside' }] },
+              {
+                after: 'four',
+                results: [{ identifier: 'b', dcat: { spatial: 'Alaska' } }],
+              },
+              {
+                after: 'five',
+                results: [
+                  {
+                    identifier: 'b',
+                    spatial_shape: { type: 'Polygon', coordinates: [] },
+                  },
+                ],
+              },
+              {
+                results: [
+                  {
+                    identifier: 'c',
+                    spatial_centroid: { type: 'Point', coordinates: [-100, 40] },
+                  },
+                ],
+              },
+            ];
+
+            const result = await probeDataGovSpatialSource({
+              retainedIdentifiers: new Set(['a', 'b', 'c']),
+              apiKey: 'personal',
+              progressEveryPages: 2,
+              onProgress: (entry) => progress.push(entry),
+              fetchImpl: async () => jsonResponse(pages.shift()),
+            });
+
+            assert.equal(result.sourceSpatialRowCount, 5);
+            assert.equal(result.sourceSpatialRecordCount, 4);
+            assert.equal(result.duplicateSourceRowCount, 1);
+            assert.equal(result.retainedSpatialRecordCount, 3);
+            assert.equal(progress.length, 3);
+            assert.deepEqual(
+              progress.map((entry) => ({
+                pagesFetched: entry.pagesFetched,
+                sourceSpatialRowCount: entry.sourceSpatialRowCount,
+                sourceSpatialRecordCount: entry.sourceSpatialRecordCount,
+                duplicateSourceRowCount: entry.duplicateSourceRowCount,
+                retainedSpatialRecordCount: entry.retainedSpatialRecordCount,
+                window: entry.window,
+                done: entry.done,
+              })),
+              [
+                {
+                  pagesFetched: 2,
+                  sourceSpatialRowCount: 2,
+                  sourceSpatialRecordCount: 2,
+                  duplicateSourceRowCount: 0,
+                  retainedSpatialRecordCount: 1,
+                  window: {
+                    startPage: 1,
+                    endPage: 2,
+                    pagesFetched: 2,
+                    sourceSpatialRowCount: 2,
+                    sourceSpatialRecordCount: 2,
+                    duplicateSourceRowCount: 0,
+                    retainedSpatialRecordCount: 1,
+                    matchedMetadataSignals: {
+                      hasSpatialTrue: 1,
+                      dcatSpatial: 1,
+                      spatialShape: 0,
+                      spatialCentroid: 0,
+                    },
+                  },
+                  done: false,
+                },
+                {
+                  pagesFetched: 4,
+                  sourceSpatialRowCount: 4,
+                  sourceSpatialRecordCount: 3,
+                  duplicateSourceRowCount: 1,
+                  retainedSpatialRecordCount: 2,
+                  window: {
+                    startPage: 3,
+                    endPage: 4,
+                    pagesFetched: 2,
+                    sourceSpatialRowCount: 2,
+                    sourceSpatialRecordCount: 1,
+                    duplicateSourceRowCount: 1,
+                    retainedSpatialRecordCount: 1,
+                    matchedMetadataSignals: {
+                      hasSpatialTrue: 0,
+                      dcatSpatial: 1,
+                      spatialShape: 1,
+                      spatialCentroid: 0,
+                    },
+                  },
+                  done: false,
+                },
+                {
+                  pagesFetched: 5,
+                  sourceSpatialRowCount: 5,
+                  sourceSpatialRecordCount: 4,
+                  duplicateSourceRowCount: 1,
+                  retainedSpatialRecordCount: 3,
+                  window: {
+                    startPage: 5,
+                    endPage: 5,
+                    pagesFetched: 1,
+                    sourceSpatialRowCount: 1,
+                    sourceSpatialRecordCount: 1,
+                    duplicateSourceRowCount: 0,
+                    retainedSpatialRecordCount: 1,
+                    matchedMetadataSignals: {
+                      hasSpatialTrue: 0,
+                      dcatSpatial: 0,
+                      spatialShape: 0,
+                      spatialCentroid: 1,
+                    },
+                  },
+                  done: true,
+                },
+              ],
+            );
+          });
+          """,
+              'progress regression test',
+          )
+
+          tests = replace_once(
+              tests,
+              """test('argument parser supports pnpm separator and source traversal controls', () => {
+            assert.deepEqual(
+          """,
+              """test('argument parser supports pnpm separator and source traversal controls', () => {
+            assert.equal(parseArgs([]).progressEveryPages, 100);
+            assert.deepEqual(
+          """,
+              'default cadence assertion',
+          )
+
+          script_path.write_text(script)
+          test_path.write_text(tests)
+          PY
+
+          pnpm exec prettier --write tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+
+      - name: Verify focused progress suite
+        run: |
+          node --test tools/scripts/data-gov-spatial-availability.test.mjs
+          pnpm exec prettier --check tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+
+      - name: Commit window summaries
+        shell: bash
+        run: |
+          git config user.name "Jeffrey Sanford"
+          git config user.email "jeffrey_sanford@hotmail.com"
+          git add tools/scripts/data-gov-spatial-availability.mjs tools/scripts/data-gov-spatial-availability.test.mjs
+          git commit -m "fix: summarize spatial probe progress windows" || true
+          git push origin HEAD:codex/spatial-probe-100-page-checkpoints
