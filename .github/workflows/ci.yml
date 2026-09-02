@@ -1,7 +1,8 @@
 # Continuous integration for the Civics Research Repository.
 #
-# `gates` runs deterministic workspace checks, including generated artifact drift. Browser evidence
-# remains separate because it needs a dev server, multiple browsers and longer failure artifacts.
+# `gates` runs deterministic workspace checks, including generated artifact drift, measured
+# frontend coverage, and a production Storybook build. Browser accessibility evidence remains
+# separate because it needs real browsers and longer failure artifacts.
 # `api` builds and tests the Spring Boot service inside its Gradle container image.
 name: CI
 
@@ -21,7 +22,7 @@ jobs:
   gates:
     name: Workspace gates
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -36,37 +37,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      # Temporary draft-only capture. Remove after the generated files are committed.
-      - name: Generate Nx Angular Storybook scaffold and a11y dependencies
-        env:
-          NX_INTERACTIVE: 'false'
-        run: |
-          pnpm exec nx g @nx/angular:storybook-configuration discovery-ui \
-            --interactionTests=true \
-            --generateStories=false \
-            --configureStaticServe=true
-          pnpm add -Dw @storybook/addon-a11y@^10.5.0 @storybook/test-runner@^0.24.0
-
-      - name: Prove generated Storybook build target
-        run: pnpm exec nx build-storybook discovery-ui --configuration=ci
-
-      - name: Upload generated Storybook scaffold
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: storybook-scaffold-${{ github.run_id }}
-          path: |
-            package.json
-            pnpm-lock.yaml
-            nx.json
-            apps/discovery-ui/project.json
-            apps/discovery-ui/tsconfig.app.json
-            apps/discovery-ui/tsconfig.json
-            apps/discovery-ui/.storybook
-          if-no-files-found: error
-          retention-days: 2
-          include-hidden-files: true
 
       - name: Check formatting
         run: pnpm exec nx format:check --all
@@ -95,8 +65,14 @@ jobs:
       - name: Unit tests
         run: pnpm exec nx run-many -t test --exclude repository-api
 
+      - name: Enforce discovery UI coverage baseline
+        run: pnpm exec nx run discovery-ui:test-coverage
+
       - name: Build the discovery UI
         run: pnpm exec nx build discovery-ui
+
+      - name: Build accessibility Storybook
+        run: pnpm exec nx build-storybook discovery-ui --configuration=ci
 
   api:
     name: Repository API
