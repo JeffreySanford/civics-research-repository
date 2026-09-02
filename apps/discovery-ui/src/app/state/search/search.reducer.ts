@@ -15,6 +15,8 @@ export interface SearchState {
   readonly cursorByPage: readonly (string | null)[];
   /** Opaque continuation returned for the page after the currently displayed page. */
   readonly nextCursor: string | null;
+  /** User-visible explanation when page-zero cursor startup explicitly falls back to offsets. */
+  readonly paginationNotice: string | null;
 }
 
 export const initialSearchState: SearchState = {
@@ -29,6 +31,7 @@ export const initialSearchState: SearchState = {
   cursorMode: false,
   cursorByPage: [],
   nextCursor: null,
+  paginationNotice: null,
 };
 
 export const searchReducer = createReducer(
@@ -41,6 +44,7 @@ export const searchReducer = createReducer(
     cursorMode: false,
     cursorByPage: [],
     nextCursor: null,
+    paginationNotice: null,
   })),
   on(SearchActions.cursorSearchSubmitted, (state, { query }) => ({
     ...state,
@@ -50,6 +54,7 @@ export const searchReducer = createReducer(
     cursorMode: false,
     cursorByPage: [],
     nextCursor: null,
+    paginationNotice: null,
   })),
   on(SearchActions.searchPageRequested, (state, { page }) => ({
     ...state,
@@ -66,6 +71,7 @@ export const searchReducer = createReducer(
     cursorMode: false,
     cursorByPage: [],
     nextCursor: null,
+    paginationNotice: null,
   })),
   on(SearchActions.cursorSearchLoaded, (state, { cursorPage, cursorUsed }) => {
     const logicalPage = Math.max(0, cursorPage.search.page);
@@ -81,8 +87,23 @@ export const searchReducer = createReducer(
       cursorMode: true,
       cursorByPage,
       nextCursor: cursorPage.nextCursor,
+      paginationNotice: null,
     };
   }),
+  on(
+    SearchActions.cursorCompatibilityLoaded,
+    (state, { response, notice }) => ({
+      ...state,
+      response,
+      query: { ...state.query, page: response.page },
+      loading: false,
+      error: null,
+      cursorMode: false,
+      cursorByPage: [],
+      nextCursor: null,
+      paginationNotice: notice,
+    }),
+  ),
   on(SearchActions.searchFailed, (state, { error }) => ({
     ...state,
     loading: false,
