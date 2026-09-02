@@ -99,8 +99,8 @@ test('binds a passing canonical C2 scale artifact to spatial evidence', () => {
 
   const markdown = formatMarkdown(report, 500000);
   assert.match(markdown, /Certified C2 binding/u);
-  assert.match(markdown, new RegExp(`Composition SHA-256: \\`${'a'.repeat(64)}\\``));
-  assert.match(markdown, new RegExp(`Projection ID: \\`${'b'.repeat(64)}\\``));
+  assert.ok(markdown.includes(`Composition SHA-256: \`${'a'.repeat(64)}\``));
+  assert.ok(markdown.includes(`Projection ID: \`${'b'.repeat(64)}\``));
 });
 
 test('rejects scale evidence that is not the certified C2 contract', () => {
