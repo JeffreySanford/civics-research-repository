@@ -1,6 +1,7 @@
 package org.civicsrepo.spatial;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.OffsetDateTime;
@@ -61,6 +62,24 @@ class JdbcResearchSpatialSidecarStoreTest {
         assertEquals(1, store.countActive(FederatedSourceSystem.DATA_GOV));
         assertTrue(store.findActive(FederatedSourceSystem.DATA_GOV, "retained-1").isPresent());
         assertTrue(store.findActive(FederatedSourceSystem.DATA_GOV, "not-retained").isEmpty());
+    }
+
+    @Test
+    void preservesRetainedGeospatialEvidenceWithoutPublisherGeometry() {
+        ResearchSpatialSidecarBuild build = runningBuild("build-no-shape");
+        store.beginBuild(build);
+
+        int retained = store.upsertRetainedBatch(build.buildId(), List.of(noShapeRecord("retained-1")));
+        store.completeAndActivate(build.buildId());
+
+        ResearchSpatialSidecarRecord evidence =
+                store.findActive(FederatedSourceSystem.DATA_GOV, "retained-1").orElseThrow();
+        assertEquals(1, retained);
+        assertEquals(SpatialGeometryStatus.NO_PUBLISHER_GEOMETRY, evidence.geometryStatus());
+        assertEquals(-100.0, evidence.sourceCentroidLon());
+        assertEquals(47.0, evidence.sourceCentroidLat());
+        assertEquals("North Dakota", evidence.rawDcatSpatial());
+        assertFalse(evidence.queryableGeometry());
     }
 
     @Test
@@ -149,5 +168,32 @@ class JdbcResearchSpatialSidecarStoreTest {
                 antimeridian ? "-170,50,170,60" : "-101,46,-99,48",
                 "{}",
                 "{}");
+    }
+
+    private ResearchSpatialSidecarRecord noShapeRecord(String identifier) {
+        return new ResearchSpatialSidecarRecord(
+                FederatedSourceSystem.DATA_GOV,
+                identifier,
+                1,
+                SNAPSHOT,
+                SNAPSHOT,
+                COMPOSITION,
+                PROJECTION,
+                null,
+                null,
+                SpatialGeometryStatus.NO_PUBLISHER_GEOMETRY,
+                null,
+                null,
+                null,
+                null,
+                -100.0,
+                47.0,
+                "DATA_GOV_VERTEX_MEAN",
+                null,
+                null,
+                null,
+                "North Dakota",
+                "{\"sourceMatch\":\"DATA_GOV_GEOSPATIAL_FILTER\"}",
+                "{\"geometryStatus\":\"NO_PUBLISHER_GEOMETRY\"}");
     }
 }
