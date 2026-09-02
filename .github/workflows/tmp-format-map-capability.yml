@@ -1,4 +1,4 @@
-name: Temporary Map Capability Format Capture
+name: Temporary Map Capability Format Apply
 
 on:
   push:
@@ -8,10 +8,10 @@ on:
       - .github/workflows/tmp-format-map-capability.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  format-capture:
+  format-apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
@@ -27,15 +27,17 @@ jobs:
             apps/discovery-ui-e2e/src/map-layers.spec.ts \
             apps/discovery-ui/src/app/pages/maps-page.html \
             apps/discovery-ui/src/app/state/maps/maps.reducer.ts
-      - name: Print formatted files
+      - name: Commit formatted files
         run: |
-          for file in \
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
             apps/discovery-ui-e2e/src/map-layers.spec.ts \
             apps/discovery-ui/src/app/pages/maps-page.html \
             apps/discovery-ui/src/app/state/maps/maps.reducer.ts
-          do
-            echo "FORMAT_FILE_BEGIN:$file"
-            base64 -w0 "$file"
-            echo
-            echo "FORMAT_FILE_END:$file"
-          done
+          if git diff --cached --quiet; then
+            echo "No formatting changes to commit."
+          else
+            git commit -m "chore: format map capability controls"
+            git push origin HEAD:codex/map-capability-controls
+          fi
