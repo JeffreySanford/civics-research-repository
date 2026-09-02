@@ -126,7 +126,7 @@ public class DataGovSpatialSidecarService {
         int pagesFetched = 0;
         long sourceRowsFetched = 0;
         long publisherShapeRows = 0;
-        long quarantinedRows = 0;
+        long sourceQuarantinedShapeRows = 0;
         String cursor = null;
         try {
             while (true) {
@@ -145,13 +145,12 @@ public class DataGovSpatialSidecarService {
                 List<ResearchSpatialSidecarRecord> records = new ArrayList<>();
                 for (JsonNode dataset : results) {
                     JsonNode shape = geometryNode(dataset.get("spatial_shape"));
-                    if (shape == null) {
-                        continue;
+                    if (shape != null) {
+                        publisherShapeRows += 1;
                     }
-                    publisherShapeRows += 1;
                     ResearchSpatialSidecarRecord record = toRecord(dataset, shape, build);
-                    if (record.geometryStatus() == SpatialGeometryStatus.QUARANTINED) {
-                        quarantinedRows += 1;
+                    if (shape != null && record.geometryStatus() == SpatialGeometryStatus.QUARANTINED) {
+                        sourceQuarantinedShapeRows += 1;
                     }
                     records.add(record);
                 }
@@ -174,7 +173,7 @@ public class DataGovSpatialSidecarService {
                     sourceRowsFetched,
                     publisherShapeRows,
                     completed.rowCount(),
-                    quarantinedRows);
+                    sourceQuarantinedShapeRows);
         } catch (RuntimeException exception) {
             sidecarStore.failBuild(buildId, exception.getMessage());
             throw exception;
@@ -243,25 +242,36 @@ public class DataGovSpatialSidecarService {
             throw new IllegalStateException("Data.gov spatial result is missing a stable identifier.");
         }
 
-        GeometryAnalysis analysis = DataGovSpatialGeometryAnalyzer.analyze(shape);
-        Bounds bounds = analysis.queryable() ? analysis.bounds() : null;
-        Point sourceCentroid = DataGovSpatialGeometryAnalyzer.normalizeCentroid(dataset.get("spatial_centroid"), objectMapper);
+        Point sourceCentroid =
+                DataGovSpatialGeometryAnalyzer.normalizeCentroid(dataset.get("spatial_centroid"), objectMapper);
+        String rawDcatSpatial = rawValue(dataset.path("dcat").get("spatial"));
+
+        GeometryAnalysis analysis = shape == null ? null : DataGovSpatialGeometryAnalyzer.analyze(shape);
+        SpatialGeometryStatus geometryStatus = analysis == null
+                ? SpatialGeometryStatus.NO_PUBLISHER_GEOMETRY
+                : analysis.status();
+        Bounds bounds = analysis != null && analysis.queryable() ? analysis.bounds() : null;
+
         Point renderPoint = null;
         String renderMethod = null;
-        if (analysis.status() == SpatialGeometryStatus.VALID && bounds != null) {
+        if (geometryStatus == SpatialGeometryStatus.VALID && bounds != null) {
             renderPoint = bounds.center();
             renderMethod = "SHAPE_BOUNDS_CENTER";
-        } else if (analysis.status() == SpatialGeometryStatus.ANTIMERIDIAN_CANDIDATE && sourceCentroid != null) {
+        } else if (geometryStatus == SpatialGeometryStatus.ANTIMERIDIAN_CANDIDATE && sourceCentroid != null) {
             renderPoint = sourceCentroid;
             renderMethod = "DATA_GOV_SOURCE_POINT_FOR_ANTIMERIDIAN_CANDIDATE";
         }
 
-        String rawDcatSpatial = rawValue(dataset.path("dcat").get("spatial"));
         Map<String, Object> provenance = new LinkedHashMap<>();
-        provenance.put("geometrySource", "spatial_shape");
         provenance.put("sourceSystem", FederatedSourceSystem.DATA_GOV.name());
         provenance.put("sourceIdentifier", identifier);
         provenance.put("sourceSnapshotAt", build.sourceSnapshotAt().toString());
+        provenance.put("sourceMatch", "DATA_GOV_GEOSPATIAL_FILTER");
+        if (shape != null) {
+            provenance.put("geometrySource", "spatial_shape");
+        } else {
+            provenance.put("geometrySource", "NONE");
+        }
         if (sourceCentroid != null) {
             provenance.put("centroidSource", "spatial_centroid");
             provenance.put("centroidMethod", "DATA_GOV_VERTEX_MEAN");
@@ -271,15 +281,21 @@ public class DataGovSpatialSidecarService {
         }
 
         Map<String, Object> validation = new LinkedHashMap<>();
-        validation.put("geometryStatus", analysis.status().name());
-        validation.put("geometryType", analysis.geometryType());
-        validation.put("positionCount", analysis.positionCount());
-        validation.put("problems", analysis.problems());
-        if (analysis.bounds() != null) {
-            validation.put("longitudeSpan", analysis.bounds().longitudeSpan());
-        }
-        if (sourceCentroid != null && analysis.bounds() != null) {
-            validation.put("sourceCentroidWithinShapeBounds", sourceCentroid.within(analysis.bounds()));
+        validation.put("geometryStatus", geometryStatus.name());
+        if (analysis == null) {
+            validation.put("geometryType", null);
+            validation.put("positionCount", 0);
+            validation.put("problems", List.of("publisher spatial_shape is absent"));
+        } else {
+            validation.put("geometryType", analysis.geometryType());
+            validation.put("positionCount", analysis.positionCount());
+            validation.put("problems", analysis.problems());
+            if (analysis.bounds() != null) {
+                validation.put("longitudeSpan", analysis.bounds().longitudeSpan());
+            }
+            if (sourceCentroid != null && analysis.bounds() != null) {
+                validation.put("sourceCentroidWithinShapeBounds", sourceCentroid.within(analysis.bounds()));
+            }
         }
 
         return new ResearchSpatialSidecarRecord(
@@ -290,9 +306,9 @@ public class DataGovSpatialSidecarService {
                 build.capturedAt(),
                 build.compositionSha256(),
                 build.projectionId(),
-                shape.toString(),
-                analysis.geometryType(),
-                analysis.status(),
+                shape == null ? null : shape.toString(),
+                analysis == null ? null : analysis.geometryType(),
+                geometryStatus,
                 bounds == null ? null : bounds.minLon(),
                 bounds == null ? null : bounds.minLat(),
                 bounds == null ? null : bounds.maxLon(),

@@ -102,8 +102,8 @@ public class JdbcResearchSpatialSidecarStore implements ResearchSpatialSidecarSt
                             captured_at timestamp with time zone not null,
                             composition_sha256 text not null,
                             projection_id text not null,
-                            geometry_json text not null,
-                            geometry_type text not null,
+                            geometry_json text,
+                            geometry_type text,
                             geometry_status text not null,
                             min_lon double precision,
                             min_lat double precision,
@@ -404,8 +404,8 @@ public class JdbcResearchSpatialSidecarStore implements ResearchSpatialSidecarSt
         statement.setObject(3, record.capturedAt());
         statement.setString(4, record.compositionSha256());
         statement.setString(5, record.projectionId());
-        statement.setString(6, record.geometryJson());
-        statement.setString(7, record.geometryType());
+        setString(statement, 6, record.geometryJson());
+        setString(statement, 7, record.geometryType());
         statement.setString(8, record.geometryStatus().name());
         setDouble(statement, 9, record.minLon());
         setDouble(statement, 10, record.minLat());
@@ -435,8 +435,8 @@ public class JdbcResearchSpatialSidecarStore implements ResearchSpatialSidecarSt
         statement.setObject(6, record.capturedAt());
         statement.setString(7, record.compositionSha256());
         statement.setString(8, record.projectionId());
-        statement.setString(9, record.geometryJson());
-        statement.setString(10, record.geometryType());
+        setString(statement, 9, record.geometryJson());
+        setString(statement, 10, record.geometryType());
         statement.setString(11, record.geometryStatus().name());
         setDouble(statement, 12, record.minLon());
         setDouble(statement, 13, record.minLat());
