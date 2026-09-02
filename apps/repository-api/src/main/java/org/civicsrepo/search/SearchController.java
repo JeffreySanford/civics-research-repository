@@ -5,10 +5,12 @@ import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SourceSystem;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/search")
@@ -74,7 +76,8 @@ public class SearchController {
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "25") int pageSize) {
         if (searchCursorService == null) {
-            throw new IllegalStateException("Cursor search service is not configured.");
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE, "Cursor search service is not configured.");
         }
         return searchCursorService.search(
                 query,

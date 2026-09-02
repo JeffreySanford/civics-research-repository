@@ -43,5 +43,5 @@
 - [x] Pagination work does not mutate the exact C2 corpus/composition/projection model.
 - [x] `pnpm research:cursor:evidence` provides a read-only two-pass full-projection traversal harness.
 - [x] Normal CI tests the harness only with small deterministic fixtures.
-- [ ] Run the full harness against the exact active C2 `FEDERATED_1M` projection and retain the generated JSON/Markdown evidence.
-- [ ] Confirm the final normal CI and Browser Evidence runs are green on the completed PR head before marking ready for review.
+- [x] Full C2 `FEDERATED_1M` traversal completed against projection `3d461a9feb49f7239f3f6aaacb0c90f1ff43d0c683238acc2202c841154db44d`: 1,000,181 unique results across 10,002 pages on each of two passes, zero duplicates, with ordered-ID SHA-256 `0c04a18b843013bd19c406af9fb99c701636870bd4941613fea3736aa167f618` on both passes.
+- [x] Final normal CI and Browser Evidence were green on the completed PR #16 head before merge.
