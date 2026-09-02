@@ -67,25 +67,22 @@ export const searchReducer = createReducer(
     cursorByPage: [],
     nextCursor: null,
   })),
-  on(
-    SearchActions.cursorSearchLoaded,
-    (state, { cursorPage, cursorUsed }) => {
-      const logicalPage = Math.max(0, cursorPage.search.page);
-      const cursorByPage = [...state.cursorByPage];
-      cursorByPage[logicalPage] = logicalPage === 0 ? null : cursorUsed;
+  on(SearchActions.cursorSearchLoaded, (state, { cursorPage, cursorUsed }) => {
+    const logicalPage = Math.max(0, cursorPage.search.page);
+    const cursorByPage = [...state.cursorByPage];
+    cursorByPage[logicalPage] = logicalPage === 0 ? null : cursorUsed;
 
-      return {
-        ...state,
-        response: cursorPage.search,
-        query: { ...state.query, page: logicalPage },
-        loading: false,
-        error: null,
-        cursorMode: true,
-        cursorByPage,
-        nextCursor: cursorPage.nextCursor,
-      };
-    },
-  ),
+    return {
+      ...state,
+      response: cursorPage.search,
+      query: { ...state.query, page: logicalPage },
+      loading: false,
+      error: null,
+      cursorMode: true,
+      cursorByPage,
+      nextCursor: cursorPage.nextCursor,
+    };
+  }),
   on(SearchActions.searchFailed, (state, { error }) => ({
     ...state,
     loading: false,

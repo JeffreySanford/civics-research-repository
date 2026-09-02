@@ -38,21 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: |
-          files=(
-            apps/discovery-ui/src/app/state/search/search.cursor.reducer.spec.ts
-            apps/discovery-ui/src/app/state/search/search.reducer.ts
-            libs/repository/api-client/src/lib/repository-api-client.cursor.spec.ts
-            libs/repository/api-client/src/lib/repository-api-client.ts
-          )
-          pnpm exec prettier --write "${files[@]}"
-          for file in "${files[@]}"; do
-            echo "FORMATTED_FILE_BEGIN:${file}"
-            base64 -w0 "$file"
-            echo
-            echo "FORMATTED_FILE_END:${file}"
-          done
-          exit 1
+        run: pnpm exec nx format:check --all
 
       - name: Lint the OpenAPI contract
         run: pnpm run openapi:lint

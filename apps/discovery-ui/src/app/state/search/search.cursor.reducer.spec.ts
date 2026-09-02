@@ -12,7 +12,10 @@ const response = (page: number): SearchResponse => ({
   facets: [],
 });
 
-const cursorPage = (page: number, nextCursor: string | null): SearchCursorPage => ({
+const cursorPage = (
+  page: number,
+  nextCursor: string | null,
+): SearchCursorPage => ({
   search: response(page),
   nextCursor,
 });

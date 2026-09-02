@@ -45,22 +45,19 @@ describe('RepositorySearchApi cursor traversal', () => {
       ),
     ).resolves.toEqual(page);
 
-    expect(http.get).toHaveBeenCalledWith(
-      'http://api.test/api/search/cursor',
-      {
-        params: {
-          q: 'North Dakota',
-          program: ['TIGER_LINE', 'Office of Science'],
-          publisher: 'U.S. Census Bureau',
-          sourceSystem: 'CENSUS',
-          geography: 'North Dakota',
-          contentType: 'DATASET',
-          vintageYear: 2025,
-          pageSize: 25,
-          cursor: 'opaque-current',
-        },
+    expect(http.get).toHaveBeenCalledWith('http://api.test/api/search/cursor', {
+      params: {
+        q: 'North Dakota',
+        program: ['TIGER_LINE', 'Office of Science'],
+        publisher: 'U.S. Census Bureau',
+        sourceSystem: 'CENSUS',
+        geography: 'North Dakota',
+        contentType: 'DATASET',
+        vintageYear: 2025,
+        pageSize: 25,
+        cursor: 'opaque-current',
       },
-    );
+    });
   });
 
   it('starts traversal without inventing a cursor parameter', async () => {
@@ -83,14 +80,11 @@ describe('RepositorySearchApi cursor traversal', () => {
       ),
     ).resolves.toEqual(page);
 
-    expect(http.get).toHaveBeenCalledWith(
-      'http://api.test/api/search/cursor',
-      {
-        params: {
-          q: 'North Dakota',
-          pageSize: 25,
-        },
+    expect(http.get).toHaveBeenCalledWith('http://api.test/api/search/cursor', {
+      params: {
+        q: 'North Dakota',
+        pageSize: 25,
       },
-    );
+    });
   });
 });
