@@ -21,6 +21,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/search/cursor': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Continue public research discovery with an opaque cursor.
+     * @description Starts a deterministic traversal at logical page zero when cursor is omitted. Returned cursors are opaque, signed navigation state bound to the active discovery projection, effective query/filter set, page size, sort contract, and public search backend. A stale, edited, or incompatible cursor is rejected instead of silently restarting with offsets.
+     */
+    get: operations['searchResearchObjectsWithCursor'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/research/{researchId}': {
     parameters: {
       query?: never;
@@ -846,6 +866,11 @@ export interface components {
       results: components['schemas']['SearchResult'][];
       facets: components['schemas']['FacetGroup'][];
     };
+    SearchCursorPage: {
+      search: components['schemas']['SearchResponse'];
+      /** @description Opaque signed continuation for the next logical page, or null when traversal is exhausted. Clients must not decode, edit, or synthesize this value. */
+      nextCursor: string | null;
+    };
     SearchResult: {
       id: string;
       title: string;
@@ -1507,6 +1532,8 @@ export interface components {
     VintageYear: number;
     Page: number;
     PageSize: number;
+    /** @description Opaque signed continuation returned by the previous cursor search page. The token must be resent unchanged with the same effective discovery criteria and page size. */
+    Cursor: string;
     /** @description URL-safe Base64 identity token for the canonical local research-object identifier. The token keeps namespaced external identifiers containing slashes and URLs inside one path segment without changing the underlying identity used by persistence and discovery. */
     ResearchId: string;
     DatasetId: string;
@@ -1549,6 +1576,45 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SearchResponse'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  searchResearchObjectsWithCursor: {
+    parameters: {
+      query?: {
+        /** @description Keyword search terms. */
+        q?: components['parameters']['SearchQuery'];
+        /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
+        program?: components['parameters']['Program'];
+        /** @description Exact publisher facet value from the active discovery projection. */
+        publisher?: components['parameters']['Publisher'];
+        /** @description Restrict results to one authoritative source system. */
+        sourceSystem?: components['parameters']['SourceSystemFilter'];
+        geography?: components['parameters']['Geography'];
+        /** @description Restrict results to one research object type. */
+        contentType?: components['parameters']['ContentType'];
+        vintageYear?: components['parameters']['VintageYear'];
+        /** @description Opaque signed continuation returned by the previous cursor search page. The token must be resent unchanged with the same effective discovery criteria and page size. */
+        cursor?: components['parameters']['Cursor'];
+        pageSize?: components['parameters']['PageSize'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description One deterministic result page plus the opaque continuation for the next page. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchCursorPage'];
         };
       };
       400: components['responses']['BadRequest'];
