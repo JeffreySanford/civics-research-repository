@@ -4,19 +4,69 @@ import test from 'node:test';
 import {
   classifyCursorTraversal,
   traverseCursor,
+  waitForApiReady,
 } from './cursor-traversal-evidence.mjs';
 
 const PROJECTION_ID = 'a'.repeat(64);
 
-function response(json) {
+function response(json, { ok = true, status = 200 } = {}) {
   return {
-    ok: true,
-    status: 200,
+    ok,
+    status,
     async json() {
       return json;
     },
   };
 }
+
+test('waitForApiReady retries transient startup failures until health responds', async () => {
+  const calls = [];
+  const sleeps = [];
+  let attempt = 0;
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    attempt += 1;
+    if (attempt === 1) {
+      throw new TypeError('fetch failed');
+    }
+    if (attempt === 2) {
+      return response({}, { ok: false, status: 503 });
+    }
+    return response({ status: 'UP' });
+  };
+
+  await waitForApiReady({
+    fetchImpl,
+    baseUrl: 'http://example.test/api',
+    attempts: 3,
+    intervalMs: 25,
+    sleepImpl: async (milliseconds) => {
+      sleeps.push(milliseconds);
+    },
+  });
+
+  assert.deepEqual(calls, [
+    'http://example.test/api/health',
+    'http://example.test/api/health',
+    'http://example.test/api/health',
+  ]);
+  assert.deepEqual(sleeps, [25, 25]);
+});
+
+test('waitForApiReady reports the final readiness failure with recovery guidance', async () => {
+  await assert.rejects(
+    waitForApiReady({
+      fetchImpl: async () => {
+        throw new TypeError('fetch failed');
+      },
+      baseUrl: 'http://example.test/api',
+      attempts: 2,
+      intervalMs: 1,
+      sleepImpl: async () => {},
+    }),
+    /Repository API was not ready.*fetch failed.*docker compose logs --tail=100 repository-api/su,
+  );
+});
 
 test('traverseCursor visits every logical page and hashes ordered IDs', async () => {
   const calls = [];
