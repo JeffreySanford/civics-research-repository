@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { summarizePairedLatencyEvidence } from './search-comparison-statistics.mjs';
 
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
 const DEFAULT_WARMUP_RUNS = 5;
@@ -190,6 +191,28 @@ export async function runSearchComparisonBenchmark({
     projection,
     warmupRuns,
     measuredRuns,
+    rawSamples: {
+      pairing:
+        'Arrays are index-paired: values at the same index came from the same comparison request.',
+      apiElapsed: {
+        solrMs: [...solrSamples],
+        openSearchMs: [...openSearchSamples],
+      },
+      engineReported: {
+        solrMs: [...solrEngineSamples],
+        openSearchMs: [...openSearchEngineSamples],
+      },
+    },
+    pairedStatistics: {
+      apiElapsed: summarizePairedLatencyEvidence(
+        solrSamples,
+        openSearchSamples,
+      ),
+      engineReported: summarizePairedLatencyEvidence(
+        solrEngineSamples,
+        openSearchEngineSamples,
+      ),
+    },
     solr: {
       engine: 'SOLR',
       elapsed: summarizeTimingSamples(solrSamples),
@@ -283,6 +306,9 @@ async function main() {
   );
   console.log(
     `OpenSearch API elapsed p50/p95/p99: ${result.openSearch.elapsed.p50Ms}/${result.openSearch.elapsed.p95Ms}/${result.openSearch.elapsed.p99Ms} ms`,
+  );
+  console.log(
+    `Paired API median difference (OpenSearch - Solr): ${result.pairedStatistics.apiElapsed.medianDifferenceMs} ms; ${Math.round(result.pairedStatistics.apiElapsed.bootstrap.confidenceLevel * 100)}% bootstrap CI ${result.pairedStatistics.apiElapsed.bootstrap.lowerMs}..${result.pairedStatistics.apiElapsed.bootstrap.upperMs} ms`,
   );
   console.log(
     `Solr QTime p50/p95/p99: ${result.solr.engineReported.p50Ms}/${result.solr.engineReported.p95Ms}/${result.solr.engineReported.p99Ms} ms`,
