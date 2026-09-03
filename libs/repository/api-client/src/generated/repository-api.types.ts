@@ -166,6 +166,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/maps/research-coverage': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get criteria- and viewport-bounded research coverage.
+     * @description Reads one activated, versioned research spatial sidecar build and returns explicit matching, mapped, unmapped, quarantined, viewport, truncation, and omitted counts plus a deterministic bounded feature set. The browser never receives the complete spatial sidecar. A viewport whose west value is greater than east crosses the antimeridian.
+     */
+    get: operations['getResearchSpatialCoverage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/overlays/census/lodes-flow': {
     parameters: {
       query?: never;
@@ -798,6 +818,77 @@ export interface components {
       retainedRows: number;
       /** Format: int64 */
       sourceQuarantinedShapeRows: number;
+    };
+    /** @enum {string} */
+    ResearchSpatialGeometryStatus:
+      | 'VALID'
+      | 'ANTIMERIDIAN_CANDIDATE'
+      | 'NO_PUBLISHER_GEOMETRY'
+      | 'QUARANTINED';
+    /** @description WGS84 viewport. west greater than east represents a viewport that crosses the antimeridian; south must be less than or equal to north. */
+    ResearchSpatialViewport: {
+      /** Format: double */
+      west: number;
+      /** Format: double */
+      south: number;
+      /** Format: double */
+      east: number;
+      /** Format: double */
+      north: number;
+    };
+    ResearchSpatialCoverageSummary: {
+      /** Format: int64 */
+      matchingRecords: number;
+      /** Format: int64 */
+      mappedRecords: number;
+      /** Format: int64 */
+      unmappedRecords: number;
+      /** Format: int64 */
+      quarantinedRecords: number;
+      /** Format: int64 */
+      unanchoredAntimeridianRecords: number;
+      /** Format: int64 */
+      viewportMappedRecords: number;
+      returnedFeatures: number;
+      /** Format: int64 */
+      omittedFeatures: number;
+      featureLimit: number;
+      truncated: boolean;
+    };
+    ResearchSpatialCoverageFeature: {
+      sourceSystem: components['schemas']['FederatedSourceSystem'];
+      sourceIdentifier: string;
+      title: string;
+      publisher: string;
+      program: string;
+      contentType: components['schemas']['ResearchObjectType'];
+      /** Format: uri */
+      sourceUrl: string;
+      geometryStatus: components['schemas']['ResearchSpatialGeometryStatus'];
+      /** @description Full publisher GeoJSON geometry retained by the active sidecar build. */
+      geometry: {
+        [key: string]: unknown;
+      };
+      /** Format: double */
+      renderLon: number | null;
+      /** Format: double */
+      renderLat: number | null;
+      renderPointMethod: string | null;
+    };
+    ResearchSpatialCoverageResponse: {
+      buildId: string;
+      sourceSystem: components['schemas']['FederatedSourceSystem'];
+      schemaVersion: number;
+      /** Format: date-time */
+      sourceSnapshotAt: string;
+      /** Format: date-time */
+      capturedAt: string;
+      compositionSha256: string;
+      projectionId: string;
+      criteriaFingerprint: string;
+      viewport: components['schemas']['ResearchSpatialViewport'];
+      summary: components['schemas']['ResearchSpatialCoverageSummary'];
+      features: components['schemas']['ResearchSpatialCoverageFeature'][];
     };
     DataGovSpatialSidecarStatusResponse: {
       activeBuild?: components['schemas']['ResearchSpatialSidecarBuild'] | null;
@@ -1870,6 +1961,52 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CensusAreaBoundary'][];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getResearchSpatialCoverage: {
+    parameters: {
+      query: {
+        /** @description Keyword search terms. */
+        q?: components['parameters']['SearchQuery'];
+        /** @description Repeatable data-driven program name. Repeat the parameter to select several programs; results match any of them. Omitting it searches every program. Values come from indexed metadata and are not restricted to the curated ResearchProgram enum. */
+        program?: components['parameters']['Program'];
+        /** @description Exact publisher facet value from the active discovery projection. */
+        publisher?: components['parameters']['Publisher'];
+        /** @description Spatial sidecar source system; currently DATA_GOV is the supported active source. */
+        sourceSystem?: components['schemas']['FederatedSourceSystem'];
+        geography?: components['parameters']['Geography'];
+        /** @description Restrict results to one research object type. */
+        contentType?: components['parameters']['ContentType'];
+        vintageYear?: components['parameters']['VintageYear'];
+        /** @description Western WGS84 longitude. Values greater than east denote a dateline-crossing viewport. */
+        west: number;
+        /** @description Southern WGS84 latitude. */
+        south: number;
+        /** @description Eastern WGS84 longitude. */
+        east: number;
+        /** @description Northern WGS84 latitude; must be greater than or equal to south. */
+        north: number;
+        /** @description Hard maximum number of map features returned for this viewport. */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Bounded spatial coverage summary and feature set. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ResearchSpatialCoverageResponse'];
         };
       };
       400: components['responses']['BadRequest'];

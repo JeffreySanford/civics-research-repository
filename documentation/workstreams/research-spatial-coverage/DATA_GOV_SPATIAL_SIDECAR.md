@@ -30,7 +30,7 @@ This distinction is deliberate:
 - a **mapped** record has publisher geometry that is structurally usable for the bounded spatial API;
 - an **unmapped** record has spatial source evidence but no queryable publisher geometry.
 
-The later bounded API must report these populations explicitly rather than treating missing geometry as a missing research object.
+The bounded API reports these populations explicitly rather than treating missing geometry as a missing research object.
 
 ## Geometry states
 
@@ -41,7 +41,7 @@ Each sidecar row has one conservative geometry state:
 - `NO_PUBLISHER_GEOMETRY` — the retained Data.gov geospatial match has no `spatial_shape`. Source centroid and raw `dcat.spatial` evidence can still be retained, but the row has no canonical geometry, canonical bounds, or repository render point.
 - `QUARANTINED` — publisher geometry is present but is structurally invalid or contains coordinates outside the WGS84 domain. It remains evidence but is not queryable geometry.
 
-Only `VALID` and `ANTIMERIDIAN_CANDIDATE` rows can expose queryable publisher geometry. The bounded API must give antimeridian candidates explicit handling rather than treating their naive min/max longitude envelope as an ordinary viewport box.
+Only `VALID` and `ANTIMERIDIAN_CANDIDATE` rows can expose queryable publisher geometry. The bounded API gives antimeridian candidates explicit handling rather than treating their naive min/max longitude envelope as an ordinary viewport box.
 
 ## Rendering points
 
@@ -116,23 +116,27 @@ criteria + viewport bounded query
                 |
                 +--> matching / mapped / unmapped counts
                 |
-                +--> aggregate / cluster / limited features
+                +--> bounded feature set
                 v
 MapLibre + semantic HTML equivalent
 ```
 
 The browser must never receive the complete sidecar population.
 
+## Bounded query layer
+
+The read boundary is implemented by `GET /maps/research-coverage` and documented in [BOUNDED_RESEARCH_SPATIAL_API.md](BOUNDED_RESEARCH_SPATIAL_API.md).
+
+That layer:
+
+- pins each request to one active build and returns its composition/projection identity;
+- accepts the shared Discovery criteria shape plus WGS84 viewport constraints;
+- reports matching, mapped, unmapped, quarantined, antimeridian, viewport, returned, and omitted counts;
+- enforces a deterministic feature limit with a hard maximum of 500;
+- handles antimeridian candidates separately from ordinary numeric envelope filtering;
+- returns full publisher GeoJSON only for the bounded features selected for the current request;
+- carries semantic research metadata needed by the accessible Maps equivalent.
+
 ## Next slice
 
-The next implementation slice is the bounded Research Coverage spatial API. It should:
-
-- bind results to the active sidecar composition/projection identity;
-- accept engine-neutral Discovery criteria plus viewport constraints;
-- return explicit matching, mapped, unmapped, quarantined/omitted counts;
-- enforce a hard feature limit and deterministic truncation/aggregation contract;
-- handle antimeridian candidates separately from ordinary numeric envelope filtering;
-- return only bounded feature geometry needed by the current request;
-- support the same information through a semantic result/table contract for the accessible Maps experience.
-
-MapLibre rendering and the Research Coverage controls belong to the following UI slice, not to the sidecar persistence layer.
+The remaining visible work is the Maps Research Coverage UI: add the category/layer, connect Discovery criteria and viewport changes to the bounded endpoint, render only the returned features in MapLibre, and expose equivalent semantic summary/table content with Storybook, axe, keyboard/focus, and Playwright evidence.
