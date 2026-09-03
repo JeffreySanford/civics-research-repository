@@ -18,6 +18,10 @@ import {
   pipelineFeatureKey,
   initialPipelineState,
 } from '../state/pipeline/pipeline.reducer';
+import {
+  initialPerformanceEvidenceState,
+  performanceEvidenceFeatureKey,
+} from '../state/performance-evidence/performance-evidence.reducer';
 
 const projection: DiscoveryProjectionState = {
   source: 'REPOSITORY',
@@ -92,6 +96,7 @@ describe('EvidencePage accessibility', () => {
           initialState: {
             [evidenceFeatureKey]: { ...initialEvidenceState, ...evidence },
             [pipelineFeatureKey]: { ...initialPipelineState, ...pipeline },
+            [performanceEvidenceFeatureKey]: initialPerformanceEvidenceState,
           },
         }),
       ],

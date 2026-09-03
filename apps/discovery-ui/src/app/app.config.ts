@@ -33,6 +33,11 @@ import {
   evidenceFeatureKey,
   evidenceReducer,
 } from './state/evidence/evidence.reducer';
+import { PerformanceEvidenceEffects } from './state/performance-evidence/performance-evidence.effects';
+import {
+  performanceEvidenceFeatureKey,
+  performanceEvidenceReducer,
+} from './state/performance-evidence/performance-evidence.reducer';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -59,11 +64,13 @@ export const appConfig: ApplicationConfig = {
     provideState(syncFeatureKey, syncReducer),
     provideState(evidenceFeatureKey, evidenceReducer),
     provideState(pipelineFeatureKey, pipelineReducer),
+    provideState(performanceEvidenceFeatureKey, performanceEvidenceReducer),
     provideEffects([
       DatasetsEffects,
       ErrorNotificationEffects,
       EvidenceEffects,
       PipelineEffects,
+      PerformanceEvidenceEffects,
       MapsEffects,
       SearchEffects,
       SyncEffects,

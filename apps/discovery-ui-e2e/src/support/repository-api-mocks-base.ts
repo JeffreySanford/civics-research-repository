@@ -52,6 +52,13 @@ export async function mockFixtureBackedRepositoryApi(
 }
 
 export async function mockRepositoryApi(page: Page): Promise<void> {
+  await page.route(`**/api/evidence/search-performance`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: searchPerformanceEvidence(),
+    });
+  });
+
   await page.route(`**/api/search**`, async (route) => {
     const url = new URL(route.request().url());
     const query = url.searchParams.get('q') ?? '';
@@ -537,6 +544,112 @@ const SYNC_ACTIONS_BY_MODE = {
     },
   ],
 } as const;
+
+function searchPerformanceEvidence() {
+  return {
+    profile: 'FEDERATED_1M',
+    capturedAt: '2026-09-03T19:06:00Z',
+    scope: 'LOCAL_CERTIFIED_TOPOLOGY_ONLY',
+    comparativeClaimAllowed: false,
+    projectionId:
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    projectionObjectCount: 1000181,
+    retainedFederatedRecords: 1000000,
+    targetParity: true,
+    claimGuardrail:
+      'Scoped statements only; this fixture does not assert a universal engine ranking.',
+    executionControls: {
+      orderStrategy: 'RANDOMIZED',
+      requestedStartingOrder: 'SOLR_FIRST',
+      realizedFirstBatchOrder: 'OPENSEARCH_FIRST',
+      seed: 20260903,
+      seedApplied: true,
+      batches: 6,
+      measuredRunsPerBatch: 20,
+      totalMeasuredRuns: 120,
+      batchExecutionOrders: ['OPENSEARCH_FIRST', 'SOLR_FIRST'],
+    },
+    standaloneBatchEvidence: {
+      available: true,
+      scenario: 'FULL_TEXT_RELEVANCE',
+      query: 'North Dakota workforce',
+      batchCount: 6,
+      apiElapsed: {
+        medianDifferenceMs: 4,
+        lower95Ms: 2,
+        upper95Ms: 5,
+        solrWinRatePercent: 100,
+        excludesZero: true,
+        interpretation:
+          'Positive differences mean OpenSearch took longer than Solr.',
+      },
+      engineReported: null,
+      experimentalUnit: 'One separately warmed benchmark batch.',
+    },
+    orderRobustness: {
+      scenarioCount: 4,
+      solrLeadsP50BothOrdersCount: 4,
+      solrLeadsP95BothOrdersCount: 4,
+      scenarios: [],
+    },
+    pairedWorkloads: [
+      {
+        scenario: 'FULL_TEXT_RELEVANCE',
+        workloadClass: 'FULL_TEXT',
+        executionOrder: 'SOLR_FIRST',
+        solrApiP50Ms: 5,
+        solrApiP95Ms: 5,
+        openSearchApiP50Ms: 7,
+        openSearchApiP95Ms: 11,
+        solrNativeP50Ms: 3,
+        solrNativeP95Ms: 3,
+        openSearchNativeP50Ms: 5,
+        openSearchNativeP95Ms: 8,
+      },
+    ],
+    concurrency: [
+      {
+        workloadId: 'FULL_TEXT_RELEVANCE',
+        workloadClass: 'FULL_TEXT',
+        concurrency: 8,
+        measuredComparisons: 240,
+        comparisonRequestsPerSecond: 18.5,
+        solrApiP50Ms: 8,
+        solrApiP95Ms: 15,
+        openSearchApiP50Ms: 14,
+        openSearchApiP95Ms: 29,
+        requestLevel: {
+          medianDifferenceMs: 6,
+          lower95Ms: 4,
+          upper95Ms: 8,
+          solrWinRatePercent: 96.5,
+          excludesZero: true,
+          interpretation:
+            'Positive differences mean OpenSearch took longer than Solr.',
+        },
+        batchLevel: {
+          available: true,
+          batchCount: 6,
+          apiElapsed: {
+            medianDifferenceMs: 5,
+            lower95Ms: 3,
+            upper95Ms: 7,
+            solrWinRatePercent: 100,
+            excludesZero: true,
+            interpretation:
+              'Positive differences mean OpenSearch took longer than Solr.',
+          },
+        },
+      },
+    ],
+    resources: {
+      captured: true,
+      interpretation: 'Counters and before/after observations remain distinct.',
+      counterResetDetected: false,
+      counterResetFields: [],
+    },
+  };
+}
 
 function accessibilityEvidence() {
   return [

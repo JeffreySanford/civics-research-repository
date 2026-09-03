@@ -1210,3 +1210,49 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
+
+.evidence-subsection {
+  margin-top: 1.5rem;
+}
+
+.evidence-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.evidence-metrics div {
+  min-width: 0;
+}
+
+.evidence-metrics dt {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.evidence-metrics dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.performance-evidence-hash {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table-secondary {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.evidence-note {
+  margin-bottom: 0;
+}
