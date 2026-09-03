@@ -6,6 +6,7 @@ on:
       - codex/maps-research-coverage-ui
     paths:
       - tools/scripts/patch-maps-research-coverage-ui.mjs
+      - tools/scripts/fix-maps-research-coverage-ui-patcher.mjs
       - .github/workflows/maps-research-coverage-ui-patch.yml
 
 permissions:
@@ -26,6 +27,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Correct temporary patcher quoting
+        run: node tools/scripts/fix-maps-research-coverage-ui-patcher.mjs
       - name: Apply UI patch
         run: node tools/scripts/patch-maps-research-coverage-ui.mjs
       - name: Format patched files
