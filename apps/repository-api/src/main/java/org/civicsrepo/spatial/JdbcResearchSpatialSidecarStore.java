@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.sql.DataSource;
 import org.civicsrepo.federation.FederatedSourceSystem;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -54,6 +55,7 @@ public class JdbcResearchSpatialSidecarStore implements ResearchSpatialSidecarSt
     private final JdbcClient jdbcClient;
     private final JdbcTemplate jdbcTemplate;
 
+    @Autowired
     public JdbcResearchSpatialSidecarStore(JdbcClient jdbcClient, DataSource dataSource) {
         this(jdbcClient, new JdbcTemplate(dataSource));
     }
