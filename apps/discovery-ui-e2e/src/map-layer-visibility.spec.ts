@@ -83,7 +83,9 @@ test.describe('map layer MapLibre visibility', () => {
       await expect(category).toHaveJSProperty('open', false);
     }
 
-    // At the desktop test viewport the four collapsed categories share one horizontal row.
+    // At the desktop test viewport the four collapsed categories share one horizontal row. Round
+    // CSS pixel positions so tiny cross-browser subpixel differences do not masquerade as layout
+    // drift while still catching a category that wrapped onto another row.
     const categoryTops = await Promise.all(
       [
         geographyCategory,
@@ -91,7 +93,9 @@ test.describe('map layer MapLibre visibility', () => {
         environmentCategory,
         researchCategory,
       ].map((category) =>
-        category.evaluate((element) => element.getBoundingClientRect().top),
+        category.evaluate((element) =>
+          Math.round(element.getBoundingClientRect().top),
+        ),
       ),
     );
     expect(Math.max(...categoryTops) - Math.min(...categoryTops)).toBeLessThan(
