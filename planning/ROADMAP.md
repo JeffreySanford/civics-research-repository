@@ -1,12 +1,12 @@
 # Roadmap
 
-This roadmap contains future outcomes only. Delivered phases are summarized in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md), generated repository facts live in [documentation/platform-status.md](../documentation/platform-status.md), and the exact C2 million-record milestone is recorded in [documentation/federation/scale-evidence.md](../documentation/federation/scale-evidence.md).
+This roadmap contains **future outcomes only**. Delivered phases belong in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md), generated repository facts live in [documentation/platform-status.md](../documentation/platform-status.md), and the certified C2 standalone milestone is recorded in [documentation/federation/scale-evidence.md](../documentation/federation/scale-evidence.md).
 
-The repository-wide rule remains: **testing and evidence precede feature expansion**. A working local screen or one successful scale run is a development milestone, not completion.
+The repository-wide rule remains: **testing and evidence precede feature expansion**.
 
-## Current position
+## Certified control baseline
 
-PI-1 has established the standalone control baseline:
+The standalone Compose research baseline is complete:
 
 ```text
 DSpace curated authority: 181
@@ -18,184 +18,169 @@ Solr:       1,000,181
 OpenSearch: 1,000,181
 ```
 
-The exact C2 composition and normalized search projection have separate deterministic identities. Solr/OpenSearch parity is proven at 1M-class scale, the retained corpus has a verified Gold Master archive, active projection identity survives ordinary API restarts without reindexing, and `quality:scale` certifies the live C2 contract from one command.
+The baseline includes deterministic composition/projection identity, Gold Master recovery, restart-safe activation, deep traversal, semantic comparison gates, paired timing evidence, randomized independent batches, concurrency 1/8/32, resource telemetry, automated statistical synthesis and an accessible Evidence UI.
 
-PRs #13 and #14 delivered the versioned semantic matrix, exact identifier probes and structured comparison filters. PRs #16 and #19 then made opaque cursor/search-after traversal the deep-discovery path and certified two complete 1,000,181-result traversals with no gaps or duplicates while retaining offset compatibility for migration.
+The project does **not** need another million-record run merely to prove that the first million works.
 
-The Maps foundation has moved well past its first administrative summary. The workspace now has purpose-oriented categories, capability-aware controls, shared authoritative Census county geometry, versioned Data.gov spatial sidecar evidence, a bounded `/maps/research-coverage` viewport API, and a visible **Data.gov publisher research geometry** Research Coverage child. MapLibre renders only the bounded publisher feature set, while semantic HTML exposes the same mapped/unmapped/quarantined/truncated evidence and research-object rows. Storybook interaction + axe evidence and targeted Playwright/MapLibre evidence cover the new states and layer behavior.
-
-The remaining PI-1 work is therefore **projection/resource evidence, durable identity reconciliation, deliberate federation/source expansion, and handoff**—not rebuilding the cursor, map-control, million-record comparison, or Data.gov spatial foundations.
-
-## PI-1 — Reusable federation and search evidence
-
-### 1. Capture reusable projection/resource evidence
-
-- Add reusable projection elapsed-time and documents/second evidence.
-- Record accepted/rejected/skipped/indexed counts with each large projection.
-- Capture host/container/JVM CPU and memory context with heavy runs.
-- Keep resource/progress evidence tied to corpus and projection identity so PI-2 compares topology rather than undocumented machines.
-- Add configurable per-source request concurrency and explicit rate-limit policy where publisher behavior requires it.
-
-### 2. Define durable identity reconciliation
-
-- Define DOI/PMID/other durable-identifier reconciliation rules.
-- Never silently merge by title.
-- Distinguish source-record identity, intellectual-work identity, versions/relationships and duplicate projection entries.
-- Review UUID/source-identifier route stability so future PubMed/OpenAlex/NASA relationships can resolve without changing existing local IDs casually.
-
-### 3. Extend research spatial coverage and thematic Maps deliberately
-
-The delivered Maps taxonomy remains stable:
+## Near-term sequence
 
 ```text
-Geography & Boundaries
-  TIGER/Line
-
-Community & Economy
-  LODES workplace / commuting
-  SAIPE
-  future population / business / housing measures
-
-Environment & Hazards
-  USGS hydrography / earthquakes
-  future 3DEP terrain
-
-Research Coverage
-  Data.gov publisher research geometry
-  future NASA collection / bounded granule coverage
-  future source-specific explicit spatial children
+#46  Close/freeze certified C2 documentation
+        |
+        +--> #47  C2.1 adversarial standalone validation
+        |
+        +--> #48  PI-2 Kubernetes topology research
+        |
+        +--> #49  Manual accessibility evidence
+                    |
+                    v
+#51  Final frontend mission alignment / portfolio polish
 ```
 
-The Data.gov research-coverage foundation is now complete enough to serve as the reusable pattern. Current publisher geospatial evidence is retained in a versioned sidecar bound to C2 composition/projection identity, and the browser receives only viewport-bounded features through the dedicated API. Missing publisher geometry, quarantined geometry, antimeridian candidates, omission, and truncation remain explicit rather than being hidden or inferred from publisher/institution location.
+## #47 — C2.1 adversarial validation
 
-Do not replay or rewrite the certified 500K Data.gov corpus merely to change spatial enrichment. `harvestRecordRaw` remains a source-reference URL, while current Data.gov `spatial_shape`, `spatial_centroid`, and `dcat.spatial` evidence belongs to the independently versioned sidecar/source-evidence model.
+C2.1 is optional follow-up research designed to challenge the existing Solr-favoring observation.
 
-Before adding many more thematic choropleths, generalize the existing shared-geometry/value pattern so new services return values keyed by stable identifiers rather than embedding their own polygons. Extend authoritative administrative geometry only when a concrete state/territory, PUMA, tract or place use case requires it.
+The protocol is frozen in [C2_ADVERSARIAL_VALIDATION_PROTOCOL.md](C2_ADVERSARIAL_VALIDATION_PROTOCOL.md) before new C2.1 timing data are collected.
 
-The strongest next thematic additions remain:
+Future outcome:
 
-1. **Population Estimates** — county population, change and growth.
-2. **County Business Patterns** — county employment/establishments/payroll with measure and industry parameters inside one conceptual layer.
-3. **Business Dynamics Statistics** — job creation/destruction and establishment births/deaths after the county-value contract is proven.
-4. **Building Permits** — county totals first; place-level symbols only after authoritative place geometry/coordinates exist.
-5. **Economic Census** — county/industry measures after the economic-layer configuration model has evidence.
-6. **ACS PUMS-derived measures** — weighted PUMA/state aggregates only; never person/household points.
-7. **3DEP terrain** — one configurable terrain/reference child rather than checkbox proliferation for hillshade/slope/aspect modes.
+- exact pinned engine versions;
+- explicit/equalized resource controls;
+- semantically validated OpenSearch optimizations;
+- preregistered multi-query full-text matrix;
+- broad/moderate/genuinely selective filter bands;
+- p50/p90/p95/p99;
+- more independently warmed batches;
+- balanced randomized order;
+- multiple clean engine/container restart blocks;
+- reporting that retains every preregistered cell, including OpenSearch wins.
 
-NASA CMR remains the strongest next federated spatial source. Extend the existing collection adapter with an explicit/pinned spatial metadata representation, then model bounded granule coverage separately so collection and granule semantics never collapse into one type. Reuse the existing bounded viewport/result-cap pattern; granules additionally need collection/time bounds where appropriate.
+C2.1 succeeds if it is reproducible and capable of contradicting C2. Solr does not need to win for the experiment to succeed.
 
-Every new research-coverage child must preserve semantic list/table equivalence, keyboard operation, provenance, explicit truncation, and the existing automated/manual accessibility evidence split.
+## #48 — PI-2 local Kubernetes search laboratory
 
-### 4. Extend the federation portfolio deliberately
+PI-2 makes topology the experimental variable while preserving the frozen corpus/query contracts.
 
-The evidence-first source order remains:
+Future outcome:
 
-1. NASA Earthdata CMR — build on the existing collection harvester, then add controlled granule semantics and spatial/temporal coverage;
-2. PubMed — bibliographic/abstract relevance scale after DOI/PMID reconciliation rules exist;
-3. OpenAlex — broad scholarly/citation coverage after the federal-source story is stable.
+- repository-owned kind lifecycle;
+- SolrCloud through the official Solr Operator and ZooKeeper;
+- supported multi-node OpenSearch deployment;
+- explicit shards/replicas/heap/CPU/memory/storage metadata;
+- unchanged Angular/Spring request semantics;
+- identical 10K/100K/1M corpus/query definitions;
+- 1/8/32 client comparisons;
+- controlled node-loss/recovery per engine;
+- post-recovery projection identity/parity evidence.
 
-For NASA CMR, reconcile planning language with the collection harvester/tests already in the repository, add committed canonical collection fixtures/evidence where needed, then prove bounded 10K/100K granule slices before any larger corpus.
+Compose remains the default fast development/demo path and standalone control topology. Kind results are local clustered evidence, never a proxy for physical/cloud-node performance.
 
-For PubMed, prefer a reproducible bounded fixture/API path first and evaluate baseline/update files before millions of individual requests. OpenAlex follows only after the federal-source and durable-identity stories remain stable.
+## #49 — Manual accessibility evidence
 
-PubMed/OpenAlex affiliation or institution geography, if later useful, is a separately named relationship/location analytic dimension. It is not research coverage unless the underlying source explicitly states research geography.
+The automated accessibility architecture is mature; remaining work is human verification.
 
-Another million-record run is justified only when it answers a new source, semantic, spatial or topology question—not merely to repeat C2 with a larger number.
+Future outcome:
 
-### PI-1 exit condition
+- dated/commit-bound keyboard-only evidence;
+- NVDA in Firefox and Chrome/Chromium;
+- JAWS or explicit N/A with licensing reason;
+- Search Lab and Evidence focus/read-order review;
+- Maps/MapLibre focus-path and visual/nonvisual equivalence review;
+- cognitive/workflow review;
+- WCAG 2.2 focus-not-obscured, dragging-alternative and target-size checks;
+- current federal ICT Testing Baseline / Trusted Tester crosswalk.
 
-PI-1 is ready to hand off when:
+Automated axe, Storybook and browser evidence never substitute for these manual checks.
 
-- large-projection resource/progress evidence is captured consistently and tied to corpus/projection identity;
-- durable identifier reconciliation rules are explicit;
-- planned source adapters have reproducible bounded harvest paths and fixture coverage;
-- stable corpus/query definitions remain versioned for PI-2;
-- semantic Solr/OpenSearch evidence remains reproducible when topology becomes the experimental variable.
+## #51 — Final frontend mission alignment and portfolio polish
 
-The broader map-product expansion can continue after PI-1; it does not have to block Kubernetes handoff once the shared spatial/search contracts required for reproducibility are stable.
+The intended final product-facing milestone is to make the repository present itself first as a government-grade Angular Open Science/data-discovery frontend.
 
-## PI-2 — Local Kubernetes search laboratory
+Future outcome:
 
-Compose remains the default fast development/demo path and the standalone control topology.
+- frontend-first README hierarchy;
+- Angular/NgRx/OpenAPI/accessibility case study;
+- concise 5-8 minute UI-focused demo path;
+- final polish audit of Discovery, research detail, Maps, Evidence and Search Lab;
+- explicit browser ownership boundary;
+- full-stack/search research retained as technical depth under the UI story;
+- non-affiliation language preserved.
 
-PI-2 adds reproducible clustered topology:
-
-- repository-owned kind lifecycle commands;
-- SolrCloud with the official Solr Operator and ZooKeeper;
-- multi-node OpenSearch with aligned mappings/analyzers;
-- identical PI-1 10K/100K/1M corpus and query definitions;
-- concurrency checkpoints such as 1/8/32;
-- explicit shard/replica/heap/storage/resource metadata;
-- deliberate node-loss/recovery and persistence verification;
-- semantic parity checks before interpreting latency differences.
-
-The purpose is topology evidence, not replacing Compose.
+The backend/search work is not removed or minimized technically. It becomes evidence that the frontend is built against realistic authority, scale, latency and failure conditions.
 
 ## PI-3 — Infrastructure as Code / AWS
 
-Choose Terraform or CDK after PI-2 has produced defensible topology/resource evidence.
+PI-3 is optional after PI-2.
 
-Implement the documented AWS target or a justified alternative with:
+Choose Terraform or CDK only after local clustered evidence provides defensible guidance for:
 
-- reproducible infrastructure;
-- secrets and identity;
-- persistent search storage;
+- node/pod sizing;
+- shard/replica strategy;
+- persistent storage;
+- JVM/resource defaults;
 - observability;
 - backup/restore;
-- health/readiness probes;
-- deployment and rollback procedures;
-- explicit reasoning about whether both search engines are required outside the comparison laboratory.
+- readiness/liveness;
+- deployment/rollback;
+- whether both search engines are required outside the comparison laboratory.
 
-## PI-4 — Manual Accessibility Evidence
+## Optional federation/source expansion
 
-The federal Section 508 baseline and the project's engineering target remain separate. The project continues to track Section 508-oriented evidence while advancing the engineering target to WCAG 2.2 A/AA.
+Additional sources are no longer prerequisites for the certified standalone baseline.
 
-Remaining dated, commit-bound manual evidence includes:
+Pursue them only when they answer a new research/product question:
 
-- keyboard-only end-to-end review;
-- NVDA in Firefox and Chrome;
-- JAWS, or explicit N/A with licensing reason;
-- map-equivalence/focus-path review;
-- cognitive/workflow review;
-- Search Lab keyboard-only flow;
-- review of the MapLibre canvas tab stop with a screen reader;
-- current ICT Testing Baseline / Trusted Tester crosswalk;
-- explicit WCAG 2.2 checks for focus not obscured, dragging alternatives and target size.
+1. NASA Earthdata CMR collection/granule spatial-temporal evidence;
+2. PubMed bibliographic/abstract ingestion after DOI/PMID reconciliation is explicit;
+3. OpenAlex scholarly/citation relationships after the federal-source identity model remains stable.
 
-Automated axe/browser/Storybook evidence never substitutes for these checks.
+Prefer bounded/reproducible source paths and publisher bulk/snapshot mechanisms over millions of ordinary API requests.
 
-## PI-5 — Browser evidence governance
+## Optional Maps expansion
 
-The dedicated Browser Evidence workflow exists and uploads failure evidence. Remaining governance work:
+The existing category/accessibility architecture remains the pattern:
 
-- decide which WCAG/Section 508-oriented jobs are required merge checks;
-- decide whether `main` receives branch protection;
-- preserve the prior known-good evidence baseline when a refresh fails.
+```text
+Geography & Boundaries
+Community & Economy
+Environment & Hazards
+Research Coverage
+```
 
-## PI-6 — Solr/OpenSearch comparison hardening
+Potential future additions include Population Estimates, County Business Patterns, Business Dynamics Statistics, Building Permits, Economic Census, weighted PUMS aggregates and one configurable 3DEP terrain/reference layer.
 
-After PI-1 handoff, consider richer scenarios:
+Rules:
 
-- phrase search and highlighting;
-- geo using the authoritative spatial-coverage model;
+- reuse authoritative shared geometry keyed by stable identifiers;
+- keep browser feature payloads bounded;
+- keep Data.gov spatial enrichment in a versioned sidecar so C2 identity is unchanged;
+- never infer research geography from publisher/institution location;
+- preserve semantic list/table equivalents and keyboard operation for every visual layer.
+
+## Optional search breadth
+
+After C2.1/PI-2, richer scenarios may include:
+
+- phrase search/highlighting;
+- geo;
 - autocomplete/suggest;
 - synonyms;
 - nested/object fields;
 - vector/hybrid search.
 
-These remain downstream of the reproducible lexical baseline.
+These are breadth experiments, not missing requirements in the certified lexical baseline.
 
-## Cross-cutting product and provenance work
+## Cross-cutting product/governance work
 
-- Record source freshness per research object where reliable publisher dates exist.
-- Expose projection/index timestamps consistently across Admin, Evidence, Discovery and Search Lab.
-- Distinguish stored sample, stale and unavailable data where those states apply.
-- Add regression coverage for LODES fallback provenance.
-- Replace remaining dataset-shaped copy where the object may be a publication, report, software item, methodology, project or granule.
-- Improve presentation of opaque publisher program values such as Data.gov codes without replacing raw metadata with a fixed UI allowlist.
-- Clarify projection-level authority terminology where compatibility `REPOSITORY` is too coarse for mixed DSpace + federated search state.
-- Move NgRx dependencies from release candidates to stable versions after validation.
+- Define DOI/PMID/other durable cross-source reconciliation rules before bibliographic expansion.
+- Record publisher freshness where reliable dates exist.
+- Expose projection/index timestamps consistently across user/admin evidence surfaces.
+- Improve opaque publisher program labels without replacing raw metadata with a fixed allowlist.
+- Replace remaining dataset-shaped copy where the object may be publication, software, methodology, project or granule.
+- Decide which browser/accessibility jobs become required checks and whether `main` receives branch protection.
+- Move NgRx release-candidate dependencies to stable versions after validation.
 
 ## Non-goals
 
-The roadmap does not include replacing DSpace with a search engine, forcing federated records into DSpace, making search indexes authoritative, deleting Compose after Kubernetes, downloading millions of binaries merely to inflate record count, running million-record work in ordinary PR CI, adding a separate Node harvester runtime, inferring research geography from publisher location, rendering raw microdata people/households as map points, sending an unbounded spatial sidecar to MapLibre, or claiming complete Section 508 conformance from automated scans.
+The roadmap does not include replacing DSpace with a search engine, making search indexes authoritative, forcing federated records into DSpace, deleting Compose after Kubernetes, downloading millions of binaries merely to inflate scale, running million-record work in ordinary PR CI, inferring research geography from publisher location, rendering raw microdata people/households as map points, sending unbounded spatial data to MapLibre, or claiming complete Section 508 conformance from automated scans.
