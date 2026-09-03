@@ -72,10 +72,17 @@ test.describe('repository research coverage', () => {
     );
     const toggle = page.getByTestId('map-layer-research-coverage');
 
-    // The capability remains discoverable while its bounded result is loading or empty.
+    // The capability remains discoverable while its bounded result is loading or empty, but its
+    // child control no longer consumes above-the-fold space until the disclosure is opened.
     await expect(category).toBeVisible();
     await expect(categorySummary).toContainText('Research Coverage');
     await expect(categorySummary).toContainText('1 layer');
+    await expect(category).toHaveJSProperty('open', false);
+    await expect(toggle).not.toBeVisible();
+
+    await categorySummary.click();
+    await expect(category).toHaveJSProperty('open', true);
+    await expect(toggle).toBeVisible();
     await expect(category).toContainText(
       'Data.gov publisher research geometry',
     );
