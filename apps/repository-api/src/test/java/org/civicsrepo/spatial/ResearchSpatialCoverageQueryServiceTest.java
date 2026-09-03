@@ -141,7 +141,8 @@ class ResearchSpatialCoverageQueryServiceTest {
         assertTrue(response.summary().truncated());
         assertEquals(1, response.features().size());
         assertEquals("inside-a", response.features().getFirst().sourceIdentifier());
-        assertEquals("Polygon", response.features().getFirst().geometry().path("type").asText());
+        assertEquals("Polygon", response.features().getFirst().geometry().get("type"));
+        assertTrue(response.features().getFirst().geometry().get("coordinates") instanceof List<?>);
     }
 
     @Test
