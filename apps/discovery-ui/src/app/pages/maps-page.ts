@@ -393,6 +393,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       .subscribe((boundary) => {
         this.pendingBoundary = boundary;
         this.renderCensusBoundary();
+        // Research coverage has an accessible semantic surface even if WebGL is unavailable.
+        // The selected Census boundary is therefore the initial bounded viewport; once MapLibre
+        // is ready, moveend replaces it with the actual interactive viewport.
+        this.researchCoverageRequestFingerprint = '';
+        this.scheduleResearchCoverageRefresh(0);
       });
 
     this.lodesFlowOverlay$
@@ -661,17 +666,26 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private currentResearchViewport(): ResearchSpatialViewport | null {
-    if (!this.map) {
-      return null;
+    if (this.map) {
+      const bounds = this.map.getBounds();
+      return {
+        west: this.normalizeLongitude(bounds.getWest()),
+        south: Math.max(-90, Math.min(90, bounds.getSouth())),
+        east: this.normalizeLongitude(bounds.getEast()),
+        north: Math.max(-90, Math.min(90, bounds.getNorth())),
+      };
     }
 
-    const bounds = this.map.getBounds();
-    return {
-      west: this.normalizeLongitude(bounds.getWest()),
-      south: Math.max(-90, Math.min(90, bounds.getSouth())),
-      east: this.normalizeLongitude(bounds.getEast()),
-      north: Math.max(-90, Math.min(90, bounds.getNorth())),
-    };
+    if (this.pendingBoundary) {
+      return {
+        west: this.pendingBoundary.west,
+        south: this.pendingBoundary.south,
+        east: this.pendingBoundary.east,
+        north: this.pendingBoundary.north,
+      };
+    }
+
+    return null;
   }
 
   private normalizeLongitude(longitude: number): number {

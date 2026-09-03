@@ -47,7 +47,7 @@ test.describe('repository research coverage', () => {
     expect(requestUrl.searchParams.get('contentType')).toBe('DATASET');
     expect(requestUrl.searchParams.get('geography')).toBeNull();
     expect(requestUrl.searchParams.get('vintageYear')).toBeNull();
-    expect(requestUrl.searchParams.get('featureLimit')).toBe('200');
+    expect(requestUrl.searchParams.get('limit')).toBe('200');
 
     for (const parameter of ['west', 'south', 'east', 'north']) {
       const value = Number(requestUrl.searchParams.get(parameter));
@@ -56,11 +56,15 @@ test.describe('repository research coverage', () => {
     expect(Number(requestUrl.searchParams.get('west'))).toBeGreaterThanOrEqual(
       -180,
     );
-    expect(Number(requestUrl.searchParams.get('east'))).toBeLessThanOrEqual(180);
+    expect(Number(requestUrl.searchParams.get('east'))).toBeLessThanOrEqual(
+      180,
+    );
     expect(Number(requestUrl.searchParams.get('south'))).toBeGreaterThanOrEqual(
       -90,
     );
-    expect(Number(requestUrl.searchParams.get('north'))).toBeLessThanOrEqual(90);
+    expect(Number(requestUrl.searchParams.get('north'))).toBeLessThanOrEqual(
+      90,
+    );
 
     const category = page.getByTestId('map-layer-category-research-coverage');
     const categorySummary = page.getByTestId(
@@ -72,7 +76,9 @@ test.describe('repository research coverage', () => {
     await expect(category).toBeVisible();
     await expect(categorySummary).toContainText('Research Coverage');
     await expect(categorySummary).toContainText('1 layer');
-    await expect(category).toContainText('Data.gov publisher research geometry');
+    await expect(category).toContainText(
+      'Data.gov publisher research geometry',
+    );
     await expect(toggle).not.toBeChecked();
 
     await toggle.check();
@@ -80,7 +86,9 @@ test.describe('repository research coverage', () => {
     await expect(page).toHaveURL(/research=on/);
 
     const legend = page.getByLabel('Visible map layer legend');
-    const legendEntry = legend.getByText(/Data.gov publisher research geometry/);
+    const legendEntry = legend.getByText(
+      /Data.gov publisher research geometry/,
+    );
     await expect(legendEntry).toContainText('3 mapped in view');
     await expect(legendEntry).toContainText('2 returned of 33 matching');
     await expect(legendEntry).toContainText('bounded to 200 features');
@@ -133,7 +141,9 @@ test.describe('repository research coverage', () => {
     await expect(point).toContainText('LODES / DATASET');
     await expect(table.getByRole('row')).toHaveCount(3); // header + two bounded features
 
-    await expect(researchSummary).toContainText('Spatial build data-gov-spatial-e2e');
+    await expect(researchSummary).toContainText(
+      'Spatial build data-gov-spatial-e2e',
+    );
     await expect(researchSummary).toContainText('projection projection-e2e');
 
     // Category collapse is presentation-only. It must not mutate the checked child, legend, or
@@ -149,9 +159,9 @@ test.describe('repository research coverage', () => {
     await toggle.uncheck();
     await expect(toggle).not.toBeChecked();
     await expect(page).toHaveURL(/research=off/);
-    await expect(legend.getByText(/Data.gov publisher research geometry/)).toHaveCount(
-      0,
-    );
+    await expect(
+      legend.getByText(/Data.gov publisher research geometry/),
+    ).toHaveCount(0);
     await expect(researchSummary).toHaveCount(0);
   });
 });

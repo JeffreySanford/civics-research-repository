@@ -11,10 +11,10 @@ import {
 } from 'rxjs';
 import {
   RepositoryMapsApi,
-  RepositorySearchApi,
   type CensusAreaBoundary,
-  type SearchResponse,
   type MapLayer,
+  type ResearchSpatialCoverageResponse,
+  type ResearchSpatialViewport,
   type UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
@@ -57,16 +57,6 @@ const censusAreaBoundaries = [
   },
 ] as unknown as CensusAreaBoundary[];
 
-const searchResponse = {
-  resultSource: 'REPOSITORY',
-  query: 'climate',
-  page: 0,
-  pageSize: 1,
-  totalResults: 8,
-  results: [],
-  facets: [],
-} as unknown as SearchResponse;
-
 const earthquakeOverlay = {
   source: 'USGS Earthquake Catalog',
   sourceUrl: 'https://earthquake.usgs.gov/',
@@ -89,9 +79,6 @@ function setup(
   mapsApi: Partial<RepositoryMapsApi>,
   actions$: Observable<unknown>,
   selectedGeography = 'North Dakota',
-  searchApi: Partial<RepositorySearchApi> = {
-    searchResearchObjects: vi.fn().mockReturnValue(of(searchResponse)),
-  },
 ) {
   TestBed.configureTestingModule({
     providers: [
@@ -103,7 +90,6 @@ function setup(
         ],
       }),
       { provide: RepositoryMapsApi, useValue: mapsApi },
-      { provide: RepositorySearchApi, useValue: searchApi },
     ],
   });
 
@@ -332,33 +318,55 @@ describe('MapsEffects', () => {
     );
   });
 
-  it('loads Research Coverage through one bounded search facet request', async () => {
-    const searchResearchObjects = vi.fn().mockReturnValue(of(searchResponse));
+  it('loads Research Coverage through the bounded spatial viewport API', async () => {
+    const response = {
+      buildId: 'spatial-build-42',
+      sourceSystem: 'DATA_GOV',
+      schemaVersion: 1,
+      sourceSnapshotAt: '2026-09-02T12:00:00Z',
+      capturedAt: '2026-09-02T12:05:00Z',
+      compositionSha256: 'a'.repeat(64),
+      projectionId: 'projection-9',
+      criteriaFingerprint: 'criteria-123',
+      viewport: { west: -125, south: 30, east: -110, north: 45 },
+      summary: {
+        matchingRecords: 33,
+        mappedRecords: 30,
+        unmappedRecords: 3,
+        quarantinedRecords: 1,
+        unanchoredAntimeridianRecords: 0,
+        viewportMappedRecords: 2,
+        returnedFeatures: 2,
+        omittedFeatures: 0,
+        featureLimit: 200,
+        truncated: false,
+      },
+      features: [],
+    } as unknown as ResearchSpatialCoverageResponse;
+    const viewport: ResearchSpatialViewport = {
+      west: -125,
+      south: 30,
+      east: -110,
+      north: 45,
+    };
     const query = {
       q: 'climate',
-      programs: ['NASA'],
-      publisher: 'NASA',
+      programs: ['TIGER_LINE', 'LODES'],
+      publisher: 'U.S. Census Bureau',
       sourceSystem: 'DATA_GOV' as const,
-      geography: 'California',
-      page: 7,
-      pageSize: 25,
+      contentType: 'DATASET' as const,
     };
+    const getResearchSpatialCoverage = vi.fn().mockReturnValue(of(response));
     const effects = setup(
-      {},
-      of(MapsActions.researchCoverageRequested({ query })),
-      'North Dakota',
-      { searchResearchObjects } as unknown as RepositorySearchApi,
+      { getResearchSpatialCoverage } as unknown as RepositoryMapsApi,
+      of(MapsActions.researchCoverageRequested({ query, viewport })),
     );
 
     const emitted = await firstValueFrom(effects.loadResearchCoverage$);
 
-    expect(searchResearchObjects).toHaveBeenCalledWith({
-      ...query,
-      page: 0,
-      pageSize: 1,
-    });
-    expect(emitted).toEqual(
-      MapsActions.researchCoverageLoaded({ response: searchResponse }),
-    );
+    // The effect owns query/viewport cancellation; RepositoryMapsApi owns the default 200-feature
+    // safety limit. Keeping the default in one place prevents the effect and client from drifting.
+    expect(getResearchSpatialCoverage).toHaveBeenCalledWith(query, viewport);
+    expect(emitted).toEqual(MapsActions.researchCoverageLoaded({ response }));
   });
 });

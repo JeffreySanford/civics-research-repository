@@ -17,6 +17,7 @@ export { failRepositoryApi };
 export async function mockRepositoryApi(page: Page): Promise<void> {
   await mockRepositoryApiBase(page);
   await mockCursorSearch(page, 'REPOSITORY');
+  await mockResearchSpatialCoverage(page);
 }
 
 /** Fixture-backed discovery uses the same cursor envelope while retaining its source disclosure. */
@@ -25,6 +26,89 @@ export async function mockFixtureBackedRepositoryApi(
 ): Promise<void> {
   await mockFixtureBackedRepositoryApiBase(page);
   await mockCursorSearch(page, 'FIXTURE');
+  await mockResearchSpatialCoverage(page);
+}
+
+async function mockResearchSpatialCoverage(page: Page): Promise<void> {
+  await page.route('**/api/maps/research-coverage**', async (route) => {
+    const url = new URL(route.request().url());
+    const viewport = {
+      west: Number(url.searchParams.get('west') ?? -125),
+      south: Number(url.searchParams.get('south') ?? 30),
+      east: Number(url.searchParams.get('east') ?? -110),
+      north: Number(url.searchParams.get('north') ?? 45),
+    };
+    const featureLimit = positiveInteger(url.searchParams.get('limit'), 200);
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        buildId: 'data-gov-spatial-e2e',
+        sourceSystem: 'DATA_GOV',
+        schemaVersion: 1,
+        sourceSnapshotAt: '2026-09-02T12:00:00Z',
+        capturedAt: '2026-09-02T12:05:00Z',
+        compositionSha256: 'a'.repeat(64),
+        projectionId: 'projection-e2e',
+        criteriaFingerprint: 'criteria-e2e',
+        viewport,
+        summary: {
+          matchingRecords: 33,
+          mappedRecords: 30,
+          unmappedRecords: 3,
+          quarantinedRecords: 1,
+          unanchoredAntimeridianRecords: 0,
+          viewportMappedRecords: 3,
+          returnedFeatures: 2,
+          omittedFeatures: 1,
+          featureLimit,
+          truncated: true,
+        },
+        features: [
+          {
+            sourceSystem: 'DATA_GOV',
+            sourceIdentifier: 'publisher-climate-polygon',
+            title: 'California Climate Resilience Study',
+            publisher: 'U.S. Census Bureau',
+            program: 'TIGER_LINE',
+            contentType: 'DATASET',
+            sourceUrl:
+              'https://catalog.data.gov/dataset/california-climate-resilience',
+            geometryStatus: 'VALID',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [-122.6, 37.1],
+                  [-121.8, 37.1],
+                  [-121.8, 37.8],
+                  [-122.6, 37.1],
+                ],
+              ],
+            },
+            renderLon: -122.2,
+            renderLat: 37.45,
+            renderPointMethod: 'SHAPE_BOUNDS_CENTER',
+          },
+          {
+            sourceSystem: 'DATA_GOV',
+            sourceIdentifier: 'publisher-water-point',
+            title: 'Western Water Research Observatory',
+            publisher: 'U.S. Census Bureau',
+            program: 'LODES',
+            contentType: 'DATASET',
+            sourceUrl:
+              'https://catalog.data.gov/dataset/western-water-research',
+            geometryStatus: 'VALID',
+            geometry: { type: 'Point', coordinates: [-118.25, 34.05] },
+            renderLon: -118.25,
+            renderLat: 34.05,
+            renderPointMethod: 'SHAPE_BOUNDS_CENTER',
+          },
+        ],
+      },
+    });
+  });
 }
 
 async function mockCursorSearch(
