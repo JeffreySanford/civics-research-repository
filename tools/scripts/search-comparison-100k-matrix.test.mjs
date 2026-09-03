@@ -127,7 +127,11 @@ test('100K matrix requires valid evidence and keeps every scenario on one projec
   assert.equal(result.scenarios.length, 3);
   assert.deepEqual(
     result.scenarios.map((scenario) => scenario.id),
-    ['FULL_TEXT_RELEVANCE', 'FACETED_SEARCH', 'FILTERING'],
+    ['FULL_TEXT_RELEVANCE', 'FACETED_SEARCH', 'FILTERING_BROAD_TYPE'],
+  );
+  assert.deepEqual(
+    result.scenarios.map((scenario) => scenario.workloadClass),
+    ['FULL_TEXT', 'FACETS', 'BROAD_FILTER'],
   );
   assert.ok(
     result.scenarios.every(
@@ -137,7 +141,8 @@ test('100K matrix requires valid evidence and keeps every scenario on one projec
   assert.equal(result.warmupRuns, 1);
   assert.equal(result.measuredRuns, 2);
   assert.equal(result.comparativeClaimAllowed, false);
-  assert.match(result.methodology, /reversed-order passes/);
+  assert.match(result.methodology, /standalone default matrix/);
+  assert.match(result.methodology, /adaptive callers may add/);
 });
 
 test('100K matrix refuses to benchmark when live scale evidence is invalid', async () => {

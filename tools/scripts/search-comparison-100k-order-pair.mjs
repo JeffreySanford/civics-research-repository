@@ -141,7 +141,7 @@ export async function runOrderPairedHundredKBenchmark({
     measuredRuns,
     comparativeClaimAllowed: false,
     methodology:
-      'The same selective program and deterministic 100K projection are measured twice: once with Solr first and once with OpenSearch first. Warmups are excluded in both passes. API elapsed and engine-native QTime/took distributions are retained separately. A lead that survives both execution orders is more robust against ordering effects, but results remain local single-topology diagnostics rather than universal engine performance claims.',
+      'The same workload matrix, selective program and deterministic 100K projection are measured twice: once with Solr first and once with OpenSearch first. The matrix covers full text, facets, broad filtering and selective filtering. Warmups are excluded in both passes. API elapsed and engine-native QTime/took distributions are retained separately. A lead that survives both execution orders is more robust against ordering effects, but results remain local single-topology diagnostics rather than universal engine performance claims.',
     passes: {
       SOLR_FIRST: solrFirst,
       OPENSEARCH_FIRST: openSearchFirst,

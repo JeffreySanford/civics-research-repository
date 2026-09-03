@@ -48,6 +48,16 @@ Each batch repeats its warm-ups before measured samples. The JSON artifact retai
 batch execution order, measured sample indexes and aggregate paired raw samples for both
 API elapsed and engine-reported timing.
 
+The 100K/research report matrix separates workload class from API scenario. The current
+matrix is:
+
+| Workload class   | Workload ID                   | API scenario          | Purpose                                     |
+| ---------------- | ----------------------------- | --------------------- | ------------------------------------------- |
+| Full text        | `FULL_TEXT_RELEVANCE`         | `FULL_TEXT_RELEVANCE` | Weighted title/summary/publisher relevance  |
+| Facets           | `FACETED_SEARCH`              | `FACETED_SEARCH`      | Corpus-wide facets/aggregations             |
+| Broad filter     | `FILTERING_BROAD_TYPE`        | `FILTERING`           | Broad `contentType=DATASET` filter behavior |
+| Selective filter | `FILTERING_SELECTIVE_PROGRAM` | `FILTERING`           | Adaptive program filter from live facets    |
+
 The benchmark rejects partial engine availability, projection mismatch, projection changes during collection, invalid timing values and HTTP failures rather than publishing incomplete performance evidence.
 
 ## First repeated API-boundary baseline
