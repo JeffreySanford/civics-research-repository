@@ -34,6 +34,24 @@ class ResearchSpatialSidecarTimestampPrecisionTest {
     }
 
     @Test
+    void normalizesCompletedAtToPostgresMicrosecondPrecision() {
+        ResearchSpatialSidecarBuild build = new ResearchSpatialSidecarBuild(
+                "build-complete",
+                FederatedSourceSystem.DATA_GOV,
+                1,
+                NANOSECOND_TIMESTAMP,
+                NANOSECOND_TIMESTAMP,
+                COMPOSITION,
+                PROJECTION,
+                ResearchSpatialSidecarBuild.Status.COMPLETE,
+                1,
+                null,
+                NANOSECOND_TIMESTAMP);
+
+        assertThat(build.completedAt()).isEqualTo(POSTGRES_TIMESTAMP);
+    }
+
+    @Test
     void normalizesRowIdentityTimestampsToTheSamePostgresPrecision() {
         ResearchSpatialSidecarRecord record = new ResearchSpatialSidecarRecord(
                 FederatedSourceSystem.DATA_GOV,
