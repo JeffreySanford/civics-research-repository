@@ -668,7 +668,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private currentResearchViewport(): ResearchSpatialViewport | null {
-    if (this.map) {
+    // A MapLibre instance can exist even when WebGL/style initialization failed. Until the style
+    // is actually ready, preserve the accessible bounded fallback from the selected Census area.
+    if (this.map && this.mapStyleReady) {
       const bounds = this.map.getBounds();
       return {
         west: this.normalizeLongitude(bounds.getWest()),
