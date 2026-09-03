@@ -1,10 +1,8 @@
 # Post-C2 Execution Plan
 
-The certified C2 standalone milestone is complete enough to become the stable control baseline for future work. Post-C2 work is intentionally split into reviewable slices so documentation closeout, adversarial performance research, clustered topology research, manual accessibility evidence and final frontend presentation do not collapse into one unreviewable change.
+The certified C2 standalone milestone is the stable control baseline. Post-C2 work is intentionally limited to the remaining questions needed to finish the research and present the application clearly.
 
 ## Stable control baseline
-
-The following facts are frozen as the current standalone control unless an explicitly named later experiment says otherwise:
 
 ```text
 profile                 FEDERATED_1M
@@ -27,25 +25,13 @@ The control claim remains scoped to the documented corpus, mappings, workloads, 
 
 Tracking issue: #46.
 
-### Purpose
-
-Make the planning/history surface agree with what the repository now proves and establish the immutable baseline used by later experiments.
-
-### Work
-
-- realign platform evolution, scale evidence, PI plan, roadmap, active backlog and acceptance criteria;
-- remove completed C2 work from active TODOs;
-- retain only evidence-supported checkmarks;
-- regenerate generated platform-status facts through repository tooling rather than hand editing when its source artifacts change;
-- preregister C2.1 before any new C2.1 timing data are collected;
-- make C2.1 and PI-2 explicitly new experiments rather than unfinished C2 work.
-
 ### Exit
 
-- documentation/planning drift checks pass;
-- C2 baseline is named complete;
-- C2.1 protocol is merged and frozen;
-- no corpus harvest, reindex or performance rerun is required.
+- planning/history surfaces agree with the delivered C2 state;
+- completed C2 work is removed from active TODOs;
+- only evidence-supported acceptance criteria remain checked;
+- the C2.1 protocol is merged before any C2.1 timing data are collected;
+- no corpus harvest, reindex or performance rerun is required for closeout.
 
 ## Slice B — C2.1 adversarial standalone fairness validation
 
@@ -72,54 +58,27 @@ Try to falsify the observed C2 Solr latency advantage by removing remaining conf
 
 ### Exit
 
-- exact preregistered protocol commit is embedded in every artifact;
+- the exact preregistered protocol commit is embedded in every artifact;
 - semantic gates pass before timing cells are admitted;
 - all preregistered cells are reported, including OpenSearch-favoring or inconclusive cells;
 - independently warmed/restarted batch evidence is complete;
-- result remains scoped to the tested standalone topology.
+- the result remains scoped to the tested standalone topology.
 
-## Slice C — PI-2 local Kubernetes search laboratory
+## Deferred topology research — issue #48 closed not planned
 
-Tracking issue: #48.
+The local Kubernetes/SolrCloud/OpenSearch-cluster laboratory is not part of the completion path.
 
-### Purpose
+A clustered local topology could change absolute latency and may change relative results because it introduces networking, scheduling, cgroup, shard/replica and multi-JVM effects. On one physical workstation, however, those effects create a new topology experiment rather than a cleaner fairness test of the standalone C2 observation.
 
-Change the independent variable from search engine to deployment topology while preserving the frozen corpus/query semantics.
+C2.1 therefore keeps Docker Compose standalone as the controlled topology and tightens the variables that matter to the current research question: engine versions, resources, query treatments, workload mix, selectivity, order, independent batches and clean restart blocks.
 
-```text
-Docker Compose standalone
-        versus
-local Kubernetes clustered
-```
+The Kubernetes idea may be reopened later only if clustered deployment, resilience or cloud migration becomes a concrete product requirement.
 
-### Work packages
-
-1. repository-owned kind create/delete/readiness commands;
-2. persistent-storage and namespace foundation;
-3. SolrCloud through the official Solr Operator and ZooKeeper;
-4. multi-node OpenSearch through a supported operator/Helm path;
-5. explicit topology/image/shard/replica/heap/resource manifests;
-6. deterministic projection into clustered Solr/OpenSearch with identity/count parity;
-7. Search Lab runtime targeting without changing application request semantics;
-8. standalone-versus-clustered 10K/100K/1M evidence where host stability permits;
-9. 1/8/32 concurrency comparison with topology/resource evidence;
-10. deliberate node-loss/recovery experiment for each engine;
-11. product Evidence/reporting that treats topology as first-class experiment metadata.
-
-### Exit
-
-- kind lifecycle is reproducible from repo commands;
-- both clustered engines receive the same deterministic projection;
-- semantic parity precedes performance interpretation;
-- node-loss/recovery is reproducible for both engines;
-- Docker Compose remains the fast default demo/control path;
-- no local-kind result is described as proof of cloud performance.
-
-## Slice D — Manual accessibility evidence
+## Slice C — Manual accessibility evidence
 
 Tracking issue: #49.
 
-This slice can run in parallel with B and C because it is a human interaction evidence stream rather than a search-topology dependency.
+This human-verification stream can proceed independently of C2.1 implementation.
 
 ### Work packages
 
@@ -138,44 +97,33 @@ This slice can run in parallel with B and C because it is a human interaction ev
 ### Exit
 
 - primary demo routes have dated, commit-bound keyboard evidence;
-- NVDA evidence exists for Firefox and Chromium-family browser;
+- NVDA evidence exists for Firefox and a Chromium-family browser;
 - JAWS is recorded or explicitly unavailable;
 - Search Lab, Evidence and Maps have manual evidence separate from automated axe/browser evidence;
 - no conformance claim exceeds the recorded evidence.
 
-## Slice E — Final frontend mission alignment and portfolio polish
+## Slice D — Final frontend mission alignment and portfolio polish
 
 Tracking issue: #51.
 
-This is intentionally the final portfolio-facing slice after the research and manual-evidence work has stabilized the application.
+This is the final product-facing slice after C2.1 and the manual evidence stream are stable.
 
 ### Purpose
 
-Make the mature repository present itself first as a **government-grade Angular Open Science/data-discovery frontend**, while keeping the full-stack/search research as strong technical depth underneath it.
-
-The final public story should emphasize that the UI is not a thin mock-data demo: it operates against real DSpace/Spring/search contracts, realistic million-record discovery state, measurable latency/failure conditions and explicit accessibility evidence.
+Present the mature repository first as a **government-grade Angular Open Science/data-discovery frontend**, while keeping the full-stack/search research as supporting technical depth.
 
 ### Work packages
 
 1. reorder the README so the user problem, Angular architecture and accessibility/data-discovery experience appear before deep corpus/search research;
-2. add `documentation/frontend-engineering-case-study.md` covering Angular page/component boundaries, NgRx actions/effects/reducers/selectors, RxJS/Observable async state and generated OpenAPI clients;
+2. add `documentation/frontend-engineering-case-study.md` covering Angular boundaries, NgRx actions/effects/reducers/selectors, RxJS/Observable async state and generated OpenAPI clients;
 3. document URL-driven search/facet state, loading/empty/error/partial-service behavior and provenance/authority presentation;
 4. document Maps visual/nonvisual equivalence and accessible focus/status/table patterns;
 5. document Storybook/component/Playwright/axe/manual evidence strategy and performance-aware rendering choices;
 6. make the browser ownership boundary explicit: Angular owns interaction/presentation/accessibility; Spring owns application use cases; DSpace/PostgreSQL/search engines remain behind typed APIs;
-7. add a concise 5-8 minute frontend-first demo path before the existing deep architecture walkthrough;
-8. audit `/discovery`, representative research detail, `/maps`, `/evidence` and `/search-lab` for final visual hierarchy, dense-table usability, status copy, responsive/reflow and keyboard/focus quality;
-9. make only narrowly justified UI code changes discovered by that audit and retain regression evidence;
-10. preserve the explicit independence/non-affiliation disclaimer and never present the repository as official U.S. Census Bureau software.
-
-### Exit
-
-- a reviewer understands the Angular/frontend engineering value from the first README screen;
-- the frontend case study links decisions to implementation/evidence rather than listing technologies;
-- a short frontend-focused demo is available for UI/stakeholder audiences;
-- primary routes have received a final UX/accessibility polish pass;
-- full-stack C2/PI-2 research remains available as supporting depth without dominating the product story;
-- final browser/manual evidence remains consistent with the UI that is actually presented.
+7. add a concise 5-8 minute frontend-first demo path;
+8. audit `/discovery`, representative research detail, `/maps`, `/evidence` and `/search-lab` for final hierarchy, dense-table usability, status copy, responsive/reflow and keyboard/focus quality;
+9. make only narrowly justified UI changes discovered by that audit and retain regression evidence;
+10. preserve the explicit independence/non-affiliation disclaimer.
 
 ## Dependency order
 
@@ -183,10 +131,6 @@ The final public story should emphasize that the UI is not a thin mock-data demo
 #46 Close/freeze C2
   |
   +--> #47 C2.1 adversarial standalone validation
-  |        |
-  |        +--> results may inform later configuration hypotheses
-  |
-  +--> #48 PI-2 Kubernetes topology laboratory
   |
   +--> #49 Manual accessibility evidence  (may proceed in parallel)
   |
@@ -195,34 +139,25 @@ The final public story should emphasize that the UI is not a thin mock-data demo
                      #51 Final frontend alignment
 ```
 
-PI-2 does not require C2.1 to produce a Solr-favoring result. It requires only a frozen corpus/query contract and explicit configuration semantics. If C2.1 changes the preferred standalone implementation treatment, PI-2 records both the certified C2 control and the later treatment rather than rewriting history.
-
-#51 is last because its purpose is to present the stable, evidence-backed product after the deeper research work has settled. It should not conceal the full-stack work; it should make clear that the backend/search depth exists to support a trustworthy frontend experience.
-
 ## What is deliberately not a prerequisite
 
-The following are useful future research/product extensions but do not block closing the certified standalone milestone or completing the final frontend presentation:
+The following remain optional future research/product work:
 
+- local Kubernetes or clustered topology experiments;
 - 10M or 100M corpora merely for larger numbers;
 - broad NASA/PubMed/OpenAlex expansion beyond bounded adapter evidence;
 - many additional thematic map layers;
 - vector/hybrid search;
-- AWS/IaC deployment;
-- replacing Docker Compose with Kubernetes for ordinary development.
+- AWS/IaC deployment.
 
-Those should be introduced only when they answer a new research, product or deployment question.
+These should be introduced only when they answer a new research, product or deployment question.
 
 ## Completion model
 
-The project should use explicit named milestones rather than one permanently unfinished backlog:
-
 ```text
 Certified standalone C2 baseline       COMPLETE / control
-C2.1 adversarial fairness validation   NEW experiment
-PI-2 Kubernetes topology laboratory    NEW experiment
+C2.1 adversarial fairness validation   FINAL search-research experiment
 Manual accessibility evidence          HUMAN verification stream
 Final frontend mission alignment       FINAL product/portfolio slice
-PI-3 AWS/IaC                           OPTIONAL deployment phase
+Kubernetes / AWS topology research     DEFERRED / reopen only if needed
 ```
-
-This preserves the value of the mature current application while leaving room for genuinely new questions.
