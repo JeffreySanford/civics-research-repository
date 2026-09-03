@@ -41,6 +41,8 @@ jobs:
           apps/discovery-ui-e2e/src/support/repository-api-mocks.ts
           apps/discovery-ui-e2e/src/support/map-layer-visibility.ts
           apps/discovery-ui-e2e/src/research-coverage.spec.ts
+      # This run is intentionally the narrow pre-PR proof for the migrated Research Coverage
+      # contract. Full workspace, Storybook, cross-browser, and live-stack gates run on the PR.
       - name: Unit tests
         run: pnpm exec nx test discovery-ui
       - name: Build discovery UI
