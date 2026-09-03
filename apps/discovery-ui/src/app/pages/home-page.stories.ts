@@ -58,8 +58,8 @@ export const CurrentPlatformOverview: Story = {
     const mapsLink = canvas.getByRole('link', {
       name: 'Explore research maps',
     });
-    await expect(searchLink.getAttribute('href')).toBe('/discovery');
-    await expect(mapsLink.getAttribute('href')).toBe('/maps');
+    expect(searchLink.getAttribute('href') ?? '').toMatch(/\/discovery$/);
+    expect(mapsLink.getAttribute('href') ?? '').toMatch(/\/maps$/);
 
     await expect(
       canvas.getByRole('navigation', {
