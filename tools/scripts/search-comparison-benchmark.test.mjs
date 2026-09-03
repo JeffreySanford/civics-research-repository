@@ -156,6 +156,42 @@ test('execution order plans support fixed, alternating and seeded randomized bat
   );
 });
 
+test('fixed and alternating order plans ignore an unused seed', () => {
+  assert.deepEqual(
+    buildExecutionOrderPlan({
+      batches: 2,
+      executionOrder: 'SOLR_FIRST',
+      orderStrategy: 'FIXED',
+      seed: Number.NaN,
+    }),
+    ['SOLR_FIRST', 'SOLR_FIRST'],
+  );
+  assert.deepEqual(
+    buildExecutionOrderPlan({
+      batches: 2,
+      executionOrder: 'SOLR_FIRST',
+      orderStrategy: 'ALTERNATE',
+      seed: Number.NaN,
+    }),
+    ['SOLR_FIRST', 'OPENSEARCH_FIRST'],
+  );
+});
+
+test('randomized order plans require an unsigned 32-bit seed', () => {
+  for (const seed of [Number.NaN, 1.5, -1, 0x100000000]) {
+    assert.throws(
+      () =>
+        buildExecutionOrderPlan({
+          batches: 2,
+          executionOrder: 'SOLR_FIRST',
+          orderStrategy: 'RANDOMIZED',
+          seed,
+        }),
+      /unsigned 32-bit integer/,
+    );
+  }
+});
+
 test('benchmark excludes warmups and reports measured distributions only', async () => {
   const requests = [];
   const responses = [
@@ -191,6 +227,8 @@ test('benchmark excludes warmups and reports measured distributions only', async
   assert.deepEqual(result.executionPlan.batchExecutionOrders, [
     'OPENSEARCH_FIRST',
   ]);
+  assert.equal(result.executionPlan.seed, null);
+  assert.equal(result.executionPlan.seedApplied, false);
   assert.equal(result.solr.elapsed.minMs, 10);
   assert.equal(result.solr.elapsed.p50Ms, 30);
   assert.equal(result.solr.elapsed.p95Ms, 50);
@@ -213,6 +251,7 @@ test('benchmark excludes warmups and reports measured distributions only', async
   assert.equal(result.pairedStatistics.apiElapsed.bootstrap.upperMs, 2);
   assert.equal(result.pairedStatistics.apiElapsed.bootstrap.excludesZero, true);
   assert.equal(result.comparativeClaimAllowed, false);
+  assert.equal(result.requestedExecutionOrder, 'OPENSEARCH_FIRST');
   assert.equal(result.executionOrder, 'OPENSEARCH_FIRST');
   assert.deepEqual(result.batchEvidence, [
     {
@@ -264,7 +303,10 @@ test('benchmark records independent batches with alternating execution order', a
   );
   assert.deepEqual(result.executionPlan, {
     orderStrategy: 'ALTERNATE',
-    seed: 20260903,
+    requestedStartingOrder: 'SOLR_FIRST',
+    realizedFirstBatchOrder: 'SOLR_FIRST',
+    seed: null,
+    seedApplied: false,
     batches: 2,
     measuredRunsPerBatch: 2,
     totalMeasuredRuns: 4,
@@ -288,6 +330,55 @@ test('benchmark records independent batches with alternating execution order', a
       sampleIndexes: [2, 3],
     },
   ]);
+});
+
+test('randomized benchmark reports the realized first batch and applied seed', async () => {
+  const requests = [];
+  const responses = Array.from({ length: 5 }, (_, index) =>
+    comparisonResponse(10 + index, 20 + index),
+  );
+  const result = await runSearchComparisonBenchmark({
+    fetchImpl: queuedFetch(responses, requests),
+    baseUrl: 'http://repository.test/api',
+    warmupRuns: 0,
+    measuredRuns: 1,
+    batches: 5,
+    executionOrder: 'SOLR_FIRST',
+    orderStrategy: 'RANDOMIZED',
+    seed: 5,
+  });
+
+  assert.equal(result.requestedExecutionOrder, 'SOLR_FIRST');
+  assert.equal(result.executionOrder, 'OPENSEARCH_FIRST');
+  assert.equal(
+    result.endpoint,
+    'http://repository.test/api/search/comparison/run?order=OPENSEARCH_FIRST',
+  );
+  assert.equal(
+    result.endpointTemplate,
+    'http://repository.test/api/search/comparison/run?order={batchExecutionOrder}',
+  );
+  assert.deepEqual(result.executionPlan, {
+    orderStrategy: 'RANDOMIZED',
+    requestedStartingOrder: 'SOLR_FIRST',
+    realizedFirstBatchOrder: 'OPENSEARCH_FIRST',
+    seed: 5,
+    seedApplied: true,
+    batches: 5,
+    measuredRunsPerBatch: 1,
+    totalMeasuredRuns: 5,
+    batchExecutionOrders: [
+      'OPENSEARCH_FIRST',
+      'SOLR_FIRST',
+      'SOLR_FIRST',
+      'SOLR_FIRST',
+      'OPENSEARCH_FIRST',
+    ],
+  });
+  assert.deepEqual(
+    requests.map(({ url }) => new URL(url).searchParams.get('order')),
+    result.executionPlan.batchExecutionOrders,
+  );
 });
 
 test('benchmark refuses an unsupported execution order', async () => {
