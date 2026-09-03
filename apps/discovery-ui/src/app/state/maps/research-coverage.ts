@@ -1,90 +1,63 @@
 import type {
-  CensusAreaBoundary,
+  ResearchSpatialCoverageFeature,
+  ResearchSpatialCoverageResponse,
   SearchQuery,
-  SearchResponse,
 } from 'repository-api-client';
 
-export interface ResearchCoverageAreaSummary {
-  readonly id: string;
-  readonly geography: string;
-  readonly count: number;
-  readonly centerLatitude: number;
-  readonly centerLongitude: number;
-}
-
+/** UI-facing summary of one build-pinned, viewport-bounded spatial response. */
 export interface ResearchCoverageSummary {
   readonly query: SearchQuery;
-  readonly resultSource: SearchResponse['resultSource'];
+  readonly buildId: string;
+  readonly sourceSystem: string;
+  readonly sourceSnapshotAt: string;
+  readonly capturedAt: string;
+  readonly compositionSha256: string;
+  readonly projectionId: string;
+  readonly criteriaFingerprint: string;
   readonly totalResults: number;
   readonly mappedResults: number;
   readonly unmappedResults: number;
-  readonly areas: readonly ResearchCoverageAreaSummary[];
+  readonly quarantinedResults: number;
+  readonly unanchoredAntimeridianResults: number;
+  readonly viewportMappedResults: number;
+  readonly returnedFeatures: number;
+  readonly omittedFeatures: number;
+  readonly featureLimit: number;
+  readonly truncated: boolean;
+  readonly features: readonly ResearchSpatialCoverageFeature[];
 }
 
 /**
- * Turns the existing bounded geography facet into a map-ready state summary.
+ * Adapts the bounded spatial API into the Maps presentation model without changing its semantics.
  *
- * Search already aggregates the full active projection in Solr/OpenSearch, so this intentionally
- * does not walk result pages in the browser. The only records represented here are those whose
- * normalized research metadata explicitly names one of the Census areas the application knows.
- * Publisher/institution locations never enter this join.
- *
- * The geography facet is self-excluding so Discovery can show alternative geography choices while
- * one is selected. When a map was opened from a geography-filtered search, keep only that selected
- * facet value; otherwise the summary would misleadingly draw areas outside the effective search.
+ * The backend owns research-object matching and publisher-geometry eligibility. The client does
+ * not reinterpret publisher/institution locations, infer geography from labels, or recompute
+ * mapped/unmapped counts. That keeps the visual map and semantic table on the same evidence.
  */
 export function buildResearchCoverageSummary(
-  response: SearchResponse,
-  boundaries: readonly CensusAreaBoundary[],
+  response: ResearchSpatialCoverageResponse,
   query: SearchQuery,
 ): ResearchCoverageSummary {
-  const geographyFacet = response.facets.find(
-    (facet) => facet.field === 'geography',
-  );
-  const selectedGeography = normalize(query.geography);
-  const boundaryByGeography = new Map(
-    boundaries.map((boundary) => [normalize(boundary.geography), boundary]),
-  );
-
-  const areas = (geographyFacet?.values ?? [])
-    .filter((value) => value.count > 0)
-    .filter(
-      (value) =>
-        !selectedGeography || normalize(value.value) === selectedGeography,
-    )
-    .flatMap((value): ResearchCoverageAreaSummary[] => {
-      const boundary = boundaryByGeography.get(normalize(value.value));
-      if (!boundary) {
-        return [];
-      }
-      return [
-        {
-          id: boundary.id,
-          geography: boundary.geography,
-          count: value.count,
-          centerLatitude: boundary.centerLatitude,
-          centerLongitude: boundary.centerLongitude,
-        },
-      ];
-    })
-    .sort(
-      (left, right) =>
-        right.count - left.count ||
-        left.geography.localeCompare(right.geography),
-    );
-
-  const mappedResults = areas.reduce((total, area) => total + area.count, 0);
-
   return {
     query,
-    resultSource: response.resultSource,
-    totalResults: response.totalResults,
-    mappedResults,
-    unmappedResults: Math.max(0, response.totalResults - mappedResults),
-    areas,
+    buildId: response.buildId,
+    sourceSystem: response.sourceSystem,
+    sourceSnapshotAt: response.sourceSnapshotAt,
+    capturedAt: response.capturedAt,
+    compositionSha256: response.compositionSha256,
+    projectionId: response.projectionId,
+    criteriaFingerprint: response.criteriaFingerprint,
+    totalResults: response.summary.matchingRecords,
+    mappedResults: response.summary.mappedRecords,
+    unmappedResults: response.summary.unmappedRecords,
+    quarantinedResults: response.summary.quarantinedRecords,
+    unanchoredAntimeridianResults:
+      response.summary.unanchoredAntimeridianRecords,
+    viewportMappedResults: response.summary.viewportMappedRecords,
+    returnedFeatures: response.summary.returnedFeatures,
+    omittedFeatures: response.summary.omittedFeatures,
+    featureLimit: response.summary.featureLimit,
+    truncated: response.summary.truncated,
+    features: response.features,
   };
-}
-
-function normalize(value: string | undefined): string {
-  return value?.trim().toLocaleLowerCase() ?? '';
 }
