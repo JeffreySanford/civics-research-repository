@@ -24,15 +24,16 @@ import type { ResearchCoverageSummary } from '../state/maps/research-coverage';
       @if (summary(); as researchCoverage) {
         <p>
           {{ researchCoverage.mappedResults | number }} of
-          {{ researchCoverage.totalResults | number }} matching Data.gov research
-          objects have publisher spatial geometry.
+          {{ researchCoverage.totalResults | number }} matching Data.gov
+          research objects have publisher spatial geometry.
           {{ researchCoverage.unmappedResults | number }} have no publisher
           geometry and {{ researchCoverage.quarantinedResults | number }} have
           geometry that failed validation. The current viewport contains
           {{ researchCoverage.viewportMappedResults | number }} mapped objects;
           {{ researchCoverage.returnedFeatures | number }} bounded features are
-          returned to the browser. Publisher, laboratory, author, and institution
-          addresses are never substituted for missing research geometry.
+          returned to the browser. Publisher, laboratory, author, and
+          institution addresses are never substituted for missing research
+          geometry.
         </p>
 
         @if (researchCoverage.unanchoredAntimeridianResults > 0) {

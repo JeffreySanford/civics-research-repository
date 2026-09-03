@@ -30,7 +30,8 @@ const populatedSummary = {
       publisher: 'Example Federal Agency',
       program: 'Climate',
       contentType: 'DATASET',
-      sourceUrl: 'https://catalog.data.gov/dataset/california-climate-resilience',
+      sourceUrl:
+        'https://catalog.data.gov/dataset/california-climate-resilience',
       geometryStatus: 'VALID',
       geometry: {
         type: 'Polygon',
@@ -107,10 +108,14 @@ export const PopulatedAndTruncated: Story = {
       }),
     ).toBeInTheDocument();
     await expect(
-      canvas.getByText(/23 additional mapped objects in this viewport are omitted/),
+      canvas.getByText(
+        /23 additional mapped objects in this viewport are omitted/,
+      ),
     ).toBeInTheDocument();
     await expect(
-      canvas.getByText(/12 antimeridian candidate geometries lack a safe render anchor/),
+      canvas.getByText(
+        /12 antimeridian candidate geometries lack a safe render anchor/,
+      ),
     ).toBeInTheDocument();
   },
 };
@@ -172,9 +177,13 @@ export const NoPublisherGeometry: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getByText(/0 of 10 matching Data.gov research objects have publisher spatial geometry/),
+      canvas.getByText(
+        /0 of 10 matching Data.gov research objects have publisher spatial geometry/,
+      ),
     ).toBeInTheDocument();
-    await expect(canvas.getByText(/9 have no publisher geometry/)).toBeInTheDocument();
+    await expect(
+      canvas.getByText(/9 have no publisher geometry/),
+    ).toBeInTheDocument();
     await expect(
       canvas.getByText(/1 have geometry that failed validation/),
     ).toBeInTheDocument();

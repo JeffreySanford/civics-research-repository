@@ -79,6 +79,7 @@ import {
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
 import type { ResearchCoverageSummary } from '../state/maps/research-coverage';
+import { ResearchCoverageSummaryComponent } from './research-coverage-summary.component';
 import {
   configureMapLibreWorker,
   findCensusAreaForPoint,
@@ -159,6 +160,7 @@ type ResearchCoverageFeatureCollection = {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    ResearchCoverageSummaryComponent,
     RouterLink,
   ],
   templateUrl: './maps-page.html',
