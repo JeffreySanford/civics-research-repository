@@ -38,11 +38,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Print canonical landing formatting
-        run: |
-          pnpm exec prettier apps/discovery-ui-e2e/src/landing-page.spec.ts apps/discovery-ui/src/app/pages/home-page.html --write
-          git diff -- apps/discovery-ui-e2e/src/landing-page.spec.ts apps/discovery-ui/src/app/pages/home-page.html
-          exit 1
+      - name: Check formatting
+        run: pnpm exec nx format:check --all
 
       - name: Lint the OpenAPI contract
         run: pnpm run openapi:lint
