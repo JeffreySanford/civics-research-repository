@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import './search-comparison-resource-telemetry.test.mjs';
 import {
   parseArguments,
   parseConcurrencyLevels,
