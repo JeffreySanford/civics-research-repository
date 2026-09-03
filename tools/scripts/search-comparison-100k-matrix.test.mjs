@@ -141,8 +141,8 @@ test('100K matrix requires valid evidence and keeps every scenario on one projec
   assert.equal(result.warmupRuns, 1);
   assert.equal(result.measuredRuns, 2);
   assert.equal(result.comparativeClaimAllowed, false);
-  assert.match(result.methodology, /broad filtering/);
-  assert.match(result.methodology, /adaptive selective filtering/);
+  assert.match(result.methodology, /standalone default matrix/);
+  assert.match(result.methodology, /adaptive callers may add/);
 });
 
 test('100K matrix refuses to benchmark when live scale evidence is invalid', async () => {
