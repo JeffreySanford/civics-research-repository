@@ -28,7 +28,10 @@ test('paired latency evidence keeps mixed outcomes visible', () => {
   assert.equal(result.sampleCount, 4);
   assert.equal(result.solrWinRatePercent, 50);
   assert.equal(result.tieRatePercent, 25);
-  assert.equal(result.interpretation, 'Positive differences mean OpenSearch took longer than Solr.');
+  assert.equal(
+    result.interpretation,
+    'Positive differences mean OpenSearch took longer than Solr.',
+  );
 });
 
 test('paired latency evidence rejects unpaired samples', () => {
