@@ -103,6 +103,14 @@ export const PopulatedAndTruncated: Story = {
       }),
     ).toBeInTheDocument();
     await expect(
+      semanticTable.getByRole('link', {
+        name: 'Open source record for California Climate Resilience Study',
+      }),
+    ).toHaveAttribute(
+      'href',
+      'https://catalog.data.gov/dataset/california-climate-resilience',
+    );
+    await expect(
       semanticTable.getByRole('cell', {
         name: 'Source-derived render anchor for antimeridian candidate',
       }),
