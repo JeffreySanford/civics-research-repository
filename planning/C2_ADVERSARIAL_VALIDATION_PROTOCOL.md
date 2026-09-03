@@ -91,28 +91,28 @@ The certified C2 baseline used `North Dakota workforce` as its stable full-text 
 
 The raw query strings are fixed before C2.1 timing:
 
-| ID | Class | Query |
-| --- | --- | --- |
-| Q01 | single/common | `energy` |
-| Q02 | single/common | `data` |
-| Q03 | single/domain | `workforce` |
-| Q04 | single/domain | `climate` |
-| Q05 | single/domain | `water` |
-| Q06 | two-term | `North Dakota` |
-| Q07 | two-term | `renewable energy` |
-| Q08 | two-term | `labor force` |
-| Q09 | two-term | `population estimates` |
-| Q10 | two-term | `energy efficiency` |
-| Q11 | three-plus | `North Dakota workforce` |
-| Q12 | three-plus | `groundwater quality research` |
-| Q13 | three-plus | `renewable energy technology` |
-| Q14 | three-plus | `economic development data` |
-| Q15 | three-plus | `carbon emissions research` |
-| Q16 | federal/source vocabulary | `Department of Energy` |
-| Q17 | federal/source vocabulary | `Census Bureau geography` |
-| Q18 | cross-domain | `scientific research data` |
-| Q19 | high-result candidate | `United States` |
-| Q20 | no-result control | `zzzxqv_nonexistent_research_term_20260903` |
+| ID  | Class                     | Query                                       |
+| --- | ------------------------- | ------------------------------------------- |
+| Q01 | single/common             | `energy`                                    |
+| Q02 | single/common             | `data`                                      |
+| Q03 | single/domain             | `workforce`                                 |
+| Q04 | single/domain             | `climate`                                   |
+| Q05 | single/domain             | `water`                                     |
+| Q06 | two-term                  | `North Dakota`                              |
+| Q07 | two-term                  | `renewable energy`                          |
+| Q08 | two-term                  | `labor force`                               |
+| Q09 | two-term                  | `population estimates`                      |
+| Q10 | two-term                  | `energy efficiency`                         |
+| Q11 | three-plus                | `North Dakota workforce`                    |
+| Q12 | three-plus                | `groundwater quality research`              |
+| Q13 | three-plus                | `renewable energy technology`               |
+| Q14 | three-plus                | `economic development data`                 |
+| Q15 | three-plus                | `carbon emissions research`                 |
+| Q16 | federal/source vocabulary | `Department of Energy`                      |
+| Q17 | federal/source vocabulary | `Census Bureau geography`                   |
+| Q18 | cross-domain              | `scientific research data`                  |
+| Q19 | high-result candidate     | `United States`                             |
+| Q20 | no-result control         | `zzzxqv_nonexistent_research_term_20260903` |
 
 These labels describe intent, not guaranteed document frequency. Actual total-hit counts are recorded before timing and remain part of the evidence. A query is not removed merely because its observed frequency differs from the descriptive label.
 
