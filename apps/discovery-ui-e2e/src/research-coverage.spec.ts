@@ -18,14 +18,14 @@ test.describe('repository research coverage', () => {
     page,
   }) => {
     // Coverage is fetched from criteria + viewport state, independently of whether the presentation
-    // layer is visible. Listen before navigation so an initial boundary- or MapLibre-driven request
-    // cannot race past the assertion; toggling Research Coverage below tests presentation only.
-    const researchRequests: string[] = [];
-    page.on('request', (request) => {
+    // layer is visible. Register the request wait before navigation so an initial boundary- or
+    // MapLibre-driven request cannot race past the assertion; toggling below tests presentation only.
+    const researchRequest = page.waitForRequest((request) => {
       const url = new URL(request.url());
-      if (url.pathname.endsWith('/api/maps/research-coverage')) {
-        researchRequests.push(request.url());
-      }
+      return (
+        url.pathname.endsWith('/api/maps/research-coverage') &&
+        url.searchParams.get('q') === 'climate'
+      );
     });
 
     await page.goto(
@@ -39,25 +39,7 @@ test.describe('repository research coverage', () => {
       page.getByRole('heading', { name: 'California Workforce Explorer' }),
     ).toBeVisible();
 
-    await expect
-      .poll(
-        () =>
-          researchRequests.some((requestUrl) => {
-            const url = new URL(requestUrl);
-            return url.searchParams.get('q') === 'climate';
-          }),
-        {
-          message:
-            'Maps requests bounded Research Coverage when criteria and a viewport are available',
-        },
-      )
-      .toBe(true);
-
-    const matchingRequest = researchRequests.find(
-      (requestUrl) => new URL(requestUrl).searchParams.get('q') === 'climate',
-    );
-    expect(matchingRequest).toBeTruthy();
-    const requestUrl = new URL(matchingRequest ?? 'http://invalid.local');
+    const requestUrl = new URL((await researchRequest).url());
 
     expect(requestUrl.searchParams.get('q')).toBe('climate');
     expect(requestUrl.searchParams.getAll('program')).toEqual([
