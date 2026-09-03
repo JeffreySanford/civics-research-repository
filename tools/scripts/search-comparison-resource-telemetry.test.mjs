@@ -346,8 +346,14 @@ test('resource delta omits regressed counters and surfaces reset evidence', () =
   assert.equal(result.openSearch.processCpuTotalMillisDelta, null);
   assert.equal(result.openSearch.gcCollectionCountDelta, null);
   assert.equal(result.openSearch.searchQueryTotalDelta, null);
-  assert.equal(result.solr.garbageCollectionMetricDeltas['jvm.gc.count'], undefined);
-  assert.equal(result.solr.cpuTimeMetricDeltas['jvm.os.processCpuTime'], undefined);
+  assert.equal(
+    result.solr.garbageCollectionMetricDeltas['jvm.gc.count'],
+    undefined,
+  );
+  assert.equal(
+    result.solr.cpuTimeMetricDeltas['jvm.os.processCpuTime'],
+    undefined,
+  );
   assert.ok(
     result.counterResetFields.includes('openSearch.process.cpuTotalMillis'),
   );

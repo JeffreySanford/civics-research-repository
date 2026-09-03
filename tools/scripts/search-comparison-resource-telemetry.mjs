@@ -423,8 +423,7 @@ export function summarizeResourceDelta(before, after) {
     afterCpuAndLoadMetrics: after.solr.normalizedMetricGroups.cpuAndLoad,
     beforeHeapAndMemoryMetrics:
       before.solr.normalizedMetricGroups.heapAndMemory,
-    afterHeapAndMemoryMetrics:
-      after.solr.normalizedMetricGroups.heapAndMemory,
+    afterHeapAndMemoryMetrics: after.solr.normalizedMetricGroups.heapAndMemory,
   };
 
   return {
