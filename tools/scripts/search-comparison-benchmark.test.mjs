@@ -152,20 +152,16 @@ test('benchmark excludes warmups and reports measured distributions only', async
   assert.equal(result.solr.engineReported.sampleCount, 5);
   assert.equal(result.solr.engineReported.p50Ms, 30);
   assert.equal(result.openSearch.engineReported.p95Ms, 52);
-  assert.deepEqual(result.rawSamples.apiElapsed.solrMs, [
-    10, 20, 30, 40, 50,
-  ]);
-  assert.deepEqual(result.rawSamples.apiElapsed.openSearchMs, [
-    12, 22, 32, 42, 52,
-  ]);
+  assert.deepEqual(result.rawSamples.apiElapsed.solrMs, [10, 20, 30, 40, 50]);
+  assert.deepEqual(
+    result.rawSamples.apiElapsed.openSearchMs,
+    [12, 22, 32, 42, 52],
+  );
   assert.equal(result.pairedStatistics.apiElapsed.medianDifferenceMs, 2);
   assert.equal(result.pairedStatistics.apiElapsed.solrWinRatePercent, 100);
   assert.equal(result.pairedStatistics.apiElapsed.bootstrap.lowerMs, 2);
   assert.equal(result.pairedStatistics.apiElapsed.bootstrap.upperMs, 2);
-  assert.equal(
-    result.pairedStatistics.apiElapsed.bootstrap.excludesZero,
-    true,
-  );
+  assert.equal(result.pairedStatistics.apiElapsed.bootstrap.excludesZero, true);
   assert.equal(result.comparativeClaimAllowed, false);
   assert.equal(result.executionOrder, 'OPENSEARCH_FIRST');
   assert.match(result.measurementBoundary, /API elapsed measures Spring/);
