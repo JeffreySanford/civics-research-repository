@@ -4,6 +4,7 @@ import {
   buildBalancedExecutionOrderSchedule,
   parseArguments,
   runBatchedSearchComparisonBenchmark,
+  summarizeIndependentBatchDifferences,
 } from './search-comparison-batches.mjs';
 
 const PROJECTION_ID = 'a'.repeat(64);
@@ -78,6 +79,22 @@ test('balanced execution-order schedule is deterministic and order-balanced', ()
   );
 });
 
+test('batch-level summary bootstraps independently warmed batch medians', () => {
+  const result = summarizeIndependentBatchDifferences([10, 10, 10, 10], {
+    bootstrapIterations: 1000,
+    seed: 42,
+  });
+
+  assert.equal(result.batchCount, 4);
+  assert.equal(result.medianBatchDifferenceMs, 10);
+  assert.equal(result.solrLeadBatchRatePercent, 100);
+  assert.equal(result.tieBatchRatePercent, 0);
+  assert.equal(result.bootstrap.lowerMs, 10);
+  assert.equal(result.bootstrap.upperMs, 10);
+  assert.equal(result.bootstrap.excludesZero, true);
+  assert.match(result.interpretation, /batch median/);
+});
+
 test('batched benchmark preserves batch evidence and aggregates paired samples', async () => {
   const requests = [];
   const responses = [
@@ -109,6 +126,10 @@ test('batched benchmark preserves batch evidence and aggregates paired samples',
   assert.equal(result.batches.length, 4);
   assert.equal(result.randomization.orderCounts.SOLR_FIRST, 2);
   assert.equal(result.randomization.orderCounts.OPENSEARCH_FIRST, 2);
+  assert.equal(result.batchLevel.apiElapsed.batchCount, 4);
+  assert.equal(result.batchLevel.apiElapsed.medianBatchDifferenceMs, 10);
+  assert.equal(result.batchLevel.apiElapsed.solrLeadBatchRatePercent, 100);
+  assert.equal(result.batchLevel.apiElapsed.bootstrap.excludesZero, true);
   assert.equal(result.aggregate.rawSamples.apiElapsed.solrMs.length, 8);
   assert.equal(result.aggregate.rawSamples.apiElapsed.openSearchMs.length, 8);
   assert.equal(result.aggregate.pairedStatistics.apiElapsed.sampleCount, 8);
