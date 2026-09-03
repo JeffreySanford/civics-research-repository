@@ -17,6 +17,9 @@ test.describe('repository research coverage', () => {
   test('preserves Discovery criteria in a viewport-bounded spatial request @wcag @section508', async ({
     page,
   }) => {
+    // Coverage is fetched from criteria + viewport state, independently of whether the presentation
+    // layer is visible. Register the request wait before navigation so an initial boundary- or
+    // MapLibre-driven request cannot race past the assertion; toggling below tests presentation only.
     const researchRequest = page.waitForRequest((request) => {
       const url = new URL(request.url());
       return (
@@ -37,6 +40,7 @@ test.describe('repository research coverage', () => {
     ).toBeVisible();
 
     const requestUrl = new URL((await researchRequest).url());
+
     expect(requestUrl.searchParams.get('q')).toBe('climate');
     expect(requestUrl.searchParams.getAll('program')).toEqual([
       'TIGER_LINE',
@@ -72,10 +76,17 @@ test.describe('repository research coverage', () => {
     );
     const toggle = page.getByTestId('map-layer-research-coverage');
 
-    // The capability remains discoverable while its bounded result is loading or empty.
+    // The capability remains discoverable while its bounded result is loading or empty, but its
+    // child control no longer consumes above-the-fold space until the disclosure is opened.
     await expect(category).toBeVisible();
     await expect(categorySummary).toContainText('Research Coverage');
     await expect(categorySummary).toContainText('1 layer');
+    await expect(category).toHaveJSProperty('open', false);
+    await expect(toggle).not.toBeVisible();
+
+    await categorySummary.click();
+    await expect(category).toHaveJSProperty('open', true);
+    await expect(toggle).toBeVisible();
     await expect(category).toContainText(
       'Data.gov publisher research geometry',
     );

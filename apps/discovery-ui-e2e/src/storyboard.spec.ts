@@ -1,5 +1,38 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { mockRepositoryApi } from './support/repository-api-mocks';
+
+type MapLayerControlId =
+  | 'tiger'
+  | 'lodes'
+  | 'saipe'
+  | 'hydrography'
+  | 'earthquake'
+  | 'workplace';
+
+const MAP_LAYER_CATEGORY_BY_CONTROL: Record<MapLayerControlId, string> = {
+  tiger: 'geography-boundaries',
+  lodes: 'community-economy',
+  saipe: 'community-economy',
+  workplace: 'community-economy',
+  hydrography: 'environment-hazards',
+  earthquake: 'environment-hazards',
+};
+
+async function openMapLayerCategory(
+  page: Page,
+  controlId: MapLayerControlId,
+): Promise<void> {
+  const category = page.getByTestId(
+    `map-layer-category-${MAP_LAYER_CATEGORY_BY_CONTROL[controlId]}`,
+  );
+  const isOpen = await category.evaluate(
+    (element) => (element as HTMLDetailsElement).open,
+  );
+  if (!isOpen) {
+    await category.locator('summary').click();
+  }
+  await expect(category).toHaveJSProperty('open', true);
+}
 
 test.describe('demo storyboard checks', () => {
   test.beforeEach(async ({ page }) => {
@@ -241,6 +274,7 @@ test.describe('demo storyboard checks', () => {
         await expect(toggle).not.toBeChecked();
         await expect(legend.getByText(layer.legend)).toHaveCount(0);
 
+        await openMapLayerCategory(page, layer.id);
         await toggle.check();
         await expect(legend.getByText(layer.legend)).toBeVisible();
 
@@ -323,6 +357,7 @@ test.describe('demo storyboard checks', () => {
     await page.goto('/maps?' + allLayersOn);
 
     const legend = page.getByLabel('Visible map layer legend');
+    await openMapLayerCategory(page, 'saipe');
     await page.getByTestId('map-layer-saipe').uncheck();
 
     await expect(legend.getByText(/SAIPE county poverty/)).toHaveCount(0);
@@ -374,6 +409,7 @@ test.describe('demo storyboard checks', () => {
         .getByText(/LODES commuting flows/),
     ).toBeVisible();
 
+    await openMapLayerCategory(page, 'tiger');
     await page.getByTestId('map-layer-tiger').uncheck();
     await expect(page.getByText('North Dakota TIGER/Line preview')).toHaveCount(
       0,
@@ -382,6 +418,7 @@ test.describe('demo storyboard checks', () => {
       page.getByText('2025 TIGER/Line Census area preview'),
     ).toHaveCount(0);
 
+    await openMapLayerCategory(page, 'earthquake');
     await page.getByTestId('map-layer-earthquake').uncheck();
     await expect(page.getByText('USGS event overlay')).toHaveCount(0);
     await expect(page).toHaveURL(/earthquakes=off/);
@@ -390,7 +427,9 @@ test.describe('demo storyboard checks', () => {
     ).toHaveCount(0);
     await expect(page.getByText('Western North Dakota')).toHaveCount(0);
 
+    await openMapLayerCategory(page, 'tiger');
     await page.getByTestId('map-layer-tiger').check();
+    await openMapLayerCategory(page, 'earthquake');
     await page.getByTestId('map-layer-earthquake').check();
     await expect(page).not.toHaveURL(/tiger=off/);
     await expect(page).not.toHaveURL(/earthquakes=off/);
@@ -411,6 +450,7 @@ test.describe('demo storyboard checks', () => {
     const legend = page.getByLabel('Visible map layer legend');
 
     for (const layer of MAP_LAYERS) {
+      await openMapLayerCategory(page, layer.id);
       const toggle = page.getByTestId('map-layer-' + layer.id);
       await toggle.focus();
       await expect(toggle).toBeFocused();
@@ -583,6 +623,7 @@ test.describe('map and feature list selection', () => {
     await page.goto('/maps?feature=demo-eastern-nd&earthquakes=on');
     await expect(page.getByText(/Selected Eastern North Dakota/)).toBeVisible();
 
+    await openMapLayerCategory(page, 'earthquake');
     await page.getByTestId('map-layer-earthquake').uncheck();
 
     await expect(page.getByText('No map feature selected.')).toBeVisible();
@@ -987,6 +1028,7 @@ test.describe('workplace employment layer', () => {
   test('the layer toggles off and says so in the URL @storyboard', async ({
     page,
   }) => {
+    await openMapLayerCategory(page, 'workplace');
     await page.getByTestId('map-layer-workplace').uncheck();
 
     await expect(page).toHaveURL(/workplace=off/);
@@ -1073,6 +1115,7 @@ test.describe('commuting flow selection', () => {
     await page.locator('.flow-select').first().click();
     await expect(page.getByText(/Selected .* workers\./)).toBeVisible();
 
+    await openMapLayerCategory(page, 'lodes');
     await page.getByTestId('map-layer-lodes').uncheck();
 
     await expect(page.getByText('No commuting flow selected.')).toBeVisible();

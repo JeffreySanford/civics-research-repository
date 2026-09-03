@@ -1,23 +1,57 @@
-// Expandable organization for the Maps layer controls.
+// Compact, expandable organization for the Maps layer controls.
 //
 // Native details/summary keeps disclosure keyboard behavior in the platform instead of recreating
 // an accordion state machine beside the URL/NgRx layer state. Collapsing a category is presentation
 // only: checked child layers continue to render until their own checkbox changes.
+//
+// Desktop uses a single horizontal row of collapsed categories. Opening one category drops its
+// controls over the map instead of pushing the map below the fold. Narrow screens fall back to a
+// normal in-flow disclosure so touch and zoom layouts never depend on an overlay panel.
+
+.map-toolbar {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(12rem, 18rem);
+  grid-template-areas:
+    'heading methodology area'
+    'layers layers layers';
+  gap: 0.75rem 1rem;
+  align-items: end;
+  justify-content: stretch;
+}
+
+.map-toolbar > div {
+  grid-area: heading;
+}
+
+.map-toolbar > .map-methodology-info {
+  grid-area: methodology;
+}
+
+.map-toolbar > .area-select {
+  grid-area: area;
+}
+
+.map-toolbar > .layer-controls {
+  grid-area: layers;
+  width: 100%;
+}
 
 .layer-controls {
+  position: relative;
   display: grid;
-  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .layer-category {
+  position: relative;
   min-width: 0;
   border: 1px solid var(--civics-border);
   border-radius: var(--civics-radius-sm);
   background: var(--civics-surface-panel);
-  // Older engines that do not support overflow: clip still need the rounded panel to contain its
-  // children. Browsers that support clip use it without creating a scrolling container.
-  overflow: hidden;
-  overflow: clip;
+  overflow: visible;
 }
 
 .layer-category > summary {
@@ -44,8 +78,11 @@
   outline-offset: -3px;
 }
 
+.layer-category[open] {
+  z-index: 30;
+}
+
 .layer-category[open] > summary {
-  border-bottom: 1px solid var(--civics-border);
   background: var(--civics-surface-muted);
 }
 
@@ -61,30 +98,73 @@
 }
 
 .layer-category-items {
+  position: absolute;
+  inset-block-start: calc(100% + 0.35rem);
+  inset-inline-start: 0;
+  z-index: 40;
   display: grid;
+  width: 100%;
   gap: 0.5rem;
+  border: 1px solid var(--civics-border-strong);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
   padding: 0.75rem;
+  box-shadow: 0 0.75rem 1.5rem rgb(15 23 42 / 16%);
 }
 
 .layer-category-items .layer-toggle-row {
   width: 100%;
 }
 
-@media (max-width: 40rem) {
-  .layer-category-summary-content {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.25rem;
+.layer-category-items .layer-toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.layer-category-items .layer-toggle-label {
+  white-space: normal;
+}
+
+@media (max-width: 70rem) {
+  .map-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'heading methodology'
+      'area area'
+      'layers layers';
   }
 
-  .layer-category-count {
-    flex-basis: auto;
+  .map-toolbar > .area-select {
+    max-width: 20rem;
+  }
+
+  .layer-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .layer-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .layer-category-items {
+    position: static;
+    width: auto;
+    border: 0;
+    border-top: 1px solid var(--civics-border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .layer-category-summary-content {
+    gap: 0.5rem;
   }
 }
 
 @media (forced-colors: active) {
   .layer-category,
-  .layer-category[open] > summary {
+  .layer-category-items {
     border-color: CanvasText;
   }
 

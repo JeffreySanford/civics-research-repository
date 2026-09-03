@@ -45,6 +45,17 @@ async function openRoute(page: Page, route: (typeof ROUTES)[number]) {
   ).toBeVisible();
 }
 
+async function openMapLayerCategories(page: Page): Promise<void> {
+  const categories = page.locator('details.layer-category');
+  await expect(categories).toHaveCount(4);
+
+  for (let index = 0; index < 4; index += 1) {
+    const category = categories.nth(index);
+    await category.locator('summary').click();
+    await expect(category).toHaveJSProperty('open', true);
+  }
+}
+
 test.describe('accessibility structure', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);
@@ -292,6 +303,7 @@ test.describe('accessibility structure', () => {
     page,
   }) => {
     await page.goto('/maps');
+    await openMapLayerCategories(page);
 
     // By accessible name, and by checkbox role: naming alone is now ambiguous, because each
     // toggle sits beside an info button whose name contains the same layer name. Requiring the
@@ -431,6 +443,7 @@ test.describe('accessibility structure', () => {
     page,
   }) => {
     await page.goto('/maps?area=North%20Dakota');
+    await openMapLayerCategories(page);
 
     const infoControls = [
       { testId: 'map-methodology-info', describes: /LODES/ },
