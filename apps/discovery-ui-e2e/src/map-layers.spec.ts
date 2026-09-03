@@ -78,20 +78,20 @@ test.describe('map layer controls', () => {
   /** The toggle is shareable state: a copied URL has to reopen the same map. */
   test('the LODES toggle survives a reload @maps', async ({ page }) => {
     await openLayerCategoryForToggle(page, 'map-layer-lodes');
-    await page
+    const lodes = page
       .getByRole('group', { name: 'Map layer controls' })
-      .getByRole('checkbox', { name: 'LODES commuting flows' })
-      .check();
+      .getByRole('checkbox', { name: 'LODES commuting flows' });
 
-    await page
-      .getByRole('group', { name: 'Map layer controls' })
-      .getByRole('checkbox', { name: 'LODES commuting flows' })
-      .uncheck();
-
+    await lodes.check();
+    await lodes.uncheck();
     await expect(page).toHaveURL(/lodes=off/);
 
     await page.reload();
 
+    // Disclosure state is intentionally presentation-only and resets closed on navigation. The
+    // URL remains the shareable layer state; reopen the owning category before reading its child.
+    await expect(page).toHaveURL(/lodes=off/);
+    await openLayerCategoryForToggle(page, 'map-layer-lodes');
     await expect(
       page
         .getByRole('group', { name: 'Map layer controls' })
