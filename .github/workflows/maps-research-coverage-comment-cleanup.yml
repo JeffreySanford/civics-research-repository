@@ -1,0 +1,55 @@
+name: Maps Research Coverage Comment Cleanup
+
+on:
+  push:
+    branches:
+      - codex/maps-research-coverage-ui
+    paths:
+      - .github/workflows/maps-research-coverage-comment-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/maps-research-coverage-ui
+          fetch-depth: 0
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Remove obsolete research-area JSDoc
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('apps/discovery-ui/src/app/pages/maps-page.ts')
+          text = path.read_text()
+          obsolete = '''  /**
+           * Bounded repository research-by-area summary.
+           *
+           * These are state-summary symbols, not scientific footprints. Each symbol exists only when the
+           * normalized research metadata explicitly names a supported Census area; unmapped matches stay
+           * visible in the semantic summary instead of being assigned a publisher location.
+           */
+          '''
+          if text.count(obsolete) != 1:
+              raise SystemExit(f'Expected exactly one obsolete JSDoc, found {text.count(obsolete)}')
+          path.write_text(text.replace(obsolete, ''))
+          PY
+          pnpm exec prettier --write apps/discovery-ui/src/app/pages/maps-page.ts
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/discovery-ui/src/app/pages/maps-page.ts
+          git commit -m "docs: remove obsolete research-area renderer comment"
+          git push origin HEAD:codex/maps-research-coverage-ui
