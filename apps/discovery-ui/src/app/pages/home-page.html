@@ -1,99 +1,240 @@
 <div class="landing-page">
   <section aria-labelledby="overview-heading" class="landing-hero">
     <div class="landing-hero__lead">
-      <p class="eyebrow">Docker-first open science demo</p>
+      <p class="eyebrow">Federal Open Science reference implementation</p>
       <h1 id="overview-heading">
-        Census geospatial discovery with repository sync
+        Discover, connect, and map public research at federal scale
       </h1>
-      <p>
-        Run the local stack, sync a North Dakota TIGER/Line repository object,
-        expose it through a typed Java API, and prepare it for search, maps, and
-        accessibility evidence.
+      <p class="landing-hero__intro">
+        Explore curated DSpace research alongside reproducible Data.gov and DOE
+        OSTI metadata, then carry that context into geospatial analysis,
+        provenance, search-engine comparison, and accessibility evidence.
       </p>
+
       <div class="landing-hero__actions">
         <a mat-flat-button color="primary" routerLink="/discovery">
-          Explore discovery
+          Search the research corpus
         </a>
-        <a mat-stroked-button routerLink="/maps">Open maps</a>
-        <a mat-stroked-button routerLink="/evidence">View evidence</a>
+        <a mat-stroked-button routerLink="/maps">Explore research maps</a>
+        <a mat-stroked-button routerLink="/evidence">Review evidence</a>
       </div>
+
+      <ul class="landing-hero__signals" aria-label="Platform capabilities">
+        <li>DSpace authority</li>
+        <li>Federated metadata</li>
+        <li>Solr + OpenSearch</li>
+        <li>WCAG / Section 508 evidence</li>
+      </ul>
     </div>
 
-    <ul
-      class="status-grid status-grid--hero"
-      aria-label="Current platform status"
-    >
-      <li>
-        <span><strong>API</strong> Java 21</span>
-      </li>
-      <li>
-        <span><strong>Sync</strong> Startup + admin</span>
-      </li>
-      <li>
-        <span><strong>Search</strong> Solr ready</span>
-      </li>
-      <li>
-        <span><strong>Storage</strong> Docker volumes</span>
-      </li>
+    <aside class="scale-card" aria-labelledby="scale-heading">
+      <p class="scale-card__eyebrow">Certified scale milestone</p>
+      <h2 id="scale-heading">C2 Gold Master</h2>
+      <p class="scale-card__intro">
+        A reproducible mixed-source corpus with exact composition and projection
+        identity—not an arbitrary million-row load test.
+      </p>
+
+      <dl class="scale-card__metrics">
+        <div>
+          <dt>Search documents</dt>
+          <dd>1,000,181</dd>
+        </div>
+        <div>
+          <dt>Federated records</dt>
+          <dd>1,000,000</dd>
+        </div>
+        <div>
+          <dt>Curated DSpace objects</dt>
+          <dd>181</dd>
+        </div>
+        <div>
+          <dt>Search projections</dt>
+          <dd>2</dd>
+        </div>
+      </dl>
+
+      <p class="scale-card__recipe">
+        <strong>Exact federated recipe</strong>
+        <span>500K Data.gov + 500K DOE OSTI</span>
+      </p>
+      <a class="scale-card__link" routerLink="/search-lab">
+        Compare Solr and OpenSearch
+        <span aria-hidden="true">→</span>
+      </a>
+    </aside>
+  </section>
+
+  <section aria-labelledby="journey-heading" class="landing-section">
+    <div class="landing-section__heading">
+      <p class="eyebrow">Research journey</p>
+      <h2 id="journey-heading">Start with a question. Keep the evidence attached.</h2>
+      <p>
+        The public experience, repository operations, and engineering evidence
+        are connected instead of being separate demo screens.
+      </p>
+    </div>
+
+    <div class="experience-grid">
+      <a class="experience-card" routerLink="/discovery">
+        <span class="experience-card__number" aria-hidden="true">01</span>
+        <span class="experience-card__kicker">Discover</span>
+        <strong>Search connected research</strong>
+        <span>
+          Search and facet across curated and federated datasets, publications,
+          methodology, projects, publishers, programs, and provenance.
+        </span>
+        <span class="experience-card__cta">Open Discovery →</span>
+      </a>
+
+      <a class="experience-card" routerLink="/maps">
+        <span class="experience-card__number" aria-hidden="true">02</span>
+        <span class="experience-card__kicker">Analyze</span>
+        <strong>Move from records to place</strong>
+        <span>
+          Combine Census geography, LODES, SAIPE, USGS references, and
+          Data.gov publisher geometry with accessible table and list
+          equivalents.
+        </span>
+        <span class="experience-card__cta">Open Maps →</span>
+      </a>
+
+      <a class="experience-card" routerLink="/search-lab">
+        <span class="experience-card__number" aria-hidden="true">03</span>
+        <span class="experience-card__kicker">Compare</span>
+        <strong>Inspect search behavior</strong>
+        <span>
+          Compare aligned Solr and OpenSearch projections with the active
+          corpus identity visible beside the results.
+        </span>
+        <span class="experience-card__cta">Open Search Lab →</span>
+      </a>
+
+      <a class="experience-card" routerLink="/admin/sync">
+        <span class="experience-card__number" aria-hidden="true">04</span>
+        <span class="experience-card__kicker">Operate</span>
+        <strong>Trace authority to projection</strong>
+        <span>
+          Review repository sync, federation, corpus archives, active search
+          profiles, and the Authority → Retention → Projection data flow.
+        </span>
+        <span class="experience-card__cta">Open Admin →</span>
+      </a>
+
+      <a class="experience-card" routerLink="/evidence">
+        <span class="experience-card__number" aria-hidden="true">05</span>
+        <span class="experience-card__kicker">Verify</span>
+        <strong>Review conformance evidence</strong>
+        <span>
+          Inspect automated browser and axe evidence alongside explicit manual
+          keyboard, assistive-technology, map-equivalence, and cognitive review
+          work.
+        </span>
+        <span class="experience-card__cta">Open Evidence →</span>
+      </a>
+    </div>
+  </section>
+
+  <section aria-labelledby="architecture-heading" class="platform-story">
+    <div class="platform-story__copy">
+      <p class="eyebrow">Architecture</p>
+      <h2 id="architecture-heading">Authority stays explicit. Search stays rebuildable.</h2>
+      <p>
+        Repository content and federated metadata have different owners and
+        lifecycles. The platform keeps those boundaries visible instead of
+        flattening every source into one opaque index.
+      </p>
+    </div>
+
+    <div class="authority-grid">
+      <article>
+        <span class="authority-grid__label">Curated authority</span>
+        <h3>DSpace 9</h3>
+        <p>
+          System of record for curated research objects, relations, versions,
+          metadata, and bitstreams.
+        </p>
+      </article>
+      <article>
+        <span class="authority-grid__label">Federated retention</span>
+        <h3>Application PostgreSQL</h3>
+        <p>
+          Reproducible external metadata, harvest checkpoints, quarantine,
+          corpus identity, and evidence history.
+        </p>
+      </article>
+      <article>
+        <span class="authority-grid__label">Discovery projection</span>
+        <h3>Solr + OpenSearch</h3>
+        <p>
+          Disposable, rebuildable normalized search projections tied to exact
+          corpus and projection evidence.
+        </p>
+      </article>
+      <article>
+        <span class="authority-grid__label">Research experience</span>
+        <h3>Angular + NgRx + MapLibre</h3>
+        <p>
+          Typed discovery, research-object detail, mapping, administration, and
+          accessibility-first equivalents.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="engineering-heading" class="landing-section">
+    <div class="landing-section__heading">
+      <p class="eyebrow">Engineering evidence</p>
+      <h2 id="engineering-heading">More than a catalog mockup</h2>
+      <p>
+        The repository is designed to make scale, provenance, accessibility,
+        and operational behavior reviewable—not just visually convincing.
+      </p>
+    </div>
+
+    <div class="proof-grid">
+      <article>
+        <h3>Reproducible at scale</h3>
+        <p>
+          Exact corpus composition, Gold Master archives, restart-safe active
+          projection identity, and measured million-record Solr/OpenSearch
+          parity make scale claims repeatable.
+        </p>
+      </article>
+      <article>
+        <h3>Accessible by construction</h3>
+        <p>
+          Keyboard behavior, reflow, zoom, forced colors, browser axe scans,
+          and semantic map equivalents are part of the delivery evidence.
+        </p>
+      </article>
+      <article>
+        <h3>Typed and inspectable</h3>
+        <p>
+          OpenAPI-generated Java and TypeScript contracts connect the Angular
+          experience to the Spring Boot API while source authority remains
+          visible to researchers and operators.
+        </p>
+      </article>
+    </div>
+
+    <ul class="technology-strip" aria-label="Core technology stack">
+      <li>Angular 22</li>
+      <li>Java 21</li>
+      <li>Spring Boot</li>
+      <li>DSpace 9</li>
+      <li>PostgreSQL</li>
+      <li>Apache Solr</li>
+      <li>OpenSearch</li>
+      <li>MapLibre</li>
+      <li>Docker Compose</li>
+      <li>Playwright + axe</li>
     </ul>
   </section>
 
-  <section aria-labelledby="workflow-heading" class="feature-cards">
-    <h2 id="workflow-heading" class="feature-cards__heading">Demo workflows</h2>
-    <p class="feature-cards__intro">
-      Jump into the core paths for repository discovery, geospatial preview,
-      sync administration, and accessibility evidence review.
-    </p>
-
-    <div class="feature-cards__grid">
-      <a class="feature-card feature-card--discovery" routerLink="/discovery">
-        <span class="feature-card__icon" aria-hidden="true">D</span>
-        <strong>Discovery</strong>
-        <span>Search, facets, and dataset result scaffolding.</span>
-      </a>
-      <a class="feature-card feature-card--maps" routerLink="/maps">
-        <span class="feature-card__icon" aria-hidden="true">M</span>
-        <strong>Map preview</strong>
-        <span>MapLibre shell for TIGER/Line and USGS overlays.</span>
-      </a>
-      <a class="feature-card feature-card--sync" routerLink="/admin/sync">
-        <span class="feature-card__icon" aria-hidden="true">S</span>
-        <strong>Admin sync</strong>
-        <span>Trigger dry-run or apply sync against the Java API.</span>
-      </a>
-      <a class="feature-card feature-card--evidence" routerLink="/evidence">
-        <span class="feature-card__icon" aria-hidden="true">A</span>
-        <strong>Platform evidence</strong>
-        <span>
-          Review WCAG and Section 508 automation status, and how much source
-          data the repository subscribes to, mirrors, and indexes.
-        </span>
-      </a>
-    </div>
-  </section>
-
-  <section aria-labelledby="values-heading" class="landing-values">
-    <h2 id="values-heading" class="visually-hidden">Platform values</h2>
-    <article>
-      <h3>Open science ready</h3>
-      <p>
-        Typed OpenAPI contracts, DSpace integration, and Solr-backed discovery
-        for reproducible federal data workflows.
-      </p>
-    </article>
-    <article>
-      <h3>Geospatial by default</h3>
-      <p>
-        Census boundaries, LODES flows, and USGS overlays share one accessible
-        map workspace with tabular fallbacks.
-      </p>
-    </article>
-    <article>
-      <h3>Accessibility evidence</h3>
-      <p>
-        Automated axe and Playwright scans plus manual checklists document WCAG
-        and Section 508 conformance work.
-      </p>
-    </article>
-  </section>
+  <p class="landing-disclaimer">
+    Independent reference implementation. Not affiliated with, endorsed by, or
+    sponsored by the U.S. Census Bureau, USGS, DSpace, Apache Solr, Data.gov,
+    DOE OSTI, or OpenSearch.
+  </p>
 </div>
