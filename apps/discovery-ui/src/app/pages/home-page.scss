@@ -160,6 +160,31 @@
   text-underline-offset: 0.2em;
 }
 
+.landing-evolution {
+  display: grid;
+  max-width: 64rem;
+  gap: 0.45rem;
+  margin-top: calc(clamp(2.75rem, 6vw, 5rem) * -0.45);
+  border-left: 4px solid var(--civics-link);
+  padding-left: clamp(1rem, 3vw, 1.5rem);
+}
+
+.landing-evolution h2 {
+  max-width: 34ch;
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.landing-evolution > p:last-child {
+  max-width: 58rem;
+  margin: 0.25rem 0 0;
+  color: var(--civics-text-secondary);
+  line-height: 1.6;
+}
+
 .landing-section {
   display: grid;
   gap: 1.5rem;
@@ -251,7 +276,12 @@
   line-height: 1.2;
 }
 
-.experience-card > span:not(.experience-card__number, .experience-card__kicker, .experience-card__cta) {
+.experience-card
+  > span:not(
+    .experience-card__number,
+    .experience-card__kicker,
+    .experience-card__cta
+  ) {
   color: var(--civics-text-secondary);
   line-height: 1.55;
 }
@@ -364,6 +394,10 @@
 
   .landing-hero h1 {
     font-size: clamp(2.25rem, 12vw, 3.35rem);
+  }
+
+  .landing-evolution {
+    margin-top: -1.25rem;
   }
 
   .scale-card__metrics,
