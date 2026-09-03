@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import org.civicsrepo.federation.FederatedSourceSystem;
 import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,12 @@ public class ResearchSpatialCoverageQueryService {
     private final ResearchSpatialSidecarStore sidecarStore;
     private final ObjectMapper objectMapper;
 
-    public ResearchSpatialCoverageQueryService(
+    @Autowired
+    public ResearchSpatialCoverageQueryService(JdbcClient jdbcClient, ResearchSpatialSidecarStore sidecarStore) {
+        this(jdbcClient, sidecarStore, new ObjectMapper());
+    }
+
+    ResearchSpatialCoverageQueryService(
             JdbcClient jdbcClient, ResearchSpatialSidecarStore sidecarStore, ObjectMapper objectMapper) {
         this.jdbcClient = jdbcClient;
         this.sidecarStore = sidecarStore;
