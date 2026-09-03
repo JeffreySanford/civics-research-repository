@@ -200,7 +200,7 @@ function timingRows(pass) {
   return pass.scenarios
     .map(
       (scenario) =>
-        `| ${scenario.id} | ${scenario.solr.elapsed.p50Ms} / ${scenario.solr.elapsed.p95Ms} / ${scenario.solr.elapsed.p99Ms} | ${scenario.openSearch.elapsed.p50Ms} / ${scenario.openSearch.elapsed.p95Ms} / ${scenario.openSearch.elapsed.p99Ms} | ${scenario.solr.engineReported.p50Ms} / ${scenario.solr.engineReported.p95Ms} / ${scenario.solr.engineReported.p99Ms} | ${scenario.openSearch.engineReported.p50Ms} / ${scenario.openSearch.engineReported.p95Ms} / ${scenario.openSearch.engineReported.p99Ms} |`,
+        `| ${scenario.id} | ${scenario.workloadClass ?? 'UNCLASSIFIED'} | ${scenario.solr.elapsed.p50Ms} / ${scenario.solr.elapsed.p95Ms} / ${scenario.solr.elapsed.p99Ms} | ${scenario.openSearch.elapsed.p50Ms} / ${scenario.openSearch.elapsed.p95Ms} / ${scenario.openSearch.elapsed.p99Ms} | ${scenario.solr.engineReported.p50Ms} / ${scenario.solr.engineReported.p95Ms} / ${scenario.solr.engineReported.p99Ms} | ${scenario.openSearch.engineReported.p50Ms} / ${scenario.openSearch.engineReported.p95Ms} / ${scenario.openSearch.engineReported.p99Ms} |`,
     )
     .join('\n');
 }
@@ -272,7 +272,7 @@ Captured: ${result.capturedAt}
 
 ## Methodology
 
-The report treats the repository as a research system rather than a production SLO test. Solr and OpenSearch are measured against the same deterministic projection and the same normalized scenarios. Each scenario is run in both engine execution orders. Application-boundary elapsed time and engine-native Solr QTime / OpenSearch took are retained separately. Native vendor timings are diagnostic and are not treated as perfectly equivalent definitions.
+The report treats the repository as a research system rather than a production SLO test. Solr and OpenSearch are measured against the same deterministic projection and the same normalized workload matrix: full text, facets, broad filtering and selective filtering. Each workload is run in both engine execution orders. Application-boundary elapsed time and engine-native Solr QTime / OpenSearch took are retained separately. Native vendor timings are diagnostic and are not treated as perfectly equivalent definitions.
 
 Semantic correctness is a prerequisite for performance evidence. Projection identity, target parity, total hits, and facet bucket counts must agree before comparative timing is retained.
 
@@ -287,14 +287,14 @@ Semantic correctness is a prerequisite for performance evidence. Projection iden
 
 ### SOLR_FIRST
 
-| Scenario | Solr API p50 / p95 / p99 ms | OpenSearch API p50 / p95 / p99 ms | Solr QTime p50 / p95 / p99 ms | OpenSearch took p50 / p95 / p99 ms |
-| --- | ---: | ---: | ---: | ---: |
+| Scenario | Workload class | Solr API p50 / p95 / p99 ms | OpenSearch API p50 / p95 / p99 ms | Solr QTime p50 / p95 / p99 ms | OpenSearch took p50 / p95 / p99 ms |
+| --- | --- | ---: | ---: | ---: | ---: |
 ${timingRows(paired.passes.SOLR_FIRST)}
 
 ### OPENSEARCH_FIRST
 
-| Scenario | Solr API p50 / p95 / p99 ms | OpenSearch API p50 / p95 / p99 ms | Solr QTime p50 / p95 / p99 ms | OpenSearch took p50 / p95 / p99 ms |
-| --- | ---: | ---: | ---: | ---: |
+| Scenario | Workload class | Solr API p50 / p95 / p99 ms | OpenSearch API p50 / p95 / p99 ms | Solr QTime p50 / p95 / p99 ms | OpenSearch took p50 / p95 / p99 ms |
+| --- | --- | ---: | ---: | ---: | ---: |
 ${timingRows(paired.passes.OPENSEARCH_FIRST)}
 
 ## Order robustness

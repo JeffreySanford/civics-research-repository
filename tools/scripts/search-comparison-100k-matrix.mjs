@@ -13,6 +13,8 @@ const DEFAULT_OUTPUT =
 export const DEFAULT_SCENARIOS = Object.freeze([
   Object.freeze({
     id: 'FULL_TEXT_RELEVANCE',
+    workloadClass: 'FULL_TEXT',
+    description: 'Weighted title, summary and publisher text relevance.',
     request: Object.freeze({
       scenario: 'FULL_TEXT_RELEVANCE',
       query: 'North Dakota workforce',
@@ -22,6 +24,8 @@ export const DEFAULT_SCENARIOS = Object.freeze([
   }),
   Object.freeze({
     id: 'FACETED_SEARCH',
+    workloadClass: 'FACETS',
+    description: 'Unqualified corpus-wide facet and aggregation workload.',
     request: Object.freeze({
       scenario: 'FACETED_SEARCH',
       query: '',
@@ -30,7 +34,10 @@ export const DEFAULT_SCENARIOS = Object.freeze([
     }),
   }),
   Object.freeze({
-    id: 'FILTERING',
+    id: 'FILTERING_BROAD_TYPE',
+    workloadClass: 'BROAD_FILTER',
+    description:
+      'Broad type filter expected to match most harvested Data.gov records.',
     request: Object.freeze({
       scenario: 'FILTERING',
       query: '',
@@ -150,7 +157,12 @@ export async function runHundredKSearchComparisonMatrix({
         `Projection changed before or during scenario ${scenario.id}.`,
       );
     }
-    results.push({ id: scenario.id, ...result });
+    results.push({
+      id: scenario.id,
+      workloadClass: scenario.workloadClass,
+      description: scenario.description,
+      ...result,
+    });
   }
 
   return {
@@ -160,7 +172,7 @@ export async function runHundredKSearchComparisonMatrix({
     executionOrder,
     comparativeClaimAllowed: false,
     methodology:
-      'Each scenario uses the existing diagnostic harness with warmups excluded and the same deterministic projection required for every sample. Engine execution order is explicit so reversed-order passes can test order sensitivity. Results remain local single-topology diagnostics rather than proof that either engine is inherently faster in production.',
+      'Each workload uses the existing diagnostic harness with warmups excluded and the same deterministic projection required for every sample. The matrix distinguishes full-text relevance, corpus-wide facets, broad filtering, and adaptive selective filtering. Engine execution order is explicit so reversed-order passes can test order sensitivity. Results remain local single-topology diagnostics rather than proof that either engine is inherently faster in production.',
     evidence: {
       retainedFederatedRecordCount: evidence.retainedFederatedRecordCount,
       activeProfile: evidence.activeProfile,

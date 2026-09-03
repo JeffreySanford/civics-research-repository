@@ -141,7 +141,7 @@ Only after PI-1 handoff:
 
 - [x] Retain raw paired Solr/OpenSearch timing samples and bootstrap confidence evidence.
 - [x] Add independent benchmark batches with fixed, alternating and seeded randomized execution order.
-- [ ] Add workload matrix scenarios for full text, facets, selective filter and broad filter.
+- [x] Add workload matrix scenarios for full text, facets, selective filter and broad filter.
 - [ ] Add concurrency levels for 1, 8 and 32 clients.
 - [ ] Add CPU, memory, JVM/GC and container-resource telemetry capture.
 - [ ] Generate the automated statistical research report from retained benchmark artifacts.

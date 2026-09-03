@@ -131,7 +131,7 @@ test('paired 100K benchmark reuses one selective filter across both execution or
     },
   });
 
-  assert.equal(calls.length, 9);
+  assert.equal(calls.length, 11);
   assert.equal(result.projection.projectionId, PROJECTION_ID);
   assert.equal(result.selectedFilter.value, PROGRAM);
   assert.equal(result.selectedFilter.matchingDocuments, 1419);
@@ -151,20 +151,26 @@ test('paired 100K benchmark reuses one selective filter across both execution or
     .filter((call) => call.init?.body)
     .map((call) => JSON.parse(call.init.body))
     .filter((request) => request.scenario === 'FILTERING');
-  assert.equal(filteredRequests.length, 2);
-  assert.ok(
-    filteredRequests.every(
+  assert.equal(filteredRequests.length, 4);
+  assert.equal(
+    filteredRequests.filter((request) => request.contentType === 'DATASET')
+      .length,
+    2,
+  );
+  assert.equal(
+    filteredRequests.filter(
       (request) =>
         request.programs?.length === 1 && request.programs[0] === PROGRAM,
-    ),
+    ).length,
+    2,
   );
   assert.equal(
     calls.filter((call) => call.url.includes('order=SOLR_FIRST')).length,
-    3,
+    4,
   );
   assert.equal(
     calls.filter((call) => call.url.includes('order=OPENSEARCH_FIRST')).length,
-    3,
+    4,
   );
 });
 

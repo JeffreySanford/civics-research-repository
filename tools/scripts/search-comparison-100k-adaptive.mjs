@@ -114,8 +114,12 @@ export function adaptiveScenarios(program) {
   return [
     DEFAULT_SCENARIOS[0],
     DEFAULT_SCENARIOS[1],
+    DEFAULT_SCENARIOS[2],
     Object.freeze({
       id: 'FILTERING_SELECTIVE_PROGRAM',
+      workloadClass: 'SELECTIVE_FILTER',
+      description:
+        'Adaptive program filter selected from live Solr/OpenSearch facet parity.',
       request: Object.freeze({
         scenario: 'FILTERING',
         query: '',

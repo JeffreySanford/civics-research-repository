@@ -377,6 +377,7 @@ PI-6 includes:
 - clear separation of semantic quality from timing/performance evidence,
 - raw paired samples and bootstrap confidence intervals,
 - independent batches with fixed, alternating and seeded randomized execution order,
+- workload classes for full text, facets, broad filters and selective filters,
 - phrase search and highlighting after the current matrix is green,
 - geo, autocomplete/suggest, synonyms, nested/object and vector/hybrid scenarios after the core comparison path is hardened.
 

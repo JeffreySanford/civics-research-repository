@@ -78,10 +78,15 @@ test('adaptive filter refuses facet-count drift between engines', () => {
 
 test('adaptive filtering scenario uses discovered program instead of DATASET type', () => {
   const scenarios = adaptiveScenarios({ value: '006:070', count: 12345 });
-  assert.equal(scenarios.length, 3);
-  assert.equal(scenarios[2].id, 'FILTERING_SELECTIVE_PROGRAM');
-  assert.deepEqual(scenarios[2].request.programs, ['006:070']);
-  assert.equal(scenarios[2].request.contentType, undefined);
+  assert.equal(scenarios.length, 4);
+  assert.deepEqual(
+    scenarios.map((scenario) => scenario.workloadClass),
+    ['FULL_TEXT', 'FACETS', 'BROAD_FILTER', 'SELECTIVE_FILTER'],
+  );
+  assert.equal(scenarios[3].id, 'FILTERING_SELECTIVE_PROGRAM');
+  assert.deepEqual(scenarios[3].request.programs, ['006:070']);
+  assert.equal(scenarios[3].request.contentType, undefined);
+  assert.equal(scenarios[2].request.contentType, 'DATASET');
 });
 
 test('facet discovery calls the comparison endpoint and returns a selective program', async () => {

@@ -16,6 +16,7 @@ It covers:
 - invalid-evidence refusal,
 - raw paired samples and bootstrap confidence evidence,
 - independent benchmark batches with fixed, alternating and seeded randomized execution order,
+- explicit workload matrix classes for full text, facets, broad filters and selective filters,
 - adaptive selective-filter discovery,
 - Solr/OpenSearch facet-count parity requirements,
 - paired execution-order methodology,
@@ -81,7 +82,8 @@ Research scenarios:
 
 1. full-text relevance (`North Dakota workforce`),
 2. unqualified faceted search,
-3. adaptive selective program filter chosen from live facet parity.
+3. broad `DATASET` type filtering,
+4. adaptive selective program filter chosen from live facet parity.
 
 Each scenario is measured twice:
 
@@ -100,6 +102,10 @@ execution-order strategy:
 The retained artifact includes the batch order plan, sample indexes and raw paired timing
 series so later reports can evaluate confidence and order sensitivity without rerunning
 the experiment.
+
+The workload matrix deliberately separates user-visible API scenario from research
+workload class. Both broad and selective filters use the `FILTERING` API scenario, but
+their selectivity and interpretation are different and must be reported separately.
 
 This remains the stable single-source baseline even after additional authorities are sampled.
 
