@@ -26,6 +26,7 @@ export type MapLayerVisibility = Record<
 
 type MapLayerVisibilityGroup = {
   name: string;
+  categoryTestId: string;
   toggleTestId: string;
   mapLayerIds: readonly (typeof REGISTERED_MAP_LAYER_IDS)[number][];
   accessibleListText: string;
@@ -36,6 +37,7 @@ type MapLayerVisibilityGroup = {
 export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   {
     name: 'TIGER/Line boundary',
+    categoryTestId: 'map-layer-category-geography-boundaries',
     toggleTestId: 'map-layer-tiger',
     mapLayerIds: ['census-area-fill', 'census-area-outline'],
     accessibleListText: '2025 TIGER/Line Census area preview - North Dakota',
@@ -44,6 +46,7 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   },
   {
     name: 'LODES workplace employment',
+    categoryTestId: 'map-layer-category-community-economy',
     toggleTestId: 'map-layer-workplace',
     mapLayerIds: ['lodes-workplace-jobs-circles'],
     accessibleListText: 'Jobs by workplace county for North Dakota',
@@ -52,6 +55,7 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   },
   {
     name: 'LODES commuting flows',
+    categoryTestId: 'map-layer-category-community-economy',
     toggleTestId: 'map-layer-lodes',
     mapLayerIds: [
       'lodes-workplace-flow-line',
@@ -64,6 +68,7 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   },
   {
     name: 'SAIPE county poverty',
+    categoryTestId: 'map-layer-category-community-economy',
     toggleTestId: 'map-layer-saipe',
     mapLayerIds: ['saipe-county-fill', 'saipe-county-outline'],
     accessibleListText: 'SAIPE 2023 county poverty - North Dakota',
@@ -72,6 +77,7 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   },
   {
     name: 'Data.gov publisher research geometry',
+    categoryTestId: 'map-layer-category-research-coverage',
     toggleTestId: 'map-layer-research-coverage',
     mapLayerIds: [
       'repository-research-coverage-fill',
@@ -84,6 +90,7 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   },
   {
     name: 'USGS 3HP hydrography',
+    categoryTestId: 'map-layer-category-environment-hazards',
     toggleTestId: 'map-layer-hydrography',
     mapLayerIds: ['usgs-3hp-hydrography-raster'],
     accessibleListText:
@@ -93,6 +100,7 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
   },
   {
     name: 'USGS earthquake overlay',
+    categoryTestId: 'map-layer-category-environment-hazards',
     toggleTestId: 'map-layer-earthquake',
     mapLayerIds: [
       'usgs-earthquake-points',
@@ -104,6 +112,27 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
     urlOffPattern: /earthquakes=off/,
   },
 ] as const;
+
+export async function openLayerCategoryForToggle(
+  page: Page,
+  toggleTestId: string,
+): Promise<void> {
+  const group = MAP_LAYER_VISIBILITY_GROUPS.find(
+    (candidate) => candidate.toggleTestId === toggleTestId,
+  );
+  if (!group) {
+    throw new Error(`No layer visibility group for ${toggleTestId}`);
+  }
+
+  const category = page.getByTestId(group.categoryTestId);
+  const isOpen = await category.evaluate(
+    (element) => (element as HTMLDetailsElement).open,
+  );
+  if (!isOpen) {
+    await category.locator('summary').click();
+  }
+  await expect(category).toHaveJSProperty('open', true);
+}
 
 /**
  * Reads MapLibre layout visibility from the live map instance.
