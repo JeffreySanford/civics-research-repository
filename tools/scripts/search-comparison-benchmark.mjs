@@ -13,6 +13,7 @@ const DEFAULT_ORDER_SEED = 20260903;
 const MAX_WARMUP_RUNS = 20;
 const MAX_MEASURED_RUNS = 100;
 const MAX_BATCHES = 20;
+const MAX_ORDER_SEED = 0xffffffff;
 const EXECUTION_ORDERS = new Set(['SOLR_FIRST', 'OPENSEARCH_FIRST']);
 const ORDER_STRATEGIES = new Set(['FIXED', 'ALTERNATE', 'RANDOMIZED']);
 
@@ -54,8 +55,14 @@ function requireOrderStrategy(value) {
 
 function normalizeSeed(value) {
   const parsed = Number(value);
-  if (!Number.isInteger(parsed)) {
-    throw new Error('seed must be an integer.');
+  if (
+    !Number.isInteger(parsed) ||
+    parsed < 0 ||
+    parsed > MAX_ORDER_SEED
+  ) {
+    throw new Error(
+      `seed must be an unsigned 32-bit integer from 0 to ${MAX_ORDER_SEED}.`,
+    );
   }
   return parsed;
 }
@@ -65,7 +72,7 @@ function oppositeOrder(order) {
 }
 
 function createSeededRandom(seed) {
-  let state = normalizeSeed(seed) >>> 0;
+  let state = seed;
   return () => {
     state = (state * 1664525 + 1013904223) >>> 0;
     return state / 0x100000000;
@@ -81,7 +88,6 @@ export function buildExecutionOrderPlan({
   requireBoundedInteger(batches, 'batches', 1, MAX_BATCHES);
   const startingOrder = requireExecutionOrder(executionOrder);
   const strategy = requireOrderStrategy(orderStrategy);
-  const normalizedSeed = normalizeSeed(seed);
 
   if (strategy === 'FIXED') {
     return Array.from({ length: batches }, () => startingOrder);
@@ -93,6 +99,7 @@ export function buildExecutionOrderPlan({
     );
   }
 
+  const normalizedSeed = normalizeSeed(seed);
   const orders = Array.from({ length: batches }, (_, index) =>
     index % 2 === 0 ? startingOrder : oppositeOrder(startingOrder),
   );
@@ -206,15 +213,16 @@ export async function runSearchComparisonBenchmark({
   requireBoundedInteger(warmupRuns, 'warmupRuns', 0, MAX_WARMUP_RUNS);
   requireBoundedInteger(measuredRuns, 'measuredRuns', 1, MAX_MEASURED_RUNS);
   requireBoundedInteger(batches, 'batches', 1, MAX_BATCHES);
-  const order = requireExecutionOrder(executionOrder);
+  const requestedOrder = requireExecutionOrder(executionOrder);
   const strategy = requireOrderStrategy(orderStrategy);
-  const normalizedSeed = normalizeSeed(seed);
+  const effectiveSeed = strategy === 'RANDOMIZED' ? normalizeSeed(seed) : null;
   const orderPlan = buildExecutionOrderPlan({
     batches,
-    executionOrder: order,
+    executionOrder: requestedOrder,
     orderStrategy: strategy,
-    seed: normalizedSeed,
+    seed: effectiveSeed ?? DEFAULT_ORDER_SEED,
   });
+  const realizedFirstOrder = orderPlan[0];
 
   const endpointBase = `${baseUrl.replace(/\/$/, '')}/search/comparison/run`;
   let projectionId = null;
@@ -274,10 +282,14 @@ export async function runSearchComparisonBenchmark({
     capturedAt: now().toISOString(),
     measurementBoundary:
       'API elapsed measures Spring around each engine HTTP request. Engine-reported timing is captured from that same response (Solr QTime / OpenSearch took); vendor definitions differ and are not directly equivalent.',
-    executionOrder: order,
+    requestedExecutionOrder: requestedOrder,
+    executionOrder: realizedFirstOrder,
     executionPlan: {
       orderStrategy: strategy,
-      seed: normalizedSeed,
+      requestedStartingOrder: requestedOrder,
+      realizedFirstBatchOrder: realizedFirstOrder,
+      seed: effectiveSeed,
+      seedApplied: strategy === 'RANDOMIZED',
       batches,
       measuredRunsPerBatch: measuredRuns,
       totalMeasuredRuns: solrSamples.length,
@@ -285,8 +297,9 @@ export async function runSearchComparisonBenchmark({
     },
     comparativeClaimAllowed: false,
     caveat:
-      'Warm-up runs are excluded and execution order is explicit, but this remains a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Use independent batches with alternating or randomized order before treating an engine lead as robust.',
-    endpoint: `${endpointBase}?order=${encodeURIComponent(order)}`,
+      'Warm-up runs are excluded and the realized batch execution order is retained explicitly, but this remains a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Use independent batches with alternating or randomized order before treating an engine lead as robust.',
+    endpoint: `${endpointBase}?order=${encodeURIComponent(realizedFirstOrder)}`,
+    endpointTemplate: `${endpointBase}?order={batchExecutionOrder}`,
     request,
     projection,
     warmupRuns,
@@ -421,9 +434,10 @@ async function main() {
 
   console.log(`Search comparison diagnostic written to ${outputPath}`);
   console.log(`Projection: ${result.projection.projectionId}`);
-  console.log(`Execution order: ${result.executionOrder}`);
+  console.log(`Requested starting order: ${result.requestedExecutionOrder}`);
+  console.log(`Realized first batch order: ${result.executionOrder}`);
   console.log(
-    `Execution plan: ${result.executionPlan.orderStrategy}; batches ${result.executionPlan.batchExecutionOrders.join(', ')}`,
+    `Execution plan: ${result.executionPlan.orderStrategy}; batches ${result.executionPlan.batchExecutionOrders.join(', ')}; seed ${result.executionPlan.seedApplied ? result.executionPlan.seed : 'n/a'}`,
   );
   console.log(`Measured samples: ${result.totalMeasuredRuns}`);
   console.log(
