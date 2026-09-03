@@ -31,7 +31,7 @@ test('byte and Docker stats normalization preserves raw evidence', () => {
   assert.equal(result.raw.networkIo, '1MB / 2MB');
 });
 
-test('Solr telemetry preserves registries and groups JVM resource metrics by evidence key', () => {
+test('Solr telemetry preserves registries and separates cumulative counters from CPU/load gauges', () => {
   const result = normalizeSolrTelemetry({
     metrics: {
       'solr.jvm': {
@@ -40,6 +40,7 @@ test('Solr telemetry preserves registries and groups JVM resource metrics by evi
         'gc.G1-Young-Generation.count': 4,
         'gc.G1-Young-Generation.time': 22,
         'os.processCpuLoad': 0.5,
+        'os.processCpuTime': 1000,
         'threads.count': 30,
       },
       'solr.node': {
@@ -56,8 +57,22 @@ test('Solr telemetry preserves registries and groups JVM resource metrics by evi
     4,
   );
   assert.equal(
+    result.normalizedMetricGroups.garbageCollectionCounters[
+      'jvm.gc.G1-Young-Generation.count'
+    ],
+    4,
+  );
+  assert.equal(
     result.normalizedMetricGroups.cpuAndLoad['jvm.os.processCpuLoad'],
     0.5,
+  );
+  assert.equal(
+    result.normalizedMetricGroups.cpuTimeCounters['jvm.os.processCpuTime'],
+    1000,
+  );
+  assert.equal(
+    result.normalizedMetricGroups.cpuTimeCounters['jvm.os.processCpuLoad'],
+    undefined,
   );
   assert.equal(result.normalizedMetricGroups.threads['jvm.threads.count'], 30);
 });
@@ -205,8 +220,13 @@ test('resource delta separates cumulative counters from instantaneous observatio
     },
     solr: {
       normalizedMetricGroups: {
-        garbageCollection: { 'jvm.gc.count': 2 },
-        cpuAndLoad: { 'jvm.os.cpuTime': 100 },
+        garbageCollection: { 'jvm.gc.count': 2, 'jvm.gc.rate': 0.1 },
+        garbageCollectionCounters: { 'jvm.gc.count': 2 },
+        cpuAndLoad: {
+          'jvm.os.processCpuTime': 100,
+          'jvm.os.processCpuLoad': 0.4,
+        },
+        cpuTimeCounters: { 'jvm.os.processCpuTime': 100 },
         heapAndMemory: { 'jvm.memory.heap.used': 300 },
       },
     },
@@ -231,8 +251,13 @@ test('resource delta separates cumulative counters from instantaneous observatio
     },
     solr: {
       normalizedMetricGroups: {
-        garbageCollection: { 'jvm.gc.count': 4 },
-        cpuAndLoad: { 'jvm.os.cpuTime': 150 },
+        garbageCollection: { 'jvm.gc.count': 4, 'jvm.gc.rate': 0.2 },
+        garbageCollectionCounters: { 'jvm.gc.count': 4 },
+        cpuAndLoad: {
+          'jvm.os.processCpuTime': 150,
+          'jvm.os.processCpuLoad': 0.6,
+        },
+        cpuTimeCounters: { 'jvm.os.processCpuTime': 150 },
         heapAndMemory: { 'jvm.memory.heap.used': 350 },
       },
     },
@@ -251,6 +276,11 @@ test('resource delta separates cumulative counters from instantaneous observatio
   assert.equal(result.openSearch.gcCollectionCountDelta, 3);
   assert.equal(result.openSearch.searchQueryTotalDelta, 8);
   assert.equal(result.solr.garbageCollectionMetricDeltas['jvm.gc.count'], 2);
+  assert.equal(result.solr.garbageCollectionMetricDeltas['jvm.gc.rate'], undefined);
+  assert.equal(result.solr.cpuTimeMetricDeltas['jvm.os.processCpuTime'], 50);
+  assert.equal(result.solr.beforeCpuAndLoadMetrics['jvm.os.processCpuLoad'], 0.4);
+  assert.equal(result.solr.afterCpuAndLoadMetrics['jvm.os.processCpuLoad'], 0.6);
+  assert.equal(result.solr.cpuAndLoadMetricDeltas, undefined);
   assert.equal(result.docker.solr.memoryUsedBytesDelta, 200);
   assert.equal(result.docker.solr.beforeCpuPercent, 10);
   assert.equal(result.docker.solr.afterCpuPercent, 11);
@@ -276,7 +306,12 @@ test('telemetry wrapper brackets the benchmark and keeps claims conservative', a
       solr: {
         normalizedMetricGroups: {
           garbageCollection: { 'jvm.gc.count': captures },
-          cpuAndLoad: { 'jvm.os.cpuTime': captures * 10 },
+          garbageCollectionCounters: { 'jvm.gc.count': captures },
+          cpuAndLoad: {
+            'jvm.os.processCpuTime': captures * 10,
+            'jvm.os.processCpuLoad': captures / 10,
+          },
+          cpuTimeCounters: { 'jvm.os.processCpuTime': captures * 10 },
           heapAndMemory: { 'jvm.memory.heap.used': captures * 100 },
         },
       },
@@ -298,5 +333,11 @@ test('telemetry wrapper brackets the benchmark and keeps claims conservative', a
     result.resourceTelemetry.delta.openSearch.processCpuTotalMillisDelta,
     10,
   );
-  assert.match(result.methodology, /without changing engine configuration/);
+  assert.equal(
+    result.resourceTelemetry.delta.solr.cpuTimeMetricDeltas[
+      'jvm.os.processCpuTime'
+    ],
+    10,
+  );
+  assert.match(result.methodology, /Only identifiable cumulative counters/);
 });
