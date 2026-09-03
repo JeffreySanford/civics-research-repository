@@ -16,16 +16,25 @@ const DEFAULT_OUTPUT =
   'browser-evidence-artifacts/search-comparison-batches.json';
 
 function requireInteger(value, label, minimum, maximum = Number.MAX_SAFE_INTEGER) {
-  if (
-    !Number.isInteger(value) ||
-    value < minimum ||
-    value > maximum
-  ) {
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
     throw new Error(
       `${label} must be an integer from ${minimum} to ${maximum}.`,
     );
   }
   return value;
+}
+
+function requireFinite(value, label) {
+  if (!Number.isFinite(value)) {
+    throw new Error(`${label} must be a finite number.`);
+  }
+  return value;
+}
+
+function nearestRank(values, percentile) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const rank = Math.max(1, Math.ceil(percentile * sorted.length));
+  return sorted[rank - 1];
 }
 
 function seededRandom(seed) {
@@ -57,6 +66,61 @@ export function buildBalancedExecutionOrderSchedule(
   }
 
   return schedule;
+}
+
+export function summarizeIndependentBatchDifferences(
+  values,
+  { bootstrapIterations = 5000, confidenceLevel = 0.95, seed = DEFAULT_SEED } = {},
+) {
+  if (!Array.isArray(values) || values.length < 2) {
+    throw new Error('At least two batch-level differences are required.');
+  }
+  requireInteger(bootstrapIterations, 'bootstrapIterations', 100);
+  requireInteger(seed, 'seed', 0);
+  if (!(confidenceLevel > 0 && confidenceLevel < 1)) {
+    throw new Error('confidenceLevel must be greater than 0 and less than 1.');
+  }
+
+  const differences = values.map((value) =>
+    requireFinite(value, 'Batch difference'),
+  );
+  const random = seededRandom(seed);
+  const bootstrapMedians = [];
+
+  for (let iteration = 0; iteration < bootstrapIterations; iteration += 1) {
+    const resampled = [];
+    for (let index = 0; index < differences.length; index += 1) {
+      resampled.push(
+        differences[Math.floor(random() * differences.length)],
+      );
+    }
+    bootstrapMedians.push(nearestRank(resampled, 0.5));
+  }
+
+  const alpha = 1 - confidenceLevel;
+  const lowerMs = nearestRank(bootstrapMedians, alpha / 2);
+  const upperMs = nearestRank(bootstrapMedians, 1 - alpha / 2);
+  const solrLeadBatches = differences.filter((value) => value > 0).length;
+  const ties = differences.filter((value) => value === 0).length;
+
+  return {
+    batchCount: differences.length,
+    interpretation:
+      'Each value is one batch median of paired OpenSearch-minus-Solr latency differences; positive values mean Solr was faster in that batch.',
+    medianBatchDifferenceMs: nearestRank(differences, 0.5),
+    solrLeadBatchRatePercent:
+      Math.round((solrLeadBatches / differences.length) * 10000) / 100,
+    tieBatchRatePercent: Math.round((ties / differences.length) * 10000) / 100,
+    bootstrap: {
+      method: 'percentile bootstrap of independent batch median differences',
+      seed,
+      iterations: bootstrapIterations,
+      confidenceLevel,
+      lowerMs,
+      upperMs,
+      excludesZero: lowerMs > 0 || upperMs < 0,
+    },
+  };
 }
 
 function countOrders(schedule) {
@@ -131,7 +195,7 @@ export async function runBatchedSearchComparisonBenchmark({
       batchNumber: index + 1,
       executionOrder,
       capturedAt: result.capturedAt,
-      apiElapsed: result.solr.elapsed,
+      solrApiElapsed: result.solr.elapsed,
       openSearchApiElapsed: result.openSearch.elapsed,
       solrEngineReported: result.solr.engineReported,
       openSearchEngineReported: result.openSearch.engineReported,
@@ -139,6 +203,13 @@ export async function runBatchedSearchComparisonBenchmark({
       rawSamples: result.rawSamples,
     });
   }
+
+  const apiBatchDifferences = batches.map(
+    (batch) => batch.pairedStatistics.apiElapsed.medianDifferenceMs,
+  );
+  const engineBatchDifferences = batches.map(
+    (batch) => batch.pairedStatistics.engineReported.medianDifferenceMs,
+  );
 
   return {
     kind: 'batched-local-search-comparison-diagnostic',
@@ -158,7 +229,16 @@ export async function runBatchedSearchComparisonBenchmark({
       orderCounts: countOrders(orderSchedule),
     },
     methodology:
-      'Each batch performs its own excluded warmup sequence before collecting paired measurements. Solr-first and OpenSearch-first batches are balanced and deterministically shuffled to reduce systematic ordering and run-position effects. Every batch must remain on the same deterministic projection. API elapsed and engine-native timing remain separate, and the result is still a documented local-topology experiment rather than a universal engine ranking.',
+      'Each batch performs its own excluded warmup sequence before collecting paired measurements. Solr-first and OpenSearch-first batches are balanced and deterministically shuffled to reduce systematic ordering and run-position effects. Every batch must remain on the same deterministic projection. Batch-level bootstrap intervals treat separately warmed batches as the higher-level experimental unit; pooled per-request intervals remain descriptive secondary evidence. API elapsed and engine-native timing remain separate, and the result is still a documented local-topology experiment rather than a universal engine ranking.',
+    batchLevel: {
+      apiElapsed: summarizeIndependentBatchDifferences(apiBatchDifferences, {
+        seed,
+      }),
+      engineReported: summarizeIndependentBatchDifferences(
+        engineBatchDifferences,
+        { seed },
+      ),
+    },
     aggregate: {
       rawSamples: {
         pairing:
@@ -275,13 +355,13 @@ async function main() {
     `Batches/pairs: ${result.batchCount}/${result.totalMeasuredPairs}; order counts Solr-first=${result.randomization.orderCounts.SOLR_FIRST}, OpenSearch-first=${result.randomization.orderCounts.OPENSEARCH_FIRST}`,
   );
   console.log(
+    `Batch-level API median difference (OpenSearch - Solr): ${result.batchLevel.apiElapsed.medianBatchDifferenceMs} ms; 95% bootstrap CI ${result.batchLevel.apiElapsed.bootstrap.lowerMs}..${result.batchLevel.apiElapsed.bootstrap.upperMs} ms`,
+  );
+  console.log(
     `Aggregate Solr API p50/p95/p99: ${result.aggregate.solr.elapsed.p50Ms}/${result.aggregate.solr.elapsed.p95Ms}/${result.aggregate.solr.elapsed.p99Ms} ms`,
   );
   console.log(
     `Aggregate OpenSearch API p50/p95/p99: ${result.aggregate.openSearch.elapsed.p50Ms}/${result.aggregate.openSearch.elapsed.p95Ms}/${result.aggregate.openSearch.elapsed.p99Ms} ms`,
-  );
-  console.log(
-    `Paired API median difference (OpenSearch - Solr): ${result.aggregate.pairedStatistics.apiElapsed.medianDifferenceMs} ms; 95% bootstrap CI ${result.aggregate.pairedStatistics.apiElapsed.bootstrap.lowerMs}..${result.aggregate.pairedStatistics.apiElapsed.bootstrap.upperMs} ms`,
   );
   console.log(result.methodology);
 }
