@@ -1,28 +1,25 @@
 # Program Increment Plan
 
-This plan retains the original program-increment identities while reflecting the repository's current state after the certified C2 standalone milestone.
+This plan reflects the repository's current state after the certified C2 standalone milestone. Historical increment names remain useful context, but the active completion path is now intentionally narrow.
 
 ```text
-PI-1 Federated Metadata Expansion / Standalone Evidence
+PI-1 Federated Metadata Expansion / Standalone Evidence   COMPLETE
         |
-        | established the deterministic control baseline
         v
-PI-2 Local Kubernetes Search Laboratory
+C2.1 adversarial standalone validation                   ACTIVE (#47)
         |
-        | makes topology the experimental variable
+        +--> Manual accessibility evidence               ACTIVE (#49)
+        |
         v
-PI-3 AWS Implementation Candidate
+Final frontend mission alignment                         FINAL (#51)
 
-PI-4 Manual Accessibility Evidence
-PI-5 Browser Evidence Governance
-PI-6 Solr/OpenSearch Comparison Hardening
+Local Kubernetes / clustered topology                    DEFERRED (#48 closed not planned)
+AWS / IaC                                                 OPTIONAL
 ```
 
-Docker Compose remains the default fast development/demo path and the standalone control topology throughout the program.
+Docker Compose remains the default fast development/demo path and the standalone control topology.
 
 ## Current position — September 3, 2026
-
-The original PI-1 standalone research objective is **substantially complete**. The repository no longer sits at the 10K checkpoint and no active work is occurring on the old `codex/data-gov-10k-scale` branch.
 
 The certified C2 control baseline is:
 
@@ -43,16 +40,16 @@ Identities:
 - projection ID: `3d461a9feb49f7239f3f6aaacb0c90f1ff43d0c683238acc2202c841154db44d`
 - Gold Master archive ID: `federated-1m-1788269110268-985ce2bd`
 
-The certified standalone baseline also includes:
+The certified standalone baseline includes:
 
 - bounded/reproducible federated persistence and projection;
 - restart-safe active corpus identity;
 - exact source quota enforcement;
-- Solr/OpenSearch count + projection parity;
+- Solr/OpenSearch count and projection parity;
 - deep cursor/search-after traversal with no gaps or duplicates;
 - stable semantic comparison matrices;
 - raw paired timing samples;
-- independent separately warmed batches;
+- independently warmed batches;
 - balanced seeded randomized engine order;
 - workload classes for full text, facets, broad filters and program filters;
 - concurrency 1 / 8 / 32;
@@ -60,143 +57,55 @@ The certified standalone baseline also includes:
 - automated statistical synthesis;
 - certified performance evidence exposed through the repository API and Angular Evidence UI.
 
-The C2 result is deliberately scoped to the documented corpus, mappings, workloads, versions and local/container topology. It is not a universal ranking of Solr and OpenSearch.
+The C2 result is scoped to the documented corpus, mappings, workloads, versions and local/container topology. It is not a universal ranking of Solr and OpenSearch.
 
 ## PI-1 — Federated Metadata Expansion / Standalone Evidence
-
-### Delivered objective
 
 PI-1 established a reproducible Open Science/federal-repository control topology in which:
 
 - DSpace remains authoritative for curated repository objects;
-- external publishers remain authoritative for federated source records and resources;
+- external publishers remain authoritative for federated source records/resources;
 - application PostgreSQL retains reproducible federated metadata/evidence;
 - Solr and OpenSearch remain rebuildable derived projections;
 - Angular consumes a typed Spring/OpenAPI boundary rather than engine-specific APIs.
 
-The normal UI supports mixed repository/federated discovery, provenance-aware research detail, facets, deep discovery, maps/evidence surfaces and accessible fallback/equivalent representations.
+For the standalone control baseline, PI-1 is complete because the exact C2 corpus/Gold Master, deterministic projection identity, semantic/projection parity gates, versioned workload definitions, standalone performance/resource evidence and ordinary small/demo Compose startup are all reproducible.
 
-### PI-1 completion boundary
+Optional source, map and search breadth remains future work only when it answers a new question.
 
-For purposes of the standalone control baseline, PI-1 is complete when the following remain reproducible:
+## C2.1 — Adversarial standalone validation (#47)
 
-- the exact C2 corpus and Gold Master;
-- deterministic projection identity;
-- Solr/OpenSearch semantic/projection parity gates;
-- versioned workload/query definitions;
-- standalone search-performance/resource evidence;
-- ordinary small/demo Compose startup.
-
-Those conditions are now met.
-
-### Optional PI-1 extensions
-
-The following remain valuable but are **not prerequisites** for calling the standalone baseline successful:
-
-- DOI/PMID/other cross-source durable-identifier reconciliation;
-- additional bounded NASA CMR, PubMed and OpenAlex source work;
-- additional Maps thematic/spatial layers;
-- publisher freshness/staleness enrichment;
-- broader phrase/highlight/geo/vector search scenarios.
-
-These extensions should occur only when they answer a new semantic, spatial or product question.
-
-## C2.1 — Adversarial standalone validation
-
-C2.1 is an optional follow-up experiment, not unfinished C2 work.
+C2.1 is the final planned search-research experiment, not unfinished C2 work.
 
 Protocol: [C2 Adversarial Validation Protocol](C2_ADVERSARIAL_VALIDATION_PROTOCOL.md)
 
-Issue #47 intentionally attempts to falsify the current Solr-favoring C2 observation by strengthening controls in ways that may help OpenSearch:
+It intentionally attempts to falsify the current Solr-favoring C2 observation by strengthening controls in ways that may help OpenSearch:
 
-- exact pinned engine versions;
+- exact pinned engine versions/digests;
 - explicit/equalized resource controls;
 - semantically validated OpenSearch optimizations;
-- a preregistered multi-query full-text matrix;
+- a preregistered Q01-Q20 full-text matrix;
 - broad/moderate/genuinely selective filter bands;
 - p50/p90/p95/p99;
-- more independent batches;
+- independently warmed batches;
 - balanced randomized order;
 - multiple clean engine/container restart blocks.
 
-Success means the protocol is capable of contradicting C2 and reports whatever result occurs.
+Success means the protocol is reproducible, capable of contradicting C2 and reports whatever result occurs.
 
-## PI-2 — Local Kubernetes Search Laboratory
+## Local Kubernetes topology research — deferred
 
-### Objective
+Issue #48 is closed **not planned** for the current completion path.
 
-Use the frozen standalone corpus/query contracts so **topology**, rather than corpus semantics, becomes the experimental variable.
+A local kind/SolrCloud/OpenSearch cluster would change topology and could change absolute or relative latency through networking, scheduling, cgroup, shard/replica and multi-JVM effects. On one physical workstation, that is a different research question rather than a cleaner fairness test of the standalone engines.
 
-```text
-Docker Compose standalone control
-              vs
-local Kubernetes clustered topology
-```
+Reopen clustered topology only if a concrete need emerges for deployment, resilience, failover or cloud-migration research. Compose remains the controlled standalone baseline.
 
-### Initial topology
-
-```text
-kind
-  control plane / workers
-
-SolrCloud
-  official Solr Operator
-  ZooKeeper
-  explicit shards/replicas/resources/storage
-
-OpenSearch
-  supported multi-node deployment
-  explicit primaries/replicas/resources/storage
-```
-
-### Required controls
-
-Every meaningful PI-2 experiment must:
-
-- reuse the frozen 10K/100K/1M corpus/query definitions;
-- verify standalone/clustered schema, mapping and analyzer semantics before timing interpretation;
-- record node count, shards, replicas, heap, CPU/memory and storage context;
-- preserve API elapsed versus engine-native timing distinctions;
-- preserve semantic/facet/result parity gates;
-- begin with concurrency 1 / 8 / 32;
-- describe kind as local clustered evidence, never as a cloud-performance proxy.
-
-### Exit criteria
-
-PI-2 exits when:
-
-- kind lifecycle is repository-owned and reproducible;
-- SolrCloud and multi-node OpenSearch run locally;
-- the frozen deterministic projection reaches both engines with expected identity/count;
-- Search Lab works through Spring against clustered targets;
-- standalone versus clustered measurements are reproducible;
-- at least one controlled node-loss/recovery scenario per engine is recorded;
-- post-recovery persistence/projection parity is verified;
-- Compose remains supported as the default demo/control path.
-
-## PI-3 — AWS Implementation Candidate
-
-PI-3 begins only after PI-2 produces useful topology evidence.
-
-PI-2 should inform:
-
-- EKS/node sizing;
-- shards/replicas;
-- storage requirements;
-- JVM/pod defaults;
-- persistence/backup choices;
-- readiness/liveness/observability;
-- whether a deployed target needs one or both search engines.
-
-Terraform versus CDK remains an implementation decision rather than a predetermined outcome.
-
-## PI-4 — Manual Accessibility Evidence
-
-### Objective
+## Manual Accessibility Evidence (#49)
 
 Close the human-verification gap that lint, axe, Storybook and Playwright cannot prove.
 
-Issue #49 covers:
+Required evidence includes:
 
 - full keyboard-only application review;
 - Search Lab and Evidence keyboard/focus flows;
@@ -209,39 +118,17 @@ Issue #49 covers:
 
 Every manual result must be dated and commit-bound. Automated evidence never substitutes for manual assistive-technology evidence.
 
-## PI-5 — Browser Evidence CI and Governance
+## Browser Evidence Governance
 
-The dedicated browser evidence architecture is delivered. Remaining governance decisions are:
+The dedicated browser evidence architecture is delivered. Remaining governance decisions are optional product hardening:
 
 - which WCAG/Section 508-oriented jobs become required merge checks;
 - whether `main` receives branch protection;
 - how prior known-good evidence is retained when a refresh fails.
 
-## PI-6 — Solr/OpenSearch Comparison Hardening
-
-The core lexical comparison evidence is delivered:
-
-- result/facet semantic comparison;
-- raw paired samples;
-- bootstrap confidence evidence;
-- independent randomized batches;
-- workload classes;
-- concurrency 1 / 8 / 32;
-- resource telemetry;
-- automated statistical report;
-- Evidence UI productization.
-
-Future PI-6 breadth is optional and should remain evidence-gated:
-
-- phrase/highlighting;
-- geo;
-- autocomplete/suggest and synonyms;
-- nested/object fields;
-- vector/hybrid search.
-
 ## Final portfolio-facing slice — #51
 
-After #46-#49, the intended final product slice is frontend mission alignment and polish.
+After #47 and #49, the final product slice is frontend mission alignment and polish.
 
 The repository should present itself first as a government-grade Angular Open Science/data-discovery frontend, with the full-stack and search-research work serving as technical evidence underneath it.
 
@@ -258,6 +145,10 @@ The final presentation should emphasize:
 - performance-aware behavior against a realistic million-record backend.
 
 The independence/non-affiliation disclaimer remains mandatory.
+
+## Optional infrastructure / AWS
+
+AWS/IaC is not part of the completion path. If deployment becomes a real requirement later, choose Terraform or CDK from actual deployment needs and measured resource behavior rather than from a local Kubernetes prerequisite.
 
 ## Cross-program invariants
 
