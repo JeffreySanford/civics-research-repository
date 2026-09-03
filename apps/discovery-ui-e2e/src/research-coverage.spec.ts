@@ -17,14 +17,6 @@ test.describe('repository research coverage', () => {
   test('preserves Discovery criteria in a viewport-bounded spatial request @wcag @section508', async ({
     page,
   }) => {
-    const researchRequest = page.waitForRequest((request) => {
-      const url = new URL(request.url());
-      return (
-        url.pathname.endsWith('/api/maps/research-coverage') &&
-        url.searchParams.get('q') === 'climate'
-      );
-    });
-
     await page.goto(
       '/maps?view=workforce&area=California&q=climate' +
         '&program=TIGER_LINE&program=LODES' +
@@ -35,6 +27,43 @@ test.describe('repository research coverage', () => {
     await expect(
       page.getByRole('heading', { name: 'California Workforce Explorer' }),
     ).toBeVisible();
+
+    const category = page.getByTestId('map-layer-category-research-coverage');
+    const categorySummary = page.getByTestId(
+      'map-layer-category-research-coverage-summary',
+    );
+    const toggle = page.getByTestId('map-layer-research-coverage');
+
+    // The capability remains discoverable while its bounded result is loading or empty, but its
+    // child control no longer consumes above-the-fold space until the disclosure is opened.
+    await expect(category).toBeVisible();
+    await expect(categorySummary).toContainText('Research Coverage');
+    await expect(categorySummary).toContainText('1 layer');
+    await expect(category).toHaveJSProperty('open', false);
+    await expect(toggle).not.toBeVisible();
+
+    await categorySummary.click();
+    await expect(category).toHaveJSProperty('open', true);
+    await expect(toggle).toBeVisible();
+    await expect(category).toContainText(
+      'Data.gov publisher research geometry',
+    );
+    await expect(toggle).not.toBeChecked();
+
+    // Wait for the request caused by the real disclosure + checkbox interaction. Waiting for a
+    // speculative startup request made this evidence browser-timing dependent, particularly in
+    // Firefox where the layer can remain off until the reader explicitly enables it.
+    const researchRequest = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return (
+        url.pathname.endsWith('/api/maps/research-coverage') &&
+        url.searchParams.get('q') === 'climate'
+      );
+    });
+
+    await toggle.check();
+    await expect(toggle).toBeChecked();
+    await expect(page).toHaveURL(/research=on/);
 
     const requestUrl = new URL((await researchRequest).url());
     expect(requestUrl.searchParams.get('q')).toBe('climate');
@@ -65,32 +94,6 @@ test.describe('repository research coverage', () => {
     expect(Number(requestUrl.searchParams.get('north'))).toBeLessThanOrEqual(
       90,
     );
-
-    const category = page.getByTestId('map-layer-category-research-coverage');
-    const categorySummary = page.getByTestId(
-      'map-layer-category-research-coverage-summary',
-    );
-    const toggle = page.getByTestId('map-layer-research-coverage');
-
-    // The capability remains discoverable while its bounded result is loading or empty, but its
-    // child control no longer consumes above-the-fold space until the disclosure is opened.
-    await expect(category).toBeVisible();
-    await expect(categorySummary).toContainText('Research Coverage');
-    await expect(categorySummary).toContainText('1 layer');
-    await expect(category).toHaveJSProperty('open', false);
-    await expect(toggle).not.toBeVisible();
-
-    await categorySummary.click();
-    await expect(category).toHaveJSProperty('open', true);
-    await expect(toggle).toBeVisible();
-    await expect(category).toContainText(
-      'Data.gov publisher research geometry',
-    );
-    await expect(toggle).not.toBeChecked();
-
-    await toggle.check();
-    await expect(toggle).toBeChecked();
-    await expect(page).toHaveURL(/research=on/);
 
     const legend = page.getByLabel('Visible map layer legend');
     const legendEntry = legend.getByText(
