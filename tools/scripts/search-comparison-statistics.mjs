@@ -7,7 +7,9 @@ function requireFiniteNonNegative(value, label) {
 
 function requireInteger(value, label, minimum) {
   if (!Number.isInteger(value) || value < minimum) {
-    throw new Error(`${label} must be an integer greater than or equal to ${minimum}.`);
+    throw new Error(
+      `${label} must be an integer greater than or equal to ${minimum}.`,
+    );
   }
   return value;
 }
@@ -30,8 +32,13 @@ function pairedDifferences(solrSamples, openSearchSamples) {
   if (!Array.isArray(solrSamples) || !Array.isArray(openSearchSamples)) {
     throw new Error('Solr and OpenSearch samples must both be arrays.');
   }
-  if (solrSamples.length === 0 || solrSamples.length !== openSearchSamples.length) {
-    throw new Error('Solr and OpenSearch samples must have the same non-zero length.');
+  if (
+    solrSamples.length === 0 ||
+    solrSamples.length !== openSearchSamples.length
+  ) {
+    throw new Error(
+      'Solr and OpenSearch samples must have the same non-zero length.',
+    );
   }
 
   return solrSamples.map((solrValue, index) => {
@@ -53,7 +60,11 @@ function pairedDifferences(solrSamples, openSearchSamples) {
 export function summarizePairedLatencyEvidence(
   solrSamples,
   openSearchSamples,
-  { bootstrapIterations = 5000, confidenceLevel = 0.95, seed = 20260903 } = {},
+  {
+    bootstrapIterations = 5000,
+    confidenceLevel = 0.95,
+    seed = 20260903,
+  } = {},
 ) {
   requireInteger(bootstrapIterations, 'bootstrapIterations', 100);
   requireInteger(seed, 'seed', 0);
@@ -92,7 +103,8 @@ export function summarizePairedLatencyEvidence(
       relativeDifferences.length === 0
         ? null
         : Math.round(nearestRank(relativeDifferences, 0.5) * 100) / 100,
-    solrWinRatePercent: Math.round((solrWins / differences.length) * 10000) / 100,
+    solrWinRatePercent:
+      Math.round((solrWins / differences.length) * 10000) / 100,
     tieRatePercent: Math.round((ties / differences.length) * 10000) / 100,
     bootstrap: {
       method: 'paired percentile bootstrap of median latency difference',
