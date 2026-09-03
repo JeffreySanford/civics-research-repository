@@ -38,8 +38,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm exec nx format:check --all
+      - name: Print canonical benchmark formatting
+        run: |
+          pnpm exec nx format:write --all
+          git diff -- \
+            tools/scripts/search-comparison-benchmark.mjs \
+            tools/scripts/search-comparison-statistics.mjs \
+            tools/scripts/search-comparison-statistics.test.mjs
+          exit 1
 
       - name: Lint the OpenAPI contract
         run: pnpm run openapi:lint
