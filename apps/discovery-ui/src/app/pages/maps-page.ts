@@ -1618,13 +1618,6 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Bounded repository research-by-area summary.
-   *
-   * These are state-summary symbols, not scientific footprints. Each symbol exists only when the
-   * normalized research metadata explicitly names a supported Census area; unmapped matches stay
-   * visible in the semantic summary instead of being assigned a publisher location.
-   */
-  /**
    * Draws the current viewport's bounded publisher spatial evidence.
    *
    * Ordinary rows use the publisher GeoJSON retained by the versioned sidecar. Antimeridian
