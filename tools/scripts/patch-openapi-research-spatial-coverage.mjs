@@ -274,7 +274,7 @@ if (!source.includes('  /maps/research-coverage:\n')) {
   if (!source.includes(marker)) {
     throw new Error('Could not find Maps endpoint insertion marker.');
   }
-  source = source.replace(marker, endpoint + marker);
+  source = source.replace(marker, () => endpoint + marker);
 }
 
 if (!source.includes('    ResearchSpatialCoverageResponse:\n')) {
@@ -282,7 +282,7 @@ if (!source.includes('    ResearchSpatialCoverageResponse:\n')) {
   if (!source.includes(marker)) {
     throw new Error('Could not find spatial schema insertion marker.');
   }
-  source = source.replace(marker, schemas + marker);
+  source = source.replace(marker, () => schemas + marker);
 }
 
 await writeFile(path, source);
