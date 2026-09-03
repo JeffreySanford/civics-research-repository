@@ -55,11 +55,7 @@ function requireOrderStrategy(value) {
 
 function normalizeSeed(value) {
   const parsed = Number(value);
-  if (
-    !Number.isInteger(parsed) ||
-    parsed < 0 ||
-    parsed > MAX_ORDER_SEED
-  ) {
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > MAX_ORDER_SEED) {
     throw new Error(
       `seed must be an unsigned 32-bit integer from 0 to ${MAX_ORDER_SEED}.`,
     );
