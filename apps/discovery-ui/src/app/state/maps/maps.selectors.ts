@@ -62,9 +62,19 @@ export const selectResearchCoverageQuery = createSelector(
   (state) => state.researchCoverageQuery,
 );
 
+export const selectResearchCoverageViewport = createSelector(
+  selectMapsState,
+  (state) => state.researchCoverageViewport,
+);
+
 export const selectResearchCoverageResponse = createSelector(
   selectMapsState,
   (state) => state.researchCoverageResponse,
+);
+
+export const selectResearchCoverageLoading = createSelector(
+  selectMapsState,
+  (state) => state.researchCoverageLoading,
 );
 
 export const selectResearchCoverageError = createSelector(
@@ -74,12 +84,9 @@ export const selectResearchCoverageError = createSelector(
 
 export const selectResearchCoverageSummary = createSelector(
   selectResearchCoverageResponse,
-  selectCensusAreaBoundaries,
   selectResearchCoverageQuery,
-  (response, boundaries, query) =>
-    response && query
-      ? buildResearchCoverageSummary(response, boundaries, query)
-      : null,
+  (response, query) =>
+    response && query ? buildResearchCoverageSummary(response, query) : null,
 );
 
 export const selectTigerVisible = createSelector(
@@ -146,13 +153,6 @@ export const selectSelectedLodesFlowId = createSelector(
   (state) => state.selectedLodesFlowId,
 );
 
-/**
- * The selected commuting flow itself, resolved against the loaded overlay.
- *
- * Resolved rather than stored, for the same reason the earthquake feature is: the id is the
- * selection, and the flow it names belongs to whichever overlay is currently loaded. Storing the
- * whole flow would let the two disagree after a geography change.
- */
 export const selectSelectedLodesFlow = createSelector(
   selectMapsState,
   (state) =>
