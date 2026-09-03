@@ -18,9 +18,10 @@
     'layers layers layers';
   gap: 0.75rem 1rem;
   align-items: end;
+  justify-content: stretch;
 }
 
-.map-toolbar > :first-child {
+.map-toolbar > div {
   grid-area: heading;
 }
 
