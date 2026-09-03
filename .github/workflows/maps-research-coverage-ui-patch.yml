@@ -5,10 +5,10 @@ on:
     branches:
       - codex/maps-research-coverage-ui
     paths:
-      - tools/scripts/patch-maps-research-coverage-evidence.mjs
-      - tools/scripts/patch-maps-research-coverage-fallback.mjs
-      - tools/scripts/fix-maps-research-coverage-limit-param.mjs
-      - apps/discovery-ui-e2e/src/research-coverage.spec.ts
+      - tools/scripts/patch-research-coverage-summary-component.mjs
+      - apps/discovery-ui/src/app/pages/research-coverage-summary.component.ts
+      - apps/discovery-ui/src/app/pages/research-coverage-summary.component.stories.ts
+      - apps/discovery-ui/src/app/pages/research-coverage-summary.component.a11y.spec.ts
       - .github/workflows/maps-research-coverage-ui-patch.yml
 
 permissions:
@@ -17,7 +17,10 @@ permissions:
 jobs:
   patch:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      PLAYWRIGHT_HTML_OPEN: never
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -30,29 +33,46 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Apply accessible viewport fallback
-        run: node tools/scripts/patch-maps-research-coverage-fallback.mjs
-      - name: Apply evidence migration
-        run: node tools/scripts/patch-maps-research-coverage-evidence.mjs
-      - name: Align bounded API parameter name
-        run: node tools/scripts/fix-maps-research-coverage-limit-param.mjs
-      - name: Format changed files
+      - name: Wire semantic Research Coverage component
+        run: node tools/scripts/patch-research-coverage-summary-component.mjs
+      - name: Format Storybook slice
         run: >-
           pnpm exec prettier --write
           apps/discovery-ui/src/app/pages/maps-page.ts
-          apps/discovery-ui/src/app/state/maps/maps.effects.spec.ts
-          apps/discovery-ui-e2e/src/support/repository-api-mocks.ts
-          apps/discovery-ui-e2e/src/support/map-layer-visibility.ts
-          apps/discovery-ui-e2e/src/research-coverage.spec.ts
-      # This run is intentionally the narrow pre-PR proof for the migrated Research Coverage
-      # contract. Full workspace, Storybook, cross-browser, and live-stack gates run on the PR.
-      - name: Unit tests
+          apps/discovery-ui/src/app/pages/maps-page.html
+          apps/discovery-ui/src/app/pages/research-coverage-summary.component.ts
+          apps/discovery-ui/src/app/pages/research-coverage-summary.component.stories.ts
+          apps/discovery-ui/src/app/pages/research-coverage-summary.component.a11y.spec.ts
+      - name: Unit and axe tests
         run: pnpm exec nx test discovery-ui
       - name: Build discovery UI
         run: pnpm exec nx build discovery-ui
+      - name: Build accessibility Storybook
+        run: pnpm exec nx build-storybook discovery-ui --configuration=ci
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
-      - name: Run Research Coverage browser evidence
+      - name: Run Storybook interactions and WCAG axe evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec http-server dist/storybook/discovery-ui \
+            -p 4400 -c-1 --cors > storybook-ci.log 2>&1 &
+          storybook_pid=$!
+          trap 'kill "$storybook_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4400/index.json >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != "true" ]]; then
+            cat storybook-ci.log
+            exit 1
+          fi
+          pnpm exec nx test-storybook discovery-ui
+      - name: Re-run targeted Maps browser evidence
         run: >-
           pnpm exec playwright test
           apps/discovery-ui-e2e/src/research-coverage.spec.ts
@@ -60,20 +80,20 @@ jobs:
           --config=apps/discovery-ui-e2e/playwright.config.mts
           --project=chromium
           --reporter=line
-      - name: Commit evidence migration
+      - name: Commit Storybook slice
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apps/discovery-ui/src/app/pages/maps-page.ts \
-                  apps/discovery-ui/src/app/state/maps/maps.effects.spec.ts \
-                  apps/discovery-ui-e2e/src/support/repository-api-mocks.ts \
-                  apps/discovery-ui-e2e/src/support/map-layer-visibility.ts \
-                  apps/discovery-ui-e2e/src/research-coverage.spec.ts
+                  apps/discovery-ui/src/app/pages/maps-page.html \
+                  apps/discovery-ui/src/app/pages/research-coverage-summary.component.ts \
+                  apps/discovery-ui/src/app/pages/research-coverage-summary.component.stories.ts \
+                  apps/discovery-ui/src/app/pages/research-coverage-summary.component.a11y.spec.ts
           if git diff --cached --quiet; then
-            echo "No evidence changes to commit."
+            echo "No Storybook slice changes to commit."
             exit 0
           fi
-          git commit -m "test: prove bounded publisher research coverage"
+          git commit -m "test: add Storybook research coverage evidence"
           git push origin HEAD:codex/maps-research-coverage-ui
