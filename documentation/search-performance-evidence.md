@@ -24,11 +24,29 @@ The current protocol is:
 - scenario: `FULL_TEXT_RELEVANCE`
 - query: `North Dakota workforce`
 - warm-up runs: 5, discarded
-- measured runs: 100
+- measured runs: 100 per batch
+- independent batches: configurable, default 1
 - percentiles: nearest-rank p50, p95 and p99
 - additional statistics: minimum, maximum and mean
-- engine execution order: Solr followed by OpenSearch
+- engine execution order: fixed, alternating or seeded randomized
 - comparative performance claim: disabled
+
+The default script preserves the original single-batch Solr-first behavior for local
+smoke evidence. Evidence-grade comparisons can use:
+
+```bash
+pnpm run performance:benchmark:batches
+```
+
+or pass explicit controls:
+
+```bash
+pnpm run performance:benchmark -- --batches 4 --order-strategy RANDOMIZED --seed 20260903
+```
+
+Each batch repeats its warm-ups before measured samples. The JSON artifact retains the
+batch execution order, measured sample indexes and aggregate paired raw samples for both
+API elapsed and engine-reported timing.
 
 The benchmark rejects partial engine availability, projection mismatch, projection changes during collection, invalid timing values and HTTP failures rather than publishing incomplete performance evidence.
 
@@ -52,7 +70,7 @@ Performance evidence should always retain the context required to interpret it:
 - deterministic projection ID and object count,
 - warm-up and measured sample counts,
 - scenario and query,
-- execution order,
+- execution order strategy, seed and batch execution orders,
 - API elapsed and engine-reported timings as separate series,
 - local/container topology,
 - shard/replica/node configuration when scale testing begins,

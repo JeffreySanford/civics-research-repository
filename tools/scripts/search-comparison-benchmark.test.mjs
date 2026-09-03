@@ -10,6 +10,7 @@ import './research-scale-preflight.test.mjs';
 import './research-scale-runner.test.mjs';
 import './federation-sample-all.test.mjs';
 import {
+  buildExecutionOrderPlan,
   nearestRankPercentile,
   parseArguments,
   runSearchComparisonBenchmark,
@@ -101,6 +102,12 @@ test('CLI parser accepts a conventional standalone argument separator and order'
     '100',
     '--order',
     'OPENSEARCH_FIRST',
+    '--batches',
+    '3',
+    '--order-strategy',
+    'ALTERNATE',
+    '--seed',
+    '1234',
     '--query',
     'North Dakota workforce',
   ]);
@@ -108,7 +115,44 @@ test('CLI parser accepts a conventional standalone argument separator and order'
   assert.equal(options.warmupRuns, 5);
   assert.equal(options.measuredRuns, 100);
   assert.equal(options.executionOrder, 'OPENSEARCH_FIRST');
+  assert.equal(options.batches, 3);
+  assert.equal(options.orderStrategy, 'ALTERNATE');
+  assert.equal(options.seed, 1234);
   assert.equal(options.query, 'North Dakota workforce');
+});
+
+test('execution order plans support fixed, alternating and seeded randomized batches', () => {
+  assert.deepEqual(
+    buildExecutionOrderPlan({
+      batches: 3,
+      executionOrder: 'SOLR_FIRST',
+      orderStrategy: 'FIXED',
+    }),
+    ['SOLR_FIRST', 'SOLR_FIRST', 'SOLR_FIRST'],
+  );
+  assert.deepEqual(
+    buildExecutionOrderPlan({
+      batches: 4,
+      executionOrder: 'OPENSEARCH_FIRST',
+      orderStrategy: 'ALTERNATE',
+    }),
+    ['OPENSEARCH_FIRST', 'SOLR_FIRST', 'OPENSEARCH_FIRST', 'SOLR_FIRST'],
+  );
+  assert.deepEqual(
+    buildExecutionOrderPlan({
+      batches: 5,
+      executionOrder: 'SOLR_FIRST',
+      orderStrategy: 'RANDOMIZED',
+      seed: 42,
+    }),
+    [
+      'SOLR_FIRST',
+      'OPENSEARCH_FIRST',
+      'SOLR_FIRST',
+      'SOLR_FIRST',
+      'OPENSEARCH_FIRST',
+    ],
+  );
 });
 
 test('benchmark excludes warmups and reports measured distributions only', async () => {
@@ -141,6 +185,11 @@ test('benchmark excludes warmups and reports measured distributions only', async
   assert.equal(result.projection.projectionId, PROJECTION_ID);
   assert.equal(result.warmupRuns, 2);
   assert.equal(result.measuredRuns, 5);
+  assert.equal(result.batches, 1);
+  assert.equal(result.totalMeasuredRuns, 5);
+  assert.deepEqual(result.executionPlan.batchExecutionOrders, [
+    'OPENSEARCH_FIRST',
+  ]);
   assert.equal(result.solr.elapsed.minMs, 10);
   assert.equal(result.solr.elapsed.p50Ms, 30);
   assert.equal(result.solr.elapsed.p95Ms, 50);
@@ -164,9 +213,80 @@ test('benchmark excludes warmups and reports measured distributions only', async
   assert.equal(result.pairedStatistics.apiElapsed.bootstrap.excludesZero, true);
   assert.equal(result.comparativeClaimAllowed, false);
   assert.equal(result.executionOrder, 'OPENSEARCH_FIRST');
+  assert.deepEqual(result.batchEvidence, [
+    {
+      batchId: 1,
+      executionOrder: 'OPENSEARCH_FIRST',
+      warmupRuns: 2,
+      measuredRuns: 5,
+      sampleIndexes: [0, 1, 2, 3, 4],
+    },
+  ]);
   assert.match(result.measurementBoundary, /API elapsed measures Spring/);
   assert.match(result.rawSamples.pairing, /same comparison request/);
-  assert.match(result.caveat, /reversed-order passes/);
+  assert.match(result.caveat, /independent batches/);
+});
+
+test('benchmark records independent batches with alternating execution order', async () => {
+  const requests = [];
+  const responses = [
+    comparisonResponse(900, 800),
+    comparisonResponse(10, 12),
+    comparisonResponse(20, 22),
+    comparisonResponse(700, 600),
+    comparisonResponse(30, 32),
+    comparisonResponse(40, 42),
+  ];
+
+  const result = await runSearchComparisonBenchmark({
+    fetchImpl: queuedFetch(responses, requests),
+    baseUrl: 'http://repository.test/api',
+    warmupRuns: 1,
+    measuredRuns: 2,
+    batches: 2,
+    executionOrder: 'SOLR_FIRST',
+    orderStrategy: 'ALTERNATE',
+    now: () => new Date('2026-09-03T15:00:00Z'),
+  });
+
+  assert.equal(requests.length, 6);
+  assert.deepEqual(
+    requests.map(({ url }) => new URL(url).searchParams.get('order')),
+    [
+      'SOLR_FIRST',
+      'SOLR_FIRST',
+      'SOLR_FIRST',
+      'OPENSEARCH_FIRST',
+      'OPENSEARCH_FIRST',
+      'OPENSEARCH_FIRST',
+    ],
+  );
+  assert.deepEqual(result.executionPlan, {
+    orderStrategy: 'ALTERNATE',
+    seed: 20260903,
+    batches: 2,
+    measuredRunsPerBatch: 2,
+    totalMeasuredRuns: 4,
+    batchExecutionOrders: ['SOLR_FIRST', 'OPENSEARCH_FIRST'],
+  });
+  assert.deepEqual(result.rawSamples.apiElapsed.solrMs, [10, 20, 30, 40]);
+  assert.deepEqual(result.rawSamples.apiElapsed.openSearchMs, [12, 22, 32, 42]);
+  assert.deepEqual(result.batchEvidence, [
+    {
+      batchId: 1,
+      executionOrder: 'SOLR_FIRST',
+      warmupRuns: 1,
+      measuredRuns: 2,
+      sampleIndexes: [0, 1],
+    },
+    {
+      batchId: 2,
+      executionOrder: 'OPENSEARCH_FIRST',
+      warmupRuns: 1,
+      measuredRuns: 2,
+      sampleIndexes: [2, 3],
+    },
+  ]);
 });
 
 test('benchmark refuses an unsupported execution order', async () => {
@@ -178,6 +298,18 @@ test('benchmark refuses an unsupported execution order', async () => {
       executionOrder: 'RANDOM',
     }),
     /executionOrder must be one of/,
+  );
+});
+
+test('benchmark refuses an unsupported order strategy', async () => {
+  await assert.rejects(
+    runSearchComparisonBenchmark({
+      fetchImpl: queuedFetch([]),
+      warmupRuns: 0,
+      measuredRuns: 1,
+      orderStrategy: 'ROTATE',
+    }),
+    /orderStrategy must be one of/,
   );
 });
 

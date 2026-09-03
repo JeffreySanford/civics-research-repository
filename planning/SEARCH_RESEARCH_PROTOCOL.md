@@ -14,6 +14,8 @@ It covers:
 - bounded warmup/sample controls,
 - projection identity checks,
 - invalid-evidence refusal,
+- raw paired samples and bootstrap confidence evidence,
+- independent benchmark batches with fixed, alternating and seeded randomized execution order,
 - adaptive selective-filter discovery,
 - Solr/OpenSearch facet-count parity requirements,
 - paired execution-order methodology,
@@ -87,6 +89,17 @@ Each scenario is measured twice:
 - `OPENSEARCH_FIRST`.
 
 Warmups are excluded. Application elapsed and native Solr `QTime` / OpenSearch `took` are retained separately.
+
+The standalone benchmark harness also supports independent batches with an explicit
+execution-order strategy:
+
+- `FIXED` preserves the requested order for every batch,
+- `ALTERNATE` switches between `SOLR_FIRST` and `OPENSEARCH_FIRST`,
+- `RANDOMIZED` shuffles a balanced order plan with a retained integer seed.
+
+The retained artifact includes the batch order plan, sample indexes and raw paired timing
+series so later reports can evaluate confidence and order sensitivity without rerunning
+the experiment.
 
 This remains the stable single-source baseline even after additional authorities are sampled.
 
