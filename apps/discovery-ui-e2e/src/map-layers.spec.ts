@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openLayerCategoryForToggle } from './support/map-layer-visibility';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 
 /**
@@ -22,6 +23,14 @@ test.describe('map layer controls', () => {
   });
 
   test('layer info icons appear beside each toggle @maps', async ({ page }) => {
+    for (const toggleTestId of [
+      'map-layer-tiger',
+      'map-layer-lodes',
+      'map-layer-hydrography',
+    ]) {
+      await openLayerCategoryForToggle(page, toggleTestId);
+    }
+
     for (const testId of [
       'map-layer-tiger-info',
       'map-layer-lodes-info',
@@ -46,6 +55,8 @@ test.describe('map layer controls', () => {
       name: 'TIGER/Line boundary',
     });
 
+    await openLayerCategoryForToggle(page, 'map-layer-lodes');
+    await openLayerCategoryForToggle(page, 'map-layer-tiger');
     await lodes.check();
     await tiger.check();
 
@@ -66,6 +77,7 @@ test.describe('map layer controls', () => {
 
   /** The toggle is shareable state: a copied URL has to reopen the same map. */
   test('the LODES toggle survives a reload @maps', async ({ page }) => {
+    await openLayerCategoryForToggle(page, 'map-layer-lodes');
     await page
       .getByRole('group', { name: 'Map layer controls' })
       .getByRole('checkbox', { name: 'LODES commuting flows' })
@@ -95,6 +107,8 @@ test.describe('map layer controls', () => {
       name: 'Map layer controls',
     });
 
+    await openLayerCategoryForToggle(page, 'map-layer-tiger');
+    await openLayerCategoryForToggle(page, 'map-layer-lodes');
     await layerControls
       .getByRole('checkbox', { name: 'TIGER/Line boundary' })
       .check();
@@ -126,6 +140,7 @@ test.describe('map layer controls', () => {
   }) => {
     const community = page.getByTestId('map-layer-category-community-economy');
     await expect(community).toContainText('3 layers');
+    await openLayerCategoryForToggle(page, 'map-layer-saipe');
     await expect(page.getByTestId('map-layer-saipe')).toBeVisible();
 
     let floridaSaipeRequests = 0;
@@ -235,6 +250,7 @@ test.describe('map layer controls', () => {
       'usgs-earthquake-selected=none',
     );
 
+    await openLayerCategoryForToggle(page, 'map-layer-earthquake');
     await earthquake.check();
     await expect(earthquakeGroup).toHaveAttribute('data-toggled', 'on');
     await expect(earthquakeGroup).toContainText(
@@ -260,14 +276,15 @@ test.describe('map layer controls', () => {
     const layerControls = page.getByRole('group', {
       name: 'Map layer controls',
     });
-    for (const name of [
-      'TIGER/Line boundary',
-      'LODES commuting flows',
-      'SAIPE county poverty',
-      'USGS 3HP hydrography',
-      'USGS earthquake overlay',
+    for (const entry of [
+      { name: 'TIGER/Line boundary', testId: 'map-layer-tiger' },
+      { name: 'LODES commuting flows', testId: 'map-layer-lodes' },
+      { name: 'SAIPE county poverty', testId: 'map-layer-saipe' },
+      { name: 'USGS 3HP hydrography', testId: 'map-layer-hydrography' },
+      { name: 'USGS earthquake overlay', testId: 'map-layer-earthquake' },
     ]) {
-      await layerControls.getByRole('checkbox', { name }).check();
+      await openLayerCategoryForToggle(page, entry.testId);
+      await layerControls.getByRole('checkbox', { name: entry.name }).check();
     }
 
     const toggle = page.getByTestId('map-debug-toggle');
