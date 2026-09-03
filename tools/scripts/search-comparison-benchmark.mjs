@@ -6,10 +6,15 @@ import { summarizePairedLatencyEvidence } from './search-comparison-statistics.m
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
 const DEFAULT_WARMUP_RUNS = 5;
 const DEFAULT_MEASURED_RUNS = 100;
+const DEFAULT_BATCHES = 1;
 const DEFAULT_EXECUTION_ORDER = 'SOLR_FIRST';
+const DEFAULT_ORDER_STRATEGY = 'FIXED';
+const DEFAULT_ORDER_SEED = 20260903;
 const MAX_WARMUP_RUNS = 20;
 const MAX_MEASURED_RUNS = 100;
+const MAX_BATCHES = 20;
 const EXECUTION_ORDERS = new Set(['SOLR_FIRST', 'OPENSEARCH_FIRST']);
+const ORDER_STRATEGIES = new Set(['FIXED', 'ALTERNATE', 'RANDOMIZED']);
 
 function requireBoundedInteger(value, label, minimum, maximum) {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
@@ -36,6 +41,67 @@ function requireExecutionOrder(value) {
     );
   }
   return value;
+}
+
+function requireOrderStrategy(value) {
+  if (!ORDER_STRATEGIES.has(value)) {
+    throw new Error(
+      `orderStrategy must be one of ${[...ORDER_STRATEGIES].join(', ')}.`,
+    );
+  }
+  return value;
+}
+
+function normalizeSeed(value) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed)) {
+    throw new Error('seed must be an integer.');
+  }
+  return parsed;
+}
+
+function oppositeOrder(order) {
+  return order === 'SOLR_FIRST' ? 'OPENSEARCH_FIRST' : 'SOLR_FIRST';
+}
+
+function createSeededRandom(seed) {
+  let state = normalizeSeed(seed) >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+}
+
+export function buildExecutionOrderPlan({
+  batches = DEFAULT_BATCHES,
+  executionOrder = DEFAULT_EXECUTION_ORDER,
+  orderStrategy = DEFAULT_ORDER_STRATEGY,
+  seed = DEFAULT_ORDER_SEED,
+} = {}) {
+  requireBoundedInteger(batches, 'batches', 1, MAX_BATCHES);
+  const startingOrder = requireExecutionOrder(executionOrder);
+  const strategy = requireOrderStrategy(orderStrategy);
+  const normalizedSeed = normalizeSeed(seed);
+
+  if (strategy === 'FIXED') {
+    return Array.from({ length: batches }, () => startingOrder);
+  }
+
+  if (strategy === 'ALTERNATE') {
+    return Array.from({ length: batches }, (_, index) =>
+      index % 2 === 0 ? startingOrder : oppositeOrder(startingOrder),
+    );
+  }
+
+  const orders = Array.from({ length: batches }, (_, index) =>
+    index % 2 === 0 ? startingOrder : oppositeOrder(startingOrder),
+  );
+  const random = createSeededRandom(normalizedSeed);
+  for (let index = orders.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [orders[index], orders[swapIndex]] = [orders[swapIndex], orders[index]];
+  }
+  return orders;
 }
 
 export function nearestRankPercentile(values, percentile) {
@@ -121,7 +187,10 @@ export async function runSearchComparisonBenchmark({
   baseUrl = DEFAULT_BASE_URL,
   warmupRuns = DEFAULT_WARMUP_RUNS,
   measuredRuns = DEFAULT_MEASURED_RUNS,
+  batches = DEFAULT_BATCHES,
   executionOrder = DEFAULT_EXECUTION_ORDER,
+  orderStrategy = DEFAULT_ORDER_STRATEGY,
+  seed = DEFAULT_ORDER_SEED,
   request = {
     scenario: 'FULL_TEXT_RELEVANCE',
     query: 'North Dakota workforce',
@@ -136,17 +205,28 @@ export async function runSearchComparisonBenchmark({
 
   requireBoundedInteger(warmupRuns, 'warmupRuns', 0, MAX_WARMUP_RUNS);
   requireBoundedInteger(measuredRuns, 'measuredRuns', 1, MAX_MEASURED_RUNS);
+  requireBoundedInteger(batches, 'batches', 1, MAX_BATCHES);
   const order = requireExecutionOrder(executionOrder);
+  const strategy = requireOrderStrategy(orderStrategy);
+  const normalizedSeed = normalizeSeed(seed);
+  const orderPlan = buildExecutionOrderPlan({
+    batches,
+    executionOrder: order,
+    orderStrategy: strategy,
+    seed: normalizedSeed,
+  });
 
-  const endpoint = `${baseUrl.replace(/\/$/, '')}/search/comparison/run?order=${encodeURIComponent(order)}`;
+  const endpointBase = `${baseUrl.replace(/\/$/, '')}/search/comparison/run`;
   let projectionId = null;
   let projection = null;
   const solrSamples = [];
   const openSearchSamples = [];
   const solrEngineSamples = [];
   const openSearchEngineSamples = [];
+  const batchEvidence = [];
 
-  const execute = async (recordSample) => {
+  const execute = async (recordSample, currentOrder, batchId) => {
+    const endpoint = `${endpointBase}?order=${encodeURIComponent(currentOrder)}`;
     const httpResponse = await fetchImpl(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -163,18 +243,30 @@ export async function runSearchComparisonBenchmark({
     projection = response.projection;
 
     if (recordSample) {
+      const sampleIndex = solrSamples.length;
       solrSamples.push(response.solr.elapsedMs);
       openSearchSamples.push(response.openSearch.elapsedMs);
       solrEngineSamples.push(response.solr.engineReportedMs);
       openSearchEngineSamples.push(response.openSearch.engineReportedMs);
+      batchEvidence[batchId - 1].sampleIndexes.push(sampleIndex);
     }
   };
 
-  for (let index = 0; index < warmupRuns; index += 1) {
-    await execute(false);
-  }
-  for (let index = 0; index < measuredRuns; index += 1) {
-    await execute(true);
+  for (const [index, currentOrder] of orderPlan.entries()) {
+    const batchId = index + 1;
+    batchEvidence.push({
+      batchId,
+      executionOrder: currentOrder,
+      warmupRuns,
+      measuredRuns,
+      sampleIndexes: [],
+    });
+    for (let warmupIndex = 0; warmupIndex < warmupRuns; warmupIndex += 1) {
+      await execute(false, currentOrder, batchId);
+    }
+    for (let sampleIndex = 0; sampleIndex < measuredRuns; sampleIndex += 1) {
+      await execute(true, currentOrder, batchId);
+    }
   }
 
   return {
@@ -183,17 +275,28 @@ export async function runSearchComparisonBenchmark({
     measurementBoundary:
       'API elapsed measures Spring around each engine HTTP request. Engine-reported timing is captured from that same response (Solr QTime / OpenSearch took); vendor definitions differ and are not directly equivalent.',
     executionOrder: order,
+    executionPlan: {
+      orderStrategy: strategy,
+      seed: normalizedSeed,
+      batches,
+      measuredRunsPerBatch: measuredRuns,
+      totalMeasuredRuns: solrSamples.length,
+      batchExecutionOrders: [...orderPlan],
+    },
     comparativeClaimAllowed: false,
     caveat:
-      'Warm-up runs are excluded and execution order is explicit, but this remains a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Compare reversed-order passes before treating an engine lead as robust.',
-    endpoint,
+      'Warm-up runs are excluded and execution order is explicit, but this remains a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Use independent batches with alternating or randomized order before treating an engine lead as robust.',
+    endpoint: `${endpointBase}?order=${encodeURIComponent(order)}`,
     request,
     projection,
     warmupRuns,
     measuredRuns,
+    batches,
+    totalMeasuredRuns: solrSamples.length,
+    batchEvidence,
     rawSamples: {
       pairing:
-        'Arrays are index-paired: values at the same index came from the same comparison request.',
+        'Arrays are index-paired: values at the same index came from the same comparison request. batchEvidence records which batch and execution order produced each sample index.',
       apiElapsed: {
         solrMs: [...solrSamples],
         openSearchMs: [...openSearchSamples],
@@ -231,7 +334,10 @@ export function parseArguments(argv) {
     baseUrl: DEFAULT_BASE_URL,
     warmupRuns: DEFAULT_WARMUP_RUNS,
     measuredRuns: DEFAULT_MEASURED_RUNS,
+    batches: DEFAULT_BATCHES,
     executionOrder: DEFAULT_EXECUTION_ORDER,
+    orderStrategy: DEFAULT_ORDER_STRATEGY,
+    seed: DEFAULT_ORDER_SEED,
     output: 'browser-evidence-artifacts/search-comparison-benchmark.json',
     scenario: 'FULL_TEXT_RELEVANCE',
     query: 'North Dakota workforce',
@@ -255,8 +361,20 @@ export function parseArguments(argv) {
         options.measuredRuns = Number(value);
         index += 1;
         break;
+      case '--batches':
+        options.batches = Number(value);
+        index += 1;
+        break;
       case '--order':
         options.executionOrder = value;
+        index += 1;
+        break;
+      case '--order-strategy':
+        options.orderStrategy = value;
+        index += 1;
+        break;
+      case '--seed':
+        options.seed = Number(value);
         index += 1;
         break;
       case '--output':
@@ -285,7 +403,10 @@ async function main() {
     baseUrl: options.baseUrl,
     warmupRuns: options.warmupRuns,
     measuredRuns: options.measuredRuns,
+    batches: options.batches,
     executionOrder: options.executionOrder,
+    orderStrategy: options.orderStrategy,
+    seed: options.seed,
     request: {
       scenario: options.scenario,
       query: options.query,
@@ -301,6 +422,10 @@ async function main() {
   console.log(`Search comparison diagnostic written to ${outputPath}`);
   console.log(`Projection: ${result.projection.projectionId}`);
   console.log(`Execution order: ${result.executionOrder}`);
+  console.log(
+    `Execution plan: ${result.executionPlan.orderStrategy}; batches ${result.executionPlan.batchExecutionOrders.join(', ')}`,
+  );
+  console.log(`Measured samples: ${result.totalMeasuredRuns}`);
   console.log(
     `Solr API elapsed p50/p95/p99: ${result.solr.elapsed.p50Ms}/${result.solr.elapsed.p95Ms}/${result.solr.elapsed.p99Ms} ms`,
   );

@@ -77,6 +77,7 @@
     "test:all": "pnpm nx run-many -t test --all",
     "performance:test": "node --test tools/scripts/search-comparison-benchmark.test.mjs tools/scripts/scale-evidence-check.test.mjs tools/scripts/search-semantic-matrix.test.mjs tools/scripts/cursor-traversal-evidence.test.mjs tools/scripts/data-gov-spatial-availability.test.mjs tools/scripts/data-gov-spatial-geometry-census.test.mjs tools/scripts/data-gov-spatial-source-semantics.test.mjs",
     "performance:benchmark": "node tools/scripts/search-comparison-benchmark.mjs",
+    "performance:benchmark:batches": "node tools/scripts/search-comparison-benchmark.mjs --batches 4 --order-strategy RANDOMIZED",
     "scale:evidence:check": "node tools/scripts/scale-evidence-check.mjs",
     "quality:scale": "pnpm run scale:evidence:check",
     "research:test": "pnpm performance:test",

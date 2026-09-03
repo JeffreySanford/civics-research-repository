@@ -270,11 +270,13 @@ from the same engine response that supplied the results, so no second timing-onl
 issued. The vendor metrics are labelled **engine reported** because their definitions are
 not identical.
 
-Browser Evidence also runs a repeated benchmark with 5 discarded warm-ups and 100 measured
+Browser Evidence also runs a repeated benchmark with discarded warm-ups and measured
 requests, reporting min/mean/p50/p95/p99/max for API elapsed and engine-reported series.
 Projection identity must remain stable and both engines must remain reachable for a run to
-be accepted. Fixed Solr-then-OpenSearch execution order is recorded, so the artifact does
-not make a comparative winner claim.
+be accepted. The benchmark can run independent batches with fixed, alternating or seeded
+randomized engine execution order. Batch order, sample indexes and the aggregate paired
+raw samples are retained together, so follow-up reports can distinguish an engine effect
+from a simple order effect.
 
 Detailed protocol and baseline numbers are documented in
 [Search Performance Evidence](search-performance-evidence.md).
@@ -307,10 +309,9 @@ The next performance work is about scale and experimental design rather than add
 stopwatch fields:
 
 1. record shard/replica/node topology and concurrency with benchmark artifacts,
-2. balance or randomize engine execution order for comparative experiments,
-3. repeat at materially larger index sizes such as 10,000, 100,000 and 1,000,000 documents,
-4. add result/rank/facet difference summaries alongside timing,
-5. avoid production-speed claims until topology, data volume and concurrency are realistic.
+2. repeat at materially larger index sizes such as 10,000, 100,000 and 1,000,000 documents,
+3. add result/rank/facet difference summaries alongside timing,
+4. avoid production-speed claims until topology, data volume and concurrency are realistic.
 
 ## Why OpenSearch Can Still Be Strategically Interesting
 
