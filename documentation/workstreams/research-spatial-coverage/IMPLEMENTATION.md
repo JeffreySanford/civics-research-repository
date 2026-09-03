@@ -14,8 +14,8 @@ Current behavior:
 4. Validate the response as a non-empty FeatureCollection.
 5. Validate each county GEOID, state binding, uniqueness, and Polygon/MultiPolygon geometry.
 6. Sort features deterministically by GEOID.
-7. Cache successful results by geometry vintage and state FIPS.
-8. Return a defensive copy to callers.
+7. Cache successful responses by geometry vintage and state FIPS.
+8. Return defensive copies to callers.
 9. Fail explicitly on network, publisher, validation, or unsupported-vintage errors.
 
 There is intentionally no synthetic geometry fallback.
@@ -27,7 +27,7 @@ Supported county vintages in this slice:
 
 ### SAIPE migration
 
-The SAIPE choropleth now follows this flow:
+The SAIPE choropleth follows this flow:
 
 ```text
 selected geography
@@ -42,46 +42,98 @@ A retained SAIPE GEOID that has no matching authoritative geometry is an error. 
 
 ### Layer capability truth
 
-`MapLayerService` asks `SaipeCountyChoroplethService.supportsGeography()` before advertising the SAIPE child layer. This keeps map metadata aligned with what the service can actually serve.
+Maps controls are capability-aware. Unsupported SAIPE controls are not advertised for a selected geography, category counts reflect currently available children, and collapsing a category never changes checked child state.
 
-## Immediate UI follow-up
+## Data.gov research spatial sidecar
 
-The dataset-layer API is now truthful, but the standalone Maps control family is still largely static. The next UI slice should make layer controls capability-aware for the selected geography.
+The research-coverage model is now implemented as a versioned application-owned sidecar rather than a future placeholder.
 
-For SAIPE specifically:
+The active Data.gov sidecar:
 
-- supported geography: show the SAIPE child control;
-- unsupported geography: do not render the SAIPE child control;
-- switching geography while a now-unsupported layer is selected must clear or reconcile that state accessibly;
-- category counts must reflect the currently available children;
-- the category itself should disappear only when it has no available children.
+- is keyed to retained C2 Data.gov source identifiers;
+- records source snapshot/capture time, C2 composition SHA-256, and active projection identity;
+- stages rebuilds before atomic activation so a failed refresh cannot replace the previous active build;
+- preserves current Data.gov source provenance independently from the immutable certified C2 corpus identity;
+- retains geospatial source matches even when publisher geometry is absent;
+- distinguishes `VALID`, `ANTIMERIDIAN_CANDIDATE`, `NO_PUBLISHER_GEOMETRY`, and `QUARANTINED` states;
+- stores full publisher `spatial_shape` GeoJSON where safe instead of manufacturing geometry;
+- preserves source centroid and raw `dcat.spatial` evidence without treating either as canonical polygon semantics;
+- never substitutes publisher, laboratory, author, or institution locations for research coverage.
 
-Do not leave unsupported controls permanently disabled merely to advertise planned functionality.
+The measured geometry census justified retaining publisher GeoJSON directly for the current Data.gov population; PostGIS/simplification tiers are not required for this slice.
+
+## Bounded Research Spatial API
+
+`GET /maps/research-coverage` is the scale-control boundary between the active sidecar and Maps.
+
+The endpoint:
+
+- reuses Discovery criteria instead of defining a second search language;
+- binds each response to one active sidecar build and projection identity;
+- requires a WGS84 viewport;
+- reports matching, mapped, unmapped, quarantined, antimeridian, viewport, omitted, and truncation counts explicitly;
+- returns only a deterministic bounded feature set;
+- defaults to 200 returned features with a hard maximum of 500;
+- treats antimeridian candidates through explicit safe render anchors rather than naïve world-spanning envelopes;
+- never sends the complete sidecar population to the browser.
+
+See [BOUNDED_RESEARCH_SPATIAL_API.md](BOUNDED_RESEARCH_SPATIAL_API.md) for the complete contract.
+
+## Research Coverage Maps UI
+
+Maps now renders the bounded Data.gov publisher research geometry directly.
+
+Implemented behavior:
+
+- effective Discovery criteria are preserved when entering Maps;
+- the selected Census boundary provides an accessible initial viewport before WebGL is available;
+- MapLibre `moveend` events refresh the bounded spatial request once the interactive map is active;
+- request fingerprints suppress duplicate viewport requests;
+- NgRx latest-request semantics prevent stale responses from replacing newer state;
+- ordinary publisher geometry renders through fill, line, and point MapLibre layers;
+- antimeridian candidates render only through their explicit safe source-derived anchor;
+- missing or quarantined publisher geometry remains visible in semantic counts rather than disappearing;
+- truncation and omitted-feature counts are stated explicitly;
+- the semantic Research Coverage table exposes the same bounded research-object set returned to MapLibre.
+
+The browser therefore receives only the current bounded feature set, not hundreds of thousands of sidecar rows.
+
+## Accessibility and evidence
+
+Research Coverage follows the repository's map-equivalence rule: MapLibre is not the sole information channel.
+
+The extracted semantic Research Coverage component provides:
+
+- mapped/unmapped/quarantined counts;
+- viewport and truncation status;
+- source/projection/build provenance;
+- research object title, publisher, program/type, geometry semantics, and source link;
+- a meaningful empty-viewport state;
+- loading/status text independent of canvas rendering.
+
+Automated evidence includes:
+
+- direct axe unit coverage;
+- Storybook states for loading, populated/truncated, empty viewport, no publisher geometry/antimeridian evidence, and no response;
+- global Storybook addon-a11y enforcement;
+- Storybook interaction test-runner evidence;
+- Playwright proof that Discovery criteria and WGS84 viewport reach the bounded API;
+- Chromium MapLibre visibility evidence for the publisher fill/line/point layer group;
+- regression coverage that category disclosure remains presentation-only.
+
+Manual screen-reader, keyboard, focus-path, forced-colors, and other dated Section 508 evidence remain separate release evidence and are not replaced by automated axe/browser checks.
 
 ## Reuse path
 
-After capability-aware controls, reuse the same administrative-geometry boundary for:
+The shared administrative-geometry boundary remains the correct basis for thematic county/PUMA/tract values, while explicit research footprints use the separate sidecar/bounded-spatial contract.
 
-1. Repository research-by-area summaries.
-2. Population Estimates county values.
-3. County Business Patterns county values.
-4. Business Dynamics Statistics.
-5. Building Permits.
+Next thematic candidates remain:
 
-PUMA and tract geometry should be added only when a concrete bounded consumer requires them.
+1. Population Estimates county values.
+2. County Business Patterns county values and industry configuration.
+3. Business Dynamics Statistics.
+4. Building Permits.
 
-## Future research spatial sidecar
+For Research Coverage, NASA CMR collection spatial extent is the strongest next source. Collection and granule coverage must remain separate concepts, and granule results must be bounded by collection, viewport and/or time before reaching the browser.
 
-The larger research-coverage model remains a later phase rather than a merge blocker for this foundation PR.
-
-That phase should add:
-
-- typed coverage records keyed by stable research-object ID;
-- application-owned persistence;
-- source field/evidence references;
-- derivation method and enrichment version;
-- source-specific Data.gov and NASA fixtures;
-- bounded APIs for summaries/features;
-- optional search projections only after domain/storage evidence is stable.
-
-Spatial enrichment must not silently alter the certified C2 corpus composition or projection identity.
+Spatial enrichment must continue to preserve the certified C2 corpus composition and projection identity rather than rewriting the Gold Master merely to make records mappable.

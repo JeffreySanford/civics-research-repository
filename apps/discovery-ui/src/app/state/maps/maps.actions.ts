@@ -5,9 +5,10 @@ import type {
   LodesWorkplaceOverlay,
   MapLayer,
   RepositoryError,
+  ResearchSpatialCoverageResponse,
+  ResearchSpatialViewport,
   SaipeCountyChoropleth,
   SearchQuery,
-  SearchResponse,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 
@@ -36,8 +37,13 @@ export const MapsActions = createActionGroup({
       saipeChoropleth: SaipeCountyChoropleth;
     }>(),
     'Saipe Choropleth Failed': props<{ error: RepositoryError }>(),
-    'Research Coverage Requested': props<{ query: SearchQuery }>(),
-    'Research Coverage Loaded': props<{ response: SearchResponse }>(),
+    'Research Coverage Requested': props<{
+      query: SearchQuery;
+      viewport: ResearchSpatialViewport;
+    }>(),
+    'Research Coverage Loaded': props<{
+      response: ResearchSpatialCoverageResponse;
+    }>(),
     'Research Coverage Failed': props<{ error: RepositoryError }>(),
     'Census Area Selected': props<{ geography: string }>(),
     'Tiger Layer Toggled': props<{ visible: boolean }>(),

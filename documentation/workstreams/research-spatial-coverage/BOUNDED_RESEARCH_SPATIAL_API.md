@@ -26,7 +26,7 @@ The endpoint accepts:
 - `west`, `south`, `east`, and `north` WGS84 viewport coordinates;
 - `limit`, defaulting to 200 with a hard maximum of 500 features.
 
-The criteria names intentionally mirror Discovery so the following UI slice can carry a user's search state into Maps without inventing a second filter model.
+The criteria names intentionally mirror Discovery so the Maps UI can carry a user's search state into Maps without inventing a second filter model.
 
 ## Snapshot consistency
 
@@ -91,7 +91,7 @@ The service uses the current federated Data.gov metadata fields that are actuall
 
 Current federated Data.gov discovery documents do not project `geography` or `vintageYear`. When either of those criteria is supplied, the spatial query returns zero Data.gov matches instead of inventing metadata or silently weakening the filter.
 
-This is an explicit compatibility boundary for the next UI slice and can be revisited if those fields are later added to the federated projection.
+This remains an explicit compatibility boundary and can be revisited if those fields are later added to the federated projection.
 
 ## Query text semantics
 
@@ -105,7 +105,7 @@ The normalized criteria are fingerprinted so one response carries an auditable i
 
 ## Accessible Maps contract
 
-The API is designed for both the visual map and the semantic equivalent.
+The API serves both the visual map and the semantic equivalent.
 
 Each returned feature carries research metadata together with publisher geometry:
 
@@ -119,7 +119,21 @@ Each returned feature carries research metadata together with publisher geometry
 - publisher GeoJSON;
 - optional explicit render point and render-point method.
 
-The summary counts are independent of MapLibre. The following UI slice can therefore expose the same matching/mapped/unmapped/truncated state in semantic HTML and a keyboard/screen-reader-friendly results table while MapLibre renders the bounded geometry set.
+The summary counts are independent of MapLibre. The Maps UI exposes the same matching/mapped/unmapped/quarantined/truncated state in semantic HTML and a keyboard/screen-reader-friendly results table while MapLibre renders the bounded geometry set.
+
+## Implemented Maps UI
+
+The Research Coverage UI now consumes this endpoint directly.
+
+- Discovery criteria are preserved as engine-neutral spatial criteria.
+- The initial accessible viewport can come from the selected Census boundary before WebGL is available.
+- Once MapLibre is active, bounded requests refresh after meaningful `moveend` viewport changes.
+- Request fingerprints prevent duplicate viewport requests and NgRx latest-request semantics prevent stale responses from replacing newer state.
+- Ordinary publisher geometry renders through dedicated fill, line, and point layers.
+- Antimeridian candidates render only from their explicit safe source-derived anchor rather than a naive world-spanning envelope.
+- The semantic Research Coverage component exposes the exact bounded feature set and the same mapped/unmapped/quarantined/truncated evidence as the map.
+- Storybook covers loading, populated/truncated, empty viewport, no-publisher-geometry, and no-response states under the repository's axe configuration.
+- Targeted Playwright evidence verifies the bounded request contract and MapLibre visibility behavior; raw MapLibre/WebGL assertions remain Chromium-specific where appropriate.
 
 ## Error contract
 
@@ -127,7 +141,7 @@ The summary counts are independent of MapLibre. The following UI slice can there
 - an unavailable active sidecar source returns HTTP 503;
 - unexpected server failures use the repository's shared HTTP 500 contract.
 
-At present the active persisted spatial source is Data.gov. The source parameter remains explicit so the contract does not hard-code Data.gov into the future Maps model.
+At present the active persisted spatial source is Data.gov. The source parameter remains explicit so the contract does not hard-code Data.gov into future Research Coverage children.
 
 ## Scaling boundary
 
@@ -156,15 +170,8 @@ deterministic feature cap (<= 500)
 
 The sidecar remains the durable spatial evidence layer. This API is the scale-control layer.
 
-## Next slice
+## Next research-coverage direction
 
-The following Maps Research Coverage UI slice should:
+The next spatial expansion should add a new source or semantic capability rather than bypassing this bounded contract. NASA CMR collection coverage remains the strongest candidate; collection and granule coverage must stay distinct, and granule results must be bounded by collection, viewport and/or time before reaching the browser.
 
-- add the visible `Research Coverage` Maps category/layer;
-- carry the active Discovery criteria into this endpoint;
-- query on meaningful viewport changes without creating request races;
-- expose loading, populated, empty, unavailable, unmapped, and truncated states;
-- render only the returned bounded features in MapLibre;
-- provide the same information through semantic HTML/table content;
-- add Storybook interaction + axe evidence for the extracted controls/states;
-- add Playwright browser evidence, with raw MapLibre/WebGL assertions remaining Chromium-specific where required.
+Any new Research Coverage child inherits the same requirements: authoritative source geometry, version/projection provenance, explicit truncation, semantic HTML equivalence, keyboard access, Storybook/axe state evidence, and browser proof that the visual map never becomes the sole information channel.

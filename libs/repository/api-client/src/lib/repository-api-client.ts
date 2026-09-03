@@ -33,6 +33,14 @@ export type LodesWorkplaceSummary =
 export type SaipeCountyChoropleth =
   components['schemas']['SaipeCountyChoropleth'];
 export type SaipeCountyValue = components['schemas']['SaipeCountyValue'];
+export type ResearchSpatialViewport =
+  components['schemas']['ResearchSpatialViewport'];
+export type ResearchSpatialCoverageSummary =
+  components['schemas']['ResearchSpatialCoverageSummary'];
+export type ResearchSpatialCoverageFeature =
+  components['schemas']['ResearchSpatialCoverageFeature'];
+export type ResearchSpatialCoverageResponse =
+  components['schemas']['ResearchSpatialCoverageResponse'];
 export type SearchResponse = components['schemas']['SearchResponse'];
 export type SearchCursorPage = components['schemas']['SearchCursorPage'];
 export type SearchResult = components['schemas']['SearchResult'];
@@ -141,6 +149,45 @@ export class RepositoryMapsApi {
   listCensusAreaBoundaries(): Observable<CensusAreaBoundary[]> {
     return this.http.get<CensusAreaBoundary[]>(
       `${this.baseUrl}/maps/census-areas`,
+    );
+  }
+
+  getResearchSpatialCoverage(
+    query: SearchQuery,
+    viewport: ResearchSpatialViewport,
+    limit = 200,
+  ): Observable<ResearchSpatialCoverageResponse> {
+    const params: Record<string, string | number | readonly string[]> = {
+      sourceSystem: query.sourceSystem ?? 'DATA_GOV',
+      west: viewport.west,
+      south: viewport.south,
+      east: viewport.east,
+      north: viewport.north,
+      limit,
+    };
+
+    if (query.q) {
+      params['q'] = query.q;
+    }
+    if (query.programs?.length) {
+      params['program'] = [...query.programs];
+    }
+    if (query.publisher) {
+      params['publisher'] = query.publisher;
+    }
+    if (query.geography) {
+      params['geography'] = query.geography;
+    }
+    if (query.contentType) {
+      params['contentType'] = query.contentType;
+    }
+    if (query.vintageYear !== undefined) {
+      params['vintageYear'] = query.vintageYear;
+    }
+
+    return this.http.get<ResearchSpatialCoverageResponse>(
+      `${this.baseUrl}/maps/research-coverage`,
+      { params },
     );
   }
 

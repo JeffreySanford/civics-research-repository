@@ -22,9 +22,9 @@ The exact C2 composition and normalized search projection have separate determin
 
 PRs #13 and #14 delivered the versioned semantic matrix, exact identifier probes and structured comparison filters. PRs #16 and #19 then made opaque cursor/search-after traversal the deep-discovery path and certified two complete 1,000,181-result traversals with no gaps or duplicates while retaining offset compatibility for migration.
 
-The Maps foundation has also moved past planning. The workspace now has purpose-oriented categories, capability-aware SAIPE controls, shared authoritative county geometry joined by GEOID, and the first **Research Coverage** child: bounded **Repository research by area** driven by the effective Discovery criteria with a semantic table equivalent. PR #18 also added the deterministic Data.gov spatial-availability probe needed for the next enrichment decision.
+The Maps foundation has moved well past its first administrative summary. The workspace now has purpose-oriented categories, capability-aware controls, shared authoritative Census county geometry, versioned Data.gov spatial sidecar evidence, a bounded `/maps/research-coverage` viewport API, and a visible **Data.gov publisher research geometry** Research Coverage child. MapLibre renders only the bounded publisher feature set, while semantic HTML exposes the same mapped/unmapped/quarantined/truncated evidence and research-object rows. Storybook interaction + axe evidence and targeted Playwright/MapLibre evidence cover the new states and layer behavior.
 
-The remaining PI-1 work is therefore **projection/resource evidence, durable identity reconciliation, measured spatial enrichment/federation expansion, and handoff**—not rebuilding the cursor, map-control or million-record comparison foundations.
+The remaining PI-1 work is therefore **projection/resource evidence, durable identity reconciliation, deliberate federation/source expansion, and handoff**—not rebuilding the cursor, map-control, million-record comparison, or Data.gov spatial foundations.
 
 ## PI-1 — Reusable federation and search evidence
 
@@ -61,14 +61,14 @@ Environment & Hazards
   future 3DEP terrain
 
 Research Coverage
-  repository research by area
-  future Data.gov spatial datasets
+  Data.gov publisher research geometry
   future NASA collection / bounded granule coverage
+  future source-specific explicit spatial children
 ```
 
-The next research-coverage milestone is evidence, not another speculative layer: run the corrected deterministic Data.gov spatial-availability probe by traversing the current Data.gov v4 `spatial_filter=geospatial` source subset and intersecting those records with the certified 500K retained C2 Data.gov identifiers. Capture that measured artifact and use it to decide the enrichment scope before adding a versioned, engine-neutral spatial sidecar. The source snapshot is current evidence bound to C2 identity; it is not represented as byte-for-byte historical C2 metadata. The sidecar may hold authoritative administrative areas, points, bounding boxes and later polygons while preserving source evidence and derivation method. Publisher, laboratory, author or institution location is never silently substituted for research coverage.
+The Data.gov research-coverage foundation is now complete enough to serve as the reusable pattern. Current publisher geospatial evidence is retained in a versioned sidecar bound to C2 composition/projection identity, and the browser receives only viewport-bounded features through the dedicated API. Missing publisher geometry, quarantined geometry, antimeridian candidates, omission, and truncation remain explicit rather than being hidden or inferred from publisher/institution location.
 
-Treat retained Data.gov `harvestRecordRaw` as a source-reference URL, not retained raw metadata. Use current v4 `dcat.spatial`, `spatial_shape` and `spatial_centroid` signals for candidate discovery, and use raw/transformed source endpoints only for bounded follow-up validation of selected candidates. The enrichment remains sidecar/versioned so the C2 Gold Master and its projection identity are not rewritten merely to make records mappable.
+Do not replay or rewrite the certified 500K Data.gov corpus merely to change spatial enrichment. `harvestRecordRaw` remains a source-reference URL, while current Data.gov `spatial_shape`, `spatial_centroid`, and `dcat.spatial` evidence belongs to the independently versioned sidecar/source-evidence model.
 
 Before adding many more thematic choropleths, generalize the existing shared-geometry/value pattern so new services return values keyed by stable identifiers rather than embedding their own polygons. Extend authoritative administrative geometry only when a concrete state/territory, PUMA, tract or place use case requires it.
 
@@ -82,11 +82,9 @@ The strongest next thematic additions remain:
 6. **ACS PUMS-derived measures** — weighted PUMA/state aggregates only; never person/household points.
 7. **3DEP terrain** — one configurable terrain/reference child rather than checkbox proliferation for hillshade/slope/aspect modes.
 
-The current Repository research-by-area layer can continue using its bounded search geography facet. Rich explicit spatial footprints require dedicated bounded summary/feature APIs with viewport/time/result caps and explicit truncation semantics before the browser renders them. Million-record search results must never become million MapLibre features.
+NASA CMR remains the strongest next federated spatial source. Extend the existing collection adapter with an explicit/pinned spatial metadata representation, then model bounded granule coverage separately so collection and granule semantics never collapse into one type. Reuse the existing bounded viewport/result-cap pattern; granules additionally need collection/time bounds where appropriate.
 
-NASA CMR remains the strongest federated spatial source. Extend the existing collection adapter with an explicit/pinned spatial metadata representation, then model bounded granule coverage separately so collection and granule semantics never collapse into one type.
-
-Every new research-coverage child must preserve semantic list/table equivalence, keyboard operation, provenance, and the existing automated/manual accessibility evidence split.
+Every new research-coverage child must preserve semantic list/table equivalence, keyboard operation, provenance, explicit truncation, and the existing automated/manual accessibility evidence split.
 
 ### 4. Extend the federation portfolio deliberately
 
@@ -164,7 +162,7 @@ Remaining dated, commit-bound manual evidence includes:
 - current ICT Testing Baseline / Trusted Tester crosswalk;
 - explicit WCAG 2.2 checks for focus not obscured, dragging alternatives and target size.
 
-Automated axe/browser evidence never substitutes for these checks.
+Automated axe/browser/Storybook evidence never substitutes for these checks.
 
 ## PI-5 — Browser evidence governance
 
@@ -200,4 +198,4 @@ These remain downstream of the reproducible lexical baseline.
 
 ## Non-goals
 
-The roadmap does not include replacing DSpace with a search engine, forcing federated records into DSpace, making search indexes authoritative, deleting Compose after Kubernetes, downloading millions of binaries merely to inflate record count, running million-record work in ordinary PR CI, adding a separate Node harvester runtime, inferring research geography from publisher location, rendering raw microdata people/households as map points, or claiming complete Section 508 conformance from automated scans.
+The roadmap does not include replacing DSpace with a search engine, forcing federated records into DSpace, making search indexes authoritative, deleting Compose after Kubernetes, downloading millions of binaries merely to inflate record count, running million-record work in ordinary PR CI, adding a separate Node harvester runtime, inferring research geography from publisher location, rendering raw microdata people/households as map points, sending an unbounded spatial sidecar to MapLibre, or claiming complete Section 508 conformance from automated scans.

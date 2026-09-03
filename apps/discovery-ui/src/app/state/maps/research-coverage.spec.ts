@@ -1,132 +1,100 @@
 import { describe, expect, it } from 'vitest';
 import type {
-  CensusAreaBoundary,
+  ResearchSpatialCoverageResponse,
   SearchQuery,
-  SearchResponse,
 } from 'repository-api-client';
 import { buildResearchCoverageSummary } from './research-coverage';
 
-const boundaries: CensusAreaBoundary[] = [
-  {
-    id: 'north-dakota',
-    label: 'North Dakota Census area boundary preview',
-    geography: 'North Dakota',
-    west: -104,
-    south: 46,
-    east: -96.5,
-    north: 49,
-    centerLatitude: 47.5,
-    centerLongitude: -100.5,
-    defaultZoom: 6,
-  },
-  {
-    id: 'california',
-    label: 'California Census area boundary preview',
-    geography: 'California',
-    west: -124.4,
-    south: 32.5,
-    east: -114.1,
-    north: 42,
-    centerLatitude: 36.8,
-    centerLongitude: -119.4,
-    defaultZoom: 5,
-  },
-];
-
-function response(totalResults = 20): SearchResponse {
+function response(): ResearchSpatialCoverageResponse {
   return {
-    resultSource: 'REPOSITORY',
-    query: '',
-    page: 0,
-    pageSize: 1,
-    totalResults,
-    results: [],
-    facets: [
+    buildId: 'spatial-build-42',
+    sourceSystem: 'DATA_GOV',
+    schemaVersion: 1,
+    sourceSnapshotAt: '2026-09-02T12:00:00Z',
+    capturedAt: '2026-09-02T12:05:00Z',
+    compositionSha256: 'a'.repeat(64),
+    projectionId: 'projection-9',
+    criteriaFingerprint: 'criteria-123',
+    viewport: {
+      west: -125,
+      south: 30,
+      east: -110,
+      north: 45,
+    },
+    summary: {
+      matchingRecords: 440379,
+      mappedRecords: 418462,
+      unmappedRecords: 21917,
+      quarantinedRecords: 679,
+      unanchoredAntimeridianRecords: 12,
+      viewportMappedRecords: 225,
+      returnedFeatures: 200,
+      omittedFeatures: 25,
+      featureLimit: 200,
+      truncated: true,
+    },
+    features: [
       {
-        field: 'geography',
-        label: 'Geography',
-        values: [
-          {
-            value: 'North Dakota',
-            label: 'North Dakota',
-            count: 5,
-            selected: false,
-          },
-          {
-            value: 'California',
-            label: 'California',
-            count: 3,
-            selected: false,
-          },
-          {
-            value: 'Laboratory location only',
-            label: 'Laboratory location only',
-            count: 4,
-            selected: false,
-          },
-        ],
+        sourceSystem: 'DATA_GOV',
+        sourceIdentifier: 'dataset-1',
+        title: 'Publisher polygon',
+        publisher: 'Example Agency',
+        program: 'Climate',
+        contentType: 'DATASET',
+        sourceUrl: 'https://catalog.data.gov/dataset/example',
+        geometryStatus: 'VALID',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [-120, 35],
+              [-119, 35],
+              [-119, 36],
+              [-120, 35],
+            ],
+          ],
+        },
+        renderLon: -119.5,
+        renderLat: 35.5,
+        renderPointMethod: 'SHAPE_BOUNDS_CENTER',
       },
     ],
-  };
+  } as ResearchSpatialCoverageResponse;
 }
 
 describe('buildResearchCoverageSummary', () => {
-  it('joins only explicit geography facet values that match supported Census areas', () => {
-    const query: SearchQuery = { q: 'climate', pageSize: 1 };
-    const summary = buildResearchCoverageSummary(response(), boundaries, query);
-
-    expect(
-      summary.areas.map(({ geography, count }) => ({ geography, count })),
-    ).toEqual([
-      { geography: 'North Dakota', count: 5 },
-      { geography: 'California', count: 3 },
-    ]);
-    expect(summary.mappedResults).toBe(8);
-    expect(summary.unmappedResults).toBe(12);
-    expect(summary.totalResults).toBe(20);
-  });
-
-  it('respects an effective geography filter even though the search facet is self-excluding', () => {
+  it('preserves backend-owned matching, mapping, truncation, and build evidence', () => {
     const query: SearchQuery = {
       q: 'climate',
-      geography: 'California',
-      pageSize: 1,
+      programs: ['Climate'],
+      sourceSystem: 'DATA_GOV',
     };
-    const summary = buildResearchCoverageSummary(
-      response(3),
-      boundaries,
-      query,
-    );
 
-    expect(summary.areas).toHaveLength(1);
-    expect(summary.areas[0]?.geography).toBe('California');
-    expect(summary.mappedResults).toBe(3);
-    expect(summary.unmappedResults).toBe(0);
+    const summary = buildResearchCoverageSummary(response(), query);
+
+    expect(summary.query).toEqual(query);
+    expect(summary.buildId).toBe('spatial-build-42');
+    expect(summary.projectionId).toBe('projection-9');
+    expect(summary.criteriaFingerprint).toBe('criteria-123');
+    expect(summary.totalResults).toBe(440379);
+    expect(summary.mappedResults).toBe(418462);
+    expect(summary.unmappedResults).toBe(21917);
+    expect(summary.quarantinedResults).toBe(679);
+    expect(summary.unanchoredAntimeridianResults).toBe(12);
+    expect(summary.viewportMappedResults).toBe(225);
+    expect(summary.returnedFeatures).toBe(200);
+    expect(summary.omittedFeatures).toBe(25);
+    expect(summary.featureLimit).toBe(200);
+    expect(summary.truncated).toBe(true);
   });
 
-  it('does not infer a map location for matching records without a supported explicit geography', () => {
-    const query: SearchQuery = { sourceSystem: 'DATA_GOV', pageSize: 1 };
-    const noGeographyResponse: SearchResponse = {
-      ...response(500000),
-      resultSource: 'FEDERATED',
-      facets: [
-        {
-          field: 'geography',
-          label: 'Geography',
-          values: [],
-        },
-      ],
-    };
+  it('passes the exact bounded feature list through for both map and semantic rendering', () => {
+    const bounded = response();
+    const summary = buildResearchCoverageSummary(bounded, {});
 
-    const summary = buildResearchCoverageSummary(
-      noGeographyResponse,
-      boundaries,
-      query,
-    );
-
-    expect(summary.areas).toEqual([]);
-    expect(summary.mappedResults).toBe(0);
-    expect(summary.unmappedResults).toBe(500000);
-    expect(summary.resultSource).toBe('FEDERATED');
+    expect(summary.features).toBe(bounded.features);
+    expect(summary.features).toHaveLength(1);
+    expect(summary.features[0]?.sourceIdentifier).toBe('dataset-1');
+    expect(summary.features[0]?.geometryStatus).toBe('VALID');
   });
 });

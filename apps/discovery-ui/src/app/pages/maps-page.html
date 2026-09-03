@@ -253,7 +253,6 @@
           </div>
         </details>
 
-        @if (researchCoverageSummary$ | async; as researchCoverage) {
         <details
           class="layer-category"
           data-testid="map-layer-category-research-coverage"
@@ -276,7 +275,7 @@
                   (change)="toggleResearchCoverageLayer($any($event.target).checked)"
                 />
                 <span class="layer-toggle-label"
-                  >Repository research by area</span
+                  >Data.gov publisher research geometry</span
                 >
               </label>
               <button
@@ -286,14 +285,18 @@
                 data-testid="map-layer-research-coverage-info"
                 [matTooltip]="layerTooltips.research"
                 matTooltipPosition="above"
-                aria-label="About Repository research by area layer"
+                aria-label="About Data.gov publisher research geometry layer"
               >
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
             </span>
+            @if (researchCoverageLoading$ | async) {
+            <span class="feature-hint" role="status"
+              >Updating research coverage for the current viewport…</span
+            >
+            }
           </div>
         </details>
-        }
       </fieldset>
     </div>
 
@@ -320,8 +323,9 @@
           <dt>Active data</dt>
           <dd>
             LODES workplace flows and TIGER/Line geography, with SAIPE county
-            context where retained for the selected area and repository research
-            coverage where records explicitly name a supported Census area
+            context where retained for the selected area and Data.gov research
+            coverage from publisher-supplied spatial geometry in the active
+            sidecar
           </dd>
         </div>
       </dl>
@@ -408,9 +412,16 @@
           (researchCoverageSummary$ | async; as researchCoverage) {
           <li>
             <span class="swatch research"></span>
-            Repository research by area ({{ researchCoverage.mappedResults |
-            number }} mapped of {{ researchCoverage.totalResults | number }}
-            matching)
+            Data.gov publisher research geometry ({{
+            researchCoverage.viewportMappedResults | number }} mapped in view;
+            {{ researchCoverage.returnedFeatures | number }} returned of {{
+            researchCoverage.totalResults | number }} matching) @if
+            (researchCoverage.truncated) {
+            <span class="status-pill stale"
+              >bounded to {{ researchCoverage.featureLimit | number }}
+              features</span
+            >
+            }
           </li>
           } } @if (hydrographyVisible$ | async) {
           <li>
@@ -709,62 +720,14 @@
         <strong>LODES workplace employment unavailable</strong>
         <span>Other map layers remain available.</span>
       </li>
-      } } } @if (researchCoverageVisible$ | async) { @if
-      (researchCoverageSummary$ | async; as researchCoverage) {
+      } } } @if (researchCoverageVisible$ | async) {
       <li>
-        <section
-          class="research-coverage-summary"
-          aria-labelledby="research-coverage-summary-heading"
-        >
-          <h3 id="research-coverage-summary-heading">
-            Repository research by area
-          </h3>
-          <p>
-            {{ researchCoverage.mappedResults | number }} of {{
-            researchCoverage.totalResults | number }} matching research objects
-            explicitly name a supported Census area. {{
-            researchCoverage.unmappedResults | number }} matching objects are
-            not drawn; publisher, laboratory, author, and institution locations
-            are not substituted for research geography.
-          </p>
-          @if (researchCoverage.areas.length) {
-          <table class="county-value-table">
-            <caption>
-              Matching research objects with explicit administrative geography
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Census area</th>
-                <th scope="col">Matching research objects</th>
-                <th scope="col">Discovery</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (area of researchCoverage.areas; track area.id) {
-              <tr>
-                <th scope="row">{{ area.geography }}</th>
-                <td>{{ area.count | number }}</td>
-                <td>
-                  <a
-                    [routerLink]="['/discovery']"
-                    [queryParams]="researchAreaSearchParams(area.geography)"
-                    >View matching research</a
-                  >
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-          } @else {
-          <p class="feature-hint">
-            No matching records currently expose supported explicit
-            administrative geography for this search.
-          </p>
-          }
-        </section>
+        <app-research-coverage-summary
+          [summary]="(researchCoverageSummary$ | async) ?? null"
+          [loading]="(researchCoverageLoading$ | async) ?? false"
+        />
       </li>
-      } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe)
-      {
+      } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {
       <li>
         <strong>{{ saipe.source }}</strong>
         <span>{{ saipe.attribution }} — {{ saipe.measureLabel }}</span>

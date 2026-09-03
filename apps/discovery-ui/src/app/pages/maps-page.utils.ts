@@ -144,11 +144,12 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
   },
   {
     id: 'research',
-    label: 'Repository research by area',
+    label: 'Data.gov publisher research geometry',
     sourceId: 'repository-research-coverage',
     layerIds: [
-      'repository-research-coverage-circles',
-      'repository-research-coverage-labels',
+      'repository-research-coverage-fill',
+      'repository-research-coverage-line',
+      'repository-research-coverage-points',
     ],
   },
   {
