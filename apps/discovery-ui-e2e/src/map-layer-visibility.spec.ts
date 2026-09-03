@@ -3,6 +3,7 @@ import {
   MAP_LAYER_VISIBILITY_GROUPS,
   expectLayerEvidenceHidden,
   expectLayerEvidenceVisible,
+  openLayerCategoryForToggle,
   waitForRegisteredMapLayers,
 } from './support/map-layer-visibility';
 import { mockRepositoryApi } from './support/repository-api-mocks';
@@ -36,7 +37,7 @@ test.describe('map layer MapLibre visibility', () => {
     );
   });
 
-  test('layer categories organize controls without owning selection state @wcag @section508', async ({
+  test('layer categories start collapsed and do not own selection state @wcag @section508', async ({
     page,
   }) => {
     const geographyCategory = page.getByTestId(
@@ -50,6 +51,9 @@ test.describe('map layer MapLibre visibility', () => {
     );
     const environmentCategory = page.getByTestId(
       'map-layer-category-environment-hazards',
+    );
+    const researchCategory = page.getByTestId(
+      'map-layer-category-research-coverage',
     );
 
     await expect(geographySummary).toContainText('Geography & Boundaries');
@@ -66,6 +70,36 @@ test.describe('map layer MapLibre visibility', () => {
     await expect(environmentCategory.locator('summary')).toContainText(
       '2 layers',
     );
+    await expect(researchCategory.locator('summary')).toContainText(
+      'Research Coverage',
+    );
+
+    for (const category of [
+      geographyCategory,
+      communityCategory,
+      environmentCategory,
+      researchCategory,
+    ]) {
+      await expect(category).toHaveJSProperty('open', false);
+    }
+
+    // At the desktop test viewport the four collapsed categories share one horizontal row.
+    const categoryTops = await Promise.all(
+      [
+        geographyCategory,
+        communityCategory,
+        environmentCategory,
+        researchCategory,
+      ].map((category) =>
+        category.evaluate((element) => element.getBoundingClientRect().top),
+      ),
+    );
+    expect(Math.max(...categoryTops) - Math.min(...categoryTops)).toBeLessThan(
+      2,
+    );
+
+    await geographySummary.click();
+    await expect(geographyCategory).toHaveJSProperty('open', true);
 
     const tiger = page.getByTestId('map-layer-tiger');
     await tiger.check();
@@ -103,6 +137,7 @@ test.describe('map layer MapLibre visibility', () => {
       page,
     }) => {
       await waitForRegisteredMapLayers(page);
+      await openLayerCategoryForToggle(page, group.toggleTestId);
       const toggle = page.getByTestId(group.toggleTestId);
 
       // Every layer starts off. There used to be a branch here for layers that started on; it has
@@ -127,9 +162,11 @@ test.describe('map layer MapLibre visibility', () => {
     await waitForRegisteredMapLayers(page);
 
     for (const group of MAP_LAYER_VISIBILITY_GROUPS) {
+      await openLayerCategoryForToggle(page, group.toggleTestId);
       await page.getByTestId(group.toggleTestId).check();
     }
 
+    await openLayerCategoryForToggle(page, 'map-layer-lodes');
     await page.getByTestId('map-layer-lodes').uncheck();
     await expect(page.getByTestId('map-layer-lodes')).not.toBeChecked();
 
