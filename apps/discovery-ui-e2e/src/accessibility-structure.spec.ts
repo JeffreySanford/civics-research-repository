@@ -46,11 +46,14 @@ async function openRoute(page: Page, route: (typeof ROUTES)[number]) {
 }
 
 async function openMapLayerCategories(page: Page): Promise<void> {
-  await page.locator('details.layer-category').evaluateAll((categories) => {
-    for (const category of categories) {
-      (category as HTMLDetailsElement).open = true;
-    }
-  });
+  const categories = page.locator('details.layer-category');
+  await expect(categories).toHaveCount(4);
+
+  for (let index = 0; index < 4; index += 1) {
+    const category = categories.nth(index);
+    await category.locator('summary').click();
+    await expect(category).toHaveJSProperty('open', true);
+  }
 }
 
 test.describe('accessibility structure', () => {
