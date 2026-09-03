@@ -758,6 +758,49 @@ paths:
           $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /admin/spatial/datagov/status:
+    get:
+      tags: [Admin]
+      operationId: getDataGovSpatialSidecarStatus
+      summary: Inspect the active Data.gov spatial sidecar build
+      responses:
+        '200':
+          description: Active sidecar build and row count, if one has been activated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataGovSpatialSidecarStatusResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /admin/spatial/datagov/rebuild:
+    post:
+      tags: [Admin]
+      operationId: rebuildDataGovSpatialSidecar
+      summary: Rebuild and atomically activate the retained-C2 Data.gov spatial sidecar
+      description: >-
+        Traverses the current Data.gov geospatial subset, preserves publisher spatial_shape geometry,
+        filters persistence to retained C2 Data.gov identities, stamps the active composition/projection
+        identity, and activates the new build only after the full traversal succeeds. A personal
+        Data.gov API key and the exact active FEDERATED_1M corpus are required.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataGovSpatialSidecarRebuildRequest'
+      responses:
+        '200':
+          description: Completed and activated Data.gov spatial sidecar build.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataGovSpatialSidecarRefreshResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /admin/federation/harvest/status:
     get:
       tags: [Admin]
@@ -1287,6 +1330,108 @@ components:
         linkedAt:
           type: string
           format: date-time
+    ResearchSpatialSidecarBuildStatus:
+      type: string
+      enum: [RUNNING, COMPLETE, FAILED]
+    ResearchSpatialSidecarBuild:
+      type: object
+      required:
+        - buildId
+        - sourceSystem
+        - schemaVersion
+        - sourceSnapshotAt
+        - capturedAt
+        - compositionSha256
+        - projectionId
+        - status
+        - rowCount
+      properties:
+        buildId:
+          type: string
+        sourceSystem:
+          $ref: '#/components/schemas/FederatedSourceSystem'
+        schemaVersion:
+          type: integer
+          minimum: 1
+        sourceSnapshotAt:
+          type: string
+          format: date-time
+        capturedAt:
+          type: string
+          format: date-time
+        compositionSha256:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        projectionId:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        status:
+          $ref: '#/components/schemas/ResearchSpatialSidecarBuildStatus'
+        rowCount:
+          type: integer
+          format: int64
+          minimum: 0
+        failureMessage:
+          type: [string, 'null']
+        completedAt:
+          type: [string, 'null']
+          format: date-time
+    DataGovSpatialSidecarRebuildRequest:
+      type: object
+      properties:
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 1000
+        maxPages:
+          type: integer
+          minimum: 1
+          maximum: 2000
+          default: 2000
+    DataGovSpatialSidecarRefreshResult:
+      type: object
+      required:
+        - build
+        - pagesFetched
+        - sourceRowsFetched
+        - publisherShapeRows
+        - retainedRows
+        - sourceQuarantinedShapeRows
+      properties:
+        build:
+          $ref: '#/components/schemas/ResearchSpatialSidecarBuild'
+        pagesFetched:
+          type: integer
+          minimum: 0
+        sourceRowsFetched:
+          type: integer
+          format: int64
+          minimum: 0
+        publisherShapeRows:
+          type: integer
+          format: int64
+          minimum: 0
+        retainedRows:
+          type: integer
+          format: int64
+          minimum: 0
+        sourceQuarantinedShapeRows:
+          type: integer
+          format: int64
+          minimum: 0
+    DataGovSpatialSidecarStatusResponse:
+      type: object
+      required: [activeRowCount]
+      properties:
+        activeBuild:
+          oneOf:
+            - $ref: '#/components/schemas/ResearchSpatialSidecarBuild'
+            - type: 'null'
+        activeRowCount:
+          type: integer
+          format: int64
+          minimum: 0
     FederatedSourceSystem:
       type: string
       enum: [DATA_GOV, DOE_OSTI, NASA_CMR, PUBMED, OPENALEX]

@@ -476,6 +476,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/spatial/datagov/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Inspect the active Data.gov spatial sidecar build */
+    get: operations['getDataGovSpatialSidecarStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/spatial/datagov/rebuild': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rebuild and atomically activate the retained-C2 Data.gov spatial sidecar
+     * @description Traverses the current Data.gov geospatial subset, preserves publisher spatial_shape geometry, filters persistence to retained C2 Data.gov identities, stamps the active composition/projection identity, and activates the new build only after the full traversal succeeds. A personal Data.gov API key and the exact active FEDERATED_1M corpus are required.
+     */
+    post: operations['rebuildDataGovSpatialSidecar'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/federation/harvest/status': {
     parameters: {
       query?: never;
@@ -724,6 +761,48 @@ export interface components {
       projectionRebuiltAt: string;
       /** Format: date-time */
       linkedAt: string;
+    };
+    /** @enum {string} */
+    ResearchSpatialSidecarBuildStatus: 'RUNNING' | 'COMPLETE' | 'FAILED';
+    ResearchSpatialSidecarBuild: {
+      buildId: string;
+      sourceSystem: components['schemas']['FederatedSourceSystem'];
+      schemaVersion: number;
+      /** Format: date-time */
+      sourceSnapshotAt: string;
+      /** Format: date-time */
+      capturedAt: string;
+      compositionSha256: string;
+      projectionId: string;
+      status: components['schemas']['ResearchSpatialSidecarBuildStatus'];
+      /** Format: int64 */
+      rowCount: number;
+      failureMessage?: string | null;
+      /** Format: date-time */
+      completedAt?: string | null;
+    };
+    DataGovSpatialSidecarRebuildRequest: {
+      /** @default 1000 */
+      pageSize: number;
+      /** @default 2000 */
+      maxPages: number;
+    };
+    DataGovSpatialSidecarRefreshResult: {
+      build: components['schemas']['ResearchSpatialSidecarBuild'];
+      pagesFetched: number;
+      /** Format: int64 */
+      sourceRowsFetched: number;
+      /** Format: int64 */
+      publisherShapeRows: number;
+      /** Format: int64 */
+      retainedRows: number;
+      /** Format: int64 */
+      sourceQuarantinedShapeRows: number;
+    };
+    DataGovSpatialSidecarStatusResponse: {
+      activeBuild?: components['schemas']['ResearchSpatialSidecarBuild'] | null;
+      /** Format: int64 */
+      activeRowCount: number;
     };
     /** @enum {string} */
     FederatedSourceSystem:
@@ -2294,6 +2373,54 @@ export interface operations {
       };
       400: components['responses']['BadRequest'];
       404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  getDataGovSpatialSidecarStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Active sidecar build and row count, if one has been activated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DataGovSpatialSidecarStatusResponse'];
+        };
+      };
+      500: components['responses']['InternalServerError'];
+    };
+  };
+  rebuildDataGovSpatialSidecar: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['DataGovSpatialSidecarRebuildRequest'];
+      };
+    };
+    responses: {
+      /** @description Completed and activated Data.gov spatial sidecar build. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DataGovSpatialSidecarRefreshResult'];
+        };
+      };
+      400: components['responses']['BadRequest'];
       409: components['responses']['Conflict'];
       500: components['responses']['InternalServerError'];
     };
