@@ -22,14 +22,12 @@ The baseline includes deterministic composition/projection identity, Gold Master
 
 The project does **not** need another million-record run merely to prove that the first million works.
 
-## Near-term sequence
+## Near-term completion sequence
 
 ```text
 #46  Close/freeze certified C2 documentation
         |
         +--> #47  C2.1 adversarial standalone validation
-        |
-        +--> #48  PI-2 Kubernetes topology research
         |
         +--> #49  Manual accessibility evidence
                     |
@@ -37,50 +35,34 @@ The project does **not** need another million-record run merely to prove that th
 #51  Final frontend mission alignment / portfolio polish
 ```
 
+Issue #48, the local Kubernetes topology laboratory, is closed as not planned for this completion path. A clustered topology remains a legitimate future experiment only if deployment/resilience becomes a real requirement.
+
 ## #47 — C2.1 adversarial validation
 
-C2.1 is optional follow-up research designed to challenge the existing Solr-favoring observation.
+C2.1 is the final planned search-research experiment. It is designed to challenge the existing Solr-favoring observation, not reinforce it by construction.
 
 The protocol is frozen in [C2_ADVERSARIAL_VALIDATION_PROTOCOL.md](C2_ADVERSARIAL_VALIDATION_PROTOCOL.md) before new C2.1 timing data are collected.
 
-Future outcome:
+Outcome target:
 
 - exact pinned engine versions;
 - explicit/equalized resource controls;
 - semantically validated OpenSearch optimizations;
-- preregistered multi-query full-text matrix;
+- preregistered Q01-Q20 full-text matrix;
 - broad/moderate/genuinely selective filter bands;
 - p50/p90/p95/p99;
-- more independently warmed batches;
+- independently warmed batches;
 - balanced randomized order;
 - multiple clean engine/container restart blocks;
-- reporting that retains every preregistered cell, including OpenSearch wins.
+- reporting that retains every preregistered cell, including OpenSearch wins or inconclusive cells.
 
 C2.1 succeeds if it is reproducible and capable of contradicting C2. Solr does not need to win for the experiment to succeed.
-
-## #48 — PI-2 local Kubernetes search laboratory
-
-PI-2 makes topology the experimental variable while preserving the frozen corpus/query contracts.
-
-Future outcome:
-
-- repository-owned kind lifecycle;
-- SolrCloud through the official Solr Operator and ZooKeeper;
-- supported multi-node OpenSearch deployment;
-- explicit shards/replicas/heap/CPU/memory/storage metadata;
-- unchanged Angular/Spring request semantics;
-- identical 10K/100K/1M corpus/query definitions;
-- 1/8/32 client comparisons;
-- controlled node-loss/recovery per engine;
-- post-recovery projection identity/parity evidence.
-
-Compose remains the default fast development/demo path and standalone control topology. Kind results are local clustered evidence, never a proxy for physical/cloud-node performance.
 
 ## #49 — Manual accessibility evidence
 
 The automated accessibility architecture is mature; remaining work is human verification.
 
-Future outcome:
+Outcome target:
 
 - dated/commit-bound keyboard-only evidence;
 - NVDA in Firefox and Chrome/Chromium;
@@ -97,7 +79,7 @@ Automated axe, Storybook and browser evidence never substitute for these manual 
 
 The intended final product-facing milestone is to make the repository present itself first as a government-grade Angular Open Science/data-discovery frontend.
 
-Future outcome:
+Outcome target:
 
 - frontend-first README hierarchy;
 - Angular/NgRx/OpenAPI/accessibility case study;
@@ -107,29 +89,22 @@ Future outcome:
 - full-stack/search research retained as technical depth under the UI story;
 - non-affiliation language preserved.
 
-The backend/search work is not removed or minimized technically. It becomes evidence that the frontend is built against realistic authority, scale, latency and failure conditions.
+## Deferred topology / infrastructure work
 
-## PI-3 — Infrastructure as Code / AWS
+Local Kubernetes, SolrCloud/OpenSearch clustering and AWS/IaC are **not prerequisites** for completing the current repository.
 
-PI-3 is optional after PI-2.
+They may be reopened later if the project gains a concrete need to study:
 
-Choose Terraform or CDK only after local clustered evidence provides defensible guidance for:
+- clustered resilience or failover;
+- production/cloud deployment;
+- shard/replica behavior across nodes;
+- physical/cloud capacity planning.
 
-- node/pod sizing;
-- shard/replica strategy;
-- persistent storage;
-- JVM/resource defaults;
-- observability;
-- backup/restore;
-- readiness/liveness;
-- deployment/rollback;
-- whether both search engines are required outside the comparison laboratory.
+A one-workstation kind cluster should not be treated as cleaner standalone engine evidence or as a proxy for cloud performance.
 
 ## Optional federation/source expansion
 
-Additional sources are no longer prerequisites for the certified standalone baseline.
-
-Pursue them only when they answer a new research/product question:
+Additional sources are not prerequisites for the certified standalone baseline. Pursue them only when they answer a new research/product question:
 
 1. NASA Earthdata CMR collection/granule spatial-temporal evidence;
 2. PubMed bibliographic/abstract ingestion after DOI/PMID reconciliation is explicit;
@@ -138,15 +113,6 @@ Pursue them only when they answer a new research/product question:
 Prefer bounded/reproducible source paths and publisher bulk/snapshot mechanisms over millions of ordinary API requests.
 
 ## Optional Maps expansion
-
-The existing category/accessibility architecture remains the pattern:
-
-```text
-Geography & Boundaries
-Community & Economy
-Environment & Hazards
-Research Coverage
-```
 
 Potential future additions include Population Estimates, County Business Patterns, Business Dynamics Statistics, Building Permits, Economic Census, weighted PUMS aggregates and one configurable 3DEP terrain/reference layer.
 
@@ -160,16 +126,7 @@ Rules:
 
 ## Optional search breadth
 
-After C2.1/PI-2, richer scenarios may include:
-
-- phrase search/highlighting;
-- geo;
-- autocomplete/suggest;
-- synonyms;
-- nested/object fields;
-- vector/hybrid search.
-
-These are breadth experiments, not missing requirements in the certified lexical baseline.
+After C2.1, richer scenarios may include phrase search/highlighting, geo, autocomplete/suggest, synonyms, nested/object fields and vector/hybrid search. These are breadth experiments, not missing requirements in the certified lexical baseline.
 
 ## Cross-cutting product/governance work
 
@@ -183,4 +140,4 @@ These are breadth experiments, not missing requirements in the certified lexical
 
 ## Non-goals
 
-The roadmap does not include replacing DSpace with a search engine, making search indexes authoritative, forcing federated records into DSpace, deleting Compose after Kubernetes, downloading millions of binaries merely to inflate scale, running million-record work in ordinary PR CI, inferring research geography from publisher location, rendering raw microdata people/households as map points, sending unbounded spatial data to MapLibre, or claiming complete Section 508 conformance from automated scans.
+The roadmap does not include replacing DSpace with a search engine, making search indexes authoritative, forcing federated records into DSpace, downloading millions of binaries merely to inflate scale, running million-record work in ordinary PR CI, inferring research geography from publisher location, rendering raw microdata people/households as map points, sending unbounded spatial data to MapLibre, or claiming complete Section 508 conformance from automated scans.
