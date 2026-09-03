@@ -23,6 +23,13 @@ public record ResearchSpatialCoverageFeature(
     private static final ObjectMapper JACKSON_2_MAPPER = new ObjectMapper();
     private static final TypeReference<Map<String, Object>> GEOMETRY_TYPE = new TypeReference<>() {};
 
+    public ResearchSpatialCoverageFeature {
+        if (geometry == null || geometry.isEmpty()) {
+            throw new IllegalArgumentException("Research coverage geometry must be a GeoJSON object.");
+        }
+        geometry = Map.copyOf(geometry);
+    }
+
     /**
      * Bridge the Jackson 2 tree used by the persisted sidecar reader into plain Java JSON values.
      *
