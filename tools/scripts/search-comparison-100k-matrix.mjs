@@ -172,7 +172,7 @@ export async function runHundredKSearchComparisonMatrix({
     executionOrder,
     comparativeClaimAllowed: false,
     methodology:
-      'Each workload uses the existing diagnostic harness with warmups excluded and the same deterministic projection required for every sample. The matrix distinguishes full-text relevance, corpus-wide facets, broad filtering, and adaptive selective filtering. Engine execution order is explicit so reversed-order passes can test order sensitivity. Results remain local single-topology diagnostics rather than proof that either engine is inherently faster in production.',
+      'Each supplied workload uses the existing diagnostic harness with warmups excluded and the same deterministic projection required for every sample. The standalone default matrix covers full-text relevance, corpus-wide facets, and broad filtering; adaptive callers may add a live selective-filter workload. Engine execution order is explicit so reversed-order passes can test order sensitivity. Results remain local single-topology diagnostics rather than proof that either engine is inherently faster in production.',
     evidence: {
       retainedFederatedRecordCount: evidence.retainedFederatedRecordCount,
       activeProfile: evidence.activeProfile,
