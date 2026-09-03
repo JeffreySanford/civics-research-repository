@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import './search-comparison-c2-evidence.test.mjs';
 import './search-comparison-statistical-report.test.mjs';
 import { summarizePairedLatencyEvidence } from './search-comparison-statistics.mjs';
 
