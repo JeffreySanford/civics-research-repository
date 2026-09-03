@@ -6,9 +6,9 @@
         Discover, connect, and map public research at federal scale
       </h1>
       <p class="landing-hero__intro">
-        Explore curated DSpace research alongside reproducible Data.gov and DOE
-        OSTI metadata, then carry that context into geospatial analysis,
-        provenance, search-engine comparison, and accessibility evidence.
+        Search curated DSpace research beside reproducible Data.gov and DOE OSTI
+        metadata, then carry that context into maps, provenance, and reviewable
+        accessibility evidence.
       </p>
 
       <div class="landing-hero__actions">
@@ -16,7 +16,6 @@
           Search the research corpus
         </a>
         <a mat-stroked-button routerLink="/maps">Explore research maps</a>
-        <a mat-stroked-button routerLink="/evidence">Review evidence</a>
       </div>
 
       <ul class="landing-hero__signals" aria-label="Platform capabilities">
@@ -28,24 +27,25 @@
     </div>
 
     <aside class="scale-card" aria-labelledby="scale-heading">
-      <p class="scale-card__eyebrow">Certified scale milestone</p>
-      <h2 id="scale-heading">C2 Gold Master</h2>
+      <p class="scale-card__eyebrow">Certified C2 corpus</p>
+      <h2 id="scale-heading">1,000,181 searchable records</h2>
       <p class="scale-card__intro">
-        A reproducible mixed-source corpus with exact composition and projection
-        identity—not an arbitrary million-row load test.
+        A reproducible Gold Master with exact source composition and projection
+        identity.
+      </p>
+
+      <p class="scale-card__recipe">
+        <strong>500K Data.gov + 500K DOE OSTI</strong>
+        <span>plus 181 curated DSpace research objects</span>
       </p>
 
       <dl class="scale-card__metrics">
         <div>
-          <dt>Search documents</dt>
-          <dd>1,000,181</dd>
+          <dt>Federated</dt>
+          <dd>1M</dd>
         </div>
         <div>
-          <dt>Federated records</dt>
-          <dd>1,000,000</dd>
-        </div>
-        <div>
-          <dt>Curated DSpace objects</dt>
+          <dt>Curated</dt>
           <dd>181</dd>
         </div>
         <div>
@@ -54,10 +54,6 @@
         </div>
       </dl>
 
-      <p class="scale-card__recipe">
-        <strong>Exact federated recipe</strong>
-        <span>500K Data.gov + 500K DOE OSTI</span>
-      </p>
       <a class="scale-card__link" routerLink="/search-lab">
         Compare Solr and OpenSearch
         <span aria-hidden="true">→</span>
@@ -65,175 +61,88 @@
     </aside>
   </section>
 
-  <section aria-labelledby="evolution-heading" class="landing-evolution">
-    <p class="eyebrow">Project evolution</p>
-    <h2 id="evolution-heading">
-      From Census geospatial discovery with repository sync to a federal-scale
-      Open Science platform
-    </h2>
-    <p>
-      The original repository slice is still here, but it now sits inside a
-      mixed-source research platform with a certified million-record corpus,
-      durable search identity, federated detail routing, bounded publisher
-      geometry, search-engine comparison, and reviewable accessibility evidence.
-    </p>
-  </section>
-
-  <section aria-labelledby="journey-heading" class="landing-section">
-    <div class="landing-section__heading">
-      <p class="eyebrow">Research journey</p>
-      <h2 id="journey-heading">
-        Start with a question. Keep the evidence attached.
-      </h2>
-      <p>
-        The public experience, repository operations, and engineering evidence
-        are connected instead of being separate demo screens.
-      </p>
+  <section aria-labelledby="start-heading" class="landing-section landing-start">
+    <div class="landing-section__heading landing-section__heading--compact">
+      <p class="eyebrow">Start here</p>
+      <h2 id="start-heading">Move from question to evidence</h2>
+      <p>Three primary paths cover the public research experience.</p>
     </div>
 
     <div class="experience-grid">
       <a class="experience-card" routerLink="/discovery">
-        <span class="experience-card__number" aria-hidden="true">01</span>
         <span class="experience-card__kicker">Discover</span>
         <strong>Search connected research</strong>
         <span>
-          Search and facet across curated and federated datasets, publications,
-          methodology, projects, publishers, programs, and provenance.
+          Search and facet across curated and federated research with source
+          authority and provenance kept visible.
         </span>
         <span class="experience-card__cta">Open Discovery →</span>
       </a>
 
       <a class="experience-card" routerLink="/maps">
-        <span class="experience-card__number" aria-hidden="true">02</span>
         <span class="experience-card__kicker">Analyze</span>
         <strong>Move from records to place</strong>
         <span>
           Combine Census geography, LODES, SAIPE, USGS references, and Data.gov
-          publisher geometry with accessible table and list equivalents.
+          publisher geometry with accessible equivalents.
         </span>
         <span class="experience-card__cta">Open Maps →</span>
       </a>
 
-      <a class="experience-card" routerLink="/search-lab">
-        <span class="experience-card__number" aria-hidden="true">03</span>
-        <span class="experience-card__kicker">Compare</span>
-        <strong>Inspect search behavior</strong>
-        <span>
-          Compare aligned Solr and OpenSearch projections with the active corpus
-          identity visible beside the results.
-        </span>
-        <span class="experience-card__cta">Open Search Lab →</span>
-      </a>
-
-      <a class="experience-card" routerLink="/admin/sync">
-        <span class="experience-card__number" aria-hidden="true">04</span>
-        <span class="experience-card__kicker">Operate</span>
-        <strong>Trace authority to projection</strong>
-        <span>
-          Review repository sync, federation, corpus archives, active search
-          profiles, and the Authority → Retention → Projection data flow.
-        </span>
-        <span class="experience-card__cta">Open Admin →</span>
-      </a>
-
       <a class="experience-card" routerLink="/evidence">
-        <span class="experience-card__number" aria-hidden="true">05</span>
         <span class="experience-card__kicker">Verify</span>
         <strong>Review conformance evidence</strong>
         <span>
-          Inspect automated browser and axe evidence alongside explicit manual
-          keyboard, assistive-technology, map-equivalence, and cognitive review
-          work.
+          Inspect browser, axe, keyboard, reflow, map-equivalence, and manual
+          accessibility evidence.
         </span>
         <span class="experience-card__cta">Open Evidence →</span>
       </a>
     </div>
+
+    <nav class="operator-tools" aria-label="Operator and engineering tools">
+      <span>Operator tools</span>
+      <a routerLink="/search-lab">Search Lab</a>
+      <a routerLink="/admin/sync">Repository &amp; corpus administration</a>
+    </nav>
   </section>
 
   <section aria-labelledby="architecture-heading" class="platform-story">
     <div class="platform-story__copy">
       <p class="eyebrow">Architecture</p>
-      <h2 id="architecture-heading">
-        Authority stays explicit. Search stays rebuildable.
-      </h2>
+      <h2 id="architecture-heading">Authority stays explicit. Search stays rebuildable.</h2>
       <p>
-        Repository content and federated metadata have different owners and
-        lifecycles. The platform keeps those boundaries visible instead of
-        flattening every source into one opaque index.
+        Curated repository content, retained federation data, and disposable
+        search projections keep separate responsibilities.
       </p>
     </div>
 
-    <div class="authority-grid">
-      <article>
-        <span class="authority-grid__label">Curated authority</span>
-        <h3>DSpace 9</h3>
-        <p>
-          System of record for curated research objects, relations, versions,
-          metadata, and bitstreams.
-        </p>
-      </article>
-      <article>
-        <span class="authority-grid__label">Federated retention</span>
-        <h3>Application PostgreSQL</h3>
-        <p>
-          Reproducible external metadata, harvest checkpoints, quarantine,
-          corpus identity, and evidence history.
-        </p>
-      </article>
-      <article>
-        <span class="authority-grid__label">Discovery projection</span>
-        <h3>Solr + OpenSearch</h3>
-        <p>
-          Disposable, rebuildable normalized search projections tied to exact
-          corpus and projection evidence.
-        </p>
-      </article>
-      <article>
-        <span class="authority-grid__label">Research experience</span>
-        <h3>Angular + NgRx + MapLibre</h3>
-        <p>
-          Typed discovery, research-object detail, mapping, administration, and
-          accessibility-first equivalents.
-        </p>
-      </article>
-    </div>
+    <ol class="authority-flow" aria-label="Authority to research experience flow">
+      <li>
+        <span>01 · Curated authority</span>
+        <strong>DSpace 9</strong>
+      </li>
+      <li>
+        <span>02 · Federated retention</span>
+        <strong>PostgreSQL</strong>
+      </li>
+      <li>
+        <span>03 · Discovery projection</span>
+        <strong>Solr + OpenSearch</strong>
+      </li>
+      <li>
+        <span>04 · Research experience</span>
+        <strong>Angular + MapLibre</strong>
+      </li>
+    </ol>
   </section>
 
-  <section aria-labelledby="engineering-heading" class="landing-section">
-    <div class="landing-section__heading">
-      <p class="eyebrow">Engineering evidence</p>
-      <h2 id="engineering-heading">More than a catalog mockup</h2>
-      <p>
-        The repository is designed to make scale, provenance, accessibility, and
-        operational behavior reviewable—not just visually convincing.
-      </p>
-    </div>
-
-    <div class="proof-grid">
-      <article>
-        <h3>Reproducible at scale</h3>
-        <p>
-          Exact corpus composition, Gold Master archives, restart-safe active
-          projection identity, and measured million-record Solr/OpenSearch
-          parity make scale claims repeatable.
-        </p>
-      </article>
-      <article>
-        <h3>Accessible by construction</h3>
-        <p>
-          Keyboard behavior, reflow, zoom, forced colors, browser axe scans, and
-          semantic map equivalents are part of the delivery evidence.
-        </p>
-      </article>
-      <article>
-        <h3>Typed and inspectable</h3>
-        <p>
-          OpenAPI-generated Java and TypeScript contracts connect the Angular
-          experience to the Spring Boot API while source authority remains
-          visible to researchers and operators.
-        </p>
-      </article>
-    </div>
+  <footer class="landing-footer">
+    <p class="landing-evolution">
+      <strong>Project evolution:</strong> what began as Census geospatial discovery
+      with repository sync now demonstrates a reproducible federal-scale Open
+      Science architecture with a certified million-record corpus.
+    </p>
 
     <ul class="technology-strip" aria-label="Core technology stack">
       <li>Angular 22</li>
@@ -241,17 +150,14 @@
       <li>Spring Boot</li>
       <li>DSpace 9</li>
       <li>PostgreSQL</li>
-      <li>Apache Solr</li>
-      <li>OpenSearch</li>
       <li>MapLibre</li>
-      <li>Docker Compose</li>
       <li>Playwright + axe</li>
     </ul>
-  </section>
 
-  <p class="landing-disclaimer">
-    Independent reference implementation. Not affiliated with, endorsed by, or
-    sponsored by the U.S. Census Bureau, USGS, DSpace, Apache Solr, Data.gov,
-    DOE OSTI, or OpenSearch.
-  </p>
+    <p class="landing-disclaimer">
+      Independent reference implementation. Not affiliated with, endorsed by, or
+      sponsored by the U.S. Census Bureau, USGS, DSpace, Apache Solr, Data.gov,
+      DOE OSTI, or OpenSearch.
+    </p>
+  </footer>
 </div>
