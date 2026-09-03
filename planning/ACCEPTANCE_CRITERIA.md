@@ -158,21 +158,9 @@ Certified C2 remains historical/control evidence. C2.1 is a separately versioned
 - [ ] Every preregistered cell is reported, including OpenSearch wins.
 - [ ] C2.1 Evidence/reporting remains visibly distinct from certified C2.
 
-## PI-2 Kubernetes — #48
+## Deferred topology research
 
-- [x] Docker Compose remains the default fast development/demo and standalone control topology.
-- [ ] Repository-owned kind lifecycle exists.
-- [ ] SolrCloud deployment uses the official Solr Operator/ZooKeeper path.
-- [ ] Multi-node OpenSearch deployment exists through a supported local Kubernetes path.
-- [ ] Persistent storage/readiness/liveness/resource settings are explicit for clustered engines.
-- [ ] Standalone/clustered schemas/mappings/analyzers are verified semantically aligned.
-- [ ] Frozen corpus/query contracts are projected without changing record meaning.
-- [ ] Clustered Search Lab works through the Spring API boundary.
-- [ ] 1/8/32 clustered comparisons retain topology/resource metadata.
-- [ ] Controlled Solr node-loss/recovery evidence exists.
-- [ ] Controlled OpenSearch node-loss/recovery evidence exists.
-- [ ] Post-recovery projection identity/parity is verified.
-- [ ] No report claims kind predicts physical/cloud-node performance.
+Issue #48, the local Kubernetes search laboratory, is closed **not planned** for the current acceptance boundary. Docker Compose remains the default development/demo and standalone research topology. Clustered/Kubernetes acceptance criteria may be introduced later only if deployment/resilience becomes an explicit project requirement.
 
 ## Final frontend mission alignment — #51
 
