@@ -1,6 +1,7 @@
 package org.civicsrepo.spatial;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import org.civicsrepo.federation.FederatedSourceSystem;
 
@@ -36,8 +37,8 @@ public record ResearchSpatialSidecarRecord(
         if (schemaVersion < 1) {
             throw new IllegalArgumentException("schemaVersion must be positive");
         }
-        Objects.requireNonNull(sourceSnapshotAt, "sourceSnapshotAt");
-        Objects.requireNonNull(capturedAt, "capturedAt");
+        sourceSnapshotAt = databaseTimestamp(sourceSnapshotAt, "sourceSnapshotAt");
+        capturedAt = databaseTimestamp(capturedAt, "capturedAt");
         compositionSha256 = requireSha(compositionSha256, "compositionSha256");
         projectionId = requireSha(projectionId, "projectionId");
         Objects.requireNonNull(geometryStatus, "geometryStatus");
@@ -89,6 +90,10 @@ public record ResearchSpatialSidecarRecord(
                 && minLat != null
                 && maxLon != null
                 && maxLat != null;
+    }
+
+    private static OffsetDateTime databaseTimestamp(OffsetDateTime value, String field) {
+        return Objects.requireNonNull(value, field).truncatedTo(ChronoUnit.MICROS);
     }
 
     private static void requirePair(Object left, Object right, String field) {
