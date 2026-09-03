@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -403,14 +404,14 @@ class ResearchSpatialCoverageQueryServiceTest {
                 .param("buildId", BUILD_ID)
                 .param("identifier", identifier)
                 .param("geometryStatus", status.name());
-        statement.param("geometryJson", geometryJson, String.class);
-        statement.param("minLon", minLon, Double.class);
-        statement.param("minLat", minLat, Double.class);
-        statement.param("maxLon", maxLon, Double.class);
-        statement.param("maxLat", maxLat, Double.class);
-        statement.param("renderLon", renderLon, Double.class);
-        statement.param("renderLat", renderLat, Double.class);
-        statement.param("renderMethod", renderMethod, String.class);
+        statement.param("geometryJson", geometryJson, Types.VARCHAR);
+        statement.param("minLon", minLon, Types.DOUBLE);
+        statement.param("minLat", minLat, Types.DOUBLE);
+        statement.param("maxLon", maxLon, Types.DOUBLE);
+        statement.param("maxLat", maxLat, Types.DOUBLE);
+        statement.param("renderLon", renderLon, Types.DOUBLE);
+        statement.param("renderLat", renderLat, Types.DOUBLE);
+        statement.param("renderMethod", renderMethod, Types.VARCHAR);
         statement.update();
     }
 
