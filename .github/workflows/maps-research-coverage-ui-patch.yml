@@ -7,6 +7,7 @@ on:
     paths:
       - tools/scripts/patch-maps-research-coverage-evidence.mjs
       - tools/scripts/patch-maps-research-coverage-fallback.mjs
+      - tools/scripts/fix-maps-research-coverage-limit-param.mjs
       - apps/discovery-ui-e2e/src/research-coverage.spec.ts
       - .github/workflows/maps-research-coverage-ui-patch.yml
 
@@ -33,6 +34,8 @@ jobs:
         run: node tools/scripts/patch-maps-research-coverage-fallback.mjs
       - name: Apply evidence migration
         run: node tools/scripts/patch-maps-research-coverage-evidence.mjs
+      - name: Align bounded API parameter name
+        run: node tools/scripts/fix-maps-research-coverage-limit-param.mjs
       - name: Format changed files
         run: >-
           pnpm exec prettier --write
