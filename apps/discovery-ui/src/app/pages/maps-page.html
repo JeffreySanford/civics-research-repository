@@ -253,7 +253,6 @@
           </div>
         </details>
 
-        @if (researchCoverageSummary$ | async; as researchCoverage) {
         <details
           class="layer-category"
           data-testid="map-layer-category-research-coverage"
@@ -276,7 +275,7 @@
                   (change)="toggleResearchCoverageLayer($any($event.target).checked)"
                 />
                 <span class="layer-toggle-label"
-                  >Repository research by area</span
+                  >Data.gov publisher research geometry</span
                 >
               </label>
               <button
@@ -286,14 +285,18 @@
                 data-testid="map-layer-research-coverage-info"
                 [matTooltip]="layerTooltips.research"
                 matTooltipPosition="above"
-                aria-label="About Repository research by area layer"
+                aria-label="About Data.gov publisher research geometry layer"
               >
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
             </span>
+            @if (researchCoverageLoading$ | async) {
+            <span class="feature-hint" role="status"
+              >Updating research coverage for the current viewport…</span
+            >
+            }
           </div>
         </details>
-        }
       </fieldset>
     </div>
 
@@ -320,8 +323,9 @@
           <dt>Active data</dt>
           <dd>
             LODES workplace flows and TIGER/Line geography, with SAIPE county
-            context where retained for the selected area and repository research
-            coverage where records explicitly name a supported Census area
+            context where retained for the selected area and Data.gov research
+            coverage from publisher-supplied spatial geometry in the active
+            sidecar
           </dd>
         </div>
       </dl>
@@ -408,9 +412,16 @@
           (researchCoverageSummary$ | async; as researchCoverage) {
           <li>
             <span class="swatch research"></span>
-            Repository research by area ({{ researchCoverage.mappedResults |
-            number }} mapped of {{ researchCoverage.totalResults | number }}
-            matching)
+            Data.gov publisher research geometry ({{
+            researchCoverage.viewportMappedResults | number }} mapped in view;
+            {{ researchCoverage.returnedFeatures | number }} returned of {{
+            researchCoverage.totalResults | number }} matching) @if
+            (researchCoverage.truncated) {
+            <span class="status-pill stale"
+              >bounded to {{ researchCoverage.featureLimit | number }}
+              features</span
+            >
+            }
           </li>
           } } @if (hydrographyVisible$ | async) {
           <li>
@@ -709,47 +720,83 @@
         <strong>LODES workplace employment unavailable</strong>
         <span>Other map layers remain available.</span>
       </li>
-      } } } @if (researchCoverageVisible$ | async) { @if
-      (researchCoverageSummary$ | async; as researchCoverage) {
+      } } } @if (researchCoverageVisible$ | async) {
       <li>
         <section
           class="research-coverage-summary"
           aria-labelledby="research-coverage-summary-heading"
         >
           <h3 id="research-coverage-summary-heading">
-            Repository research by area
+            Data.gov publisher research geometry
           </h3>
+          @if (researchCoverageLoading$ | async) {
+          <p class="feature-hint" role="status">
+            Updating publisher spatial coverage for the current map viewport.
+          </p>
+          } @if (researchCoverageSummary$ | async; as researchCoverage) {
           <p>
             {{ researchCoverage.mappedResults | number }} of {{
-            researchCoverage.totalResults | number }} matching research objects
-            explicitly name a supported Census area. {{
-            researchCoverage.unmappedResults | number }} matching objects are
-            not drawn; publisher, laboratory, author, and institution locations
-            are not substituted for research geography.
+            researchCoverage.totalResults | number }} matching Data.gov research
+            objects have publisher spatial geometry. {{
+            researchCoverage.unmappedResults | number }} have no publisher
+            geometry and {{ researchCoverage.quarantinedResults | number }} have
+            geometry that failed validation. The current viewport contains {{
+            researchCoverage.viewportMappedResults | number }} mapped objects;
+            {{ researchCoverage.returnedFeatures | number }} bounded features
+            are returned to the browser. Publisher, laboratory, author, and
+            institution addresses are never substituted for missing research
+            geometry.
           </p>
-          @if (researchCoverage.areas.length) {
+          @if (researchCoverage.unanchoredAntimeridianResults > 0) {
+          <p class="feature-hint">
+            {{ researchCoverage.unanchoredAntimeridianResults | number }}
+            antimeridian candidate geometries lack a safe render anchor and are
+            not mapped.
+          </p>
+          } @if (researchCoverage.truncated) {
+          <p class="feature-hint">
+            {{ researchCoverage.omittedFeatures | number }} additional mapped
+            objects in this viewport are omitted by the {{
+            researchCoverage.featureLimit | number }}-feature browser safety
+            limit. Pan or zoom to refine the bounded result.
+          </p>
+          } @if (researchCoverage.features.length) {
           <table class="county-value-table">
             <caption>
-              Matching research objects with explicit administrative geography
+              Publisher-spatial research objects returned for the current map
+              viewport
             </caption>
             <thead>
               <tr>
-                <th scope="col">Census area</th>
-                <th scope="col">Matching research objects</th>
-                <th scope="col">Discovery</th>
+                <th scope="col">Research object</th>
+                <th scope="col">Publisher</th>
+                <th scope="col">Program / type</th>
+                <th scope="col">Geometry</th>
+                <th scope="col">Source</th>
               </tr>
             </thead>
             <tbody>
-              @for (area of researchCoverage.areas; track area.id) {
+              @for (feature of researchCoverage.features; track
+              feature.sourceIdentifier) {
               <tr>
-                <th scope="row">{{ area.geography }}</th>
-                <td>{{ area.count | number }}</td>
+                <th scope="row">{{ feature.title }}</th>
+                <td>{{ feature.publisher || 'Not stated' }}</td>
                 <td>
-                  <a
-                    [routerLink]="['/discovery']"
-                    [queryParams]="researchAreaSearchParams(area.geography)"
-                    >View matching research</a
+                  {{ feature.program || 'Not stated' }} / {{ feature.contentType
+                  || 'Not stated' }}
+                </td>
+                <td>
+                  @if (feature.geometryStatus === 'ANTIMERIDIAN_CANDIDATE') {
+                  Source-derived render anchor for antimeridian candidate }
+                  @else { Publisher geometry }
+                </td>
+                <td>
+                  @if (feature.sourceUrl) {
+                  <a class="source-link" [href]="feature.sourceUrl"
+                    >Open source record</a
                   >
+                  } @else { Data.gov source identifier {{
+                  feature.sourceIdentifier }} }
                 </td>
               </tr>
               }
@@ -757,14 +804,19 @@
           </table>
           } @else {
           <p class="feature-hint">
-            No matching records currently expose supported explicit
-            administrative geography for this search.
+            No publisher-spatial research objects from this search intersect the
+            current viewport.
+          </p>
+          }
+          <p class="feature-hint">
+            Spatial build {{ researchCoverage.buildId }} · source snapshot {{
+            researchCoverage.sourceSnapshotAt | date: 'medium' }} · projection
+            {{ researchCoverage.projectionId }}
           </p>
           }
         </section>
       </li>
-      } } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe)
-      {
+      } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {
       <li>
         <strong>{{ saipe.source }}</strong>
         <span>{{ saipe.attribution }} — {{ saipe.measureLabel }}</span>

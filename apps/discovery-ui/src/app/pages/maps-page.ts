@@ -38,6 +38,8 @@ import type {
   LodesWorkplaceOverlay,
   MapLayer,
   ResearchObjectType,
+  ResearchSpatialCoverageFeature,
+  ResearchSpatialViewport,
   SaipeCountyChoropleth,
   SearchQuery,
   SourceSystem,
@@ -59,6 +61,7 @@ import {
   selectMapsError,
   selectMapsLoading,
   selectResearchCoverageError,
+  selectResearchCoverageLoading,
   selectResearchCoverageSummary,
   selectResearchCoverageVisible,
   selectSaipeChoropleth,
@@ -132,14 +135,17 @@ type ResearchCoverageFeatureCollection = {
   features: {
     type: 'Feature';
     properties: {
-      geography: string;
-      count: number;
-      radius: number;
+      sourceIdentifier: string;
+      title: string;
+      publisher: string | null;
+      program: string | null;
+      contentType: string | null;
+      sourceUrl: string | null;
+      geometryStatus: string;
+      renderPointMethod: string | null;
+      mapRendering: 'PUBLISHER_GEOMETRY' | 'ANTIMERIDIAN_ANCHOR';
     };
-    geometry: {
-      type: 'Point';
-      coordinates: [number, number];
-    };
+    geometry: unknown;
   }[];
 };
 
@@ -189,13 +195,16 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private workplaceVisible = false;
   private censusAreaBoundaries: readonly CensusAreaBoundary[] = [];
   private selectedGeography = 'North Dakota';
-  private researchCoverageCriteria: SearchQuery = { page: 0, pageSize: 1 };
-  private researchCoverageFingerprint = '';
+  private researchCoverageCriteria: SearchQuery = {};
+  private researchCoverageCriteriaFingerprint = '';
+  private researchCoverageRequestFingerprint = '';
   /** Skips pan-driven area sync while fitBounds runs after a dropdown change. */
   private skipPanAreaSync = false;
   /** Skips fitBounds while pan-driven area sync updates boundary data in place. */
   private suppressBoundaryFit = false;
   private panAreaSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  private researchCoverageRefreshTimer: ReturnType<typeof setTimeout> | null =
+    null;
   protected readonly areaSyncAnnouncement = signal<string | null>(null);
   /**
    * How the map is built, on a control the reader has to ask.
@@ -222,7 +231,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     saipe:
       'Colors counties by SAIPE poverty rate for the selected state. The county value table below lists the same statistics shown on the map.',
     research:
-      'Shows matching research-object counts only where retained metadata explicitly names a supported Census area. Records without explicit research geography are counted as not mapped; publisher or institution locations are never substituted.',
+      'Shows bounded Data.gov research coverage from publisher-supplied spatial geometry retained in the active spatial sidecar. The map never substitutes publisher, laboratory, author, or institution addresses for missing research geometry.',
     hydrography:
       'Adds USGS 3D Hydrography Program surface-water context from The National Map. Environmental geography, not Census boundaries.',
     earthquake:
@@ -261,6 +270,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   );
   protected readonly researchCoverageSummary$ = this.store.select(
     selectResearchCoverageSummary,
+  );
+  protected readonly researchCoverageLoading$ = this.store.select(
+    selectResearchCoverageLoading,
   );
   protected readonly researchCoverageError$ = this.store.select(
     selectResearchCoverageError,
@@ -408,7 +420,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((summary) => {
         this.pendingResearchCoverage = summary;
-        this.renderResearchCoverage();
+        if (summary) {
+          this.renderResearchCoverage();
+        } else {
+          this.clearResearchCoverageGeometry();
+        }
       });
 
     this.hydrographyLayer$
@@ -633,6 +649,65 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     }, 300);
   }
 
+  private scheduleResearchCoverageRefresh(delay = 250): void {
+    if (this.researchCoverageRefreshTimer !== null) {
+      clearTimeout(this.researchCoverageRefreshTimer);
+    }
+
+    this.researchCoverageRefreshTimer = setTimeout(() => {
+      this.researchCoverageRefreshTimer = null;
+      this.requestResearchCoverageForCurrentViewport();
+    }, delay);
+  }
+
+  private currentResearchViewport(): ResearchSpatialViewport | null {
+    if (!this.map) {
+      return null;
+    }
+
+    const bounds = this.map.getBounds();
+    return {
+      west: this.normalizeLongitude(bounds.getWest()),
+      south: Math.max(-90, Math.min(90, bounds.getSouth())),
+      east: this.normalizeLongitude(bounds.getEast()),
+      north: Math.max(-90, Math.min(90, bounds.getNorth())),
+    };
+  }
+
+  private normalizeLongitude(longitude: number): number {
+    const normalized = ((((longitude + 180) % 360) + 360) % 360) - 180;
+    return normalized === -180 && longitude > 0 ? 180 : normalized;
+  }
+
+  private requestResearchCoverageForCurrentViewport(): void {
+    const viewport = this.currentResearchViewport();
+    if (!viewport) {
+      return;
+    }
+
+    const viewportKey = [
+      viewport.west,
+      viewport.south,
+      viewport.east,
+      viewport.north,
+    ]
+      .map((value) => value.toFixed(5))
+      .join(',');
+    const fingerprint =
+      this.researchCoverageCriteriaFingerprint + '|' + viewportKey;
+    if (fingerprint === this.researchCoverageRequestFingerprint) {
+      return;
+    }
+
+    this.researchCoverageRequestFingerprint = fingerprint;
+    this.store.dispatch(
+      MapsActions.researchCoverageRequested({
+        query: this.researchCoverageCriteria,
+        viewport,
+      }),
+    );
+  }
+
   private bindPanAreaSync(): void {
     if (!this.map) {
       return;
@@ -641,10 +716,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     const onMoveEnd = (): void => {
       if (this.skipPanAreaSync) {
         this.skipPanAreaSync = false;
-        return;
+      } else {
+        this.schedulePanAreaSync();
       }
 
-      this.schedulePanAreaSync();
+      this.scheduleResearchCoverageRefresh();
     };
 
     const onZoomChanged = (): void => this.refreshHydrographyZoomHint();
@@ -652,9 +728,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.map.on('moveend', onMoveEnd);
     this.map.on('zoomend', onZoomChanged);
     onZoomChanged();
+    this.scheduleResearchCoverageRefresh(0);
     this.destroyRef.onDestroy(() => {
       if (this.panAreaSyncTimer !== null) {
         clearTimeout(this.panAreaSyncTimer);
+      }
+      if (this.researchCoverageRefreshTimer !== null) {
+        clearTimeout(this.researchCoverageRefreshTimer);
       }
 
       this.map?.off('moveend', onMoveEnd);
@@ -700,8 +780,6 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
         const query: SearchQuery = {
           q,
-          page: 0,
-          pageSize: 1,
           ...(programs.length ? { programs } : {}),
           ...(publisher ? { publisher } : {}),
           ...(sourceSystem
@@ -716,9 +794,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
         this.researchCoverageCriteria = query;
         const fingerprint = JSON.stringify(query);
-        if (fingerprint !== this.researchCoverageFingerprint) {
-          this.researchCoverageFingerprint = fingerprint;
-          this.store.dispatch(MapsActions.researchCoverageRequested({ query }));
+        if (fingerprint !== this.researchCoverageCriteriaFingerprint) {
+          this.researchCoverageCriteriaFingerprint = fingerprint;
+          this.researchCoverageRequestFingerprint = '';
+          this.scheduleResearchCoverageRefresh(0);
         }
       });
   }
@@ -737,12 +816,6 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         ? { vintageYear: String(query.vintageYear) }
         : {}),
     };
-  }
-
-  protected researchAreaSearchParams(
-    geography: string,
-  ): Record<string, string | string[]> {
-    return { ...this.backToSearchParams(), geography };
   }
 
   private bindUrlState(): void {
@@ -1535,6 +1608,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
    * normalized research metadata explicitly names a supported Census area; unmapped matches stay
    * visible in the semantic summary instead of being assigned a publisher location.
    */
+  /**
+   * Draws the current viewport's bounded publisher spatial evidence.
+   *
+   * Ordinary rows use the publisher GeoJSON retained by the versioned sidecar. Antimeridian
+   * candidates use the explicit source-derived render anchor instead of drawing a naive envelope
+   * across the world. The semantic table exposes the same bounded feature list and rendering mode.
+   */
   private renderResearchCoverage(): void {
     if (!this.map || !this.mapStyleReady || !this.pendingResearchCoverage) {
       return;
@@ -1559,42 +1639,67 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.map.addLayer({
-      id: 'repository-research-coverage-circles',
+      id: 'repository-research-coverage-fill',
+      type: 'fill',
+      source: 'repository-research-coverage',
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      layout: {
+        visibility: this.researchCoverageVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'fill-color': '#0f766e',
+        'fill-opacity': 0.28,
+      },
+    });
+
+    this.map.addLayer({
+      id: 'repository-research-coverage-line',
+      type: 'line',
+      source: 'repository-research-coverage',
+      filter: [
+        'any',
+        ['==', ['geometry-type'], 'LineString'],
+        ['==', ['geometry-type'], 'Polygon'],
+      ],
+      layout: {
+        visibility: this.researchCoverageVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'line-color': '#115e59',
+        'line-width': 2.5,
+        'line-opacity': 0.9,
+      },
+    });
+
+    this.map.addLayer({
+      id: 'repository-research-coverage-points',
       type: 'circle',
       source: 'repository-research-coverage',
+      filter: ['==', ['geometry-type'], 'Point'],
       layout: {
         visibility: this.researchCoverageVisible ? 'visible' : 'none',
       },
       paint: {
         'circle-color': '#0f766e',
-        'circle-opacity': 0.72,
+        'circle-opacity': 0.82,
+        'circle-radius': 7,
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 2,
-        'circle-radius': [
-          'to-number',
-          ['get', 'radius'],
-        ] as DataDrivenPropertyValueSpecification<number>,
-      },
-    });
-
-    this.map.addLayer({
-      id: 'repository-research-coverage-labels',
-      type: 'symbol',
-      source: 'repository-research-coverage',
-      layout: {
-        visibility: this.researchCoverageVisible ? 'visible' : 'none',
-        'text-field': ['to-string', ['get', 'count']],
-        'text-size': 12,
-        'text-allow-overlap': false,
-      },
-      paint: {
-        'text-color': '#ffffff',
-        'text-halo-color': '#134e4a',
-        'text-halo-width': 1,
       },
     });
 
     this.applyLayerVisibility();
+  }
+
+  private clearResearchCoverageGeometry(): void {
+    if (!this.map || !this.mapStyleReady) {
+      return;
+    }
+
+    const source = this.map.getSource(
+      'repository-research-coverage',
+    ) as GeoJSONSource | null;
+    source?.setData({ type: 'FeatureCollection', features: [] });
   }
 
   private renderHydrographyLayer(): void {
@@ -1652,23 +1757,46 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private createResearchCoverageGeoJson(
     summary: ResearchCoverageSummary,
   ): ResearchCoverageFeatureCollection {
-    const largest = Math.max(1, ...summary.areas.map((area) => area.count));
-
     return {
       type: 'FeatureCollection',
-      features: summary.areas.map((area) => ({
+      features: summary.features.map((feature) => ({
         type: 'Feature',
         properties: {
-          geography: area.geography,
-          count: area.count,
-          radius: 7 + 21 * Math.sqrt(area.count / largest),
+          sourceIdentifier: feature.sourceIdentifier,
+          title: feature.title,
+          publisher: feature.publisher ?? null,
+          program: feature.program ?? null,
+          contentType: feature.contentType ?? null,
+          sourceUrl: feature.sourceUrl ?? null,
+          geometryStatus: feature.geometryStatus,
+          renderPointMethod: feature.renderPointMethod ?? null,
+          mapRendering:
+            feature.geometryStatus === 'ANTIMERIDIAN_CANDIDATE'
+              ? 'ANTIMERIDIAN_ANCHOR'
+              : 'PUBLISHER_GEOMETRY',
         },
-        geometry: {
-          type: 'Point',
-          coordinates: [area.centerLongitude, area.centerLatitude],
-        },
+        geometry: this.researchCoverageMapGeometry(feature),
       })),
     };
+  }
+
+  private researchCoverageMapGeometry(
+    feature: ResearchSpatialCoverageFeature,
+  ): unknown {
+    if (
+      feature.geometryStatus === 'ANTIMERIDIAN_CANDIDATE' &&
+      feature.renderLon !== null &&
+      feature.renderLon !== undefined &&
+      feature.renderLat !== null &&
+      feature.renderLat !== undefined
+    ) {
+      return {
+        type: 'Point',
+        coordinates: [feature.renderLon, feature.renderLat],
+      };
+    }
+
+    return feature.geometry;
   }
 
   private createEarthquakeGeoJson(
