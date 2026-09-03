@@ -290,9 +290,72 @@ test('resource delta separates cumulative counters from instantaneous observatio
     0.6,
   );
   assert.equal(result.solr.cpuAndLoadMetricDeltas, undefined);
+  assert.equal(result.counterResetDetected, false);
+  assert.deepEqual(result.counterResetFields, []);
   assert.equal(result.docker.solr.memoryUsedBytesDelta, 200);
   assert.equal(result.docker.solr.beforeCpuPercent, 10);
   assert.equal(result.docker.solr.afterCpuPercent, 11);
+});
+
+test('resource delta omits regressed counters and surfaces reset evidence', () => {
+  const before = {
+    openSearch: {
+      process: { cpuTotalMillis: 1000, cpuPercent: 10 },
+      jvm: {
+        gcCollectionCount: 20,
+        gcCollectionTimeMillis: 200,
+        heapUsedBytes: 300,
+      },
+      search: { queryTotal: 500, queryTimeMillis: 4000 },
+    },
+    solr: {
+      normalizedMetricGroups: {
+        garbageCollection: { 'jvm.gc.count': 10 },
+        garbageCollectionCounters: { 'jvm.gc.count': 10 },
+        cpuAndLoad: { 'jvm.os.processCpuTime': 900 },
+        cpuTimeCounters: { 'jvm.os.processCpuTime': 900 },
+        heapAndMemory: {},
+      },
+    },
+    docker: {},
+  };
+  const after = {
+    openSearch: {
+      process: { cpuTotalMillis: 50, cpuPercent: 5 },
+      jvm: {
+        gcCollectionCount: 1,
+        gcCollectionTimeMillis: 5,
+        heapUsedBytes: 100,
+      },
+      search: { queryTotal: 2, queryTimeMillis: 10 },
+    },
+    solr: {
+      normalizedMetricGroups: {
+        garbageCollection: { 'jvm.gc.count': 1 },
+        garbageCollectionCounters: { 'jvm.gc.count': 1 },
+        cpuAndLoad: { 'jvm.os.processCpuTime': 40 },
+        cpuTimeCounters: { 'jvm.os.processCpuTime': 40 },
+        heapAndMemory: {},
+      },
+    },
+    docker: {},
+  };
+
+  const result = summarizeResourceDelta(before, after);
+  assert.equal(result.counterResetDetected, true);
+  assert.equal(result.openSearch.processCpuTotalMillisDelta, null);
+  assert.equal(result.openSearch.gcCollectionCountDelta, null);
+  assert.equal(result.openSearch.searchQueryTotalDelta, null);
+  assert.equal(result.solr.garbageCollectionMetricDeltas['jvm.gc.count'], undefined);
+  assert.equal(result.solr.cpuTimeMetricDeltas['jvm.os.processCpuTime'], undefined);
+  assert.ok(
+    result.counterResetFields.includes('openSearch.process.cpuTotalMillis'),
+  );
+  assert.ok(
+    result.counterResetFields.includes(
+      'solr.cpuTimeCounters.jvm.os.processCpuTime',
+    ),
+  );
 });
 
 test('telemetry wrapper brackets the benchmark and keeps claims conservative', async () => {
@@ -348,5 +411,6 @@ test('telemetry wrapper brackets the benchmark and keeps claims conservative', a
     ],
     10,
   );
-  assert.match(result.methodology, /Only identifiable cumulative counters/);
+  assert.equal(result.resourceTelemetry.delta.counterResetDetected, false);
+  assert.match(result.methodology, /Counter regressions/);
 });
