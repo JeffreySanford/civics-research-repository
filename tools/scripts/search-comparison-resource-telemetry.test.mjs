@@ -276,10 +276,19 @@ test('resource delta separates cumulative counters from instantaneous observatio
   assert.equal(result.openSearch.gcCollectionCountDelta, 3);
   assert.equal(result.openSearch.searchQueryTotalDelta, 8);
   assert.equal(result.solr.garbageCollectionMetricDeltas['jvm.gc.count'], 2);
-  assert.equal(result.solr.garbageCollectionMetricDeltas['jvm.gc.rate'], undefined);
+  assert.equal(
+    result.solr.garbageCollectionMetricDeltas['jvm.gc.rate'],
+    undefined,
+  );
   assert.equal(result.solr.cpuTimeMetricDeltas['jvm.os.processCpuTime'], 50);
-  assert.equal(result.solr.beforeCpuAndLoadMetrics['jvm.os.processCpuLoad'], 0.4);
-  assert.equal(result.solr.afterCpuAndLoadMetrics['jvm.os.processCpuLoad'], 0.6);
+  assert.equal(
+    result.solr.beforeCpuAndLoadMetrics['jvm.os.processCpuLoad'],
+    0.4,
+  );
+  assert.equal(
+    result.solr.afterCpuAndLoadMetrics['jvm.os.processCpuLoad'],
+    0.6,
+  );
   assert.equal(result.solr.cpuAndLoadMetricDeltas, undefined);
   assert.equal(result.docker.solr.memoryUsedBytesDelta, 200);
   assert.equal(result.docker.solr.beforeCpuPercent, 10);
