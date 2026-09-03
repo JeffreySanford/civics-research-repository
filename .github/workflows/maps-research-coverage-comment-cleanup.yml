@@ -29,19 +29,22 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+
           path = Path('apps/discovery-ui/src/app/pages/maps-page.ts')
           text = path.read_text()
-          obsolete = '''  /**
-           * Bounded repository research-by-area summary.
-           *
-           * These are state-summary symbols, not scientific footprints. Each symbol exists only when the
-           * normalized research metadata explicitly names a supported Census area; unmapped matches stay
-           * visible in the semantic summary instead of being assigned a publisher location.
-           */
-          '''
-          if text.count(obsolete) != 1:
-              raise SystemExit(f'Expected exactly one obsolete JSDoc, found {text.count(obsolete)}')
-          path.write_text(text.replace(obsolete, ''))
+          pattern = re.compile(
+              r"\n  /\*\*\n   \* Bounded repository research-by-area summary\.\n"
+              r"   \*\n"
+              r"   \* These are state-summary symbols, not scientific footprints\. Each symbol exists only when the\n"
+              r"   \* normalized research metadata explicitly names a supported Census area; unmapped matches stay\n"
+              r"   \* visible in the semantic summary instead of being assigned a publisher location\.\n"
+              r"   \*/\n"
+          )
+          text, count = pattern.subn('\n', text, count=1)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one obsolete JSDoc, found {count}')
+          path.write_text(text)
           PY
           pnpm exec prettier --write apps/discovery-ui/src/app/pages/maps-page.ts
       - name: Commit cleanup
