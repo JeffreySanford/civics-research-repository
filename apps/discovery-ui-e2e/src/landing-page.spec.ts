@@ -23,7 +23,9 @@ test.describe('landing page release evidence', () => {
     await expect(
       page.getByRole('heading', { name: '1,000,181 searchable records' }),
     ).toBeVisible();
-    await expect(page.getByText('500K Data.gov + 500K DOE OSTI')).toBeVisible();
+    await expect(
+      page.getByText('500K Data.gov + 500K DOE OSTI'),
+    ).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Search the research corpus' }),
     ).toHaveAttribute('href', '/discovery');
@@ -44,7 +46,9 @@ test.describe('landing page release evidence', () => {
     page,
   }) => {
     await page.goto('/');
-    const search = page.getByRole('link', { name: 'Search the research corpus' });
+    const search = page.getByRole('link', {
+      name: 'Search the research corpus',
+    });
 
     await search.focus();
     await expect(search).toBeFocused();
