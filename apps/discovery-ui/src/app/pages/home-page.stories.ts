@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import {
   applicationConfig,
@@ -7,10 +8,25 @@ import {
 import { expect, within } from 'storybook/test';
 import { HomePage } from './home-page';
 
+@Component({
+  standalone: true,
+  template: '',
+})
+class StoryRoutePlaceholder {}
+
 const meta: Meta<HomePage> = {
   title: 'Accessibility/Landing page',
   component: HomePage,
-  decorators: [applicationConfig({ providers: [provideRouter([])] })],
+  decorators: [
+    applicationConfig({
+      providers: [
+        provideRouter([
+          { path: '', component: StoryRoutePlaceholder },
+          { path: '**', component: StoryRoutePlaceholder },
+        ]),
+      ],
+    }),
+  ],
   parameters: { layout: 'fullscreen' },
 };
 
@@ -35,12 +51,16 @@ export const CurrentPlatformOverview: Story = {
     await expect(
       canvas.getByText('500K Data.gov + 500K DOE OSTI'),
     ).toBeInTheDocument();
-    await expect(
-      canvas.getByRole('link', { name: 'Search the research corpus' }),
-    ).toHaveAttribute('href', '/discovery');
-    await expect(
-      canvas.getByRole('link', { name: 'Explore research maps' }),
-    ).toHaveAttribute('href', '/maps');
+
+    const searchLink = canvas.getByRole('link', {
+      name: 'Search the research corpus',
+    });
+    const mapsLink = canvas.getByRole('link', {
+      name: 'Explore research maps',
+    });
+    await expect(searchLink.getAttribute('href')).toBe('/discovery');
+    await expect(mapsLink.getAttribute('href')).toBe('/maps');
+
     await expect(
       canvas.getByRole('navigation', {
         name: 'Operator and engineering tools',
