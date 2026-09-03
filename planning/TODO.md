@@ -6,16 +6,15 @@ The repository follows an evidence-first rule: define the contract, controls and
 
 ## Current position
 
-The certified standalone C2 baseline is complete. The following are **not active backlog items anymore**:
+The certified standalone C2 baseline is complete. These are no longer active backlog items:
 
 - exact 500K Data.gov + 500K DOE OSTI million-record composition;
 - deterministic 1,000,181-document Solr/OpenSearch projection parity;
 - deep cursor/search-after traversal without gaps or duplicates;
 - versioned lexical workload matrix;
 - raw paired timing samples and bootstrap confidence evidence;
-- independent separately warmed batches;
-- balanced/seeded randomized execution order;
-- concurrency checkpoints 1 / 8 / 32;
+- independently warmed batches and seeded randomized execution order;
+- concurrency 1 / 8 / 32;
 - CPU, memory, JVM/GC and container telemetry;
 - automated statistical research synthesis;
 - certified C2 Evidence UI productization.
@@ -26,7 +25,6 @@ Those results remain historical/control evidence. New work must not silently rew
 
 - [ ] Realign planning/history documents to the final C2 state.
 - [ ] Keep only evidence-backed acceptance criteria checked.
-- [ ] Regenerate generated platform status from its source artifacts where supported.
 - [ ] Merge the preregistered C2.1 protocol before collecting any C2.1 timing data.
 
 ## #47 — C2.1 adversarial Solr/OpenSearch fairness validation
@@ -35,36 +33,20 @@ Protocol: [C2 Adversarial Validation Protocol](C2_ADVERSARIAL_VALIDATION_PROTOCO
 
 The goal is to try to **falsify** the current Solr-favoring observation, not strengthen it by construction.
 
-- [ ] Pin exact Solr and OpenSearch versions.
+- [ ] Pin exact Solr and OpenSearch versions/digests.
 - [ ] Equalize explicit JVM heap and container CPU/memory controls where technically equivalent.
 - [ ] Record shard/replica/index settings with each experimental block.
 - [ ] Admit OpenSearch query/aggregation optimizations only after semantic-equivalence gates pass.
-- [ ] Use the preregistered full-text query matrix instead of relying on one query.
+- [ ] Use the preregistered Q01-Q20 full-text query matrix.
 - [ ] Use preregistered broad, moderate and genuinely selective filter bands.
 - [ ] Add p90 while retaining p50/p95/p99.
 - [ ] Execute balanced seeded randomized engine-first order.
 - [ ] Warm every independent batch separately.
 - [ ] Run multiple clean engine/container restart blocks.
-- [ ] Preserve raw paired samples and independently warmed batch identities.
-- [ ] Report every preregistered cell, including cells where OpenSearch wins.
+- [ ] Preserve raw paired samples, restart-block identities and batch identities.
+- [ ] Report every preregistered cell, including cells where OpenSearch wins or the result is inconclusive.
 - [ ] Keep C2.1 artifacts distinct from certified C2 artifacts.
 - [ ] Extend the Evidence UI/report so C2 and C2.1 cannot be confused.
-
-## #48 — PI-2 local Kubernetes search laboratory
-
-Compose remains the default fast development/demo path and the standalone control topology.
-
-- [ ] Add repository-owned kind cluster lifecycle commands.
-- [ ] Deploy SolrCloud using the official Solr Operator and ZooKeeper.
-- [ ] Deploy a supported multi-node OpenSearch cluster.
-- [ ] Define persistent storage, readiness/liveness, CPU/memory and JVM settings explicitly.
-- [ ] Verify standalone and clustered schemas/mappings/analyzers are semantically aligned.
-- [ ] Project the frozen corpus/query contracts without changing record semantics.
-- [ ] Run 1 / 8 / 32 client comparisons with topology/resource metadata.
-- [ ] Reproduce a controlled Solr node-loss/recovery experiment.
-- [ ] Reproduce a controlled OpenSearch node-loss/recovery experiment.
-- [ ] Verify post-recovery projection identity/parity.
-- [ ] Preserve the boundary that kind is local clustered evidence, not a cloud-performance proxy.
 
 ## #49 — Manual accessibility evidence
 
@@ -85,7 +67,7 @@ Automated axe/browser evidence remains separate from human assistive-technology 
 
 ## #51 — Final frontend mission alignment and portfolio polish
 
-This is the intended final portfolio-facing slice after #46-#49.
+This is the intended final portfolio-facing slice after #47 and #49.
 
 - [ ] Reorder the README so the Angular government data-discovery frontend is the primary story.
 - [ ] Add a frontend engineering case study covering Angular, NgRx/RxJS, OpenAPI-generated clients, URL state, async states, accessibility and Maps equivalence.
@@ -94,9 +76,15 @@ This is the intended final portfolio-facing slice after #46-#49.
 - [ ] Make the browser/API ownership boundary explicit: Angular owns interaction/presentation/accessibility; Spring owns application API/use cases; DSpace and search engines remain behind the typed boundary.
 - [ ] Preserve the repository's non-affiliation disclaimer and avoid implying this is official Census Bureau software.
 
+## Deferred topology work
+
+Issue #48, the local Kubernetes search laboratory, is closed **not planned** for the current completion path.
+
+Reopen clustered/Kubernetes work only if a concrete deployment, resilience or cloud-migration requirement appears. A one-host kind cluster is a different topology experiment; it is not required to make C2.1 statistically defensible.
+
 ## Optional federation and map expansion
 
-These are legitimate future research/product directions, but they are **not prerequisites** for calling the current standalone platform successful.
+These are legitimate future directions, but they are not prerequisites for calling the current standalone platform successful.
 
 - [ ] Define DOI/PMID/other durable cross-source reconciliation rules; never silently merge by title.
 - [ ] Add configurable publisher request concurrency/rate-limit policy where needed.
@@ -113,12 +101,11 @@ These are legitimate future research/product directions, but they are **not prer
 - [ ] Move NgRx dependencies from release candidates to stable versions after validation.
 - [ ] Continue typed API error and contract/integration-test hardening.
 
-## PI-3 — Infrastructure as Code / AWS
+## Optional infrastructure / AWS
 
-PI-3 begins only when PI-2 has produced useful local topology evidence.
+No AWS/IaC work is required to finish the current repository. If deployment becomes a concrete goal later:
 
-- [ ] Choose Terraform or CDK based on the measured topology and deployment needs.
-- [ ] Implement the documented AWS target or a justified alternative.
-- [ ] Add secrets/identity, observability, backup/restore and persistent search storage.
-- [ ] Document deployment and rollback from the Compose/kind baselines.
-- [ ] Decide whether both search engines are justified outside the comparison laboratory.
+- [ ] choose Terraform or CDK based on actual deployment needs;
+- [ ] add secrets/identity, observability, backup/restore and persistent search storage;
+- [ ] document deployment and rollback from the Compose baseline;
+- [ ] decide whether both search engines are justified outside the comparison laboratory.
