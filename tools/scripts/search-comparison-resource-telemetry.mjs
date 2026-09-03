@@ -168,18 +168,35 @@ function matchingMetrics(metrics, pattern) {
   );
 }
 
+function cumulativeGarbageCollectionMetrics(metrics) {
+  return Object.fromEntries(
+    Object.entries(metrics).filter(([key]) => /\.(count|time)$/i.test(key)),
+  );
+}
+
+function cumulativeCpuTimeMetrics(metrics) {
+  return Object.fromEntries(
+    Object.entries(metrics).filter(([key]) => /cpu.*time$/i.test(key)),
+  );
+}
+
 export function normalizeSolrTelemetry(payload) {
   const registries = payload?.metrics ?? {};
   const jvm = registries['solr.jvm'] ?? {};
   const node = registries['solr.node'] ?? {};
   const numeric = flattenNumericMetrics({ jvm, node });
+  const garbageCollection = matchingMetrics(numeric, /(^|\.)gc\.|garbage/i);
+  const cpuAndLoad = matchingMetrics(numeric, /cpu|load/i);
   return {
     metricSelection:
-      'Solr 9 JVM and node registries are preserved verbatim. Numeric metrics are additionally grouped by key pattern so version-specific JVM/GC names remain evidence instead of being silently remapped.',
+      'Solr 9 JVM and node registries are preserved verbatim. Numeric metrics are additionally grouped by key pattern so version-specific JVM/GC names remain evidence instead of being silently remapped. Only GC count/time and CPU-time fields are classified as cumulative counters for delta calculations; CPU/load gauges remain before/after observations.',
     normalizedMetricGroups: {
       heapAndMemory: matchingMetrics(numeric, /heap|memory|mem\./i),
-      garbageCollection: matchingMetrics(numeric, /(^|\.)gc\.|garbage/i),
-      cpuAndLoad: matchingMetrics(numeric, /cpu|load/i),
+      garbageCollection,
+      garbageCollectionCounters:
+        cumulativeGarbageCollectionMetrics(garbageCollection),
+      cpuAndLoad,
+      cpuTimeCounters: cumulativeCpuTimeMetrics(cpuAndLoad),
       threads: matchingMetrics(numeric, /thread/i),
     },
     rawRegistries: {
@@ -325,7 +342,7 @@ export function summarizeResourceDelta(before, after) {
 
   return {
     interpretation:
-      'Counter-like JVM/search metrics are expressed as after-minus-before deltas. Instantaneous CPU and memory percentages are retained as before/after observations rather than mislabeled cumulative consumption.',
+      'Only identifiable cumulative counters are expressed as after-minus-before deltas. Instantaneous CPU/load, heap and container memory observations are retained as before/after values rather than mislabeled cumulative consumption.',
     openSearch: {
       processCpuTotalMillisDelta: numericDelta(
         before.openSearch.process.cpuTotalMillis,
@@ -354,13 +371,19 @@ export function summarizeResourceDelta(before, after) {
     },
     solr: {
       garbageCollectionMetricDeltas: metricMapDelta(
+        before.solr.normalizedMetricGroups.garbageCollectionCounters,
+        after.solr.normalizedMetricGroups.garbageCollectionCounters,
+      ),
+      beforeGarbageCollectionMetrics:
         before.solr.normalizedMetricGroups.garbageCollection,
+      afterGarbageCollectionMetrics:
         after.solr.normalizedMetricGroups.garbageCollection,
+      cpuTimeMetricDeltas: metricMapDelta(
+        before.solr.normalizedMetricGroups.cpuTimeCounters,
+        after.solr.normalizedMetricGroups.cpuTimeCounters,
       ),
-      cpuAndLoadMetricDeltas: metricMapDelta(
-        before.solr.normalizedMetricGroups.cpuAndLoad,
-        after.solr.normalizedMetricGroups.cpuAndLoad,
-      ),
+      beforeCpuAndLoadMetrics: before.solr.normalizedMetricGroups.cpuAndLoad,
+      afterCpuAndLoadMetrics: after.solr.normalizedMetricGroups.cpuAndLoad,
       beforeHeapAndMemoryMetrics:
         before.solr.normalizedMetricGroups.heapAndMemory,
       afterHeapAndMemoryMetrics:
@@ -385,7 +408,7 @@ export async function runTelemetryWrappedConcurrencyMatrix({
     capturedAt: now().toISOString(),
     comparativeClaimAllowed: false,
     methodology:
-      'Resource telemetry brackets the concurrency matrix without changing engine configuration. Solr JVM/node registries, OpenSearch node JVM/process/OS/index stats, and Docker service snapshots are retained with normalized summaries. Counter deltas and instantaneous observations are kept distinct; telemetry supports interpretation of the local benchmark but does not establish universal engine efficiency.',
+      'Resource telemetry brackets the concurrency matrix without changing engine configuration. Solr JVM/node registries, OpenSearch node JVM/process/OS/index stats, and Docker service snapshots are retained with normalized summaries. Only identifiable cumulative counters are differenced; CPU/load, heap and container-memory gauges remain explicit observations. Telemetry supports interpretation of the local benchmark but does not establish universal engine efficiency.',
     benchmark,
     resourceTelemetry: {
       before,
