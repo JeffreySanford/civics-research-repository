@@ -1,7 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { summarizePairedLatencyEvidence } from './search-comparison-statistics.mjs';
+import {
+  summarizePairedLatencyEvidence,
+} from './search-comparison-statistics.mjs';
 
 const DEFAULT_BASE_URL = 'http://localhost:8080/api';
 const DEFAULT_WARMUP_RUNS = 5;
