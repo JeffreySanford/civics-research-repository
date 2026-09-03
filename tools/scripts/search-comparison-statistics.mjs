@@ -60,11 +60,7 @@ function pairedDifferences(solrSamples, openSearchSamples) {
 export function summarizePairedLatencyEvidence(
   solrSamples,
   openSearchSamples,
-  {
-    bootstrapIterations = 5000,
-    confidenceLevel = 0.95,
-    seed = 20260903,
-  } = {},
+  { bootstrapIterations = 5000, confidenceLevel = 0.95, seed = 20260903 } = {},
 ) {
   requireInteger(bootstrapIterations, 'bootstrapIterations', 100);
   requireInteger(seed, 'seed', 0);
