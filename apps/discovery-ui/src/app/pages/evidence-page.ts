@@ -39,6 +39,7 @@ import {
   indexEvidenceById,
   standardLabel,
 } from './evidence-page.utils';
+import { SearchPerformanceEvidenceComponent } from './search-performance-evidence.component';
 
 @Component({
   selector: 'app-evidence-page',
@@ -49,6 +50,7 @@ import {
     MatProgressSpinnerModule,
     MatTabsModule,
     AdminSearchProjectionComponent,
+    SearchPerformanceEvidenceComponent,
   ],
   templateUrl: './evidence-page.html',
 })

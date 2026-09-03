@@ -140,7 +140,7 @@ export class DiscoveryPage implements OnInit {
 
     // Not submitSearch(): that resets to the first page, which is right when a filter changes and
     // wrong on load. A deep link to ?page=1 must open on page 2, not silently on page 1.
-    this.updateSearchUrl();
+    void this.updateSearchUrl();
     this.dispatchSearch();
   }
 
@@ -152,19 +152,30 @@ export class DiscoveryPage implements OnInit {
    */
   protected submitSearch(): void {
     this.page = 0;
-    this.updateSearchUrl();
+    void this.updateSearchUrl();
     this.dispatchSearch();
   }
 
   /** Moves to another page, keeping every filter as it is. */
   protected goToPage(page: number): void {
     this.page = Math.max(0, page);
-    this.updateSearchUrl();
+    const navigation = this.updateSearchUrl();
     this.store.dispatch(SearchActions.searchPageRequested({ page: this.page }));
 
-    // Paging replaces the whole list. Without moving focus, a keyboard or screen-reader user is
-    // left on a button whose surrounding content silently changed underneath them.
-    this.resultsHeading?.nativeElement.focus();
+    // Paging replaces the whole list. Move focus only after the query-parameter navigation
+    // settles, then place the heading explicitly in the viewport. WebKit can retain the
+    // pager's old scroll position even after focus moves, leaving the focused heading offscreen.
+    void navigation.then(() => {
+      const heading = this.resultsHeading?.nativeElement;
+      if (!heading) {
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        heading.focus({ preventScroll: true });
+        heading.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
+    });
   }
 
   private dispatchSearch(): void {
@@ -322,8 +333,8 @@ export class DiscoveryPage implements OnInit {
     this.submitSearch();
   }
 
-  private updateSearchUrl(): void {
-    void this.router.navigate([], {
+  private updateSearchUrl(): Promise<boolean> {
+    return this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
         q: this.searchControl.value || null,

@@ -501,6 +501,27 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /evidence/search-performance:
+    get:
+      tags: [Evidence]
+      operationId: getSearchPerformanceEvidence
+      summary: Get the latest locally certified C2 Solr/OpenSearch research summary.
+      description: >-
+        Returns a stable UI-facing summary of generated C2 research artifacts. Positive paired
+        latency differences mean OpenSearch took longer than Solr. The response is scoped to the
+        documented corpus, mappings, workload/client cells, engine versions and local container
+        topology and must not be interpreted as a universal search-engine ranking.
+      responses:
+        '200':
+          description: Certified C2 search performance evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchPerformanceEvidence'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /admin/sync:
     get:
       tags: [Admin]
@@ -2400,6 +2421,317 @@ components:
         longitude:
           type: number
           format: double
+    SearchPerformanceLatencyInference:
+      type: object
+      required:
+        - medianDifferenceMs
+        - lower95Ms
+        - upper95Ms
+        - solrWinRatePercent
+        - excludesZero
+        - interpretation
+      properties:
+        medianDifferenceMs:
+          type: [number, 'null']
+          format: double
+        lower95Ms:
+          type: [number, 'null']
+          format: double
+        upper95Ms:
+          type: [number, 'null']
+          format: double
+        solrWinRatePercent:
+          type: [number, 'null']
+          format: double
+        excludesZero:
+          type: [boolean, 'null']
+        interpretation:
+          type: [string, 'null']
+    SearchPerformanceExecutionControls:
+      type: object
+      required:
+        - orderStrategy
+        - requestedStartingOrder
+        - realizedFirstBatchOrder
+        - seed
+        - seedApplied
+        - batches
+        - measuredRunsPerBatch
+        - totalMeasuredRuns
+        - batchExecutionOrders
+      properties:
+        orderStrategy:
+          type: [string, 'null']
+        requestedStartingOrder:
+          type: [string, 'null']
+        realizedFirstBatchOrder:
+          type: [string, 'null']
+        seed:
+          type: [integer, 'null']
+          format: int64
+        seedApplied:
+          type: boolean
+        batches:
+          type: [integer, 'null']
+        measuredRunsPerBatch:
+          type: [integer, 'null']
+        totalMeasuredRuns:
+          type: [integer, 'null']
+        batchExecutionOrders:
+          type: array
+          items:
+            type: string
+    SearchPerformanceBatchInference:
+      type: object
+      required:
+        - available
+        - scenario
+        - query
+        - batchCount
+        - apiElapsed
+        - engineReported
+        - experimentalUnit
+      properties:
+        available:
+          type: boolean
+        scenario:
+          type: [string, 'null']
+        query:
+          type: [string, 'null']
+        batchCount:
+          type: [integer, 'null']
+        apiElapsed:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceLatencyInference'
+            - type: 'null'
+        engineReported:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceLatencyInference'
+            - type: 'null'
+        experimentalUnit:
+          type: [string, 'null']
+    SearchPerformanceOrderScenario:
+      type: object
+      required:
+        - id
+        - solrLeadsP50BothOrders
+        - solrLeadsP95BothOrders
+      properties:
+        id:
+          type: string
+        solrLeadsP50BothOrders:
+          type: boolean
+        solrLeadsP95BothOrders:
+          type: boolean
+    SearchPerformanceOrderRobustness:
+      type: object
+      required:
+        - scenarioCount
+        - solrLeadsP50BothOrdersCount
+        - solrLeadsP95BothOrdersCount
+        - scenarios
+      properties:
+        scenarioCount:
+          type: integer
+        solrLeadsP50BothOrdersCount:
+          type: integer
+        solrLeadsP95BothOrdersCount:
+          type: integer
+        scenarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchPerformanceOrderScenario'
+    SearchPerformancePairedWorkload:
+      type: object
+      required:
+        - scenario
+        - workloadClass
+        - executionOrder
+        - solrApiP50Ms
+        - solrApiP95Ms
+        - openSearchApiP50Ms
+        - openSearchApiP95Ms
+        - solrNativeP50Ms
+        - solrNativeP95Ms
+        - openSearchNativeP50Ms
+        - openSearchNativeP95Ms
+      properties:
+        scenario:
+          type: string
+        workloadClass:
+          type: [string, 'null']
+        executionOrder:
+          type: string
+        solrApiP50Ms:
+          type: [number, 'null']
+          format: double
+        solrApiP95Ms:
+          type: [number, 'null']
+          format: double
+        openSearchApiP50Ms:
+          type: [number, 'null']
+          format: double
+        openSearchApiP95Ms:
+          type: [number, 'null']
+          format: double
+        solrNativeP50Ms:
+          type: [number, 'null']
+          format: double
+        solrNativeP95Ms:
+          type: [number, 'null']
+          format: double
+        openSearchNativeP50Ms:
+          type: [number, 'null']
+          format: double
+        openSearchNativeP95Ms:
+          type: [number, 'null']
+          format: double
+    SearchPerformanceBatchCellInference:
+      type: object
+      required:
+        - available
+        - batchCount
+        - apiElapsed
+      properties:
+        available:
+          type: boolean
+        batchCount:
+          type: [integer, 'null']
+        apiElapsed:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceLatencyInference'
+            - type: 'null'
+    SearchPerformanceConcurrencyCell:
+      type: object
+      required:
+        - workloadId
+        - workloadClass
+        - concurrency
+        - measuredComparisons
+        - comparisonRequestsPerSecond
+        - solrApiP50Ms
+        - solrApiP95Ms
+        - openSearchApiP50Ms
+        - openSearchApiP95Ms
+        - requestLevel
+        - batchLevel
+      properties:
+        workloadId:
+          type: string
+        workloadClass:
+          type: [string, 'null']
+        concurrency:
+          type: integer
+        measuredComparisons:
+          type: [integer, 'null']
+        comparisonRequestsPerSecond:
+          type: [number, 'null']
+          format: double
+        solrApiP50Ms:
+          type: [number, 'null']
+          format: double
+        solrApiP95Ms:
+          type: [number, 'null']
+          format: double
+        openSearchApiP50Ms:
+          type: [number, 'null']
+          format: double
+        openSearchApiP95Ms:
+          type: [number, 'null']
+          format: double
+        requestLevel:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceLatencyInference'
+            - type: 'null'
+        batchLevel:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceBatchCellInference'
+            - type: 'null'
+    SearchPerformanceResourceSummary:
+      type: object
+      required:
+        - captured
+        - interpretation
+        - counterResetDetected
+        - counterResetFields
+      properties:
+        captured:
+          type: boolean
+        interpretation:
+          type: [string, 'null']
+        counterResetDetected:
+          type: boolean
+        counterResetFields:
+          type: array
+          items:
+            type: string
+    SearchPerformanceEvidence:
+      type: object
+      required:
+        - profile
+        - capturedAt
+        - scope
+        - comparativeClaimAllowed
+        - projectionId
+        - projectionObjectCount
+        - retainedFederatedRecords
+        - targetParity
+        - claimGuardrail
+        - executionControls
+        - standaloneBatchEvidence
+        - orderRobustness
+        - pairedWorkloads
+        - concurrency
+        - resources
+      properties:
+        profile:
+          type: string
+          enum: [FEDERATED_1M]
+        capturedAt:
+          type: string
+          format: date-time
+        scope:
+          type: string
+          enum: [LOCAL_CERTIFIED_TOPOLOGY_ONLY]
+        comparativeClaimAllowed:
+          type: boolean
+        projectionId:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        projectionObjectCount:
+          type: integer
+          format: int64
+          minimum: 0
+        retainedFederatedRecords:
+          type: integer
+          format: int64
+          minimum: 0
+        targetParity:
+          type: boolean
+        claimGuardrail:
+          type: string
+        executionControls:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceExecutionControls'
+            - type: 'null'
+        standaloneBatchEvidence:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceBatchInference'
+            - type: 'null'
+        orderRobustness:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceOrderRobustness'
+            - type: 'null'
+        pairedWorkloads:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchPerformancePairedWorkload'
+        concurrency:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchPerformanceConcurrencyCell'
+        resources:
+          $ref: '#/components/schemas/SearchPerformanceResourceSummary'
     AccessibilityEvidence:
       type: object
       required: [id, workflow, status, standard, capturedAt]

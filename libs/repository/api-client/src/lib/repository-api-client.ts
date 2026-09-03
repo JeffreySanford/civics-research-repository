@@ -66,6 +66,10 @@ export type ProjectionBreakdown = components['schemas']['ProjectionBreakdown'];
 export type AccessibilityEvidence =
   components['schemas']['AccessibilityEvidence'];
 export type EvidenceStatus = components['schemas']['EvidenceStatus'];
+export type SearchPerformanceEvidence =
+  components['schemas']['SearchPerformanceEvidence'];
+export type SearchPerformanceLatencyInference =
+  components['schemas']['SearchPerformanceLatencyInference'];
 
 export interface SearchQuery {
   readonly q?: string;
@@ -272,6 +276,12 @@ export class RepositoryEvidenceApi {
   listAccessibilityEvidence(): Observable<AccessibilityEvidence[]> {
     return this.http.get<AccessibilityEvidence[]>(
       `${this.baseUrl}/accessibility/evidence`,
+    );
+  }
+
+  getSearchPerformanceEvidence(): Observable<SearchPerformanceEvidence> {
+    return this.http.get<SearchPerformanceEvidence>(
+      `${this.baseUrl}/evidence/search-performance`,
     );
   }
 }

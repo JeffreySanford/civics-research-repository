@@ -294,6 +294,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/evidence/search-performance': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the latest locally certified C2 Solr/OpenSearch research summary.
+     * @description Returns a stable UI-facing summary of generated C2 research artifacts. Positive paired latency differences mean OpenSearch took longer than Solr. The response is scoped to the documented corpus, mappings, workload/client cells, engine versions and local container topology and must not be interpreted as a universal search-engine ranking.
+     */
+    get: operations['getSearchPerformanceEvidence'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/sync': {
     parameters: {
       query?: never;
@@ -1258,6 +1278,138 @@ export interface components {
       /** Format: double */
       longitude: number;
     };
+    SearchPerformanceLatencyInference: {
+      /** Format: double */
+      medianDifferenceMs: number | null;
+      /** Format: double */
+      lower95Ms: number | null;
+      /** Format: double */
+      upper95Ms: number | null;
+      /** Format: double */
+      solrWinRatePercent: number | null;
+      excludesZero: boolean | null;
+      interpretation: string | null;
+    };
+    SearchPerformanceExecutionControls: {
+      orderStrategy: string | null;
+      requestedStartingOrder: string | null;
+      realizedFirstBatchOrder: string | null;
+      /** Format: int64 */
+      seed: number | null;
+      seedApplied: boolean;
+      batches: number | null;
+      measuredRunsPerBatch: number | null;
+      totalMeasuredRuns: number | null;
+      batchExecutionOrders: string[];
+    };
+    SearchPerformanceBatchInference: {
+      available: boolean;
+      scenario: string | null;
+      query: string | null;
+      batchCount: number | null;
+      apiElapsed:
+        | components['schemas']['SearchPerformanceLatencyInference']
+        | null;
+      engineReported:
+        | components['schemas']['SearchPerformanceLatencyInference']
+        | null;
+      experimentalUnit: string | null;
+    };
+    SearchPerformanceOrderScenario: {
+      id: string;
+      solrLeadsP50BothOrders: boolean;
+      solrLeadsP95BothOrders: boolean;
+    };
+    SearchPerformanceOrderRobustness: {
+      scenarioCount: number;
+      solrLeadsP50BothOrdersCount: number;
+      solrLeadsP95BothOrdersCount: number;
+      scenarios: components['schemas']['SearchPerformanceOrderScenario'][];
+    };
+    SearchPerformancePairedWorkload: {
+      scenario: string;
+      workloadClass: string | null;
+      executionOrder: string;
+      /** Format: double */
+      solrApiP50Ms: number | null;
+      /** Format: double */
+      solrApiP95Ms: number | null;
+      /** Format: double */
+      openSearchApiP50Ms: number | null;
+      /** Format: double */
+      openSearchApiP95Ms: number | null;
+      /** Format: double */
+      solrNativeP50Ms: number | null;
+      /** Format: double */
+      solrNativeP95Ms: number | null;
+      /** Format: double */
+      openSearchNativeP50Ms: number | null;
+      /** Format: double */
+      openSearchNativeP95Ms: number | null;
+    };
+    SearchPerformanceBatchCellInference: {
+      available: boolean;
+      batchCount: number | null;
+      apiElapsed:
+        | components['schemas']['SearchPerformanceLatencyInference']
+        | null;
+    };
+    SearchPerformanceConcurrencyCell: {
+      workloadId: string;
+      workloadClass: string | null;
+      concurrency: number;
+      measuredComparisons: number | null;
+      /** Format: double */
+      comparisonRequestsPerSecond: number | null;
+      /** Format: double */
+      solrApiP50Ms: number | null;
+      /** Format: double */
+      solrApiP95Ms: number | null;
+      /** Format: double */
+      openSearchApiP50Ms: number | null;
+      /** Format: double */
+      openSearchApiP95Ms: number | null;
+      requestLevel:
+        | components['schemas']['SearchPerformanceLatencyInference']
+        | null;
+      batchLevel:
+        | components['schemas']['SearchPerformanceBatchCellInference']
+        | null;
+    };
+    SearchPerformanceResourceSummary: {
+      captured: boolean;
+      interpretation: string | null;
+      counterResetDetected: boolean;
+      counterResetFields: string[];
+    };
+    SearchPerformanceEvidence: {
+      /** @enum {string} */
+      profile: 'FEDERATED_1M';
+      /** Format: date-time */
+      capturedAt: string;
+      /** @enum {string} */
+      scope: 'LOCAL_CERTIFIED_TOPOLOGY_ONLY';
+      comparativeClaimAllowed: boolean;
+      projectionId: string;
+      /** Format: int64 */
+      projectionObjectCount: number;
+      /** Format: int64 */
+      retainedFederatedRecords: number;
+      targetParity: boolean;
+      claimGuardrail: string;
+      executionControls:
+        | components['schemas']['SearchPerformanceExecutionControls']
+        | null;
+      standaloneBatchEvidence:
+        | components['schemas']['SearchPerformanceBatchInference']
+        | null;
+      orderRobustness:
+        | components['schemas']['SearchPerformanceOrderRobustness']
+        | null;
+      pairedWorkloads: components['schemas']['SearchPerformancePairedWorkload'][];
+      concurrency: components['schemas']['SearchPerformanceConcurrencyCell'][];
+      resources: components['schemas']['SearchPerformanceResourceSummary'];
+    };
     AccessibilityEvidence: {
       id: string;
       workflow: string;
@@ -2169,6 +2321,28 @@ export interface operations {
       400: components['responses']['BadRequest'];
       500: components['responses']['InternalServerError'];
       503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getSearchPerformanceEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Certified C2 search performance evidence. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchPerformanceEvidence'];
+        };
+      };
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
     };
   };
   listRepositorySyncJobs: {
