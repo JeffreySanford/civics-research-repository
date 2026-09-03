@@ -93,7 +93,8 @@ export function summarizePairedLatencyEvidence(
 
   return {
     sampleCount: differences.length,
-    interpretation: 'Positive differences mean OpenSearch took longer than Solr.',
+    interpretation:
+      'Positive differences mean OpenSearch took longer than Solr.',
     medianDifferenceMs: nearestRank(differences, 0.5),
     medianRelativeDifferencePercent:
       relativeDifferences.length === 0
