@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { summarizePairedLatencyEvidence } from './search-comparison-statistics.mjs';
+import {
+  summarizePairedLatencyEvidence,
+} from './search-comparison-statistics.mjs';
 
 test('paired latency evidence reports a deterministic bootstrap interval', () => {
   const result = summarizePairedLatencyEvidence(
