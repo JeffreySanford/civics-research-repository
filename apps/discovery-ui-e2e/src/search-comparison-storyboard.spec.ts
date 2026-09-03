@@ -14,7 +14,7 @@ test.describe('Search Lab storyboard', () => {
     await page.goto('/');
 
     await page
-      .getByRole('navigation')
+      .getByRole('navigation', { name: 'Primary navigation' })
       .getByRole('link', { name: 'Search Lab' })
       .click();
 
