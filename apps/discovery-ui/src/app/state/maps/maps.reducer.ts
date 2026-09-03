@@ -4,9 +4,10 @@ import type {
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
+  ResearchSpatialCoverageResponse,
+  ResearchSpatialViewport,
   SaipeCountyChoropleth,
   SearchQuery,
-  SearchResponse,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
@@ -26,7 +27,9 @@ export interface MapsState {
   readonly saipeChoropleth: SaipeCountyChoropleth | null;
   readonly saipeChoroplethError: string | null;
   readonly researchCoverageQuery: SearchQuery | null;
-  readonly researchCoverageResponse: SearchResponse | null;
+  readonly researchCoverageViewport: ResearchSpatialViewport | null;
+  readonly researchCoverageResponse: ResearchSpatialCoverageResponse | null;
+  readonly researchCoverageLoading: boolean;
   readonly researchCoverageError: string | null;
   readonly tigerVisible: boolean;
   readonly earthquakeVisible: boolean;
@@ -56,7 +59,9 @@ export const initialMapsState: MapsState = {
   saipeChoropleth: null,
   saipeChoroplethError: null,
   researchCoverageQuery: null,
+  researchCoverageViewport: null,
   researchCoverageResponse: null,
+  researchCoverageLoading: false,
   researchCoverageError: null,
   tigerVisible: false,
   earthquakeVisible: false,
@@ -95,8 +100,6 @@ export const mapsReducer = createReducer(
       ...state,
       layers,
       loading: false,
-      // Capability metadata owns whether SAIPE may exist for this geography. Once a newly loaded
-      // area says it does not, stale visibility/data/errors from the previous area must disappear.
       saipeVisible: saipeAvailable ? state.saipeVisible : false,
       saipeChoropleth: saipeAvailable ? state.saipeChoropleth : null,
       saipeChoroplethError: saipeAvailable ? state.saipeChoroplethError : null,
@@ -133,8 +136,6 @@ export const mapsReducer = createReducer(
     ...state,
     lodesFlowOverlay,
     lodesFlowError: null,
-    // Flows are per-geography. Switching from North Dakota to Texas replaces the whole set, and a
-    // selection carried across would name a flow the new overlay does not contain.
     selectedLodesFlowId: lodesFlowOverlay.flows.some(
       (flow) => flow.id === state.selectedLodesFlowId,
     )
@@ -156,22 +157,27 @@ export const mapsReducer = createReducer(
     saipeChoropleth: null,
     saipeChoroplethError: error.message,
   })),
-  on(MapsActions.researchCoverageRequested, (state, { query }) => ({
+  on(MapsActions.researchCoverageRequested, (state, { query, viewport }) => ({
     ...state,
     researchCoverageQuery: query,
-    // The previous response belongs to a different effective search. Clearing it prevents the map
-    // from showing a stale spatial summary while the new bounded facet request is in flight.
+    researchCoverageViewport: viewport,
+    researchCoverageLoading: true,
+    // The previous response belongs to a different effective viewport or search. Clearing it
+    // prevents the map and semantic summary from describing a stale bounded result while the
+    // latest-request-wins effect is in flight.
     researchCoverageResponse: null,
     researchCoverageError: null,
   })),
   on(MapsActions.researchCoverageLoaded, (state, { response }) => ({
     ...state,
     researchCoverageResponse: response,
+    researchCoverageLoading: false,
     researchCoverageError: null,
   })),
   on(MapsActions.researchCoverageFailed, (state, { error }) => ({
     ...state,
     researchCoverageResponse: null,
+    researchCoverageLoading: false,
     researchCoverageError: error.message,
   })),
   on(MapsActions.censusAreaSelected, (state, { geography }) => ({
@@ -179,8 +185,6 @@ export const mapsReducer = createReducer(
     selectedGeography: geography,
     loading: true,
     error: null,
-    // The old choropleth belongs to the old geography. Keep the user's toggle preference until
-    // capability metadata lands, but never display stale SAIPE values while the new area loads.
     saipeChoropleth: null,
     saipeChoroplethError: null,
   })),
@@ -201,8 +205,6 @@ export const mapsReducer = createReducer(
   on(MapsActions.lodesLayerToggled, (state, { visible }) => ({
     ...state,
     lodesVisible: visible,
-    // A selection that survives its layer being hidden leaves the table announcing a highlight
-    // nobody can see, and the map holding one it is no longer drawing.
     selectedLodesFlowId: visible ? state.selectedLodesFlowId : null,
   })),
   on(MapsActions.lodesFlowSelected, (state, { flowId }) => ({
