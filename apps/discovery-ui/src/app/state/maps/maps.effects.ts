@@ -10,20 +10,10 @@ import {
   switchMap,
   withLatestFrom,
 } from 'rxjs';
-import {
-  parseRepositoryError,
-  RepositoryMapsApi,
-  RepositorySearchApi,
-} from 'repository-api-client';
+import { parseRepositoryError, RepositoryMapsApi } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { selectSelectedGeography } from './maps.selectors';
 
-/**
- * The dataset identifier the repository seeds for a Census area's TIGER/Line boundary.
- *
- * The same slug convention the backend uses to resolve a dataset back to its geography, so a new
- * area needs no change here.
- */
 function datasetIdForGeography(geography: string): string {
   return `tiger-line-${geography.toLowerCase().replace(/\s+/g, '-')}-2025`;
 }
@@ -32,7 +22,6 @@ function datasetIdForGeography(geography: string): string {
 export class MapsEffects {
   private readonly actions$ = inject(Actions);
   private readonly mapsApi = inject(RepositoryMapsApi);
-  private readonly searchApi = inject(RepositorySearchApi);
   private readonly store = inject(Store);
 
   readonly loadMapData$ = createEffect(() =>
@@ -148,11 +137,6 @@ export class MapsEffects {
     ),
   );
 
-  /**
-   * SAIPE is a geography capability, not a universal Maps dependency. The backend layer metadata
-   * is the authoritative statement that retained SAIPE values exist for the selected area, so do
-   * not call the choropleth endpoint until that capability is advertised.
-   */
   readonly loadSaipeChoroplethForSelectedArea$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MapsActions.mapLayersLoaded),
@@ -181,29 +165,27 @@ export class MapsEffects {
   );
 
   /**
-   * Research Coverage reuses the public search aggregation rather than transferring matching hits
-   * to the browser. A one-result page is sufficient because the geography facet is computed over
-   * the full effective result set in the active projection.
+   * Research Coverage consumes the bounded spatial sidecar API directly. `switchMap` gives the
+   * viewport the same latest-request-wins semantics as the rest of Maps: a slow request for the
+   * previous pan/zoom can never overwrite the response for the current viewport.
    */
   readonly loadResearchCoverage$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MapsActions.researchCoverageRequested),
-      switchMap(({ query }) =>
-        this.searchApi
-          .searchResearchObjects({ ...query, page: 0, pageSize: 1 })
-          .pipe(
-            map((response) => MapsActions.researchCoverageLoaded({ response })),
-            catchError((error: unknown) =>
-              of(
-                MapsActions.researchCoverageFailed({
-                  error: parseRepositoryError(
-                    error,
-                    'Repository research coverage failed to load.',
-                  ),
-                }),
-              ),
+      switchMap(({ query, viewport }) =>
+        this.mapsApi.getResearchSpatialCoverage(query, viewport).pipe(
+          map((response) => MapsActions.researchCoverageLoaded({ response })),
+          catchError((error: unknown) =>
+            of(
+              MapsActions.researchCoverageFailed({
+                error: parseRepositoryError(
+                  error,
+                  'Repository research coverage failed to load.',
+                ),
+              }),
             ),
           ),
+        ),
       ),
     ),
   );
