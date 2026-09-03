@@ -49,6 +49,14 @@ async function openRoute(page: Page, path: string): Promise<void> {
   });
 }
 
+async function openMapLayerCategories(page: Page): Promise<void> {
+  await page.locator('details.layer-category').evaluateAll((categories) => {
+    for (const category of categories) {
+      (category as HTMLDetailsElement).open = true;
+    }
+  });
+}
+
 async function visibleControlCount(page: Page): Promise<number> {
   return page.locator(INTERACTIVE).evaluateAll(
     (nodes) =>
@@ -197,6 +205,7 @@ test.describe('keyboard operability', () => {
     page,
   }) => {
     await openRoute(page, '/maps');
+    await openMapLayerCategories(page);
 
     for (const testId of [
       'map-methodology-info',
