@@ -81,12 +81,12 @@ Native Solr `QTime` and OpenSearch `took` are diagnostic timing boundaries with 
 
 For every tested workload class, Solr retained lower API p50 and p95 in both engine-first orders.
 
-| Workload | Solr-first API p50 / p95 | OpenSearch-first API p50 / p95 | Order-robust direction |
-| --- | ---: | ---: | --- |
-| Full text | Solr 5 / 5 ms vs OpenSearch 7 / 11 ms | Solr 2 / 2 ms vs OpenSearch 5 / 6 ms | Solr lower in both |
-| Facets | Solr 33 / 35 ms vs OpenSearch 83 / 105 ms | Solr 30 / 32 ms vs OpenSearch 83 / 104 ms | Solr lower in both |
-| Broad filter | Solr 30 / 32 ms vs OpenSearch 92 / 122 ms | Solr 27 / 29 ms vs OpenSearch 91 / 123 ms | Solr lower in both |
-| Program filter | Solr 17 / 18 ms vs OpenSearch 61 / 77 ms | Solr 17 / 18 ms vs OpenSearch 60 / 78 ms | Solr lower in both |
+| Workload       |                  Solr-first API p50 / p95 |            OpenSearch-first API p50 / p95 | Order-robust direction |
+| -------------- | ----------------------------------------: | ----------------------------------------: | ---------------------- |
+| Full text      |     Solr 5 / 5 ms vs OpenSearch 7 / 11 ms |      Solr 2 / 2 ms vs OpenSearch 5 / 6 ms | Solr lower in both     |
+| Facets         | Solr 33 / 35 ms vs OpenSearch 83 / 105 ms | Solr 30 / 32 ms vs OpenSearch 83 / 104 ms | Solr lower in both     |
+| Broad filter   | Solr 30 / 32 ms vs OpenSearch 92 / 122 ms | Solr 27 / 29 ms vs OpenSearch 91 / 123 ms | Solr lower in both     |
+| Program filter |  Solr 17 / 18 ms vs OpenSearch 61 / 77 ms |  Solr 17 / 18 ms vs OpenSearch 60 / 78 ms | Solr lower in both     |
 
 Order robustness summary:
 
@@ -114,20 +114,20 @@ Positive differences mean OpenSearch took longer than Solr. Batch medians are th
 
 The concurrency experiment is a paired **application topology** comparison, not an isolated maximum-QPS search-engine saturation test.
 
-| Workload | Clients | Paired req/s | Solr p50 / p95 | OpenSearch p50 / p95 | Batch median OS − Solr (95% CI) |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Full text | 1 | 60.75 | 1 / 2 ms | 5 / 6 ms | 4 ms (3 .. 4) |
-| Full text | 8 | 270.84 | 2 / 4 ms | 8 / 14 ms | 6 ms (5 .. 6) |
-| Full text | 32 | 443.04 | 5 / 16 ms | 21 / 40 ms | 12 ms (10 .. 20) |
-| Facets | 1 | 7.84 | 30 / 32 ms | 82 / 107 ms | 52 ms (51 .. 53) |
-| Facets | 8 | 44.79 | 35 / 52 ms | 104 / 132 ms | 70 ms (63 .. 72) |
-| Facets | 32 | 49.52 | 113 / 278 ms | 290 / 451 ms | 71 ms (55 .. 265) |
-| Broad filter | 1 | 7.30 | 27 / 29 ms | 91 / 123 ms | 64 ms (63 .. 65) |
-| Broad filter | 8 | 41.81 | 31 / 43 ms | 117 / 152 ms | 87 ms (76 .. 90) |
-| Broad filter | 32 | 46.62 | 103 / 253 ms | 329 / 533 ms | 161 ms (86 .. 294) |
-| Program filter | 1 | 10.73 | 17 / 18 ms | 62 / 68 ms | 45 ms (44 .. 45) |
-| Program filter | 8 | 60.38 | 18 / 31 ms | 78 / 103 ms | 57 ms (54 .. 60) |
-| Program filter | 32 | 72.15 | 54 / 144 ms | 227 / 349 ms | 133 ms (109 .. 206) |
+| Workload       | Clients | Paired req/s | Solr p50 / p95 | OpenSearch p50 / p95 | Batch median OS − Solr (95% CI) |
+| -------------- | ------: | -----------: | -------------: | -------------------: | ------------------------------: |
+| Full text      |       1 |        60.75 |       1 / 2 ms |             5 / 6 ms |                   4 ms (3 .. 4) |
+| Full text      |       8 |       270.84 |       2 / 4 ms |            8 / 14 ms |                   6 ms (5 .. 6) |
+| Full text      |      32 |       443.04 |      5 / 16 ms |           21 / 40 ms |                12 ms (10 .. 20) |
+| Facets         |       1 |         7.84 |     30 / 32 ms |          82 / 107 ms |                52 ms (51 .. 53) |
+| Facets         |       8 |        44.79 |     35 / 52 ms |         104 / 132 ms |                70 ms (63 .. 72) |
+| Facets         |      32 |        49.52 |   113 / 278 ms |         290 / 451 ms |               71 ms (55 .. 265) |
+| Broad filter   |       1 |         7.30 |     27 / 29 ms |          91 / 123 ms |                64 ms (63 .. 65) |
+| Broad filter   |       8 |        41.81 |     31 / 43 ms |         117 / 152 ms |                87 ms (76 .. 90) |
+| Broad filter   |      32 |        46.62 |   103 / 253 ms |         329 / 533 ms |              161 ms (86 .. 294) |
+| Program filter |       1 |        10.73 |     17 / 18 ms |           62 / 68 ms |                45 ms (44 .. 45) |
+| Program filter |       8 |        60.38 |     18 / 31 ms |          78 / 103 ms |                57 ms (54 .. 60) |
+| Program filter |      32 |        72.15 |    54 / 144 ms |         227 / 349 ms |             133 ms (109 .. 206) |
 
 The observed direction persisted through 32-client paired application load in the certified local setup.
 
