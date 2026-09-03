@@ -92,7 +92,9 @@ import type { ResearchCoverageSummary } from '../state/maps/research-coverage';
                       <a
                         class="source-link"
                         [href]="feature.sourceUrl"
-                        [attr.aria-label]="'Open source record for ' + feature.title"
+                        [attr.aria-label]="
+                          'Open source record for ' + feature.title
+                        "
                         >Open source record</a
                       >
                     } @else {
