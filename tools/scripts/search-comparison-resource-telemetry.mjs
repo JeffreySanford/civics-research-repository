@@ -310,16 +310,41 @@ function numericDelta(before, after) {
     : null;
 }
 
-function metricMapDelta(before = {}, after = {}) {
+function cumulativeDelta(before, after, label, resetFields) {
+  if (!Number.isFinite(before) || !Number.isFinite(after)) {
+    return null;
+  }
+  if (after < before) {
+    resetFields.push(label);
+    return null;
+  }
+  return after - before;
+}
+
+function cumulativeMetricMapDelta(
+  before = {},
+  after = {},
+  labelPrefix,
+  resetFields,
+) {
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
   return Object.fromEntries(
     [...keys]
-      .map((key) => [key, numericDelta(before[key], after[key])])
+      .map((key) => [
+        key,
+        cumulativeDelta(
+          before[key],
+          after[key],
+          `${labelPrefix}.${key}`,
+          resetFields,
+        ),
+      ])
       .filter(([, value]) => value !== null),
   );
 }
 
 export function summarizeResourceDelta(before, after) {
+  const counterResetFields = [];
   const docker = {};
   for (const service of RESOURCE_SERVICES) {
     const previous = before.docker?.[service];
@@ -340,55 +365,75 @@ export function summarizeResourceDelta(before, after) {
     };
   }
 
+  const openSearch = {
+    processCpuTotalMillisDelta: cumulativeDelta(
+      before.openSearch.process.cpuTotalMillis,
+      after.openSearch.process.cpuTotalMillis,
+      'openSearch.process.cpuTotalMillis',
+      counterResetFields,
+    ),
+    gcCollectionCountDelta: cumulativeDelta(
+      before.openSearch.jvm.gcCollectionCount,
+      after.openSearch.jvm.gcCollectionCount,
+      'openSearch.jvm.gcCollectionCount',
+      counterResetFields,
+    ),
+    gcCollectionTimeMillisDelta: cumulativeDelta(
+      before.openSearch.jvm.gcCollectionTimeMillis,
+      after.openSearch.jvm.gcCollectionTimeMillis,
+      'openSearch.jvm.gcCollectionTimeMillis',
+      counterResetFields,
+    ),
+    searchQueryTotalDelta: cumulativeDelta(
+      before.openSearch.search.queryTotal,
+      after.openSearch.search.queryTotal,
+      'openSearch.search.queryTotal',
+      counterResetFields,
+    ),
+    searchQueryTimeMillisDelta: cumulativeDelta(
+      before.openSearch.search.queryTimeMillis,
+      after.openSearch.search.queryTimeMillis,
+      'openSearch.search.queryTimeMillis',
+      counterResetFields,
+    ),
+    beforeHeapUsedBytes: before.openSearch.jvm.heapUsedBytes,
+    afterHeapUsedBytes: after.openSearch.jvm.heapUsedBytes,
+    beforeProcessCpuPercent: before.openSearch.process.cpuPercent,
+    afterProcessCpuPercent: after.openSearch.process.cpuPercent,
+  };
+
+  const solr = {
+    garbageCollectionMetricDeltas: cumulativeMetricMapDelta(
+      before.solr.normalizedMetricGroups.garbageCollectionCounters,
+      after.solr.normalizedMetricGroups.garbageCollectionCounters,
+      'solr.garbageCollectionCounters',
+      counterResetFields,
+    ),
+    beforeGarbageCollectionMetrics:
+      before.solr.normalizedMetricGroups.garbageCollection,
+    afterGarbageCollectionMetrics:
+      after.solr.normalizedMetricGroups.garbageCollection,
+    cpuTimeMetricDeltas: cumulativeMetricMapDelta(
+      before.solr.normalizedMetricGroups.cpuTimeCounters,
+      after.solr.normalizedMetricGroups.cpuTimeCounters,
+      'solr.cpuTimeCounters',
+      counterResetFields,
+    ),
+    beforeCpuAndLoadMetrics: before.solr.normalizedMetricGroups.cpuAndLoad,
+    afterCpuAndLoadMetrics: after.solr.normalizedMetricGroups.cpuAndLoad,
+    beforeHeapAndMemoryMetrics:
+      before.solr.normalizedMetricGroups.heapAndMemory,
+    afterHeapAndMemoryMetrics:
+      after.solr.normalizedMetricGroups.heapAndMemory,
+  };
+
   return {
     interpretation:
-      'Only identifiable cumulative counters are expressed as after-minus-before deltas. Instantaneous CPU/load, heap and container memory observations are retained as before/after values rather than mislabeled cumulative consumption.',
-    openSearch: {
-      processCpuTotalMillisDelta: numericDelta(
-        before.openSearch.process.cpuTotalMillis,
-        after.openSearch.process.cpuTotalMillis,
-      ),
-      gcCollectionCountDelta: numericDelta(
-        before.openSearch.jvm.gcCollectionCount,
-        after.openSearch.jvm.gcCollectionCount,
-      ),
-      gcCollectionTimeMillisDelta: numericDelta(
-        before.openSearch.jvm.gcCollectionTimeMillis,
-        after.openSearch.jvm.gcCollectionTimeMillis,
-      ),
-      searchQueryTotalDelta: numericDelta(
-        before.openSearch.search.queryTotal,
-        after.openSearch.search.queryTotal,
-      ),
-      searchQueryTimeMillisDelta: numericDelta(
-        before.openSearch.search.queryTimeMillis,
-        after.openSearch.search.queryTimeMillis,
-      ),
-      beforeHeapUsedBytes: before.openSearch.jvm.heapUsedBytes,
-      afterHeapUsedBytes: after.openSearch.jvm.heapUsedBytes,
-      beforeProcessCpuPercent: before.openSearch.process.cpuPercent,
-      afterProcessCpuPercent: after.openSearch.process.cpuPercent,
-    },
-    solr: {
-      garbageCollectionMetricDeltas: metricMapDelta(
-        before.solr.normalizedMetricGroups.garbageCollectionCounters,
-        after.solr.normalizedMetricGroups.garbageCollectionCounters,
-      ),
-      beforeGarbageCollectionMetrics:
-        before.solr.normalizedMetricGroups.garbageCollection,
-      afterGarbageCollectionMetrics:
-        after.solr.normalizedMetricGroups.garbageCollection,
-      cpuTimeMetricDeltas: metricMapDelta(
-        before.solr.normalizedMetricGroups.cpuTimeCounters,
-        after.solr.normalizedMetricGroups.cpuTimeCounters,
-      ),
-      beforeCpuAndLoadMetrics: before.solr.normalizedMetricGroups.cpuAndLoad,
-      afterCpuAndLoadMetrics: after.solr.normalizedMetricGroups.cpuAndLoad,
-      beforeHeapAndMemoryMetrics:
-        before.solr.normalizedMetricGroups.heapAndMemory,
-      afterHeapAndMemoryMetrics:
-        after.solr.normalizedMetricGroups.heapAndMemory,
-    },
+      'Only identifiable cumulative counters are expressed as after-minus-before deltas. Instantaneous CPU/load, heap and container memory observations are retained as before/after values rather than mislabeled cumulative consumption. A counter that decreases is treated as a reset/restart signal: its delta is omitted and the field is listed in counterResetFields.',
+    openSearch,
+    solr,
+    counterResetDetected: counterResetFields.length > 0,
+    counterResetFields,
     docker,
   };
 }
@@ -408,7 +453,7 @@ export async function runTelemetryWrappedConcurrencyMatrix({
     capturedAt: now().toISOString(),
     comparativeClaimAllowed: false,
     methodology:
-      'Resource telemetry brackets the concurrency matrix without changing engine configuration. Solr JVM/node registries, OpenSearch node JVM/process/OS/index stats, and Docker service snapshots are retained with normalized summaries. Only identifiable cumulative counters are differenced; CPU/load, heap and container-memory gauges remain explicit observations. Telemetry supports interpretation of the local benchmark but does not establish universal engine efficiency.',
+      'Resource telemetry brackets the concurrency matrix without changing engine configuration. Solr JVM/node registries, OpenSearch node JVM/process/OS/index stats, and Docker service snapshots are retained with normalized summaries. Only identifiable cumulative counters are differenced; CPU/load, heap and container-memory gauges remain explicit observations. Counter regressions are surfaced as reset/restart evidence rather than negative resource consumption. Telemetry supports interpretation of the local benchmark but does not establish universal engine efficiency.',
     benchmark,
     resourceTelemetry: {
       before,
