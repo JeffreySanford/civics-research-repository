@@ -58,7 +58,7 @@ function parityResponse() {
   };
 }
 
-test('C2.1 full-text matrix is frozen to Q01-Q20 including prior query and no-result control', () => {
+test('C2.1 full-text matrix is frozen to Q01-Q20 including rare, phrase, prior query and no-result controls', () => {
   assert.equal(C2_1_FULL_TEXT_QUERIES.length, 20);
   assert.deepEqual(
     C2_1_FULL_TEXT_QUERIES.map(({ id }) => id),
@@ -67,6 +67,8 @@ test('C2.1 full-text matrix is frozen to Q01-Q20 including prior query and no-re
       (_, index) => `Q${String(index + 1).padStart(2, '0')}`,
     ),
   );
+  assert.equal(C2_1_FULL_TEXT_QUERIES[4].class, 'single/rare candidate');
+  assert.equal(C2_1_FULL_TEXT_QUERIES[4].query, 'hydrogeology');
   assert.equal(C2_1_FULL_TEXT_QUERIES[5].class, 'exact-phrase');
   assert.equal(C2_1_FULL_TEXT_QUERIES[5].query, '"North Dakota"');
   assert.equal(C2_1_FULL_TEXT_QUERIES[10].query, 'North Dakota workforce');
