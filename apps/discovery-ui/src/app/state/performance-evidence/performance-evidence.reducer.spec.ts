@@ -20,6 +20,7 @@ const evidence = {
   orderRobustness: null,
   pairedWorkloads: [],
   concurrency: [],
+  c21Adversarial: null,
   resources: {
     captured: true,
     interpretation: null,

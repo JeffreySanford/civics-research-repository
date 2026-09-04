@@ -18,6 +18,7 @@ public record SearchPerformanceEvidence(
         OrderRobustness orderRobustness,
         List<PairedWorkload> pairedWorkloads,
         List<ConcurrencyCell> concurrency,
+        C21AdversarialEvidence c21Adversarial,
         ResourceSummary resources) {
 
     public SearchPerformanceEvidence {
@@ -104,6 +105,32 @@ public record SearchPerformanceEvidence(
     public record BatchCellInference(
             boolean available,
             Integer batchCount,
+            LatencyInference apiElapsed) {}
+
+    /** Adversarial C2.1 evidence is deliberately separate from the historical C2 baseline. */
+    public record C21AdversarialEvidence(
+            String capturedAt,
+            String openSearchTreatment,
+            int workloadCellCount,
+            int restartBlocks,
+            int independentBatchSummariesPerCell,
+            int solrLowerLatencyCells,
+            int openSearchLowerLatencyCells,
+            int tiedCells,
+            int ciExcludesZeroFavoringSolr,
+            int ciExcludesZeroFavoringOpenSearch,
+            List<C21Cell> cells,
+            String claimGuardrail) {
+
+        public C21AdversarialEvidence {
+            cells = List.copyOf(cells);
+        }
+    }
+
+    public record C21Cell(
+            String id,
+            String workload,
+            long totalHits,
             LatencyInference apiElapsed) {}
 
     public record ResourceSummary(

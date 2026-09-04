@@ -1382,6 +1382,29 @@ export interface components {
       counterResetDetected: boolean;
       counterResetFields: string[];
     };
+    SearchPerformanceC21Cell: {
+      id: string;
+      workload: string;
+      /** Format: int64 */
+      totalHits: number;
+      apiElapsed: components['schemas']['SearchPerformanceLatencyInference'];
+    };
+    SearchPerformanceC21Adversarial: {
+      /** Format: date-time */
+      capturedAt: string;
+      /** @enum {string} */
+      openSearchTreatment: 'C2_1_OPTIMIZED_EQUIVALENT';
+      workloadCellCount: number;
+      restartBlocks: number;
+      independentBatchSummariesPerCell: number;
+      solrLowerLatencyCells: number;
+      openSearchLowerLatencyCells: number;
+      tiedCells: number;
+      ciExcludesZeroFavoringSolr: number;
+      ciExcludesZeroFavoringOpenSearch: number;
+      cells: components['schemas']['SearchPerformanceC21Cell'][];
+      claimGuardrail: string;
+    };
     SearchPerformanceEvidence: {
       /** @enum {string} */
       profile: 'FEDERATED_1M';
@@ -1408,6 +1431,9 @@ export interface components {
         | null;
       pairedWorkloads: components['schemas']['SearchPerformancePairedWorkload'][];
       concurrency: components['schemas']['SearchPerformanceConcurrencyCell'][];
+      c21Adversarial:
+        | components['schemas']['SearchPerformanceC21Adversarial']
+        | null;
       resources: components['schemas']['SearchPerformanceResourceSummary'];
     };
     AccessibilityEvidence: {

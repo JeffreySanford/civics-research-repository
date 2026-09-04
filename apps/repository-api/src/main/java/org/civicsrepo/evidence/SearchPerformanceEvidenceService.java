@@ -27,6 +27,11 @@ public class SearchPerformanceEvidenceService {
     private static final String PROFILE = "FEDERATED_1M";
     private static final String STATISTICAL_REPORT = "search-comparison-statistical-report.json";
     private static final String RESEARCH_REPORT = "research-performance/federated-1m-report.json";
+    private static final String C21_STATISTICAL_REPORT = "c2-1/statistical-report.json";
+    private static final String C21_EXPERIMENT = "C2.1_ADVERSARIAL_STANDALONE";
+    private static final String C21_REPORT_KIND = "c2-1-statistical-report";
+    private static final String C21_TREATMENT = "C2_1_OPTIMIZED_EQUIVALENT";
+    private static final String C21_SCOPE = "LOCAL_CERTIFIED_TOPOLOGY_ONLY";
     private static final String POSITIVE_DIFFERENCE = "Positive differences mean OpenSearch took longer than Solr.";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -40,6 +45,7 @@ public class SearchPerformanceEvidenceService {
     public Optional<SearchPerformanceEvidence> latestEvidence() {
         Path statisticalPath = evidenceRoot.resolve(STATISTICAL_REPORT);
         Path researchPath = evidenceRoot.resolve(RESEARCH_REPORT);
+        Path c21Path = evidenceRoot.resolve(C21_STATISTICAL_REPORT);
         if (!Files.isRegularFile(statisticalPath) || !Files.isRegularFile(researchPath)) {
             return Optional.empty();
         }
@@ -47,14 +53,15 @@ public class SearchPerformanceEvidenceService {
         try {
             JsonNode statistical = objectMapper.readTree(statisticalPath.toFile());
             JsonNode research = objectMapper.readTree(researchPath.toFile());
-            return Optional.of(toEvidence(research, statistical));
+            JsonNode c21 = Files.isRegularFile(c21Path) ? objectMapper.readTree(c21Path.toFile()) : null;
+            return Optional.of(toEvidence(research, statistical, c21));
         } catch (IOException exception) {
-            LOGGER.error("Failed to read C2 search performance evidence from {}", evidenceRoot, exception);
-            throw new IllegalStateException("Could not read C2 search performance evidence", exception);
+            LOGGER.error("Failed to read C2/C2.1 search performance evidence from {}", evidenceRoot, exception);
+            throw new IllegalStateException("Could not read C2/C2.1 search performance evidence", exception);
         }
     }
 
-    private static SearchPerformanceEvidence toEvidence(JsonNode research, JsonNode statistical) {
+    private static SearchPerformanceEvidence toEvidence(JsonNode research, JsonNode statistical, JsonNode c21) {
         JsonNode paired = research.path("paired");
         String profile = paired.path("profile").asText();
         if (!PROFILE.equals(profile)) {
@@ -67,6 +74,7 @@ public class SearchPerformanceEvidenceService {
             throw new IllegalStateException("Search performance evidence projection mismatch");
         }
 
+        long projectionObjectCount = paired.path("projection").path("objectCount").asLong();
         JsonNode researchEvidence = paired.path("evidence");
         return new SearchPerformanceEvidence(
                 profile,
@@ -74,7 +82,7 @@ public class SearchPerformanceEvidenceService {
                 statistical.path("scope").asText(),
                 statistical.path("comparativeClaimAllowed").asBoolean(false),
                 statisticalProjection,
-                paired.path("projection").path("objectCount").asLong(),
+                projectionObjectCount,
                 researchEvidence.path("retainedFederatedRecordCount").asLong(),
                 researchEvidence.path("targetParity").asBoolean(false),
                 statistical.path("claimGuardrail").asText(),
@@ -83,6 +91,7 @@ public class SearchPerformanceEvidenceService {
                 orderRobustness(statistical.path("orderRobustness")),
                 pairedWorkloads(paired.path("passes")),
                 concurrency(statistical),
+                c21Adversarial(c21, statisticalProjection, projectionObjectCount),
                 resources(statistical.path("resourceEvidence")));
     }
 
@@ -202,6 +211,135 @@ public class SearchPerformanceEvidenceService {
                 available,
                 intOrNull(row.get("batchCount")),
                 available ? inference(row.path("apiElapsed").path("statistics")) : null);
+    }
+
+    private static SearchPerformanceEvidence.C21AdversarialEvidence c21Adversarial(
+            JsonNode node, String projectionId, long projectionObjectCount) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        if (!C21_EXPERIMENT.equals(node.path("experiment").asText())
+                || !C21_REPORT_KIND.equals(node.path("kind").asText())) {
+            throw new IllegalStateException("C2.1 evidence is not the admitted adversarial statistical report");
+        }
+        if (!C21_SCOPE.equals(node.path("scope").asText())) {
+            throw new IllegalStateException("C2.1 evidence scope mismatch");
+        }
+        if (node.path("comparativeClaimAllowed").asBoolean(true)) {
+            throw new IllegalStateException("C2.1 evidence must retain the comparative-claim guardrail");
+        }
+        if (!projectionId.equals(node.path("projectionId").asText())
+                || projectionObjectCount != node.path("projectionObjectCount").asLong(-1)) {
+            throw new IllegalStateException("C2.1 evidence projection mismatch");
+        }
+        if (!C21_TREATMENT.equals(node.path("openSearchTreatment").asText())) {
+            throw new IllegalStateException("C2.1 evidence treatment mismatch");
+        }
+
+        JsonNode inferenceContract = node.path("inferenceContract");
+        int restartBlocks = inferenceContract.path("restartBlocks").asInt(-1);
+        int independentBatches = inferenceContract.path("independentBatchSummariesPerCell").asInt(-1);
+        if (restartBlocks != 4 || independentBatches != 16) {
+            throw new IllegalStateException("C2.1 evidence does not match the accepted 4-block / 16-batch design");
+        }
+
+        JsonNode summary = node.path("summary");
+        JsonNode apiSummary = summary.path("apiElapsed");
+        int workloadCellCount = summary.path("workloadCellCount").asInt(-1);
+        List<SearchPerformanceEvidence.C21Cell> cells = new ArrayList<>();
+        node.path("cells").forEach(cell -> {
+            SearchPerformanceEvidence.LatencyInference apiElapsed =
+                    inference(cell.path("batchLevelInference").path("apiElapsed").path("statistics"));
+            if (apiElapsed == null) {
+                throw new IllegalStateException("C2.1 workload cell is missing batch-level API inference");
+            }
+            cells.add(new SearchPerformanceEvidence.C21Cell(
+                    cell.path("id").asText(),
+                    c21Workload(cell),
+                    cell.path("totalHits").asLong(),
+                    apiElapsed));
+        });
+        if (workloadCellCount < 1 || cells.size() != workloadCellCount) {
+            throw new IllegalStateException("C2.1 evidence workload summary does not match retained cells");
+        }
+        validateC21ApiSummary(apiSummary, cells);
+
+        return new SearchPerformanceEvidence.C21AdversarialEvidence(
+                node.path("capturedAt").asText(),
+                node.path("openSearchTreatment").asText(),
+                workloadCellCount,
+                restartBlocks,
+                independentBatches,
+                apiSummary.path("solrLowerLatencyCells").asInt(),
+                apiSummary.path("openSearchLowerLatencyCells").asInt(),
+                apiSummary.path("tiedCells").asInt(),
+                apiSummary.path("ciExcludesZeroFavoringSolr").asInt(),
+                apiSummary.path("ciExcludesZeroFavoringOpenSearch").asInt(),
+                cells,
+                node.path("claimGuardrail").asText());
+    }
+
+    private static void validateC21ApiSummary(
+            JsonNode apiSummary, List<SearchPerformanceEvidence.C21Cell> cells) {
+        int solrLowerLatencyCells = 0;
+        int openSearchLowerLatencyCells = 0;
+        int tiedCells = 0;
+        int ciExcludesZeroFavoringSolr = 0;
+        int ciExcludesZeroFavoringOpenSearch = 0;
+
+        for (SearchPerformanceEvidence.C21Cell cell : cells) {
+            SearchPerformanceEvidence.LatencyInference inference = cell.apiElapsed();
+            Double medianDifferenceMs = inference.medianDifferenceMs();
+            Double lower95Ms = inference.lower95Ms();
+            Double upper95Ms = inference.upper95Ms();
+
+            if (medianDifferenceMs == null || lower95Ms == null || upper95Ms == null) {
+                throw new IllegalStateException(
+                        "C2.1 workload cell is missing complete batch-level API inference");
+            }
+
+            if (medianDifferenceMs > 0) {
+                solrLowerLatencyCells++;
+            } else if (medianDifferenceMs < 0) {
+                openSearchLowerLatencyCells++;
+            } else {
+                tiedCells++;
+            }
+
+            if (lower95Ms > 0) {
+                ciExcludesZeroFavoringSolr++;
+            } else if (upper95Ms < 0) {
+                ciExcludesZeroFavoringOpenSearch++;
+            }
+        }
+
+        boolean summaryMatches =
+                apiSummary.path("solrLowerLatencyCells").asInt(-1) == solrLowerLatencyCells
+                        && apiSummary.path("openSearchLowerLatencyCells").asInt(-1)
+                                == openSearchLowerLatencyCells
+                        && apiSummary.path("tiedCells").asInt(-1) == tiedCells
+                        && apiSummary.path("ciExcludesZeroFavoringSolr").asInt(-1)
+                                == ciExcludesZeroFavoringSolr
+                        && apiSummary.path("ciExcludesZeroFavoringOpenSearch").asInt(-1)
+                                == ciExcludesZeroFavoringOpenSearch;
+
+        if (!summaryMatches) {
+            throw new IllegalStateException(
+                    "C2.1 evidence API summary drift from retained workload cells");
+        }
+    }
+
+    private static String c21Workload(JsonNode cell) {
+        String query = cell.path("request").path("query").asText().trim();
+        if (!query.isBlank()) {
+            return query;
+        }
+        String selected = cell.path("selected").path("normalizedIdentity").asText().trim();
+        if (!selected.isBlank()) {
+            return selected;
+        }
+        String family = cell.path("family").asText().trim();
+        return family.isBlank() ? cell.path("id").asText() : family;
     }
 
     private static SearchPerformanceEvidence.LatencyInference inferenceFromConcurrencyRow(JsonNode row) {
