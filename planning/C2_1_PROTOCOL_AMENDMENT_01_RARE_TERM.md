@@ -8,7 +8,7 @@ Related work: issue #47 and merged PR #56.
 
 Issue #47 requires the preregistered C2.1 full-text matrix to cover common and rare terms, short and long queries, exact phrases, cross-source vocabulary, no-result controls, and high-result-count queries.
 
-PR #56 already amended Q06 to the exact-phrase workload `\"North Dakota\"` and added equivalent phrase-only handling for both OpenSearch comparison implementations before C2.1 timing collection.
+PR #56 already amended Q06 to the exact-phrase workload `"North Dakota"` and added equivalent phrase-only handling for both OpenSearch comparison implementations before C2.1 timing collection.
 
 This amendment closes the remaining rare-term coverage gap before C2.1 performance timing is intentionally collected.
 
@@ -16,9 +16,11 @@ This amendment closes the remaining rare-term coverage gap before C2.1 performan
 
 This amendment supersedes only the Q05 row of `planning/C2_ADVERSARIAL_VALIDATION_PROTOCOL.md`:
 
-| ID  | Prior class     | Prior query | Amended class           | Amended query   |
-| --- | --------------- | ----------- | ----------------------- | --------------- |
-| Q05 | `single/domain` | `water`     | `single/rare candidate` | `hydrogeology`  |
+- ID: `Q05`
+- Prior class: `single/domain`
+- Prior query: `water`
+- Amended class: `single/rare candidate`
+- Amended query: `hydrogeology`
 
 All other Q01-Q20 strings and classes remain unchanged, including Q06 exact phrase, Q11 `North Dakota workforce`, and Q20 no-result control.
 
