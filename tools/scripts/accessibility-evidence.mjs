@@ -81,11 +81,21 @@ function validateManualEvidenceContract() {
   ];
 
   for (const entry of required) {
-    const content = readFileSync(entry.path, 'utf8');
+    let content;
+    try {
+      content = readFileSync(entry.path, 'utf8');
+    } catch (error) {
+      const detail = error instanceof Error ? `: ${error.message}` : '';
+      throw new Error(
+        `Could not read ${entry.label} at ${entry.path}${detail}`,
+        { cause: error },
+      );
+    }
+
     const missing = entry.phrases.filter((phrase) => !content.includes(phrase));
     if (missing.length > 0) {
       throw new Error(
-        `${entry.label} is missing required #49/C2.1 language: ${missing.join(', ')}`,
+        `${entry.label} at ${entry.path} is missing required #49/C2.1 language: ${missing.join(', ')}`,
       );
     }
   }
