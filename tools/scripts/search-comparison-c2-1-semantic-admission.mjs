@@ -73,16 +73,14 @@ function requireCertifiedResponse(response, label) {
       Number(engine?.indexedDocumentCount) !==
       C2_1_EXPECTED.projectionObjectCount
     ) {
-      throw new Error(`${label}: ${engineLabel} indexed document count changed.`);
+      throw new Error(
+        `${label}: ${engineLabel} indexed document count changed.`,
+      );
     }
   }
 }
 
-export function compareC21TreatmentSemantics({
-  cellId,
-  baseline,
-  optimized,
-}) {
+export function compareC21TreatmentSemantics({ cellId, baseline, optimized }) {
   requireCertifiedResponse(baseline, `${cellId} baseline`);
   requireCertifiedResponse(optimized, `${cellId} optimized`);
 
@@ -100,13 +98,19 @@ export function compareC21TreatmentSemantics({
     JSON.stringify(optimizedOpenSearch.facets);
 
   if (!treatmentPreservesTotalHits) {
-    throw new Error(`${cellId}: optimized treatment changed OpenSearch total hits.`);
+    throw new Error(
+      `${cellId}: optimized treatment changed OpenSearch total hits.`,
+    );
   }
   if (!treatmentPreservesResultOrder) {
-    throw new Error(`${cellId}: optimized treatment changed OpenSearch top-N result order.`);
+    throw new Error(
+      `${cellId}: optimized treatment changed OpenSearch top-N result order.`,
+    );
   }
   if (!treatmentPreservesFacets) {
-    throw new Error(`${cellId}: optimized treatment changed OpenSearch facet bucket counts.`);
+    throw new Error(
+      `${cellId}: optimized treatment changed OpenSearch facet bucket counts.`,
+    );
   }
 
   const crossEngineTotalHitsEqual =
@@ -158,9 +162,7 @@ function requestForSelectedFilter(selected) {
   if (selected.field === 'sourceSystem') {
     return { ...base, sourceSystem: selected.value };
   }
-  throw new Error(
-    `C2.1 selected unsupported filter field ${selected.field}.`,
-  );
+  throw new Error(`C2.1 selected unsupported filter field ${selected.field}.`);
 }
 
 export function buildC21SemanticCells(filterSelection) {
@@ -237,7 +239,10 @@ export async function runC21SemanticAdmission({
   requireCertifiedResponse(discoveryResponse, 'filter discovery');
   const filterSelection = selectC21FilterBands(discoveryResponse);
   const cells = buildC21SemanticCells(filterSelection);
-  assert.ok(cells.length >= 21, 'C2.1 semantic matrix must include Q01-Q20 plus facets.');
+  assert.ok(
+    cells.length >= 21,
+    'C2.1 semantic matrix must include Q01-Q20 plus facets.',
+  );
 
   const admittedCells = [];
   for (const cell of cells) {

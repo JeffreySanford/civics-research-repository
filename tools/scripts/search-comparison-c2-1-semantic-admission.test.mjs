@@ -163,16 +163,12 @@ test('full semantic admission discards timing and names the treatment on every r
   assert.equal(calls.length, 49);
   assert.ok(
     calls.some((call) =>
-      call.url.includes(
-        `openSearchTreatment=${C2_1_ADMITTED_TREATMENT}`,
-      ),
+      call.url.includes(`openSearchTreatment=${C2_1_ADMITTED_TREATMENT}`),
     ),
   );
   assert.ok(
     calls.some((call) =>
-      call.url.includes(
-        `openSearchTreatment=${C2_1_BASELINE_TREATMENT}`,
-      ),
+      call.url.includes(`openSearchTreatment=${C2_1_BASELINE_TREATMENT}`),
     ),
   );
   assert.equal('elapsedMs' in evidence.cells[0].semantic, false);

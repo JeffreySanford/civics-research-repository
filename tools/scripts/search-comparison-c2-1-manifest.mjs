@@ -113,10 +113,14 @@ function validateCertifiedEvidence(evidence) {
     evidence?.retainedFederatedRecords !==
     C2_1_EXPECTED.retainedFederatedRecords
   ) {
-    throw new Error('C2.1 requires exactly 1,000,000 retained federated records.');
+    throw new Error(
+      'C2.1 requires exactly 1,000,000 retained federated records.',
+    );
   }
   if (evidence?.targetParity !== true) {
-    throw new Error('C2.1 refuses timing without Solr/OpenSearch target parity.');
+    throw new Error(
+      'C2.1 refuses timing without Solr/OpenSearch target parity.',
+    );
   }
   if (evidence?.comparativeClaimAllowed !== false) {
     throw new Error(
@@ -142,20 +146,17 @@ function validateContainer(service, container) {
     );
   }
   if (container?.HostConfig?.Memory !== C2_1_EXPECTED.memoryBytes) {
-    throw new Error(`C2.1 ${service} container must be limited to 4 GiB memory.`);
+    throw new Error(
+      `C2.1 ${service} container must be limited to 4 GiB memory.`,
+    );
   }
 
   const environment = environmentMap(container);
   if (isSolr && environment.SOLR_HEAP !== C2_1_EXPECTED.heap) {
     throw new Error('C2.1 Solr must run with SOLR_HEAP=512m.');
   }
-  if (
-    !isSolr &&
-    environment.OPENSEARCH_JAVA_OPTS !== '-Xms512m -Xmx512m'
-  ) {
-    throw new Error(
-      'C2.1 OpenSearch must run with -Xms512m -Xmx512m.',
-    );
+  if (!isSolr && environment.OPENSEARCH_JAVA_OPTS !== '-Xms512m -Xmx512m') {
+    throw new Error('C2.1 OpenSearch must run with -Xms512m -Xmx512m.');
   }
 
   return {
@@ -309,7 +310,9 @@ function validateOpenSearchRuntime({
     );
   }
   if (!settingsNode?.settings) {
-    throw new Error('C2.1 OpenSearch settings response is missing index settings.');
+    throw new Error(
+      'C2.1 OpenSearch settings response is missing index settings.',
+    );
   }
 
   const indexSettings = settingsNode.settings;
@@ -350,10 +353,14 @@ function validateOpenSearchRuntime({
 
 function validateReadState(readState) {
   if (Number(readState?.solrCommit?.responseHeader?.status) !== 0) {
-    throw new Error('C2.1 requires a successful Solr hard commit before timing.');
+    throw new Error(
+      'C2.1 requires a successful Solr hard commit before timing.',
+    );
   }
   if (Number(readState?.openSearchRefresh?._shards?.failed ?? 1) !== 0) {
-    throw new Error('C2.1 requires a successful OpenSearch refresh before timing.');
+    throw new Error(
+      'C2.1 requires a successful OpenSearch refresh before timing.',
+    );
   }
   return {
     solrHardCommit: 'SUCCESS',
@@ -478,7 +485,10 @@ async function fetchJson(fetchImpl, url, init) {
 }
 
 async function dockerInspect(execFileImpl, containerId) {
-  const output = await command(execFileImpl, 'docker', ['inspect', containerId]);
+  const output = await command(execFileImpl, 'docker', [
+    'inspect',
+    containerId,
+  ]);
   const [inspection] = parseJsonDocuments(output);
   if (!inspection) {
     throw new Error(`Docker inspect returned no data for ${containerId}.`);
@@ -499,12 +509,7 @@ async function dockerImageInspect(execFileImpl, imageId) {
   return inspection;
 }
 
-async function prepareReadState({
-  fetchImpl,
-  solrUrl,
-  openSearchUrl,
-  now,
-}) {
+async function prepareReadState({ fetchImpl, solrUrl, openSearchUrl, now }) {
   const solrCommit = await fetchJson(
     fetchImpl,
     `${solrUrl}/solr/${C2_1_EXPECTED.solrCore}/update?commit=true&wt=json`,
@@ -609,10 +614,7 @@ export async function captureC21ExecutionManifest({
   const [solrSystem, solrCoreStatus, solrConfig, solrSchema] =
     await Promise.all([
       fetchJson(fetchImpl, `${solrUrl}/solr/admin/info/system?wt=json`),
-      fetchJson(
-        fetchImpl,
-        `${solrUrl}/solr/admin/cores?action=STATUS&wt=json`,
-      ),
+      fetchJson(fetchImpl, `${solrUrl}/solr/admin/cores?action=STATUS&wt=json`),
       fetchJson(
         fetchImpl,
         `${solrUrl}/solr/${C2_1_EXPECTED.solrCore}/config?wt=json&omitHeader=true`,

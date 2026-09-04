@@ -62,8 +62,9 @@ test('C2.1 full-text matrix is frozen to Q01-Q20 including prior query and no-re
   assert.equal(C2_1_FULL_TEXT_QUERIES.length, 20);
   assert.deepEqual(
     C2_1_FULL_TEXT_QUERIES.map(({ id }) => id),
-    Array.from({ length: 20 }, (_, index) =>
-      `Q${String(index + 1).padStart(2, '0')}`,
+    Array.from(
+      { length: 20 },
+      (_, index) => `Q${String(index + 1).padStart(2, '0')}`,
     ),
   );
   assert.equal(C2_1_FULL_TEXT_QUERIES[10].query, 'North Dakota workforce');
@@ -209,9 +210,8 @@ test('C2.1 restart plan is deterministic and exactly balanced in every block and
       2,
     );
     assert.equal(
-      block.batchExecutionOrders.filter(
-        (order) => order === 'OPENSEARCH_FIRST',
-      ).length,
+      block.batchExecutionOrders.filter((order) => order === 'OPENSEARCH_FIRST')
+        .length,
       2,
     );
     assert.equal(block.realizedFirstBatchOrder, block.batchExecutionOrders[0]);

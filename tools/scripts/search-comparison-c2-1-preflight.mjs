@@ -19,10 +19,14 @@ export function buildC21PreflightAuthorization({ manifest, semantic }) {
     throw new Error('C2.1 execution manifest did not authorize timing.');
   }
   if (manifest?.comparativeClaimAllowed !== false) {
-    throw new Error('C2.1 execution manifest lost the comparative-claim guardrail.');
+    throw new Error(
+      'C2.1 execution manifest lost the comparative-claim guardrail.',
+    );
   }
   if (semantic?.admitted !== true) {
-    throw new Error('C2.1 optimized OpenSearch treatment was not semantically admitted.');
+    throw new Error(
+      'C2.1 optimized OpenSearch treatment was not semantically admitted.',
+    );
   }
   if (
     semantic?.timingDiscarded !== true ||
@@ -41,7 +45,9 @@ export function buildC21PreflightAuthorization({ manifest, semantic }) {
     manifest?.certifiedControl?.projectionId !== C2_1_EXPECTED.projectionId ||
     semantic?.projectionId !== C2_1_EXPECTED.projectionId
   ) {
-    throw new Error('C2.1 preflight artifacts do not share the certified projection.');
+    throw new Error(
+      'C2.1 preflight artifacts do not share the certified projection.',
+    );
   }
   if (
     Number(manifest?.certifiedControl?.projectionObjectCount) !==

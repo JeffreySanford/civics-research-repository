@@ -61,9 +61,7 @@ function validInput() {
     },
     openSearchImage: {
       Id: OPENSEARCH_IMAGE_ID,
-      RepoDigests: [
-        `opensearchproject/opensearch@sha256:${'4'.repeat(64)}`,
-      ],
+      RepoDigests: [`opensearchproject/opensearch@sha256:${'4'.repeat(64)}`],
       Created: '2026-08-01T00:00:00Z',
     },
     solrRuntime: {
@@ -168,7 +166,10 @@ test('C2.1 manifest admits only the frozen certified standalone topology', () =>
 
 test('C2.1 manifest accepts a stable alias resolving to one differently named physical index', () => {
   const manifest = buildC21ExecutionManifest(validInput());
-  assert.equal(manifest.topology.openSearch.runtime.alias, 'discovery-comparison');
+  assert.equal(
+    manifest.topology.openSearch.runtime.alias,
+    'discovery-comparison',
+  );
   assert.equal(
     manifest.topology.openSearch.runtime.resolvedPhysicalIndex,
     PHYSICAL_INDEX,
@@ -226,15 +227,15 @@ test('C2.1 manifest refuses asymmetric container CPU, memory, heap, or image tag
 
   const wrongHeap = validInput();
   wrongHeap.solrContainer.Config.Env = ['SOLR_HEAP=1g'];
-  assert.throws(
-    () => buildC21ExecutionManifest(wrongHeap),
-    /SOLR_HEAP=512m/,
-  );
+  assert.throws(() => buildC21ExecutionManifest(wrongHeap), /SOLR_HEAP=512m/);
 
   assert.throws(
     () =>
       buildC21ExecutionManifest(
-        mutate(['openSearchContainer', 'Config', 'Image'], 'opensearchproject/opensearch:latest'),
+        mutate(
+          ['openSearchContainer', 'Config', 'Image'],
+          'opensearchproject/opensearch:latest',
+        ),
       ),
     /must use opensearchproject\/opensearch:2\.19\.6/,
   );
@@ -242,10 +243,7 @@ test('C2.1 manifest refuses asymmetric container CPU, memory, heap, or image tag
 
 test('C2.1 manifest refuses mutable or mismatched engine image identity', () => {
   assert.throws(
-    () =>
-      buildC21ExecutionManifest(
-        mutate(['solrImage', 'RepoDigests'], []),
-      ),
+    () => buildC21ExecutionManifest(mutate(['solrImage', 'RepoDigests'], [])),
     /immutable image ID and RepoDigest/,
   );
   assert.throws(
@@ -271,7 +269,14 @@ test('C2.1 manifest proves Solr has exactly one expected core and the certified 
     () =>
       buildC21ExecutionManifest(
         mutate(
-          ['solrRuntime', 'coreStatus', 'status', 'discovery', 'index', 'numDocs'],
+          [
+            'solrRuntime',
+            'coreStatus',
+            'status',
+            'discovery',
+            'index',
+            'numDocs',
+          ],
           C2_1_EXPECTED.projectionObjectCount - 1,
         ),
       ),
@@ -307,7 +312,13 @@ test('C2.1 manifest refuses OpenSearch shard, replica, version, and document-cou
     () =>
       buildC21ExecutionManifest(
         mutate(
-          ['openSearchRuntime', 'settings', PHYSICAL_INDEX, 'settings', 'index.number_of_shards'],
+          [
+            'openSearchRuntime',
+            'settings',
+            PHYSICAL_INDEX,
+            'settings',
+            'index.number_of_shards',
+          ],
           '2',
         ),
       ),
@@ -317,7 +328,13 @@ test('C2.1 manifest refuses OpenSearch shard, replica, version, and document-cou
     () =>
       buildC21ExecutionManifest(
         mutate(
-          ['openSearchRuntime', 'settings', PHYSICAL_INDEX, 'settings', 'index.number_of_replicas'],
+          [
+            'openSearchRuntime',
+            'settings',
+            PHYSICAL_INDEX,
+            'settings',
+            'index.number_of_replicas',
+          ],
           '1',
         ),
       ),
@@ -366,8 +383,7 @@ test('C2.1 manifest refuses malformed commit and protocol identities', () => {
     /repositoryCommit must be a 40-character Git commit SHA/,
   );
   assert.throws(
-    () =>
-      buildC21ExecutionManifest({ ...validInput(), protocolSha256: 'abc' }),
+    () => buildC21ExecutionManifest({ ...validInput(), protocolSha256: 'abc' }),
     /protocolSha256 must be a SHA-256 hex digest/,
   );
 });
