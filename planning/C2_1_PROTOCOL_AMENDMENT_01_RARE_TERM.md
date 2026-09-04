@@ -16,9 +16,11 @@ This amendment closes the remaining rare-term coverage gap before C2.1 performan
 
 This amendment supersedes only the Q05 row of `planning/C2_ADVERSARIAL_VALIDATION_PROTOCOL.md`:
 
-| ID  | Prior class     | Prior query | Amended class          | Amended query   |
-| --- | --------------- | ----------- | ---------------------- | --------------- |
-| Q05 | `single/domain` | `water`     | `single/rare candidate` | `hydrogeology` |
+- ID: `Q05`
+- Prior class: `single/domain`
+- Prior query: `water`
+- Amended class: `single/rare candidate`
+- Amended query: `hydrogeology`
 
 All other Q01-Q20 strings and classes remain unchanged, including Q06 exact phrase, Q11 `North Dakota workforce`, and Q20 no-result control.
 
