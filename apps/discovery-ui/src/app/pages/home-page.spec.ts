@@ -17,19 +17,26 @@ describe('HomePage', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('presents the current federal-scale research platform and certified corpus', async () => {
+  it('presents the frontend mission with scale as supporting validation', async () => {
     const fixture = await render();
     const host = fixture.nativeElement as HTMLElement;
 
     expect(host.querySelector('h1')?.textContent).toContain(
       'Discover, connect, and map public research at federal scale',
     );
-    expect(host.querySelector('.scale-card')?.textContent).toContain(
-      '1,000,181 searchable records',
-    );
-    expect(host.querySelector('.scale-card')?.textContent).toContain(
-      '500K Data.gov + 500K DOE OSTI',
-    );
+
+    const hero = host.querySelector('.landing-hero__lead')?.textContent ?? '';
+    expect(hero).toContain('Angular 22 + NgRx/RxJS');
+    expect(hero).toContain('generated API contract');
+    expect(hero).toContain('Angular 22 + NgRx');
+    expect(hero).toContain('Generated OpenAPI');
+    expect(hero).toContain('Accessible MapLibre');
+
+    const scaleCard = host.querySelector('.scale-card')?.textContent ?? '';
+    expect(scaleCard).toContain('Scale validation');
+    expect(scaleCard).toContain('1,000,181 searchable records');
+    expect(scaleCard).toContain('500K Data.gov + 500K DOE OSTI');
+
     expect(host.querySelectorAll('.experience-card')).toHaveLength(3);
     expect(host.querySelectorAll('.authority-flow li')).toHaveLength(4);
   });
