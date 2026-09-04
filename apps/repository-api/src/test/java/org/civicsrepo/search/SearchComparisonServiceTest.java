@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +30,7 @@ class SearchComparisonServiceTest {
 
     private DiscoveryIndex solr;
     private OpenSearchProjectionClient openSearch;
+    private OpenSearchC21OptimizedClient c21OpenSearch;
     private DiscoveryProjectionService projectionService;
     private SearchComparisonService service;
 
@@ -36,8 +38,9 @@ class SearchComparisonServiceTest {
     void setUp() {
         solr = mock(DiscoveryIndex.class);
         openSearch = mock(OpenSearchProjectionClient.class);
+        c21OpenSearch = mock(OpenSearchC21OptimizedClient.class);
         projectionService = mock(DiscoveryProjectionService.class);
-        service = new SearchComparisonService(solr, openSearch, projectionService);
+        service = new SearchComparisonService(solr, openSearch, c21OpenSearch, projectionService);
 
         when(solr.indexName()).thenReturn("discovery");
         when(openSearch.indexName()).thenReturn("discovery-comparison");
@@ -69,10 +72,8 @@ class SearchComparisonServiceTest {
                 null,
                 0,
                 25);
-        when(solr.searchWithDiagnostics(expectedCriteria))
-                .thenReturn(execution(3, 6));
-        when(openSearch.searchWithDiagnostics(expectedCriteria))
-                .thenReturn(execution(3, 11));
+        when(solr.searchWithDiagnostics(expectedCriteria)).thenReturn(execution(3, 6));
+        when(openSearch.searchWithDiagnostics(expectedCriteria)).thenReturn(execution(3, 11));
 
         SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FACETED_SEARCH)
                 .query("reactor materials")
@@ -99,16 +100,15 @@ class SearchComparisonServiceTest {
         assertThat(result.getOpenSearch().getEngineReportedMs()).isEqualTo(11L);
         verify(solr).searchWithDiagnostics(expectedCriteria);
         verify(openSearch).searchWithDiagnostics(expectedCriteria);
+        verify(c21OpenSearch, never()).searchWithDiagnostics(any());
     }
 
     @Test
     void reversesEngineExecutionOrderWithoutChangingTheResponseShape() {
         available(solr);
         available(openSearch);
-        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(2, 4));
-        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(2, 7));
+        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(2, 4));
+        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(2, 7));
 
         SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FULL_TEXT_RELEVANCE)
                 .query("workforce")
@@ -132,12 +132,37 @@ class SearchComparisonServiceTest {
     }
 
     @Test
+    void routesOnlyExplicitC21TreatmentThroughTheOptimizedAdapter() {
+        available(solr);
+        available(openSearch);
+        SearchComparisonCriteria expected = new SearchComparisonCriteria(
+                "workforce", List.of(), null, null, null, null, null, null, null, 0, 10);
+        when(solr.searchWithDiagnostics(expected)).thenReturn(execution(2, 4));
+        when(c21OpenSearch.searchWithDiagnostics(expected)).thenReturn(execution(2, 5));
+
+        SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FULL_TEXT_RELEVANCE)
+                .query("workforce")
+                .page(0)
+                .pageSize(10);
+
+        var result = service.run(
+                request,
+                SearchComparisonExecutionOrder.OPENSEARCH_FIRST,
+                OpenSearchComparisonTreatment.C2_1_OPTIMIZED_EQUIVALENT);
+
+        verify(c21OpenSearch).searchWithDiagnostics(expected);
+        verify(openSearch, never()).searchWithDiagnostics(any(SearchComparisonCriteria.class));
+        assertThat(result.getSameProjection()).isTrue();
+        assertThat(result.getOpenSearch().getTotalHits()).isEqualTo(2);
+        assertThat(result.getOpenSearch().getEngineReportedMs()).isEqualTo(5L);
+    }
+
+    @Test
     void keepsSolrResultWhenOpenSearchIsDown() {
         available(solr);
         when(openSearch.isEnabled()).thenReturn(true);
         when(openSearch.documentCount()).thenReturn(Optional.empty());
-        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(2, 5));
+        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(2, 5));
 
         var result = service.run(new SearchComparisonRequest(SearchComparisonScenarioId.FULL_TEXT_RELEVANCE)
                 .query("workforce")
@@ -157,8 +182,7 @@ class SearchComparisonServiceTest {
         available(openSearch);
         when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
                 .thenThrow(new IllegalStateException("Solr request failed"));
-        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(4, 5));
+        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(4, 5));
 
         var result = service.run(new SearchComparisonRequest(SearchComparisonScenarioId.FILTERING)
                 .query("jobs")
@@ -176,10 +200,8 @@ class SearchComparisonServiceTest {
     void reportsProjectionMismatchEvenWhenDocumentCountsMatch() {
         available(solr);
         available(openSearch);
-        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(1, 5));
-        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(1, 5));
+        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(1, 5));
+        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(1, 5));
         currentProjectionFor(
                 "discovery-comparison",
                 "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -197,10 +219,8 @@ class SearchComparisonServiceTest {
     void normalizesNullQueryAndOutOfRangePagingBeforeCallingEitherEngine() {
         available(solr);
         available(openSearch);
-        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(0, 5));
-        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class)))
-                .thenReturn(execution(0, 5));
+        when(solr.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(0, 5));
+        when(openSearch.searchWithDiagnostics(any(SearchComparisonCriteria.class))).thenReturn(execution(0, 5));
 
         service.run(new SearchComparisonRequest(SearchComparisonScenarioId.FILTERING)
                 .page(-9)
