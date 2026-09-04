@@ -1,3 +1,4 @@
+import './search-comparison-c2-1-report.test.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
