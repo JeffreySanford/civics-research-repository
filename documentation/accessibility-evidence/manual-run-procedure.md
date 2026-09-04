@@ -23,7 +23,7 @@ pnpm install --frozen-lockfile
 pnpm run start:all
 ```
 
-Record the active corpus/profile shown by the application. The manual accessibility result is about the UI commit and the visible runtime state; it is not a new C2 performance run.
+Record the active corpus/profile shown by the application. The manual accessibility result is about the UI commit and the visible runtime state; it is not a new C2 or C2.1 performance run.
 
 ## 2. Record the test environment
 
@@ -101,7 +101,9 @@ On a representative object:
 
 ### Evidence task
 
-On `/evidence`, select **Search comparison** and verify the C2 panel in reading order:
+On `/evidence`, select **Search comparison** and verify the two evidence layers in reading order.
+
+For the **Historical C2 baseline** verify:
 
 1. certified corpus/projection summary;
 2. order robustness and telemetry integrity;
@@ -109,9 +111,19 @@ On `/evidence`, select **Search comparison** and verify the C2 panel in reading 
 4. paired workload table;
 5. 1/8/32 concurrency table;
 6. experimental controls;
-7. scientific claim boundary.
+7. historical C2 scientific claim boundary.
 
-For dense tables, confirm keyboard users can reach/read all content, any table-local horizontal scrolling is operable, and the page itself does not become an uncontrolled horizontal-scroll surface.
+Then continue into **Adversarial C2.1 validation** and verify:
+
+1. the heading makes C2.1 visibly and nonvisually distinct from the historical C2 baseline;
+2. the optimized `C2_1_OPTIMIZED_EQUIVALENT` treatment and experiment design are understandable;
+3. the 16 independent batch summaries per cell and four restart blocks are discoverable;
+4. all 24 retained workload cells can be reached and read, including query/filter identity and realized hit count;
+5. median `OpenSearch - Solr`, bootstrap 95% CI and Solr batch win rate have understandable units/sign meaning;
+6. the C2.1 claim boundary is encountered and remains scoped to the certified corpus/configuration/topology;
+7. the page does not imply that historical C2 and adversarial C2.1 samples were pooled.
+
+For dense tables, confirm keyboard users can reach/read all content, any table-local horizontal scrolling is operable, and the page itself does not become an uncontrolled horizontal-scroll surface. Do not pool C2 and C2.1 observations into one manual result; record any layer-specific failure against the layer where it occurred.
 
 ### Search Lab task
 
@@ -145,7 +157,7 @@ For each primary route:
 
 Then perform the complete Discovery, Maps, Evidence and Search Lab tasks rather than only reading static content.
 
-For Evidence specifically, use NVDA table-navigation commands to confirm that captions, column headers and row headers preserve meaning in both the paired-workload and concurrency tables.
+For Evidence specifically, use NVDA table-navigation commands to confirm that captions, column headers and row headers preserve meaning in the historical C2 paired-workload/concurrency tables and the adversarial C2.1 24-cell table. Confirm the **Historical C2 baseline** and **Adversarial C2.1 validation** headings are distinct in the heading list, the `OpenSearch - Solr` sign convention is understandable, and each layer's claim boundary is encountered separately.
 
 For Maps, the success criterion is the semantic workflow, not whether NVDA can interpret WebGL drawing commands.
 
@@ -163,7 +175,7 @@ Where a JAWS license/environment is available, repeat the relevant screen-reader
 - Forms Mode entry/exit;
 - heading/link/region lists;
 - live-region behavior;
-- Evidence table navigation;
+- Evidence table navigation across both C2 and C2.1 layers;
 - Search Lab form/result navigation;
 - Maps semantic equivalent.
 
@@ -190,7 +202,9 @@ Particularly inspect:
 - whether errors explain a next action;
 - whether Search Lab distinguishes diagnostic local timing from a universal engine verdict;
 - whether Evidence distinguishes operational parity, descriptive request timing and stronger batch-level inference;
-- whether dense C2 tables explain their units/sign conventions without requiring prior benchmark knowledge.
+- whether **Historical C2 baseline** and **Adversarial C2.1 validation** are clearly separate evidence layers;
+- whether dense C2/C2.1 tables explain their units/sign conventions without requiring prior benchmark knowledge;
+- whether the C2.1 claim boundary remains scoped and does not imply a universal Solr/OpenSearch result.
 
 ## 9. Failure handling
 
@@ -234,5 +248,6 @@ Issue #49 is complete only when:
 - NVDA Firefox and Chrome/Chromium evidence is recorded;
 - JAWS is tested or explicitly `N/A` with reason;
 - Maps, Evidence and Search Lab have manual workflow evidence;
+- Historical C2 baseline and Adversarial C2.1 validation have separate human Evidence observations;
 - failures have remediation/rerun records;
 - evidence/status language still distinguishes automated and manual verification.
