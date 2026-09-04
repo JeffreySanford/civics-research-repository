@@ -27,14 +27,17 @@ public class SearchComparisonService {
 
     private final DiscoveryIndex solr;
     private final OpenSearchProjectionClient openSearch;
+    private final OpenSearchC21OptimizedClient c21OpenSearch;
     private final DiscoveryProjectionService projectionService;
 
     public SearchComparisonService(
             DiscoveryIndex solr,
             OpenSearchProjectionClient openSearch,
+            OpenSearchC21OptimizedClient c21OpenSearch,
             DiscoveryProjectionService projectionService) {
         this.solr = solr;
         this.openSearch = openSearch;
+        this.c21OpenSearch = c21OpenSearch;
         this.projectionService = projectionService;
     }
 
@@ -55,12 +58,24 @@ public class SearchComparisonService {
     }
 
     public SearchComparisonResponse run(SearchComparisonRequest request) {
-        return run(request, SearchComparisonExecutionOrder.SOLR_FIRST);
+        return run(
+                request,
+                SearchComparisonExecutionOrder.SOLR_FIRST,
+                OpenSearchComparisonTreatment.BASELINE_SCOPED_FILTERS);
     }
 
     public SearchComparisonResponse run(SearchComparisonRequest request, SearchComparisonExecutionOrder executionOrder) {
+        return run(request, executionOrder, OpenSearchComparisonTreatment.BASELINE_SCOPED_FILTERS);
+    }
+
+    public SearchComparisonResponse run(
+            SearchComparisonRequest request,
+            SearchComparisonExecutionOrder executionOrder,
+            OpenSearchComparisonTreatment openSearchTreatment) {
         SearchComparisonScenarioId scenario = Objects.requireNonNull(request.getScenario(), "scenario is required");
         SearchComparisonExecutionOrder order = Objects.requireNonNull(executionOrder, "executionOrder is required");
+        OpenSearchComparisonTreatment treatment =
+                Objects.requireNonNull(openSearchTreatment, "openSearchTreatment is required");
         SearchComparisonCriteria criteria = new SearchComparisonCriteria(
                 request.getQuery(),
                 request.getPrograms(),
@@ -77,11 +92,11 @@ public class SearchComparisonService {
         SearchEngineComparison solrResult;
         SearchEngineComparison openSearchResult;
         if (order == SearchComparisonExecutionOrder.OPENSEARCH_FIRST) {
-            openSearchResult = runOpenSearch(criteria);
+            openSearchResult = runOpenSearch(criteria, treatment);
             solrResult = runSolr(criteria);
         } else {
             solrResult = runSolr(criteria);
-            openSearchResult = runOpenSearch(criteria);
+            openSearchResult = runOpenSearch(criteria, treatment);
         }
 
         ProjectionState projection = projectionService.state();
@@ -140,7 +155,8 @@ public class SearchComparisonService {
         }
     }
 
-    private SearchEngineComparison runOpenSearch(SearchComparisonCriteria criteria) {
+    private SearchEngineComparison runOpenSearch(
+            SearchComparisonCriteria criteria, OpenSearchComparisonTreatment treatment) {
         boolean enabled = openSearch.isEnabled();
         Optional<Integer> indexedCount = enabled ? openSearch.documentCount() : Optional.empty();
         boolean reachable = enabled && indexedCount.isPresent();
@@ -156,7 +172,9 @@ public class SearchComparisonService {
 
         long started = System.nanoTime();
         try {
-            SearchExecution execution = openSearch.searchWithDiagnostics(criteria);
+            SearchExecution execution = treatment == OpenSearchComparisonTreatment.C2_1_OPTIMIZED_EQUIVALENT
+                    ? c21OpenSearch.searchWithDiagnostics(criteria)
+                    : openSearch.searchWithDiagnostics(criteria);
             long elapsedMs = elapsedMillis(started);
             return completed(
                     SearchComparisonEngine.OPENSEARCH,
