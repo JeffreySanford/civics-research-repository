@@ -12,7 +12,11 @@ export const C2_1_FULL_TEXT_QUERIES = Object.freeze([
   Object.freeze({ id: 'Q02', class: 'single/common', query: 'data' }),
   Object.freeze({ id: 'Q03', class: 'single/domain', query: 'workforce' }),
   Object.freeze({ id: 'Q04', class: 'single/domain', query: 'climate' }),
-  Object.freeze({ id: 'Q05', class: 'single/domain', query: 'water' }),
+  Object.freeze({
+    id: 'Q05',
+    class: 'single/rare candidate',
+    query: 'hydrogeology',
+  }),
   Object.freeze({ id: 'Q06', class: 'exact-phrase', query: '"North Dakota"' }),
   Object.freeze({ id: 'Q07', class: 'two-term', query: 'renewable energy' }),
   Object.freeze({ id: 'Q08', class: 'two-term', query: 'labor force' }),
