@@ -26,13 +26,12 @@ import type { SearchPerformanceLatencyInference } from 'repository-api-client';
       data-testid="certified-search-performance"
     >
       <h2 id="certified-search-performance-heading">
-        Certified C2 Solr / OpenSearch performance evidence
+        Certified Solr / OpenSearch performance evidence
       </h2>
       <p>
-        This panel reads the generated C2 research artifacts through the
-        repository API. It separates descriptive request-level timing from the
-        stronger separately warmed batch-level inference and retains the
-        experiment controls that produced the evidence.
+        This panel reads generated research artifacts through the repository API.
+        Historical C2 baseline evidence and adversarial C2.1 validation remain
+        separate; neither experiment overwrites or pools the other's samples.
       </p>
 
       @if (loading$ | async) {
@@ -53,6 +52,14 @@ import type { SearchPerformanceLatencyInference } from 'repository-api-client';
       }
 
       @if (evidence$ | async; as evidence) {
+        <h3 id="historical-c2-heading">Historical C2 baseline</h3>
+        <p>
+          The original certified standalone experiment remains the historical
+          baseline. Its request-level distributions, separately warmed batch
+          inference, concurrency matrix and telemetry are shown below without
+          being mixed with C2.1.
+        </p>
+
         <dl class="pipeline-stats performance-evidence-summary">
           <div class="pipeline-stat">
             <dt>Certified corpus</dt>
@@ -353,8 +360,115 @@ import type { SearchPerformanceLatencyInference } from 'repository-api-client';
         }
 
         <p class="warning-message">
-          <strong>Claim boundary:</strong> {{ evidence.claimGuardrail }}
+          <strong>Historical C2 claim boundary:</strong>
+          {{ evidence.claimGuardrail }}
         </p>
+
+        @if (evidence.c21Adversarial; as c21) {
+          <section
+            aria-labelledby="c21-adversarial-heading"
+            class="evidence-subsection"
+            data-testid="c2-1-adversarial-evidence"
+          >
+            <h3 id="c21-adversarial-heading">Adversarial C2.1 validation</h3>
+            <p>
+              C2.1 preserves the certified projection while equalizing standalone
+              resources, admitting the semantically equivalent optimized
+              OpenSearch treatment, balancing engine-first order, and repeating
+              independently warmed batches across clean restart blocks. Its
+              samples remain separate from historical C2.
+            </p>
+
+            <dl class="pipeline-stats performance-evidence-summary">
+              <div class="pipeline-stat">
+                <dt>Median direction</dt>
+                <dd class="pipeline-stat-value">
+                  {{ c21.solrLowerLatencyCells }} /
+                  {{ c21.workloadCellCount }}
+                </dd>
+                <dd class="pipeline-stat-note">
+                  workload cells with lower Solr median API latency;
+                  {{ c21.openSearchLowerLatencyCells }} OpenSearch-leading and
+                  {{ c21.tiedCells }} tied.
+                </dd>
+              </div>
+              <div class="pipeline-stat">
+                <dt>95% interval support</dt>
+                <dd class="pipeline-stat-value">
+                  {{ c21.ciExcludesZeroFavoringSolr }} /
+                  {{ c21.workloadCellCount }}
+                </dd>
+                <dd class="pipeline-stat-note">
+                  batch-level intervals excluding zero in Solr's direction;
+                  {{ c21.ciExcludesZeroFavoringOpenSearch }} in OpenSearch's
+                  direction.
+                </dd>
+              </div>
+              <div class="pipeline-stat">
+                <dt>Batch inference</dt>
+                <dd class="pipeline-stat-value">
+                  {{ c21.independentBatchSummariesPerCell }}
+                </dd>
+                <dd class="pipeline-stat-note">
+                  independently warmed batch medians per workload cell.
+                </dd>
+              </div>
+              <div class="pipeline-stat">
+                <dt>Restart blocks</dt>
+                <dd class="pipeline-stat-value">{{ c21.restartBlocks }}</dd>
+                <dd class="pipeline-stat-note">
+                  clean restart blocks · treatment
+                  <code>{{ c21.openSearchTreatment }}</code> · captured
+                  {{ c21.capturedAt | date: 'medium' }}
+                </dd>
+              </div>
+            </dl>
+
+            <div class="table-scroll">
+              <table class="evidence-table">
+                <caption>
+                  C2.1 batch-level API latency inference for every retained
+                  preregistered workload cell
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Cell</th>
+                    <th scope="col">Workload</th>
+                    <th scope="col">Realized hits</th>
+                    <th scope="col">Median OS − Solr</th>
+                    <th scope="col">Bootstrap 95% CI</th>
+                    <th scope="col">Solr batch win rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of c21.cells; track row.id) {
+                    <tr>
+                      <th scope="row">{{ row.id }}</th>
+                      <td>{{ row.workload }}</td>
+                      <td>{{ formatInteger(row.totalHits) }}</td>
+                      <td>
+                        {{ formatLatency(row.apiElapsed.medianDifferenceMs) }}
+                      </td>
+                      <td>{{ formatCi(row.apiElapsed) }}</td>
+                      <td>
+                        {{ formatPercent(row.apiElapsed.solrWinRatePercent) }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <p class="evidence-note">
+              Positive OS − Solr differences mean OpenSearch took longer at the
+              application boundary. Per-cell intervals are not
+              multiplicity-adjusted; no family-wide significance claim is made.
+            </p>
+            <p class="warning-message">
+              <strong>C2.1 claim boundary:</strong> {{ c21.claimGuardrail }}
+            </p>
+          </section>
+        }
       }
     </section>
   `,
