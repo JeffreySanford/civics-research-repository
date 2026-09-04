@@ -109,6 +109,8 @@ test('CLI parser accepts a conventional standalone argument separator and order'
     'ALTERNATE',
     '--seed',
     '1234',
+    '--open-search-treatment',
+    'C2_1_OPTIMIZED_EQUIVALENT',
     '--query',
     'North Dakota workforce',
   ]);
@@ -119,6 +121,7 @@ test('CLI parser accepts a conventional standalone argument separator and order'
   assert.equal(options.batches, 3);
   assert.equal(options.orderStrategy, 'ALTERNATE');
   assert.equal(options.seed, 1234);
+  assert.equal(options.openSearchTreatment, 'C2_1_OPTIMIZED_EQUIVALENT');
   assert.equal(options.query, 'North Dakota workforce');
 });
 
@@ -381,6 +384,53 @@ test('randomized benchmark reports the realized first batch and applied seed', a
   );
 });
 
+test('benchmark can route an explicit OpenSearch treatment and order plan', async () => {
+  const requests = [];
+  const responses = Array.from({ length: 4 }, (_, index) =>
+    comparisonResponse(10 + index, 20 + index),
+  );
+
+  const result = await runSearchComparisonBenchmark({
+    fetchImpl: queuedFetch(responses, requests),
+    baseUrl: 'http://repository.test/api',
+    warmupRuns: 0,
+    measuredRuns: 1,
+    batches: 4,
+    executionOrder: 'SOLR_FIRST',
+    executionOrderPlan: [
+      'OPENSEARCH_FIRST',
+      'SOLR_FIRST',
+      'SOLR_FIRST',
+      'OPENSEARCH_FIRST',
+    ],
+    openSearchTreatment: 'C2_1_OPTIMIZED_EQUIVALENT',
+  });
+
+  assert.equal(result.executionPlan.orderStrategy, 'EXPLICIT');
+  assert.equal(result.executionPlan.seedApplied, false);
+  assert.equal(result.executionPlan.seed, null);
+  assert.equal(result.executionOrder, 'OPENSEARCH_FIRST');
+  assert.equal(result.openSearchTreatment, 'C2_1_OPTIMIZED_EQUIVALENT');
+  assert.equal(
+    result.endpoint,
+    'http://repository.test/api/search/comparison/run?order=OPENSEARCH_FIRST&openSearchTreatment=C2_1_OPTIMIZED_EQUIVALENT',
+  );
+  assert.equal(
+    result.endpointTemplate,
+    'http://repository.test/api/search/comparison/run?order={batchExecutionOrder}&openSearchTreatment=C2_1_OPTIMIZED_EQUIVALENT',
+  );
+  assert.deepEqual(
+    requests.map(({ url }) => new URL(url).searchParams.get('order')),
+    result.executionPlan.batchExecutionOrders,
+  );
+  assert.deepEqual(
+    requests.map(({ url }) =>
+      new URL(url).searchParams.get('openSearchTreatment'),
+    ),
+    Array.from({ length: 4 }, () => 'C2_1_OPTIMIZED_EQUIVALENT'),
+  );
+});
+
 test('benchmark refuses an unsupported execution order', async () => {
   await assert.rejects(
     runSearchComparisonBenchmark({
@@ -390,6 +440,29 @@ test('benchmark refuses an unsupported execution order', async () => {
       executionOrder: 'RANDOM',
     }),
     /executionOrder must be one of/,
+  );
+});
+
+test('benchmark refuses unsupported treatment and mismatched explicit plans', async () => {
+  await assert.rejects(
+    runSearchComparisonBenchmark({
+      fetchImpl: queuedFetch([]),
+      warmupRuns: 0,
+      measuredRuns: 1,
+      openSearchTreatment: 'FAST_MODE',
+    }),
+    /openSearchTreatment must be one of/,
+  );
+
+  await assert.rejects(
+    runSearchComparisonBenchmark({
+      fetchImpl: queuedFetch([]),
+      warmupRuns: 0,
+      measuredRuns: 1,
+      batches: 2,
+      executionOrderPlan: ['SOLR_FIRST'],
+    }),
+    /Explicit execution order plan length must match batches/,
   );
 });
 

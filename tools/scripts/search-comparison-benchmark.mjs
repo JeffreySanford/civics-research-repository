@@ -10,12 +10,17 @@ const DEFAULT_BATCHES = 1;
 const DEFAULT_EXECUTION_ORDER = 'SOLR_FIRST';
 const DEFAULT_ORDER_STRATEGY = 'FIXED';
 const DEFAULT_ORDER_SEED = 20260903;
+const DEFAULT_OPENSEARCH_TREATMENT = null;
 const MAX_WARMUP_RUNS = 20;
 const MAX_MEASURED_RUNS = 100;
 const MAX_BATCHES = 20;
 const MAX_ORDER_SEED = 0xffffffff;
 const EXECUTION_ORDERS = new Set(['SOLR_FIRST', 'OPENSEARCH_FIRST']);
 const ORDER_STRATEGIES = new Set(['FIXED', 'ALTERNATE', 'RANDOMIZED']);
+const OPENSEARCH_TREATMENTS = new Set([
+  'BASELINE_SCOPED_FILTERS',
+  'C2_1_OPTIMIZED_EQUIVALENT',
+]);
 
 function requireBoundedInteger(value, label, minimum, maximum) {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
@@ -51,6 +56,34 @@ function requireOrderStrategy(value) {
     );
   }
   return value;
+}
+
+function normalizeOpenSearchTreatment(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+  if (!OPENSEARCH_TREATMENTS.has(value)) {
+    throw new Error(
+      `openSearchTreatment must be one of ${[...OPENSEARCH_TREATMENTS].join(', ')}.`,
+    );
+  }
+  return value;
+}
+
+function normalizeExecutionOrderPlan(plan) {
+  if (plan == null) {
+    return null;
+  }
+  if (!Array.isArray(plan) || plan.length === 0) {
+    throw new Error('executionOrderPlan must be a non-empty array.');
+  }
+  requireBoundedInteger(
+    plan.length,
+    'executionOrderPlan length',
+    1,
+    MAX_BATCHES,
+  );
+  return plan.map((order) => requireExecutionOrder(order));
 }
 
 function normalizeSeed(value) {
@@ -194,6 +227,8 @@ export async function runSearchComparisonBenchmark({
   executionOrder = DEFAULT_EXECUTION_ORDER,
   orderStrategy = DEFAULT_ORDER_STRATEGY,
   seed = DEFAULT_ORDER_SEED,
+  executionOrderPlan = null,
+  openSearchTreatment = DEFAULT_OPENSEARCH_TREATMENT,
   request = {
     scenario: 'FULL_TEXT_RELEVANCE',
     query: 'North Dakota workforce',
@@ -210,14 +245,26 @@ export async function runSearchComparisonBenchmark({
   requireBoundedInteger(measuredRuns, 'measuredRuns', 1, MAX_MEASURED_RUNS);
   requireBoundedInteger(batches, 'batches', 1, MAX_BATCHES);
   const requestedOrder = requireExecutionOrder(executionOrder);
-  const strategy = requireOrderStrategy(orderStrategy);
+  const explicitOrderPlan = normalizeExecutionOrderPlan(executionOrderPlan);
+  const strategy = explicitOrderPlan
+    ? 'EXPLICIT'
+    : requireOrderStrategy(orderStrategy);
   const effectiveSeed = strategy === 'RANDOMIZED' ? normalizeSeed(seed) : null;
-  const orderPlan = buildExecutionOrderPlan({
-    batches,
-    executionOrder: requestedOrder,
-    orderStrategy: strategy,
-    seed: effectiveSeed ?? DEFAULT_ORDER_SEED,
-  });
+  const orderPlan =
+    explicitOrderPlan ??
+    buildExecutionOrderPlan({
+      batches,
+      executionOrder: requestedOrder,
+      orderStrategy: strategy,
+      seed: effectiveSeed ?? DEFAULT_ORDER_SEED,
+    });
+  if (!explicitOrderPlan && orderPlan.length !== batches) {
+    throw new Error('Generated execution order plan does not match batches.');
+  }
+  if (explicitOrderPlan && explicitOrderPlan.length !== batches) {
+    throw new Error('Explicit execution order plan length must match batches.');
+  }
+  const treatment = normalizeOpenSearchTreatment(openSearchTreatment);
   const realizedFirstOrder = orderPlan[0];
 
   const endpointBase = `${baseUrl.replace(/\/$/, '')}/search/comparison/run`;
@@ -230,7 +277,11 @@ export async function runSearchComparisonBenchmark({
   const batchEvidence = [];
 
   const execute = async (recordSample, currentOrder, batchId) => {
-    const endpoint = `${endpointBase}?order=${encodeURIComponent(currentOrder)}`;
+    const query = new URLSearchParams({ order: currentOrder });
+    if (treatment) {
+      query.set('openSearchTreatment', treatment);
+    }
+    const endpoint = `${endpointBase}?${query.toString()}`;
     const httpResponse = await fetchImpl(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -291,11 +342,16 @@ export async function runSearchComparisonBenchmark({
       totalMeasuredRuns: solrSamples.length,
       batchExecutionOrders: [...orderPlan],
     },
+    openSearchTreatment: treatment,
     comparativeClaimAllowed: false,
     caveat:
       'Warm-up runs are excluded and the realized batch execution order is retained explicitly, but this remains a single local/container topology. Solr QTime and OpenSearch took also have different vendor semantics. Use independent batches with alternating or randomized order before treating an engine lead as robust.',
-    endpoint: `${endpointBase}?order=${encodeURIComponent(realizedFirstOrder)}`,
-    endpointTemplate: `${endpointBase}?order={batchExecutionOrder}`,
+    endpoint: treatment
+      ? `${endpointBase}?order=${encodeURIComponent(realizedFirstOrder)}&openSearchTreatment=${encodeURIComponent(treatment)}`
+      : `${endpointBase}?order=${encodeURIComponent(realizedFirstOrder)}`,
+    endpointTemplate: treatment
+      ? `${endpointBase}?order={batchExecutionOrder}&openSearchTreatment=${encodeURIComponent(treatment)}`
+      : `${endpointBase}?order={batchExecutionOrder}`,
     request,
     projection,
     warmupRuns,
@@ -347,6 +403,7 @@ export function parseArguments(argv) {
     executionOrder: DEFAULT_EXECUTION_ORDER,
     orderStrategy: DEFAULT_ORDER_STRATEGY,
     seed: DEFAULT_ORDER_SEED,
+    openSearchTreatment: DEFAULT_OPENSEARCH_TREATMENT,
     output: 'browser-evidence-artifacts/search-comparison-benchmark.json',
     scenario: 'FULL_TEXT_RELEVANCE',
     query: 'North Dakota workforce',
@@ -386,6 +443,10 @@ export function parseArguments(argv) {
         options.seed = Number(value);
         index += 1;
         break;
+      case '--open-search-treatment':
+        options.openSearchTreatment = value;
+        index += 1;
+        break;
       case '--output':
         options.output = value;
         index += 1;
@@ -416,6 +477,7 @@ async function main() {
     executionOrder: options.executionOrder,
     orderStrategy: options.orderStrategy,
     seed: options.seed,
+    openSearchTreatment: options.openSearchTreatment,
     request: {
       scenario: options.scenario,
       query: options.query,
