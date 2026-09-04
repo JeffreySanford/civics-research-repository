@@ -345,15 +345,13 @@ A production search-engine decision must include topology, persistent storage, b
 
 ## Current seams
 
-The remaining seams are now concentrated in scale and evidence rather than missing foundation architecture:
+The foundation architecture, exact million-record C2 baseline, adversarial C2.1 search comparison, Maps research workflow, generated API boundary, and automated browser/accessibility evidence are implemented.
 
-1. Close the 10K Data.gov snapshot/projection/search/storage/resource evidence, then prove 100K.
-2. Add DOE OSTI and the first controlled deterministic million-record corpus, followed by NASA CMR, PubMed and OpenAlex.
-3. Define DOI/PMID/other durable-identifier reconciliation without silent title-based merging.
-4. Add opaque cursor/search-after public discovery while preserving offset compatibility during migration.
-5. Harden live-source taxonomy presentation for opaque program values without fixed UI allowlists.
-6. Consider clearer projection-level authority terminology than compatibility `REPOSITORY` for mixed authority-backed projections.
-7. Record projection/index timestamps and large-run progress/resource context consistently across Admin, Evidence and Search Lab.
-8. Complete and record manual keyboard, NVDA, JAWS, Search Lab, and map-equivalence evidence.
-9. Decide required browser-evidence checks and `main` branch protection.
-10. Implement the PI-2 local Kubernetes laboratory before committing to the PI-3 AWS implementation candidate.
+Remaining work is intentionally narrow:
+
+1. record manual keyboard/NVDA/JAWS/map/cognitive evidence under issue #49 when human AT verification is required;
+2. complete frontend mission alignment and portfolio presentation under issue #51;
+3. reconcile generated planning/status documentation after the final frontend slice;
+4. treat additional federation sources or production-cloud topology as deliberate future work rather than prerequisites for the completed reference implementation.
+
+Kubernetes experimentation is not an active completion requirement. The prior Kubernetes laboratory issue was closed `not_planned`; the implemented Docker Compose topology remains the reproducible local platform and the scoped C2/C2.1 research environment.

@@ -102,7 +102,7 @@ Use a product-facing generic heading such as **Geospatial research explorer** wh
 
 ### Status
 
-**Small copy correction recommended; no layout redesign.**
+**Implemented in #51; no layout redesign required.**
 
 ## `/evidence`
 
@@ -125,7 +125,7 @@ Update pipeline copy to describe a rebuildable **mixed-origin discovery projecti
 
 ### Status
 
-**Small accuracy correction recommended; otherwise polished.**
+**Implemented in #51; otherwise polished.**
 
 ## `/search-lab`
 
@@ -147,7 +147,7 @@ Say that the same normalized request is run against two **application-owned mixe
 
 ### Status
 
-**Small accuracy/positioning correction recommended; no structural change.**
+**Implemented in #51; no structural change required.**
 
 ## Responsive, reflow and dense-data assessment
 
@@ -172,9 +172,9 @@ The final frontend story should therefore say **WCAG/Section 508-oriented engine
 ## Changes justified by this audit
 
 1. Frontend-first landing copy — implemented.
-2. Product-facing generic Maps heading — narrow follow-up.
-3. Mixed-origin Evidence pipeline wording — narrow follow-up.
-4. Mixed-origin/frontend-boundary Search Lab introduction — narrow follow-up.
+2. Product-facing generic Maps heading — implemented.
+3. Mixed-origin Evidence pipeline wording — implemented.
+4. Mixed-origin/frontend-boundary Search Lab introduction — implemented.
 5. Frontend-first README/case study/demo narrative — implemented in this slice.
 
 Everything else should remain stable unless tests or Browser Evidence reveal an actual regression.
