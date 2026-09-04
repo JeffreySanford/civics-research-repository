@@ -1,0 +1,59 @@
+name: C2.1 formatting fix
+
+on:
+  push:
+    branches: [codex/c2-1-standalone-controls]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/c2-1-standalone-controls
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format C2.1 files with repository Prettier
+        run: >-
+          pnpm exec prettier --write
+          tools/scripts/search-comparison-c2-1-foundation.mjs
+          tools/scripts/search-comparison-c2-1-foundation.test.mjs
+          tools/scripts/search-comparison-c2-1-manifest.mjs
+          tools/scripts/search-comparison-c2-1-manifest.test.mjs
+          tools/scripts/search-comparison-c2-1-preflight.mjs
+          tools/scripts/search-comparison-c2-1-semantic-admission.mjs
+          tools/scripts/search-comparison-c2-1-semantic-admission.test.mjs
+
+      - name: Commit formatting only
+        shell: bash
+        run: |
+          if git diff --quiet --exit-code; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            tools/scripts/search-comparison-c2-1-foundation.mjs \
+            tools/scripts/search-comparison-c2-1-foundation.test.mjs \
+            tools/scripts/search-comparison-c2-1-manifest.mjs \
+            tools/scripts/search-comparison-c2-1-manifest.test.mjs \
+            tools/scripts/search-comparison-c2-1-preflight.mjs \
+            tools/scripts/search-comparison-c2-1-semantic-admission.mjs \
+            tools/scripts/search-comparison-c2-1-semantic-admission.test.mjs
+          git commit -m "chore: format C2.1 research harness"
+          git push origin HEAD:codex/c2-1-standalone-controls
