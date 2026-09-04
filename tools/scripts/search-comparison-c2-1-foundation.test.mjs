@@ -105,6 +105,34 @@ test('C2.1 filter candidates require exact Solr/OpenSearch facet-count parity', 
   assert.equal(candidates.length, 5);
 });
 
+test('C2.1 parity lookup trims facet identities consistently across engines', () => {
+  const response = parityResponse();
+  response.solr.facets[0].values.push({
+    value: '  Whitespace Program  ',
+    label: 'Whitespace Program',
+    count: 30,
+    selected: false,
+  });
+  response.openSearch.facets[0].values.push({
+    value: 'Whitespace Program',
+    label: 'Whitespace Program',
+    count: 30,
+    selected: false,
+  });
+
+  const candidates = collectC21ParityFilterCandidates(response);
+  assert.deepEqual(
+    candidates.find(({ value }) => value === 'Whitespace Program'),
+    {
+      field: 'program',
+      value: 'Whitespace Program',
+      count: 30,
+      selectivityPercent: 3,
+      normalizedIdentity: 'program=Whitespace Program',
+    },
+  );
+});
+
 test('C2.1 band selection uses midpoint distance then lexical field=value tie break', () => {
   const result = selectC21FilterBands(parityResponse());
   const byBand = new Map(result.bands.map((band) => [band.band, band]));
