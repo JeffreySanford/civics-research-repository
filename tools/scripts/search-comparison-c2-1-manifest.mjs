@@ -21,7 +21,7 @@ export const C2_1_EXPECTED = Object.freeze({
   solrCore: 'discovery',
   openSearchImage: 'opensearchproject/opensearch:2.19.6',
   openSearchVersion: '2.19.6',
-  openSearchIndex: 'discovery-comparison',
+  openSearchAlias: 'discovery-comparison',
   heap: '512m',
   nanoCpus: 4_000_000_000,
   memoryBytes: 4 * 1024 ** 3,
@@ -130,6 +130,7 @@ function validateContainer(service, container) {
   const expectedImage = isSolr
     ? C2_1_EXPECTED.solrImage
     : C2_1_EXPECTED.openSearchImage;
+
   if (container?.Config?.Image !== expectedImage) {
     throw new Error(
       `C2.1 ${service} container must use ${expectedImage}; found ${container?.Config?.Image ?? 'missing'}.`,
@@ -212,8 +213,9 @@ function validateSolrRuntime({ systemInfo, coreStatus, config, schema }) {
       `C2.1 requires Solr ${C2_1_EXPECTED.solrVersion}; live Solr reports ${version || 'missing version'}.`,
     );
   }
+
   const statuses = coreStatus?.status ?? {};
-  const names = Object.keys(statuses);
+  const names = Object.keys(statuses).sort();
   if (
     names.length !== C2_1_EXPECTED.shardOrCoreCount ||
     names[0] !== C2_1_EXPECTED.solrCore
@@ -222,6 +224,7 @@ function validateSolrRuntime({ systemInfo, coreStatus, config, schema }) {
       `C2.1 requires exactly one application Solr core named ${C2_1_EXPECTED.solrCore}.`,
     );
   }
+
   const core = statuses[C2_1_EXPECTED.solrCore];
   const numDocs = Number(core?.index?.numDocs);
   if (numDocs !== C2_1_EXPECTED.projectionObjectCount) {
@@ -229,10 +232,12 @@ function validateSolrRuntime({ systemInfo, coreStatus, config, schema }) {
       `C2.1 Solr core must contain ${C2_1_EXPECTED.projectionObjectCount} documents; found ${numDocs}.`,
     );
   }
+
   const jvmVersion = solrJvmVersion(systemInfo);
   if (!jvmVersion) {
     throw new Error('C2.1 requires live Solr JVM version metadata.');
   }
+
   return {
     version,
     jvmVersion,
@@ -257,27 +262,34 @@ function singleOpenSearchNode(nodesJvm) {
   return entries[0];
 }
 
-function openSearchIndexSettings(settings) {
-  const index = settings?.[C2_1_EXPECTED.openSearchIndex];
-  if (!index?.settings) {
+function singleOpenSearchIndex(document, label) {
+  const entries = Object.entries(document ?? {});
+  if (entries.length !== 1) {
     throw new Error(
-      `C2.1 requires settings for OpenSearch index ${C2_1_EXPECTED.openSearchIndex}.`,
+      `C2.1 ${label} must resolve alias ${C2_1_EXPECTED.openSearchAlias} to exactly one physical index.`,
     );
   }
-  return index.settings;
+  return entries[0];
 }
 
 function setting(settings, key) {
   return settings[key] ?? settings.index?.[key.replace(/^index\./, '')];
 }
 
-function validateOpenSearchRuntime({ root, nodesJvm, settings, mapping }) {
+function validateOpenSearchRuntime({
+  root,
+  nodesJvm,
+  settings,
+  mapping,
+  count,
+}) {
   const version = String(root?.version?.number ?? '').trim();
   if (version !== C2_1_EXPECTED.openSearchVersion) {
     throw new Error(
       `C2.1 requires OpenSearch ${C2_1_EXPECTED.openSearchVersion}; live OpenSearch reports ${version || 'missing version'}.`,
     );
   }
+
   const [, node] = singleOpenSearchNode(nodesJvm);
   const jvmVersion = String(
     node?.jvm?.version ?? node?.jvm?.vm_version ?? '',
@@ -286,7 +298,21 @@ function validateOpenSearchRuntime({ root, nodesJvm, settings, mapping }) {
     throw new Error('C2.1 requires live OpenSearch JVM version metadata.');
   }
 
-  const indexSettings = openSearchIndexSettings(settings);
+  const [resolvedIndex, settingsNode] = singleOpenSearchIndex(
+    settings,
+    'settings response',
+  );
+  const [mappingIndex] = singleOpenSearchIndex(mapping, 'mapping response');
+  if (mappingIndex !== resolvedIndex) {
+    throw new Error(
+      'C2.1 OpenSearch settings and mapping resolved to different physical indices.',
+    );
+  }
+  if (!settingsNode?.settings) {
+    throw new Error('C2.1 OpenSearch settings response is missing index settings.');
+  }
+
+  const indexSettings = settingsNode.settings;
   const shards = Number(setting(indexSettings, 'index.number_of_shards'));
   const replicas = Number(setting(indexSettings, 'index.number_of_replicas'));
   if (shards !== C2_1_EXPECTED.shardOrCoreCount) {
@@ -295,6 +321,14 @@ function validateOpenSearchRuntime({ root, nodesJvm, settings, mapping }) {
   if (replicas !== C2_1_EXPECTED.replicaCount) {
     throw new Error('C2.1 requires zero OpenSearch replicas.');
   }
+
+  const documentCount = Number(count?.count);
+  if (documentCount !== C2_1_EXPECTED.projectionObjectCount) {
+    throw new Error(
+      `C2.1 OpenSearch alias must contain ${C2_1_EXPECTED.projectionObjectCount} documents; found ${documentCount}.`,
+    );
+  }
+
   const refreshInterval = String(
     setting(indexSettings, 'index.refresh_interval') ?? 'default',
   );
@@ -305,7 +339,9 @@ function validateOpenSearchRuntime({ root, nodesJvm, settings, mapping }) {
     nodeCount: 1,
     shardCount: shards,
     replicaCount: replicas,
-    index: C2_1_EXPECTED.openSearchIndex,
+    alias: C2_1_EXPECTED.openSearchAlias,
+    resolvedPhysicalIndex: resolvedIndex,
+    numDocs: documentCount,
     refreshInterval,
     settingsSha256: sha256Json(settings),
     mappingSha256: sha256Json(mapping),
@@ -348,6 +384,7 @@ export function buildC21ExecutionManifest({
       'C2.1 refuses timing from a dirty Git worktree; commit or stash changes first.',
     );
   }
+
   validateCertifiedEvidence(evidence);
   const repositorySha = requireCommit(repositoryCommit, 'repositoryCommit');
   const protocolSha = requireCommit(protocolCommit, 'protocolCommit');
@@ -356,6 +393,9 @@ export function buildC21ExecutionManifest({
   }
   if (!dockerVersion || typeof dockerVersion !== 'object') {
     throw new Error('C2.1 requires Docker server version metadata.');
+  }
+  if (!host || typeof host !== 'object') {
+    throw new Error('C2.1 requires host runtime metadata.');
   }
 
   const solrContainerRuntime = validateContainer('solr', solrContainer);
@@ -430,7 +470,9 @@ async function command(execFileImpl, executable, args) {
 async function fetchJson(fetchImpl, url, init) {
   const response = await fetchImpl(url, init);
   if (!response.ok) {
-    throw new Error(`C2.1 runtime preflight failed: ${url} returned HTTP ${response.status}.`);
+    throw new Error(
+      `C2.1 runtime preflight failed: ${url} returned HTTP ${response.status}.`,
+    );
   }
   return response.json();
 }
@@ -474,7 +516,7 @@ async function prepareReadState({
   );
   const openSearchRefresh = await fetchJson(
     fetchImpl,
-    `${openSearchUrl}/${C2_1_EXPECTED.openSearchIndex}/_refresh`,
+    `${openSearchUrl}/${C2_1_EXPECTED.openSearchAlias}/_refresh`,
     { method: 'POST' },
   );
   return {
@@ -563,12 +605,13 @@ export async function captureC21ExecutionManifest({
     openSearchUrl,
     now,
   });
+
   const [solrSystem, solrCoreStatus, solrConfig, solrSchema] =
     await Promise.all([
       fetchJson(fetchImpl, `${solrUrl}/solr/admin/info/system?wt=json`),
       fetchJson(
         fetchImpl,
-        `${solrUrl}/solr/admin/cores?action=STATUS&core=${C2_1_EXPECTED.solrCore}&wt=json`,
+        `${solrUrl}/solr/admin/cores?action=STATUS&wt=json`,
       ),
       fetchJson(
         fetchImpl,
@@ -579,19 +622,24 @@ export async function captureC21ExecutionManifest({
         `${solrUrl}/solr/${C2_1_EXPECTED.solrCore}/schema?wt=json&omitHeader=true`,
       ),
     ]);
-  const [openSearchRoot, openSearchNodesJvm, openSearchSettings, openSearchMapping] =
-    await Promise.all([
-      fetchJson(fetchImpl, openSearchUrl),
-      fetchJson(fetchImpl, `${openSearchUrl}/_nodes/jvm`),
-      fetchJson(
-        fetchImpl,
-        `${openSearchUrl}/${C2_1_EXPECTED.openSearchIndex}/_settings?include_defaults=true&flat_settings=true`,
-      ),
-      fetchJson(
-        fetchImpl,
-        `${openSearchUrl}/${C2_1_EXPECTED.openSearchIndex}/_mapping`,
-      ),
-    ]);
+
+  const aliasUrl = `${openSearchUrl}/${C2_1_EXPECTED.openSearchAlias}`;
+  const [
+    openSearchRoot,
+    openSearchNodesJvm,
+    openSearchSettings,
+    openSearchMapping,
+    openSearchCount,
+  ] = await Promise.all([
+    fetchJson(fetchImpl, openSearchUrl),
+    fetchJson(fetchImpl, `${openSearchUrl}/_nodes/jvm`),
+    fetchJson(
+      fetchImpl,
+      `${aliasUrl}/_settings?include_defaults=true&flat_settings=true`,
+    ),
+    fetchJson(fetchImpl, `${aliasUrl}/_mapping`),
+    fetchJson(fetchImpl, `${aliasUrl}/_count`),
+  ]);
 
   return buildC21ExecutionManifest({
     capturedAt: now().toISOString(),
@@ -616,6 +664,7 @@ export async function captureC21ExecutionManifest({
       nodesJvm: openSearchNodesJvm,
       settings: openSearchSettings,
       mapping: openSearchMapping,
+      count: openSearchCount,
     },
     readState,
     host: {
