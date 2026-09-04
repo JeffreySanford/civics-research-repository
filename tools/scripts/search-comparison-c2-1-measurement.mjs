@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
-import { waitForApiReady } from './cursor-traversal-evidence.mjs';
+import { waitForC21RuntimeReady } from './search-comparison-c2-1-projection-readiness.mjs';
 import {
   C2_1_RESTART_BLOCKS,
   C2_1_BATCHES_PER_BLOCK,
@@ -135,7 +135,7 @@ export function applyC21TimingContract(benchmark) {
 export async function recreateC21StandaloneStack({
   execFileImpl = execFileAsync,
   baseUrl = DEFAULT_BASE_URL,
-  waitForReady = waitForApiReady,
+  waitForReady = waitForC21RuntimeReady,
 } = {}) {
   await execFileImpl(
     'docker',
