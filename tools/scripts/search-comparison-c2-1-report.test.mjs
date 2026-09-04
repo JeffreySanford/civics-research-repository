@@ -90,13 +90,16 @@ function suite() {
     projectionObjectCount: C2_1_EXPECTED.projectionObjectCount,
     openSearchTreatment: C2_1_ADMITTED_TREATMENT,
     workloadMatrix,
-    restartBlocks: Array.from({ length: C2_1_RESTART_BLOCKS }, (_, blockIndex) => ({
-      blockId: blockIndex + 1,
-      workloads: workloadMatrix.map((cell) => ({
-        ...cell,
-        benchmark: benchmark({ openSearchWins: cell.id === 'Q20' }),
-      })),
-    })),
+    restartBlocks: Array.from(
+      { length: C2_1_RESTART_BLOCKS },
+      (_, blockIndex) => ({
+        blockId: blockIndex + 1,
+        workloads: workloadMatrix.map((cell) => ({
+          ...cell,
+          benchmark: benchmark({ openSearchWins: cell.id === 'Q20' }),
+        })),
+      }),
+    ),
   };
 }
 
@@ -149,7 +152,8 @@ test('C2.1 report uses 16 independent batch medians per cell and retains OpenSea
     C2_1_RESTART_BLOCKS * C2_1_BATCHES_PER_BLOCK,
   );
   assert.equal(
-    report.cells[0].batchLevelInference.apiElapsed.statistics.medianDifferenceMs,
+    report.cells[0].batchLevelInference.apiElapsed.statistics
+      .medianDifferenceMs,
     2,
   );
   assert.equal(
@@ -157,7 +161,8 @@ test('C2.1 report uses 16 independent batch medians per cell and retains OpenSea
     'SOLR_LOWER_LATENCY',
   );
   assert.equal(
-    report.cells[19].batchLevelInference.apiElapsed.statistics.medianDifferenceMs,
+    report.cells[19].batchLevelInference.apiElapsed.statistics
+      .medianDifferenceMs,
     -2,
   );
   assert.equal(
