@@ -35,13 +35,13 @@ The landing page is eager; the working application routes are lazy-loaded in [`a
 
 The primary portfolio routes are:
 
-| Route | Frontend responsibility |
-| --- | --- |
-| `/discovery` | Search, facets, URL state, paging, provenance and research-to-map handoff |
-| `/research/:id` | Authority-neutral research-object detail with curated/federated distinctions |
-| `/maps` | MapLibre visualization plus equivalent semantic data and shared selection state |
-| `/evidence` | Accessibility, pipeline and search-research evidence with explicit claim boundaries |
-| `/search-lab` | Diagnostic Solr/OpenSearch comparison without leaking engine integration into components |
+| Route           | Frontend responsibility                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `/discovery`    | Search, facets, URL state, paging, provenance and research-to-map handoff                |
+| `/research/:id` | Authority-neutral research-object detail with curated/federated distinctions             |
+| `/maps`         | MapLibre visualization plus equivalent semantic data and shared selection state          |
+| `/evidence`     | Accessibility, pipeline and search-research evidence with explicit claim boundaries      |
+| `/search-lab`   | Diagnostic Solr/OpenSearch comparison without leaking engine integration into components |
 
 The browser architecture favors page components that coordinate user intent with NgRx state, while API ownership lives in effects/services and wire shapes come from the generated OpenAPI client.
 

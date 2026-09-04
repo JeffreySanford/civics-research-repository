@@ -214,14 +214,14 @@ pnpm run start:all
 
 Primary endpoints:
 
-| Service | URL |
-| --- | --- |
-| Discovery UI | `http://localhost:4200` |
-| Repository API | `http://localhost:8080/api` |
-| DSpace REST | `http://localhost:8081/server/api` |
-| Discovery Solr | `http://localhost:8983/solr` |
-| OpenSearch | `http://localhost:9200` |
-| DSpace Solr | `http://localhost:8984/solr` |
+| Service        | URL                                |
+| -------------- | ---------------------------------- |
+| Discovery UI   | `http://localhost:4200`            |
+| Repository API | `http://localhost:8080/api`        |
+| DSpace REST    | `http://localhost:8081/server/api` |
+| Discovery Solr | `http://localhost:8983/solr`       |
+| OpenSearch     | `http://localhost:9200`            |
+| DSpace Solr    | `http://localhost:8984/solr`       |
 
 If the Angular container is running but serving a stale/unresponsive UI, restart only that service:
 
