@@ -10,7 +10,7 @@ const routes = [
     path: '/datasets/tiger-line-north-dakota-2025',
     heading: '2025 TIGER/Line - Census Tracts - North Dakota',
   },
-  { path: '/maps', heading: 'MapLibre geospatial workspace' },
+  { path: '/maps', heading: 'Geospatial research explorer' },
   { path: '/admin/sync', heading: 'Repository sync' },
   {
     path: '/evidence',

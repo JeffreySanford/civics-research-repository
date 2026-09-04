@@ -1,33 +1,99 @@
 # Civics Research Repository
 
-Civics Research Repository is an independent reference implementation of a federal Open Science repository and discovery platform. It uses DSpace as the system of record for curated repository objects, an application-owned federated metadata catalog for reproducible external-source records, rebuildable Solr/OpenSearch discovery projections, and an accessible Angular/MapLibre experience to connect datasets, publications, methodology, projects, provenance, access restrictions, and geospatial analysis.
+Civics Research Repository is an independent **federal Open Science reference implementation** focused on the public research experience: accessible Angular discovery, provenance-aware research detail, geospatial analysis, reviewable evidence, and typed frontend/backend integration over a real mixed-authority corpus.
+
+The browser application is intentionally designed as a **government-grade data discovery frontend**, not as a thin UI over one repository or search engine.
+
+```text
+Angular 22 / NgRx / RxJS / MapLibre
+        |
+        | generated typed REST contract
+        v
+Spring repository API
+        |
+        +--> DSpace
+        +--> application PostgreSQL
+        +--> Solr / OpenSearch
+```
+
+The UI owns interaction state, discovery workflows, presentation, accessibility and visualization. It does **not** call DSpace, Solr, OpenSearch or external publisher APIs directly.
 
 This project is not affiliated with, endorsed by, or sponsored by the U.S. Census Bureau, USGS, DSpace, Apache Solr, Data.gov, DOE OSTI, or OpenSearch.
 
-## What the platform demonstrates
+## What the frontend demonstrates
 
-### Discover connected research across authority boundaries
+### Discovery that remains shareable and explainable
 
-Search and facet across curated repository-backed research objects and provenance-bearing federated metadata rather than a hand-coded dataset list. Results can include datasets, publications, methodology, projects, access statements, authors, DOI metadata, citations, typed relationships, publishers, source systems and data-driven program values.
+`/discovery` searches curated DSpace research objects and retained federated publisher metadata through one typed application contract while keeping provenance visible.
 
-Authority remains explicit:
+The Angular/NgRx workflow demonstrates:
 
-- DSpace is authoritative for curated repository objects;
-- external publishers are authoritative for federated records and downloadable resources;
-- application PostgreSQL retains reproducible federated metadata, harvest checkpoints and evidence;
-- Solr and OpenSearch are derived discovery projections.
+- keyword search and data-driven facets;
+- URL-owned query/filter/page state for reproducible links;
+- loading, empty, error, fixture/degraded and pagination states;
+- source system, origin, access level and authoritative-source presentation;
+- bounded result pages rather than client-side million-record processing;
+- keyboard-aware paging that restores focus to changed results;
+- a context-preserving handoff from discovery into Maps.
 
-Canonical `/research/:id` detail routing resolves either curated repository content or federated metadata while `/datasets/:id` remains a compatibility route. Federated detail links back to the authoritative publisher and does not imply that external files are preserved locally.
+The UI does not maintain a fixed allowlist for publisher program names. Values from the active search projection survive URL/deep-link round trips without being collapsed into a curated frontend enum.
 
-### Move from discovery to an actionable research view
+### Research-object detail without repository coupling
 
-A workforce-oriented journey connects search context to the map workspace. TIGER/Line geography, LODES workplace employment, LODES commuting flows, SAIPE context, and optional USGS reference layers can be explored without losing the equivalent table/list representation required for keyboard and assistive-technology users.
+Canonical `/research/:id` routing resolves either curated repository content or federated metadata behind the Spring API. Angular renders one typed research-object contract rather than deciding how DSpace or a publisher should be queried.
 
-### Produce deterministic scale evidence
+Curated records can expose repository-owned files, relationships, versions, citations and access statements. Federated records identify their external source/publisher and authoritative resource without implying that publisher files are preserved locally.
 
-PI-1 now includes a completed exact million-record federated research checkpoint rather than only the earlier 1K/10K stepping stones.
+`/datasets/:id` remains a compatibility route.
 
-The current C2 Gold Master is:
+### Maps where the canvas is not the accessibility model
+
+`/maps` combines MapLibre visualization with equivalent semantic tables/lists driven from the same application state.
+
+TIGER/Line geography, LODES workplace employment and commuting flows, SAIPE context, optional USGS reference layers and Data.gov spatial coverage can be explored without making WebGL the only way to obtain the underlying research values.
+
+Selection, geography, layer state, URL context, announcements and semantic equivalents are coordinated through Angular/NgRx rather than through direct map-to-DOM coupling.
+
+### Accessibility and evidence as product behavior
+
+Accessibility is treated as an engineering artifact rather than a single axe score.
+
+The repository includes:
+
+- Angular/template accessibility rules;
+- component-state tests for loading, failure, empty and restricted states;
+- Storybook interaction + axe evidence;
+- Playwright real-browser semantics and workflows;
+- reflow, zoom, contrast, dark-mode and forced-colors checks;
+- map-equivalence and keyboard preconditions;
+- generated automated evidence;
+- explicit manual keyboard/NVDA/JAWS/map/cognitive checklists that remain separate from automated passes.
+
+The project does **not** represent automated evidence as completed manual Section 508 certification.
+
+### Generated contracts instead of duplicated frontend DTOs
+
+[`schemas/openapi/repository-api.yaml`](schemas/openapi/repository-api.yaml) is the browser/API contract source of truth. TypeScript client types and Java wire DTOs are generated from that contract, and CI rejects stale generated clients.
+
+That boundary is especially important for provenance and evidence surfaces, where a missing or nullable field can change what the UI is allowed to claim.
+
+See [Frontend Engineering Case Study](documentation/frontend-engineering-case-study.md) for the concrete Angular/NgRx/OpenAPI/accessibility decisions and implementation links.
+
+## Primary demo paths
+
+The portfolio-facing route order is intentionally frontend-first:
+
+1. **Discovery** — search, facets, URL state and provenance;
+2. **Research detail** — authority-neutral object presentation;
+3. **Maps** — visual/nonvisual state equivalence;
+4. **Evidence** — accessibility and scientific claim boundaries;
+5. **Search Lab** — supporting Solr/OpenSearch engineering depth.
+
+For interviews or stakeholder review, use the [5–8 minute frontend-first walkthrough](documentation/demo/frontend-first-walkthrough.md). The deeper [15–20 minute demo](documentation/demo/demo-script.md) remains available for repository, synchronization and search-architecture discussion.
+
+## Scale validates the frontend; it does not define the product
+
+The current certified C2 corpus is:
 
 - **500,000 Data.gov + 500,000 DOE OSTI** retained federated records;
 - **1,000,000** federated records in application PostgreSQL;
@@ -40,36 +106,22 @@ The corpus composition identity is kept separate from the full search projection
 
 The exact C2 retained corpus is also captured as a verified host-backed Gold Master archive, so the million-record state can be restored without repeating the full external harvest.
 
-See [Federated Scale Evidence](documentation/federation/scale-evidence.md) for the measured storage, benchmark, archive, exact-activation and restart-safety record.
+### C2.1 adversarial Solr/OpenSearch evidence
 
-### Keep search identity durable across restarts
+The follow-on C2.1 experiment deliberately gave OpenSearch an optimized semantically equivalent treatment and required projection parity, balanced randomized engine order, independent warmed batches, clean restart blocks and an adversarial workload matrix.
 
-Ordinary `repository-api` restarts no longer reset a persisted large projection to the curated demo. Startup verifies the live Solr/OpenSearch counts against the durable activation record and rehydrates the active profile, projection ID and object count without rewriting the indexes.
+Within the certified 1,000,181-object standalone Docker experiment:
 
-For `FEDERATED_1M`, activation is also an API invariant: one million arbitrary rows is not sufficient. The server requires the exact 500K Data.gov + 500K DOE OSTI composite recipe.
+- all **24/24 API-latency workload cells** had lower Solr batch-median latency;
+- all **24/24 paired batch-level bootstrap intervals** excluded zero in Solr's direction;
+- engine-reported timing showed the same 24/24 directional pattern;
+- all result cells were retained; no unfavorable cell-removal rule was permitted.
 
-The Admin data-flow view exposes **Authority → Retention → Projection**, and public Discovery surfaces the active corpus profile, projected document count and C2 identity so the user can see what corpus a search is actually running against.
+The claim remains scoped to the exact corpus, engine versions, resources, mappings, treatment, workload and standalone topology. It is **not** a universal claim that Solr is faster than OpenSearch.
 
-### Produce reviewable accessibility evidence
+Historical C2 and adversarial C2.1 remain separate evidence layers in `/evidence`.
 
-Accessibility is treated as an engineering artifact: Angular template linting, component-state axe tests, browser axe scans, keyboard preconditions, reflow, zoom, contrast, forced-colors, dark-mode, and map-equivalence checks feed generated evidence. Manual keyboard, NVDA, JAWS, map-equivalence and cognitive reviews remain explicit rather than being implied by automation.
-
-## Current status
-
-The generated repository/platform baseline is [documentation/platform-status.md](documentation/platform-status.md). It derives volatile curated-catalog, source-inventory, mirror, adapter-registry and accessibility facts from committed artifacts.
-
-Heavy live scale facts are recorded separately because a million-record local corpus and its storage measurements are intentionally not committed to Git. The durable milestone summary is [documentation/federation/scale-evidence.md](documentation/federation/scale-evidence.md).
-
-Use:
-
-```bash
-pnpm run docs:status
-pnpm run docs:check
-```
-
-The current platform includes a repository-backed Open Science slice, broad curated catalog coverage, bounded bitstream mirroring, mixed repository/federated discovery and detail routing, resumable Data.gov and DOE OSTI harvesting, deterministic composite/projection evidence, exact million-record Solr/OpenSearch parity, restart-safe active projection identity, geospatial research views, synchronization workflows, and automated accessibility/browser evidence.
-
-Active PI-1 work is now concentrated on **reusable scale validation and semantic search evidence**, not proving the first million again: a named live scale checker, stable large-corpus query definitions, result/rank/facet difference evidence, projection throughput/resource context, cursor/search-after pagination, cross-source identifier rules, and staged additional federation sources. Kubernetes/AWS remain follow-on topology work rather than prerequisites for the Compose control baseline.
+See [Federated Scale Evidence](documentation/federation/scale-evidence.md) and the Evidence UI for the measured storage, projection and search-research record.
 
 ## Architecture at a glance
 
@@ -77,10 +129,10 @@ Active PI-1 work is now concentrated on **reusable scale validation and semantic
 Public researcher / repository steward
                   |
                   v
-Angular 22 + NgRx + MapLibre
-search | research objects | maps | admin | evidence
+Angular 22 + NgRx + RxJS + MapLibre
+Discovery | Research detail | Maps | Evidence | Search Lab
                   |
-                  | typed REST from OpenAPI
+                  | generated OpenAPI REST contract
                   v
 Java 21 / Spring Boot repository-api
        |                 |                    |
@@ -98,11 +150,26 @@ federated metadata    /             \
        |                derived search
        |
 Federated publishers
-Data.gov / DOE OSTI / later CMR / PubMed / OpenAlex
+Data.gov / DOE OSTI / later controlled sources
 metadata + authoritative external links
 ```
 
 DSpace PostgreSQL/Solr and application PostgreSQL/public search indexes have different owners and lifecycles. DSpace controls its internal database, Solr cores, repository metadata, relations, versions and bitstreams. The application controls operational/federated state and disposable public discovery projections.
+
+## Search and repository ownership
+
+Authority remains explicit:
+
+- DSpace is authoritative for curated repository objects;
+- external publishers are authoritative for federated records and downloadable resources;
+- application PostgreSQL retains reproducible federated metadata, harvest checkpoints and evidence;
+- Solr and OpenSearch are derived discovery projections.
+
+Ordinary `repository-api` restarts do not reset a persisted large projection to the curated demo. Startup verifies the live Solr/OpenSearch counts against the durable activation record and rehydrates the active profile, projection ID and object count without rewriting the indexes.
+
+For `FEDERATED_1M`, activation is also an API invariant: one million arbitrary rows is not sufficient. The server requires the exact 500K Data.gov + 500K DOE OSTI composite recipe.
+
+The Admin data-flow view exposes **Authority → Retention → Projection**, and public Discovery surfaces the active corpus profile, projected document count and C2 identity so users can see what corpus a search is running against.
 
 ## Stack
 
@@ -113,10 +180,25 @@ DSpace PostgreSQL/Solr and application PostgreSQL/public search indexes have dif
 - DSpace 9 as the curated repository system of record.
 - Application PostgreSQL for sync state, federated metadata, harvest checkpoints/quarantine and evidence history.
 - Apache Solr as the normal public search engine behind the `DiscoveryIndex` boundary.
-- OpenSearch as the aligned comparison projection target while PI-1/PI-2 collect evidence.
+- OpenSearch as the aligned comparison projection target for controlled evidence.
 - Separate PostgreSQL/Solr ownership for application and DSpace runtimes.
 - Docker Compose for the complete local platform and standalone scale baseline.
-- Playwright, axe-core, Vitest/jsdom, browser evidence CI, and manual evidence checklists.
+- Playwright, axe-core, Vitest/jsdom, Storybook and Browser Evidence CI.
+
+## Current status
+
+The core product, C2/C2.1 search-research program, and frontend portfolio presentation are implemented. The remaining recorded verification gap is optional human assistive-technology evidence under #49; additional federation or production-cloud work is future scope rather than a completion prerequisite.
+
+The generated repository/platform baseline is [documentation/platform-status.md](documentation/platform-status.md). It derives volatile curated-catalog, source-inventory, mirror, adapter-registry and accessibility facts from committed artifacts.
+
+Heavy live scale facts are recorded separately because a million-record local corpus and its storage measurements are intentionally not committed to Git.
+
+Use:
+
+```bash
+pnpm run docs:status
+pnpm run docs:check
+```
 
 ## Quick start
 
@@ -128,7 +210,7 @@ pnpm install
 pnpm run start:all
 ```
 
-`start:all` starts the DSpace profile and application stack, waits for health checks, generates and seeds SAF packages when needed, and prints the service URLs. Persistent application volumes preserve federated harvest/snapshot/evidence state across ordinary recreate/rebuild operations.
+`start:all` starts the DSpace profile and application stack, waits for health checks, generates/seeds SAF packages when needed, and prints service URLs. Persistent application volumes preserve federated harvest/snapshot/evidence state across ordinary recreate/rebuild operations.
 
 Primary endpoints:
 
@@ -140,6 +222,18 @@ Primary endpoints:
 | Discovery Solr | `http://localhost:8983/solr`       |
 | OpenSearch     | `http://localhost:9200`            |
 | DSpace Solr    | `http://localhost:8984/solr`       |
+
+If the Angular container is running but serving a stale/unresponsive UI, restart only that service:
+
+```bash
+docker compose restart discovery-ui
+```
+
+If a simple restart is insufficient:
+
+```bash
+docker compose up -d --force-recreate discovery-ui
+```
 
 Stop the full stack without deleting volumes:
 
@@ -159,31 +253,27 @@ pnpm run sync:apply                # apply owned metadata changes
 pnpm run reindex                   # rebuild the selected public discovery projection
 pnpm run research:preflight        # non-mutating FEDERATED_1M/C2 readiness check
 pnpm run research:report           # current FEDERATED_1M research report
-pnpm run research:full             # C2 preflight + quality gate + 1M report
 pnpm run federation:sample:all     # bounded source-adapter sample verification
-pnpm run catalog:harvest           # verify/probe curated catalog vintages and sources
-pnpm run sources:inventory         # refresh measured source-file inventory
-pnpm run dspace:mirror             # refresh bounded source-file mirroring
 pnpm run evidence:refresh          # run and record automated accessibility evidence
 pnpm run docs:status               # regenerate current platform status
 pnpm run quality:all               # deterministic ordinary repository quality gate
 ```
 
-Heavy harvest/projection operations remain explicit. Ordinary PR CI does not create a 1M corpus.
+Heavy harvest/projection/measurement operations remain explicit. Ordinary PR CI does not create or rerun the accepted 1M experiment.
 
 ## Documentation
 
+- [Frontend engineering case study](documentation/frontend-engineering-case-study.md)
+- [Frontend-first demo walkthrough](documentation/demo/frontend-first-walkthrough.md)
 - [Current generated platform status](documentation/platform-status.md)
 - [Federated scale evidence](documentation/federation/scale-evidence.md)
-- [Federated metadata expansion](documentation/federation/README.md)
-- [Program Increment plan](planning/PI_PLAN.md)
 - [Architecture](documentation/architecture.md)
 - [Architecture diagrams](documentation/architecture-diagrams.md)
 - [Open Science research objects](documentation/open-science-research-objects.md)
 - [Mapping and visualization](documentation/mapping-visualization.md)
 - [Section 508 and WCAG evidence](documentation/accessibility-508-wcag.md)
 - [Manual accessibility evidence](documentation/accessibility-manual-evidence.md)
-- [Interview/demo package](documentation/demo/README.md)
+- [Full interview/demo package](documentation/demo/README.md)
 - [AWS modernization](documentation/aws-modernization.md)
 - [Future roadmap](planning/ROADMAP.md)
 - [Active backlog](planning/TODO.md)

@@ -28,7 +28,7 @@ const ROUTES = [
   {
     path: '/maps',
     title: 'Map Preview',
-    heading: 'MapLibre geospatial workspace',
+    heading: 'Geospatial research explorer',
   },
   { path: '/admin/sync', title: 'Repository Sync', heading: 'Repository sync' },
   {

@@ -5,14 +5,13 @@
         <!-- Named for the research question when the reader arrived with one. "MapLibre
              geospatial workspace" describes the library; it does not describe what the reader
              came here to find out. -->
-        @if (workforceView()) {
         <p class="eyebrow">Geospatial research workspace</p>
+        @if (workforceView()) {
         <h1 id="maps-heading">
           {{ (selectedGeography$ | async) ?? 'Census' }} Workforce Explorer
         </h1>
         } @else {
-        <p class="eyebrow">Map preview</p>
-        <h1 id="maps-heading">MapLibre geospatial workspace</h1>
+        <h1 id="maps-heading">Geospatial research explorer</h1>
         }
       </div>
 

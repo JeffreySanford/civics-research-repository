@@ -18,7 +18,7 @@ test.describe('map layer controls', () => {
     await mockRepositoryApi(page);
     await page.goto('/maps');
     await expect(
-      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+      page.getByRole('heading', { name: 'Geospatial research explorer' }),
     ).toBeVisible();
   });
 

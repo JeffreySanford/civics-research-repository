@@ -7,7 +7,7 @@ import { waitForStablePage } from './support/wait-for-stable-page';
 const AXE_ROUTES = [
   { path: '/', heading: 'Census geospatial discovery with repository sync' },
   { path: '/discovery', heading: 'Find research objects' },
-  { path: '/maps', heading: 'MapLibre geospatial workspace' },
+  { path: '/maps', heading: 'Geospatial research explorer' },
   {
     path: '/evidence',
     heading: 'Platform evidence: conformance and data provenance',

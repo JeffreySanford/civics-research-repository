@@ -60,7 +60,7 @@ test.describe('accessibility evidence', () => {
       path: `/research/${federatedResearchId}`,
       heading: 'Workforce Example Metadata',
     },
-    { path: '/maps', heading: 'MapLibre geospatial workspace' },
+    { path: '/maps', heading: 'Geospatial research explorer' },
     { path: '/admin/sync', heading: 'Repository sync' },
     {
       path: '/evidence',

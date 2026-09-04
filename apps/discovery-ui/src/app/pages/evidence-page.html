@@ -41,10 +41,13 @@
               <span>({{ capturedAt | date: 'mediumDate' }})</span>
               }
             </p>
-            @if (checkCounts$ | async; as counts) { @if (counts.total > 0) {
+            @if (checkExecutionCounts$ | async; as counts) { @if (counts.total >
+            0) {
             <p>
-              Approximately {{ counts.total }} automated checks recorded across
-              axe, structural, reflow, and storyboard suites.
+              Approximately {{ counts.total }} automated check executions
+              recorded across the automated evidence runs. Some runs
+              intentionally overlap, so this is not a count of unique
+              accessibility assertions.
             </p>
             } }
             <p class="warning-message">
@@ -229,8 +232,8 @@
             locally. These four measures show what the repository references at
             publisher sources, how much of the measured source data the DSpace
             assetstore preserves as bitstreams, what has been curated into
-            DSpace as research objects, and what the separate Solr projection is
-            serving for discovery.
+            DSpace as research objects, and what the rebuildable mixed-origin
+            discovery projection is serving for search.
           </p>
 
           <!-- Hero numbers, not a chart: four totals in three different units. A chart would
@@ -277,8 +280,9 @@
                 {{ stages.indexedDocuments }} documents
               </dd>
               <dd class="pipeline-stat-note">
-                Rebuildable Solr discovery projection sourced from DSpace;
-                source {{ stages.indexedSource ?? 'unknown' }}.
+                Rebuildable mixed-origin discovery projection from curated
+                DSpace and retained federated metadata; source {{
+                stages.indexedSource ?? 'unknown' }}.
               </dd>
             </div>
           </dl>

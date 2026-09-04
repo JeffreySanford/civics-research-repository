@@ -96,13 +96,13 @@ test.describe('repository API failure states', () => {
     await page.goto('/maps');
 
     await expect(
-      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+      page.getByRole('heading', { name: 'Geospatial research explorer' }),
     ).toBeVisible();
     // Scoped to the workspace: the same failure is also announced in a snackbar, and this test
     // is about the page itself reporting the outage inline rather than only in a transient toast.
     await expect(
       page
-        .getByLabel('MapLibre geospatial workspace')
+        .getByLabel('Geospatial research explorer')
         .getByRole('alert')
         .filter({ hasText: 'Map data failed to load' }),
     ).toBeVisible();
