@@ -63,7 +63,7 @@ test.describe('demo storyboard checks', () => {
       .getByRole('link', { name: 'Maps' })
       .click();
     await expect(
-      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+      page.getByRole('heading', { name: 'Geospatial research explorer' }),
     ).toBeVisible();
 
     await page
@@ -196,7 +196,7 @@ test.describe('demo storyboard checks', () => {
     await page.getByRole('link', { name: 'Open interactive map' }).click();
 
     await expect(
-      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+      page.getByRole('heading', { name: 'Geospatial research explorer' }),
     ).toBeVisible();
     await expect(page.getByLabel('Census area')).toHaveValue('California');
     await page.goBack();
@@ -904,7 +904,7 @@ test.describe('explore workforce on the map', () => {
     await page.goto('/maps');
 
     await expect(
-      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+      page.getByRole('heading', { name: 'Geospatial research explorer' }),
     ).toBeVisible();
     await expect(
       page.getByRole('region', { name: 'Research context' }),
