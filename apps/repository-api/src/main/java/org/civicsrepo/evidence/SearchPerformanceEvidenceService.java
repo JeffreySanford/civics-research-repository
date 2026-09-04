@@ -31,6 +31,7 @@ public class SearchPerformanceEvidenceService {
     private static final String C21_EXPERIMENT = "C2.1_ADVERSARIAL_STANDALONE";
     private static final String C21_REPORT_KIND = "c2-1-statistical-report";
     private static final String C21_TREATMENT = "C2_1_OPTIMIZED_EQUIVALENT";
+    private static final String C21_SCOPE = "LOCAL_CERTIFIED_TOPOLOGY_ONLY";
     private static final String POSITIVE_DIFFERENCE = "Positive differences mean OpenSearch took longer than Solr.";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -55,8 +56,8 @@ public class SearchPerformanceEvidenceService {
             JsonNode c21 = Files.isRegularFile(c21Path) ? objectMapper.readTree(c21Path.toFile()) : null;
             return Optional.of(toEvidence(research, statistical, c21));
         } catch (IOException exception) {
-            LOGGER.error("Failed to read C2 search performance evidence from {}", evidenceRoot, exception);
-            throw new IllegalStateException("Could not read C2 search performance evidence", exception);
+            LOGGER.error("Failed to read C2/C2.1 search performance evidence from {}", evidenceRoot, exception);
+            throw new IllegalStateException("Could not read C2/C2.1 search performance evidence", exception);
         }
     }
 
@@ -221,6 +222,9 @@ public class SearchPerformanceEvidenceService {
                 || !C21_REPORT_KIND.equals(node.path("kind").asText())) {
             throw new IllegalStateException("C2.1 evidence is not the admitted adversarial statistical report");
         }
+        if (!C21_SCOPE.equals(node.path("scope").asText())) {
+            throw new IllegalStateException("C2.1 evidence scope mismatch");
+        }
         if (node.path("comparativeClaimAllowed").asBoolean(true)) {
             throw new IllegalStateException("C2.1 evidence must retain the comparative-claim guardrail");
         }
@@ -258,6 +262,7 @@ public class SearchPerformanceEvidenceService {
         if (workloadCellCount < 1 || cells.size() != workloadCellCount) {
             throw new IllegalStateException("C2.1 evidence workload summary does not match retained cells");
         }
+        validateC21ApiSummary(apiSummary, cells);
 
         return new SearchPerformanceEvidence.C21AdversarialEvidence(
                 node.path("capturedAt").asText(),
@@ -272,6 +277,56 @@ public class SearchPerformanceEvidenceService {
                 apiSummary.path("ciExcludesZeroFavoringOpenSearch").asInt(),
                 cells,
                 node.path("claimGuardrail").asText());
+    }
+
+    private static void validateC21ApiSummary(
+            JsonNode apiSummary, List<SearchPerformanceEvidence.C21Cell> cells) {
+        int solrLowerLatencyCells = 0;
+        int openSearchLowerLatencyCells = 0;
+        int tiedCells = 0;
+        int ciExcludesZeroFavoringSolr = 0;
+        int ciExcludesZeroFavoringOpenSearch = 0;
+
+        for (SearchPerformanceEvidence.C21Cell cell : cells) {
+            SearchPerformanceEvidence.LatencyInference inference = cell.apiElapsed();
+            Double medianDifferenceMs = inference.medianDifferenceMs();
+            Double lower95Ms = inference.lower95Ms();
+            Double upper95Ms = inference.upper95Ms();
+
+            if (medianDifferenceMs == null || lower95Ms == null || upper95Ms == null) {
+                throw new IllegalStateException(
+                        "C2.1 workload cell is missing complete batch-level API inference");
+            }
+
+            if (medianDifferenceMs > 0) {
+                solrLowerLatencyCells++;
+            } else if (medianDifferenceMs < 0) {
+                openSearchLowerLatencyCells++;
+            } else {
+                tiedCells++;
+            }
+
+            if (lower95Ms > 0) {
+                ciExcludesZeroFavoringSolr++;
+            } else if (upper95Ms < 0) {
+                ciExcludesZeroFavoringOpenSearch++;
+            }
+        }
+
+        boolean summaryMatches =
+                apiSummary.path("solrLowerLatencyCells").asInt(-1) == solrLowerLatencyCells
+                        && apiSummary.path("openSearchLowerLatencyCells").asInt(-1)
+                                == openSearchLowerLatencyCells
+                        && apiSummary.path("tiedCells").asInt(-1) == tiedCells
+                        && apiSummary.path("ciExcludesZeroFavoringSolr").asInt(-1)
+                                == ciExcludesZeroFavoringSolr
+                        && apiSummary.path("ciExcludesZeroFavoringOpenSearch").asInt(-1)
+                                == ciExcludesZeroFavoringOpenSearch;
+
+        if (!summaryMatches) {
+            throw new IllegalStateException(
+                    "C2.1 evidence API summary drift from retained workload cells");
+        }
     }
 
     private static String c21Workload(JsonNode cell) {

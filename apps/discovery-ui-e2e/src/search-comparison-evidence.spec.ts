@@ -9,7 +9,11 @@ function c21EvidenceFixture() {
     const isQ20 = id === 'Q20';
     return {
       id,
-      workload: isQ02 ? 'data' : isQ20 ? 'no-result control' : `query ${index + 1}`,
+      workload: isQ02
+        ? 'data'
+        : isQ20
+          ? 'no-result control'
+          : `query ${index + 1}`,
       totalHits: isQ02 ? 866_048 : isQ20 ? 0 : index + 100,
       apiElapsed: {
         medianDifferenceMs: isQ02 ? 56 : isQ20 ? 1 : 8,
@@ -203,7 +207,9 @@ test.describe('Evidence search comparison', () => {
     await expect(c21).toContainText('16');
     await expect(c21).toContainText('4');
     await expect(c21).toContainText('C2_1_OPTIMIZED_EQUIVALENT');
-    await expect(c21).toContainText('samples remain separate from historical C2');
+    await expect(c21).toContainText(
+      'samples remain separate from historical C2',
+    );
 
     const table = c21.getByRole('table', {
       name: /C2\.1 batch-level API latency inference/,
@@ -215,6 +221,8 @@ test.describe('Evidence search comparison', () => {
       table.getByRole('rowheader', { name: 'FILTER_BROAD' }),
     ).toBeVisible();
     await expect(table.getByText('500,000')).toBeVisible();
-    await expect(c21.getByText('Scoped C2.1 claims only; no universal engine ranking.')).toBeVisible();
+    await expect(
+      c21.getByText('Scoped C2.1 claims only; no universal engine ranking.'),
+    ).toBeVisible();
   });
 });

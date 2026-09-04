@@ -106,6 +106,40 @@ class SearchPerformanceEvidenceServiceTest {
                 .hasMessageContaining("C2.1 evidence treatment mismatch");
     }
 
+    @Test
+    void rejectsC21ScopeOrSummaryDrift() throws Exception {
+        writeResearchReport(PROJECTION);
+        writeStatisticalReport(PROJECTION);
+        writeC21Report(PROJECTION, C21_TREATMENT);
+
+        Path reportPath = tempDir.resolve("c2-1/statistical-report.json");
+        String validReport = Files.readString(reportPath);
+
+        Files.writeString(
+                reportPath,
+                validReport.replace(
+                        "\"scope\": \"LOCAL_CERTIFIED_TOPOLOGY_ONLY\"",
+                        "\"scope\": \"UNSCOPED\""));
+
+        SearchPerformanceEvidenceService scopeService =
+                new SearchPerformanceEvidenceService(tempDir.toString());
+        assertThatThrownBy(scopeService::latestEvidence)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("C2.1 evidence scope mismatch");
+
+        Files.writeString(
+                reportPath,
+                validReport.replace(
+                        "\"solrLowerLatencyCells\": 1",
+                        "\"solrLowerLatencyCells\": 0"));
+
+        SearchPerformanceEvidenceService summaryService =
+                new SearchPerformanceEvidenceService(tempDir.toString());
+        assertThatThrownBy(summaryService::latestEvidence)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("C2.1 evidence API summary drift");
+    }
+
     private void writeResearchReport(String projection) throws Exception {
         Path directory = tempDir.resolve("research-performance");
         Files.createDirectories(directory);

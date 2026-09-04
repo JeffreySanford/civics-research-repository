@@ -105,13 +105,13 @@ const evidence: SearchPerformanceEvidence = {
   c21Adversarial: {
     capturedAt: '2026-09-04T15:23:00Z',
     openSearchTreatment: 'C2_1_OPTIMIZED_EQUIVALENT',
-    workloadCellCount: 24,
+    workloadCellCount: 2,
     restartBlocks: 4,
     independentBatchSummariesPerCell: 16,
-    solrLowerLatencyCells: 24,
+    solrLowerLatencyCells: 2,
     openSearchLowerLatencyCells: 0,
     tiedCells: 0,
-    ciExcludesZeroFavoringSolr: 24,
+    ciExcludesZeroFavoringSolr: 2,
     ciExcludesZeroFavoringOpenSearch: 0,
     cells: [
       {
@@ -187,7 +187,7 @@ describe('SearchPerformanceEvidenceComponent', () => {
     expect(text).toContain('Scoped local C2 claims only.');
 
     expect(text).toContain('Adversarial C2.1 validation');
-    expect(text).toContain('24 / 24');
+    expect(text).toContain('2 / 2');
     expect(text).toContain('16');
     expect(text).toContain('C2_1_OPTIMIZED_EQUIVALENT');
     expect(text).toContain('Q01');
