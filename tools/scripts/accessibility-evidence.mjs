@@ -16,6 +16,18 @@ const RELEASE_DIR = resolve(
   ROOT,
   'documentation/accessibility-evidence/release-checklists',
 );
+const MANUAL_CHECKLIST_PATH = resolve(
+  ROOT,
+  'documentation/accessibility-manual-evidence.md',
+);
+const MANUAL_PROCEDURE_PATH = resolve(
+  ROOT,
+  'documentation/accessibility-evidence/manual-run-procedure.md',
+);
+const MANUAL_TEMPLATE_PATH = resolve(
+  ROOT,
+  'documentation/accessibility-evidence/manual-run-template.md',
+);
 const MANUAL_IDS = new Set([
   'keyboard-checklist',
   'nvda-checklist',
@@ -38,6 +50,45 @@ function dateOf(iso) {
 
 function shortSha(sha) {
   return sha && sha !== 'unknown' ? sha.slice(0, 8) : 'unknown';
+}
+
+function validateManualEvidenceContract() {
+  const required = [
+    {
+      path: MANUAL_CHECKLIST_PATH,
+      label: 'manual accessibility checklist',
+      phrases: ['Historical C2 baseline', 'Adversarial C2.1 validation'],
+    },
+    {
+      path: MANUAL_PROCEDURE_PATH,
+      label: 'manual accessibility run procedure',
+      phrases: [
+        'Historical C2 baseline',
+        'Adversarial C2.1 validation',
+        '24 retained workload cells',
+        'Do not pool C2 and C2.1',
+      ],
+    },
+    {
+      path: MANUAL_TEMPLATE_PATH,
+      label: 'manual accessibility run template',
+      phrases: [
+        'Historical C2 baseline',
+        'Adversarial C2.1 validation',
+        'Evidence/C2/C2.1 dense data: **Not run**',
+      ],
+    },
+  ];
+
+  for (const entry of required) {
+    const content = readFileSync(entry.path, 'utf8');
+    const missing = entry.phrases.filter((phrase) => !content.includes(phrase));
+    if (missing.length > 0) {
+      throw new Error(
+        `${entry.label} is missing required #49/C2.1 language: ${missing.join(', ')}`,
+      );
+    }
+  }
 }
 
 function gitSha() {
@@ -230,6 +281,7 @@ function writeReleaseChecklist(snapshot, manifest) {
 }
 
 function generate(check = false) {
+  validateManualEvidenceContract();
   const snapshot = readJson(SNAPSHOT_PATH);
   const existingManifest = readJson(MANIFEST_PATH);
   const expected = json(buildManifest(snapshot, existingManifest));
@@ -253,6 +305,7 @@ function generate(check = false) {
 }
 
 function refresh() {
+  validateManualEvidenceContract();
   // Write nothing unless both suites pass: a failed run must not replace the last known-good record.
   run('pnpm', ['run', 'a11y:components']);
   run('pnpm', ['run', 'e2e:reports']);
