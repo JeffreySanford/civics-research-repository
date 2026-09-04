@@ -28,15 +28,15 @@ Record results under `documentation/accessibility-evidence/` with:
 
 ## Scope
 
-| Route                                      | Primary workflow                                                                 |
-| ------------------------------------------ | -------------------------------------------------------------------------------- |
-| `/`                                        | Orientation and primary navigation                                               |
-| `/discovery`                               | Search, facets, paging and result navigation                                     |
-| `/datasets/{id}` / future `/research/{id}` | Type-aware research-object metadata, files, citation and relationships           |
-| `/maps`                                    | Layer controls, area selection, equivalent tables/lists and synchronized selection |
-| `/admin/sync`                              | Dry-run, diff, apply, reindex and status reporting                               |
+| Route                                      | Primary workflow                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `/`                                        | Orientation and primary navigation                                                               |
+| `/discovery`                               | Search, facets, paging and result navigation                                                     |
+| `/datasets/{id}` / future `/research/{id}` | Type-aware research-object metadata, files, citation and relationships                           |
+| `/maps`                                    | Layer controls, area selection, equivalent tables/lists and synchronized selection               |
+| `/admin/sync`                              | Dry-run, diff, apply, reindex and status reporting                                               |
 | `/evidence`                                | Accessibility/data-pipeline evidence plus Historical C2 baseline and Adversarial C2.1 validation |
-| `/search-lab`                              | Two-engine comparison form, projection parity, status and result interpretation |
+| `/search-lab`                              | Two-engine comparison form, projection parity, status and result interpretation                  |
 
 ## Checklist 1 — Keyboard only
 
@@ -100,11 +100,11 @@ Ignore or disconnect the mouse for the entire run.
 
 ### WCAG 2.2 manual extension
 
-| ID | Check                                                                  | WCAG   |
-| -- | ---------------------------------------------------------------------- | ------ |
-| W1 | Focused controls are not entirely obscured by author-created content   | 2.4.11 |
-| W2 | Any drag interaction has a non-dragging alternative where applicable   | 2.5.7  |
-| W3 | Primary pointer targets meet target-size, spacing or exception criteria | 2.5.8  |
+| ID  | Check                                                                   | WCAG   |
+| --- | ----------------------------------------------------------------------- | ------ |
+| W1  | Focused controls are not entirely obscured by author-created content    | 2.4.11 |
+| W2  | Any drag interaction has a non-dragging alternative where applicable    | 2.5.7  |
+| W3  | Primary pointer targets meet target-size, spacing or exception criteria | 2.5.8  |
 
 ## Checklist 2 — NVDA
 
@@ -176,38 +176,38 @@ The current demo exposes historical C2 evidence and the adversarial C2.1 experim
 
 ### Search comparison Evidence
 
-| ID | Check                                                                                                                        |
-| -- | ---------------------------------------------------------------------------------------------------------------------------- |
-| E1 | **Historical C2 baseline** and **Adversarial C2.1 validation** are separately named and encountered in a logical reading order |
-| E2 | The C2.1 24-cell workload table can be reached, traversed and interpreted without relying on visual layout alone              |
-| E3 | Median `OpenSearch - Solr`, bootstrap 95% CI, 16 independent batch summaries and four restart blocks are understandable       |
-| E4 | Historical C2 and C2.1 claim boundaries are both discoverable and no wording implies that their samples are pooled           |
-| E5 | Dense C2/C2.1 tables preserve captions/headers/units and remain operable when local horizontal scrolling is required         |
+| ID  | Check                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------ |
+| E1  | **Historical C2 baseline** and **Adversarial C2.1 validation** are separately named and encountered in a logical reading order |
+| E2  | The C2.1 24-cell workload table can be reached, traversed and interpreted without relying on visual layout alone               |
+| E3  | Median `OpenSearch - Solr`, bootstrap 95% CI, 16 independent batch summaries and four restart blocks are understandable        |
+| E4  | Historical C2 and C2.1 claim boundaries are both discoverable and no wording implies that their samples are pooled             |
+| E5  | Dense C2/C2.1 tables preserve captions/headers/units and remain operable when local horizontal scrolling is required           |
 
 ### Search Lab
 
-| ID | Check                                                                                                       |
-| -- | ----------------------------------------------------------------------------------------------------------- |
-| S1 | Scenario, search terms and structured-filter controls are reached in logical order                         |
-| S2 | `Run both engines` is keyboard operable and the running/completion status is perceivable                   |
-| S3 | Projection parity or warning state is encountered before interpreting engine differences                   |
-| S4 | Solr and OpenSearch result/metric sections have distinct, coherent headings                                |
-| S5 | Clear/reverse filters restores a predictable form state without stale focus                                |
-| S6 | Local timing is explained as diagnostic evidence for this topology rather than a universal engine verdict |
+| ID  | Check                                                                                                     |
+| --- | --------------------------------------------------------------------------------------------------------- |
+| S1  | Scenario, search terms and structured-filter controls are reached in logical order                        |
+| S2  | `Run both engines` is keyboard operable and the running/completion status is perceivable                  |
+| S3  | Projection parity or warning state is encountered before interpreting engine differences                  |
+| S4  | Solr and OpenSearch result/metric sections have distinct, coherent headings                               |
+| S5  | Clear/reverse filters restores a predictable form state without stale focus                               |
+| S6  | Local timing is explained as diagnostic evidence for this topology rather than a universal engine verdict |
 
 ## Checklist 5 — Cognitive and workflow review
 
-| ID  | Check                                                                        |
-| --- | ---------------------------------------------------------------------------- |
-| C1  | Each route's purpose is clear from heading and lead text                     |
-| C2  | Search results explain what the object is and why it matched                 |
-| C3  | Applied filters are visible and reversible                                   |
-| C4  | Errors explain what happened and what to do next                             |
-| C5  | Long operations show progress                                                |
-| C6  | Repository terminology is avoided or explained                               |
-| C7  | File actions communicate content/format/size expectations                    |
-| C8  | Citation is correct and copyable                                             |
-| C9  | Nothing implies live/repository content when it is fixture, stale or sampled |
+| ID  | Check                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------ |
+| C1  | Each route's purpose is clear from heading and lead text                                                           |
+| C2  | Search results explain what the object is and why it matched                                                       |
+| C3  | Applied filters are visible and reversible                                                                         |
+| C4  | Errors explain what happened and what to do next                                                                   |
+| C5  | Long operations show progress                                                                                      |
+| C6  | Repository terminology is avoided or explained                                                                     |
+| C7  | File actions communicate content/format/size expectations                                                          |
+| C8  | Citation is correct and copyable                                                                                   |
+| C9  | Nothing implies live/repository content when it is fixture, stale or sampled                                       |
 | C10 | Evidence distinguishes Historical C2 baseline from Adversarial C2.1 validation and preserves scoped claim language |
 
 ## Browser-specific notes
