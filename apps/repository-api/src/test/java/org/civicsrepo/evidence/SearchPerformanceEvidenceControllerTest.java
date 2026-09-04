@@ -38,6 +38,7 @@ class SearchPerformanceEvidenceControllerTest {
                 null,
                 List.of(),
                 List.of(),
+                null,
                 new SearchPerformanceEvidence.ResourceSummary(true, "Telemetry captured.", false, List.of()));
         given(evidenceService.latestEvidence()).willReturn(Optional.of(evidence));
 
