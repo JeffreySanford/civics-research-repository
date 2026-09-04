@@ -1,0 +1,16 @@
+services:
+  solr:
+    image: solr:9.10.1
+    environment:
+      SOLR_HEAP: 512m
+    cpus: '4.0'
+    mem_limit: 4g
+
+  opensearch:
+    image: opensearchproject/opensearch:2.19.6
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: 'true'
+      OPENSEARCH_JAVA_OPTS: '-Xms512m -Xmx512m'
+    cpus: '4.0'
+    mem_limit: 4g

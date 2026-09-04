@@ -28,7 +28,9 @@ public class SearchComparisonController {
     @PostMapping("/run")
     public SearchComparisonResponse run(
             @RequestBody SearchComparisonRequest request,
-            @RequestParam(defaultValue = "SOLR_FIRST") SearchComparisonExecutionOrder order) {
-        return searchComparisonService.run(request, order);
+            @RequestParam(defaultValue = "SOLR_FIRST") SearchComparisonExecutionOrder order,
+            @RequestParam(defaultValue = "BASELINE_SCOPED_FILTERS")
+                    OpenSearchComparisonTreatment openSearchTreatment) {
+        return searchComparisonService.run(request, order, openSearchTreatment);
     }
 }

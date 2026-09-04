@@ -1,8 +1,10 @@
 # C2.1 Adversarial Solr/OpenSearch Fairness Validation Protocol
 
-Status: **PREREGISTERED — NO C2.1 PERFORMANCE RESULTS MAY BE ADMITTED UNTIL THIS PROTOCOL IS MERGED**
+Status: **PREREGISTERED AND MERGED — NO C2.1 PERFORMANCE RESULTS COLLECTED YET**
 
 Related work: issue #47. The certified C2 baseline remains historical evidence and is not overwritten by C2.1.
+
+Pre-measurement housekeeping amendment: local Kubernetes work in #48 was closed as not planned for the current completion path. This wording update changes no corpus identity, query, filter band, selection algorithm, restart count, batch count, measured-run count, order strategy, timing boundary or interpretation rule.
 
 ## Research question
 
@@ -298,7 +300,7 @@ C2.1 may support statements such as:
 
 > Under the preregistered C2.1 corpus, query/filter matrix, semantically validated query treatments, equalized standalone resource controls, randomized engine order and repeated restart-block design, the measured latency difference favored X for Y of the tested cells.
 
-C2.1 must not be summarized as proof that Solr or OpenSearch is universally faster, more scalable or more resource-efficient. Standalone local Docker results do not predict SolrCloud/OpenSearch-cluster or AWS behavior; topology becomes the independent variable in PI-2.
+C2.1 must not be summarized as proof that Solr or OpenSearch is universally faster, more scalable or more resource-efficient. Standalone local Docker results do not predict SolrCloud/OpenSearch-cluster or AWS behavior; clustered/distributed topology remains a separate future research question and is not part of the C2.1 completion path.
 
 ## Protocol amendments
 

@@ -29,7 +29,7 @@ class SearchComparisonControllerTest {
     }
 
     @Test
-    void delegatesTheTypedComparisonRequestAndExecutionOrder() {
+    void delegatesTheTypedComparisonRequestExecutionOrderAndTreatment() {
         SearchComparisonService service = mock(SearchComparisonService.class);
         SearchComparisonController controller = new SearchComparisonController(service);
         SearchComparisonRequest request = new SearchComparisonRequest(SearchComparisonScenarioId.FILTERING)
@@ -37,9 +37,21 @@ class SearchComparisonControllerTest {
                 .page(0)
                 .pageSize(10);
         SearchComparisonResponse response = mock(SearchComparisonResponse.class);
-        when(service.run(request, SearchComparisonExecutionOrder.OPENSEARCH_FIRST)).thenReturn(response);
+        when(service.run(
+                        request,
+                        SearchComparisonExecutionOrder.OPENSEARCH_FIRST,
+                        OpenSearchComparisonTreatment.C2_1_OPTIMIZED_EQUIVALENT))
+                .thenReturn(response);
 
-        assertThat(controller.run(request, SearchComparisonExecutionOrder.OPENSEARCH_FIRST)).isSameAs(response);
-        verify(service).run(request, SearchComparisonExecutionOrder.OPENSEARCH_FIRST);
+        assertThat(controller.run(
+                        request,
+                        SearchComparisonExecutionOrder.OPENSEARCH_FIRST,
+                        OpenSearchComparisonTreatment.C2_1_OPTIMIZED_EQUIVALENT))
+                .isSameAs(response);
+        verify(service)
+                .run(
+                        request,
+                        SearchComparisonExecutionOrder.OPENSEARCH_FIRST,
+                        OpenSearchComparisonTreatment.C2_1_OPTIMIZED_EQUIVALENT);
     }
 }
