@@ -1,217 +1,191 @@
 # Acceptance Criteria
 
-## First Vertical Slice
+This file records the current acceptance boundary for the mature standalone reference implementation. A checked item means the behavior is implemented and supported by repository evidence/tests; it does **not** imply that every adjacent future enhancement is complete.
 
-The first implementation milestone is complete when the demo can show one public research dataset flowing through the repository, API, Angular UI, map visualization, and accessibility evidence.
+The repository rule remains: **testing/evidence precedes feature expansion**.
 
-**Status: complete for the connected slice.** Discovery, facets, dataset detail, and related research read from DSpace; the generated fixture catalog is a labelled fallback only when the repository is unavailable. Open items below are follow-on breadth, contract polish, or demo artifacts — not a broken integration.
+## Core Open Science vertical slice
 
-Checking a box here means the behavior is implemented and covered by a test, not that every adjacent seam is closed. **Testing first is the acceptance rule**: adding a test file is not enough when the relevant CI/browser/real-stack workflow has not actually executed it.
+- [x] DSpace remains the system of record for curated repository objects.
+- [x] Curated research objects include datasets, publications, methodology and projects.
+- [x] Metadata supports title, summary/abstract, publisher/program, geography, vintage year, source/documentation URLs, files/manifests and citations where applicable.
+- [x] Large public-use source artifacts are linked/manifested or intentionally mirrored rather than checked into Git merely for scale.
+- [x] DSpace REST is part of the live application path.
+- [x] Public discovery is served through the application-owned search projection.
+- [x] Fixture/fallback content is labelled rather than silently substituted for live repository content.
 
-## Data and Repository
+## API and application architecture
 
-- [x] One visual geospatial North Dakota dataset from TIGER/Line or LODES is represented as a repository item.
-- [x] ACS PUMS remains documented as a follow-on metadata-rich repository dataset.
-- [x] Item metadata includes title, abstract, publisher, program, geography, vintage year, source URL, documentation URL, file list, and citation.
-- [x] Large source files are represented by file manifests and source URLs unless intentionally mirrored.
-- [x] Mirrored publisher artifacts persist in Docker storage when useful for local demo reliability.
-- [x] Sync state records source identifier, source URL, DSpace item ID, last sync status, and source freshness.
-- [x] Startup sync creates or updates required seed repository objects after Docker startup.
-- [x] DSpace community and collection exist for Census public research data.
-- [x] The item is available through DSpace REST.
-- [x] The item is discoverable through Solr-backed search.
-- [x] No large public-use dataset files are checked into git.
+- [x] Browser-facing routes are described through OpenAPI contracts.
+- [x] Frontend TypeScript DTOs/clients are generated from OpenAPI.
+- [x] Java DTOs are generated from OpenAPI/build tooling.
+- [x] Generated-contract drift is a repository quality concern rather than hand-maintained duplication.
+- [x] Spring/Java API remains the browser boundary; Angular does not call DSpace, Solr or OpenSearch directly.
+- [x] Validation rejects invalid IDs/pagination/filter/enum inputs on implemented routes.
+- [x] Typed API/use-case/component tests cover the primary product paths.
 
-## API Contract
+## Angular frontend
 
-- [x] Search, dataset detail, versions, map layers, USGS earthquake overlay, and accessibility evidence endpoints are described in OpenAPI.
-- [x] Frontend TypeScript DTOs are generated from OpenAPI.
-- [x] Java DTOs are generated from OpenAPI on every build.
-- [x] `pnpm run openapi:check` fails when generated frontend types drift.
-- [x] API errors use typed error responses on the implemented core routes.
-
-## Backend
-
-- [x] `apps/repository-api` runs locally through an Nx target.
-- [x] Java API targets Java 21.
-- [x] API endpoints return typed responses for the first dataset.
-- [x] Request validation rejects invalid pagination, IDs, date ranges, enum values, and URL inputs.
-- [x] Unit tests cover controller validation and service mapping.
-- [x] Backend configuration separates local DSpace, Solr, and USGS endpoints from code.
-
-## Frontend
-
-- [x] Search page supports keyword search, facets, loading, empty, and error states.
+- [x] Discovery supports keyword search and facets.
 - [x] Search state is represented in URL parameters where practical.
-- [x] Dataset detail page shows metadata, files, versions, citation, and map tab when geospatial metadata exists.
-- [x] Admin workflow exposes manual sync controls and sync status.
-- [x] Accessibility evidence view summarizes automated and manual evidence.
-- [x] Angular API imports use generated OpenAPI types.
-- [x] NgRx effects own API calls and cancellation for search, dataset detail, map overlays, and evidence.
-- [x] Components do not hand-author duplicate DTOs.
+- [x] Loading, empty and error states are explicit.
+- [x] Research detail supports repository-backed and federated records through authority-neutral routing.
+- [x] Provenance/authority messaging distinguishes curated repository content from federated external-source metadata.
+- [x] Admin surfaces synchronization/corpus/projection state.
+- [x] Evidence surfaces automated/manual evidence boundaries and certified search-research evidence.
+- [x] Angular API usage relies on generated contracts rather than duplicate handwritten DTOs.
+- [x] NgRx/effects own asynchronous application workflows for primary search/detail/maps/evidence paths.
+- [x] Observable-driven shared state remains the primary application pattern.
 
-## Mapping
+## Maps and data visualization
 
-- [x] Map tab renders a MapLibre GL Census geography or sample layer for the selected dataset.
-- [x] USGS earthquake overlay can be toggled.
-- [x] Map includes legend, attribution, visible update timestamp, and clear error/stale states.
-- [x] Mapped information is also available as an accessible table or feature list.
-- [x] Layer controls are keyboard reachable and have accessible names.
+- [x] MapLibre renders implemented Census/USGS/research-coverage visual layers.
+- [x] Mapped information has semantic list/table equivalents rather than canvas-only meaning.
+- [x] Layer controls are keyboard reachable and labelled.
+- [x] Map state includes provenance/attribution and explicit loading/error/stale/unsupported conditions where applicable.
+- [x] Shared authoritative geography/value patterns prevent every thematic layer from inventing independent geometry semantics.
+- [x] Browser feature payloads for research coverage are bounded rather than attempting to render the million-record corpus as million map features.
+- [x] Research geography is not inferred merely from publisher/institution location.
 
-## Search Comparison
+## Federated authority and provenance
 
-### Architecture and contract
+- [x] DSpace remains authoritative for curated repository objects.
+- [x] External publishers remain authoritative for federated source records/resources.
+- [x] Application PostgreSQL retains reproducible federated metadata/harvest/evidence state without pretending those records are DSpace items.
+- [x] Solr and OpenSearch remain derived state for curated + federated origins.
+- [x] Search/detail contracts distinguish repository/federated provenance.
+- [x] Controlled `sourceSystem` identifies source adapters independently of free-form publisher/program values.
+- [x] Federated records use namespaced source identity.
+- [ ] Cross-source DOI/PMID/other durable intellectual-work reconciliation rules are fully explicit for future bibliographic federation.
 
-- [x] `pnpm run start:all` includes OpenSearch as a default local service with persistent Docker storage.
-- [x] DSpace remains the system of record for curated repository objects; neither Solr nor OpenSearch is authoritative repository storage.
-- [x] Solr and OpenSearch receive the same normalized `DiscoveryDocument` projection rather than independently assembling source data.
-- [x] The normalized projection has a deterministic SHA-256 identity so parity is stronger than document-count equality.
-- [x] Per-engine projection state records whether the current projection succeeded, its projection ID, engine-reported document count, and warnings.
-- [x] Search comparison endpoints are described in OpenAPI and frontend TypeScript types are generated from the contract.
-- [x] The standard admin reindex contract exposes deterministic projection identity consistently.
+## Scalable metadata and projection
 
-### Search Lab behavior
+- [x] Federated metadata persistence is bounded/batch-oriented.
+- [x] Discovery projection processes large corpora in bounded streaming/batch form rather than requiring a whole-corpus in-memory list.
+- [x] Solr/OpenSearch receive the same normalized projection input.
+- [x] Deterministic projection identity is used in addition to document counts.
+- [x] Projection identity remains stable enough to support restart-safe active corpus state and evidence comparison.
+- [x] Deep discovery has an opaque cursor/search-after path rather than relying only on expensive deep offsets.
+- [x] Complete C2 traversal has been certified without gaps or duplicates.
+- [x] Heavy million-record work remains explicit/manual research work rather than ordinary PR CI.
 
-- [x] `/search-lab` runs the same normalized request against Solr and OpenSearch in one comparison workflow.
-- [x] The page supports facets/aggregations, full-text relevance, and filtering scenarios.
-- [x] The page exposes source, expected object count, projection ID, engine index names, engine document counts, API elapsed time, engine-reported timing, facets and ranked results.
-- [x] Projection parity is explicitly verified before engine differences are interpreted.
-- [x] One engine can fail or be unreachable without hiding evidence returned by the other engine.
-- [x] Local timing is labelled as a measurement of that run rather than a production benchmark claim.
-- [x] OpenSearch preserves the implemented Solr comparison semantics for current facets/filtering.
+## Certified C2 corpus
 
-### Testing and evidence gate
+- [x] Exact retained federated corpus contains **500,000 Data.gov + 500,000 DOE OSTI = 1,000,000 records**.
+- [x] Curated DSpace adds **181** objects for a **1,000,181-document** normalized search projection.
+- [x] Composition SHA is `e2c7cceb641589715a6390cb35846a67d7361fb15ec00fe3445a3e0036a5524b`.
+- [x] Projection ID is `3d461a9feb49f7239f3f6aaacb0c90f1ff43d0c683238acc2202c841154db44d`.
+- [x] Solr and OpenSearch both hold **1,000,181** documents for the certified projection.
+- [x] Exact source quotas are enforced; an arbitrary million-row mix is not accepted as equivalent C2.
+- [x] The retained corpus has a verified Gold Master archive/restore path.
+- [x] Restart-safe activation preserves a valid `FEDERATED_1M` projection across ordinary API restart/rebuild.
+- [x] Read-only live scale certification validates retained count, source recipe, activation identity, projection parity and public provenance.
 
-- [x] Java comparison service/use-case tests execute successfully for dual-engine success, one-engine-down behavior, failure isolation, normalization, and projection mismatch.
-- [x] Comparison controller tests execute successfully.
-- [x] Angular Search Lab component and typed API-client unit tests execute successfully.
-- [x] Deterministic Playwright comparison scenarios execute successfully.
-- [x] Search Lab axe/WCAG/Section 508-oriented route evidence executes successfully.
-- [x] Search Lab is included in the executable demo storyboard.
-- [x] A real-stack browser smoke test proves Angular -> Spring API -> live Solr + live OpenSearch without API route mocks.
-- [x] Dedicated browser CI retains an HTML report and failure traces/screenshots and distinguishes deterministic mocked evidence from real-stack evidence.
-- [x] The final PR head was green across normal workspace/API CI and dedicated browser evidence before merge.
+## Search comparison architecture
 
-### Operational/evidence follow-on
+- [x] OpenSearch is a comparison projection target rather than a second source of repository authority.
+- [x] `/search-lab` runs the same normalized application request against Solr and OpenSearch.
+- [x] Projection parity is verified before engine differences are interpreted.
+- [x] One engine can fail without hiding evidence from the other engine.
+- [x] API elapsed and engine-native timing are retained separately.
+- [x] Solr `QTime` and OpenSearch `took` are not mislabeled as semantically identical vendor metrics.
+- [x] Current facet/filter semantics have explicit equivalence checks before performance evidence is admitted.
+- [x] Search comparison evidence distinguishes deterministic mocked browser evidence from live real-stack evidence.
 
-- [x] Admin Sync shows the normalized projection, current projection ID, and per-engine Solr/OpenSearch projection health.
-- [x] Evidence contains a Search Engine Comparison section that distinguishes unit/use-case evidence, deterministic mocked browser evidence, live-stack evidence, automated accessibility evidence, and manual evidence.
-- [x] Engine-native timing (`Solr QTime`, `OpenSearch took`) is exposed separately from API elapsed time.
-- [x] Repeated measurement uses warm-up and p50/p95/p99 distributions before comparative performance claims.
-- [x] Broader phrase/highlight/geo/suggest/synonym/vector/hybrid scenarios wait until the current comparison test matrix is green.
+## Scientific C2 performance evidence
 
-## PI-1 Federated Metadata Expansion
+- [x] Repeated measurements discard warmups before measured samples.
+- [x] Raw paired request samples are retained.
+- [x] Bootstrap confidence evidence is generated from retained paired observations.
+- [x] Independently warmed benchmark batches are retained as a stronger repeated experimental unit.
+- [x] Fixed, alternating and seeded randomized engine-order strategies are supported.
+- [x] Certified C2 uses a retained randomized seed/order plan.
+- [x] Workload classes cover full text, facets, broad filter and program filter.
+- [x] Both `SOLR_FIRST` and `OPENSEARCH_FIRST` workload evidence are retained.
+- [x] Concurrency **1 / 8 / 32** is measured.
+- [x] CPU, memory, JVM/GC and container telemetry is captured with counter/gauge distinction and reset detection.
+- [x] Automated statistical research synthesis is generated from retained artifacts.
+- [x] Certified C2 evidence is exposed through a stable repository API/OpenAPI/generated-client path to Angular.
+- [x] Evidence UI exposes corpus identity, order robustness, batch inference, paired workload latency, concurrency, telemetry and claim boundary.
+- [x] Scientific interpretation is scoped to the documented corpus/mappings/workloads/versions/local topology.
+- [x] The repository does not claim that either search engine is universally faster or more resource-efficient.
+- [x] Per-cell confidence intervals are not presented as a multiplicity-adjusted family-wide significance test.
 
-Detailed designs:
+## Search comparison testing/evidence gate
 
-- [Federated Metadata Expansion](../documentation/federation/README.md)
-- [Federated Metadata Architecture](../documentation/federation/federated-metadata-architecture.md)
-- [Source Ingestion Plan](../documentation/federation/source-ingestion-plan.md)
-- [Million-Record Federated Metadata Corpus](../documentation/federation/million-record-corpus.md)
+- [x] Java service/use-case/controller tests cover dual-engine success, partial failure and projection mismatch behavior.
+- [x] Angular comparison/component/client tests execute as repository quality evidence.
+- [x] Deterministic Playwright comparison scenarios exist.
+- [x] Search Lab axe/WCAG/Section 508-oriented automated evidence exists.
+- [x] Real-stack browser smoke proves Angular -> Spring -> live Solr + live OpenSearch without substituting API route mocks for engine traffic.
+- [x] Browser evidence retains reports/traces/screenshots for failure diagnosis.
+- [x] Cross-browser Chromium/Firefox/WebKit evidence passed the certified C2 Evidence UI head before merge.
 
-### Authority, provenance and identity
+## Automated accessibility evidence
 
-- [ ] DSpace remains authoritative for curated repository objects.
-- [ ] Federated records identify their authoritative external publisher/source and are persisted locally as reproducible metadata, not as fake DSpace objects.
-- [ ] Solr and OpenSearch remain derived state for repository and federated origins.
-- [ ] Search/detail contracts distinguish `REPOSITORY`, `FEDERATED` and fixture/fallback origins.
-- [ ] A controlled `sourceSystem` identifies the adapter/source independently of free-form publisher/program values.
-- [ ] Source records use namespaced stable identity such as `DOE_OSTI:<id>` or `PUBMED:<pmid>`.
-- [ ] Cross-source reconciliation uses durable identifiers/explicit relationships rather than silent title matching.
+- [x] Angular/template prevention rules cover common accessibility regressions.
+- [x] Component-state accessibility evidence exists.
+- [x] Browser axe/structural evidence exists for primary workflows.
+- [x] Reflow/zoom/contrast/forced-colors/dark-mode conditions are part of the evidence architecture.
+- [x] Map-equivalence automation checks visual/nonvisual state relationships.
+- [x] Automated evidence is explicitly distinguished from manual assistive-technology review.
 
-### Scalable metadata model and projection
+## Manual accessibility evidence — #49
 
-- [ ] Publisher/program/subject facets can represent source data without collapsing unknown values into a single `OTHER` bucket.
-- [ ] Federated metadata persistence records normalized fields, provenance, source URLs, harvest state and bounded source-specific metadata.
-- [ ] `/research/:id` resolves DSpace-backed and federated detail while `/datasets/:id` remains compatible during transition.
-- [ ] Federated detail clearly links to authoritative external resources without claiming local file preservation.
-- [ ] Discovery projection can process 100K/1M records in bounded batches rather than materializing the whole corpus in memory.
-- [ ] Solr/OpenSearch indexing uses bounded bulk updates rather than one giant whole-corpus request body.
-- [ ] Deterministic projection identity is stable across different page/batch sizes.
-- [ ] Search pagination has a tested path away from expensive deep offsets, using opaque cursor semantics where needed.
+- [ ] Full-application keyboard-only run is recorded with date/commit context.
+- [ ] Search Lab keyboard-only comparison flow is recorded.
+- [ ] Evidence page focus/read-order review is recorded.
+- [ ] Maps/MapLibre keyboard and visual/nonvisual equivalence review is recorded.
+- [ ] NVDA + Firefox evidence is recorded.
+- [ ] NVDA + Chrome/Chromium evidence is recorded.
+- [ ] JAWS is recorded or explicitly marked N/A with licensing reason.
+- [ ] Cognitive/workflow review is recorded.
+- [ ] WCAG 2.2 focus-not-obscured/dragging-alternative/target-size manual checks are recorded.
+- [ ] Current federal ICT Testing Baseline / Trusted Tester crosswalk is recorded.
 
-### Harvester framework
+## C2.1 adversarial validation — #47
 
-- [ ] A common adapter/harvester framework owns retries, rate limits, paging, checkpoints, resume, cancellation, progress and error quarantine.
-- [ ] Harvest runs record source, requested limit, accepted/rejected/skipped counts, retrieval window and adapter version.
-- [ ] Tiny deterministic source fixtures cover adapters in normal CI without public-network dependency.
-- [ ] Heavy 100K/1M harvest/index evidence is manual/scheduled and does not run on every pull request.
+Certified C2 remains historical/control evidence. C2.1 is a separately versioned attempt to falsify the observed Solr advantage.
 
-### PI-1 source portfolio
+- [x] C2.1 protocol is preregistered before timing evidence collection.
+- [ ] Exact Solr/OpenSearch versions are pinned for C2.1.
+- [ ] Explicit/equalized resource controls are retained with C2.1 artifacts.
+- [ ] Semantically equivalent OpenSearch-friendly optimizations are admitted as treatments.
+- [ ] Preregistered multi-query full-text matrix is executed.
+- [ ] Broad/moderate/genuinely selective filter bands are executed.
+- [ ] p90 is added while retaining p50/p95/p99.
+- [ ] Multiple independent clean restart blocks are completed.
+- [ ] Every preregistered cell is reported, including OpenSearch wins.
+- [ ] C2.1 Evidence/reporting remains visibly distinct from certified C2.
 
-- [ ] Data.gov adapter supports reproducible bounded harvest and renders through the normal discovery/detail UI.
-- [ ] DOE OSTI adapter supports reproducible bounded harvest and supplies the preferred first 1M federal research corpus.
-- [ ] NASA CMR adapter distinguishes collection and granule metadata and supports controlled large slices.
-- [ ] PubMed adapter supports reproducible bibliographic harvesting and a large-corpus path appropriate to publisher bulk/update mechanisms.
-- [ ] OpenAlex adapter supports controlled scholarly/citation snapshots without requiring the entire source corpus locally.
-- [ ] All five adapters have normalization/identity/malformed-record fixture coverage.
+## Deferred topology research
 
-### PI-1 corpus evidence
+Issue #48, the local Kubernetes search laboratory, is closed **not planned** for the current acceptance boundary. Docker Compose remains the default development/demo and standalone research topology. Clustered/Kubernetes acceptance criteria may be introduced later only if deployment/resilience becomes an explicit project requirement.
 
-- [ ] Deterministic 10K and 100K corpora can be regenerated with source/date/count/version/hash manifests.
-- [ ] A deterministic 1M normalized metadata corpus can be generated without committing it to Git.
-- [ ] Underlying publisher binaries/full text remain external by default.
-- [ ] Standalone Solr and standalone OpenSearch receive the same 1M normalized corpus with matching count/projection identity.
-- [ ] Indexing duration, accepted/rejected counts, failures, memory and disk growth are recorded.
-- [ ] Stable large-corpus query definitions cover identifiers, rare/common terms, authors, publishers, sources, types, dates and high/low-cardinality facets.
-- [ ] Result-set/top-N/rank/facet differences are recorded so faster-but-wrong behavior cannot pass.
-- [ ] The original small curated Compose demo remains functional and easy to start.
-- [ ] PI-1 exports/version-controls corpus manifests/query definitions that PI-2 can consume without changing record semantics.
+## Final frontend mission alignment — #51
 
-## PI-2 Local Kubernetes Search Laboratory
+- [ ] README presents the Angular government/Open Science data-discovery frontend before deep federation/search-research detail.
+- [ ] Frontend engineering case study documents Angular/NgRx/RxJS/OpenAPI/accessibility decisions with implementation/evidence references.
+- [ ] Demo package contains a concise frontend-first 5-8 minute walkthrough.
+- [ ] `/discovery`, research detail, `/maps`, `/evidence` and `/search-lab` receive final UX/accessibility presentation audit.
+- [ ] Browser ownership boundary is explicit: Angular owns interaction/presentation/accessibility; Spring owns application use cases; DSpace/search engines remain behind typed APIs.
+- [ ] Existing independence/non-affiliation disclaimer is preserved.
 
-Detailed designs:
+## Demo readiness
 
-- [Local Cloud Search Laboratory](../documentation/cloud/README.md)
-- [Local Kubernetes Search Cluster](../documentation/cloud/local-kubernetes-search-cluster.md)
+- [x] `pnpm run start:all` starts the complete local development/demo stack.
+- [x] Persistent volumes preserve the mature local corpus/evidence across ordinary restart/rebuild operations.
+- [x] Small/demo Compose remains a supported product path independent of the million-record research corpus.
+- [x] Continuous integration runs deterministic repository quality gates.
+- [x] Dedicated browser evidence covers the current comparison/frontend workflows.
+- [ ] Final #51 demo narrative is frontend-first and aligned with the mature product presentation.
 
-### Supported topology model
+## Governance / optional future breadth
 
-- [ ] Docker Compose remains functional as the default fast development/demo/reference path after Kubernetes is introduced.
-- [ ] Kubernetes uses the same normalized PI-1 corpus/query definitions rather than a separate synthetic data model.
-- [ ] A reproducible kind cluster can be created and destroyed from repository-owned configuration/scripts.
-
-### Clustered search
-
-- [ ] Solr runs as SolrCloud through the official Solr Operator with at least three Solr pods.
-- [ ] OpenSearch runs as a multi-node Kubernetes cluster through the official operator or Helm chart.
-- [ ] Persistent storage, readiness/liveness probes and explicit CPU/memory/JVM settings are defined for both search engines.
-- [ ] Standalone and clustered Solr schema/config semantics are verified equivalent before performance interpretation.
-- [ ] Standalone and clustered OpenSearch mappings/analyzers are verified equivalent before performance interpretation.
-- [ ] The same normalized corpus reaches clustered Solr and OpenSearch with matching deterministic identity and expected count.
-- [ ] Search Lab can execute the live comparison through Spring against both clustered engines.
-
-### Cluster evidence
-
-- [ ] 10K and 100K PI-1 corpora are measured in standalone and clustered topologies.
-- [ ] The PI-1 1M corpus is measured where workstation resources remain stable.
-- [ ] Concurrency 1/8/32 is measured with identical stable query definitions.
-- [ ] Benchmark artifacts record node/shard/replica/resource/heap/storage/concurrency context.
-- [ ] Engine order is balanced/randomized/separated before comparative speed conclusions.
-- [ ] Semantic result/facet behavior is verified before performance differences are accepted.
-- [ ] A deliberate Solr node-loss/recovery experiment records availability, recovery and parity.
-- [ ] A deliberate OpenSearch node-loss/recovery experiment records availability, recovery and parity.
-- [ ] Kubernetes results are described as local clustered evidence, never as proof that kind workers equal physical/cloud nodes.
-
-## Accessibility Evidence
-
-- [x] `pnpm run wcag:report` produces a console report.
-- [x] `pnpm run section508:report` produces a console report.
-- [x] Angular evidence view displays the latest accessibility evidence status.
-- [x] Automated scans cover search, dataset detail, and map workflows.
-- [x] Keyboard tests cover search filters, result navigation, dataset tabs, and map layer controls.
-- [x] Manual checklists exist for keyboard, NVDA, JAWS where available, and map equivalence.
-- [x] Known accessibility limitations are documented.
-- [ ] Manual Search Lab keyboard and screen-reader evidence is recorded before a manual conformance claim is made for that workflow.
-- [ ] PI-1 federated discovery/detail changes preserve keyboard, reflow, focus and accessible-name evidence as source/facet counts grow.
-
-## Demo Readiness
-
-- [x] `pnpm run start:all` starts the full development and demonstration experience, including DSpace, seed, reindex, and the OpenSearch comparison service.
-- [x] Docker Compose starts persistent local services and the app can be demoed after restart.
-- [x] Continuous integration runs the normal quality gates on pull requests.
-- [x] Dedicated browser evidence passed the current comparison workflow before merge.
-- [ ] PI-1 retains an explicit small/demo profile so a million-record corpus is never required for a normal demonstration.
-- [ ] PI-2 retains the same small/demo Compose path after kind/Kubernetes scripts are added.
-- [ ] `main` is protected with required status checks if/when repository governance chooses that policy.
-- [x] Demo script explains the current architecture, dataset flow, map overlay, and accessibility evidence.
+- [ ] Decide whether `main` receives required-check branch protection.
+- [ ] Decide which browser/accessibility jobs become required merge checks.
+- [ ] Preserve prior known-good accessibility evidence if refresh fails.
+- [ ] Cross-source DOI/PMID reconciliation is explicit before large bibliographic-source expansion.
+- [ ] Additional NASA/PubMed/OpenAlex work remains bounded/evidence-first rather than a prerequisite for the certified standalone baseline.
+- [ ] Additional Maps thematic layers reuse shared authoritative geometry/value contracts and semantic equivalents.
+- [ ] Phrase/highlight/geo/suggest/synonym/nested/vector/hybrid search breadth remains evidence-gated.
