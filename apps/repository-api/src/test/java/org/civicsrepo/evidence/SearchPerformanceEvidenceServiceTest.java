@@ -10,14 +10,16 @@ import org.junit.jupiter.api.io.TempDir;
 
 class SearchPerformanceEvidenceServiceTest {
     private static final String PROJECTION = "a".repeat(64);
+    private static final String C21_TREATMENT = "C2_1_OPTIMIZED_EQUIVALENT";
 
     @TempDir
     Path tempDir;
 
     @Test
-    void mapsCertifiedResearchAndStatisticalArtifactsIntoStableEvidence() throws Exception {
+    void mapsCertifiedC2AndC21ArtifactsIntoSeparateStableEvidence() throws Exception {
         writeResearchReport(PROJECTION);
         writeStatisticalReport(PROJECTION);
+        writeC21Report(PROJECTION, C21_TREATMENT);
 
         SearchPerformanceEvidence evidence = new SearchPerformanceEvidenceService(tempDir.toString())
                 .latestEvidence()
@@ -42,6 +44,31 @@ class SearchPerformanceEvidenceServiceTest {
         assertThat(evidence.concurrency().getFirst().batchLevel().batchCount()).isEqualTo(6);
         assertThat(evidence.resources().captured()).isTrue();
         assertThat(evidence.resources().counterResetDetected()).isFalse();
+
+        assertThat(evidence.c21Adversarial()).isNotNull();
+        assertThat(evidence.c21Adversarial().openSearchTreatment()).isEqualTo(C21_TREATMENT);
+        assertThat(evidence.c21Adversarial().restartBlocks()).isEqualTo(4);
+        assertThat(evidence.c21Adversarial().independentBatchSummariesPerCell()).isEqualTo(16);
+        assertThat(evidence.c21Adversarial().solrLowerLatencyCells()).isEqualTo(1);
+        assertThat(evidence.c21Adversarial().ciExcludesZeroFavoringSolr()).isEqualTo(1);
+        assertThat(evidence.c21Adversarial().cells()).hasSize(1);
+        assertThat(evidence.c21Adversarial().cells().getFirst().workload()).isEqualTo("energy");
+        assertThat(evidence.c21Adversarial().cells().getFirst().totalHits()).isEqualTo(43_707);
+        assertThat(evidence.c21Adversarial().cells().getFirst().apiElapsed().medianDifferenceMs()).isEqualTo(8.0);
+        assertThat(evidence.c21Adversarial().cells().getFirst().apiElapsed().lower95Ms()).isEqualTo(8.0);
+    }
+
+    @Test
+    void keepsHistoricalC2AvailableWhenC21ReportIsAbsent() throws Exception {
+        writeResearchReport(PROJECTION);
+        writeStatisticalReport(PROJECTION);
+
+        SearchPerformanceEvidence evidence = new SearchPerformanceEvidenceService(tempDir.toString())
+                .latestEvidence()
+                .orElseThrow();
+
+        assertThat(evidence.projectionId()).isEqualTo(PROJECTION);
+        assertThat(evidence.c21Adversarial()).isNull();
     }
 
     @Test
@@ -50,7 +77,7 @@ class SearchPerformanceEvidenceServiceTest {
     }
 
     @Test
-    void rejectsArtifactsFromDifferentProjections() throws Exception {
+    void rejectsArtifactsFromDifferentC2Projections() throws Exception {
         writeResearchReport(PROJECTION);
         writeStatisticalReport("b".repeat(64));
 
@@ -59,6 +86,24 @@ class SearchPerformanceEvidenceServiceTest {
         assertThatThrownBy(service::latestEvidence)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("projection mismatch");
+    }
+
+    @Test
+    void rejectsC21ProjectionOrTreatmentDrift() throws Exception {
+        writeResearchReport(PROJECTION);
+        writeStatisticalReport(PROJECTION);
+        writeC21Report("b".repeat(64), C21_TREATMENT);
+
+        SearchPerformanceEvidenceService projectionService = new SearchPerformanceEvidenceService(tempDir.toString());
+        assertThatThrownBy(projectionService::latestEvidence)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("C2.1 evidence projection mismatch");
+
+        writeC21Report(PROJECTION, "BASELINE_SCOPED_FILTERS");
+        SearchPerformanceEvidenceService treatmentService = new SearchPerformanceEvidenceService(tempDir.toString());
+        assertThatThrownBy(treatmentService::latestEvidence)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("C2.1 evidence treatment mismatch");
     }
 
     private void writeResearchReport(String projection) throws Exception {
@@ -177,5 +222,55 @@ class SearchPerformanceEvidenceServiceTest {
                   }
                 }
                 """.formatted(projection));
+    }
+
+    private void writeC21Report(String projection, String treatment) throws Exception {
+        Path directory = tempDir.resolve("c2-1");
+        Files.createDirectories(directory);
+        Files.writeString(directory.resolve("statistical-report.json"), """
+                {
+                  "experiment": "C2.1_ADVERSARIAL_STANDALONE",
+                  "kind": "c2-1-statistical-report",
+                  "capturedAt": "2026-09-04T15:23:00Z",
+                  "scope": "LOCAL_CERTIFIED_TOPOLOGY_ONLY",
+                  "comparativeClaimAllowed": false,
+                  "projectionId": "%s",
+                  "projectionObjectCount": 1000181,
+                  "openSearchTreatment": "%s",
+                  "inferenceContract": {
+                    "restartBlocks": 4,
+                    "independentBatchSummariesPerCell": 16
+                  },
+                  "summary": {
+                    "workloadCellCount": 1,
+                    "apiElapsed": {
+                      "solrLowerLatencyCells": 1,
+                      "openSearchLowerLatencyCells": 0,
+                      "tiedCells": 0,
+                      "ciExcludesZeroFavoringSolr": 1,
+                      "ciExcludesZeroFavoringOpenSearch": 0
+                    }
+                  },
+                  "cells": [
+                    {
+                      "id": "Q01",
+                      "family": "FULL_TEXT_RELEVANCE",
+                      "request": {"query": "energy"},
+                      "totalHits": 43707,
+                      "batchLevelInference": {
+                        "apiElapsed": {
+                          "statistics": {
+                            "interpretation": "Positive differences mean OpenSearch took longer than Solr.",
+                            "medianDifferenceMs": 8,
+                            "solrWinRatePercent": 100,
+                            "bootstrap": {"lowerMs": 8, "upperMs": 8, "excludesZero": true}
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "claimGuardrail": "Scoped C2.1 claims only."
+                }
+                """.formatted(projection, treatment));
     }
 }
