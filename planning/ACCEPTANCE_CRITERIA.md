@@ -145,18 +145,31 @@ The repository rule remains: **testing/evidence precedes feature expansion**.
 
 ## C2.1 adversarial validation — #47
 
-Certified C2 remains historical/control evidence. C2.1 is a separately versioned attempt to falsify the observed Solr advantage.
+Certified C2 remains historical/control evidence. C2.1 is a separately versioned attempt to falsify the observed Solr advantage. The pre-measurement fairness-control foundation merged in PR #53; timed execution/reporting remains a separate acceptance boundary.
+
+### Fairness controls — PR #53 complete
 
 - [x] C2.1 protocol is preregistered before timing evidence collection.
-- [ ] Exact Solr/OpenSearch versions are pinned for C2.1.
-- [ ] Explicit/equalized resource controls are retained with C2.1 artifacts.
-- [ ] Semantically equivalent OpenSearch-friendly optimizations are admitted as treatments.
-- [ ] Preregistered multi-query full-text matrix is executed.
-- [ ] Broad/moderate/genuinely selective filter bands are executed.
-- [ ] p90 is added while retaining p50/p95/p99.
-- [ ] Multiple independent clean restart blocks are completed.
-- [ ] Every preregistered cell is reported, including OpenSearch wins.
-- [ ] C2.1 Evidence/reporting remains visibly distinct from certified C2.
+- [x] Solr **9.10.1** and OpenSearch **2.19.6** are explicitly pinned for the controlled standalone topology.
+- [x] Equalized **512 MB JVM heap**, **4 CPU**, and **4 GiB container memory** controls are encoded and verified by the C2.1 runtime manifest/preflight.
+- [x] Runtime evidence records/proves engine image identity, JVM/version, Solr core state, OpenSearch physical-index/alias state, shard/replica settings, projection identity and read-state preparation before timing is authorized.
+- [x] `BASELINE_SCOPED_FILTERS` and `C2_1_OPTIMIZED_EQUIVALENT` are explicit OpenSearch treatments; the optimized treatment is isolated from normal Search Lab/application behavior.
+- [x] OpenSearch-friendly aggregation/query optimization is admitted only after semantic-equivalence checks preserve total hits, top-N identity/order and facet bucket/count semantics.
+- [x] The preregistered **Q01-Q20** full-text matrix is frozen as executable C2.1 measurement cells.
+- [x] Broad **25-75%**, moderate **5-25%**, and selective **0.5-5%** filter bands are frozen with deterministic parity-only candidate selection and `NO_VALID_CANDIDATE` refusal rather than post-hoc widening.
+- [x] The C2.1 timing contract adds nearest-rank **p90** while retaining p50/p95/p99 and leaving certified C2 unchanged.
+- [x] The restart/order plan is deterministic and exactly balanced by construction: four restart blocks × four batches, two `SOLR_FIRST` and two `OPENSEARCH_FIRST` batches per block, eight/eight overall.
+- [x] `READY` timing authorization binds the exact runtime manifest and semantic admission artifacts and refuses projection/configuration/treatment/execution-plan drift.
+- [x] C2.1 fairness-control, manifest, semantic-admission and preflight refusal paths are part of the normal `performance:test` quality gate.
+
+### Timed execution/reporting — still required
+
+- [ ] Execute the complete preregistered Q01-Q20, facet and broad/moderate/selective timing matrix under C2.1 authorization.
+- [ ] Complete the multiple independent clean engine/container restart blocks with separately warmed batches.
+- [ ] Preserve raw paired samples, block/batch identities, realized engine order and all admitted cells in C2.1-only artifacts.
+- [ ] Report every preregistered cell, including OpenSearch wins, ties and inconclusive effects; do not drop or rename unfavorable cells.
+- [ ] Produce C2.1 statistical synthesis with query-family/restart-block interpretation while retaining the existing multiplicity and local-topology guardrails.
+- [ ] Expose C2.1 reporting separately from certified C2 in the Evidence product so the historical baseline and adversarial experiment cannot be confused.
 
 ## Deferred topology research
 
