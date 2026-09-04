@@ -205,7 +205,7 @@ persisted snapshot <-> projection evidence
 
 An operator-bound harvest that reaches `maxPages` is intentionally `PAUSED`, not falsely `COMPLETED`. Ordinary harvest calls resume a compatible paused run with the same page size, adapter version and cursor. Restart-from-beginning is deliberately separate and clears traversal state without deleting retained federated metadata.
 
-The Data.gov live path has already proven 1K end to end and a same-run resume from 1K to 10K. See the scale-evidence document for the exact checkpoint state and remaining 10K evidence.
+The certified C2 corpus retains 500,000 Data.gov and 500,000 DOE OSTI federated records and projects them with 181 curated DSpace objects into the 1,000,181-document Solr/OpenSearch Gold Master. See the scale-evidence document for the exact corpus, archive, projection, restart-safety, and C2/C2.1 evidence.
 
 ## Discovery and comparison flow
 
@@ -339,7 +339,7 @@ A test file existing in the repository is not enough; CI must actually execute t
 
 ## Deployment direction
 
-Docker Compose is the implemented platform and demo environment and the standalone baseline for PI-1 scale work. PI-2 will consume exact PI-1 corpus identities in a local kind-based SolrCloud/OpenSearch laboratory. Only after PI-2 evidence should the project finalize production-shaped AWS topology details. Infrastructure-as-code is not yet implemented.
+Docker Compose is the implemented platform, demo environment, and reproducible standalone baseline used by C2/C2.1. The proposed local Kubernetes/SolrCloud/OpenSearch laboratory is not an active completion requirement; that issue was closed `not_planned`. Production-shaped AWS topology and infrastructure-as-code remain deliberate future work if a deployment target requires them.
 
 A production search-engine decision must include topology, persistent storage, backup/rebuild strategy, availability, cost, observability, security, index migration/alias strategy and operational ownership. Local single-node timing does not make that decision.
 
@@ -347,11 +347,12 @@ A production search-engine decision must include topology, persistent storage, b
 
 The foundation architecture, exact million-record C2 baseline, adversarial C2.1 search comparison, Maps research workflow, generated API boundary, and automated browser/accessibility evidence are implemented.
 
+Frontend mission alignment and portfolio presentation are implemented alongside the foundation architecture, exact million-record C2 baseline, adversarial C2.1 search comparison, Maps research workflow, generated API boundary, and automated browser/accessibility evidence.
+
 Remaining work is intentionally narrow:
 
 1. record manual keyboard/NVDA/JAWS/map/cognitive evidence under issue #49 when human AT verification is required;
-2. complete frontend mission alignment and portfolio presentation under issue #51;
-3. reconcile generated planning/status documentation after the final frontend slice;
-4. treat additional federation sources or production-cloud topology as deliberate future work rather than prerequisites for the completed reference implementation.
+2. reconcile generated planning/status documentation after the final frontend merge;
+3. treat additional federation sources or production-cloud topology as deliberate future work rather than prerequisites for the completed reference implementation.
 
 Kubernetes experimentation is not an active completion requirement. The prior Kubernetes laboratory issue was closed `not_planned`; the implemented Docker Compose topology remains the reproducible local platform and the scoped C2/C2.1 research environment.

@@ -25,12 +25,17 @@ describe('HomePage', () => {
       'Discover, connect, and map public research at federal scale',
     );
 
-    const hero = host.querySelector('.landing-hero__lead')?.textContent ?? '';
-    expect(hero).toContain('Angular 22 + NgRx/RxJS');
-    expect(hero).toContain('generated API contract');
-    expect(hero).toContain('Angular 22 + NgRx');
-    expect(hero).toContain('Generated OpenAPI');
-    expect(hero).toContain('Accessible MapLibre');
+    const intro = host.querySelector('.landing-hero__intro')?.textContent ?? '';
+    expect(intro).toContain('Angular 22 + NgRx/RxJS');
+    expect(intro).toContain('generated API contract');
+
+    const signals = Array.from(
+      host.querySelectorAll('.landing-hero__signals li'),
+    ).map((signal) => signal.textContent?.trim());
+    expect(signals).toContain('Angular 22 + NgRx');
+    expect(signals).toContain('Generated OpenAPI');
+    expect(signals).toContain('Accessible MapLibre');
+    expect(signals).toContain('WCAG / Section 508 evidence');
 
     const scaleCard = host.querySelector('.scale-card')?.textContent ?? '';
     expect(scaleCard).toContain('Scale validation');

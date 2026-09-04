@@ -181,4 +181,4 @@ Everything else should remain stable unless tests or Browser Evidence reveal an 
 
 ## Exit interpretation
 
-Once the three narrow copy corrections above are applied and normal quality/browser gates pass, the primary routes meet the #51 presentation goal without an unnecessary redesign. The remaining manual AT work belongs to #49 and does not block the repository from accurately presenting the automated accessibility engineering already completed.
+The three narrow copy corrections are applied, and the primary routes meet the #51 presentation goal without an unnecessary redesign. Normal quality and Browser Evidence remain the merge gates. The remaining manual AT work belongs to #49 and does not block the repository from accurately presenting the automated accessibility engineering already completed.

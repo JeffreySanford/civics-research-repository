@@ -187,7 +187,7 @@ The Admin data-flow view exposes **Authority → Retention → Projection**, and
 
 ## Current status
 
-The core product and C2/C2.1 search-research program are implemented. Remaining work is concentrated in portfolio/frontend presentation and optional human assistive-technology evidence rather than proving the first million records again.
+The core product, C2/C2.1 search-research program, and frontend portfolio presentation are implemented. The remaining recorded verification gap is optional human assistive-technology evidence under #49; additional federation or production-cloud work is future scope rather than a completion prerequisite.
 
 The generated repository/platform baseline is [documentation/platform-status.md](documentation/platform-status.md). It derives volatile curated-catalog, source-inventory, mirror, adapter-registry and accessibility facts from committed artifacts.
 
