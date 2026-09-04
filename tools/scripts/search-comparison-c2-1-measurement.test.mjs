@@ -13,6 +13,7 @@ import {
   applyC21TimingContract,
   buildC21MeasurementCells,
   parseArguments,
+  recreateC21StandaloneStack,
   runC21MeasurementSuite,
   validateC21TimingAuthorization,
 } from './search-comparison-c2-1-measurement.mjs';
@@ -137,6 +138,28 @@ test('C2.1 timing contract adds p90 without changing the generic benchmark contr
   assert.equal(result.solr.elapsed.p50Ms, 30);
   assert.equal(result.solr.elapsed.p90Ms, 50);
   assert.equal(result.openSearch.engineReported.p90Ms, 6);
+});
+
+test('standalone recreation waits for repository API readiness after Compose returns', async () => {
+  const events = [];
+  await recreateC21StandaloneStack({
+    baseUrl: 'http://example.test/api',
+    execFileImpl: async (executable, args) => {
+      events.push({ kind: 'compose', executable, args });
+      return { stdout: '', stderr: '' };
+    },
+    waitForReady: async ({ baseUrl }) => {
+      events.push({ kind: 'ready', baseUrl });
+    },
+  });
+
+  assert.deepEqual(
+    events.map((event) => event.kind),
+    ['compose', 'ready'],
+  );
+  assert.equal(events[0].executable, 'docker');
+  assert.ok(events[0].args.includes('--wait'));
+  assert.equal(events[1].baseUrl, 'http://example.test/api');
 });
 
 test('measurement suite routes every workload through block authorization and optimized treatment', async () => {
