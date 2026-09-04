@@ -18,7 +18,7 @@ This amendment supersedes only the Q05 row of `planning/C2_ADVERSARIAL_VALIDATIO
 
 | ID  | Prior class     | Prior query | Amended class           | Amended query   |
 | --- | --------------- | ----------- | ----------------------- | --------------- |
-| Q05 | `single/domain` | `water`     | `single/rare candidate` | `hydrogeology` |
+| Q05 | `single/domain` | `water`     | `single/rare candidate` | `hydrogeology`  |
 
 All other Q01-Q20 strings and classes remain unchanged, including Q06 exact phrase, Q11 `North Dakota workforce`, and Q20 no-result control.
 
