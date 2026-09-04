@@ -2665,6 +2665,77 @@ components:
           type: array
           items:
             type: string
+    SearchPerformanceC21Cell:
+      type: object
+      required:
+        - id
+        - workload
+        - totalHits
+        - apiElapsed
+      properties:
+        id:
+          type: string
+        workload:
+          type: string
+        totalHits:
+          type: integer
+          format: int64
+          minimum: 0
+        apiElapsed:
+          $ref: '#/components/schemas/SearchPerformanceLatencyInference'
+    SearchPerformanceC21Adversarial:
+      type: object
+      required:
+        - capturedAt
+        - openSearchTreatment
+        - workloadCellCount
+        - restartBlocks
+        - independentBatchSummariesPerCell
+        - solrLowerLatencyCells
+        - openSearchLowerLatencyCells
+        - tiedCells
+        - ciExcludesZeroFavoringSolr
+        - ciExcludesZeroFavoringOpenSearch
+        - cells
+        - claimGuardrail
+      properties:
+        capturedAt:
+          type: string
+          format: date-time
+        openSearchTreatment:
+          type: string
+          enum: [C2_1_OPTIMIZED_EQUIVALENT]
+        workloadCellCount:
+          type: integer
+          minimum: 1
+        restartBlocks:
+          type: integer
+          minimum: 1
+        independentBatchSummariesPerCell:
+          type: integer
+          minimum: 1
+        solrLowerLatencyCells:
+          type: integer
+          minimum: 0
+        openSearchLowerLatencyCells:
+          type: integer
+          minimum: 0
+        tiedCells:
+          type: integer
+          minimum: 0
+        ciExcludesZeroFavoringSolr:
+          type: integer
+          minimum: 0
+        ciExcludesZeroFavoringOpenSearch:
+          type: integer
+          minimum: 0
+        cells:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SearchPerformanceC21Cell'
+        claimGuardrail:
+          type: string
     SearchPerformanceEvidence:
       type: object
       required:
@@ -2682,6 +2753,7 @@ components:
         - orderRobustness
         - pairedWorkloads
         - concurrency
+        - c21Adversarial
         - resources
       properties:
         profile:
@@ -2730,6 +2802,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SearchPerformanceConcurrencyCell'
+        c21Adversarial:
+          oneOf:
+            - $ref: '#/components/schemas/SearchPerformanceC21Adversarial'
+            - type: 'null'
         resources:
           $ref: '#/components/schemas/SearchPerformanceResourceSummary'
     AccessibilityEvidence:

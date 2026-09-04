@@ -29,9 +29,10 @@ import type { SearchPerformanceLatencyInference } from 'repository-api-client';
         Certified Solr / OpenSearch performance evidence
       </h2>
       <p>
-        This panel reads generated research artifacts through the repository API.
-        Historical C2 baseline evidence and adversarial C2.1 validation remain
-        separate; neither experiment overwrites or pools the other's samples.
+        This panel reads generated research artifacts through the repository
+        API. Historical C2 baseline evidence and adversarial C2.1 validation
+        remain separate; neither experiment overwrites or pools the other's
+        samples.
       </p>
 
       @if (loading$ | async) {
@@ -372,11 +373,11 @@ import type { SearchPerformanceLatencyInference } from 'repository-api-client';
           >
             <h3 id="c21-adversarial-heading">Adversarial C2.1 validation</h3>
             <p>
-              C2.1 preserves the certified projection while equalizing standalone
-              resources, admitting the semantically equivalent optimized
-              OpenSearch treatment, balancing engine-first order, and repeating
-              independently warmed batches across clean restart blocks. Its
-              samples remain separate from historical C2.
+              C2.1 preserves the certified projection while equalizing
+              standalone resources, admitting the semantically equivalent
+              optimized OpenSearch treatment, balancing engine-first order, and
+              repeating independently warmed batches across clean restart
+              blocks. Its samples remain separate from historical C2.
             </p>
 
             <dl class="pipeline-stats performance-evidence-summary">
