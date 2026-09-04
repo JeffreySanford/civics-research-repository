@@ -28,15 +28,15 @@
 
 ## Primary route matrix
 
-| Route           | Workflow                                                                    | Keyboard | Screen reader | Notes/issues |
-| --------------- | --------------------------------------------------------------------------- | -------- | ------------- | ------------ |
-| `/`             | Orientation, navigation, skip link                                          | Not run  | Not run       |              |
-| `/discovery`    | Search, facets, URL state, paging, result navigation                        | Not run  | Not run       |              |
-| `/research/:id` | Metadata, provenance, relationships/files where present                     | Not run  | Not run       |              |
-| `/maps`         | Layer controls, area selection, semantic equivalent, synchronized selection | Not run  | Not run       |              |
-| `/admin/sync`   | Status and safe operator controls                                           | Not run  | Not run       |              |
-| `/evidence`     | Evidence navigation, dense tables, C2 claim boundary                        | Not run  | Not run       |              |
-| `/search-lab`   | Form, comparison execution, projection parity, two-engine results           | Not run  | Not run       |              |
+| Route           | Workflow                                                                                  | Keyboard | Screen reader | Notes/issues |
+| --------------- | ----------------------------------------------------------------------------------------- | -------- | ------------- | ------------ |
+| `/`             | Orientation, navigation, skip link                                                        | Not run  | Not run       |              |
+| `/discovery`    | Search, facets, URL state, paging, result navigation                                      | Not run  | Not run       |              |
+| `/research/:id` | Metadata, provenance, relationships/files where present                                   | Not run  | Not run       |              |
+| `/maps`         | Layer controls, area selection, semantic equivalent, synchronized selection               | Not run  | Not run       |              |
+| `/admin/sync`   | Status and safe operator controls                                                         | Not run  | Not run       |              |
+| `/evidence`     | Historical C2 baseline, Adversarial C2.1 validation, dense tables and claim boundaries   | Not run  | Not run       |              |
+| `/search-lab`   | Form, comparison execution, projection parity, two-engine results                         | Not run  | Not run       |              |
 
 ## Keyboard-only results
 
@@ -89,15 +89,20 @@ Run without using a pointing device.
 
 ### Evidence
 
-| ID  | Check                                                                                                   | Result  | Observation / issue |
-| --- | ------------------------------------------------------------------------------------------------------- | ------- | ------------------- |
-| KE1 | Reach the Search comparison evidence surface in a predictable order                                     | Not run |                     |
-| KE2 | Certified corpus/projection/order/telemetry summary is readable without layout-dependent interpretation | Not run |                     |
-| KE3 | Separately warmed batch inference terms and sign convention are understandable                          | Not run |                     |
-| KE4 | Paired workload and concurrency tables can be traversed by keyboard without horizontal-scroll traps     | Not run |                     |
-| KE5 | Table captions/headers preserve row/column meaning at dense data points                                 | Not run |                     |
-| KE6 | Experimental controls and claim boundary are reachable after the tables                                 | Not run |                     |
-| KE7 | Loading/error status for evidence is perceivable without moving focus unexpectedly                      | Not run |                     |
+| ID   | Check                                                                                                                | Result  | Observation / issue |
+| ---- | -------------------------------------------------------------------------------------------------------------------- | ------- | ------------------- |
+| KE1  | Reach the Search comparison evidence surface in a predictable order                                                  | Not run |                     |
+| KE2  | **Historical C2 baseline** corpus/projection/order/telemetry summary is readable without layout-dependent interpretation | Not run |                     |
+| KE3  | Historical C2 separately warmed batch inference terms and sign convention are understandable                        | Not run |                     |
+| KE4  | Historical C2 paired workload and concurrency tables can be traversed without horizontal-scroll traps               | Not run |                     |
+| KE5  | Historical C2 table captions/headers preserve row/column meaning at dense data points                                | Not run |                     |
+| KE6  | **Adversarial C2.1 validation** is encountered as a separate evidence layer                                          | Not run |                     |
+| KE7  | C2.1 optimized treatment, 16 independent batch summaries and four restart blocks are understandable                 | Not run |                     |
+| KE8  | All 24 retained C2.1 workload cells are reachable and expose identity plus realized hit count                        | Not run |                     |
+| KE9  | Median `OpenSearch - Solr`, bootstrap 95% CI and Solr batch win rate have understandable units/sign meaning         | Not run |                     |
+| KE10 | Historical C2 and C2.1 claim boundaries are separately reachable and do not imply pooled samples                    | Not run |                     |
+| KE11 | C2.1 table captions/headers preserve row/column meaning and local horizontal scrolling remains operable             | Not run |                     |
+| KE12 | Loading/error status for evidence is perceivable without moving focus unexpectedly                                   | Not run |                     |
 
 ### Search Lab
 
@@ -115,26 +120,26 @@ Run without using a pointing device.
 
 Run with current stable NVDA in **Firefox**, then repeat in **Chrome/Chromium**. Record browser-specific differences instead of copying results between browsers.
 
-| ID  | Check                                                                                          | Firefox | Chrome/Chromium | Observation / issue |
-| --- | ---------------------------------------------------------------------------------------------- | ------- | --------------- | ------------------- |
-| N1  | Distinct page title is announced                                                               | Not run | Not run         |                     |
-| N2  | Heading outline is coherent with heading navigation                                            | Not run | Not run         |                     |
-| N3  | Landmarks are meaningful and navigable                                                         | Not run | Not run         |                     |
-| N4  | Navigation exposes destination/current state                                                   | Not run | Not run         |                     |
-| N5  | Form controls expose label, role and state                                                     | Not run | Not run         |                     |
-| N6  | Search/facet result updates announce once without unwanted focus movement                      | Not run | Not run         |                     |
-| N7  | Research metadata/provenance reads as meaningful label/value information                       | Not run | Not run         |                     |
-| N8  | Maps semantic table/list conveys the information available visually                            | Not run | Not run         |                     |
-| N9  | MapLibre canvas does not trap browse/focus mode or emit misleading content                     | Not run | Not run         |                     |
-| N10 | Evidence summary metrics and headings are understandable in reading order                      | Not run | Not run         |                     |
-| N11 | Evidence tables expose caption, column headers and row headers correctly                       | Not run | Not run         |                     |
-| N12 | Claim boundary is encountered and understood as part of C2 evidence                            | Not run | Not run         |                     |
-| N13 | Search Lab comparison form is operable in focus mode                                           | Not run | Not run         |                     |
-| N14 | `Running comparison` and completion announcements fire once                                    | Not run | Not run         |                     |
-| N15 | Projection parity/warning state is announced before engine result interpretation               | Not run | Not run         |                     |
-| N16 | Solr/OpenSearch sections expose distinct coherent heading structures                           | Not run | Not run         |                     |
-| N17 | Loading, empty, stale, partial-service and error states are announced                          | Not run | Not run         |                     |
-| N18 | No raw UUID/URL/debug identifier substitutes for a human-facing name where a label is expected | Not run | Not run         |                     |
+| ID  | Check                                                                                                      | Firefox | Chrome/Chromium | Observation / issue |
+| --- | ---------------------------------------------------------------------------------------------------------- | ------- | --------------- | ------------------- |
+| N1  | Distinct page title is announced                                                                           | Not run | Not run         |                     |
+| N2  | Heading outline is coherent with heading navigation                                                        | Not run | Not run         |                     |
+| N3  | Landmarks are meaningful and navigable                                                                     | Not run | Not run         |                     |
+| N4  | Navigation exposes destination/current state                                                               | Not run | Not run         |                     |
+| N5  | Form controls expose label, role and state                                                                 | Not run | Not run         |                     |
+| N6  | Search/facet result updates announce once without unwanted focus movement                                  | Not run | Not run         |                     |
+| N7  | Research metadata/provenance reads as meaningful label/value information                                   | Not run | Not run         |                     |
+| N8  | Maps semantic table/list conveys the information available visually                                        | Not run | Not run         |                     |
+| N9  | MapLibre canvas does not trap browse/focus mode or emit misleading content                                 | Not run | Not run         |                     |
+| N10 | Historical C2 baseline and Adversarial C2.1 validation headings are distinct in reading/heading order     | Not run | Not run         |                     |
+| N11 | Historical C2 and C2.1 evidence tables expose captions, column headers and row headers correctly          | Not run | Not run         |                     |
+| N12 | Both C2 claim boundaries are encountered separately; C2.1 sign/CI language is understandable              | Not run | Not run         |                     |
+| N13 | Search Lab comparison form is operable in focus mode                                                       | Not run | Not run         |                     |
+| N14 | `Running comparison` and completion announcements fire once                                                | Not run | Not run         |                     |
+| N15 | Projection parity/warning state is announced before engine result interpretation                           | Not run | Not run         |                     |
+| N16 | Solr/OpenSearch sections expose distinct coherent heading structures                                       | Not run | Not run         |                     |
+| N17 | Loading, empty, stale, partial-service and error states are announced                                      | Not run | Not run         |                     |
+| N18 | No raw UUID/URL/debug identifier substitutes for a human-facing name where a label is expected             | Not run | Not run         |                     |
 
 ## JAWS results
 
@@ -146,22 +151,23 @@ Run with JAWS + Chrome where available. If a license/environment is unavailable,
 | J2  | Forms mode enters/exits search/filter controls correctly                       | Not run |                     |
 | J3  | Heading/region/link lists expose meaningful names                              | Not run |                     |
 | J4  | Status/alert regions announce once and at the appropriate time                 | Not run |                     |
-| J5  | Dense Evidence tables remain understandable with table-navigation commands     | Not run |                     |
+| J5  | Dense C2/C2.1 Evidence tables remain understandable with table-navigation commands | Not run |                     |
 | J6  | Search Lab form/results remain usable without switching to pointer interaction | Not run |                     |
 | J7  | Maps equivalent list/table provides the meaningful nonvisual workflow          | Not run |                     |
 
 ## Cognitive/workflow results
 
-| ID  | Check                                                                                          | Result  | Observation / issue |
-| --- | ---------------------------------------------------------------------------------------------- | ------- | ------------------- |
-| C1  | Route purpose is clear from heading/lead text                                                  | Not run |                     |
-| C2  | Applied filters/status are visible, understandable and reversible                              | Not run |                     |
-| C3  | Errors explain what happened and the next available action                                     | Not run |                     |
-| C4  | Long operations expose progress/status                                                         | Not run |                     |
-| C5  | Provenance makes live/stored/fixture/federated authority understandable                        | Not run |                     |
-| C6  | Evidence distinguishes operational parity, descriptive timing and stronger inference           | Not run |                     |
-| C7  | Dense C2 tables do not require memorizing unexplained abbreviations/sign conventions           | Not run |                     |
-| C8  | Search Lab explains that local timings are diagnostic rather than universal performance claims | Not run |                     |
+| ID  | Check                                                                                                             | Result  | Observation / issue |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ------- | ------------------- |
+| C1  | Route purpose is clear from heading/lead text                                                                     | Not run |                     |
+| C2  | Applied filters/status are visible, understandable and reversible                                                 | Not run |                     |
+| C3  | Errors explain what happened and the next available action                                                        | Not run |                     |
+| C4  | Long operations expose progress/status                                                                            | Not run |                     |
+| C5  | Provenance makes live/stored/fixture/federated authority understandable                                           | Not run |                     |
+| C6  | Evidence distinguishes operational parity, descriptive timing and stronger inference                              | Not run |                     |
+| C7  | Historical C2 baseline and Adversarial C2.1 validation remain distinct and their sign conventions are explained  | Not run |                     |
+| C8  | C2.1 language remains scoped to the tested corpus/configuration/topology and does not imply a universal verdict   | Not run |                     |
+| C9  | Search Lab explains that local timings are diagnostic rather than universal performance claims                    | Not run |                     |
 
 ## Failures and remediation
 
@@ -185,7 +191,7 @@ Every failure gets a product defect before the evidence can be treated as comple
 - JAWS: **Not run**
 - Maps equivalence: **Not run**
 - Search Lab: **Not run**
-- Evidence/C2 dense data: **Not run**
+- Evidence/C2/C2.1 dense data: **Not run**
 - Cognitive/workflow review: **Not run**
 
 ### Claim permitted by this run
