@@ -102,6 +102,49 @@ const evidence: SearchPerformanceEvidence = {
       },
     },
   ],
+  c21Adversarial: {
+    capturedAt: '2026-09-04T15:23:00Z',
+    openSearchTreatment: 'C2_1_OPTIMIZED_EQUIVALENT',
+    workloadCellCount: 24,
+    restartBlocks: 4,
+    independentBatchSummariesPerCell: 16,
+    solrLowerLatencyCells: 24,
+    openSearchLowerLatencyCells: 0,
+    tiedCells: 0,
+    ciExcludesZeroFavoringSolr: 24,
+    ciExcludesZeroFavoringOpenSearch: 0,
+    cells: [
+      {
+        id: 'Q01',
+        workload: 'energy',
+        totalHits: 43_707,
+        apiElapsed: {
+          medianDifferenceMs: 8,
+          lower95Ms: 8,
+          upper95Ms: 8,
+          solrWinRatePercent: 100,
+          excludesZero: true,
+          interpretation:
+            'Positive differences mean OpenSearch took longer than Solr.',
+        },
+      },
+      {
+        id: 'FILTER_BROAD',
+        workload: 'sourceSystem=DATA_GOV',
+        totalHits: 500_000,
+        apiElapsed: {
+          medianDifferenceMs: 24,
+          lower95Ms: 23,
+          upper95Ms: 24,
+          solrWinRatePercent: 100,
+          excludesZero: true,
+          interpretation:
+            'Positive differences mean OpenSearch took longer than Solr.',
+        },
+      },
+    ],
+    claimGuardrail: 'Scoped local C2.1 claims only.',
+  },
   resources: {
     captured: true,
     interpretation: 'Counters and observations remain distinct.',
@@ -130,19 +173,42 @@ describe('SearchPerformanceEvidenceComponent', () => {
     return fixture;
   };
 
-  it('renders certified corpus, batch inference, concurrency and claim boundary', async () => {
+  it('renders historical C2 and adversarial C2.1 as separate evidence layers', async () => {
     const fixture = await render({ evidence, loading: false, error: null });
     const text = fixture.nativeElement.textContent as string;
 
-    expect(text).toContain(
-      'Certified C2 Solr / OpenSearch performance evidence',
-    );
+    expect(text).toContain('Certified Solr / OpenSearch performance evidence');
+    expect(text).toContain('Historical C2 baseline');
     expect(text).toContain('1,000,181');
     expect(text).toContain('4 ms');
     expect(text).toContain('2 .. 5 ms');
     expect(text).toContain('Concurrency matrix: 1 / 8 / 32 clients');
     expect(text).toContain('18.5');
     expect(text).toContain('Scoped local C2 claims only.');
+
+    expect(text).toContain('Adversarial C2.1 validation');
+    expect(text).toContain('24 / 24');
+    expect(text).toContain('16');
+    expect(text).toContain('C2_1_OPTIMIZED_EQUIVALENT');
+    expect(text).toContain('Q01');
+    expect(text).toContain('43,707');
+    expect(text).toContain('8 .. 8 ms');
+    expect(text).toContain('FILTER_BROAD');
+    expect(text).toContain('500,000');
+    expect(text).toContain('23 .. 24 ms');
+    expect(text).toContain('Scoped local C2.1 claims only.');
+  });
+
+  it('keeps historical C2 visible when C2.1 evidence is unavailable', async () => {
+    const fixture = await render({
+      evidence: { ...evidence, c21Adversarial: null },
+      loading: false,
+      error: null,
+    });
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Historical C2 baseline');
+    expect(text).not.toContain('Adversarial C2.1 validation');
   });
 
   it('renders the runtime guidance when evidence is unavailable', async () => {
