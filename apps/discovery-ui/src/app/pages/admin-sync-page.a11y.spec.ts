@@ -15,7 +15,10 @@ import { installMatchMediaStub } from '../testing/match-media';
  * user precisely when the page is asking them to wait.
  */
 describe('AdminSyncPage accessibility', () => {
-  const AXE_TEST_TIMEOUT_MS = 10_000;
+  // The full local quality suite can put enough contention on jsdom/axe for an
+  // otherwise passing scan to exceed 10 seconds. Keep the accessibility
+  // assertion unchanged while allowing deterministic headroom on slower hosts.
+  const AXE_TEST_TIMEOUT_MS = 20_000;
 
   beforeEach(() => {
     installMatchMediaStub();

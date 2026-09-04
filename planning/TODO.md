@@ -6,7 +6,9 @@ The repository follows an evidence-first rule: define the contract, controls and
 
 ## Current position
 
-The certified standalone C2 baseline is complete. These are no longer active backlog items:
+The certified standalone C2 baseline is complete, and the C2.1 pre-measurement fairness-control foundation is complete through PR #53.
+
+These are no longer active backlog items:
 
 - exact 500K Data.gov + 500K DOE OSTI million-record composition;
 - deterministic 1,000,181-document Solr/OpenSearch projection parity;
@@ -17,36 +19,32 @@ The certified standalone C2 baseline is complete. These are no longer active bac
 - concurrency 1 / 8 / 32;
 - CPU, memory, JVM/GC and container telemetry;
 - automated statistical research synthesis;
-- certified C2 Evidence UI productization.
+- certified C2 Evidence UI productization;
+- C2 closeout/planning realignment from #46;
+- C2.1 preregistration;
+- C2.1 exact engine-version and equalized resource controls;
+- C2.1 runtime identity/refusal manifest;
+- C2.1 optimized OpenSearch treatment plus semantic-admission gate;
+- C2.1 Q01-Q20 workload definitions and deterministic selectivity bands;
+- C2.1 p90 timing contract;
+- C2.1 deterministic balanced restart/order plan and READY authorization.
 
-Those results remain historical/control evidence. New work must not silently rewrite them.
-
-## #46 — Close certified C2 milestone
-
-- [ ] Realign planning/history documents to the final C2 state.
-- [ ] Keep only evidence-backed acceptance criteria checked.
-- [ ] Merge the preregistered C2.1 protocol before collecting any C2.1 timing data.
+Those results remain historical/control or frozen pre-measurement evidence. New work must not silently rewrite them.
 
 ## #47 — C2.1 adversarial Solr/OpenSearch fairness validation
 
 Protocol: [C2 Adversarial Validation Protocol](C2_ADVERSARIAL_VALIDATION_PROTOCOL.md)
 
-The goal is to try to **falsify** the current Solr-favoring observation, not strengthen it by construction.
+The goal is to try to **falsify** the current Solr-favoring observation, not strengthen it by construction. PR #53 completed the fairness-control foundation; the remaining work is timed execution, synthesis and productization.
 
-- [ ] Pin exact Solr and OpenSearch versions/digests.
-- [ ] Equalize explicit JVM heap and container CPU/memory controls where technically equivalent.
-- [ ] Record shard/replica/index settings with each experimental block.
-- [ ] Admit OpenSearch query/aggregation optimizations only after semantic-equivalence gates pass.
-- [ ] Use the preregistered Q01-Q20 full-text query matrix.
-- [ ] Use preregistered broad, moderate and genuinely selective filter bands.
-- [ ] Add p90 while retaining p50/p95/p99.
-- [ ] Execute balanced seeded randomized engine-first order.
-- [ ] Warm every independent batch separately.
-- [ ] Run multiple clean engine/container restart blocks.
-- [ ] Preserve raw paired samples, restart-block identities and batch identities.
-- [ ] Report every preregistered cell, including cells where OpenSearch wins or the result is inconclusive.
-- [ ] Keep C2.1 artifacts distinct from certified C2 artifacts.
-- [ ] Extend the Evidence UI/report so C2 and C2.1 cannot be confused.
+- [ ] Execute the preregistered Q01-Q20 full-text matrix under READY authorization.
+- [ ] Execute facets plus broad, moderate and genuinely selective filter cells under the frozen semantic admission.
+- [ ] Run all planned clean engine/container restart blocks with separately warmed batches and the frozen balanced seeded order.
+- [ ] Preserve raw paired samples, restart-block identities, batch identities, realized order and runtime-manifest identity in C2.1-only artifacts.
+- [ ] Report every preregistered cell, including cells where OpenSearch wins, ties or the result is inconclusive.
+- [ ] Extend statistical synthesis for query-family and restart-block interpretation while retaining the existing multiplicity/local-topology guardrails.
+- [ ] Keep C2.1 artifacts visibly distinct from certified C2 artifacts.
+- [ ] Extend the Evidence UI/report so certified C2 and C2.1 cannot be confused.
 
 ## #49 — Manual accessibility evidence
 
