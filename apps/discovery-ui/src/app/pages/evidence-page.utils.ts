@@ -228,7 +228,7 @@ export function indexEvidenceById(
   return new Map(entries.map((entry) => [entry.id, entry]));
 }
 
-export function countAutomatedChecks(
+export function countAutomatedCheckExecutions(
   automatedEntries: readonly AccessibilityEvidence[],
 ): { passed: number; failed: number; total: number } {
   let passed = 0;

@@ -30,7 +30,7 @@ test.describe('map layer MapLibre visibility', () => {
     await mockRepositoryApi(page);
     await page.goto('/maps');
     await expect(
-      page.getByRole('heading', { name: 'MapLibre geospatial workspace' }),
+      page.getByRole('heading', { name: 'Geospatial research explorer' }),
     ).toBeVisible();
     await expect(page.getByText('Loading map data from the API')).toHaveCount(
       0,

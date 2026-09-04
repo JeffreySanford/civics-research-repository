@@ -41,10 +41,13 @@
               <span>({{ capturedAt | date: 'mediumDate' }})</span>
               }
             </p>
-            @if (checkCounts$ | async; as counts) { @if (counts.total > 0) {
+            @if (checkExecutionCounts$ | async; as counts) { @if (counts.total >
+            0) {
             <p>
-              Approximately {{ counts.total }} automated checks recorded across
-              axe, structural, reflow, and storyboard suites.
+              Approximately {{ counts.total }} automated check executions
+              recorded across the automated evidence runs. Some runs
+              intentionally overlap, so this is not a count of unique
+              accessibility assertions.
             </p>
             } }
             <p class="warning-message">

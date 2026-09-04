@@ -20,7 +20,7 @@ import {
   selectSourceProgramRows,
 } from '../state/pipeline/pipeline.selectors';
 import {
-  selectAutomatedCheckCounts,
+  selectAutomatedCheckExecutionCounts,
   selectAutomatedEvidence,
   selectEvidenceError,
   selectEvidenceLoading,
@@ -71,8 +71,8 @@ export class EvidencePage implements OnInit {
   );
   protected readonly pipelineError$ = this.store.select(selectPipelineError);
   protected readonly error$ = this.store.select(selectEvidenceError);
-  protected readonly checkCounts$ = this.store.select(
-    selectAutomatedCheckCounts,
+  protected readonly checkExecutionCounts$ = this.store.select(
+    selectAutomatedCheckExecutionCounts,
   );
   protected readonly latestCapturedAt$ = this.store.select(
     selectLatestCapturedAt,

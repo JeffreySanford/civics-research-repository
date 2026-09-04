@@ -34,7 +34,9 @@ test.describe('Search Lab storyboard', () => {
     ).toBeVisible();
     await expect(page.getByText('34 ms')).toBeVisible();
     await expect(page.getByText('29 ms')).toBeVisible();
-    await expect(page.getByText('local demo measurements')).toBeVisible();
+    await expect(
+      page.getByText(/local diagnostics, not production benchmarks/i),
+    ).toBeVisible();
   });
 
   test('keeps relevance and filtering in the same comparison workflow @storyboard @comparison', async ({

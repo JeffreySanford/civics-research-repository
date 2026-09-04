@@ -1,6 +1,6 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import {
-  countAutomatedChecks,
+  countAutomatedCheckExecutions,
   isAutomatedEvidence,
 } from '../../pages/evidence-page.utils';
 import { evidenceFeatureKey, type EvidenceState } from './evidence.reducer';
@@ -33,9 +33,9 @@ export const selectManualEvidence = createSelector(
   (entries) => entries.filter((entry) => !isAutomatedEvidence(entry.status)),
 );
 
-export const selectAutomatedCheckCounts = createSelector(
+export const selectAutomatedCheckExecutionCounts = createSelector(
   selectAutomatedEvidence,
-  (entries) => countAutomatedChecks(entries),
+  (entries) => countAutomatedCheckExecutions(entries),
 );
 
 export const selectLatestCapturedAt = createSelector(

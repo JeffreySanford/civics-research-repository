@@ -1,6 +1,6 @@
 import {
   buildReportArtifacts,
-  countAutomatedChecks,
+  countAutomatedCheckExecutions,
   evidenceStatusLabel,
   extractArtifactPath,
   isAutomatedEvidence,
@@ -68,9 +68,9 @@ describe('evidence-page.utils', () => {
     );
   });
 
-  it('sums automated check counts from notes', () => {
+  it('sums automated check executions from evidence notes', () => {
     expect(
-      countAutomatedChecks([
+      countAutomatedCheckExecutions([
         {
           id: 'axe',
           workflow: 'axe',
