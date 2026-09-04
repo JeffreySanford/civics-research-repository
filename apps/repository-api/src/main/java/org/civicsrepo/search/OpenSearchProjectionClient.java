@@ -420,6 +420,7 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                 "multi_match",
                 Map.of(
                         "query", trimmed,
+                        "type", "cross_fields",
                         "fields",
                                 List.of(
                                         "title^5",

@@ -176,6 +176,7 @@ class OpenSearchProjectionClientSearchTest {
         JsonNode query = objectMapper.readTree(requestBody.get()).path("query");
         JsonNode weightedTerms = query.path("bool").path("must").path(0).path("multi_match");
         assertThat(weightedTerms.path("query").asText()).isEqualTo("North Dakota workforce");
+        assertThat(weightedTerms.path("type").asText()).isEqualTo("cross_fields");
         assertThat(weightedTerms.path("minimum_should_match").asText()).isEqualTo("2<67%");
         assertThat(query.path("bool").path("should")).hasSize(3);
     }
