@@ -71,17 +71,24 @@ function facetGroup(engine, field) {
   return group && Array.isArray(group.values) ? group : null;
 }
 
+function normalizedFacetValue(value) {
+  return String(value ?? '').trim();
+}
+
 function facetCountMap(group) {
   if (!group) {
     return new Map();
   }
   return new Map(
-    group.values.map((value) => [String(value.value), Number(value.count)]),
+    group.values.map((value) => [
+      normalizedFacetValue(value?.value),
+      Number(value?.count),
+    ]),
   );
 }
 
 function normalizedIdentity(field, value) {
-  return `${field}=${String(value).trim()}`;
+  return `${field}=${normalizedFacetValue(value)}`;
 }
 
 export function collectC21ParityFilterCandidates(
@@ -102,9 +109,9 @@ export function collectC21ParityFilterCandidates(
     }
     const openSearchCounts = facetCountMap(openSearchGroup);
     for (const value of solrGroup.values) {
-      const normalizedValue = String(value?.value ?? '').trim();
+      const normalizedValue = normalizedFacetValue(value?.value);
       const count = Number(value?.count);
-      const openSearchCount = openSearchCounts.get(String(value?.value));
+      const openSearchCount = openSearchCounts.get(normalizedValue);
       if (
         normalizedValue === '' ||
         !Number.isFinite(count) ||
