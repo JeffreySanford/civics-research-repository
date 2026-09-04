@@ -136,6 +136,50 @@ class OpenSearchProjectionClientSearchTest {
                         }));
     }
 
+    @Test
+    void quotedQueryRequiresExactPhraseMatching() throws Exception {
+        client.searchWithDiagnostics(new SearchComparisonCriteria(
+                "\"North Dakota\"",
+                List.of(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0,
+                10));
+
+        JsonNode query = objectMapper.readTree(requestBody.get()).path("query");
+        assertThat(query.path("multi_match").path("query").asText()).isEqualTo("North Dakota");
+        assertThat(query.path("multi_match").path("type").asText()).isEqualTo("phrase");
+        assertThat(query.path("multi_match").path("minimum_should_match").isMissingNode()).isTrue();
+        assertThat(query.path("bool").isMissingNode()).isTrue();
+    }
+
+    @Test
+    void ordinaryQueryKeepsWeightedTermMatchingWithPhraseBoosts() throws Exception {
+        client.searchWithDiagnostics(new SearchComparisonCriteria(
+                " North Dakota workforce ",
+                List.of(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0,
+                10));
+
+        JsonNode query = objectMapper.readTree(requestBody.get()).path("query");
+        JsonNode weightedTerms = query.path("bool").path("must").path(0).path("multi_match");
+        assertThat(weightedTerms.path("query").asText()).isEqualTo("North Dakota workforce");
+        assertThat(weightedTerms.path("minimum_should_match").asText()).isEqualTo("2<67%");
+        assertThat(query.path("bool").path("should")).hasSize(3);
+    }
+
     private void handleSearch(HttpExchange exchange) throws IOException {
         requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
         byte[] response = """

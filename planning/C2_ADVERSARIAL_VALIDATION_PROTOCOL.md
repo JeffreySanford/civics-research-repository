@@ -100,7 +100,7 @@ The raw query strings are fixed before C2.1 timing:
 | Q03 | single/domain             | `workforce`                                 |
 | Q04 | single/domain             | `climate`                                   |
 | Q05 | single/domain             | `water`                                     |
-| Q06 | two-term                  | `North Dakota`                              |
+| Q06 | exact-phrase              | `"North Dakota"`                            |
 | Q07 | two-term                  | `renewable energy`                          |
 | Q08 | two-term                  | `labor force`                               |
 | Q09 | two-term                  | `population estimates`                      |
@@ -118,7 +118,7 @@ The raw query strings are fixed before C2.1 timing:
 
 These labels describe intent, not guaranteed document frequency. Actual total-hit counts are recorded before timing and remain part of the evidence. A query is not removed merely because its observed frequency differs from the descriptive label.
 
-If exact-phrase search is added as a distinct scenario, phrase queries must be preregistered in a protocol amendment merged before their timing data are collected; quoted strings must not be retroactively promoted into a new workload after results are visible.
+Q06 is the preregistered exact-phrase member of the full-text matrix. If exact-phrase search is later expanded into a distinct scenario, additional phrase queries must be preregistered in a protocol amendment merged before their timing data are collected; quoted strings must not be retroactively promoted into a new workload after results are visible.
 
 ## Filter selectivity matrix
 

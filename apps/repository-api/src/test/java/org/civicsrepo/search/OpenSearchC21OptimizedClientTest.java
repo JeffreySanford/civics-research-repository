@@ -105,9 +105,35 @@ class OpenSearchC21OptimizedClientTest {
         assertThat(request.path("aggs").toString()).contains("c2_1_shared_scope_01");
     }
 
+    @Test
+    void quotedQueryRequiresExactPhraseMatching() {
+        Map<String, Object> request = client.requestForTest(criteria("\"North Dakota\"", List.of()));
+        JsonNode query = objectMapper.valueToTree(request.get("query"));
+
+        assertThat(query.path("multi_match").path("query").asText()).isEqualTo("North Dakota");
+        assertThat(query.path("multi_match").path("type").asText()).isEqualTo("phrase");
+        assertThat(query.path("multi_match").path("minimum_should_match").isMissingNode()).isTrue();
+        assertThat(query.path("bool").isMissingNode()).isTrue();
+    }
+
+    @Test
+    void ordinaryQueryKeepsWeightedTermMatchingWithPhraseBoosts() {
+        Map<String, Object> request = client.requestForTest(criteria(" North Dakota workforce ", List.of()));
+        JsonNode query = objectMapper.valueToTree(request.get("query"));
+        JsonNode weightedTerms = query.path("bool").path("must").path(0).path("multi_match");
+
+        assertThat(weightedTerms.path("query").asText()).isEqualTo("North Dakota workforce");
+        assertThat(weightedTerms.path("minimum_should_match").asText()).isEqualTo("2<67%");
+        assertThat(query.path("bool").path("should")).hasSize(3);
+    }
+
     private SearchComparisonCriteria criteria(List<String> programs) {
+        return criteria("North Dakota workforce", programs);
+    }
+
+    private SearchComparisonCriteria criteria(String query, List<String> programs) {
         return new SearchComparisonCriteria(
-                "North Dakota workforce",
+                query,
                 programs,
                 null,
                 null,

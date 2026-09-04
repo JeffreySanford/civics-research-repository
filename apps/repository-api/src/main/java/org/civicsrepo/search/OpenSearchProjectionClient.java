@@ -393,14 +393,33 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
     }
 
     private Map<String, Object> queryClause(String query) {
-        if (normalize(query).isBlank()) {
+        String trimmed = trimQuery(query);
+        if (trimmed.isBlank()) {
             return Map.of("match_all", Map.of());
+        }
+        if (isExactPhraseQuery(trimmed)) {
+            String phrase = trimmed.substring(1, trimmed.length() - 1).trim();
+            return Map.of(
+                    "multi_match",
+                    Map.of(
+                            "query", phrase,
+                            "type", "phrase",
+                            "fields",
+                                    List.of(
+                                            "title^5",
+                                            "geography^4",
+                                            "subjects^3",
+                                            "programName^3",
+                                            "authors^3",
+                                            "summary^2",
+                                            "citation^1",
+                                            "publisher^0.5")));
         }
 
         Map<String, Object> weightedTerms = Map.of(
                 "multi_match",
                 Map.of(
-                        "query", query,
+                        "query", trimmed,
                         "fields",
                                 List.of(
                                         "title^5",
@@ -414,11 +433,22 @@ public class OpenSearchProjectionClient implements DiscoveryProjectionTarget {
                         "minimum_should_match", "2<67%"));
 
         List<Map<String, Object>> phraseBoosts = List.of(
-                Map.of("match_phrase", Map.of("title", Map.of("query", query, "boost", 8))),
-                Map.of("match_phrase", Map.of("geography", Map.of("query", query, "boost", 6))),
-                Map.of("match_phrase", Map.of("summary", Map.of("query", query, "boost", 2))));
+                Map.of("match_phrase", Map.of("title", Map.of("query", trimmed, "boost", 8))),
+                Map.of("match_phrase", Map.of("geography", Map.of("query", trimmed, "boost", 6))),
+                Map.of("match_phrase", Map.of("summary", Map.of("query", trimmed, "boost", 2))));
 
         return Map.of("bool", Map.of("must", List.of(weightedTerms), "should", phraseBoosts));
+    }
+
+    private boolean isExactPhraseQuery(String query) {
+        return query.length() >= 3
+                && query.startsWith("\"")
+                && query.endsWith("\"")
+                && !query.substring(1, query.length() - 1).trim().isEmpty();
+    }
+
+    private String trimQuery(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private List<Map<String, Object>> filterClauses(
