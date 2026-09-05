@@ -322,7 +322,8 @@ export type MapLayerGroupId =
   | 'saipe'
   | 'population'
   | 'research'
-  | 'hydrography';
+  | 'hydrography'
+  | 'terrain';
 
 export type MapLayerGroup = {
   readonly id: MapLayerGroupId;
@@ -407,6 +408,12 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
     label: 'USGS 3HP hydrography',
     sourceId: 'usgs-3hp-hydrography',
     layerIds: ['usgs-3hp-hydrography-raster'],
+  },
+  {
+    id: 'terrain',
+    label: 'USGS 3DEP terrain',
+    sourceId: 'usgs-3dep-terrain',
+    layerIds: ['usgs-3dep-terrain-raster'],
   },
 ];
 
