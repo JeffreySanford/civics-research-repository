@@ -8,7 +8,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Base64;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,11 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class UsgsTerrainTileService {
     static final URI UPSTREAM_EXPORT = URI.create(
             "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage");
-
-    /** 1x1 transparent PNG returned when upstream terrain imagery is unavailable. */
-    static final byte[] TRANSPARENT_PNG = Base64.getDecoder()
-            .decode(
-                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X2ZkAAAAASUVORK5CYII=");
 
     enum TerrainMode {
         HILLSHADE("hillshade", "Hillshade Gray"),
@@ -61,8 +55,7 @@ public class UsgsTerrainTileService {
             }
 
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "mode must be one of hillshade, tinted, slope");
+                    HttpStatus.BAD_REQUEST, "mode must be one of hillshade, tinted, slope");
         }
     }
 
@@ -92,14 +85,14 @@ public class UsgsTerrainTileService {
                     && isImageResponse(response)) {
                 return response.body();
             }
+
+            throw unavailable("USGS 3DEP returned an unusable terrain image response", null);
         } catch (IOException exception) {
-            return TRANSPARENT_PNG;
+            throw unavailable("USGS 3DEP terrain service is unavailable", exception);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            return TRANSPARENT_PNG;
+            throw unavailable("USGS 3DEP terrain request was interrupted", exception);
         }
-
-        return TRANSPARENT_PNG;
     }
 
     private URI buildUpstreamUri(String bbox, TerrainMode mode) {
@@ -125,8 +118,7 @@ public class UsgsTerrainTileService {
         String[] parts = bbox.split(",", -1);
         if (parts.length != 4) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "bbox must be west,south,east,north in EPSG:3857");
+                    HttpStatus.BAD_REQUEST, "bbox must be west,south,east,north in EPSG:3857");
         }
 
         double[] coordinates = new double[4];
@@ -160,6 +152,10 @@ public class UsgsTerrainTileService {
                 .firstValue("Content-Type")
                 .map(contentType -> contentType.toLowerCase(Locale.ROOT).startsWith("image/"))
                 .orElse(body != null && body.length > 0);
+    }
+
+    private ResponseStatusException unavailable(String message, Exception cause) {
+        return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, message, cause);
     }
 
     private String encode(String value) {
