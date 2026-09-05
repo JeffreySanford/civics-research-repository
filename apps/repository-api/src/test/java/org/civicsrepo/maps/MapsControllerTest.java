@@ -114,11 +114,7 @@ class MapsControllerTest {
                         2025,
                         List.of(2020, 2021, 2022, 2023, 2024, 2025),
                         List.of(2021, 2022, 2023, 2024, 2025),
-                        java.util.Map.of(
-                                "type",
-                                "FeatureCollection",
-                                "features",
-                                List.of()),
+                        java.util.Map.of("type", "FeatureCollection", "features", List.of()),
                         List.of());
 
         response.priorYear(2024);
@@ -126,18 +122,14 @@ class MapsControllerTest {
         given(
                         populationEstimatesService.findChoropleth(
                                 "North Dakota",
-                                org.civicsrepo.generated.dto.PopulationEstimateMeasure
-                                        .ANNUAL_GROWTH_RATE,
+                                org.civicsrepo.generated.dto.PopulationEstimateMeasure.ANNUAL_GROWTH_RATE,
                                 2025))
                 .willReturn(response);
 
-        mockMvc.perform(
-                        get("/overlays/census/population-estimates"))
+        mockMvc.perform(get("/overlays/census/population-estimates"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.geography").value("North Dakota"))
-                .andExpect(
-                        jsonPath("$.measure")
-                                .value("ANNUAL_GROWTH_RATE"))
+                .andExpect(jsonPath("$.measure").value("ANNUAL_GROWTH_RATE"))
                 .andExpect(jsonPath("$.year").value(2025))
                 .andExpect(jsonPath("$.priorYear").value(2024))
                 .andExpect(jsonPath("$.units").value("percent"));
@@ -145,8 +137,7 @@ class MapsControllerTest {
         verify(populationEstimatesService)
                 .findChoropleth(
                         "North Dakota",
-                        org.civicsrepo.generated.dto.PopulationEstimateMeasure
-                                .ANNUAL_GROWTH_RATE,
+                        org.civicsrepo.generated.dto.PopulationEstimateMeasure.ANNUAL_GROWTH_RATE,
                         2025);
     }
 
@@ -164,33 +155,26 @@ class MapsControllerTest {
                         2025,
                         URI.create("https://example.test/tigerweb/2025/counties"),
                         "U.S. Census Bureau TIGERweb",
-                        org.civicsrepo.generated.dto.PopulationEstimateMeasure
-                                .POPULATION,
+                        org.civicsrepo.generated.dto.PopulationEstimateMeasure.POPULATION,
                         "Resident population estimate",
                         "people",
                         2024,
                         List.of(2020, 2021, 2022, 2023, 2024, 2025),
                         List.of(2021, 2022, 2023, 2024, 2025),
-                        java.util.Map.of(
-                                "type",
-                                "FeatureCollection",
-                                "features",
-                                List.of()),
+                        java.util.Map.of("type", "FeatureCollection", "features", List.of()),
                         List.of());
 
         given(
                         populationEstimatesService.findChoropleth(
                                 "California",
-                                org.civicsrepo.generated.dto.PopulationEstimateMeasure
-                                        .POPULATION,
+                                org.civicsrepo.generated.dto.PopulationEstimateMeasure.POPULATION,
                                 2024))
                 .willReturn(response);
 
-        mockMvc.perform(
-                        get("/overlays/census/population-estimates")
-                                .param("geography", "California")
-                                .param("measure", "POPULATION")
-                                .param("year", "2024"))
+        mockMvc.perform(get("/overlays/census/population-estimates")
+                        .param("geography", "California")
+                        .param("measure", "POPULATION")
+                        .param("year", "2024"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.geography").value("California"))
                 .andExpect(jsonPath("$.measure").value("POPULATION"))
@@ -199,28 +183,24 @@ class MapsControllerTest {
         verify(populationEstimatesService)
                 .findChoropleth(
                         "California",
-                        org.civicsrepo.generated.dto.PopulationEstimateMeasure
-                                .POPULATION,
+                        org.civicsrepo.generated.dto.PopulationEstimateMeasure.POPULATION,
                         2024);
     }
 
     @Test
-    void returnsBadRequestForUnsupportedPopulationMeasureYear()
-            throws Exception {
+    void returnsBadRequestForUnsupportedPopulationMeasureYear() throws Exception {
         given(
                         populationEstimatesService.findChoropleth(
                                 "North Dakota",
-                                org.civicsrepo.generated.dto.PopulationEstimateMeasure
-                                        .ANNUAL_CHANGE,
+                                org.civicsrepo.generated.dto.PopulationEstimateMeasure.ANNUAL_CHANGE,
                                 2020))
                 .willThrow(
                         new PopulationEstimatesService.InvalidQueryException(
                                 "Year 2020 is not supported for population estimate measure ANNUAL_CHANGE."));
 
-        mockMvc.perform(
-                        get("/overlays/census/population-estimates")
-                                .param("measure", "ANNUAL_CHANGE")
-                                .param("year", "2020"))
+        mockMvc.perform(get("/overlays/census/population-estimates")
+                        .param("measure", "ANNUAL_CHANGE")
+                        .param("year", "2020"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
@@ -272,13 +252,15 @@ class MapsControllerTest {
                 .andExpect(header().string("Content-Type", "image/png"))
                 .andExpect(header().exists("Cache-Control"));
 
-        verify(usgsHydrographyTileService).exportTile("-100,40,-99,41", 3857, 3857, "256,256", true);
+        verify(usgsHydrographyTileService)
+                .exportTile("-100,40,-99,41", 3857, 3857, "256,256", true);
     }
 
     @Test
     void proxiesTerrainExportTilesAsPng() throws Exception {
+        byte[] terrainPng = new byte[] {(byte) 137, 80, 78, 71, 13, 10, 26, 10};
         given(usgsTerrainTileService.exportTile("-100,40,-99,41", "slope"))
-                .willReturn(UsgsTerrainTileService.TRANSPARENT_PNG);
+                .willReturn(terrainPng);
 
         mockMvc.perform(get("/overlays/usgs/terrain/export")
                         .param("bbox", "-100,40,-99,41")
@@ -336,6 +318,11 @@ class MapsControllerTest {
                 true,
                 new UsgsEarthquakeQuery(minMagnitude, days, 45.93, 49.0, -104.05, -96.55),
                 List.of(new UsgsEarthquakeFeature(
-                        "nd-1", "Western North Dakota", 2.8, OffsetDateTime.parse("2026-01-01T00:00:00Z"), 47.9, -103.2)));
+                        "nd-1",
+                        "Western North Dakota",
+                        2.8,
+                        OffsetDateTime.parse("2026-01-01T00:00:00Z"),
+                        47.9,
+                        -103.2)));
     }
 }
