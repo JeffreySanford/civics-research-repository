@@ -2,6 +2,9 @@ export type UsgsTerrainMode = 'hillshade' | 'tinted' | 'slope';
 
 export const DEFAULT_USGS_TERRAIN_MODE: UsgsTerrainMode = 'hillshade';
 
+export const USGS_3DEP_TERRAIN_TILE_TEMPLATE =
+  '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=hillshade';
+
 export function isUsgsTerrainMode(
   value: string | null,
 ): value is UsgsTerrainMode {
