@@ -27,7 +27,9 @@ export const Available: Story = {
     await expect(
       canvas.getByText('USGS 3DEP terrain is available and currently off.'),
     ).toBeInTheDocument();
-    await expect(canvas.getByRole('link', { name: 'USGS 3DEP' })).toHaveAttribute(
+    await expect(
+      canvas.getByRole('link', { name: 'USGS 3DEP' }),
+    ).toHaveAttribute(
       'href',
       expect.stringContaining('3DEPElevation/ImageServer'),
     );
