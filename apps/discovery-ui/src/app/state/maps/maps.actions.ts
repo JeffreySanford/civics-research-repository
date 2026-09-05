@@ -13,6 +13,7 @@ import type {
   SearchQuery,
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
+import type { UsgsTerrainMode } from './terrain';
 
 export const MapsActions = createActionGroup({
   source: 'Repository Maps',
@@ -62,6 +63,8 @@ export const MapsActions = createActionGroup({
     'Lodes Layer Toggled': props<{ visible: boolean }>(),
     'Workplace Layer Toggled': props<{ visible: boolean }>(),
     'Hydrography Layer Toggled': props<{ visible: boolean }>(),
+    'Terrain Layer Toggled': props<{ visible: boolean }>(),
+    'Terrain Mode Changed': props<{ mode: UsgsTerrainMode }>(),
     'Saipe Layer Toggled': props<{ visible: boolean }>(),
     'Population Layer Toggled': props<{ visible: boolean }>(),
     'Research Coverage Layer Toggled': props<{ visible: boolean }>(),
