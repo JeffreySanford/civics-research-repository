@@ -86,6 +86,17 @@ public class MapLayerService {
                         "/overlays/usgs/hydrography/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&f=image&transparent=true"));
 
         layers.add(new MapLayer(
+                        "usgs-3dep-terrain",
+                        "USGS 3DEP terrain",
+                        MapLayerType.USGS_REFERENCE,
+                        URI.create(
+                                "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer"),
+                        "USGS National Map 3D Elevation Program (3DEP)")
+                .visibleByDefault(false)
+                .rasterTileUrlTemplate(
+                        "/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=hillshade"));
+
+        layers.add(new MapLayer(
                         "usgs-earthquakes-" + slug,
                         "USGS earthquake overlay",
                         MapLayerType.USGS_EARTHQUAKE,
