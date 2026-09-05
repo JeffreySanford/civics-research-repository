@@ -172,3 +172,63 @@
     outline-color: Highlight;
   }
 }
+
+/* One thematic checkbox with configuration owned by that layer. */
+.layer-config-group {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.population-config {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(6rem, 0.65fr);
+  gap: 0.65rem;
+  min-width: 0;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-muted);
+  padding: 0.65rem 0.75rem;
+}
+
+.population-config label {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  color: var(--civics-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.population-config select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--civics-border-strong);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+  color: var(--civics-text-primary);
+  padding: 0.45rem 0.5rem;
+  font: inherit;
+}
+
+.population-config-status {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+@media (max-width: 40rem) {
+  .population-config {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (forced-colors: active) {
+  .population-config {
+    border-color: CanvasText;
+  }
+
+  .population-config select {
+    border-color: CanvasText;
+  }
+}

@@ -189,3 +189,43 @@ export const selectWorkplaceVisible = createSelector(
   selectMapsState,
   (state) => state.workplaceVisible,
 );
+
+export const selectPopulationEstimatesAvailable = createSelector(
+  selectMapLayers,
+  (layers) =>
+    layers.some((layer) => layer.id.startsWith('population-estimates-county-')),
+);
+
+export const selectSaipeAvailable = createSelector(selectMapLayers, (layers) =>
+  layers.some((layer) => layer.id.startsWith('saipe-county-poverty-')),
+);
+
+export const selectPopulationEstimatesChoropleth = createSelector(
+  selectMapsState,
+  (state) => state.populationEstimatesChoropleth,
+);
+
+export const selectPopulationEstimatesError = createSelector(
+  selectMapsState,
+  (state) => state.populationEstimatesError,
+);
+
+export const selectPopulationEstimatesLoading = createSelector(
+  selectMapsState,
+  (state) => state.populationEstimatesLoading,
+);
+
+export const selectPopulationEstimateMeasure = createSelector(
+  selectMapsState,
+  (state) => state.populationEstimateMeasure,
+);
+
+export const selectPopulationEstimateYear = createSelector(
+  selectMapsState,
+  (state) => state.populationEstimateYear,
+);
+
+export const selectPopulationVisible = createSelector(
+  selectMapsState,
+  (state) => state.populationVisible,
+);

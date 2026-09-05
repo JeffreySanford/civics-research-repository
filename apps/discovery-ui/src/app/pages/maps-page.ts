@@ -37,6 +37,8 @@ import type {
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
+  PopulationEstimateMeasure,
+  PopulationEstimatesChoropleth,
   ResearchObjectType,
   ResearchSpatialCoverageFeature,
   ResearchSpatialViewport,
@@ -60,11 +62,19 @@ import {
   selectMapLayers,
   selectMapsError,
   selectMapsLoading,
+  selectPopulationEstimateMeasure,
+  selectPopulationEstimatesAvailable,
+  selectPopulationEstimatesChoropleth,
+  selectPopulationEstimatesError,
+  selectPopulationEstimatesLoading,
+  selectPopulationEstimateYear,
+  selectPopulationVisible,
   selectResearchCoverageError,
   selectResearchCoverageLoading,
   selectResearchCoverageSummary,
   selectResearchCoverageVisible,
   selectSelectedResearchCoverageId,
+  selectSaipeAvailable,
   selectSaipeChoropleth,
   selectSaipeChoroplethError,
   selectSaipeVisible,
@@ -80,8 +90,10 @@ import {
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
 import type { ResearchCoverageSummary } from '../state/maps/research-coverage';
+import { PopulationEstimatesSummaryComponent } from './population-estimates-summary.component';
 import { ResearchCoverageSummaryComponent } from './research-coverage-summary.component';
 import {
+  buildPopulationEstimateScale,
   configureMapLibreWorker,
   expandResearchCoverageCluster,
   findCensusAreaForPoint,
@@ -165,6 +177,7 @@ type ResearchCoverageFeatureCollection = {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    PopulationEstimatesSummaryComponent,
     ResearchCoverageSummaryComponent,
     RouterLink,
   ],
@@ -187,6 +200,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingLodesFlowOverlay: LodesFlowOverlay | null = null;
   private pendingLodesWorkplaceOverlay: LodesWorkplaceOverlay | null = null;
   private pendingSaipeChoropleth: SaipeCountyChoropleth | null = null;
+  private pendingPopulationEstimates: PopulationEstimatesChoropleth | null =
+    null;
   private pendingHydrographyLayer: MapLayer | null = null;
   private pendingResearchCoverage: ResearchCoverageSummary | null = null;
   /** True once the MapLibre style is parsed; overlays must not wait for raster tiles. */
@@ -196,6 +211,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private lodesVisible = false;
   private hydrographyVisible = false;
   private saipeVisible = false;
+  private populationVisible = false;
+  private populationEstimateMeasure: PopulationEstimateMeasure =
+    'ANNUAL_GROWTH_RATE';
+  private populationEstimateYear = 2025;
   private researchCoverageVisible = false;
   private selectedResearchCoverageId: string | null = null;
   private selectedFeatureId: string | null = null;
@@ -238,6 +257,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       'Jobs counted where they are worked, from LEHD LODES Workplace Area Characteristics. Circle area is proportional to the county job count, so a circle twice the area holds twice the jobs. Pairs with the commuting flows: one shows where the work is, the other who travels to it.',
     saipe:
       'Colors counties by SAIPE poverty rate for the selected state. The county value table below lists the same statistics shown on the map.',
+    population:
+      'Colors counties using Census Population Estimates Program Vintage 2025 values. Population uses a sequential scale; annual change and annual growth use a diverging scale centered at zero. Colors do not imply statistical significance.',
     research:
       'Shows spatial extents declared in Data.gov metadata. Map points are deterministic display anchors for those extents, not observation sites or data-collection locations. Publisher, laboratory, author, and institution addresses are never substituted for missing research geometry.',
     hydrography:
@@ -258,10 +279,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected mapDebugSnapshot: MapDebugSnapshot | null = null;
 
   protected readonly layers$ = this.store.select(selectMapLayers);
-  protected readonly saipeAvailable$ = this.layers$.pipe(
-    map((layers) =>
-      layers.some((layer) => layer.layerType === 'CENSUS_CHOROPLETH'),
-    ),
+  protected readonly saipeAvailable$ = this.store.select(selectSaipeAvailable);
+  protected readonly populationAvailable$ = this.store.select(
+    selectPopulationEstimatesAvailable,
   );
   protected readonly hydrographyLayer$ = this.store.select(
     selectHydrographyLayer,
@@ -276,6 +296,40 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly saipeChoroplethError$ = this.store.select(
     selectSaipeChoroplethError,
   );
+  protected readonly populationEstimatesChoropleth$ = this.store.select(
+    selectPopulationEstimatesChoropleth,
+  );
+  protected readonly populationScale$ =
+    this.populationEstimatesChoropleth$.pipe(
+      map((choropleth) =>
+        choropleth ? buildPopulationEstimateScale(choropleth) : null,
+      ),
+    );
+
+  protected readonly populationYears = [
+    2020, 2021, 2022, 2023, 2024, 2025,
+  ] as const;
+
+  protected readonly populationChangeYears = [
+    2021, 2022, 2023, 2024, 2025,
+  ] as const;
+
+  protected readonly populationEstimatesError$ = this.store.select(
+    selectPopulationEstimatesError,
+  );
+  protected readonly populationEstimatesLoading$ = this.store.select(
+    selectPopulationEstimatesLoading,
+  );
+  protected readonly populationEstimateMeasure$ = this.store.select(
+    selectPopulationEstimateMeasure,
+  );
+  protected readonly populationEstimateYear$ = this.store.select(
+    selectPopulationEstimateYear,
+  );
+  protected readonly populationVisible$ = this.store.select(
+    selectPopulationVisible,
+  );
+
   protected readonly researchCoverageSummary$ = this.store.select(
     selectResearchCoverageSummary,
   );
@@ -304,6 +358,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.store.select(selectLodesVisible),
     this.store.select(selectHydrographyVisible),
     this.store.select(selectSaipeVisible),
+    this.store.select(selectPopulationVisible),
   ]).pipe(
     map(
       ([
@@ -313,6 +368,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         lodesVisible,
         hydrographyVisible,
         saipeVisible,
+        populationVisible,
       ]) =>
         layers.filter((layer) => {
           switch (layer.layerType) {
@@ -321,7 +377,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             case 'CENSUS_DATA':
               return lodesVisible;
             case 'CENSUS_CHOROPLETH':
-              return saipeVisible;
+              if (layer.id.startsWith('saipe-county-poverty-')) {
+                return saipeVisible;
+              }
+              if (layer.id.startsWith('population-estimates-county-')) {
+                return populationVisible;
+              }
+              return false;
             case 'USGS_EARTHQUAKE':
               return earthquakeVisible;
             case 'USGS_REFERENCE':
@@ -432,6 +494,23 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         this.renderSaipeChoropleth();
       });
 
+    this.populationEstimatesChoropleth$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((choropleth) => {
+        this.pendingPopulationEstimates = choropleth;
+        this.renderPopulationEstimates();
+      });
+
+    combineLatest([
+      this.populationEstimateMeasure$,
+      this.populationEstimateYear$,
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([measure, year]) => {
+        this.populationEstimateMeasure = measure;
+        this.populationEstimateYear = year;
+      });
+
     this.researchCoverageSummary$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((summary) => {
@@ -509,6 +588,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.workplaceVisible$,
       this.hydrographyVisible$,
       this.saipeVisible$,
+      this.populationVisible$,
       this.researchCoverageVisible$,
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -520,6 +600,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           workplaceVisible,
           hydrographyVisible,
           saipeVisible,
+          populationVisible,
           researchCoverageVisible,
         ]) => {
           this.tigerVisible = tigerVisible;
@@ -528,6 +609,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           this.lodesVisible = lodesVisible;
           this.hydrographyVisible = hydrographyVisible;
           this.saipeVisible = saipeVisible;
+          this.populationVisible = populationVisible;
           this.researchCoverageVisible = researchCoverageVisible;
           this.applyLayerVisibility();
         },
@@ -577,6 +659,54 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected toggleSaipeLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.saipeLayerToggled({ visible }));
     this.updateMapUrl({ saipeVisible: visible });
+  }
+
+  protected togglePopulationLayer(visible: boolean): void {
+    this.store.dispatch(MapsActions.populationLayerToggled({ visible }));
+    this.updateMapUrl({ populationVisible: visible });
+  }
+
+  protected changePopulationMeasure(value: string): void {
+    const measure = value as PopulationEstimateMeasure;
+    const year =
+      measure === 'POPULATION'
+        ? this.populationEstimateYear
+        : Math.max(2021, this.populationEstimateYear);
+
+    this.store.dispatch(
+      MapsActions.populationEstimatesConfigurationChanged({
+        measure,
+        year,
+      }),
+    );
+
+    this.updateMapUrl({
+      populationMeasure: measure,
+      populationYear: year,
+    });
+  }
+
+  protected changePopulationYear(value: string): void {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed)) {
+      return;
+    }
+
+    const minimum =
+      this.populationEstimateMeasure === 'POPULATION' ? 2020 : 2021;
+    const year = Math.max(minimum, Math.min(2025, parsed));
+
+    this.store.dispatch(
+      MapsActions.populationEstimatesConfigurationChanged({
+        measure: this.populationEstimateMeasure,
+        year,
+      }),
+    );
+
+    this.updateMapUrl({
+      populationMeasure: this.populationEstimateMeasure,
+      populationYear: year,
+    });
   }
 
   protected toggleResearchCoverageLayer(visible: boolean): void {
@@ -878,6 +1008,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           workplaceVisible: this.toVisibleState(params.get('workplace')),
           hydrographyVisible: this.toVisibleState(params.get('hydrography')),
           saipeVisible: this.toVisibleState(params.get('saipe')),
+          populationVisible: this.toVisibleState(params.get('population')),
+          populationMeasure: this.toPopulationMeasure(
+            params.get('populationMeasure'),
+          ),
+          populationYear: this.toPopulationYear(params.get('populationYear')),
           researchCoverageVisible: this.toVisibleState(params.get('research')),
           featureId: params.get('feature'),
         })),
@@ -890,6 +1025,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             previous.workplaceVisible === current.workplaceVisible &&
             previous.hydrographyVisible === current.hydrographyVisible &&
             previous.saipeVisible === current.saipeVisible &&
+            previous.populationVisible === current.populationVisible &&
+            previous.populationMeasure === current.populationMeasure &&
+            previous.populationYear === current.populationYear &&
             previous.researchCoverageVisible ===
               current.researchCoverageVisible &&
             previous.featureId === current.featureId,
@@ -905,6 +1043,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           workplaceVisible,
           hydrographyVisible,
           saipeVisible,
+          populationVisible,
+          populationMeasure,
+          populationYear,
           researchCoverageVisible,
           featureId,
         }) => {
@@ -954,6 +1095,30 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             );
           }
 
+          if (populationVisible !== null) {
+            this.store.dispatch(
+              MapsActions.populationLayerToggled({
+                visible: populationVisible,
+              }),
+            );
+          }
+
+          if (populationMeasure !== null || populationYear !== null) {
+            const measure = populationMeasure ?? this.populationEstimateMeasure;
+            const requestedYear = populationYear ?? this.populationEstimateYear;
+            const year =
+              measure === 'POPULATION'
+                ? requestedYear
+                : Math.max(2021, requestedYear);
+
+            this.store.dispatch(
+              MapsActions.populationEstimatesConfigurationChanged({
+                measure,
+                year,
+              }),
+            );
+          }
+
           if (researchCoverageVisible !== null) {
             this.store.dispatch(
               MapsActions.researchCoverageLayerToggled({
@@ -977,48 +1142,67 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     workplaceVisible?: boolean;
     hydrographyVisible?: boolean;
     saipeVisible?: boolean;
+    populationVisible?: boolean;
+    populationMeasure?: PopulationEstimateMeasure;
+    populationYear?: number;
     researchCoverageVisible?: boolean;
     featureId?: string | null;
   }): void {
+    const queryParams: Record<string, string | number | null> = {};
+
+    if (options.geography !== undefined) {
+      queryParams['area'] = options.geography;
+    }
+
+    if (options.tigerVisible !== undefined) {
+      queryParams['tiger'] = this.toLayerParam(options.tigerVisible);
+    }
+
+    if (options.featureId !== undefined) {
+      queryParams['feature'] = options.featureId ?? null;
+    }
+
+    if (options.earthquakeVisible !== undefined) {
+      queryParams['earthquakes'] = this.toLayerParam(options.earthquakeVisible);
+    }
+
+    if (options.lodesVisible !== undefined) {
+      queryParams['lodes'] = this.toLayerParam(options.lodesVisible);
+    }
+
+    if (options.workplaceVisible !== undefined) {
+      queryParams['workplace'] = this.toLayerParam(options.workplaceVisible);
+    }
+
+    if (options.hydrographyVisible !== undefined) {
+      queryParams['hydrography'] = this.toLayerParam(
+        options.hydrographyVisible,
+      );
+    }
+
+    if (options.saipeVisible !== undefined) {
+      queryParams['saipe'] = this.toLayerParam(options.saipeVisible);
+    }
+
+    if (options.populationVisible !== undefined) {
+      queryParams['population'] = options.populationVisible ? 'on' : 'off';
+    }
+
+    if (options.populationMeasure !== undefined) {
+      queryParams['populationMeasure'] = options.populationMeasure;
+    }
+
+    if (options.populationYear !== undefined) {
+      queryParams['populationYear'] = options.populationYear;
+    }
+
+    if (options.researchCoverageVisible !== undefined) {
+      queryParams['research'] = options.researchCoverageVisible ? 'on' : 'off';
+    }
+
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {
-        area: options.geography === undefined ? undefined : options.geography,
-        tiger:
-          options.tigerVisible === undefined
-            ? undefined
-            : this.toLayerParam(options.tigerVisible),
-        feature:
-          options.featureId === undefined
-            ? undefined
-            : (options.featureId ?? null),
-        earthquakes:
-          options.earthquakeVisible === undefined
-            ? undefined
-            : this.toLayerParam(options.earthquakeVisible),
-        lodes:
-          options.lodesVisible === undefined
-            ? undefined
-            : this.toLayerParam(options.lodesVisible),
-        workplace:
-          options.workplaceVisible === undefined
-            ? undefined
-            : this.toLayerParam(options.workplaceVisible),
-        hydrography:
-          options.hydrographyVisible === undefined
-            ? undefined
-            : this.toLayerParam(options.hydrographyVisible),
-        saipe:
-          options.saipeVisible === undefined
-            ? undefined
-            : this.toLayerParam(options.saipeVisible),
-        research:
-          options.researchCoverageVisible === undefined
-            ? undefined
-            : options.researchCoverageVisible
-              ? 'on'
-              : 'off',
-      },
+      queryParams,
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
@@ -1038,6 +1222,28 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   private toLayerParam(visible: boolean): string | null {
     return visible ? null : 'off';
+  }
+
+  private toPopulationMeasure(
+    value: string | null,
+  ): PopulationEstimateMeasure | null {
+    if (
+      value === 'POPULATION' ||
+      value === 'ANNUAL_CHANGE' ||
+      value === 'ANNUAL_GROWTH_RATE'
+    ) {
+      return value;
+    }
+
+    return null;
+  }
+
+  private toPopulationYear(value: string | null): number | null {
+    const parsed = Number(value);
+
+    return Number.isInteger(parsed) && parsed >= 2020 && parsed <= 2025
+      ? parsed
+      : null;
   }
 
   private isOverlayStale(staleAfter: string): boolean {
@@ -1228,6 +1434,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.renderLodesSampleLayer();
     this.renderWorkplaceLayer();
     this.renderSaipeChoropleth();
+    this.renderPopulationEstimates();
     this.renderResearchCoverage();
     this.renderResearchCoverageSelection();
     this.renderHydrographyLayer();
@@ -1711,6 +1918,71 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.applyLayerVisibility();
   }
 
+  private renderPopulationEstimates(): void {
+    if (!this.map || !this.mapStyleReady || !this.pendingPopulationEstimates) {
+      return;
+    }
+
+    const overlay = this.pendingPopulationEstimates;
+    const data = overlay.geoJson as GeoJsonFeatureCollection;
+    const scale = buildPopulationEstimateScale(overlay);
+
+    const existingSource = this.map.getSource(
+      'population-estimates-county',
+    ) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+
+      if (this.map.getLayer('population-estimates-county-fill')) {
+        this.map.setPaintProperty(
+          'population-estimates-county-fill',
+          'fill-color',
+          scale.fillColor,
+        );
+      }
+
+      this.applyLayerVisibility();
+      return;
+    }
+
+    this.map.addSource('population-estimates-county', {
+      type: 'geojson',
+      data,
+    });
+
+    this.map.addLayer(
+      {
+        id: 'population-estimates-county-fill',
+        type: 'fill',
+        source: 'population-estimates-county',
+        layout: {
+          visibility: this.populationVisible ? 'visible' : 'none',
+        },
+        paint: {
+          'fill-color': scale.fillColor,
+          'fill-opacity': 0.72,
+        },
+      },
+      'census-area-fill',
+    );
+
+    this.map.addLayer({
+      id: 'population-estimates-county-outline',
+      type: 'line',
+      source: 'population-estimates-county',
+      layout: {
+        visibility: this.populationVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'line-color': '#334155',
+        'line-width': 1.25,
+      },
+    });
+
+    this.applyLayerVisibility();
+  }
+
   /**
    * Draws the current viewport's bounded publisher spatial evidence.
    *
@@ -2187,6 +2459,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       lodes: this.lodesVisible,
       workplace: this.workplaceVisible,
       saipe: this.saipeVisible,
+      population: this.populationVisible,
       research: this.researchCoverageVisible,
       hydrography: this.hydrographyVisible,
     };

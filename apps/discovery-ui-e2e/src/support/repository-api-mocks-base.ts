@@ -123,14 +123,27 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
           visibleByDefault: true,
         },
         {
-          id: 'saipe-county-poverty',
+          id: `saipe-county-poverty-${geography
+            .toLowerCase()
+            .replaceAll(' ', '-')}`,
           label: `2023 SAIPE county poverty - ${geography}`,
           layerType: 'CENSUS_CHOROPLETH',
           sourceUrl:
             'https://www.census.gov/data/datasets/2023/demo-saipe/2023-state-and-county.html',
           attribution:
             'U.S. Census Bureau Small Area Income and Poverty Estimates',
-          visibleByDefault: true,
+          visibleByDefault: false,
+        },
+        {
+          id: `population-estimates-county-${geography
+            .toLowerCase()
+            .replaceAll(' ', '-')}`,
+          label: `Vintage 2025 county Population Estimates - ${geography}`,
+          layerType: 'CENSUS_CHOROPLETH',
+          sourceUrl:
+            'https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/counties/totals/co-est2025-alldata.csv',
+          attribution: 'U.S. Census Bureau Population Estimates Program',
+          visibleByDefault: false,
         },
         {
           id: 'usgs-3hp-hydrography',
@@ -240,6 +253,154 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
       await route.fulfill({
         contentType: 'application/json',
         json: lodesWorkplaceOverlay(geography),
+      });
+    },
+  );
+
+  await page.route(
+    `**/api/overlays/census/population-estimates**`,
+    async (route) => {
+      const url = new URL(route.request().url());
+      const geography = url.searchParams.get('geography') ?? 'North Dakota';
+      const measure = url.searchParams.get('measure') ?? 'ANNUAL_GROWTH_RATE';
+      const year = Number(url.searchParams.get('year') ?? 2025);
+
+      const series = [
+        {
+          fips: '38001',
+          name: 'Adams County',
+          population: {
+            2020: 2200,
+            2021: 2180,
+            2022: 2160,
+            2023: 2140,
+            2024: 2100,
+            2025: 2050,
+          },
+          geometry: [
+            [-102.7, 45.9],
+            [-102.0, 45.9],
+            [-102.0, 46.4],
+            [-102.7, 46.4],
+            [-102.7, 45.9],
+          ],
+        },
+        {
+          fips: '38017',
+          name: 'Cass County',
+          population: {
+            2020: 180000,
+            2021: 183000,
+            2022: 186000,
+            2023: 188000,
+            2024: 190000,
+            2025: 197600,
+          },
+          geometry: [
+            [-97.8, 46.6],
+            [-96.8, 46.6],
+            [-96.8, 47.2],
+            [-97.8, 47.2],
+            [-97.8, 46.6],
+          ],
+        },
+        {
+          fips: '38035',
+          name: 'Grand Forks County',
+          population: {
+            2020: 72000,
+            2021: 72500,
+            2022: 72800,
+            2023: 73000,
+            2024: 73000,
+            2025: 73000,
+          },
+          geometry: [
+            [-98.1, 47.7],
+            [-97.0, 47.7],
+            [-97.0, 48.4],
+            [-98.1, 48.4],
+            [-98.1, 47.7],
+          ],
+        },
+      ] as const;
+
+      const priorYear = measure === 'POPULATION' ? null : year - 1;
+
+      const counties = series.map((county) => {
+        const population =
+          county.population[year as keyof typeof county.population];
+        const priorPopulation =
+          priorYear === null
+            ? undefined
+            : county.population[priorYear as keyof typeof county.population];
+
+        let value = Number(population);
+
+        if (measure === 'ANNUAL_CHANGE') {
+          value = population - Number(priorPopulation);
+        } else if (measure === 'ANNUAL_GROWTH_RATE') {
+          value =
+            ((population - Number(priorPopulation)) / Number(priorPopulation)) *
+            100;
+        }
+
+        return {
+          fips: county.fips,
+          name: county.name,
+          value,
+          population,
+          ...(priorPopulation === undefined ? {} : { priorPopulation }),
+        };
+      });
+
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          source: 'U.S. Census Bureau Population Estimates Program',
+          sourceUrl:
+            'https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/counties/totals/co-est2025-alldata.csv',
+          attribution: 'U.S. Census Bureau Population Estimates Program',
+          geography,
+          sourceVintage: 2025,
+          sourceSha256: 'a'.repeat(64),
+          capturedAt: '2026-09-05',
+          geometryVintage: 2025,
+          geometrySourceUrl: 'https://tigerweb.geo.census.gov/',
+          geometryAttribution: 'U.S. Census Bureau TIGERweb',
+          measure,
+          measureLabel:
+            measure === 'POPULATION'
+              ? 'Resident population estimate'
+              : measure === 'ANNUAL_CHANGE'
+                ? 'Annual population change'
+                : 'Annual population growth rate',
+          units: measure === 'ANNUAL_GROWTH_RATE' ? 'percent' : 'people',
+          year,
+          ...(priorYear === null ? {} : { priorYear }),
+          supportedPopulationYears: [2020, 2021, 2022, 2023, 2024, 2025],
+          supportedChangeYears: [2021, 2022, 2023, 2024, 2025],
+          counties,
+          geoJson: {
+            type: 'FeatureCollection',
+            features: series.map((county, index) => ({
+              type: 'Feature',
+              properties: {
+                GEOID: county.fips,
+                fips: county.fips,
+                name: county.name,
+                value: counties[index].value,
+                population: counties[index].population,
+                measure,
+                year,
+              },
+              geometry: {
+                type: 'Polygon',
+                coordinates: [county.geometry],
+              },
+            })),
+          },
+        },
       });
     },
   );

@@ -3,6 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import {
   catchError,
+  concat,
   filter,
   map,
   mergeMap,
@@ -10,9 +11,18 @@ import {
   switchMap,
   withLatestFrom,
 } from 'rxjs';
-import { parseRepositoryError, RepositoryMapsApi } from 'repository-api-client';
+import {
+  parseRepositoryError,
+  RepositoryMapsApi,
+  type PopulationEstimateMeasure,
+} from 'repository-api-client';
 import { MapsActions } from './maps.actions';
-import { selectSelectedGeography } from './maps.selectors';
+import {
+  selectMapLayers,
+  selectPopulationEstimateMeasure,
+  selectPopulationEstimateYear,
+  selectSelectedGeography,
+} from './maps.selectors';
 
 function datasetIdForGeography(geography: string): string {
   return `tiger-line-${geography.toLowerCase().replace(/\s+/g, '-')}-2025`;
@@ -169,6 +179,43 @@ export class MapsEffects {
    * viewport the same latest-request-wins semantics as the rest of Maps: a slow request for the
    * previous pan/zoom can never overwrite the response for the current viewport.
    */
+  readonly loadPopulationEstimatesForSelectedArea$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.mapLayersLoaded),
+      filter(({ layers }) =>
+        layers.some((layer) =>
+          layer.id.startsWith('population-estimates-county-'),
+        ),
+      ),
+      withLatestFrom(
+        this.store.select(selectSelectedGeography),
+        this.store.select(selectPopulationEstimateMeasure),
+        this.store.select(selectPopulationEstimateYear),
+      ),
+      switchMap(([, geography, measure, year]) =>
+        this.populationEstimatesRequest(geography, measure, year),
+      ),
+    ),
+  );
+
+  readonly reloadPopulationEstimatesForConfiguration$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.populationEstimatesConfigurationChanged),
+      withLatestFrom(
+        this.store.select(selectSelectedGeography),
+        this.store.select(selectMapLayers),
+      ),
+      filter(([, , layers]) =>
+        layers.some((layer) =>
+          layer.id.startsWith('population-estimates-county-'),
+        ),
+      ),
+      switchMap(([{ measure, year }, geography]) =>
+        this.populationEstimatesRequest(geography, measure, year),
+      ),
+    ),
+  );
+
   readonly loadResearchCoverage$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MapsActions.researchCoverageRequested),
@@ -189,4 +236,32 @@ export class MapsEffects {
       ),
     ),
   );
+  private populationEstimatesRequest(
+    geography: string,
+    measure: PopulationEstimateMeasure,
+    year: number,
+  ) {
+    return concat(
+      of(MapsActions.populationEstimatesRequested()),
+      this.mapsApi
+        .getPopulationEstimatesChoropleth(geography, measure, year)
+        .pipe(
+          map((populationEstimatesChoropleth) =>
+            MapsActions.populationEstimatesLoaded({
+              populationEstimatesChoropleth,
+            }),
+          ),
+          catchError((error: unknown) =>
+            of(
+              MapsActions.populationEstimatesFailed({
+                error: parseRepositoryError(
+                  error,
+                  `County population estimates for ${geography} failed to load.`,
+                ),
+              }),
+            ),
+          ),
+        ),
+    );
+  }
 }

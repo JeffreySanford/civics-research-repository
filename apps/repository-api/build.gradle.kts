@@ -100,6 +100,7 @@ tasks.register("resolveDependencies") {
 
 dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("org.apache.commons:commons-csv:1.14.1")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("jakarta.transaction:jakarta.transaction-api")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")

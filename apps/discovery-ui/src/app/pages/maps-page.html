@@ -105,7 +105,8 @@
                    category, the control count is two baseline LODES controls plus optional SAIPE. -->
               @if (layers$ | async; as layers) {
               <span class="layer-category-count"
-                >{{ (saipeAvailable$ | async) ? 3 : 2 }} layers</span
+                >{{ 2 + ((saipeAvailable$ | async) ? 1 : 0) +
+                ((populationAvailable$ | async) ? 1 : 0) }} layers</span
               >
               } @else {
               <span class="layer-category-count">2 layers</span>
@@ -160,8 +161,7 @@
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
             </span>
-            @for (layer of layers$ | async; track layer.id) { @if
-            (layer.layerType === 'CENSUS_CHOROPLETH') {
+            @if (saipeAvailable$ | async) {
             <span class="layer-toggle-row">
               <label class="layer-toggle">
                 <input
@@ -184,7 +184,86 @@
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
             </span>
-            } }
+            } @if (populationAvailable$ | async) {
+            <div class="layer-config-group">
+              <span class="layer-toggle-row">
+                <label class="layer-toggle">
+                  <input
+                    type="checkbox"
+                    data-testid="map-layer-population"
+                    [checked]="populationVisible$ | async"
+                    (change)="togglePopulationLayer($any($event.target).checked)"
+                  />
+                  <span class="layer-toggle-label">County population</span>
+                </label>
+
+                <button
+                  type="button"
+                  class="layer-info-button"
+                  mat-icon-button
+                  data-testid="map-layer-population-info"
+                  [matTooltip]="layerTooltips.population"
+                  matTooltipPosition="above"
+                  aria-label="About County population layer"
+                >
+                  <mat-icon aria-hidden="true">info_outline</mat-icon>
+                </button>
+              </span>
+
+              @if (populationVisible$ | async) { @if (
+              populationEstimateMeasure$ | async; as populationMeasure ) { @if (
+              populationEstimateYear$ | async; as populationYear ) {
+              <div class="population-config" data-testid="population-config">
+                <label>
+                  Measure
+                  <select
+                    #populationMeasureSelect
+                    data-testid="population-measure"
+                    [value]="populationMeasure"
+                    (change)="
+                            changePopulationMeasure(
+                              populationMeasureSelect.value
+                            )
+                          "
+                  >
+                    <option value="POPULATION">Population</option>
+                    <option value="ANNUAL_CHANGE">Annual numeric change</option>
+                    <option value="ANNUAL_GROWTH_RATE">
+                      Annual growth rate
+                    </option>
+                  </select>
+                </label>
+
+                <label>
+                  Year
+                  <select
+                    #populationYearSelect
+                    data-testid="population-year"
+                    (change)="
+                            changePopulationYear(populationYearSelect.value)
+                          "
+                  >
+                    @for ( year of (populationMeasure === 'POPULATION' ?
+                    populationYears : populationChangeYears); track year ) {
+                    <option [value]="year" [selected]="year === populationYear">
+                      {{ year }}
+                    </option>
+                    }
+                  </select>
+                </label>
+
+                @if (populationEstimatesLoading$ | async) {
+                <span
+                  class="feature-hint population-config-status"
+                  role="status"
+                >
+                  Updating County population…
+                </span>
+                }
+              </div>
+              } } }
+            </div>
+            }
           </div>
         </details>
 
@@ -402,6 +481,49 @@
           <li>
             <span class="swatch saipe"></span>
             SAIPE county poverty ({{ saipe.counties.length }} counties)
+          </li>
+          } } @if (populationVisible$ | async) { @if (
+          populationEstimatesChoropleth$ | async; as population ) { @if
+          (populationScale$ | async; as populationScale) {
+          <li class="population-legend-entry">
+            <span class="swatch population"></span>
+
+            <div class="population-legend-body">
+              <strong>
+                County population — {{ population.measureLabel }}
+              </strong>
+
+              <span>
+                @if (population.priorYear) { {{ population.priorYear }}–{{
+                population.year }} } @else { {{ population.year }} } · {{
+                population.units }} · PEP Vintage {{ population.sourceVintage }}
+              </span>
+
+              <div
+                class="population-breaks"
+                aria-label="County population color scale"
+              >
+                @for ( populationBreak of populationScale.breaks; track
+                populationBreak.label ) {
+                <span class="population-break">
+                  <span
+                    class="swatch population-break-swatch"
+                    [style.background-color]="populationBreak.color"
+                  ></span>
+                  {{ populationBreak.label }}
+                </span>
+                }
+              </div>
+
+              <span class="population-legend-note">
+                {{ populationScale.description }}
+              </span>
+            </div>
+          </li>
+          } } @else if (populationEstimatesError$ | async) {
+          <li>
+            <span class="swatch population"></span>
+            County population unavailable
           </li>
           } } @if (researchCoverageVisible$ | async) { @if
           (researchCoverageSummary$ | async; as researchCoverage) {
@@ -724,6 +846,16 @@
           "
           (featureSelected)="selectResearchCoverageFeature($event)"
           (selectionCleared)="clearResearchCoverageSelection()"
+        />
+      </li>
+      } @if (populationVisible$ | async) {
+      <li>
+        <app-population-estimates-summary
+          [choropleth]="
+            (populationEstimatesChoropleth$ | async) ?? null
+          "
+          [loading]="(populationEstimatesLoading$ | async) ?? false"
+          [error]="(populationEstimatesError$ | async) ?? null"
         />
       </li>
       } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {

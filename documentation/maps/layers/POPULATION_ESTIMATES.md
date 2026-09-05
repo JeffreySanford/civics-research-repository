@@ -207,3 +207,55 @@ Requirements:
 - failures/missing values remain explicit rather than manufactured;
 - the implementation establishes a reusable pattern for later county thematic layers such as CBP/BDS/Building Permits;
 - normal Maps/browser/accessibility gates pass.
+
+## Implementation status
+
+Implemented for issue #67.
+
+The delivered slice uses the pinned Census Population Estimates Program
+`CO-EST2025-ALLDATA` Vintage 2025 county series.
+
+Implementation characteristics:
+
+- 3,144 validated county/county-equivalent GEOIDs from the pinned source;
+- source file identity, Windows-1252 encoding, capture date, SHA-256 checksum,
+  parsed row counts, and supported years retained as provenance;
+- Population for 2020-2025;
+- Annual numeric change for 2021-2025;
+- Annual growth rate for 2021-2025;
+- Annual change cross-validated against the published `NPOPCHG` fields;
+- no growth rate manufactured when the prior-year population is zero;
+- authoritative 2025 Census county geometry reused through
+  `AdministrativeGeometryService`;
+- strict GEOID value/geometry joins with duplicate and missing geometry/value
+  failures kept explicit;
+- SAIPE and Population Estimates capabilities advertised independently;
+- one `County population` conceptual layer with measure/year configuration;
+- default measure is latest-year annual growth rate;
+- Population uses deterministic sequential county-value breaks;
+- annual change and growth use a zero-centered diverging scale;
+- the same computed break contract drives MapLibre and the textual legend;
+- measure, year, and visibility round-trip through URL state;
+- semantic county table exposes FIPS, selected value, current/prior population,
+  units, year/year pair, and source/geometry provenance;
+- Storybook populated/population/one-value/empty/loading/error states;
+- axe coverage for populated, loading, and unavailable states;
+- Playwright evidence for control-to-map/table/URL equivalence and MapLibre
+  visibility.
+
+### Accepted evidence
+
+- Angular unit/axe: 197 passed.
+- Storybook interactions: 20 passed.
+- Focused Chromium Population Estimates + map-layer visibility: 13 passed,
+  retry-free.
+- Population semantic/browser evidence: 6 passed across Chromium, Firefox,
+  and WebKit, retry-free.
+- Full comparison/WCAG/Section 508 browser gate: 346 passed, 26 intentionally
+  skipped.
+- Production Angular build: successful.
+- Repository API tests and runtime image build: successful.
+- OpenAPI lint/generation/check: successful.
+
+This work does not modify the accepted C2/C2.1 corpus, projection identity, or
+search timing evidence.

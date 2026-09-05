@@ -46,6 +46,9 @@ class MapsControllerTest {
     private SaipeCountyChoroplethService saipeCountyChoroplethService;
 
     @MockitoBean
+    private PopulationEstimatesService populationEstimatesService;
+
+    @MockitoBean
     private UsgsHydrographyTileService usgsHydrographyTileService;
 
     @Test
@@ -85,6 +88,138 @@ class MapsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value("north-dakota"))
                 .andExpect(jsonPath("$[0].defaultZoom").value(6.0));
+    }
+
+    @Test
+    void appliesPopulationEstimateDefaults() throws Exception {
+        var response =
+                new org.civicsrepo.generated.dto.PopulationEstimatesChoropleth(
+                        "U.S. Census Bureau Population Estimates Program",
+                        URI.create("https://example.test/co-est2025-alldata.csv"),
+                        "U.S. Census Bureau Population Estimates Program",
+                        "North Dakota",
+                        2025,
+                        "4f5a499d851e2cb48fd7a5405e5a9235453a8a66933657aacd10df0e264f35d5",
+                        java.time.LocalDate.parse("2026-09-05"),
+                        2025,
+                        URI.create("https://example.test/tigerweb/2025/counties"),
+                        "U.S. Census Bureau TIGERweb",
+                        org.civicsrepo.generated.dto.PopulationEstimateMeasure
+                                .ANNUAL_GROWTH_RATE,
+                        "Annual population growth rate",
+                        "percent",
+                        2025,
+                        List.of(2020, 2021, 2022, 2023, 2024, 2025),
+                        List.of(2021, 2022, 2023, 2024, 2025),
+                        java.util.Map.of(
+                                "type",
+                                "FeatureCollection",
+                                "features",
+                                List.of()),
+                        List.of());
+
+        response.priorYear(2024);
+
+        given(
+                        populationEstimatesService.findChoropleth(
+                                "North Dakota",
+                                org.civicsrepo.generated.dto.PopulationEstimateMeasure
+                                        .ANNUAL_GROWTH_RATE,
+                                2025))
+                .willReturn(response);
+
+        mockMvc.perform(
+                        get("/overlays/census/population-estimates"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.geography").value("North Dakota"))
+                .andExpect(
+                        jsonPath("$.measure")
+                                .value("ANNUAL_GROWTH_RATE"))
+                .andExpect(jsonPath("$.year").value(2025))
+                .andExpect(jsonPath("$.priorYear").value(2024))
+                .andExpect(jsonPath("$.units").value("percent"));
+
+        verify(populationEstimatesService)
+                .findChoropleth(
+                        "North Dakota",
+                        org.civicsrepo.generated.dto.PopulationEstimateMeasure
+                                .ANNUAL_GROWTH_RATE,
+                        2025);
+    }
+
+    @Test
+    void bindsPopulationEstimateConfiguration() throws Exception {
+        var response =
+                new org.civicsrepo.generated.dto.PopulationEstimatesChoropleth(
+                        "U.S. Census Bureau Population Estimates Program",
+                        URI.create("https://example.test/co-est2025-alldata.csv"),
+                        "U.S. Census Bureau Population Estimates Program",
+                        "California",
+                        2025,
+                        "4f5a499d851e2cb48fd7a5405e5a9235453a8a66933657aacd10df0e264f35d5",
+                        java.time.LocalDate.parse("2026-09-05"),
+                        2025,
+                        URI.create("https://example.test/tigerweb/2025/counties"),
+                        "U.S. Census Bureau TIGERweb",
+                        org.civicsrepo.generated.dto.PopulationEstimateMeasure
+                                .POPULATION,
+                        "Resident population estimate",
+                        "people",
+                        2024,
+                        List.of(2020, 2021, 2022, 2023, 2024, 2025),
+                        List.of(2021, 2022, 2023, 2024, 2025),
+                        java.util.Map.of(
+                                "type",
+                                "FeatureCollection",
+                                "features",
+                                List.of()),
+                        List.of());
+
+        given(
+                        populationEstimatesService.findChoropleth(
+                                "California",
+                                org.civicsrepo.generated.dto.PopulationEstimateMeasure
+                                        .POPULATION,
+                                2024))
+                .willReturn(response);
+
+        mockMvc.perform(
+                        get("/overlays/census/population-estimates")
+                                .param("geography", "California")
+                                .param("measure", "POPULATION")
+                                .param("year", "2024"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.geography").value("California"))
+                .andExpect(jsonPath("$.measure").value("POPULATION"))
+                .andExpect(jsonPath("$.year").value(2024));
+
+        verify(populationEstimatesService)
+                .findChoropleth(
+                        "California",
+                        org.civicsrepo.generated.dto.PopulationEstimateMeasure
+                                .POPULATION,
+                        2024);
+    }
+
+    @Test
+    void returnsBadRequestForUnsupportedPopulationMeasureYear()
+            throws Exception {
+        given(
+                        populationEstimatesService.findChoropleth(
+                                "North Dakota",
+                                org.civicsrepo.generated.dto.PopulationEstimateMeasure
+                                        .ANNUAL_CHANGE,
+                                2020))
+                .willThrow(
+                        new PopulationEstimatesService.InvalidQueryException(
+                                "Year 2020 is not supported for population estimate measure ANNUAL_CHANGE."));
+
+        mockMvc.perform(
+                        get("/overlays/census/population-estimates")
+                                .param("measure", "ANNUAL_CHANGE")
+                                .param("year", "2020"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
 
     @Test

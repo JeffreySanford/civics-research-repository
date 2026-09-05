@@ -7,6 +7,8 @@ export const REGISTERED_MAP_LAYER_IDS = [
   'lodes-workplace-jobs-circles',
   'saipe-county-fill',
   'saipe-county-outline',
+  'population-estimates-county-fill',
+  'population-estimates-county-outline',
   'repository-research-coverage-clusters',
   'repository-research-coverage-cluster-count',
   'repository-research-coverage-points',
@@ -75,6 +77,19 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
     accessibleListText: 'SAIPE 2023 county poverty - North Dakota',
     legendText: /SAIPE county poverty/,
     urlOffPattern: /saipe=off/,
+  },
+  {
+    name: 'County population',
+    categoryTestId: 'map-layer-category-community-economy',
+    toggleTestId: 'map-layer-population',
+    mapLayerIds: [
+      'population-estimates-county-fill',
+      'population-estimates-county-outline',
+    ],
+    accessibleListText:
+      'Vintage 2025 county Population Estimates - North Dakota',
+    legendText: /County population — Annual population growth rate/,
+    urlOffPattern: /population=off/,
   },
   {
     name: 'Data.gov research extents',
