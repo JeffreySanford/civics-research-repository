@@ -87,11 +87,27 @@ import {
   selectWorkplaceVisible,
   selectSelectedLodesFlow,
   selectSelectedLodesFlowId,
+  selectTerrainAvailable,
+  selectTerrainLayer,
+  selectTerrainMode,
+  selectTerrainVisible,
   selectTigerVisible,
 } from '../state/maps/maps.selectors';
 import type { ResearchCoverageSummary } from '../state/maps/research-coverage';
+import {
+  DEFAULT_USGS_TERRAIN_MODE,
+  isUsgsTerrainMode,
+  USGS_3DEP_TERRAIN_TILE_TEMPLATE,
+  usgsTerrainModeLabel,
+  withUsgsTerrainMode,
+  type UsgsTerrainMode,
+} from '../state/maps/terrain';
 import { PopulationEstimatesSummaryComponent } from './population-estimates-summary.component';
 import { ResearchCoverageSummaryComponent } from './research-coverage-summary.component';
+import {
+  TerrainLayerStatusComponent,
+  type TerrainLoadStatus,
+} from './terrain-layer-status.component';
 import {
   buildPopulationEstimateScale,
   configureMapLibreWorker,
@@ -179,6 +195,7 @@ type ResearchCoverageFeatureCollection = {
     MatTooltipModule,
     PopulationEstimatesSummaryComponent,
     ResearchCoverageSummaryComponent,
+    TerrainLayerStatusComponent,
     RouterLink,
   ],
   templateUrl: './maps-page.html',
@@ -203,6 +220,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingPopulationEstimates: PopulationEstimatesChoropleth | null =
     null;
   private pendingHydrographyLayer: MapLayer | null = null;
+  private pendingTerrainLayer: MapLayer | null = null;
   private pendingResearchCoverage: ResearchCoverageSummary | null = null;
   /** True once the MapLibre style is parsed; overlays must not wait for raster tiles. */
   private mapStyleReady = false;
@@ -210,6 +228,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private earthquakeVisible = false;
   private lodesVisible = false;
   private hydrographyVisible = false;
+  private terrainVisible = false;
+  private terrainMode: UsgsTerrainMode = DEFAULT_USGS_TERRAIN_MODE;
+  private renderedTerrainMode: UsgsTerrainMode | null = null;
   private saipeVisible = false;
   private populationVisible = false;
   private populationEstimateMeasure: PopulationEstimateMeasure =
@@ -233,6 +254,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private researchCoverageRefreshTimer: ReturnType<typeof setTimeout> | null =
     null;
   protected readonly areaSyncAnnouncement = signal<string | null>(null);
+  protected readonly terrainStatus = signal<TerrainLoadStatus>('idle');
+  protected readonly terrainModeLabel = usgsTerrainModeLabel;
   /**
    * How the map is built, on a control the reader has to ask.
    *
@@ -263,6 +286,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       'Shows spatial extents declared in Data.gov metadata. Map points are deterministic display anchors for those extents, not observation sites or data-collection locations. Publisher, laboratory, author, and institution addresses are never substituted for missing research geometry.',
     hydrography:
       'Adds USGS 3D Hydrography Program surface-water context from The National Map. Environmental geography, not Census boundaries.',
+    terrain:
+      'Adds USGS 3DEP terrain as subordinate geographic context. Choose hillshade, tinted elevation, or slope without changing the research and economic data represented by the vector layers.',
     earthquake:
       'Plots recent earthquake epicenters from the USGS FDSN feed near the selected area. Updates from the live API when available.',
   } as const;
@@ -286,6 +311,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly hydrographyLayer$ = this.store.select(
     selectHydrographyLayer,
   );
+  protected readonly terrainLayer$ = this.store.select(selectTerrainLayer);
+  protected readonly terrainAvailable$ = this.store.select(
+    selectTerrainAvailable,
+  );
+  protected readonly terrainVisible$ = this.store.select(selectTerrainVisible);
+  protected readonly terrainMode$ = this.store.select(selectTerrainMode);
   protected readonly lodesFlowOverlay$ = this.store.select(
     selectLodesFlowOverlay,
   );
@@ -357,6 +388,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.store.select(selectEarthquakeVisible),
     this.store.select(selectLodesVisible),
     this.store.select(selectHydrographyVisible),
+    this.store.select(selectTerrainVisible),
     this.store.select(selectSaipeVisible),
     this.store.select(selectPopulationVisible),
   ]).pipe(
@@ -367,6 +399,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         earthquakeVisible,
         lodesVisible,
         hydrographyVisible,
+        terrainVisible,
         saipeVisible,
         populationVisible,
       ]) =>
@@ -387,7 +420,13 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             case 'USGS_EARTHQUAKE':
               return earthquakeVisible;
             case 'USGS_REFERENCE':
-              return hydrographyVisible;
+              if (layer.id === 'usgs-3hp-hydrography') {
+                return hydrographyVisible;
+              }
+              if (layer.id === 'usgs-3dep-terrain') {
+                return terrainVisible;
+              }
+              return false;
             default:
               return true;
           }
@@ -536,6 +575,27 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         this.renderHydrographyLayer();
       });
 
+    this.terrainLayer$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((layer) => {
+        this.pendingTerrainLayer = layer ?? null;
+        if (!layer) {
+          this.terrainStatus.set('idle');
+        }
+        this.renderTerrainLayer();
+      });
+
+    this.terrainMode$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((mode) => {
+        const changed = mode !== this.terrainMode;
+        this.terrainMode = mode;
+        if (changed && this.terrainVisible) {
+          this.terrainStatus.set('loading');
+        }
+        this.renderTerrainLayer();
+      });
+
     this.censusAreaBoundaries$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((boundaries) => {
@@ -587,6 +647,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.lodesVisible$,
       this.workplaceVisible$,
       this.hydrographyVisible$,
+      this.terrainVisible$,
       this.saipeVisible$,
       this.populationVisible$,
       this.researchCoverageVisible$,
@@ -599,18 +660,29 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           lodesVisible,
           workplaceVisible,
           hydrographyVisible,
+          terrainVisible,
           saipeVisible,
           populationVisible,
           researchCoverageVisible,
         ]) => {
+          const terrainTurnedOn = terrainVisible && !this.terrainVisible;
           this.tigerVisible = tigerVisible;
           this.workplaceVisible = workplaceVisible;
           this.earthquakeVisible = earthquakeVisible;
           this.lodesVisible = lodesVisible;
           this.hydrographyVisible = hydrographyVisible;
+          this.terrainVisible = terrainVisible;
           this.saipeVisible = saipeVisible;
           this.populationVisible = populationVisible;
           this.researchCoverageVisible = researchCoverageVisible;
+
+          if (terrainTurnedOn) {
+            this.terrainStatus.set('loading');
+            this.renderTerrainLayer();
+          } else if (!terrainVisible) {
+            this.terrainStatus.set('idle');
+          }
+
           this.applyLayerVisibility();
         },
       );
@@ -654,6 +726,22 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected toggleHydrographyLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.hydrographyLayerToggled({ visible }));
     this.updateMapUrl({ hydrographyVisible: visible });
+  }
+
+  protected toggleTerrainLayer(visible: boolean): void {
+    this.terrainStatus.set(visible ? 'loading' : 'idle');
+    this.store.dispatch(MapsActions.terrainLayerToggled({ visible }));
+    this.updateMapUrl({ terrainVisible: visible });
+  }
+
+  protected changeTerrainMode(value: string): void {
+    if (!isUsgsTerrainMode(value)) {
+      return;
+    }
+
+    this.terrainStatus.set(this.terrainVisible ? 'loading' : 'idle');
+    this.store.dispatch(MapsActions.terrainModeChanged({ mode: value }));
+    this.updateMapUrl({ terrainMode: value });
   }
 
   protected toggleSaipeLayer(visible: boolean): void {
@@ -1007,6 +1095,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           lodesVisible: this.toVisibleState(params.get('lodes')),
           workplaceVisible: this.toVisibleState(params.get('workplace')),
           hydrographyVisible: this.toVisibleState(params.get('hydrography')),
+          terrainVisible: this.toVisibleState(params.get('terrain')),
+          terrainMode: this.toTerrainMode(params.get('terrainMode')),
           saipeVisible: this.toVisibleState(params.get('saipe')),
           populationVisible: this.toVisibleState(params.get('population')),
           populationMeasure: this.toPopulationMeasure(
@@ -1024,6 +1114,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             previous.lodesVisible === current.lodesVisible &&
             previous.workplaceVisible === current.workplaceVisible &&
             previous.hydrographyVisible === current.hydrographyVisible &&
+            previous.terrainVisible === current.terrainVisible &&
+            previous.terrainMode === current.terrainMode &&
             previous.saipeVisible === current.saipeVisible &&
             previous.populationVisible === current.populationVisible &&
             previous.populationMeasure === current.populationMeasure &&
@@ -1042,6 +1134,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           lodesVisible,
           workplaceVisible,
           hydrographyVisible,
+          terrainVisible,
+          terrainMode,
           saipeVisible,
           populationVisible,
           populationMeasure,
@@ -1087,6 +1181,16 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
                 visible: hydrographyVisible,
               }),
             );
+          }
+
+          if (terrainVisible !== null) {
+            this.store.dispatch(
+              MapsActions.terrainLayerToggled({ visible: terrainVisible }),
+            );
+          }
+
+          if (terrainMode !== null) {
+            this.store.dispatch(MapsActions.terrainModeChanged({ mode: terrainMode }));
           }
 
           if (saipeVisible !== null) {
@@ -1141,6 +1245,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     lodesVisible?: boolean;
     workplaceVisible?: boolean;
     hydrographyVisible?: boolean;
+    terrainVisible?: boolean;
+    terrainMode?: UsgsTerrainMode;
     saipeVisible?: boolean;
     populationVisible?: boolean;
     populationMeasure?: PopulationEstimateMeasure;
@@ -1178,6 +1284,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       queryParams['hydrography'] = this.toLayerParam(
         options.hydrographyVisible,
       );
+    }
+
+    if (options.terrainVisible !== undefined) {
+      queryParams['terrain'] = options.terrainVisible ? 'on' : 'off';
+    }
+
+    if (options.terrainMode !== undefined) {
+      queryParams['terrainMode'] = options.terrainMode;
     }
 
     if (options.saipeVisible !== undefined) {
@@ -1222,6 +1336,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   private toLayerParam(visible: boolean): string | null {
     return visible ? null : 'off';
+  }
+
+  private toTerrainMode(value: string | null): UsgsTerrainMode | null {
+    return isUsgsTerrainMode(value) ? value : null;
   }
 
   private toPopulationMeasure(
@@ -1293,6 +1411,27 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       new maplibregl.NavigationControl({ showCompass: false }),
       'top-right',
     );
+
+    this.map.on('sourcedata', (event) => {
+      const sourceId = (event as { sourceId?: string }).sourceId;
+      if (
+        sourceId === 'usgs-3dep-terrain' &&
+        this.terrainVisible &&
+        this.map?.isSourceLoaded('usgs-3dep-terrain') &&
+        this.terrainStatus() !== 'error'
+      ) {
+        this.terrainStatus.set('ready');
+        this.changeDetectorRef.markForCheck();
+      }
+    });
+
+    this.map.on('error', (event) => {
+      const sourceId = (event as { sourceId?: string }).sourceId;
+      if (sourceId === 'usgs-3dep-terrain') {
+        this.terrainStatus.set('error');
+        this.changeDetectorRef.markForCheck();
+      }
+    });
 
     // The map half of the two-way binding: activating a feature on the canvas selects it and
     // moves programmatic focus to the matching list entry, so a keyboard or screen-reader user
@@ -1430,6 +1569,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    // Terrain belongs immediately above the OSM base and below Census/thematic overlays.
+    this.renderTerrainLayer();
     this.renderCensusBoundary();
     this.renderLodesSampleLayer();
     this.renderWorkplaceLayer();
@@ -1777,8 +1918,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const data = this.pendingLodesFlowOverlay
-      .geoJson as GeoJsonFeatureCollection;
+    const data = this.pendingLodesFlowOverlay.geoJson as GeoJsonFeatureCollection;
     const existingSource = this.map.getSource(
       'lodes-workplace-flow',
     ) as GeoJSONSource | null;
@@ -1857,8 +1997,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const data = this.pendingSaipeChoropleth
-      .geoJson as GeoJsonFeatureCollection;
+    const data = this.pendingSaipeChoropleth.geoJson as GeoJsonFeatureCollection;
     const existingSource = this.map.getSource(
       'saipe-county-choropleth',
     ) as GeoJSONSource | null;
@@ -1995,9 +2134,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const data = this.createResearchCoverageGeoJson(
-      this.pendingResearchCoverage,
-    );
+    const data = this.createResearchCoverageGeoJson(this.pendingResearchCoverage);
     const existingSource = this.map.getSource(
       'repository-research-coverage',
     ) as GeoJSONSource | null;
@@ -2151,8 +2288,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private createResearchCoverageSelectionGeoJson(): GeoJsonFeatureCollection {
     const selected =
       this.pendingResearchCoverage?.features.find(
-        (feature) =>
-          feature.sourceIdentifier === this.selectedResearchCoverageId,
+        (feature) => feature.sourceIdentifier === this.selectedResearchCoverageId,
       ) ?? null;
 
     if (!selected) {
@@ -2214,6 +2350,67 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       type: 'FeatureCollection',
       features: [],
     });
+  }
+
+  private renderTerrainLayer(): void {
+    if (!this.map || !this.mapStyleReady || !this.pendingTerrainLayer) {
+      return;
+    }
+
+    const sourceId = 'usgs-3dep-terrain';
+    const layerId = 'usgs-3dep-terrain-raster';
+    const modeChanged =
+      this.renderedTerrainMode !== null &&
+      this.renderedTerrainMode !== this.terrainMode;
+
+    if (modeChanged) {
+      if (this.map.getLayer(layerId)) {
+        this.map.removeLayer(layerId);
+      }
+      if (this.map.getSource(sourceId)) {
+        this.map.removeSource(sourceId);
+      }
+    }
+
+    const template = withUsgsTerrainMode(
+      this.pendingTerrainLayer.rasterTileUrlTemplate ??
+        USGS_3DEP_TERRAIN_TILE_TEMPLATE,
+      this.terrainMode,
+    );
+    const tileTemplate = resolveRasterTileUrlTemplate(
+      template,
+      this.repositoryApiBaseUrl,
+    );
+
+    if (!this.map.getSource(sourceId)) {
+      this.map.addSource(sourceId, {
+        type: 'raster',
+        tiles: [tileTemplate],
+        tileSize: 256,
+        attribution: this.pendingTerrainLayer.attribution,
+      });
+    }
+
+    if (!this.map.getLayer(layerId)) {
+      this.map.addLayer(
+        {
+          id: layerId,
+          type: 'raster',
+          source: sourceId,
+          layout: {
+            visibility: this.terrainVisible ? 'visible' : 'none',
+          },
+          paint: {
+            // Terrain is orientation context, not the research result. Keep it subordinate.
+            'raster-opacity': 0.42,
+          },
+        },
+        this.overlayInsertBeforeId(),
+      );
+    }
+
+    this.renderedTerrainMode = this.terrainMode;
+    this.applyLayerVisibility();
   }
 
   private renderHydrographyLayer(): void {
@@ -2462,6 +2659,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       population: this.populationVisible,
       research: this.researchCoverageVisible,
       hydrography: this.hydrographyVisible,
+      terrain: this.terrainVisible,
     };
   }
 
