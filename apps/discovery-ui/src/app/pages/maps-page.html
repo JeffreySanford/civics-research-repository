@@ -101,8 +101,9 @@
             <span class="layer-category-summary-content">
               <span class="layer-category-title">Community &amp; Economy</span>
               <!-- The API has one shared LODES metadata capability for the two LODES controls,
-                   plus optional SAIPE. With boundary + two environmental entries outside this
-                   category, the control count is two baseline LODES controls plus optional SAIPE. -->
+                   plus optional SAIPE. With boundary + environmental entries outside this
+                   category, the control count is two baseline LODES controls plus optional
+                   county thematic capabilities. -->
               @if (layers$ | async; as layers) {
               <span class="layer-category-count"
                 >{{ 2 + ((saipeAvailable$ | async) ? 1 : 0) +
@@ -276,11 +277,59 @@
               <span class="layer-category-title"
                 >Environment &amp; Hazards</span
               >
-              <span class="layer-category-count">2 layers</span>
+              <span class="layer-category-count"
+                >{{ 2 + ((terrainAvailable$ | async) ? 1 : 0) }} layers</span
+              >
             </span>
           </summary>
 
           <div class="layer-category-items">
+            @if (terrainAvailable$ | async) {
+            <div class="layer-config-group">
+              <span class="layer-toggle-row">
+                <label class="layer-toggle">
+                  <input
+                    type="checkbox"
+                    data-testid="map-layer-terrain"
+                    [checked]="terrainVisible$ | async"
+                    (change)="toggleTerrainLayer($any($event.target).checked)"
+                  />
+                  <span class="layer-toggle-label">USGS 3DEP terrain</span>
+                </label>
+                <button
+                  type="button"
+                  class="layer-info-button"
+                  mat-icon-button
+                  data-testid="map-layer-terrain-info"
+                  [matTooltip]="layerTooltips.terrain"
+                  matTooltipPosition="above"
+                  aria-label="About USGS 3DEP terrain layer"
+                >
+                  <mat-icon aria-hidden="true">info_outline</mat-icon>
+                </button>
+              </span>
+
+              @if (terrainVisible$ | async) { @if (terrainMode$ | async; as
+              terrainMode) {
+              <div class="terrain-config" data-testid="terrain-config">
+                <label>
+                  Visualization
+                  <select
+                    #terrainModeSelect
+                    data-testid="terrain-mode"
+                    [value]="terrainMode"
+                    (change)="changeTerrainMode(terrainModeSelect.value)"
+                  >
+                    <option value="hillshade">Hillshade</option>
+                    <option value="tinted">Tinted elevation</option>
+                    <option value="slope">Slope</option>
+                  </select>
+                </label>
+              </div>
+              } }
+            </div>
+            }
+
             <span class="layer-toggle-row">
               <label class="layer-toggle">
                 <input
@@ -452,7 +501,13 @@
       <aside class="map-legend" aria-label="Visible map layer legend">
         <h2>Visible layers</h2>
         <ul>
-          @if (tigerVisible$ | async) {
+          @if (terrainVisible$ | async) { @if (terrainMode$ | async; as
+          terrainMode) {
+          <li>
+            <span class="swatch terrain"></span>
+            USGS 3DEP terrain — {{ terrainModeLabel(terrainMode) }}
+          </li>
+          } } @if (tigerVisible$ | async) {
           <li>
             <span class="swatch census"></span>
             @if (selectedBoundary$ | async; as boundary) { {{ boundary.geography
@@ -687,6 +742,24 @@
       Selecting an event here moves the map to it; selecting an event on the map
       moves focus here.
     </p>
+
+    @if (terrainLayer$ | async; as terrainLayer) {
+    <app-terrain-layer-status
+      [available]="true"
+      [visible]="(terrainVisible$ | async) ?? false"
+      [mode]="(terrainMode$ | async) ?? 'hillshade'"
+      [status]="terrainStatus()"
+      [sourceUrl]="terrainLayer.sourceUrl"
+    />
+    } @else {
+    <app-terrain-layer-status
+      [available]="false"
+      [visible]="false"
+      mode="hillshade"
+      status="idle"
+      [sourceUrl]="null"
+    />
+    }
 
     <p
       class="feature-announcement"
