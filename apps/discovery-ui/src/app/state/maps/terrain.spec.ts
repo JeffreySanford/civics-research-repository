@@ -32,25 +32,31 @@ describe('USGS terrain mode contract', () => {
     expect(usgsTerrainModeLabel('slope')).toBe('Slope');
   });
 
-  it('replaces an existing mode without changing the rest of the template', () => {
-    expect(
-      withUsgsTerrainMode(
-        '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=hillshade',
-        'slope',
-      ),
-    ).toBe(
-      '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=slope',
-    );
-  });
+  it(
+    'replaces an existing mode without changing the rest of the template',
+    () => {
+      expect(
+        withUsgsTerrainMode(
+          '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=hillshade',
+          'slope',
+        ),
+      ).toBe(
+        '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=slope',
+      );
+    },
+  );
 
-  it('adds a mode when an approved template does not already contain one', () => {
-    expect(
-      withUsgsTerrainMode(
-        '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}',
-        'tinted',
-      ),
-    ).toBe(
-      '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=tinted',
-    );
-  });
+  it(
+    'adds a mode when an approved template does not already contain one',
+    () => {
+      expect(
+        withUsgsTerrainMode(
+          '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}',
+          'tinted',
+        ),
+      ).toBe(
+        '/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}&mode=tinted',
+      );
+    },
+  );
 });
