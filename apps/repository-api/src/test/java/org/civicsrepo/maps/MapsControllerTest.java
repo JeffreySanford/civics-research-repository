@@ -51,6 +51,9 @@ class MapsControllerTest {
     @MockitoBean
     private UsgsHydrographyTileService usgsHydrographyTileService;
 
+    @MockitoBean
+    private UsgsTerrainTileService usgsTerrainTileService;
+
     @Test
     void serializesDatasetMapLayersIncludingAttribution() throws Exception {
         given(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
@@ -270,6 +273,21 @@ class MapsControllerTest {
                 .andExpect(header().exists("Cache-Control"));
 
         verify(usgsHydrographyTileService).exportTile("-100,40,-99,41", 3857, 3857, "256,256", true);
+    }
+
+    @Test
+    void proxiesTerrainExportTilesAsPng() throws Exception {
+        given(usgsTerrainTileService.exportTile("-100,40,-99,41", "slope"))
+                .willReturn(UsgsTerrainTileService.TRANSPARENT_PNG);
+
+        mockMvc.perform(get("/overlays/usgs/terrain/export")
+                        .param("bbox", "-100,40,-99,41")
+                        .param("mode", "slope"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "image/png"))
+                .andExpect(header().exists("Cache-Control"));
+
+        verify(usgsTerrainTileService).exportTile("-100,40,-99,41", "slope");
     }
 
     @Test
