@@ -7,8 +7,8 @@ export const REGISTERED_MAP_LAYER_IDS = [
   'lodes-workplace-jobs-circles',
   'saipe-county-fill',
   'saipe-county-outline',
-  'repository-research-coverage-fill',
-  'repository-research-coverage-line',
+  'repository-research-coverage-clusters',
+  'repository-research-coverage-cluster-count',
   'repository-research-coverage-points',
   'usgs-3hp-hydrography-raster',
   'usgs-earthquake-points',
@@ -30,6 +30,7 @@ type MapLayerVisibilityGroup = {
   toggleTestId: string;
   mapLayerIds: readonly (typeof REGISTERED_MAP_LAYER_IDS)[number][];
   accessibleListText: string;
+  accessibleListExact?: boolean;
   legendText: string | RegExp;
   urlOffPattern: RegExp;
 };
@@ -76,16 +77,17 @@ export const MAP_LAYER_VISIBILITY_GROUPS: readonly MapLayerVisibilityGroup[] = [
     urlOffPattern: /saipe=off/,
   },
   {
-    name: 'Data.gov publisher research geometry',
+    name: 'Data.gov research extents',
     categoryTestId: 'map-layer-category-research-coverage',
     toggleTestId: 'map-layer-research-coverage',
     mapLayerIds: [
-      'repository-research-coverage-fill',
-      'repository-research-coverage-line',
+      'repository-research-coverage-clusters',
+      'repository-research-coverage-cluster-count',
       'repository-research-coverage-points',
     ],
-    accessibleListText: 'Data.gov publisher research geometry',
-    legendText: /Data.gov publisher research geometry/,
+    accessibleListText: 'Data.gov research extents',
+    accessibleListExact: true,
+    legendText: /Data.gov research extents/,
     urlOffPattern: /research=off/,
   },
   {
@@ -213,7 +215,11 @@ export async function expectLayerEvidenceVisible(
     'section[aria-labelledby="features-heading"]',
   );
 
-  await expect(featureList.getByText(group.accessibleListText)).toBeVisible();
+  await expect(
+    featureList.getByText(group.accessibleListText, {
+      exact: group.accessibleListExact ?? false,
+    }),
+  ).toBeVisible();
 
   const legend = page.getByLabel('Visible map layer legend');
   await expect(legend.getByText(group.legendText)).toBeVisible();
@@ -229,7 +235,11 @@ export async function expectLayerEvidenceHidden(
     'section[aria-labelledby="features-heading"]',
   );
 
-  await expect(featureList.getByText(group.accessibleListText)).toHaveCount(0);
+  await expect(
+    featureList.getByText(group.accessibleListText, {
+      exact: group.accessibleListExact ?? false,
+    }),
+  ).toHaveCount(0);
 
   const legend = page.getByLabel('Visible map layer legend');
   await expect(legend.getByText(group.legendText)).toHaveCount(0);

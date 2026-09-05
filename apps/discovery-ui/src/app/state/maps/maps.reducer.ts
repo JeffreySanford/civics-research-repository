@@ -38,6 +38,7 @@ export interface MapsState {
   readonly hydrographyVisible: boolean;
   readonly saipeVisible: boolean;
   readonly researchCoverageVisible: boolean;
+  readonly selectedResearchCoverageId: string | null;
   /** Feature shared by the map and the accessible list; either view can set it. */
   readonly selectedFeatureId: string | null;
   /** Commuting flow shared by the map and the accessible table; either view can set it. */
@@ -70,6 +71,7 @@ export const initialMapsState: MapsState = {
   hydrographyVisible: false,
   saipeVisible: false,
   researchCoverageVisible: false,
+  selectedResearchCoverageId: null,
   selectedFeatureId: null,
   selectedLodesFlowId: null,
   loading: false,
@@ -173,6 +175,12 @@ export const mapsReducer = createReducer(
     researchCoverageResponse: response,
     researchCoverageLoading: false,
     researchCoverageError: null,
+    selectedResearchCoverageId: response.features.some(
+      (feature) =>
+        feature.sourceIdentifier === state.selectedResearchCoverageId,
+    )
+      ? state.selectedResearchCoverageId
+      : null,
   })),
   on(MapsActions.researchCoverageFailed, (state, { error }) => ({
     ...state,
@@ -226,6 +234,20 @@ export const mapsReducer = createReducer(
   on(MapsActions.researchCoverageLayerToggled, (state, { visible }) => ({
     ...state,
     researchCoverageVisible: visible,
+    selectedResearchCoverageId: visible
+      ? state.selectedResearchCoverageId
+      : null,
+  })),
+  on(
+    MapsActions.researchCoverageFeatureSelected,
+    (state, { sourceIdentifier }) => ({
+      ...state,
+      selectedResearchCoverageId: sourceIdentifier,
+    }),
+  ),
+  on(MapsActions.researchCoverageSelectionCleared, (state) => ({
+    ...state,
+    selectedResearchCoverageId: null,
   })),
   on(MapsActions.mapFeatureSelected, (state, { featureId }) => ({
     ...state,

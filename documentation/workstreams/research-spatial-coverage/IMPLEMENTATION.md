@@ -81,7 +81,7 @@ See [BOUNDED_RESEARCH_SPATIAL_API.md](BOUNDED_RESEARCH_SPATIAL_API.md) for the c
 
 ## Research Coverage Maps UI
 
-Maps now renders the bounded Data.gov publisher research geometry directly.
+Maps renders bounded Data.gov research extents as deterministic display anchors, clustered where useful. Selecting one research object reveals only that object's publisher-declared footprint when the geometry is safe to draw; antimeridian candidates remain anchor-only.
 
 Implemented behavior:
 

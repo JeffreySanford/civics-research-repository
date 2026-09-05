@@ -90,11 +90,11 @@ export const PopulatedAndTruncated: Story = {
     const canvas = within(canvasElement);
     await expect(
       canvas.getByRole('heading', {
-        name: 'Data.gov publisher research geometry',
+        name: 'Data.gov research extents',
       }),
     ).toBeInTheDocument();
     const table = canvas.getByRole('table', {
-      name: 'Publisher-spatial research objects returned for the current map viewport',
+      name: 'Data.gov research extents returned for the current map viewport',
     });
     const semanticTable = within(table);
     await expect(
@@ -112,7 +112,7 @@ export const PopulatedAndTruncated: Story = {
     );
     await expect(
       semanticTable.getByRole('cell', {
-        name: 'Source-derived render anchor for antimeridian candidate',
+        name: 'Source-derived display anchor for antimeridian candidate',
       }),
     ).toBeInTheDocument();
     await expect(
@@ -137,7 +137,7 @@ export const Loading: Story = {
         name: '',
       }),
     ).toHaveTextContent(
-      'Updating publisher spatial coverage for the current map viewport.',
+      'Updating Data.gov research extents for the current map viewport.',
     );
   },
 };
@@ -158,7 +158,7 @@ export const EmptyViewport: Story = {
     const canvas = within(canvasElement);
     await expect(
       canvas.getByText(
-        'No publisher-spatial research objects from this search intersect the current viewport.',
+        'No Data.gov research extents from this search intersect the current viewport.',
       ),
     ).toBeInTheDocument();
     await expect(canvas.queryByRole('table')).not.toBeInTheDocument();
@@ -186,7 +186,7 @@ export const NoPublisherGeometry: Story = {
     const canvas = within(canvasElement);
     await expect(
       canvas.getByText(
-        /0 of 10 matching Data.gov research objects have publisher spatial geometry/,
+        /0 of 10 matching Data.gov research objects have publisher-declared spatial geometry/,
       ),
     ).toBeInTheDocument();
     await expect(
@@ -204,8 +204,68 @@ export const NoResponse: Story = {
     const canvas = within(canvasElement);
     await expect(
       canvas.getByText(
-        'No bounded publisher-spatial response is available for the current viewport.',
+        'No bounded Data.gov research-extent response is available for the current viewport.',
       ),
     ).toBeInTheDocument();
+  },
+};
+
+export const SelectedExtent: Story = {
+  args: {
+    summary: populatedSummary,
+    loading: false,
+    selectedSourceIdentifier: 'publisher-climate-polygon',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const selected = canvas.getByRole('button', {
+      name: 'California Climate Resilience Study',
+    });
+
+    await expect(selected).toHaveAttribute('aria-pressed', 'true');
+
+    await expect(
+      canvas.getByRole('status', {
+        name: 'Research extent selection',
+      }),
+    ).toHaveTextContent('Selected California Climate Resilience Study');
+
+    await expect(
+      canvas.getByText('Publisher-declared spatial geometry selected on map'),
+    ).toBeInTheDocument();
+
+    await expect(
+      canvas.getByRole('button', {
+        name: 'Clear research extent selection',
+      }),
+    ).toBeInTheDocument();
+  },
+};
+
+export const SelectedAntimeridianAnchor: Story = {
+  args: {
+    summary: populatedSummary,
+    loading: false,
+    selectedSourceIdentifier: 'antimeridian-observation',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const selected = canvas.getByRole('button', {
+      name: 'Pacific Observation Coverage',
+    });
+
+    await expect(selected).toHaveAttribute('aria-pressed', 'true');
+
+    await expect(
+      canvas.getByText(
+        'Source-derived display anchor for antimeridian candidate',
+      ),
+    ).toBeInTheDocument();
+
+    await expect(
+      canvas.queryByText('Publisher-declared spatial geometry selected on map'),
+    ).not.toBeInTheDocument();
   },
 };

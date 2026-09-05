@@ -270,7 +270,7 @@
                   (change)="toggleResearchCoverageLayer($any($event.target).checked)"
                 />
                 <span class="layer-toggle-label"
-                  >Data.gov publisher research geometry</span
+                  >Data.gov research extents</span
                 >
               </label>
               <button
@@ -280,7 +280,7 @@
                 data-testid="map-layer-research-coverage-info"
                 [matTooltip]="layerTooltips.research"
                 matTooltipPosition="above"
-                aria-label="About Data.gov publisher research geometry layer"
+                aria-label="About Data.gov research extents layer"
               >
                 <mat-icon aria-hidden="true">info_outline</mat-icon>
               </button>
@@ -407,11 +407,10 @@
           (researchCoverageSummary$ | async; as researchCoverage) {
           <li>
             <span class="swatch research"></span>
-            Data.gov publisher research geometry ({{
-            researchCoverage.viewportMappedResults | number }} mapped in view;
-            {{ researchCoverage.returnedFeatures | number }} returned of {{
-            researchCoverage.totalResults | number }} matching) @if
-            (researchCoverage.truncated) {
+            Data.gov research extents ({{ researchCoverage.viewportMappedResults
+            | number }} mapped in view; {{ researchCoverage.returnedFeatures |
+            number }} returned of {{ researchCoverage.totalResults | number }}
+            matching) @if (researchCoverage.truncated) {
             <span class="status-pill stale"
               >bounded to {{ researchCoverage.featureLimit | number }}
               features</span
@@ -720,6 +719,11 @@
         <app-research-coverage-summary
           [summary]="(researchCoverageSummary$ | async) ?? null"
           [loading]="(researchCoverageLoading$ | async) ?? false"
+          [selectedSourceIdentifier]="
+            (selectedResearchCoverageId$ | async) ?? null
+          "
+          (featureSelected)="selectResearchCoverageFeature($event)"
+          (selectionCleared)="clearResearchCoverageSelection()"
         />
       </li>
       } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {
