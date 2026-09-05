@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import {
   configureMapLibreWorker,
+  expandResearchCoverageCluster,
   findCensusAreaForPoint,
   MAP_LAYER_GROUPS,
   readMapDebugSnapshot,
@@ -261,5 +262,83 @@ describe('whenMapStyleReady', () => {
 
     expect(once).toHaveBeenCalledWith('style.load', expect.any(Function));
     expect(action).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('expandResearchCoverageCluster', () => {
+  it('asks MapLibre for the expansion zoom and eases to the cluster center', async () => {
+    const getClusterExpansionZoom = vi.fn().mockResolvedValue(8);
+    const easeTo = vi.fn();
+
+    const map = {
+      getSource: vi.fn().mockReturnValue({
+        getClusterExpansionZoom,
+      }),
+      easeTo,
+    } as unknown as MapLibreMap;
+
+    const expanded = await expandResearchCoverageCluster(map, {
+      properties: {
+        cluster_id: 42,
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [-122.4194, 37.7749],
+      },
+    });
+
+    expect(expanded).toBe(true);
+    expect(getClusterExpansionZoom).toHaveBeenCalledWith(42);
+    expect(easeTo).toHaveBeenCalledWith({
+      center: [-122.4194, 37.7749],
+      zoom: 8,
+    });
+  });
+
+  it('rejects malformed cluster features without moving the map', async () => {
+    const easeTo = vi.fn();
+
+    const map = {
+      getSource: vi.fn(),
+      easeTo,
+    } as unknown as MapLibreMap;
+
+    const expanded = await expandResearchCoverageCluster(map, {
+      properties: {},
+      geometry: {
+        type: 'Point',
+        coordinates: [-122.4194, 37.7749],
+      },
+    });
+
+    expect(expanded).toBe(false);
+    expect(map.getSource).not.toHaveBeenCalled();
+    expect(easeTo).not.toHaveBeenCalled();
+  });
+
+  it('fails safely when cluster expansion cannot be resolved', async () => {
+    const easeTo = vi.fn();
+
+    const map = {
+      getSource: vi.fn().mockReturnValue({
+        getClusterExpansionZoom: vi
+          .fn()
+          .mockRejectedValue(new Error('cluster unavailable')),
+      }),
+      easeTo,
+    } as unknown as MapLibreMap;
+
+    const expanded = await expandResearchCoverageCluster(map, {
+      properties: {
+        cluster_id: 7,
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [-122.4, 37.7],
+      },
+    });
+
+    expect(expanded).toBe(false);
+    expect(easeTo).not.toHaveBeenCalled();
   });
 });

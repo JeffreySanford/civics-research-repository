@@ -144,12 +144,15 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
   },
   {
     id: 'research',
-    label: 'Data.gov publisher research geometry',
+    label: 'Data.gov research extents',
     sourceId: 'repository-research-coverage',
     layerIds: [
-      'repository-research-coverage-fill',
-      'repository-research-coverage-line',
+      'repository-research-coverage-clusters',
+      'repository-research-coverage-cluster-count',
       'repository-research-coverage-points',
+      'repository-research-coverage-selected-fill',
+      'repository-research-coverage-selected-line',
+      'repository-research-coverage-selected-anchor',
     ],
   },
   {
@@ -322,4 +325,67 @@ export function whenMapStyleReady(
   }
 
   map.once('style.load', callback);
+}
+
+export type ResearchCoverageClusterFeature = {
+  readonly properties?: Record<string, unknown> | null;
+  readonly geometry?: {
+    readonly type?: string;
+    readonly coordinates?: unknown;
+  } | null;
+};
+
+/**
+ * Expands one rendered Data.gov research cluster.
+ *
+ * Kept outside the component so the MapLibre interaction contract can be
+ * unit-tested without relying on synthetic WebGL mouse coordinates.
+ */
+export async function expandResearchCoverageCluster(
+  map: MapLibreMap,
+  feature: ResearchCoverageClusterFeature | null | undefined,
+): Promise<boolean> {
+  const clusterId = Number(feature?.properties?.['cluster_id']);
+
+  if (
+    !Number.isFinite(clusterId) ||
+    feature?.geometry?.type !== 'Point' ||
+    !Array.isArray(feature.geometry.coordinates)
+  ) {
+    return false;
+  }
+
+  const longitude = Number(feature.geometry.coordinates[0]);
+  const latitude = Number(feature.geometry.coordinates[1]);
+
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+    return false;
+  }
+
+  const source = map.getSource('repository-research-coverage') as
+    | {
+        getClusterExpansionZoom?: (clusterId: number) => Promise<number>;
+      }
+    | undefined;
+
+  if (typeof source?.getClusterExpansionZoom !== 'function') {
+    return false;
+  }
+
+  try {
+    const zoom = await source.getClusterExpansionZoom(clusterId);
+
+    if (!Number.isFinite(zoom)) {
+      return false;
+    }
+
+    map.easeTo({
+      center: [longitude, latitude],
+      zoom,
+    });
+
+    return true;
+  } catch {
+    return false;
+  }
 }

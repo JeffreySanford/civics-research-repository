@@ -482,3 +482,110 @@ describe('lodes flow selection', () => {
     expect(reloaded.selectedLodesFlowId).toBe('nd-2');
   });
 });
+
+describe('research coverage selection', () => {
+  const feature = (sourceIdentifier: string) => ({
+    sourceSystem: 'DATA_GOV',
+    sourceIdentifier,
+    title: `${sourceIdentifier} title`,
+    publisher: 'Example Federal Agency',
+    program: 'Climate',
+    contentType: 'DATASET',
+    sourceUrl: `https://catalog.data.gov/dataset/${sourceIdentifier}`,
+    geometryStatus: 'VALID',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [],
+    },
+    renderLon: -100,
+    renderLat: 40,
+    renderPointMethod: 'SHAPE_BOUNDS_CENTER',
+  });
+
+  const response = (ids: readonly string[]) =>
+    ({
+      features: ids.map(feature),
+    }) as never;
+
+  it('records a selected Data.gov research extent', () => {
+    const state = mapsReducer(
+      initialMapsState,
+      MapsActions.researchCoverageFeatureSelected({
+        sourceIdentifier: 'climate-study',
+      }),
+    );
+
+    expect(state.selectedResearchCoverageId).toBe('climate-study');
+  });
+
+  it('clears the research extent selection explicitly', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.researchCoverageFeatureSelected({
+        sourceIdentifier: 'climate-study',
+      }),
+    );
+
+    const cleared = mapsReducer(
+      selected,
+      MapsActions.researchCoverageSelectionCleared(),
+    );
+
+    expect(cleared.selectedResearchCoverageId).toBeNull();
+  });
+
+  it('clears the research selection when the layer is hidden', () => {
+    const selected = mapsReducer(
+      {
+        ...initialMapsState,
+        researchCoverageVisible: true,
+      },
+      MapsActions.researchCoverageFeatureSelected({
+        sourceIdentifier: 'climate-study',
+      }),
+    );
+
+    const hidden = mapsReducer(
+      selected,
+      MapsActions.researchCoverageLayerToggled({ visible: false }),
+    );
+
+    expect(hidden.selectedResearchCoverageId).toBeNull();
+  });
+
+  it('keeps a selection that remains in the bounded response', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.researchCoverageFeatureSelected({
+        sourceIdentifier: 'climate-study',
+      }),
+    );
+
+    const loaded = mapsReducer(
+      selected,
+      MapsActions.researchCoverageLoaded({
+        response: response(['climate-study', 'water-study']),
+      }),
+    );
+
+    expect(loaded.selectedResearchCoverageId).toBe('climate-study');
+  });
+
+  it('drops a selection that disappears from the bounded response', () => {
+    const selected = mapsReducer(
+      initialMapsState,
+      MapsActions.researchCoverageFeatureSelected({
+        sourceIdentifier: 'climate-study',
+      }),
+    );
+
+    const loaded = mapsReducer(
+      selected,
+      MapsActions.researchCoverageLoaded({
+        response: response(['water-study']),
+      }),
+    );
+
+    expect(loaded.selectedResearchCoverageId).toBeNull();
+  });
+});

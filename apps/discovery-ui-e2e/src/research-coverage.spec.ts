@@ -82,14 +82,12 @@ test.describe('repository research coverage', () => {
     await expect(categorySummary).toContainText('Research Coverage');
     await expect(categorySummary).toContainText('1 layer');
     await expect(category).toHaveJSProperty('open', false);
-    await expect(toggle).not.toBeVisible();
+    await expect(toggle).toBeHidden();
 
     await categorySummary.click();
     await expect(category).toHaveJSProperty('open', true);
     await expect(toggle).toBeVisible();
-    await expect(category).toContainText(
-      'Data.gov publisher research geometry',
-    );
+    await expect(category).toContainText('Data.gov research extents');
     await expect(toggle).not.toBeChecked();
 
     await toggle.check();
@@ -97,9 +95,7 @@ test.describe('repository research coverage', () => {
     await expect(page).toHaveURL(/research=on/);
 
     const legend = page.getByLabel('Visible map layer legend');
-    const legendEntry = legend.getByText(
-      /Data.gov publisher research geometry/,
-    );
+    const legendEntry = legend.getByText(/Data.gov research extents/);
     await expect(legendEntry).toContainText('3 mapped in view');
     await expect(legendEntry).toContainText('2 returned of 33 matching');
     await expect(legendEntry).toContainText('bounded to 200 features');
@@ -110,11 +106,11 @@ test.describe('repository research coverage', () => {
     const researchSummary = featureList.locator('.research-coverage-summary');
     await expect(
       researchSummary.getByRole('heading', {
-        name: 'Data.gov publisher research geometry',
+        name: 'Data.gov research extents',
       }),
     ).toBeVisible();
     await expect(researchSummary).toContainText(
-      '30 of 33 matching Data.gov research objects have publisher spatial geometry',
+      '30 of 33 matching Data.gov research objects have publisher-declared spatial geometry',
     );
     await expect(researchSummary).toContainText('3 have no publisher geometry');
     await expect(researchSummary).toContainText(
@@ -131,7 +127,7 @@ test.describe('repository research coverage', () => {
     );
 
     const table = researchSummary.getByRole('table', {
-      name: 'Publisher-spatial research objects returned for the current map viewport',
+      name: 'Data.gov research extents returned for the current map viewport',
     });
     const polygon = table
       .getByRole('row')
@@ -142,7 +138,9 @@ test.describe('repository research coverage', () => {
 
     await expect(polygon).toContainText('U.S. Census Bureau');
     await expect(polygon).toContainText('TIGER_LINE / DATASET');
-    await expect(polygon).toContainText('Publisher geometry');
+    await expect(polygon).toContainText(
+      'Display anchor for publisher-declared extent',
+    );
     await expect(
       polygon.getByRole('link', { name: 'Open source record' }),
     ).toHaveAttribute(
@@ -170,9 +168,7 @@ test.describe('repository research coverage', () => {
     await toggle.uncheck();
     await expect(toggle).not.toBeChecked();
     await expect(page).toHaveURL(/research=off/);
-    await expect(
-      legend.getByText(/Data.gov publisher research geometry/),
-    ).toHaveCount(0);
+    await expect(legend.getByText(/Data.gov research extents/)).toHaveCount(0);
     await expect(researchSummary).toHaveCount(0);
   });
 });

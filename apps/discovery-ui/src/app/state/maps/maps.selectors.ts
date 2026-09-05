@@ -119,6 +119,20 @@ export const selectResearchCoverageVisible = createSelector(
   (state) => state.researchCoverageVisible,
 );
 
+export const selectSelectedResearchCoverageId = createSelector(
+  selectMapsState,
+  (state) => state.selectedResearchCoverageId,
+);
+
+export const selectSelectedResearchCoverageFeature = createSelector(
+  selectMapsState,
+  (state) =>
+    state.researchCoverageResponse?.features.find(
+      (feature) =>
+        feature.sourceIdentifier === state.selectedResearchCoverageId,
+    ) ?? null,
+);
+
 export const selectHydrographyLayer = createSelector(
   selectMapLayers,
   (layers) => layers.find((layer) => layer.layerType === 'USGS_REFERENCE'),
