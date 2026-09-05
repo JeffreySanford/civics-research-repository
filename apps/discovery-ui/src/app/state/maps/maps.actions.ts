@@ -4,6 +4,8 @@ import type {
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
+  PopulationEstimateMeasure,
+  PopulationEstimatesChoropleth,
   RepositoryError,
   ResearchSpatialCoverageResponse,
   ResearchSpatialViewport,
@@ -37,6 +39,15 @@ export const MapsActions = createActionGroup({
       saipeChoropleth: SaipeCountyChoropleth;
     }>(),
     'Saipe Choropleth Failed': props<{ error: RepositoryError }>(),
+    'Population Estimates Configuration Changed': props<{
+      measure: PopulationEstimateMeasure;
+      year: number;
+    }>(),
+    'Population Estimates Requested': emptyProps(),
+    'Population Estimates Loaded': props<{
+      populationEstimatesChoropleth: PopulationEstimatesChoropleth;
+    }>(),
+    'Population Estimates Failed': props<{ error: RepositoryError }>(),
     'Research Coverage Requested': props<{
       query: SearchQuery;
       viewport: ResearchSpatialViewport;
@@ -52,6 +63,7 @@ export const MapsActions = createActionGroup({
     'Workplace Layer Toggled': props<{ visible: boolean }>(),
     'Hydrography Layer Toggled': props<{ visible: boolean }>(),
     'Saipe Layer Toggled': props<{ visible: boolean }>(),
+    'Population Layer Toggled': props<{ visible: boolean }>(),
     'Research Coverage Layer Toggled': props<{ visible: boolean }>(),
     'Research Coverage Feature Selected': props<{
       sourceIdentifier: string;

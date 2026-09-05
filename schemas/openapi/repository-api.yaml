@@ -396,6 +396,46 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /overlays/census/population-estimates:
+    get:
+      tags: [Maps]
+      operationId: getPopulationEstimatesChoropleth
+      summary: Get Vintage 2025 county population estimates and authoritative county geometry.
+      description: >-
+        Joins pinned Census Population Estimates Program Vintage 2025 county values
+        to compatible authoritative Census county geometry by GEOID. Population,
+        annual numeric change, and annual growth rate are derived deterministically
+        from the same Vintage 2025 population series.
+      parameters:
+        - $ref: '#/components/parameters/Geography'
+        - name: measure
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/PopulationEstimateMeasure'
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2025
+            default: 2025
+      responses:
+        '200':
+          description: County Population Estimates thematic layer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopulationEstimatesChoropleth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /overlays/usgs/earthquakes:
     get:
       tags: [Maps]
@@ -3377,6 +3417,109 @@ components:
           type: string
         destinationCounty:
           type: string
+    PopulationEstimateMeasure:
+      type: string
+      enum:
+        - POPULATION
+        - ANNUAL_CHANGE
+        - ANNUAL_GROWTH_RATE
+      default: ANNUAL_GROWTH_RATE
+
+    PopulationEstimateCountyValue:
+      type: object
+      required:
+        - fips
+        - name
+        - value
+        - population
+      properties:
+        fips:
+          type: string
+          pattern: '^[0-9]{5}$'
+        name:
+          type: string
+        value:
+          type: number
+          format: double
+        population:
+          type: integer
+          format: int64
+        priorPopulation:
+          type: integer
+          format: int64
+
+    PopulationEstimatesChoropleth:
+      type: object
+      required:
+        - source
+        - sourceUrl
+        - attribution
+        - geography
+        - sourceVintage
+        - sourceSha256
+        - capturedAt
+        - geometryVintage
+        - geometrySourceUrl
+        - geometryAttribution
+        - measure
+        - measureLabel
+        - units
+        - year
+        - supportedPopulationYears
+        - supportedChangeYears
+        - geoJson
+        - counties
+      properties:
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        attribution:
+          type: string
+        geography:
+          type: string
+        sourceVintage:
+          type: integer
+        sourceSha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        capturedAt:
+          type: string
+          format: date
+        geometryVintage:
+          type: integer
+        geometrySourceUrl:
+          type: string
+          format: uri
+        geometryAttribution:
+          type: string
+        measure:
+          $ref: '#/components/schemas/PopulationEstimateMeasure'
+        measureLabel:
+          type: string
+        units:
+          type: string
+        year:
+          type: integer
+        priorYear:
+          type: integer
+        supportedPopulationYears:
+          type: array
+          items:
+            type: integer
+        supportedChangeYears:
+          type: array
+          items:
+            type: integer
+        geoJson:
+          type: object
+          additionalProperties: true
+        counties:
+          type: array
+          items:
+            $ref: '#/components/schemas/PopulationEstimateCountyValue'
+
     SaipeCountyChoropleth:
       type: object
       required:

@@ -19,7 +19,12 @@ import {
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { MapsEffects } from './maps.effects';
-import { selectSelectedGeography } from './maps.selectors';
+import {
+  selectMapLayers,
+  selectPopulationEstimateMeasure,
+  selectPopulationEstimateYear,
+  selectSelectedGeography,
+} from './maps.selectors';
 
 const layers = [
   {
@@ -40,6 +45,15 @@ const saipeLayer = {
     'https://www.census.gov/data/datasets/2023/demo-saipe/2023-state-and-county.html',
   attribution: 'U.S. Census Bureau Small Area Income and Poverty Estimates',
   visibleByDefault: true,
+} as unknown as MapLayer;
+
+const populationLayer = {
+  id: 'population-estimates-county-north-dakota',
+  label: 'Vintage 2025 county Population Estimates - North Dakota',
+  layerType: 'CENSUS_CHOROPLETH',
+  sourceUrl: 'https://example.test/co-est2025-alldata.csv',
+  attribution: 'U.S. Census Bureau Population Estimates Program',
+  visibleByDefault: false,
 } as unknown as MapLayer;
 
 const censusAreaBoundaries = [
@@ -79,6 +93,7 @@ function setup(
   mapsApi: Partial<RepositoryMapsApi>,
   actions$: Observable<unknown>,
   selectedGeography = 'North Dakota',
+  selectedLayers: MapLayer[] = layers,
 ) {
   TestBed.configureTestingModule({
     providers: [
@@ -87,6 +102,12 @@ function setup(
       provideMockStore({
         selectors: [
           { selector: selectSelectedGeography, value: selectedGeography },
+          { selector: selectMapLayers, value: selectedLayers },
+          {
+            selector: selectPopulationEstimateMeasure,
+            value: 'ANNUAL_GROWTH_RATE',
+          },
+          { selector: selectPopulationEstimateYear, value: 2025 },
         ],
       }),
       { provide: RepositoryMapsApi, useValue: mapsApi },
@@ -291,6 +312,105 @@ describe('MapsEffects', () => {
 
     expect(emitted).toEqual([]);
     expect(getSaipeCountyChoropleth).not.toHaveBeenCalled();
+  });
+
+  it('loads Population Estimates only when the area advertises the capability', async () => {
+    const populationEstimatesChoropleth = {
+      geography: 'North Dakota',
+      measure: 'ANNUAL_GROWTH_RATE',
+      year: 2025,
+    } as never;
+
+    const getPopulationEstimatesChoropleth = vi
+      .fn()
+      .mockReturnValue(of(populationEstimatesChoropleth));
+
+    const effects = setup(
+      { getPopulationEstimatesChoropleth } as unknown as RepositoryMapsApi,
+      of(
+        MapsActions.mapLayersLoaded({
+          layers: [...layers, populationLayer],
+        }),
+      ),
+      'North Dakota',
+      [...layers, populationLayer],
+    );
+
+    const emitted = await lastValueFrom(
+      effects.loadPopulationEstimatesForSelectedArea$.pipe(toArray()),
+    );
+
+    expect(getPopulationEstimatesChoropleth).toHaveBeenCalledWith(
+      'North Dakota',
+      'ANNUAL_GROWTH_RATE',
+      2025,
+    );
+
+    expect(emitted).toEqual([
+      MapsActions.populationEstimatesRequested(),
+      MapsActions.populationEstimatesLoaded({
+        populationEstimatesChoropleth,
+      }),
+    ]);
+  });
+
+  it('does not request Population Estimates without the capability', async () => {
+    const getPopulationEstimatesChoropleth = vi.fn();
+
+    const effects = setup(
+      { getPopulationEstimatesChoropleth } as unknown as RepositoryMapsApi,
+      of(MapsActions.mapLayersLoaded({ layers })),
+      'Puerto Rico',
+      layers,
+    );
+
+    const emitted = await lastValueFrom(
+      effects.loadPopulationEstimatesForSelectedArea$.pipe(toArray()),
+    );
+
+    expect(emitted).toEqual([]);
+    expect(getPopulationEstimatesChoropleth).not.toHaveBeenCalled();
+  });
+
+  it('reloads Population Estimates when measure or year changes', async () => {
+    const populationEstimatesChoropleth = {
+      geography: 'North Dakota',
+      measure: 'POPULATION',
+      year: 2024,
+    } as never;
+
+    const getPopulationEstimatesChoropleth = vi
+      .fn()
+      .mockReturnValue(of(populationEstimatesChoropleth));
+
+    const effects = setup(
+      { getPopulationEstimatesChoropleth } as unknown as RepositoryMapsApi,
+      of(
+        MapsActions.populationEstimatesConfigurationChanged({
+          measure: 'POPULATION',
+          year: 2024,
+        }),
+      ),
+      'North Dakota',
+      [...layers, populationLayer],
+    );
+
+    const emitted = await lastValueFrom(
+      effects.reloadPopulationEstimatesForConfiguration$.pipe(toArray()),
+    );
+
+    expect(getPopulationEstimatesChoropleth).toHaveBeenCalledWith(
+      'North Dakota',
+      'POPULATION',
+      2024,
+    );
+
+    expect(emitted).toEqual([
+      MapsActions.populationEstimatesRequested(),
+      MapsActions.populationEstimatesLoaded({
+        populationEstimatesChoropleth,
+      }),
+    ]);
   });
 
   /** The Census layers must survive an overlay outage; the two effects are independent. */

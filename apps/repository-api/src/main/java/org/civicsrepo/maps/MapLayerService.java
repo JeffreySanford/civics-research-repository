@@ -22,12 +22,15 @@ public class MapLayerService {
 
     private final CensusAreaBoundaryService censusAreaBoundaryService;
     private final SaipeCountyChoroplethService saipeCountyChoroplethService;
+    private final PopulationEstimatesService populationEstimatesService;
 
     public MapLayerService(
             CensusAreaBoundaryService censusAreaBoundaryService,
-            SaipeCountyChoroplethService saipeCountyChoroplethService) {
+            SaipeCountyChoroplethService saipeCountyChoroplethService,
+            PopulationEstimatesService populationEstimatesService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.saipeCountyChoroplethService = saipeCountyChoroplethService;
+        this.populationEstimatesService = populationEstimatesService;
     }
 
     public List<MapLayer> findDatasetLayers(String datasetId) {
@@ -59,6 +62,17 @@ public class MapLayerService {
                             URI.create("https://www.census.gov/data/datasets/2023/demo-saipe/2023-state-and-county.html"),
                             "U.S. Census Bureau Small Area Income and Poverty Estimates")
                     .visibleByDefault(true));
+        }
+
+        if (populationEstimatesService.supportsGeography(geography)) {
+            layers.add(new MapLayer(
+                            "population-estimates-county-" + slug,
+                            "Vintage 2025 county Population Estimates - " + geography,
+                            MapLayerType.CENSUS_CHOROPLETH,
+                            URI.create(
+                                    "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/counties/totals/co-est2025-alldata.csv"),
+                            "U.S. Census Bureau Population Estimates Program")
+                    .visibleByDefault(false));
         }
 
         layers.add(new MapLayer(

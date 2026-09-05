@@ -1,5 +1,11 @@
-import type { Map as MapLibreMap } from 'maplibre-gl';
-import type { CensusAreaBoundary } from 'repository-api-client';
+import type {
+  DataDrivenPropertyValueSpecification,
+  Map as MapLibreMap,
+} from 'maplibre-gl';
+import type {
+  CensusAreaBoundary,
+  PopulationEstimatesChoropleth,
+} from 'repository-api-client';
 
 /** Map zoom must reach this level before panning can auto-select a census area. */
 export const MIN_ZOOM_FOR_PAN_AREA_SYNC = 5;
@@ -77,12 +83,244 @@ export function configureMapLibreWorker(maplibregl: MapLibreModule): void {
 }
 
 /** The toggles the map exposes. One per checkbox in the layer controls. */
+export type PopulationLegendBreak = {
+  readonly label: string;
+  readonly color: string;
+};
+
+export type PopulationEstimateScale = {
+  readonly kind: 'sequential' | 'diverging';
+  readonly fillColor: DataDrivenPropertyValueSpecification<string>;
+  readonly breaks: readonly PopulationLegendBreak[];
+  readonly description: string;
+};
+
+const POPULATION_SEQUENTIAL_COLORS = [
+  '#eff6ff',
+  '#bfdbfe',
+  '#60a5fa',
+  '#2563eb',
+  '#1e3a8a',
+] as const;
+
+const POPULATION_DIVERGING_COLORS = [
+  '#9a3412',
+  '#fdba74',
+  '#f8fafc',
+  '#93c5fd',
+  '#1d4ed8',
+] as const;
+
+function populationScaleNumber(value: number, percent: boolean): string {
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: percent ? 2 : 0,
+    minimumFractionDigits: 0,
+  }).format(value);
+}
+
+function populationQuantile(
+  sorted: readonly number[],
+  probability: number,
+): number {
+  if (sorted.length === 1) {
+    return sorted[0];
+  }
+
+  const position = (sorted.length - 1) * probability;
+  const lowerIndex = Math.floor(position);
+  const upperIndex = Math.ceil(position);
+
+  if (lowerIndex === upperIndex) {
+    return sorted[lowerIndex];
+  }
+
+  const fraction = position - lowerIndex;
+  return (
+    sorted[lowerIndex] + (sorted[upperIndex] - sorted[lowerIndex]) * fraction
+  );
+}
+
+/**
+ * Builds the cartographic contract for one Population Estimates response.
+ *
+ * Population uses deterministic state-level quantile thresholds. Annual change
+ * and annual growth use a symmetric diverging scale centered exactly on zero,
+ * so identical positive and negative magnitudes have equal visual weight.
+ *
+ * The returned break model is also intended for the textual legend. The map
+ * and semantic explanation therefore cannot silently use different bins.
+ */
+export function buildPopulationEstimateScale(
+  choropleth: PopulationEstimatesChoropleth,
+): PopulationEstimateScale {
+  const values = choropleth.counties
+    .map((county) => county.value)
+    .filter((value) => Number.isFinite(value))
+    .sort((left, right) => left - right);
+
+  if (values.length === 0) {
+    return {
+      kind: choropleth.measure === 'POPULATION' ? 'sequential' : 'diverging',
+      fillColor: '#cbd5e1',
+      breaks: [
+        {
+          label: 'No mapped numeric values',
+          color: '#cbd5e1',
+        },
+      ],
+      description: 'No numeric county values are available for this view.',
+    };
+  }
+
+  if (choropleth.measure === 'POPULATION') {
+    const first = values[0];
+    const rawThresholds = [0.2, 0.4, 0.6, 0.8].map((probability) =>
+      populationQuantile(values, probability),
+    );
+
+    const thresholds = rawThresholds.filter(
+      (value, index, all) =>
+        value > first && (index === 0 || value > all[index - 1]),
+    );
+
+    if (thresholds.length === 0) {
+      return {
+        kind: 'sequential',
+        fillColor: POPULATION_SEQUENTIAL_COLORS[2],
+        breaks: [
+          {
+            label: `All counties: ${populationScaleNumber(first, false)}`,
+            color: POPULATION_SEQUENTIAL_COLORS[2],
+          },
+        ],
+        description:
+          'All returned counties have the same population value, so one sequential class is used.',
+      };
+    }
+
+    const expression: unknown[] = [
+      'step',
+      ['to-number', ['get', 'value']],
+      POPULATION_SEQUENTIAL_COLORS[0],
+    ];
+
+    thresholds.forEach((threshold, index) => {
+      expression.push(
+        threshold,
+        POPULATION_SEQUENTIAL_COLORS[
+          Math.min(index + 1, POPULATION_SEQUENTIAL_COLORS.length - 1)
+        ],
+      );
+    });
+
+    const colors = POPULATION_SEQUENTIAL_COLORS.slice(0, thresholds.length + 1);
+
+    const breaks: PopulationLegendBreak[] = colors.map((color, index) => {
+      if (index === 0) {
+        return {
+          color,
+          label: `< ${populationScaleNumber(thresholds[0], false)}`,
+        };
+      }
+
+      if (index === colors.length - 1) {
+        return {
+          color,
+          label: `≥ ${populationScaleNumber(
+            thresholds[thresholds.length - 1],
+            false,
+          )}`,
+        };
+      }
+
+      return {
+        color,
+        label:
+          `${populationScaleNumber(thresholds[index - 1], false)} to < ` +
+          populationScaleNumber(thresholds[index], false),
+      };
+    });
+
+    return {
+      kind: 'sequential',
+      fillColor: expression as DataDrivenPropertyValueSpecification<string>,
+      breaks,
+      description:
+        'Sequential quantile thresholds are derived deterministically from the returned county values; darker blue indicates larger population.',
+    };
+  }
+
+  const maxAbsolute = Math.max(...values.map((value) => Math.abs(value)));
+
+  if (maxAbsolute === 0) {
+    return {
+      kind: 'diverging',
+      fillColor: POPULATION_DIVERGING_COLORS[2],
+      breaks: [
+        {
+          label: 'No annual change (0)',
+          color: POPULATION_DIVERGING_COLORS[2],
+        },
+      ],
+      description:
+        'Every returned county is at zero, so the diverging scale collapses to its neutral midpoint.',
+    };
+  }
+
+  const half = maxAbsolute / 2;
+  const percent = choropleth.measure === 'ANNUAL_GROWTH_RATE';
+
+  return {
+    kind: 'diverging',
+    fillColor: [
+      'interpolate',
+      ['linear'],
+      ['to-number', ['get', 'value']],
+      -maxAbsolute,
+      POPULATION_DIVERGING_COLORS[0],
+      -half,
+      POPULATION_DIVERGING_COLORS[1],
+      0,
+      POPULATION_DIVERGING_COLORS[2],
+      half,
+      POPULATION_DIVERGING_COLORS[3],
+      maxAbsolute,
+      POPULATION_DIVERGING_COLORS[4],
+    ] as DataDrivenPropertyValueSpecification<string>,
+    breaks: [
+      {
+        label: populationScaleNumber(-maxAbsolute, percent),
+        color: POPULATION_DIVERGING_COLORS[0],
+      },
+      {
+        label: populationScaleNumber(-half, percent),
+        color: POPULATION_DIVERGING_COLORS[1],
+      },
+      {
+        label: '0',
+        color: POPULATION_DIVERGING_COLORS[2],
+      },
+      {
+        label: `+${populationScaleNumber(half, percent)}`,
+        color: POPULATION_DIVERGING_COLORS[3],
+      },
+      {
+        label: `+${populationScaleNumber(maxAbsolute, percent)}`,
+        color: POPULATION_DIVERGING_COLORS[4],
+      },
+    ],
+    description:
+      'Diverging scale centered at zero; orange indicates population loss and blue indicates population growth. Color does not imply statistical significance.',
+  };
+}
+
 export type MapLayerGroupId =
   | 'tiger'
   | 'earthquake'
   | 'lodes'
   | 'workplace'
   | 'saipe'
+  | 'population'
   | 'research'
   | 'hydrography';
 
@@ -141,6 +379,15 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
     label: 'SAIPE county choropleth',
     sourceId: 'saipe-county-choropleth',
     layerIds: ['saipe-county-fill', 'saipe-county-outline'],
+  },
+  {
+    id: 'population',
+    label: 'County population',
+    sourceId: 'population-estimates-county',
+    layerIds: [
+      'population-estimates-county-fill',
+      'population-estimates-county-outline',
+    ],
   },
   {
     id: 'research',

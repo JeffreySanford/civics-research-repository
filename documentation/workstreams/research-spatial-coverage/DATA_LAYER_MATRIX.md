@@ -53,7 +53,7 @@ The committed curated inventory contains 181 research objects. The major area-sc
 
 - Existing source capability: county-level population measures.
 - First map role: population, annual change, and growth-rate county choropleth.
-- Priority: next county thematic layer after capability-aware Maps controls.
+- Current status: implemented with Vintage 2025 county values, authoritative 2025 county geometry, configurable population/change/growth measures, URL state, deterministic cartography, and a semantic equivalent.
 - Geometry: reuse `AdministrativeGeometryService`.
 
 **County Business Patterns**
@@ -271,7 +271,7 @@ Every new layer inherits the map-equivalence rules:
 1. Complete authoritative shared county geometry and SAIPE migration. **Implemented in this workstream.**
 2. Make Maps controls capability-aware for the selected geography.
 3. Add Repository research-by-area coverage from retained explicit administrative metadata.
-4. Add Population Estimates county values.
+4. Add Population Estimates county values. **Implemented.**
 5. Add County Business Patterns with measure/industry configuration.
 6. Add Business Dynamics Statistics, then Building Permits.
 7. Add a deterministic Data.gov spatial-availability probe and targeted sidecar enrichment.

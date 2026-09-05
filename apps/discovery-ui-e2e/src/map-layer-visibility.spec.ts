@@ -62,7 +62,7 @@ test.describe('map layer MapLibre visibility', () => {
       'Community & Economy',
     );
     await expect(communityCategory.locator('summary')).toContainText(
-      '3 layers',
+      '4 layers',
     );
     await expect(environmentCategory.locator('summary')).toContainText(
       'Environment & Hazards',

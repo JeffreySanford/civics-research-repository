@@ -1256,3 +1256,55 @@ input:focus-visible {
 .evidence-note {
   margin-bottom: 0;
 }
+
+.swatch.population {
+  background: #2563eb;
+}
+
+.population-legend-entry {
+  align-items: flex-start !important;
+}
+
+.population-legend-body {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.population-breaks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.population-break {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.population-break-swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+.population-legend-note {
+  color: var(--civics-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+/*
+ * County thematic tables remain contained at WCAG 1.4.10 widths.
+ * The table may preserve its two-dimensional relationship internally,
+ * but it never widens the document itself.
+ */
+@media (max-width: 40rem) {
+  .county-value-table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

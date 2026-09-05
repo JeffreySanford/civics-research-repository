@@ -6,6 +6,8 @@ import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.civicsrepo.generated.dto.LodesFlowOverlay;
 import org.civicsrepo.generated.dto.LodesWorkplaceOverlay;
 import org.civicsrepo.generated.dto.MapLayer;
+import org.civicsrepo.generated.dto.PopulationEstimateMeasure;
+import org.civicsrepo.generated.dto.PopulationEstimatesChoropleth;
 import org.civicsrepo.generated.dto.SaipeCountyChoropleth;
 import org.civicsrepo.generated.dto.UsgsEarthquakeOverlay;
 import org.springframework.http.CacheControl;
@@ -28,6 +30,7 @@ public class MapsController {
     private final LodesFlowService lodesFlowService;
     private final LodesWorkplaceService lodesWorkplaceService;
     private final SaipeCountyChoroplethService saipeCountyChoroplethService;
+    private final PopulationEstimatesService populationEstimatesService;
     private final UsgsHydrographyTileService usgsHydrographyTileService;
 
     public MapsController(
@@ -37,6 +40,7 @@ public class MapsController {
             LodesFlowService lodesFlowService,
             LodesWorkplaceService lodesWorkplaceService,
             SaipeCountyChoroplethService saipeCountyChoroplethService,
+            PopulationEstimatesService populationEstimatesService,
             UsgsHydrographyTileService usgsHydrographyTileService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.mapLayerService = mapLayerService;
@@ -44,6 +48,7 @@ public class MapsController {
         this.lodesFlowService = lodesFlowService;
         this.lodesWorkplaceService = lodesWorkplaceService;
         this.saipeCountyChoroplethService = saipeCountyChoroplethService;
+        this.populationEstimatesService = populationEstimatesService;
         this.usgsHydrographyTileService = usgsHydrographyTileService;
     }
 
@@ -93,6 +98,28 @@ public class MapsController {
             return lodesFlowService.findFlowSample(geography);
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
+    }
+
+    @GetMapping("/overlays/census/population-estimates")
+    public PopulationEstimatesChoropleth getPopulationEstimatesChoropleth(
+            @RequestParam(defaultValue = "North Dakota") String geography,
+            @RequestParam(defaultValue = "ANNUAL_GROWTH_RATE")
+                    PopulationEstimateMeasure measure,
+            @RequestParam(defaultValue = "2025") int year) {
+        try {
+            return populationEstimatesService.findChoropleth(
+                    geography, measure, year);
+        } catch (PopulationEstimatesService.InvalidQueryException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    exception.getMessage(),
+                    exception);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    exception.getMessage(),
+                    exception);
         }
     }
 

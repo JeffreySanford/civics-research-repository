@@ -33,6 +33,12 @@ export type LodesWorkplaceSummary =
 export type SaipeCountyChoropleth =
   components['schemas']['SaipeCountyChoropleth'];
 export type SaipeCountyValue = components['schemas']['SaipeCountyValue'];
+export type PopulationEstimateMeasure =
+  components['schemas']['PopulationEstimateMeasure'];
+export type PopulationEstimateCountyValue =
+  components['schemas']['PopulationEstimateCountyValue'];
+export type PopulationEstimatesChoropleth =
+  components['schemas']['PopulationEstimatesChoropleth'];
 export type ResearchSpatialViewport =
   components['schemas']['ResearchSpatialViewport'];
 export type ResearchSpatialCoverageSummary =
@@ -224,6 +230,23 @@ export class RepositoryMapsApi {
       `${this.baseUrl}/overlays/census/lodes-flow`,
       {
         params: { geography },
+      },
+    );
+  }
+
+  getPopulationEstimatesChoropleth(
+    geography: string,
+    measure: PopulationEstimateMeasure = 'ANNUAL_GROWTH_RATE',
+    year = 2025,
+  ): Observable<PopulationEstimatesChoropleth> {
+    return this.http.get<PopulationEstimatesChoropleth>(
+      `${this.baseUrl}/overlays/census/population-estimates`,
+      {
+        params: {
+          geography,
+          measure,
+          year,
+        },
       },
     );
   }

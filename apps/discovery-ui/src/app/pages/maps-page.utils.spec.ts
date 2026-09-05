@@ -1,5 +1,6 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import {
+  buildPopulationEstimateScale,
   configureMapLibreWorker,
   expandResearchCoverageCluster,
   findCensusAreaForPoint,
@@ -67,6 +68,7 @@ describe('readMapDebugSnapshot', () => {
     lodes: true,
     workplace: false,
     saipe: true,
+    population: true,
     hydrography: true,
     research: true,
   };
@@ -131,6 +133,7 @@ describe('readMapDebugSnapshot', () => {
         lodes: false,
         workplace: false,
         saipe: false,
+        population: false,
         hydrography: false,
         research: false,
       },
@@ -340,5 +343,78 @@ describe('expandResearchCoverageCluster', () => {
 
     expect(expanded).toBe(false);
     expect(easeTo).not.toHaveBeenCalled();
+  });
+});
+
+describe('buildPopulationEstimateScale', () => {
+  function choropleth(
+    measure: 'POPULATION' | 'ANNUAL_CHANGE' | 'ANNUAL_GROWTH_RATE',
+    values: readonly number[],
+  ) {
+    return {
+      measure,
+      counties: values.map((value, index) => ({
+        fips: `380${String(index + 1).padStart(2, '0')}`,
+        name: `County ${index + 1}`,
+        value,
+        population: Math.round(Math.abs(value)),
+      })),
+    } as never;
+  }
+
+  it('uses deterministic sequential thresholds for population', () => {
+    const scale = buildPopulationEstimateScale(
+      choropleth('POPULATION', [10, 20, 30, 40, 50]),
+    );
+
+    expect(scale.kind).toBe('sequential');
+    expect(scale.breaks.length).toBeGreaterThan(1);
+    expect(scale.description).toContain('quantile');
+    expect(scale.fillColor).toEqual(expect.arrayContaining(['step']));
+  });
+
+  it('centers annual growth symmetrically on zero', () => {
+    const scale = buildPopulationEstimateScale(
+      choropleth('ANNUAL_GROWTH_RATE', [-4, -1, 0.5, 8]),
+    );
+
+    expect(scale.kind).toBe('diverging');
+    expect(scale.breaks.map((entry) => entry.label)).toContain('0');
+    expect(scale.description).toContain('centered at zero');
+
+    const expression = scale.fillColor as unknown[];
+    expect(expression).toContain(-8);
+    expect(expression).toContain(0);
+    expect(expression).toContain(8);
+  });
+
+  it('uses the same diverging contract for annual numeric change', () => {
+    const scale = buildPopulationEstimateScale(
+      choropleth('ANNUAL_CHANGE', [-100, 0, 25]),
+    );
+
+    expect(scale.kind).toBe('diverging');
+
+    const expression = scale.fillColor as unknown[];
+    expect(expression).toContain(-100);
+    expect(expression).toContain(100);
+  });
+
+  it('collapses a one-value population distribution safely', () => {
+    const scale = buildPopulationEstimateScale(choropleth('POPULATION', [42]));
+
+    expect(scale.kind).toBe('sequential');
+    expect(scale.breaks).toHaveLength(1);
+    expect(scale.breaks[0].label).toContain('42');
+  });
+
+  it('uses the neutral midpoint when every county has zero change', () => {
+    const scale = buildPopulationEstimateScale(
+      choropleth('ANNUAL_GROWTH_RATE', [0, 0, 0]),
+    );
+
+    expect(scale.kind).toBe('diverging');
+    expect(scale.breaks).toHaveLength(1);
+    expect(scale.breaks[0].label).toContain('0');
   });
 });

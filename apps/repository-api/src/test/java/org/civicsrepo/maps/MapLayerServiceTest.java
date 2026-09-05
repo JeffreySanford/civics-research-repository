@@ -11,15 +11,22 @@ import org.junit.jupiter.api.Test;
 
 class MapLayerServiceTest {
     private final CensusAreaBoundaryService boundaries = new CensusAreaBoundaryService();
-    private final SaipeCountyChoroplethService saipe = new SaipeCountyChoroplethService(
-            boundaries,
+    private final AdministrativeGeometryService geometry =
             new AdministrativeGeometryService(
                     Map.of(
                             2023, "https://example.test/2023/counties/query",
                             2025, "https://example.test/2025/counties/query"),
                     HttpClient.newHttpClient(),
-                    new ObjectMapper()));
-    private final MapLayerService mapLayerService = new MapLayerService(boundaries, saipe);
+                    new ObjectMapper());
+
+    private final SaipeCountyChoroplethService saipe =
+            new SaipeCountyChoroplethService(boundaries, geometry);
+
+    private final PopulationEstimatesService population =
+            new PopulationEstimatesService(boundaries, geometry);
+
+    private final MapLayerService mapLayerService =
+            new MapLayerService(boundaries, saipe, population);
 
     @Test
     void includesReferenceAndChoroplethLayersWhereSaipeValuesExist() {
@@ -36,6 +43,45 @@ class MapLayerServiceTest {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-florida-2025"))
                 .extracting(MapLayer::getId)
                 .doesNotContain("saipe-county-poverty-florida");
+    }
+
+    @Test
+    void advertisesPopulationEstimatesWhereVintage2025ValuesExist() {
+        assertThat(
+                        mapLayerService.findDatasetLayers(
+                                "tiger-line-north-dakota-2025"))
+                .filteredOn(
+                        layer ->
+                                layer.getId()
+                                        .equals(
+                                                "population-estimates-county-north-dakota"))
+                .singleElement()
+                .satisfies(layer -> {
+                    assertThat(layer.getLayerType())
+                            .isEqualTo(MapLayerType.CENSUS_CHOROPLETH);
+                    assertThat(layer.getAttribution())
+                            .contains("Population Estimates Program");
+                    assertThat(layer.getVisibleByDefault()).isFalse();
+                });
+    }
+
+    @Test
+    void keepsSaipeAndPopulationCapabilitiesIndependent() {
+        assertThat(
+                        mapLayerService.findDatasetLayers(
+                                "tiger-line-florida-2025"))
+                .extracting(MapLayer::getId)
+                .contains("population-estimates-county-florida")
+                .doesNotContain("saipe-county-poverty-florida");
+    }
+
+    @Test
+    void doesNotAdvertisePopulationWherePinnedCountyValuesAreAbsent() {
+        assertThat(
+                        mapLayerService.findDatasetLayers(
+                                "tiger-line-puerto-rico-2025"))
+                .extracting(MapLayer::getId)
+                .doesNotContain("population-estimates-county-puerto-rico");
     }
 
     @Test

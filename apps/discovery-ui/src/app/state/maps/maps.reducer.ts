@@ -4,6 +4,8 @@ import type {
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
+  PopulationEstimateMeasure,
+  PopulationEstimatesChoropleth,
   ResearchSpatialCoverageResponse,
   ResearchSpatialViewport,
   SaipeCountyChoropleth,
@@ -26,6 +28,11 @@ export interface MapsState {
   readonly lodesWorkplaceError: string | null;
   readonly saipeChoropleth: SaipeCountyChoropleth | null;
   readonly saipeChoroplethError: string | null;
+  readonly populationEstimatesChoropleth: PopulationEstimatesChoropleth | null;
+  readonly populationEstimatesError: string | null;
+  readonly populationEstimatesLoading: boolean;
+  readonly populationEstimateMeasure: PopulationEstimateMeasure;
+  readonly populationEstimateYear: number;
   readonly researchCoverageQuery: SearchQuery | null;
   readonly researchCoverageViewport: ResearchSpatialViewport | null;
   readonly researchCoverageResponse: ResearchSpatialCoverageResponse | null;
@@ -37,6 +44,7 @@ export interface MapsState {
   readonly workplaceVisible: boolean;
   readonly hydrographyVisible: boolean;
   readonly saipeVisible: boolean;
+  readonly populationVisible: boolean;
   readonly researchCoverageVisible: boolean;
   readonly selectedResearchCoverageId: string | null;
   /** Feature shared by the map and the accessible list; either view can set it. */
@@ -59,6 +67,11 @@ export const initialMapsState: MapsState = {
   lodesWorkplaceError: null,
   saipeChoropleth: null,
   saipeChoroplethError: null,
+  populationEstimatesChoropleth: null,
+  populationEstimatesError: null,
+  populationEstimatesLoading: false,
+  populationEstimateMeasure: 'ANNUAL_GROWTH_RATE',
+  populationEstimateYear: 2025,
   researchCoverageQuery: null,
   researchCoverageViewport: null,
   researchCoverageResponse: null,
@@ -70,6 +83,7 @@ export const initialMapsState: MapsState = {
   workplaceVisible: false,
   hydrographyVisible: false,
   saipeVisible: false,
+  populationVisible: false,
   researchCoverageVisible: false,
   selectedResearchCoverageId: null,
   selectedFeatureId: null,
@@ -87,6 +101,7 @@ export const mapsReducer = createReducer(
     earthquakeError: null,
     lodesFlowError: null,
     saipeChoroplethError: null,
+    populationEstimatesError: null,
     researchCoverageError: null,
   })),
   on(MapsActions.mapDataLoaded, (state, { censusAreaBoundaries }) => ({
@@ -94,8 +109,11 @@ export const mapsReducer = createReducer(
     censusAreaBoundaries,
   })),
   on(MapsActions.mapLayersLoaded, (state, { layers }) => {
-    const saipeAvailable = layers.some(
-      (layer) => layer.layerType === 'CENSUS_CHOROPLETH',
+    const saipeAvailable = layers.some((layer) =>
+      layer.id.startsWith('saipe-county-poverty-'),
+    );
+    const populationAvailable = layers.some((layer) =>
+      layer.id.startsWith('population-estimates-county-'),
     );
 
     return {
@@ -105,6 +123,16 @@ export const mapsReducer = createReducer(
       saipeVisible: saipeAvailable ? state.saipeVisible : false,
       saipeChoropleth: saipeAvailable ? state.saipeChoropleth : null,
       saipeChoroplethError: saipeAvailable ? state.saipeChoroplethError : null,
+      populationVisible: populationAvailable ? state.populationVisible : false,
+      populationEstimatesChoropleth: populationAvailable
+        ? state.populationEstimatesChoropleth
+        : null,
+      populationEstimatesError: populationAvailable
+        ? state.populationEstimatesError
+        : null,
+      populationEstimatesLoading: populationAvailable
+        ? state.populationEstimatesLoading
+        : false,
     };
   }),
   on(MapsActions.earthquakeOverlayLoaded, (state, { earthquakeOverlay }) => ({
@@ -159,6 +187,36 @@ export const mapsReducer = createReducer(
     saipeChoropleth: null,
     saipeChoroplethError: error.message,
   })),
+  on(
+    MapsActions.populationEstimatesConfigurationChanged,
+    (state, { measure, year }) => ({
+      ...state,
+      populationEstimateMeasure: measure,
+      populationEstimateYear: year,
+      populationEstimatesChoropleth: null,
+      populationEstimatesError: null,
+    }),
+  ),
+  on(MapsActions.populationEstimatesRequested, (state) => ({
+    ...state,
+    populationEstimatesLoading: true,
+    populationEstimatesError: null,
+  })),
+  on(
+    MapsActions.populationEstimatesLoaded,
+    (state, { populationEstimatesChoropleth }) => ({
+      ...state,
+      populationEstimatesChoropleth,
+      populationEstimatesLoading: false,
+      populationEstimatesError: null,
+    }),
+  ),
+  on(MapsActions.populationEstimatesFailed, (state, { error }) => ({
+    ...state,
+    populationEstimatesChoropleth: null,
+    populationEstimatesLoading: false,
+    populationEstimatesError: error.message,
+  })),
   on(MapsActions.researchCoverageRequested, (state, { query, viewport }) => ({
     ...state,
     researchCoverageQuery: query,
@@ -195,6 +253,9 @@ export const mapsReducer = createReducer(
     error: null,
     saipeChoropleth: null,
     saipeChoroplethError: null,
+    populationEstimatesChoropleth: null,
+    populationEstimatesError: null,
+    populationEstimatesLoading: false,
   })),
   on(MapsActions.mapDataFailed, (state, { error }) => ({
     ...state,
@@ -230,6 +291,10 @@ export const mapsReducer = createReducer(
   on(MapsActions.saipeLayerToggled, (state, { visible }) => ({
     ...state,
     saipeVisible: visible,
+  })),
+  on(MapsActions.populationLayerToggled, (state, { visible }) => ({
+    ...state,
+    populationVisible: visible,
   })),
   on(MapsActions.researchCoverageLayerToggled, (state, { visible }) => ({
     ...state,

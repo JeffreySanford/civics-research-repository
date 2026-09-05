@@ -589,3 +589,111 @@ describe('research coverage selection', () => {
     expect(loaded.selectedResearchCoverageId).toBeNull();
   });
 });
+
+describe('population estimates state', () => {
+  const populationLayer = {
+    id: 'population-estimates-county-north-dakota',
+    label: 'Vintage 2025 county Population Estimates - North Dakota',
+    layerType: 'CENSUS_CHOROPLETH',
+    sourceUrl: 'https://example.test/population.csv',
+    attribution: 'U.S. Census Bureau Population Estimates Program',
+    visibleByDefault: false,
+  } as unknown as MapLayer;
+
+  it('defaults to latest annual growth while leaving the layer hidden', () => {
+    expect(initialMapsState.populationVisible).toBe(false);
+    expect(initialMapsState.populationEstimateMeasure).toBe(
+      'ANNUAL_GROWTH_RATE',
+    );
+    expect(initialMapsState.populationEstimateYear).toBe(2025);
+    expect(initialMapsState.populationEstimatesLoading).toBe(false);
+  });
+
+  it('tracks measure and year as explicit configuration', () => {
+    const state = mapsReducer(
+      initialMapsState,
+      MapsActions.populationEstimatesConfigurationChanged({
+        measure: 'POPULATION',
+        year: 2024,
+      }),
+    );
+
+    expect(state.populationEstimateMeasure).toBe('POPULATION');
+    expect(state.populationEstimateYear).toBe(2024);
+  });
+
+  it('tracks request, success, and failure independently', () => {
+    const requested = mapsReducer(
+      initialMapsState,
+      MapsActions.populationEstimatesRequested(),
+    );
+
+    expect(requested.populationEstimatesLoading).toBe(true);
+
+    const choropleth = {
+      geography: 'North Dakota',
+      measure: 'ANNUAL_GROWTH_RATE',
+      year: 2025,
+    } as never;
+
+    const loaded = mapsReducer(
+      requested,
+      MapsActions.populationEstimatesLoaded({
+        populationEstimatesChoropleth: choropleth,
+      }),
+    );
+
+    expect(loaded.populationEstimatesLoading).toBe(false);
+    expect(loaded.populationEstimatesChoropleth).toBe(choropleth);
+
+    const failed = mapsReducer(
+      loaded,
+      MapsActions.populationEstimatesFailed({
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'Population service unavailable.',
+        },
+      }),
+    );
+
+    expect(failed.populationEstimatesChoropleth).toBeNull();
+    expect(failed.populationEstimatesLoading).toBe(false);
+    expect(failed.populationEstimatesError).toBe(
+      'Population service unavailable.',
+    );
+  });
+
+  it('keeps SAIPE and Population Estimates capability independent', () => {
+    const loaded = mapsReducer(
+      {
+        ...initialMapsState,
+        saipeVisible: true,
+        populationVisible: true,
+      },
+      MapsActions.mapLayersLoaded({
+        layers: [populationLayer],
+      }),
+    );
+
+    expect(loaded.saipeVisible).toBe(false);
+    expect(loaded.populationVisible).toBe(true);
+  });
+
+  it('clears population data when the new area lacks the capability', () => {
+    const loaded = mapsReducer(
+      {
+        ...initialMapsState,
+        populationVisible: true,
+        populationEstimatesChoropleth: {
+          geography: 'North Dakota',
+        } as never,
+      },
+      MapsActions.mapLayersLoaded({
+        layers: [],
+      }),
+    );
+
+    expect(loaded.populationVisible).toBe(false);
+    expect(loaded.populationEstimatesChoropleth).toBeNull();
+  });
+});

@@ -240,6 +240,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/overlays/census/population-estimates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Vintage 2025 county population estimates and authoritative county geometry.
+     * @description Joins pinned Census Population Estimates Program Vintage 2025 county values to compatible authoritative Census county geometry by GEOID. Population, annual numeric change, and annual growth rate are derived deterministically from the same Vintage 2025 population series.
+     */
+    get: operations['getPopulationEstimatesChoropleth'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/overlays/usgs/earthquakes': {
     parameters: {
       query?: never;
@@ -1762,6 +1782,50 @@ export interface components {
       originCounty: string;
       destinationCounty: string;
     };
+    /**
+     * @default ANNUAL_GROWTH_RATE
+     * @enum {string}
+     */
+    PopulationEstimateMeasure:
+      | 'POPULATION'
+      | 'ANNUAL_CHANGE'
+      | 'ANNUAL_GROWTH_RATE';
+    PopulationEstimateCountyValue: {
+      fips: string;
+      name: string;
+      /** Format: double */
+      value: number;
+      /** Format: int64 */
+      population: number;
+      /** Format: int64 */
+      priorPopulation?: number;
+    };
+    PopulationEstimatesChoropleth: {
+      source: string;
+      /** Format: uri */
+      sourceUrl: string;
+      attribution: string;
+      geography: string;
+      sourceVintage: number;
+      sourceSha256: string;
+      /** Format: date */
+      capturedAt: string;
+      geometryVintage: number;
+      /** Format: uri */
+      geometrySourceUrl: string;
+      geometryAttribution: string;
+      measure: components['schemas']['PopulationEstimateMeasure'];
+      measureLabel: string;
+      units: string;
+      year: number;
+      priorYear?: number;
+      supportedPopulationYears: number[];
+      supportedChangeYears: number[];
+      geoJson: {
+        [key: string]: unknown;
+      };
+      counties: components['schemas']['PopulationEstimateCountyValue'][];
+    };
     SaipeCountyChoropleth: {
       source: string;
       /** Format: uri */
@@ -2262,6 +2326,34 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SaipeCountyChoropleth'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getPopulationEstimatesChoropleth: {
+    parameters: {
+      query?: {
+        geography?: components['parameters']['Geography'];
+        measure?: components['schemas']['PopulationEstimateMeasure'];
+        year?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description County Population Estimates thematic layer. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PopulationEstimatesChoropleth'];
         };
       };
       400: components['responses']['BadRequest'];
