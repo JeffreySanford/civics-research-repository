@@ -13,6 +13,10 @@ import type {
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
+import {
+  DEFAULT_USGS_TERRAIN_MODE,
+  type UsgsTerrainMode,
+} from './terrain';
 
 export const mapsFeatureKey = 'maps';
 
@@ -43,6 +47,8 @@ export interface MapsState {
   readonly lodesVisible: boolean;
   readonly workplaceVisible: boolean;
   readonly hydrographyVisible: boolean;
+  readonly terrainVisible: boolean;
+  readonly terrainMode: UsgsTerrainMode;
   readonly saipeVisible: boolean;
   readonly populationVisible: boolean;
   readonly researchCoverageVisible: boolean;
@@ -82,6 +88,8 @@ export const initialMapsState: MapsState = {
   lodesVisible: false,
   workplaceVisible: false,
   hydrographyVisible: false,
+  terrainVisible: false,
+  terrainMode: DEFAULT_USGS_TERRAIN_MODE,
   saipeVisible: false,
   populationVisible: false,
   researchCoverageVisible: false,
@@ -115,6 +123,9 @@ export const mapsReducer = createReducer(
     const populationAvailable = layers.some((layer) =>
       layer.id.startsWith('population-estimates-county-'),
     );
+    const terrainAvailable = layers.some(
+      (layer) => layer.id === 'usgs-3dep-terrain',
+    );
 
     return {
       ...state,
@@ -133,6 +144,7 @@ export const mapsReducer = createReducer(
       populationEstimatesLoading: populationAvailable
         ? state.populationEstimatesLoading
         : false,
+      terrainVisible: terrainAvailable ? state.terrainVisible : false,
     };
   }),
   on(MapsActions.earthquakeOverlayLoaded, (state, { earthquakeOverlay }) => ({
@@ -287,6 +299,14 @@ export const mapsReducer = createReducer(
   on(MapsActions.hydrographyLayerToggled, (state, { visible }) => ({
     ...state,
     hydrographyVisible: visible,
+  })),
+  on(MapsActions.terrainLayerToggled, (state, { visible }) => ({
+    ...state,
+    terrainVisible: visible,
+  })),
+  on(MapsActions.terrainModeChanged, (state, { mode }) => ({
+    ...state,
+    terrainMode: mode,
   })),
   on(MapsActions.saipeLayerToggled, (state, { visible }) => ({
     ...state,
