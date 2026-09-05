@@ -13,10 +13,7 @@ import type {
   UsgsEarthquakeOverlay,
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
-import {
-  DEFAULT_USGS_TERRAIN_MODE,
-  type UsgsTerrainMode,
-} from './terrain';
+import { DEFAULT_USGS_TERRAIN_MODE, type UsgsTerrainMode } from './terrain';
 
 export const mapsFeatureKey = 'maps';
 
