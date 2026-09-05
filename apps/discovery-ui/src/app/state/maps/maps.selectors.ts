@@ -109,6 +109,16 @@ export const selectHydrographyVisible = createSelector(
   (state) => state.hydrographyVisible,
 );
 
+export const selectTerrainVisible = createSelector(
+  selectMapsState,
+  (state) => state.terrainVisible,
+);
+
+export const selectTerrainMode = createSelector(
+  selectMapsState,
+  (state) => state.terrainMode,
+);
+
 export const selectSaipeVisible = createSelector(
   selectMapsState,
   (state) => state.saipeVisible,
@@ -135,7 +145,17 @@ export const selectSelectedResearchCoverageFeature = createSelector(
 
 export const selectHydrographyLayer = createSelector(
   selectMapLayers,
-  (layers) => layers.find((layer) => layer.layerType === 'USGS_REFERENCE'),
+  (layers) => layers.find((layer) => layer.id === 'usgs-3hp-hydrography'),
+);
+
+export const selectTerrainLayer = createSelector(
+  selectMapLayers,
+  (layers) => layers.find((layer) => layer.id === 'usgs-3dep-terrain'),
+);
+
+export const selectTerrainAvailable = createSelector(
+  selectTerrainLayer,
+  (layer) => layer !== undefined,
 );
 
 export const selectMapsLoading = createSelector(
