@@ -78,7 +78,9 @@ async function terrainMapState(page: Page): Promise<{
   tiles: string[];
 } | null> {
   return page.evaluate(() => {
-    const canvas = document.querySelector('[data-testid="discovery-map-canvas"]') as
+    const canvas = document.querySelector(
+      '[data-testid="discovery-map-canvas"]',
+    ) as
       | (HTMLElement & { __map?: import('maplibre-gl').Map })
       | null;
     const map = canvas?.__map;
@@ -146,28 +148,28 @@ test.describe('USGS 3DEP terrain', () => {
     await page.goto('/maps');
 
     await expect.poll(() => terrainMapState(page)).not.toBeNull();
-    await expect.poll(async () => (await terrainMapState(page))?.visibility).toBe(
-      'none',
-    );
-    await expect.poll(async () => (await terrainMapState(page))?.tiles.join(' ')).toContain(
-      'mode=hillshade',
-    );
+    await expect
+      .poll(async () => (await terrainMapState(page))?.visibility)
+      .toBe('none');
+    await expect
+      .poll(async () => (await terrainMapState(page))?.tiles.join(' '))
+      .toContain('mode=hillshade');
 
     await openLayerCategoryForToggle(page, 'map-layer-terrain');
     await page.getByTestId('map-layer-terrain').check();
 
-    await expect.poll(async () => (await terrainMapState(page))?.visibility).toBe(
-      'visible',
-    );
+    await expect
+      .poll(async () => (await terrainMapState(page))?.visibility)
+      .toBe('visible');
 
     await page.getByTestId('terrain-mode').selectOption('slope');
 
-    await expect.poll(async () => (await terrainMapState(page))?.tiles.join(' ')).toContain(
-      'mode=slope',
-    );
-    await expect.poll(async () => (await terrainMapState(page))?.visibility).toBe(
-      'visible',
-    );
+    await expect
+      .poll(async () => (await terrainMapState(page))?.tiles.join(' '))
+      .toContain('mode=slope');
+    await expect
+      .poll(async () => (await terrainMapState(page))?.visibility)
+      .toBe('visible');
   });
 
   test('restores terrain visibility and mode while Census geography changes @maps @wcag @section508', async ({
@@ -187,11 +189,11 @@ test.describe('USGS 3DEP terrain', () => {
     await expect(page.getByTestId('map-layer-terrain')).toBeChecked();
     await expect(page.getByTestId('terrain-mode')).toHaveValue('tinted');
 
-    await expect.poll(async () => (await terrainMapState(page))?.visibility).toBe(
-      'visible',
-    );
-    await expect.poll(async () => (await terrainMapState(page))?.tiles.join(' ')).toContain(
-      'mode=tinted',
-    );
+    await expect
+      .poll(async () => (await terrainMapState(page))?.visibility)
+      .toBe('visible');
+    await expect
+      .poll(async () => (await terrainMapState(page))?.tiles.join(' '))
+      .toContain('mode=tinted');
   });
 });
