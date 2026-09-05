@@ -139,7 +139,7 @@ test.describe('map layer controls', () => {
     page,
   }) => {
     const community = page.getByTestId('map-layer-category-community-economy');
-    await expect(community).toContainText('3 layers');
+    await expect(community).toContainText('4 layers');
     await openLayerCategoryForToggle(page, 'map-layer-saipe');
     await expect(page.getByTestId('map-layer-saipe')).toBeVisible();
 
