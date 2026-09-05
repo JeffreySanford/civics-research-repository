@@ -141,4 +141,21 @@ class MapLayerServiceTest {
                         .doesNotContain("hydro.nationalmap.gov")
                         .doesNotContain("/tile/{z}/{y}/{x}"));
     }
+
+    /** 3DEP is dynamic imagery; the browser receives one approved repository proxy template. */
+    @Test
+    void terrainLayerUsesProxiedHillshadeTemplateByDefault() {
+        assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
+                .filteredOn(layer -> layer.getId().equals("usgs-3dep-terrain"))
+                .singleElement()
+                .satisfies(layer -> {
+                    assertThat(layer.getLayerType()).isEqualTo(MapLayerType.USGS_REFERENCE);
+                    assertThat(layer.getVisibleByDefault()).isFalse();
+                    assertThat(layer.getAttribution()).contains("3D Elevation Program");
+                    assertThat(layer.getRasterTileUrlTemplate())
+                            .contains("/overlays/usgs/terrain/export?bbox={bbox-epsg-3857}")
+                            .contains("mode=hillshade")
+                            .doesNotContain("elevation.nationalmap.gov");
+                });
+    }
 }
