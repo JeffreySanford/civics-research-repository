@@ -32,6 +32,7 @@ public class MapsController {
     private final SaipeCountyChoroplethService saipeCountyChoroplethService;
     private final PopulationEstimatesService populationEstimatesService;
     private final UsgsHydrographyTileService usgsHydrographyTileService;
+    private final UsgsTerrainTileService usgsTerrainTileService;
 
     public MapsController(
             CensusAreaBoundaryService censusAreaBoundaryService,
@@ -41,7 +42,8 @@ public class MapsController {
             LodesWorkplaceService lodesWorkplaceService,
             SaipeCountyChoroplethService saipeCountyChoroplethService,
             PopulationEstimatesService populationEstimatesService,
-            UsgsHydrographyTileService usgsHydrographyTileService) {
+            UsgsHydrographyTileService usgsHydrographyTileService,
+            UsgsTerrainTileService usgsTerrainTileService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.mapLayerService = mapLayerService;
         this.usgsEarthquakeService = usgsEarthquakeService;
@@ -50,6 +52,7 @@ public class MapsController {
         this.saipeCountyChoroplethService = saipeCountyChoroplethService;
         this.populationEstimatesService = populationEstimatesService;
         this.usgsHydrographyTileService = usgsHydrographyTileService;
+        this.usgsTerrainTileService = usgsTerrainTileService;
     }
 
     @GetMapping("/datasets/{datasetId}/map-layers")
@@ -78,6 +81,17 @@ public class MapsController {
         byte[] tile = usgsHydrographyTileService.exportTile(bbox, bboxSR, imageSR, size, transparent);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic())
+                .contentType(MediaType.IMAGE_PNG)
+                .body(tile);
+    }
+
+    @GetMapping(value = "/overlays/usgs/terrain/export", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> getUsgsTerrainTileExport(
+            @RequestParam String bbox,
+            @RequestParam(defaultValue = "hillshade") String mode) {
+        byte[] tile = usgsTerrainTileService.exportTile(bbox, mode);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(Duration.ofHours(6)).cachePublic())
                 .contentType(MediaType.IMAGE_PNG)
                 .body(tile);
     }
