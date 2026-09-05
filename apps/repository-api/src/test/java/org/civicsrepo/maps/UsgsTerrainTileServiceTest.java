@@ -14,7 +14,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,12 +74,12 @@ class UsgsTerrainTileServiceTest {
     }
 
     @Test
-    void returnsTransparentPlaceholderWhenUpstreamFails() {
+    void surfacesUpstreamFailuresAsServiceUnavailable() {
         UsgsTerrainTileService service = new UsgsTerrainTileService(TestHttpClient.withIOException());
 
-        byte[] tile = service.exportTile("-100,40,-99,41", "slope");
-
-        assertThat(Arrays.equals(tile, UsgsTerrainTileService.TRANSPARENT_PNG)).isTrue();
+        assertThatThrownBy(() -> service.exportTile("-100,40,-99,41", "slope"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("terrain service is unavailable");
     }
 
     private void assertTerrainFunction(String mode, String expectedFunction) {
