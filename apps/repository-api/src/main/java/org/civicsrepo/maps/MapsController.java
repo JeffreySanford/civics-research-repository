@@ -1,7 +1,7 @@
 package org.civicsrepo.maps;
 
-import java.util.List;
 import java.time.Duration;
+import java.util.List;
 import org.civicsrepo.generated.dto.CensusAreaBoundary;
 import org.civicsrepo.generated.dto.LodesFlowOverlay;
 import org.civicsrepo.generated.dto.LodesWorkplaceOverlay;
@@ -31,6 +31,7 @@ public class MapsController {
     private final LodesWorkplaceService lodesWorkplaceService;
     private final SaipeCountyChoroplethService saipeCountyChoroplethService;
     private final PopulationEstimatesService populationEstimatesService;
+    private final CountyBusinessPatternsService countyBusinessPatternsService;
     private final UsgsHydrographyTileService usgsHydrographyTileService;
     private final UsgsTerrainTileService usgsTerrainTileService;
 
@@ -42,6 +43,7 @@ public class MapsController {
             LodesWorkplaceService lodesWorkplaceService,
             SaipeCountyChoroplethService saipeCountyChoroplethService,
             PopulationEstimatesService populationEstimatesService,
+            CountyBusinessPatternsService countyBusinessPatternsService,
             UsgsHydrographyTileService usgsHydrographyTileService,
             UsgsTerrainTileService usgsTerrainTileService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
@@ -51,6 +53,7 @@ public class MapsController {
         this.lodesWorkplaceService = lodesWorkplaceService;
         this.saipeCountyChoroplethService = saipeCountyChoroplethService;
         this.populationEstimatesService = populationEstimatesService;
+        this.countyBusinessPatternsService = countyBusinessPatternsService;
         this.usgsHydrographyTileService = usgsHydrographyTileService;
         this.usgsTerrainTileService = usgsTerrainTileService;
     }
@@ -118,22 +121,29 @@ public class MapsController {
     @GetMapping("/overlays/census/population-estimates")
     public PopulationEstimatesChoropleth getPopulationEstimatesChoropleth(
             @RequestParam(defaultValue = "North Dakota") String geography,
-            @RequestParam(defaultValue = "ANNUAL_GROWTH_RATE")
-                    PopulationEstimateMeasure measure,
+            @RequestParam(defaultValue = "ANNUAL_GROWTH_RATE") PopulationEstimateMeasure measure,
             @RequestParam(defaultValue = "2025") int year) {
         try {
-            return populationEstimatesService.findChoropleth(
-                    geography, measure, year);
+            return populationEstimatesService.findChoropleth(geography, measure, year);
         } catch (PopulationEstimatesService.InvalidQueryException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    exception.getMessage(),
-                    exception);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
         } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    exception.getMessage(),
-                    exception);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
+        }
+    }
+
+    @GetMapping("/overlays/census/county-business-patterns")
+    public CountyBusinessPatternsService.Choropleth getCountyBusinessPatternsChoropleth(
+            @RequestParam(defaultValue = "North Dakota") String geography,
+            @RequestParam(defaultValue = "ESTABLISHMENTS") CountyBusinessPatternsMeasure measure,
+            @RequestParam(defaultValue = "TOTAL") String industry,
+            @RequestParam(defaultValue = "2023") int year) {
+        try {
+            return countyBusinessPatternsService.findChoropleth(geography, measure, industry, year);
+        } catch (CountyBusinessPatternsService.InvalidQueryException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
         }
     }
 
