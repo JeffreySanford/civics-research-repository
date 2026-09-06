@@ -260,6 +260,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/overlays/census/county-business-patterns': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get 2023 County Business Patterns county values and authoritative county geometry.
+     * @description Joins the pinned 2023 Census County Business Patterns county-map extract to compatible 2023 Census TIGERweb county geometry by GEOID. Missing county/industry rows remain explicitly unavailable and are never manufactured as zero.
+     */
+    get: operations['getCountyBusinessPatternsChoropleth'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/overlays/usgs/earthquakes': {
     parameters: {
       query?: never;
@@ -1803,6 +1823,86 @@ export interface components {
       destinationCounty: string;
     };
     /**
+     * @default ESTABLISHMENTS
+     * @enum {string}
+     */
+    CountyBusinessPatternsMeasure:
+      | 'ESTABLISHMENTS'
+      | 'EMPLOYMENT'
+      | 'FIRST_QUARTER_PAYROLL'
+      | 'ANNUAL_PAYROLL';
+    /**
+     * @default TOTAL
+     * @enum {string}
+     */
+    CountyBusinessPatternsIndustry:
+      | 'TOTAL'
+      | '11'
+      | '21'
+      | '22'
+      | '23'
+      | '31'
+      | '42'
+      | '44'
+      | '48'
+      | '51'
+      | '52'
+      | '53'
+      | '54'
+      | '55'
+      | '56'
+      | '61'
+      | '62'
+      | '71'
+      | '72'
+      | '81'
+      | '99';
+    CountyBusinessPatternsCountyValue: {
+      fips: string;
+      name: string;
+      /** @description True only when Census published a retained row for the selected county and industry. */
+      available: boolean;
+      /** @description Selected published value, or null when the county/industry row is unavailable. */
+      value: number | null;
+      /** @description Census noise flag for EMP/QP1/AP; null for establishments or unavailable rows. */
+      noiseFlag: ('G' | 'H' | 'J') | null;
+    };
+    CountyBusinessPatternsChoropleth: {
+      layerId: string;
+      source: string;
+      /** Format: uri */
+      sourceUrl: string;
+      attribution: string;
+      geography: string;
+      /** @enum {string} */
+      geographyLevel: 'COUNTY';
+      /** @enum {integer} */
+      sourceReferenceYear: 2023;
+      sourceSha256: string;
+      /** Format: date */
+      capturedAt: string;
+      /** @enum {integer} */
+      geometryVintage: 2023;
+      /** Format: uri */
+      geometrySourceUrl: string;
+      geometryAttribution: string;
+      measure: components['schemas']['CountyBusinessPatternsMeasure'];
+      measureLabel: string;
+      units: string;
+      industryCode: components['schemas']['CountyBusinessPatternsIndustry'];
+      industryLabel: string;
+      /** @enum {integer} */
+      year: 2023;
+      availableCountyCount: number;
+      unavailableCountyCount: number;
+      excludedStatewideRows: number;
+      missingRowSemantics: string;
+      geoJson: {
+        [key: string]: unknown;
+      };
+      counties: components['schemas']['CountyBusinessPatternsCountyValue'][];
+    };
+    /**
      * @default ANNUAL_GROWTH_RATE
      * @enum {string}
      */
@@ -2374,6 +2474,35 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['PopulationEstimatesChoropleth'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getCountyBusinessPatternsChoropleth: {
+    parameters: {
+      query?: {
+        geography?: components['parameters']['Geography'];
+        measure?: components['schemas']['CountyBusinessPatternsMeasure'];
+        industry?: components['schemas']['CountyBusinessPatternsIndustry'];
+        year?: 2023;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description County Business Patterns county thematic layer. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CountyBusinessPatternsChoropleth'];
         };
       };
       400: components['responses']['BadRequest'];
