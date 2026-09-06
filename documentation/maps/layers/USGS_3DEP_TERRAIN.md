@@ -17,11 +17,11 @@ This slice is intentionally service-backed. It does not download, normalize, or 
 
 The application exposes three visualization choices from the upstream service:
 
-| Application mode | Upstream raster function |
-| --- | --- |
-| Hillshade | `Hillshade Gray` |
+| Application mode | Upstream raster function     |
+| ---------------- | ---------------------------- |
+| Hillshade        | `Hillshade Gray`             |
 | Tinted elevation | `Hillshade Elevation Tinted` |
-| Slope | `Slope Map` |
+| Slope            | `Slope Map`                  |
 
 Hillshade is the default. Aspect, contours, and additional upstream renderings remain outside this slice.
 
