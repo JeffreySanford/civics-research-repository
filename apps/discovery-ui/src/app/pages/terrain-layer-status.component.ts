@@ -15,19 +15,23 @@ export type TerrainLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
         </p>
       } @else if (!visible) {
         <p>USGS 3DEP terrain is available and currently off.</p>
-      } @else if (status === 'loading') {
-        <p role="status">Loading USGS 3DEP {{ modeLabel }} terrain imagery…</p>
-      } @else if (status === 'error') {
-        <p role="alert">
-          USGS 3DEP terrain imagery is unavailable. The other map layers remain
-          usable.
-        </p>
       } @else {
-        <p role="status">
+        <p
+          [attr.role]="status === 'loading' || status === 'error' ? null : 'status'"
+        >
           USGS 3DEP terrain is on — {{ modeLabel }}. Terrain is contextual
           imagery only; research and economic meaning remains available through
           the map's vector layers and semantic equivalents.
         </p>
+
+        @if (status === 'loading') {
+          <p role="status">Loading USGS 3DEP {{ modeLabel }} terrain imagery…</p>
+        } @else if (status === 'error') {
+          <p role="alert">
+            USGS 3DEP terrain imagery is unavailable. The other map layers remain
+            usable.
+          </p>
+        }
       }
 
       @if (available && sourceUrl) {
