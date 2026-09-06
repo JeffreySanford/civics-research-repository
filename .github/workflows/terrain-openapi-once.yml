@@ -86,6 +86,7 @@ jobs:
           pnpm exec prettier --write schemas/openapi/repository-api.yaml
           pnpm run openapi:lint
           pnpm run openapi:generate
+          git add libs/repository/api-client/src/generated/repository-api.types.ts
           pnpm run openapi:check
 
       - name: Commit generated contract
