@@ -1,0 +1,57 @@
+name: Terrain format once
+
+on:
+  push:
+    branches:
+      - codex/maps-usgs-3dep-terrain
+
+permissions:
+  contents: write
+
+jobs:
+  format-once:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/maps-usgs-3dep-terrain
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply repository formatting
+        run: >-
+          pnpm exec prettier --write
+          apps/discovery-ui-e2e/src/terrain-layer.spec.ts
+          apps/discovery-ui-e2e/src/support/map-layer-visibility.ts
+          apps/discovery-ui/src/app/pages/maps-page.ts
+          apps/discovery-ui/src/app/state/maps/maps.selectors.ts
+          apps/discovery-ui/src/app/state/maps/terrain.spec.ts
+          documentation/maps/layers/USGS_3DEP_TERRAIN.md
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm --ignore-unmatch apps/discovery-ui-e2e/src/terrain-format-diagnostic.spec.ts
+          git rm --ignore-unmatch .github/workflows/terrain-format-once.yml
+          git add \
+            apps/discovery-ui-e2e/src/terrain-layer.spec.ts \
+            apps/discovery-ui-e2e/src/support/map-layer-visibility.ts \
+            apps/discovery-ui/src/app/pages/maps-page.ts \
+            apps/discovery-ui/src/app/state/maps/maps.selectors.ts \
+            apps/discovery-ui/src/app/state/maps/terrain.spec.ts \
+            documentation/maps/layers/USGS_3DEP_TERRAIN.md
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style(maps): apply repository formatting'
+          git push origin HEAD:codex/maps-usgs-3dep-terrain
