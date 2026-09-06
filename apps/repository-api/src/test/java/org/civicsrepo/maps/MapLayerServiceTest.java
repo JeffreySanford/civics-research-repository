@@ -25,8 +25,11 @@ class MapLayerServiceTest {
     private final PopulationEstimatesService population =
             new PopulationEstimatesService(boundaries, geometry);
 
+    private final CountyBusinessPatternsService countyBusinessPatterns =
+            new CountyBusinessPatternsService(boundaries, geometry);
+
     private final MapLayerService mapLayerService =
-            new MapLayerService(boundaries, saipe, population);
+            new MapLayerService(boundaries, saipe, population, countyBusinessPatterns);
 
     @Test
     void includesReferenceAndChoroplethLayersWhereSaipeValuesExist() {
@@ -66,6 +69,19 @@ class MapLayerServiceTest {
     }
 
     @Test
+    void advertisesCountyBusinessPatternsWherePinned2023ValuesExist() {
+        assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
+                .filteredOn(layer -> layer.getId().equals("county-business-patterns-north-dakota"))
+                .singleElement()
+                .satisfies(layer -> {
+                    assertThat(layer.getLayerType()).isEqualTo(MapLayerType.CENSUS_CHOROPLETH);
+                    assertThat(layer.getAttribution()).contains("County Business Patterns");
+                    assertThat(layer.getVisibleByDefault()).isFalse();
+                    assertThat(layer.getSourceUrl().toString()).contains("cbp23co.zip");
+                });
+    }
+
+    @Test
     void keepsSaipeAndPopulationCapabilitiesIndependent() {
         assertThat(
                         mapLayerService.findDatasetLayers(
@@ -94,10 +110,6 @@ class MapLayerServiceTest {
                 });
     }
 
-    /**
-     * The dataset argument was previously ignored, so every state was described by North Dakota's
-     * layers however the map was navigated.
-     */
     @Test
     void describesTheGeographyTheDatasetBelongsTo() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-california-2025"))
@@ -106,7 +118,6 @@ class MapLayerServiceTest {
                 .anySatisfy(label -> assertThat(label).isEqualTo("2025 TIGER/Line - Census Tracts - California"));
     }
 
-    /** The area slug can contain hyphens, so it cannot be read off a fixed position in the id. */
     @Test
     void resolvesMultiWordAreaSlugs() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-district-of-columbia-2025"))
@@ -114,7 +125,6 @@ class MapLayerServiceTest {
                 .contains("tiger-line-district-of-columbia-boundary", "lodes-workplace-flow-district-of-columbia");
     }
 
-    /** "west-virginia" contains "virginia", so the longest match has to win. */
     @Test
     void prefersTheLongestMatchingArea() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-west-virginia-2025"))
@@ -122,7 +132,6 @@ class MapLayerServiceTest {
                 .anySatisfy(label -> assertThat(label).isEqualTo("2025 TIGER/Line - Census Tracts - West Virginia"));
     }
 
-    /** An identifier that names no known area must not silently claim one. */
     @Test
     void fallsBackToTheNationalGeography() {
         assertThat(mapLayerService.findDatasetLayers("some-unmapped-dataset-2025"))
@@ -130,7 +139,6 @@ class MapLayerServiceTest {
                 .anySatisfy(label -> assertThat(label).contains("United States"));
     }
 
-    /** 3DHP_all is a dynamic MapServer; MapLibre must use proxied export bbox tiles. */
     @Test
     void hydrographyLayerUsesProxiedExportTileTemplate() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
@@ -142,7 +150,6 @@ class MapLayerServiceTest {
                         .doesNotContain("/tile/{z}/{y}/{x}"));
     }
 
-    /** 3DEP is dynamic imagery; the browser receives one approved repository proxy template. */
     @Test
     void terrainLayerUsesProxiedHillshadeTemplateByDefault() {
         assertThat(mapLayerService.findDatasetLayers("tiger-line-north-dakota-2025"))
