@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Isolate CBP map-layer capability to its browser spec
+      - name: Repair CBP URL restoration and browser fixture isolation
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -148,14 +148,69 @@ jobs:
               raise SystemExit('CBP beforeEach anchor not found')
           spec = spec.replace(old, new, 1)
           spec_path.write_text(spec)
+
+          page_ts_path = Path('apps/discovery-ui/src/app/pages/maps-page.ts')
+          page_ts = page_ts_path.read_text()
+          replacements = {
+              "    this.updateMapUrl({ countyBusinessPatternsVisible: visible });": '''    this.updateMapUrl({
+              countyBusinessPatternsVisible: visible,
+              countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+              countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+              countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+            });''',
+              "    this.updateMapUrl({ countyBusinessPatternsMeasure: measure });": '''    this.updateMapUrl({
+              countyBusinessPatternsMeasure: measure,
+              countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+              countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+            });''',
+              "    this.updateMapUrl({ countyBusinessPatternsIndustry: industry });": '''    this.updateMapUrl({
+              countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+              countyBusinessPatternsIndustry: industry,
+              countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+            });''',
+              "    this.updateMapUrl({ countyBusinessPatternsYear: year });": '''    this.updateMapUrl({
+              countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+              countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+              countyBusinessPatternsYear: year,
+            });''',
+          }
+          for old_text, new_text in replacements.items():
+              if page_ts.count(old_text) != 1:
+                  raise SystemExit(f'Expected one MapsPage URL anchor for {old_text!r}, found {page_ts.count(old_text)}')
+              page_ts = page_ts.replace(old_text, new_text, 1)
+          page_ts_path.write_text(page_ts)
+
+          page_html_path = Path('apps/discovery-ui/src/app/pages/maps-page.html')
+          page_html = page_html_path.read_text()
+          industry_option = '<option [value]="industry.code">'
+          if page_html.count(industry_option) != 1:
+              raise SystemExit(f'Expected one dynamic industry option, found {page_html.count(industry_option)}')
+          page_html = page_html.replace(
+              industry_option,
+              '<option\n                      [value]="industry.code"\n                      [selected]="industry.code === cbpIndustry"\n                    >',
+              1,
+          )
+          year_option = '<option [value]="year">{{ year }}</option>'
+          if page_html.count(year_option) != 1:
+              raise SystemExit(f'Expected one CBP year option, found {page_html.count(year_option)}')
+          page_html = page_html.replace(
+              year_option,
+              '<option [value]="year" [selected]="year === cbpYear">\n                      {{ year }}\n                    </option>',
+              1,
+          )
+          page_html_path.write_text(page_html)
           PY
 
-      - name: Format fixture changes
+      - name: Format repaired files
         run: |
           pnpm exec prettier --write \
+            apps/discovery-ui/src/app/pages/maps-page.ts \
+            apps/discovery-ui/src/app/pages/maps-page.html \
             apps/discovery-ui-e2e/src/support/repository-api-mocks.ts \
             apps/discovery-ui-e2e/src/county-business-patterns.spec.ts
           pnpm exec prettier --check \
+            apps/discovery-ui/src/app/pages/maps-page.ts \
+            apps/discovery-ui/src/app/pages/maps-page.html \
             apps/discovery-ui-e2e/src/support/repository-api-mocks.ts \
             apps/discovery-ui-e2e/src/county-business-patterns.spec.ts
 
@@ -177,7 +232,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
+            apps/discovery-ui/src/app/pages/maps-page.ts \
+            apps/discovery-ui/src/app/pages/maps-page.html \
             apps/discovery-ui-e2e/src/support/repository-api-mocks.ts \
             apps/discovery-ui-e2e/src/county-business-patterns.spec.ts
-          git commit -m "test(maps): isolate County Business Patterns browser fixtures"
+          git commit -m "fix(maps): restore County Business Patterns URLs"
           git push origin HEAD:codex/maps-county-business-patterns
