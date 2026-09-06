@@ -1,0 +1,42 @@
+{
+  "source": "U.S. Census Bureau County Business Patterns",
+  "sourceArchiveUrl": "https://www2.census.gov/programs-surveys/cbp/datasets/2023/cbp23co.zip",
+  "sourceFileName": "cbp23co.txt",
+  "referenceYear": 2023,
+  "sourceEncoding": "UTF-8/ASCII-compatible CSV",
+  "capturedAt": "2026-09-06",
+  "sourceFileSha256": "83b5099fed522a6e4e430811e16fe224b77744e45f71860b8b9722781e8833c5",
+  "normalizedSha256": "2096daa7220b053ba5f7f08e5a7be29f84e8611bc0b1d94604750c1e153209f6",
+  "retainedRows": 53692,
+  "retainedCounties": 3192,
+  "supportedIndustryCodes": [
+    "TOTAL",
+    "11",
+    "21",
+    "22",
+    "23",
+    "31",
+    "42",
+    "44",
+    "48",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "61",
+    "62",
+    "71",
+    "72",
+    "81",
+    "99"
+  ],
+  "retainedSourceNaicsRule": "------ or NN----",
+  "noiseFlags": {
+    "G": "0 to less than 2% noise",
+    "H": "2 to less than 5% noise",
+    "J": "at least 5% noise"
+  },
+  "missingRowSemantics": "A missing county/industry row is unavailable in the published source and must not be interpreted as zero."
+}

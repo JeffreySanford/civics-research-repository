@@ -7,8 +7,7 @@ import {
   serializeCbpRows,
 } from './prepare-cbp-source.mjs';
 
-const HEADER =
-  'fipstate,fipscty,naics,emp_nf,emp,qp1_nf,qp1,ap_nf,ap,est,n1_4';
+const HEADER = 'fipstate,fipscty,naics,emp_nf,emp,qp1_nf,qp1,ap_nf,ap,est,n1_4';
 
 function source(...rows) {
   return `${HEADER}\n${rows.join('\n')}\n`;

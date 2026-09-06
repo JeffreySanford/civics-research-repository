@@ -104,7 +104,9 @@ export function parseCsv(text) {
 export function prepareCbpRows(sourceText) {
   const rows = parseCsv(sourceText.replace(/^\uFEFF/, ''));
   if (rows.length < 2) {
-    throw new Error('CBP source must contain a header and at least one data row.');
+    throw new Error(
+      'CBP source must contain a header and at least one data row.',
+    );
   }
 
   const headers = rows[0].map((header) => header.trim().toUpperCase());
@@ -136,15 +138,26 @@ export function prepareCbpRows(sourceText) {
     }
 
     const field = (name) => sourceRow[headerIndexes.get(name)]?.trim() ?? '';
-    const stateFips = requirePattern(field('FIPSTATE'), /^\d{2}$/, 'FIPSTATE', rowIndex);
-    const countyFips = requirePattern(field('FIPSCTY'), /^\d{3}$/, 'FIPSCTY', rowIndex);
+    const stateFips = requirePattern(
+      field('FIPSTATE'),
+      /^\d{2}$/,
+      'FIPSTATE',
+      rowIndex,
+    );
+    const countyFips = requirePattern(
+      field('FIPSCTY'),
+      /^\d{3}$/,
+      'FIPSCTY',
+      rowIndex,
+    );
     const sourceNaics = field('NAICS');
 
     if (!isRetainedNaics(sourceNaics)) {
       continue;
     }
 
-    const industryCode = sourceNaics === '------' ? 'TOTAL' : sourceNaics.slice(0, 2);
+    const industryCode =
+      sourceNaics === '------' ? 'TOTAL' : sourceNaics.slice(0, 2);
     const geoid = `${stateFips}${countyFips}`;
     const key = `${geoid}:${industryCode}`;
 
@@ -155,13 +168,21 @@ export function prepareCbpRows(sourceText) {
     }
     seen.add(key);
 
-    const employmentNoiseFlag = requireNoiseFlag(field('EMP_NF'), 'EMP_NF', rowIndex);
+    const employmentNoiseFlag = requireNoiseFlag(
+      field('EMP_NF'),
+      'EMP_NF',
+      rowIndex,
+    );
     const firstQuarterPayrollNoiseFlag = requireNoiseFlag(
       field('QP1_NF'),
       'QP1_NF',
       rowIndex,
     );
-    const annualPayrollNoiseFlag = requireNoiseFlag(field('AP_NF'), 'AP_NF', rowIndex);
+    const annualPayrollNoiseFlag = requireNoiseFlag(
+      field('AP_NF'),
+      'AP_NF',
+      rowIndex,
+    );
 
     retained.push({
       geoid,
@@ -176,13 +197,19 @@ export function prepareCbpRows(sourceText) {
         rowIndex,
       ),
       firstQuarterPayrollNoiseFlag,
-      annualPayrollThousands: requireNonnegativeInteger(field('AP'), 'AP', rowIndex),
+      annualPayrollThousands: requireNonnegativeInteger(
+        field('AP'),
+        'AP',
+        rowIndex,
+      ),
       annualPayrollNoiseFlag,
     });
   }
 
   if (retained.length === 0) {
-    throw new Error('CBP source contained no all-sector or two-digit NAICS rows.');
+    throw new Error(
+      'CBP source contained no all-sector or two-digit NAICS rows.',
+    );
   }
 
   retained.sort(
@@ -230,7 +257,9 @@ export function buildMetadata({
 }) {
   requireCapturedAt(capturedAt);
 
-  const countyGeoids = [...new Set(retainedRows.map((row) => row.geoid))].sort();
+  const countyGeoids = [
+    ...new Set(retainedRows.map((row) => row.geoid)),
+  ].sort();
   const industryCodes = [
     ...new Set(retainedRows.map((row) => row.industryCode)),
   ].sort((left, right) =>
@@ -368,7 +397,9 @@ function runCli() {
   console.log(`Written ${metadataPath}`);
 }
 
-const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : null;
+const invokedPath = process.argv[1]
+  ? pathToFileURL(resolve(process.argv[1])).href
+  : null;
 if (invokedPath === import.meta.url) {
   try {
     runCli();
