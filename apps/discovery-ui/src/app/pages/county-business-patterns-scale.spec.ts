@@ -27,7 +27,8 @@ function choropleth(
     industryLabel: 'All sectors',
     year: 2023,
     availableCountyCount: counties.filter((county) => county.available).length,
-    unavailableCountyCount: counties.filter((county) => !county.available).length,
+    unavailableCountyCount: counties.filter((county) => !county.available)
+      .length,
     excludedStatewideRows: 753,
     missingRowSemantics:
       'A missing county/industry row is unavailable in the published source and must not be interpreted as zero.',

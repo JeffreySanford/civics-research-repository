@@ -14,7 +14,9 @@ const cbpLayer = {
 describe('County Business Patterns maps reducer', () => {
   it('defaults to total establishments in 2023 and keeps the layer hidden', () => {
     expect(initialMapsState.countyBusinessPatternsVisible).toBe(false);
-    expect(initialMapsState.countyBusinessPatternsMeasure).toBe('ESTABLISHMENTS');
+    expect(initialMapsState.countyBusinessPatternsMeasure).toBe(
+      'ESTABLISHMENTS',
+    );
     expect(initialMapsState.countyBusinessPatternsIndustry).toBe('TOTAL');
     expect(initialMapsState.countyBusinessPatternsYear).toBe(2023);
   });

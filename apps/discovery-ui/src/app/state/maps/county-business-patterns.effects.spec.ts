@@ -2,10 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { provideMockStore } from '@ngrx/store/testing';
 import { lastValueFrom, of, toArray, type Observable } from 'rxjs';
-import {
-  RepositoryMapsApi,
-  type MapLayer,
-} from 'repository-api-client';
+import { RepositoryMapsApi, type MapLayer } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import { MapsEffects } from './maps.effects';
 import {
@@ -49,9 +46,15 @@ function setup(
         selectors: [
           { selector: selectSelectedGeography, value: 'North Dakota' },
           { selector: selectMapLayers, value: selectedLayers },
-          { selector: selectPopulationEstimateMeasure, value: 'ANNUAL_GROWTH_RATE' },
+          {
+            selector: selectPopulationEstimateMeasure,
+            value: 'ANNUAL_GROWTH_RATE',
+          },
           { selector: selectPopulationEstimateYear, value: 2025 },
-          { selector: selectCountyBusinessPatternsMeasure, value: 'ESTABLISHMENTS' },
+          {
+            selector: selectCountyBusinessPatternsMeasure,
+            value: 'ESTABLISHMENTS',
+          },
           { selector: selectCountyBusinessPatternsIndustry, value: 'TOTAL' },
           { selector: selectCountyBusinessPatternsYear, value: 2023 },
         ],

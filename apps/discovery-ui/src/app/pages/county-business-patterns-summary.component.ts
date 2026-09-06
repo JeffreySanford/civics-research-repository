@@ -52,8 +52,8 @@ import type { CountyBusinessPatternsChoropleth } from 'repository-api-client';
         <p class="feature-hint">
           Census noise flags apply to employment and payroll values: G means
           less than 2% noise, H means 2% to less than 5%, and J means at least
-          5%. They are not confidence intervals. Establishment counts do not
-          use these flags.
+          5%. They are not confidence intervals. Establishment counts do not use
+          these flags.
         </p>
 
         <p>
@@ -76,8 +76,23 @@ import type { CountyBusinessPatternsChoropleth } from 'repository-api-client';
         @if (cbp.counties.length) {
           <table class="county-value-table">
             <caption>
-              {{ cbp.measureLabel }} for {{ cbp.industryLabel }} in
-              {{ cbp.geography }}, {{ cbp.year }} ({{ cbp.units }})
+              {{
+                cbp.measureLabel
+              }}
+              for
+              {{
+                cbp.industryLabel
+              }}
+              in
+              {{
+                cbp.geography
+              }},
+              {{
+                cbp.year
+              }}
+              ({{
+                cbp.units
+              }})
             </caption>
 
             <thead>

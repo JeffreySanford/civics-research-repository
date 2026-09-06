@@ -13,13 +13,7 @@ export type CountyBusinessPatternsScale = {
   readonly description: string;
 };
 
-const COLORS = [
-  '#ecfdf5',
-  '#a7f3d0',
-  '#34d399',
-  '#059669',
-  '#064e3b',
-] as const;
+const COLORS = ['#ecfdf5', '#a7f3d0', '#34d399', '#059669', '#064e3b'] as const;
 
 export const COUNTY_BUSINESS_PATTERNS_UNAVAILABLE_COLOR = '#d1d5db';
 
@@ -37,8 +31,7 @@ function quantile(sorted: readonly number[], probability: number): number {
 
   const fraction = position - lowerIndex;
   return (
-    sorted[lowerIndex] +
-    (sorted[upperIndex] - sorted[lowerIndex]) * fraction
+    sorted[lowerIndex] + (sorted[upperIndex] - sorted[lowerIndex]) * fraction
   );
 }
 

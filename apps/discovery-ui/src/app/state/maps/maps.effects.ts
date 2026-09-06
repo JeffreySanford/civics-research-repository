@@ -220,7 +220,9 @@ export class MapsEffects {
     this.actions$.pipe(
       ofType(MapsActions.mapLayersLoaded),
       filter(({ layers }) =>
-        layers.some((layer) => layer.id.startsWith('county-business-patterns-')),
+        layers.some((layer) =>
+          layer.id.startsWith('county-business-patterns-'),
+        ),
       ),
       withLatestFrom(
         this.store.select(selectSelectedGeography),
@@ -229,12 +231,7 @@ export class MapsEffects {
         this.store.select(selectCountyBusinessPatternsYear),
       ),
       switchMap(([, geography, measure, industry, year]) =>
-        this.countyBusinessPatternsRequest(
-          geography,
-          measure,
-          industry,
-          year,
-        ),
+        this.countyBusinessPatternsRequest(geography, measure, industry, year),
       ),
     ),
   );
@@ -247,15 +244,12 @@ export class MapsEffects {
         this.store.select(selectMapLayers),
       ),
       filter(([, , layers]) =>
-        layers.some((layer) => layer.id.startsWith('county-business-patterns-')),
+        layers.some((layer) =>
+          layer.id.startsWith('county-business-patterns-'),
+        ),
       ),
       switchMap(([{ measure, industry, year }, geography]) =>
-        this.countyBusinessPatternsRequest(
-          geography,
-          measure,
-          industry,
-          year,
-        ),
+        this.countyBusinessPatternsRequest(geography, measure, industry, year),
       ),
     ),
   );
@@ -324,12 +318,7 @@ export class MapsEffects {
     return concat(
       of(MapsActions.countyBusinessPatternsRequested()),
       this.mapsApi
-        .getCountyBusinessPatternsChoropleth(
-          geography,
-          measure,
-          industry,
-          year,
-        )
+        .getCountyBusinessPatternsChoropleth(geography, measure, industry, year)
         .pipe(
           map((countyBusinessPatternsChoropleth) =>
             MapsActions.countyBusinessPatternsLoaded({

@@ -151,8 +151,7 @@ async function mockCountyBusinessPatterns(page: Page): Promise<void> {
       const units =
         measure === 'EMPLOYMENT'
           ? 'people'
-          : measure === 'FIRST_QUARTER_PAYROLL' ||
-              measure === 'ANNUAL_PAYROLL'
+          : measure === 'FIRST_QUARTER_PAYROLL' || measure === 'ANNUAL_PAYROLL'
             ? 'thousand dollars'
             : 'establishments';
       const industryLabel =
@@ -259,9 +258,8 @@ async function mockCountyBusinessPatterns(page: Page): Promise<void> {
           year,
           availableCountyCount: counties.filter((county) => county.available)
             .length,
-          unavailableCountyCount: counties.filter(
-            (county) => !county.available,
-          ).length,
+          unavailableCountyCount: counties.filter((county) => !county.available)
+            .length,
           excludedStatewideRows: 753,
           missingRowSemantics:
             'A missing county/industry row is unavailable in the published source and must not be interpreted as zero.',

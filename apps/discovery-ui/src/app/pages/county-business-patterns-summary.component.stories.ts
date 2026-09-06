@@ -85,7 +85,9 @@ export const PublishedZeroAndUnavailable: Story = {
     await expect(
       canvas.getByRole('rowheader', { name: 'Towner County' }),
     ).toBeInTheDocument();
-    await expect(canvas.getByRole('table')).toHaveTextContent('0 establishments');
+    await expect(canvas.getByRole('table')).toHaveTextContent(
+      '0 establishments',
+    );
     await expect(canvas.getByRole('table')).toHaveTextContent('Unavailable');
   },
 };

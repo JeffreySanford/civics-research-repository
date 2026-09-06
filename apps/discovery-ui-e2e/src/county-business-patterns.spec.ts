@@ -95,7 +95,9 @@ test.describe('2023 County Business Patterns', () => {
       'map-layer-county-business-patterns',
     );
 
-    await expect(page.getByTestId('map-layer-county-business-patterns')).toBeChecked();
+    await expect(
+      page.getByTestId('map-layer-county-business-patterns'),
+    ).toBeChecked();
     await expect(
       page.getByTestId('county-business-patterns-measure'),
     ).toHaveValue('EMPLOYMENT');
