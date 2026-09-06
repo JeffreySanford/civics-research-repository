@@ -818,7 +818,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
 
   protected toggleEarthquakeLayer(visible: boolean): void {
     this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
-    this.updateMapUrl({ earthquakeVisible: visible });
+    this.updateMapUrl({
+      earthquakeVisible: visible,
+      ...(visible ? {} : { featureId: null }),
+    });
   }
 
   protected toggleWorkplaceLayer(visible: boolean): void {

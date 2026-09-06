@@ -626,7 +626,10 @@ test.describe('map and feature list selection', () => {
     await openMapLayerCategory(page, 'earthquake');
     await page.getByTestId('map-layer-earthquake').uncheck();
 
-    await expect(page.getByText('No map feature selected.')).toBeVisible();
+    await expect(page).not.toHaveURL(/feature=/);
+    await expect(page.getByTestId('feature-announcement')).toContainText(
+      'No map feature selected.',
+    );
   });
 });
 
