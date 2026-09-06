@@ -47,6 +47,19 @@ For 2020-2023 county files, Census defines the noise flags as:
 
 The application may expose those flags semantically but must not imply they are ordinary measurement-error confidence intervals.
 
+## County-map eligibility
+
+The real 2023 county file also contains `FIPSCTY=999` aggregate records such as `01999`. Those rows are useful CBP aggregates, but they do not identify a county polygon and therefore cannot participate in a strict county GEOID-to-TIGERweb join.
+
+The repository-owned county map resource consequently:
+
+- retains only rows whose `FIPSCTY != 999`;
+- records the excluded retained-level aggregate-row count in `source.json`;
+- never invents geometry for an `XX999` identifier;
+- keeps a source row with any other five-digit county GEOID subject to strict 2023 TIGERweb join validation.
+
+This is an eligibility filter for a **county map**, not a statement that the excluded aggregate is zero, missing, or suppressed.
+
 ## Publication/confidentiality semantics
 
 Census documentation states that beginning with reference year 2017 a cell is published only when it contains at least three establishments; otherwise the cell is dropped from the release. Therefore a missing county/industry row is not evidence of zero business activity.
@@ -82,12 +95,18 @@ Default: **Establishments**.
 
 The first slice is deliberately bounded:
 
-- `00` — total for all sectors;
-- published 2-digit NAICS sectors available in the retained source;
+- `TOTAL` — all sectors, sourced from `------`;
+- published retained sector rows available as `NN----` in the county file;
 - authoritative labels from Census/NAICS reference metadata;
 - no browser delivery of the full 2- through 6-digit national industry cube.
 
-Census documents that 2017-2023 CBP uses 2017 NAICS.
+The downloadable source uses a single retained row for the combined sector families. The UI must label them by their full published range rather than imply a narrower sector:
+
+- source `31----` → **31–33 Manufacturing**;
+- source `44----` → **44–45 Retail Trade**;
+- source `48----` → **48–49 Transportation and Warehousing**.
+
+The other retained sector identifiers use their normal two-digit label. Census documents that 2017-2023 CBP uses 2017 NAICS.
 
 ### Year
 
@@ -99,12 +118,12 @@ The first implementation supports reference year **2023** only. Year remains exp
 pinned Census cbp23co-derived extract
         |
         v
-validated values keyed by county GEOID + NAICS + year
+validated county-eligible values keyed by county GEOID + NAICS + year
         |
         v
 selected state + measure + industry + year
         |
-        +--> AdministrativeGeometryService(state FIPS, compatible county vintage)
+        +--> AdministrativeGeometryService(state FIPS, 2023 county vintage)
         |
         v
 strict GEOID join
@@ -116,7 +135,7 @@ county-thematic API response
 Angular / NgRx / MapLibre + semantic table
 ```
 
-Validation must reject or explicitly classify malformed FIPS identifiers, duplicate county/NAICS rows, unsupported NAICS levels, malformed numeric values, impossible noise flags, source/geometry join failures, and cross-year mixing.
+Validation must reject or explicitly classify malformed FIPS identifiers, duplicate county/NAICS rows, unsupported NAICS levels, malformed numeric values, impossible noise flags, source/geometry join failures, and cross-year mixing. `XX999` aggregates are excluded before county-map joins and counted in provenance.
 
 ## API direction
 
@@ -136,10 +155,13 @@ selected year
 values[]
   county GEOID
   county label
-  value | unavailable
+  available
+  value | null
   noise/publication metadata where applicable
 provenance
 ```
+
+Every county in the returned 2023 geometry should remain represented semantically. If the selected industry has no published CBP row for a real county, return `available=false` and `value=null`; do not synthesize zero. Conversely, any retained CBP county GEOID that cannot join to the selected 2023 geometry is an integrity failure.
 
 Geometry remains authoritative and separate even if the browser receives joined GeoJSON.
 
@@ -168,6 +190,7 @@ Measure, industry, and year controls must be keyboard operable and named. Map co
 Backend/service:
 
 - retained-source parsing;
+- `XX999` county-map exclusion and provenance count;
 - county GEOID and NAICS validation;
 - measure/unit mapping;
 - duplicate-row failures;
@@ -203,7 +226,8 @@ Playwright:
 
 ## Exit criteria
 
-- authoritative 2023 CBP values render against shared county geometry;
+- authoritative 2023 CBP values render against shared 2023 county geometry;
+- `XX999` aggregates are absent from the county resource and counted in provenance;
 - controls, URL, legend, map, and semantic table agree on measure/industry/year;
 - source/reference-year provenance is visible;
 - missing/publication states remain explicit rather than manufactured as zero;
