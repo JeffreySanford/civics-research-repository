@@ -80,9 +80,7 @@ async function terrainMapState(page: Page): Promise<{
   return page.evaluate(() => {
     const canvas = document.querySelector(
       '[data-testid="discovery-map-canvas"]',
-    ) as
-      | (HTMLElement & { __map?: import('maplibre-gl').Map })
-      | null;
+    ) as (HTMLElement & { __map?: import('maplibre-gl').Map }) | null;
     const map = canvas?.__map;
 
     if (!map?.getLayer('usgs-3dep-terrain-raster')) {
