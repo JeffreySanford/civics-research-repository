@@ -170,7 +170,7 @@ test.describe('USGS 3DEP terrain', () => {
       .toBe('visible');
   });
 
-  test('restores terrain visibility and mode while Census geography changes @maps @wcag @section508', async ({
+  test('restores terrain visibility and mode while Census geography changes @wcag @section508', async ({
     page,
   }) => {
     await page.goto('/maps?terrain=on&terrainMode=tinted&area=North%20Dakota');
@@ -186,7 +186,20 @@ test.describe('USGS 3DEP terrain', () => {
     await expect(page).toHaveURL(/terrainMode=tinted/);
     await expect(page.getByTestId('map-layer-terrain')).toBeChecked();
     await expect(page.getByTestId('terrain-mode')).toHaveValue('tinted');
+    await expect(page.getByTestId('terrain-semantic-status')).toContainText(
+      'USGS 3DEP terrain is on — Tinted elevation',
+    );
+  });
 
+  test('keeps restored terrain raster visible and tinted while Census geography changes @maps', async ({
+    page,
+  }) => {
+    await page.goto('/maps?terrain=on&terrainMode=tinted&area=North%20Dakota');
+
+    await expect.poll(() => terrainMapState(page)).not.toBeNull();
+    await page.getByLabel('Census area').selectOption('California');
+
+    await expect(page).toHaveURL(/area=California/);
     await expect
       .poll(async () => (await terrainMapState(page))?.visibility)
       .toBe('visible');
