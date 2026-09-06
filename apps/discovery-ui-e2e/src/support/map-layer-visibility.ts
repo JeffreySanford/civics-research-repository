@@ -137,11 +137,17 @@ export async function openLayerCategoryForToggle(
   const group = MAP_LAYER_VISIBILITY_GROUPS.find(
     (candidate) => candidate.toggleTestId === toggleTestId,
   );
-  if (!group) {
-    throw new Error(`No layer visibility group for ${toggleTestId}`);
+  const categoryTestId =
+    group?.categoryTestId ??
+    (toggleTestId === 'map-layer-terrain'
+      ? 'map-layer-category-environment-hazards'
+      : null);
+
+  if (!categoryTestId) {
+    throw new Error(`No layer category for ${toggleTestId}`);
   }
 
-  const category = page.getByTestId(group.categoryTestId);
+  const category = page.getByTestId(categoryTestId);
   const isOpen = await category.evaluate(
     (element) => (element as HTMLDetailsElement).open,
   );

@@ -70,6 +70,7 @@ describe('readMapDebugSnapshot', () => {
     saipe: true,
     population: true,
     hydrography: true,
+    terrain: true,
     research: true,
   };
 
@@ -135,6 +136,7 @@ describe('readMapDebugSnapshot', () => {
         saipe: false,
         population: false,
         hydrography: false,
+        terrain: false,
         research: false,
       },
     );
