@@ -141,7 +141,9 @@ export async function openLayerCategoryForToggle(
     group?.categoryTestId ??
     (toggleTestId === 'map-layer-terrain'
       ? 'map-layer-category-environment-hazards'
-      : null);
+      : toggleTestId === 'map-layer-county-business-patterns'
+        ? 'map-layer-category-community-economy'
+        : null);
 
   if (!categoryTestId) {
     throw new Error(`No layer category for ${toggleTestId}`);

@@ -50,6 +50,9 @@ jobs:
       - name: Check the fixture catalog is current
         run: pnpm run fixture:check
 
+      - name: Test CBP source preparation
+        run: node --test tools/scripts/prepare-cbp-source.test.mjs
+
       - name: Check the accessibility evidence manifest is current
         run: pnpm run evidence:check
 

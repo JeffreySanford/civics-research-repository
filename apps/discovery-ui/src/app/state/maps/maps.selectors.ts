@@ -215,6 +215,12 @@ export const selectPopulationEstimatesAvailable = createSelector(
     layers.some((layer) => layer.id.startsWith('population-estimates-county-')),
 );
 
+export const selectCountyBusinessPatternsAvailable = createSelector(
+  selectMapLayers,
+  (layers) =>
+    layers.some((layer) => layer.id.startsWith('county-business-patterns-')),
+);
+
 export const selectSaipeAvailable = createSelector(selectMapLayers, (layers) =>
   layers.some((layer) => layer.id.startsWith('saipe-county-poverty-')),
 );
@@ -247,4 +253,39 @@ export const selectPopulationEstimateYear = createSelector(
 export const selectPopulationVisible = createSelector(
   selectMapsState,
   (state) => state.populationVisible,
+);
+
+export const selectCountyBusinessPatternsChoropleth = createSelector(
+  selectMapsState,
+  (state) => state.countyBusinessPatternsChoropleth,
+);
+
+export const selectCountyBusinessPatternsError = createSelector(
+  selectMapsState,
+  (state) => state.countyBusinessPatternsError,
+);
+
+export const selectCountyBusinessPatternsLoading = createSelector(
+  selectMapsState,
+  (state) => state.countyBusinessPatternsLoading,
+);
+
+export const selectCountyBusinessPatternsMeasure = createSelector(
+  selectMapsState,
+  (state) => state.countyBusinessPatternsMeasure,
+);
+
+export const selectCountyBusinessPatternsIndustry = createSelector(
+  selectMapsState,
+  (state) => state.countyBusinessPatternsIndustry,
+);
+
+export const selectCountyBusinessPatternsYear = createSelector(
+  selectMapsState,
+  (state) => state.countyBusinessPatternsYear,
+);
+
+export const selectCountyBusinessPatternsVisible = createSelector(
+  selectMapsState,
+  (state) => state.countyBusinessPatternsVisible,
 );

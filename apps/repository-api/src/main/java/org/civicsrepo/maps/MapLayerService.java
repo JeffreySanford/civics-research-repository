@@ -23,14 +23,17 @@ public class MapLayerService {
     private final CensusAreaBoundaryService censusAreaBoundaryService;
     private final SaipeCountyChoroplethService saipeCountyChoroplethService;
     private final PopulationEstimatesService populationEstimatesService;
+    private final CountyBusinessPatternsService countyBusinessPatternsService;
 
     public MapLayerService(
             CensusAreaBoundaryService censusAreaBoundaryService,
             SaipeCountyChoroplethService saipeCountyChoroplethService,
-            PopulationEstimatesService populationEstimatesService) {
+            PopulationEstimatesService populationEstimatesService,
+            CountyBusinessPatternsService countyBusinessPatternsService) {
         this.censusAreaBoundaryService = censusAreaBoundaryService;
         this.saipeCountyChoroplethService = saipeCountyChoroplethService;
         this.populationEstimatesService = populationEstimatesService;
+        this.countyBusinessPatternsService = countyBusinessPatternsService;
     }
 
     public List<MapLayer> findDatasetLayers(String datasetId) {
@@ -72,6 +75,16 @@ public class MapLayerService {
                             URI.create(
                                     "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/counties/totals/co-est2025-alldata.csv"),
                             "U.S. Census Bureau Population Estimates Program")
+                    .visibleByDefault(false));
+        }
+
+        if (countyBusinessPatternsService.supportsGeography(geography)) {
+            layers.add(new MapLayer(
+                            "county-business-patterns-" + slug,
+                            "2023 County Business Patterns - " + geography,
+                            MapLayerType.CENSUS_CHOROPLETH,
+                            URI.create("https://www2.census.gov/programs-surveys/cbp/datasets/2023/cbp23co.zip"),
+                            "U.S. Census Bureau County Business Patterns")
                     .visibleByDefault(false));
         }
 
@@ -120,7 +133,6 @@ public class MapLayerService {
         return censusAreaBoundaryService.listBoundaries().stream()
                 .filter((boundary) -> normalized.contains(boundary.getId()))
                 .map(CensusAreaBoundary::getGeography)
-                // The longest match wins: "north-dakota" and "dakota" would both match otherwise.
                 .reduce((shorter, longer) -> longer.length() >= shorter.length() ? longer : shorter)
                 .orElse(DEFAULT_GEOGRAPHY);
     }

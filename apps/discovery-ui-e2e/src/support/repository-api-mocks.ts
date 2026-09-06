@@ -18,6 +18,7 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
   await mockRepositoryApiBase(page);
   await mockCursorSearch(page, 'REPOSITORY');
   await mockResearchSpatialCoverage(page);
+  await mockCountyBusinessPatterns(page);
 }
 
 /** Fixture-backed discovery uses the same cursor envelope while retaining its source disclosure. */
@@ -27,6 +28,173 @@ export async function mockFixtureBackedRepositoryApi(
   await mockFixtureBackedRepositoryApiBase(page);
   await mockCursorSearch(page, 'FIXTURE');
   await mockResearchSpatialCoverage(page);
+  await mockCountyBusinessPatterns(page);
+}
+
+async function mockCountyBusinessPatterns(page: Page): Promise<void> {
+  await page.route(
+    '**/api/overlays/census/county-business-patterns**',
+    async (route) => {
+      const url = new URL(route.request().url());
+      const geography = url.searchParams.get('geography') ?? 'North Dakota';
+      const measure = url.searchParams.get('measure') ?? 'ESTABLISHMENTS';
+      const industryCode = url.searchParams.get('industry') ?? 'TOTAL';
+      const year = Number(url.searchParams.get('year') ?? 2023);
+
+      const measureLabel =
+        measure === 'EMPLOYMENT'
+          ? 'Mid-March employment'
+          : measure === 'FIRST_QUARTER_PAYROLL'
+            ? 'First-quarter payroll'
+            : measure === 'ANNUAL_PAYROLL'
+              ? 'Annual payroll'
+              : 'Establishments';
+      const units =
+        measure === 'EMPLOYMENT'
+          ? 'people'
+          : measure === 'FIRST_QUARTER_PAYROLL' || measure === 'ANNUAL_PAYROLL'
+            ? 'thousand dollars'
+            : 'establishments';
+      const industryLabel =
+        industryCode === '54'
+          ? 'Professional, Scientific, and Technical Services'
+          : 'All sectors';
+
+      const countyFixtures = [
+        {
+          fips: '38001',
+          name: 'Adams County',
+          available: true,
+          values: {
+            ESTABLISHMENTS: industryCode === '54' ? 4 : 113,
+            EMPLOYMENT: industryCode === '54' ? 14 : 890,
+            FIRST_QUARTER_PAYROLL: industryCode === '54' ? 210 : 10400,
+            ANNUAL_PAYROLL: industryCode === '54' ? 860 : 42800,
+          },
+          noiseFlag: industryCode === '54' ? 'H' : 'G',
+          geometry: [
+            [-102.7, 45.9],
+            [-102.0, 45.9],
+            [-102.0, 46.4],
+            [-102.7, 46.4],
+            [-102.7, 45.9],
+          ],
+        },
+        {
+          fips: '38017',
+          name: 'Cass County',
+          available: true,
+          values: {
+            ESTABLISHMENTS: industryCode === '54' ? 3 : 6200,
+            EMPLOYMENT: industryCode === '54' ? 0 : 105000,
+            FIRST_QUARTER_PAYROLL: industryCode === '54' ? 0 : 1450000,
+            ANNUAL_PAYROLL: industryCode === '54' ? 0 : 5900000,
+          },
+          noiseFlag: 'G',
+          geometry: [
+            [-97.8, 46.6],
+            [-96.8, 46.6],
+            [-96.8, 47.2],
+            [-97.8, 47.2],
+            [-97.8, 46.6],
+          ],
+        },
+        {
+          fips: '38035',
+          name: 'Grand Forks County',
+          available: industryCode !== '54',
+          values: {
+            ESTABLISHMENTS: 2600,
+            EMPLOYMENT: 42000,
+            FIRST_QUARTER_PAYROLL: 525000,
+            ANNUAL_PAYROLL: 2140000,
+          },
+          noiseFlag: 'G',
+          geometry: [
+            [-98.1, 47.7],
+            [-97.0, 47.7],
+            [-97.0, 48.4],
+            [-98.1, 48.4],
+            [-98.1, 47.7],
+          ],
+        },
+      ] as const;
+
+      const counties = countyFixtures.map((county) => ({
+        fips: county.fips,
+        name: county.name,
+        available: county.available,
+        value: county.available
+          ? county.values[measure as keyof typeof county.values]
+          : null,
+        noiseFlag:
+          county.available && measure !== 'ESTABLISHMENTS'
+            ? county.noiseFlag
+            : null,
+      }));
+
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          layerId: `county-business-patterns-${geography
+            .toLowerCase()
+            .replaceAll(' ', '-')}`,
+          source: 'U.S. Census Bureau County Business Patterns',
+          sourceUrl:
+            'https://www2.census.gov/programs-surveys/cbp/datasets/2023/cbp23co.zip',
+          attribution: 'U.S. Census Bureau County Business Patterns',
+          geography,
+          geographyLevel: 'COUNTY',
+          sourceReferenceYear: 2023,
+          sourceSha256: 'b'.repeat(64),
+          capturedAt: '2026-09-06',
+          geometryVintage: 2023,
+          geometrySourceUrl: 'https://tigerweb.geo.census.gov/',
+          geometryAttribution: 'U.S. Census Bureau TIGERweb',
+          measure,
+          measureLabel,
+          units,
+          industryCode,
+          industryLabel,
+          year,
+          availableCountyCount: counties.filter((county) => county.available)
+            .length,
+          unavailableCountyCount: counties.filter((county) => !county.available)
+            .length,
+          excludedStatewideRows: 753,
+          missingRowSemantics:
+            'A missing county/industry row is unavailable in the published source and must not be interpreted as zero.',
+          counties,
+          geoJson: {
+            type: 'FeatureCollection',
+            sourceReferenceYear: 2023,
+            geometryVintage: 2023,
+            measure,
+            industryCode,
+            year,
+            features: countyFixtures.map((county, index) => ({
+              type: 'Feature',
+              properties: {
+                GEOID: county.fips,
+                fips: county.fips,
+                name: county.name,
+                available: counties[index].available,
+                value: counties[index].value,
+                noiseFlag: counties[index].noiseFlag,
+                measure,
+                industryCode,
+                year,
+              },
+              geometry: {
+                type: 'Polygon',
+                coordinates: [county.geometry],
+              },
+            })),
+          },
+        },
+      });
+    },
+  );
 }
 
 async function mockResearchSpatialCoverage(page: Page): Promise<void> {

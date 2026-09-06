@@ -1,6 +1,9 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import type {
   CensusAreaBoundary,
+  CountyBusinessPatternsChoropleth,
+  CountyBusinessPatternsIndustry,
+  CountyBusinessPatternsMeasure,
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
@@ -49,6 +52,16 @@ export const MapsActions = createActionGroup({
       populationEstimatesChoropleth: PopulationEstimatesChoropleth;
     }>(),
     'Population Estimates Failed': props<{ error: RepositoryError }>(),
+    'County Business Patterns Configuration Changed': props<{
+      measure: CountyBusinessPatternsMeasure;
+      industry: CountyBusinessPatternsIndustry;
+      year: number;
+    }>(),
+    'County Business Patterns Requested': emptyProps(),
+    'County Business Patterns Loaded': props<{
+      countyBusinessPatternsChoropleth: CountyBusinessPatternsChoropleth;
+    }>(),
+    'County Business Patterns Failed': props<{ error: RepositoryError }>(),
     'Research Coverage Requested': props<{
       query: SearchQuery;
       viewport: ResearchSpatialViewport;
@@ -67,6 +80,7 @@ export const MapsActions = createActionGroup({
     'Terrain Mode Changed': props<{ mode: UsgsTerrainMode }>(),
     'Saipe Layer Toggled': props<{ visible: boolean }>(),
     'Population Layer Toggled': props<{ visible: boolean }>(),
+    'County Business Patterns Layer Toggled': props<{ visible: boolean }>(),
     'Research Coverage Layer Toggled': props<{ visible: boolean }>(),
     'Research Coverage Feature Selected': props<{
       sourceIdentifier: string;

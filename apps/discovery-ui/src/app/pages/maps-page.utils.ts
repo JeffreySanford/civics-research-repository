@@ -321,6 +321,7 @@ export type MapLayerGroupId =
   | 'workplace'
   | 'saipe'
   | 'population'
+  | 'cbp'
   | 'research'
   | 'hydrography'
   | 'terrain';
@@ -388,6 +389,15 @@ export const MAP_LAYER_GROUPS: readonly MapLayerGroup[] = [
     layerIds: [
       'population-estimates-county-fill',
       'population-estimates-county-outline',
+    ],
+  },
+  {
+    id: 'cbp',
+    label: 'County Business Patterns',
+    sourceId: 'county-business-patterns-county',
+    layerIds: [
+      'county-business-patterns-county-fill',
+      'county-business-patterns-county-outline',
     ],
   },
   {

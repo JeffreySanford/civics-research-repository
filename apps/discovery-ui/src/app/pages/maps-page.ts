@@ -34,6 +34,9 @@ import type {
 } from 'maplibre-gl';
 import type {
   CensusAreaBoundary,
+  CountyBusinessPatternsChoropleth,
+  CountyBusinessPatternsIndustry,
+  CountyBusinessPatternsMeasure,
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
@@ -51,6 +54,14 @@ import { REPOSITORY_API_BASE_URL } from 'repository-api-client';
 import { MapsActions } from '../state/maps/maps.actions';
 import {
   selectCensusAreaBoundaries,
+  selectCountyBusinessPatternsAvailable,
+  selectCountyBusinessPatternsChoropleth,
+  selectCountyBusinessPatternsError,
+  selectCountyBusinessPatternsIndustry,
+  selectCountyBusinessPatternsLoading,
+  selectCountyBusinessPatternsMeasure,
+  selectCountyBusinessPatternsVisible,
+  selectCountyBusinessPatternsYear,
   selectEarthquakeError,
   selectEarthquakeOverlay,
   selectEarthquakeVisible,
@@ -102,6 +113,8 @@ import {
   withUsgsTerrainMode,
   type UsgsTerrainMode,
 } from '../state/maps/terrain';
+import { buildCountyBusinessPatternsScale } from './county-business-patterns-scale';
+import { CountyBusinessPatternsSummaryComponent } from './county-business-patterns-summary.component';
 import { PopulationEstimatesSummaryComponent } from './population-estimates-summary.component';
 import { ResearchCoverageSummaryComponent } from './research-coverage-summary.component';
 import {
@@ -193,6 +206,7 @@ type ResearchCoverageFeatureCollection = {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    CountyBusinessPatternsSummaryComponent,
     PopulationEstimatesSummaryComponent,
     ResearchCoverageSummaryComponent,
     TerrainLayerStatusComponent,
@@ -219,6 +233,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingSaipeChoropleth: SaipeCountyChoropleth | null = null;
   private pendingPopulationEstimates: PopulationEstimatesChoropleth | null =
     null;
+  private pendingCountyBusinessPatterns: CountyBusinessPatternsChoropleth | null =
+    null;
   private pendingHydrographyLayer: MapLayer | null = null;
   private pendingTerrainLayer: MapLayer | null = null;
   private pendingResearchCoverage: ResearchCoverageSummary | null = null;
@@ -236,6 +252,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private populationEstimateMeasure: PopulationEstimateMeasure =
     'ANNUAL_GROWTH_RATE';
   private populationEstimateYear = 2025;
+  private countyBusinessPatternsVisible = false;
+  private countyBusinessPatternsMeasure: CountyBusinessPatternsMeasure =
+    'ESTABLISHMENTS';
+  private countyBusinessPatternsIndustry: CountyBusinessPatternsIndustry =
+    'TOTAL';
+  private countyBusinessPatternsYear = 2023;
   private researchCoverageVisible = false;
   private selectedResearchCoverageId: string | null = null;
   private selectedFeatureId: string | null = null;
@@ -282,6 +304,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       'Colors counties by SAIPE poverty rate for the selected state. The county value table below lists the same statistics shown on the map.',
     population:
       'Colors counties using Census Population Estimates Program Vintage 2025 values. Population uses a sequential scale; annual change and annual growth use a diverging scale centered at zero. Colors do not imply statistical significance.',
+    cbp: 'Colors counties using the pinned 2023 Census County Business Patterns source. Choose establishments, employment, or payroll and a 2-digit NAICS sector. Gray means the county/industry row is unavailable in the published source, never zero.',
     research:
       'Shows spatial extents declared in Data.gov metadata. Map points are deterministic display anchors for those extents, not observation sites or data-collection locations. Publisher, laboratory, author, and institution addresses are never substituted for missing research geometry.',
     hydrography:
@@ -307,6 +330,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly saipeAvailable$ = this.store.select(selectSaipeAvailable);
   protected readonly populationAvailable$ = this.store.select(
     selectPopulationEstimatesAvailable,
+  );
+  protected readonly countyBusinessPatternsAvailable$ = this.store.select(
+    selectCountyBusinessPatternsAvailable,
   );
   protected readonly hydrographyLayer$ = this.store.select(
     selectHydrographyLayer,
@@ -361,6 +387,61 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     selectPopulationVisible,
   );
 
+  protected readonly countyBusinessPatternsChoropleth$ = this.store.select(
+    selectCountyBusinessPatternsChoropleth,
+  );
+  protected readonly countyBusinessPatternsScale$ =
+    this.countyBusinessPatternsChoropleth$.pipe(
+      map((choropleth) =>
+        choropleth ? buildCountyBusinessPatternsScale(choropleth) : null,
+      ),
+    );
+  protected readonly countyBusinessPatternsError$ = this.store.select(
+    selectCountyBusinessPatternsError,
+  );
+  protected readonly countyBusinessPatternsLoading$ = this.store.select(
+    selectCountyBusinessPatternsLoading,
+  );
+  protected readonly countyBusinessPatternsMeasure$ = this.store.select(
+    selectCountyBusinessPatternsMeasure,
+  );
+  protected readonly countyBusinessPatternsIndustry$ = this.store.select(
+    selectCountyBusinessPatternsIndustry,
+  );
+  protected readonly countyBusinessPatternsYear$ = this.store.select(
+    selectCountyBusinessPatternsYear,
+  );
+  protected readonly countyBusinessPatternsVisible$ = this.store.select(
+    selectCountyBusinessPatternsVisible,
+  );
+  protected readonly countyBusinessPatternsYears = [2023] as const;
+  protected readonly countyBusinessPatternsIndustries: readonly {
+    code: CountyBusinessPatternsIndustry;
+    label: string;
+  }[] = [
+    { code: 'TOTAL', label: 'All sectors' },
+    { code: '11', label: '11 Agriculture, forestry, fishing & hunting' },
+    { code: '21', label: '21 Mining, quarrying, oil & gas' },
+    { code: '22', label: '22 Utilities' },
+    { code: '23', label: '23 Construction' },
+    { code: '31', label: '31-33 Manufacturing' },
+    { code: '42', label: '42 Wholesale trade' },
+    { code: '44', label: '44-45 Retail trade' },
+    { code: '48', label: '48-49 Transportation & warehousing' },
+    { code: '51', label: '51 Information' },
+    { code: '52', label: '52 Finance & insurance' },
+    { code: '53', label: '53 Real estate, rental & leasing' },
+    { code: '54', label: '54 Professional, scientific & technical services' },
+    { code: '55', label: '55 Management of companies & enterprises' },
+    { code: '56', label: '56 Administrative support & waste services' },
+    { code: '61', label: '61 Educational services' },
+    { code: '62', label: '62 Health care & social assistance' },
+    { code: '71', label: '71 Arts, entertainment & recreation' },
+    { code: '72', label: '72 Accommodation & food services' },
+    { code: '81', label: '81 Other services' },
+    { code: '99', label: '99 Industries not classified' },
+  ];
+
   protected readonly researchCoverageSummary$ = this.store.select(
     selectResearchCoverageSummary,
   );
@@ -391,6 +472,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.store.select(selectTerrainVisible),
     this.store.select(selectSaipeVisible),
     this.store.select(selectPopulationVisible),
+    this.store.select(selectCountyBusinessPatternsVisible),
   ]).pipe(
     map(
       ([
@@ -402,6 +484,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         terrainVisible,
         saipeVisible,
         populationVisible,
+        countyBusinessPatternsVisible,
       ]) =>
         layers.filter((layer) => {
           switch (layer.layerType) {
@@ -415,6 +498,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
               }
               if (layer.id.startsWith('population-estimates-county-')) {
                 return populationVisible;
+              }
+              if (layer.id.startsWith('county-business-patterns-')) {
+                return countyBusinessPatternsVisible;
               }
               return false;
             case 'USGS_EARTHQUAKE':
@@ -540,6 +626,25 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         this.renderPopulationEstimates();
       });
 
+    this.countyBusinessPatternsChoropleth$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((choropleth) => {
+        this.pendingCountyBusinessPatterns = choropleth;
+        this.renderCountyBusinessPatterns();
+      });
+
+    combineLatest([
+      this.countyBusinessPatternsMeasure$,
+      this.countyBusinessPatternsIndustry$,
+      this.countyBusinessPatternsYear$,
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([measure, industry, year]) => {
+        this.countyBusinessPatternsMeasure = measure;
+        this.countyBusinessPatternsIndustry = industry;
+        this.countyBusinessPatternsYear = year;
+      });
+
     combineLatest([
       this.populationEstimateMeasure$,
       this.populationEstimateYear$,
@@ -650,6 +755,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       this.terrainVisible$,
       this.saipeVisible$,
       this.populationVisible$,
+      this.countyBusinessPatternsVisible$,
       this.researchCoverageVisible$,
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -663,6 +769,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           terrainVisible,
           saipeVisible,
           populationVisible,
+          countyBusinessPatternsVisible,
           researchCoverageVisible,
         ]) => {
           const terrainTurnedOn = terrainVisible && !this.terrainVisible;
@@ -674,6 +781,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           this.terrainVisible = terrainVisible;
           this.saipeVisible = saipeVisible;
           this.populationVisible = populationVisible;
+          this.countyBusinessPatternsVisible = countyBusinessPatternsVisible;
           this.researchCoverageVisible = researchCoverageVisible;
 
           if (terrainTurnedOn) {
@@ -794,6 +902,78 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.updateMapUrl({
       populationMeasure: this.populationEstimateMeasure,
       populationYear: year,
+    });
+  }
+
+  protected toggleCountyBusinessPatternsLayer(visible: boolean): void {
+    this.store.dispatch(
+      MapsActions.countyBusinessPatternsLayerToggled({ visible }),
+    );
+    this.updateMapUrl({
+      countyBusinessPatternsVisible: visible,
+      countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+      countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+      countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+    });
+  }
+
+  protected changeCountyBusinessPatternsMeasure(value: string): void {
+    const measure = this.toCountyBusinessPatternsMeasure(value);
+    if (!measure) {
+      return;
+    }
+
+    this.store.dispatch(
+      MapsActions.countyBusinessPatternsConfigurationChanged({
+        measure,
+        industry: this.countyBusinessPatternsIndustry,
+        year: this.countyBusinessPatternsYear,
+      }),
+    );
+    this.updateMapUrl({
+      countyBusinessPatternsMeasure: measure,
+      countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+      countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+    });
+  }
+
+  protected changeCountyBusinessPatternsIndustry(value: string): void {
+    const industry = this.toCountyBusinessPatternsIndustry(value);
+    if (!industry) {
+      return;
+    }
+
+    this.store.dispatch(
+      MapsActions.countyBusinessPatternsConfigurationChanged({
+        measure: this.countyBusinessPatternsMeasure,
+        industry,
+        year: this.countyBusinessPatternsYear,
+      }),
+    );
+    this.updateMapUrl({
+      countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+      countyBusinessPatternsIndustry: industry,
+      countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+    });
+  }
+
+  protected changeCountyBusinessPatternsYear(value: string): void {
+    const year = this.toCountyBusinessPatternsYear(value);
+    if (year === null) {
+      return;
+    }
+
+    this.store.dispatch(
+      MapsActions.countyBusinessPatternsConfigurationChanged({
+        measure: this.countyBusinessPatternsMeasure,
+        industry: this.countyBusinessPatternsIndustry,
+        year,
+      }),
+    );
+    this.updateMapUrl({
+      countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+      countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+      countyBusinessPatternsYear: year,
     });
   }
 
@@ -1103,6 +1283,18 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             params.get('populationMeasure'),
           ),
           populationYear: this.toPopulationYear(params.get('populationYear')),
+          countyBusinessPatternsVisible: this.toVisibleState(
+            params.get('countyBusinessPatterns'),
+          ),
+          countyBusinessPatternsMeasure: this.toCountyBusinessPatternsMeasure(
+            params.get('countyBusinessPatternsMeasure'),
+          ),
+          countyBusinessPatternsIndustry: this.toCountyBusinessPatternsIndustry(
+            params.get('countyBusinessPatternsIndustry'),
+          ),
+          countyBusinessPatternsYear: this.toCountyBusinessPatternsYear(
+            params.get('countyBusinessPatternsYear'),
+          ),
           researchCoverageVisible: this.toVisibleState(params.get('research')),
           featureId: params.get('feature'),
         })),
@@ -1120,6 +1312,14 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             previous.populationVisible === current.populationVisible &&
             previous.populationMeasure === current.populationMeasure &&
             previous.populationYear === current.populationYear &&
+            previous.countyBusinessPatternsVisible ===
+              current.countyBusinessPatternsVisible &&
+            previous.countyBusinessPatternsMeasure ===
+              current.countyBusinessPatternsMeasure &&
+            previous.countyBusinessPatternsIndustry ===
+              current.countyBusinessPatternsIndustry &&
+            previous.countyBusinessPatternsYear ===
+              current.countyBusinessPatternsYear &&
             previous.researchCoverageVisible ===
               current.researchCoverageVisible &&
             previous.featureId === current.featureId,
@@ -1140,6 +1340,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           populationVisible,
           populationMeasure,
           populationYear,
+          countyBusinessPatternsVisible,
+          countyBusinessPatternsMeasure,
+          countyBusinessPatternsIndustry,
+          countyBusinessPatternsYear,
           researchCoverageVisible,
           featureId,
         }) => {
@@ -1225,6 +1429,33 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
             );
           }
 
+          if (countyBusinessPatternsVisible !== null) {
+            this.store.dispatch(
+              MapsActions.countyBusinessPatternsLayerToggled({
+                visible: countyBusinessPatternsVisible,
+              }),
+            );
+          }
+
+          if (
+            countyBusinessPatternsMeasure !== null ||
+            countyBusinessPatternsIndustry !== null ||
+            countyBusinessPatternsYear !== null
+          ) {
+            this.store.dispatch(
+              MapsActions.countyBusinessPatternsConfigurationChanged({
+                measure:
+                  countyBusinessPatternsMeasure ??
+                  this.countyBusinessPatternsMeasure,
+                industry:
+                  countyBusinessPatternsIndustry ??
+                  this.countyBusinessPatternsIndustry,
+                year:
+                  countyBusinessPatternsYear ?? this.countyBusinessPatternsYear,
+              }),
+            );
+          }
+
           if (researchCoverageVisible !== null) {
             this.store.dispatch(
               MapsActions.researchCoverageLayerToggled({
@@ -1253,6 +1484,10 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     populationVisible?: boolean;
     populationMeasure?: PopulationEstimateMeasure;
     populationYear?: number;
+    countyBusinessPatternsVisible?: boolean;
+    countyBusinessPatternsMeasure?: CountyBusinessPatternsMeasure;
+    countyBusinessPatternsIndustry?: CountyBusinessPatternsIndustry;
+    countyBusinessPatternsYear?: number;
     researchCoverageVisible?: boolean;
     featureId?: string | null;
   }): void {
@@ -1312,6 +1547,26 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       queryParams['populationYear'] = options.populationYear;
     }
 
+    if (options.countyBusinessPatternsVisible !== undefined) {
+      queryParams['countyBusinessPatterns'] =
+        options.countyBusinessPatternsVisible ? 'on' : 'off';
+    }
+
+    if (options.countyBusinessPatternsMeasure !== undefined) {
+      queryParams['countyBusinessPatternsMeasure'] =
+        options.countyBusinessPatternsMeasure;
+    }
+
+    if (options.countyBusinessPatternsIndustry !== undefined) {
+      queryParams['countyBusinessPatternsIndustry'] =
+        options.countyBusinessPatternsIndustry;
+    }
+
+    if (options.countyBusinessPatternsYear !== undefined) {
+      queryParams['countyBusinessPatternsYear'] =
+        options.countyBusinessPatternsYear;
+    }
+
     if (options.researchCoverageVisible !== undefined) {
       queryParams['research'] = options.researchCoverageVisible ? 'on' : 'off';
     }
@@ -1364,6 +1619,36 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     return Number.isInteger(parsed) && parsed >= 2020 && parsed <= 2025
       ? parsed
       : null;
+  }
+
+  private toCountyBusinessPatternsMeasure(
+    value: string | null,
+  ): CountyBusinessPatternsMeasure | null {
+    if (
+      value === 'ESTABLISHMENTS' ||
+      value === 'EMPLOYMENT' ||
+      value === 'FIRST_QUARTER_PAYROLL' ||
+      value === 'ANNUAL_PAYROLL'
+    ) {
+      return value;
+    }
+
+    return null;
+  }
+
+  private toCountyBusinessPatternsIndustry(
+    value: string | null,
+  ): CountyBusinessPatternsIndustry | null {
+    return this.countyBusinessPatternsIndustries.some(
+      (industry) => industry.code === value,
+    )
+      ? (value as CountyBusinessPatternsIndustry)
+      : null;
+  }
+
+  private toCountyBusinessPatternsYear(value: string | null): number | null {
+    const parsed = Number(value);
+    return parsed === 2023 ? 2023 : null;
   }
 
   private isOverlayStale(staleAfter: string): boolean {
@@ -1578,6 +1863,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.renderWorkplaceLayer();
     this.renderSaipeChoropleth();
     this.renderPopulationEstimates();
+    this.renderCountyBusinessPatterns();
     this.renderResearchCoverage();
     this.renderResearchCoverageSelection();
     this.renderHydrographyLayer();
@@ -2126,6 +2412,64 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.applyLayerVisibility();
   }
 
+  private renderCountyBusinessPatterns(): void {
+    if (
+      !this.map ||
+      !this.mapStyleReady ||
+      !this.pendingCountyBusinessPatterns
+    ) {
+      return;
+    }
+
+    const overlay = this.pendingCountyBusinessPatterns;
+    const data = overlay.geoJson as GeoJsonFeatureCollection;
+    const scale = buildCountyBusinessPatternsScale(overlay);
+    const sourceId = 'county-business-patterns-county';
+    const fillId = 'county-business-patterns-county-fill';
+    const outlineId = 'county-business-patterns-county-outline';
+    const existingSource = this.map.getSource(sourceId) as GeoJSONSource | null;
+
+    if (existingSource) {
+      existingSource.setData(data);
+      if (this.map.getLayer(fillId)) {
+        this.map.setPaintProperty(fillId, 'fill-color', scale.fillColor);
+      }
+      this.applyLayerVisibility();
+      return;
+    }
+
+    this.map.addSource(sourceId, { type: 'geojson', data });
+    this.map.addLayer(
+      {
+        id: fillId,
+        type: 'fill',
+        source: sourceId,
+        layout: {
+          visibility: this.countyBusinessPatternsVisible ? 'visible' : 'none',
+        },
+        paint: {
+          'fill-color': scale.fillColor,
+          'fill-opacity': 0.72,
+        },
+      },
+      'census-area-fill',
+    );
+    this.map.addLayer({
+      id: outlineId,
+      type: 'line',
+      source: sourceId,
+      layout: {
+        visibility: this.countyBusinessPatternsVisible ? 'visible' : 'none',
+      },
+      paint: {
+        'line-color': '#065f46',
+        'line-width': 1.25,
+      },
+    });
+
+    this.applyLayerVisibility();
+  }
+
   /**
    * Draws the current viewport's bounded publisher spatial evidence.
    *
@@ -2664,6 +3008,7 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       workplace: this.workplaceVisible,
       saipe: this.saipeVisible,
       population: this.populationVisible,
+      cbp: this.countyBusinessPatternsVisible,
       research: this.researchCoverageVisible,
       hydrography: this.hydrographyVisible,
       terrain: this.terrainVisible,

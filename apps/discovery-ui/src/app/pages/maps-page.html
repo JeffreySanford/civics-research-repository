@@ -107,7 +107,9 @@
               @if (layers$ | async; as layers) {
               <span class="layer-category-count"
                 >{{ 2 + ((saipeAvailable$ | async) ? 1 : 0) +
-                ((populationAvailable$ | async) ? 1 : 0) }} layers</span
+                ((populationAvailable$ | async) ? 1 : 0) +
+                ((countyBusinessPatternsAvailable$ | async) ? 1 : 0) }}
+                layers</span
               >
               } @else {
               <span class="layer-category-count">2 layers</span>
@@ -263,6 +265,117 @@
                 }
               </div>
               } } }
+            </div>
+            } @if (countyBusinessPatternsAvailable$ | async) {
+            <div class="layer-config-group">
+              <span class="layer-toggle-row">
+                <label class="layer-toggle">
+                  <input
+                    type="checkbox"
+                    data-testid="map-layer-county-business-patterns"
+                    [checked]="countyBusinessPatternsVisible$ | async"
+                    (change)="
+                      toggleCountyBusinessPatternsLayer(
+                        $any($event.target).checked
+                      )
+                    "
+                  />
+                  <span class="layer-toggle-label"
+                    >County Business Patterns</span
+                  >
+                </label>
+                <button
+                  type="button"
+                  class="layer-info-button"
+                  mat-icon-button
+                  data-testid="map-layer-county-business-patterns-info"
+                  [matTooltip]="layerTooltips.cbp"
+                  matTooltipPosition="above"
+                  aria-label="About County Business Patterns layer"
+                >
+                  <mat-icon aria-hidden="true">info_outline</mat-icon>
+                </button>
+              </span>
+
+              @if (countyBusinessPatternsVisible$ | async) { @if
+              (countyBusinessPatternsMeasure$ | async; as cbpMeasure) { @if
+              (countyBusinessPatternsIndustry$ | async; as cbpIndustry) { @if
+              (countyBusinessPatternsYear$ | async; as cbpYear) {
+              <div
+                class="population-config"
+                data-testid="county-business-patterns-config"
+              >
+                <label>
+                  Measure
+                  <select
+                    #cbpMeasureSelect
+                    data-testid="county-business-patterns-measure"
+                    [value]="cbpMeasure"
+                    (change)="
+                      changeCountyBusinessPatternsMeasure(cbpMeasureSelect.value)
+                    "
+                  >
+                    <option value="ESTABLISHMENTS">Establishments</option>
+                    <option value="EMPLOYMENT">Employment</option>
+                    <option value="FIRST_QUARTER_PAYROLL">
+                      First-quarter payroll
+                    </option>
+                    <option value="ANNUAL_PAYROLL">Annual payroll</option>
+                  </select>
+                </label>
+
+                <label>
+                  Industry
+                  <select
+                    #cbpIndustrySelect
+                    data-testid="county-business-patterns-industry"
+                    [value]="cbpIndustry"
+                    (change)="
+                      changeCountyBusinessPatternsIndustry(
+                        cbpIndustrySelect.value
+                      )
+                    "
+                  >
+                    @for ( industry of countyBusinessPatternsIndustries; track
+                    industry.code ) {
+                    <option
+                      [value]="industry.code"
+                      [selected]="industry.code === cbpIndustry"
+                    >
+                      {{ industry.label }}
+                    </option>
+                    }
+                  </select>
+                </label>
+
+                <label>
+                  Year
+                  <select
+                    #cbpYearSelect
+                    data-testid="county-business-patterns-year"
+                    [value]="cbpYear"
+                    (change)="
+                      changeCountyBusinessPatternsYear(cbpYearSelect.value)
+                    "
+                  >
+                    @for (year of countyBusinessPatternsYears; track year) {
+                    <option [value]="year" [selected]="year === cbpYear">
+                      {{ year }}
+                    </option>
+                    }
+                  </select>
+                </label>
+
+                @if (countyBusinessPatternsLoading$ | async) {
+                <span
+                  class="feature-hint population-config-status"
+                  role="status"
+                >
+                  Updating County Business Patterns…
+                </span>
+                }
+              </div>
+              } } } }
             </div>
             }
           </div>
@@ -579,6 +692,40 @@
           <li>
             <span class="swatch population"></span>
             County population unavailable
+          </li>
+          } } @if (countyBusinessPatternsVisible$ | async) { @if (
+          countyBusinessPatternsChoropleth$ | async; as cbp ) { @if
+          (countyBusinessPatternsScale$ | async; as cbpScale) {
+          <li class="population-legend-entry">
+            <span class="swatch" [style.background-color]="'#059669'"></span>
+            <div class="population-legend-body">
+              <strong>County Business Patterns — {{ cbp.measureLabel }}</strong>
+              <span>
+                {{ cbp.industryLabel }} · {{ cbp.year }} · {{ cbp.units }}
+              </span>
+              <div
+                class="population-breaks"
+                aria-label="County Business Patterns color scale"
+              >
+                @for (cbpBreak of cbpScale.breaks; track cbpBreak.label) {
+                <span class="population-break">
+                  <span
+                    class="swatch population-break-swatch"
+                    [style.background-color]="cbpBreak.color"
+                  ></span>
+                  {{ cbpBreak.label }}
+                </span>
+                }
+              </div>
+              <span class="population-legend-note">
+                {{ cbpScale.description }}
+              </span>
+            </div>
+          </li>
+          } } @else if (countyBusinessPatternsError$ | async) {
+          <li>
+            <span class="swatch" [style.background-color]="'#059669'"></span>
+            County Business Patterns unavailable
           </li>
           } } @if (researchCoverageVisible$ | async) { @if
           (researchCoverageSummary$ | async; as researchCoverage) {
@@ -929,6 +1076,16 @@
           "
           [loading]="(populationEstimatesLoading$ | async) ?? false"
           [error]="(populationEstimatesError$ | async) ?? null"
+        />
+      </li>
+      } @if (countyBusinessPatternsVisible$ | async) {
+      <li>
+        <app-county-business-patterns-summary
+          [choropleth]="
+            (countyBusinessPatternsChoropleth$ | async) ?? null
+          "
+          [loading]="(countyBusinessPatternsLoading$ | async) ?? false"
+          [error]="(countyBusinessPatternsError$ | async) ?? null"
         />
       </li>
       } @if (saipeVisible$ | async) { @if (saipeChoropleth$ | async; as saipe) {

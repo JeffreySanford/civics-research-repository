@@ -39,6 +39,14 @@ export type PopulationEstimateCountyValue =
   components['schemas']['PopulationEstimateCountyValue'];
 export type PopulationEstimatesChoropleth =
   components['schemas']['PopulationEstimatesChoropleth'];
+export type CountyBusinessPatternsMeasure =
+  components['schemas']['CountyBusinessPatternsMeasure'];
+export type CountyBusinessPatternsIndustry =
+  components['schemas']['CountyBusinessPatternsIndustry'];
+export type CountyBusinessPatternsCountyValue =
+  components['schemas']['CountyBusinessPatternsCountyValue'];
+export type CountyBusinessPatternsChoropleth =
+  components['schemas']['CountyBusinessPatternsChoropleth'];
 export type ResearchSpatialViewport =
   components['schemas']['ResearchSpatialViewport'];
 export type ResearchSpatialCoverageSummary =
@@ -248,6 +256,18 @@ export class RepositoryMapsApi {
           year,
         },
       },
+    );
+  }
+
+  getCountyBusinessPatternsChoropleth(
+    geography: string,
+    measure: CountyBusinessPatternsMeasure = 'ESTABLISHMENTS',
+    industry: CountyBusinessPatternsIndustry = 'TOTAL',
+    year = 2023,
+  ): Observable<CountyBusinessPatternsChoropleth> {
+    return this.http.get<CountyBusinessPatternsChoropleth>(
+      `${this.baseUrl}/overlays/census/county-business-patterns`,
+      { params: { geography, measure, industry, year } },
     );
   }
 
