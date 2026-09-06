@@ -148,9 +148,8 @@ export const selectHydrographyLayer = createSelector(
   (layers) => layers.find((layer) => layer.id === 'usgs-3hp-hydrography'),
 );
 
-export const selectTerrainLayer = createSelector(
-  selectMapLayers,
-  (layers) => layers.find((layer) => layer.id === 'usgs-3dep-terrain'),
+export const selectTerrainLayer = createSelector(selectMapLayers, (layers) =>
+  layers.find((layer) => layer.id === 'usgs-3dep-terrain'),
 );
 
 export const selectTerrainAvailable = createSelector(
