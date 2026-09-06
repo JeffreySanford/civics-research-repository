@@ -1,0 +1,102 @@
+name: Terrain OpenAPI once
+
+on:
+  push:
+    branches:
+      - codex/maps-usgs-3dep-terrain
+
+permissions:
+  contents: write
+
+jobs:
+  generate-once:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/maps-usgs-3dep-terrain
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Add terrain OpenAPI contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('schemas/openapi/repository-api.yaml')
+          text = path.read_text(encoding='utf-8')
+          marker = "  /accessibility/evidence:\n"
+          if '/overlays/usgs/terrain/export:' in text:
+              raise SystemExit('terrain OpenAPI path already exists')
+          if marker not in text:
+              raise SystemExit('accessibility path marker not found')
+
+          terrain = """  /overlays/usgs/terrain/export:
+            get:
+              tags: [Maps]
+              operationId: getUsgsTerrainTileExport
+              summary: Proxy USGS 3DEP terrain raster tile export.
+              description: >-
+                Fetches a bounded PNG from the USGS 3DEP Bare Earth DEM dynamic ImageServer through
+                the repository API so the discovery UI does not construct source-specific ArcGIS
+                requests.
+              parameters:
+                - name: bbox
+                  in: query
+                  required: true
+                  schema:
+                    type: string
+                  description: Comma-separated west,south,east,north in EPSG:3857 (Web Mercator).
+                - name: mode
+                  in: query
+                  schema:
+                    type: string
+                    enum: [hillshade, tinted, slope]
+                    default: hillshade
+              responses:
+                '200':
+                  description: USGS 3DEP terrain raster PNG.
+                  content:
+                    image/png:
+                      schema:
+                        type: string
+                        format: binary
+                '400':
+                  $ref: '#/components/responses/BadRequest'
+                '500':
+                  $ref: '#/components/responses/InternalServerError'
+                '503':
+                  $ref: '#/components/responses/ServiceUnavailable'
+          """
+
+          path.write_text(text.replace(marker, terrain + marker, 1), encoding='utf-8')
+          PY
+
+          pnpm exec prettier --write schemas/openapi/repository-api.yaml
+          pnpm run openapi:lint
+          pnpm run openapi:generate
+          pnpm run openapi:check
+
+      - name: Commit generated contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm --ignore-unmatch .github/workflows/terrain-openapi-once.yml
+          git add \
+            schemas/openapi/repository-api.yaml \
+            libs/repository/api-client/src/generated/repository-api.types.ts
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(maps): publish terrain proxy contract'
+          git push origin HEAD:codex/maps-usgs-3dep-terrain
