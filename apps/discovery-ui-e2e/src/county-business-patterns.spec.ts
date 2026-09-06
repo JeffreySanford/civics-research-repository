@@ -58,16 +58,16 @@ test.describe('2023 County Business Patterns', () => {
         name: 'County business activity context',
       }),
     ).toContainText(
-      'Employment for Professional, Scientific, and Technical Services in North Dakota, 2023',
+      'Mid-March employment for Professional, Scientific, and Technical Services in North Dakota, 2023',
     );
 
     const table = page.getByRole('table', {
-      name: /Employment for Professional, Scientific, and Technical Services in North Dakota, 2023/,
+      name: /Mid-March employment for Professional, Scientific, and Technical Services in North Dakota, 2023/,
     });
     await expect(table).toBeVisible();
 
     const cassRow = table.getByRole('row', { name: /Cass County/ });
-    await expect(cassRow).toContainText('0 employees');
+    await expect(cassRow).toContainText('0 people');
     await expect(cassRow).toContainText('Published');
     await expect(cassRow).toContainText('G');
 
@@ -78,7 +78,7 @@ test.describe('2023 County Business Patterns', () => {
 
     const legend = page.getByLabel('Visible map layer legend');
     await expect(legend).toContainText(
-      'County Business Patterns — Employment',
+      'County Business Patterns — Mid-March employment',
     );
     await expect(legend).toContainText('unavailable, not zero');
   });
@@ -108,7 +108,7 @@ test.describe('2023 County Business Patterns', () => {
 
     await expect(
       page.getByRole('table', {
-        name: /Employment for Professional, Scientific, and Technical Services in North Dakota, 2023/,
+        name: /Mid-March employment for Professional, Scientific, and Technical Services in North Dakota, 2023/,
       }),
     ).toBeVisible();
   });
