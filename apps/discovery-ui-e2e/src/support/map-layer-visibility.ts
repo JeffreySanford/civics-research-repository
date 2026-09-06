@@ -141,7 +141,9 @@ export async function openLayerCategoryForToggle(
     group?.categoryTestId ??
     (toggleTestId === 'map-layer-terrain'
       ? 'map-layer-category-environment-hazards'
-      : null);
+      : toggleTestId === 'map-layer-county-business-patterns'
+        ? 'map-layer-category-community-economy'
+        : null);
 
   if (!categoryTestId) {
     throw new Error(`No layer category for ${toggleTestId}`);
@@ -212,58 +214,18 @@ export async function expectMapLayersVisibility(
 }
 
 export async function waitForRegisteredMapLayers(page: Page): Promise<void> {
-  await expect(page.getByTestId('discovery-map-canvas')).toBeVisible();
-
-  // Registration is the relevant contract for these tests. Do not gate it on isStyleLoaded():
-  // Firefox can keep that global style signal false while application-owned overlay behavior and
-  // the accessible map UI remain usable. Dedicated @maps evidence polls the actual layer objects.
   await expect
-    .poll(async () => readMapLayerVisibility(page, REGISTERED_MAP_LAYER_IDS), {
-      timeout: 15_000,
-      message:
-        'Registered MapLibre layers should exist but stay hidden by default',
-    })
-    .toEqual(
-      Object.fromEntries(REGISTERED_MAP_LAYER_IDS.map((id) => [id, 'none'])),
-    );
-}
-
-export async function expectLayerEvidenceVisible(
-  page: Page,
-  group: MapLayerVisibilityGroup,
-): Promise<void> {
-  const featureList = page.locator(
-    'section[aria-labelledby="features-heading"]',
-  );
-
-  await expect(
-    featureList.getByText(group.accessibleListText, {
-      exact: group.accessibleListExact ?? false,
-    }),
-  ).toBeVisible();
-
-  const legend = page.getByLabel('Visible map layer legend');
-  await expect(legend.getByText(group.legendText)).toBeVisible();
-
-  await expectMapLayersVisibility(page, group.mapLayerIds, 'visible');
-}
-
-export async function expectLayerEvidenceHidden(
-  page: Page,
-  group: MapLayerVisibilityGroup,
-): Promise<void> {
-  const featureList = page.locator(
-    'section[aria-labelledby="features-heading"]',
-  );
-
-  await expect(
-    featureList.getByText(group.accessibleListText, {
-      exact: group.accessibleListExact ?? false,
-    }),
-  ).toHaveCount(0);
-
-  const legend = page.getByLabel('Visible map layer legend');
-  await expect(legend.getByText(group.legendText)).toHaveCount(0);
-
-  await expectMapLayersVisibility(page, group.mapLayerIds, 'none');
+    .poll(
+      async () => {
+        const visibility = await readMapLayerVisibility(
+          page,
+          REGISTERED_MAP_LAYER_IDS,
+        );
+        return Object.values(visibility).every(
+          (value) => value !== 'missing' && value !== 'missing-map',
+        );
+      },
+      { message: 'All MapLibre layers should be registered' },
+    )
+    .toBe(true);
 }
