@@ -1,0 +1,109 @@
+name: Repair map feature URL state
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-map-feature-url-state.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with:
+          version: 10.14.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Repair hidden earthquake selection URL state
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          page = Path('apps/discovery-ui/src/app/pages/maps-page.ts')
+          text = page.read_text()
+          old = """  protected toggleEarthquakeLayer(visible: boolean): void {
+              this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
+              this.updateMapUrl({ earthquakeVisible: visible });
+            }
+          """
+          new = """  protected toggleEarthquakeLayer(visible: boolean): void {
+              this.store.dispatch(MapsActions.earthquakeLayerToggled({ visible }));
+              this.updateMapUrl({
+                earthquakeVisible: visible,
+                ...(visible ? {} : { featureId: null }),
+              });
+            }
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one earthquake toggle block, found {text.count(old)}')
+          page.write_text(text.replace(old, new))
+
+          spec = Path('apps/discovery-ui-e2e/src/storyboard.spec.ts')
+          text = spec.read_text()
+          old = """    await openMapLayerCategory(page, 'earthquake');
+              await page.getByTestId('map-layer-earthquake').uncheck();
+
+              await expect(page.getByText('No map feature selected.')).toBeVisible();
+            });
+          """
+          new = """    await openMapLayerCategory(page, 'earthquake');
+              await page.getByTestId('map-layer-earthquake').uncheck();
+
+              await expect(page).not.toHaveURL(/feature=/);
+              await expect(page.getByTestId('feature-announcement')).toContainText(
+                'No map feature selected.',
+              );
+            });
+          """
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one hiding-overlay storyboard block, found {text.count(old)}')
+          spec.write_text(text.replace(old, new))
+          PY
+
+          pnpm exec prettier --write \
+            apps/discovery-ui/src/app/pages/maps-page.ts \
+            apps/discovery-ui-e2e/src/storyboard.spec.ts
+
+      - name: Validate unit and lint gates
+        run: |
+          pnpm nx run discovery-ui:lint
+          pnpm nx run discovery-ui:test
+          pnpm nx run discovery-ui-e2e:lint
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Validate selection regression across browsers
+        run: >-
+          pnpm exec playwright test
+          --config=apps/discovery-ui-e2e/playwright.config.mts
+          --grep "hiding the overlay clears the selection"
+          --reporter=list
+
+      - name: Commit repair to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/discovery-ui/src/app/pages/maps-page.ts apps/discovery-ui-e2e/src/storyboard.spec.ts
+          if git diff --cached --quiet; then
+            echo "No repair changes to commit."
+            exit 0
+          fi
+          git commit -m "fix(maps): clear hidden feature URL state"
+          git push origin HEAD:main
