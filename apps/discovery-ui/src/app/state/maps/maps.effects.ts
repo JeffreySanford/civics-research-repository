@@ -14,10 +14,15 @@ import {
 import {
   parseRepositoryError,
   RepositoryMapsApi,
+  type CountyBusinessPatternsIndustry,
+  type CountyBusinessPatternsMeasure,
   type PopulationEstimateMeasure,
 } from 'repository-api-client';
 import { MapsActions } from './maps.actions';
 import {
+  selectCountyBusinessPatternsIndustry,
+  selectCountyBusinessPatternsMeasure,
+  selectCountyBusinessPatternsYear,
   selectMapLayers,
   selectPopulationEstimateMeasure,
   selectPopulationEstimateYear,
@@ -174,11 +179,6 @@ export class MapsEffects {
     ),
   );
 
-  /**
-   * Research Coverage consumes the bounded spatial sidecar API directly. `switchMap` gives the
-   * viewport the same latest-request-wins semantics as the rest of Maps: a slow request for the
-   * previous pan/zoom can never overwrite the response for the current viewport.
-   */
   readonly loadPopulationEstimatesForSelectedArea$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MapsActions.mapLayersLoaded),
@@ -216,6 +216,55 @@ export class MapsEffects {
     ),
   );
 
+  readonly loadCountyBusinessPatternsForSelectedArea$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.mapLayersLoaded),
+      filter(({ layers }) =>
+        layers.some((layer) => layer.id.startsWith('county-business-patterns-')),
+      ),
+      withLatestFrom(
+        this.store.select(selectSelectedGeography),
+        this.store.select(selectCountyBusinessPatternsMeasure),
+        this.store.select(selectCountyBusinessPatternsIndustry),
+        this.store.select(selectCountyBusinessPatternsYear),
+      ),
+      switchMap(([, geography, measure, industry, year]) =>
+        this.countyBusinessPatternsRequest(
+          geography,
+          measure,
+          industry,
+          year,
+        ),
+      ),
+    ),
+  );
+
+  readonly reloadCountyBusinessPatternsForConfiguration$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MapsActions.countyBusinessPatternsConfigurationChanged),
+      withLatestFrom(
+        this.store.select(selectSelectedGeography),
+        this.store.select(selectMapLayers),
+      ),
+      filter(([, , layers]) =>
+        layers.some((layer) => layer.id.startsWith('county-business-patterns-')),
+      ),
+      switchMap(([{ measure, industry, year }, geography]) =>
+        this.countyBusinessPatternsRequest(
+          geography,
+          measure,
+          industry,
+          year,
+        ),
+      ),
+    ),
+  );
+
+  /**
+   * Research Coverage consumes the bounded spatial sidecar API directly. `switchMap` gives the
+   * viewport the same latest-request-wins semantics as the rest of Maps: a slow request for the
+   * previous pan/zoom can never overwrite the response for the current viewport.
+   */
   readonly loadResearchCoverage$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MapsActions.researchCoverageRequested),
@@ -236,6 +285,7 @@ export class MapsEffects {
       ),
     ),
   );
+
   private populationEstimatesRequest(
     geography: string,
     measure: PopulationEstimateMeasure,
@@ -257,6 +307,41 @@ export class MapsEffects {
                 error: parseRepositoryError(
                   error,
                   `County population estimates for ${geography} failed to load.`,
+                ),
+              }),
+            ),
+          ),
+        ),
+    );
+  }
+
+  private countyBusinessPatternsRequest(
+    geography: string,
+    measure: CountyBusinessPatternsMeasure,
+    industry: CountyBusinessPatternsIndustry,
+    year: number,
+  ) {
+    return concat(
+      of(MapsActions.countyBusinessPatternsRequested()),
+      this.mapsApi
+        .getCountyBusinessPatternsChoropleth(
+          geography,
+          measure,
+          industry,
+          year,
+        )
+        .pipe(
+          map((countyBusinessPatternsChoropleth) =>
+            MapsActions.countyBusinessPatternsLoaded({
+              countyBusinessPatternsChoropleth,
+            }),
+          ),
+          catchError((error: unknown) =>
+            of(
+              MapsActions.countyBusinessPatternsFailed({
+                error: parseRepositoryError(
+                  error,
+                  `County business activity for ${geography} failed to load.`,
                 ),
               }),
             ),
