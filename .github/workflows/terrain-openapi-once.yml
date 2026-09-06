@@ -41,43 +41,44 @@ jobs:
           if marker not in text:
               raise SystemExit('accessibility path marker not found')
 
-          terrain = """  /overlays/usgs/terrain/export:
-            get:
-              tags: [Maps]
-              operationId: getUsgsTerrainTileExport
-              summary: Proxy USGS 3DEP terrain raster tile export.
-              description: >-
-                Fetches a bounded PNG from the USGS 3DEP Bare Earth DEM dynamic ImageServer through
-                the repository API so the discovery UI does not construct source-specific ArcGIS
-                requests.
-              parameters:
-                - name: bbox
-                  in: query
-                  required: true
-                  schema:
-                    type: string
-                  description: Comma-separated west,south,east,north in EPSG:3857 (Web Mercator).
-                - name: mode
-                  in: query
-                  schema:
-                    type: string
-                    enum: [hillshade, tinted, slope]
-                    default: hillshade
-              responses:
-                '200':
-                  description: USGS 3DEP terrain raster PNG.
-                  content:
-                    image/png:
-                      schema:
-                        type: string
-                        format: binary
-                '400':
-                  $ref: '#/components/responses/BadRequest'
-                '500':
-                  $ref: '#/components/responses/InternalServerError'
-                '503':
-                  $ref: '#/components/responses/ServiceUnavailable'
-          """
+          terrain = ''.join([
+              "  /overlays/usgs/terrain/export:\n",
+              "    get:\n",
+              "      tags: [Maps]\n",
+              "      operationId: getUsgsTerrainTileExport\n",
+              "      summary: Proxy USGS 3DEP terrain raster tile export.\n",
+              "      description: >-\n",
+              "        Fetches a bounded PNG from the USGS 3DEP Bare Earth DEM dynamic ImageServer through\n",
+              "        the repository API so the discovery UI does not construct source-specific ArcGIS\n",
+              "        requests.\n",
+              "      parameters:\n",
+              "        - name: bbox\n",
+              "          in: query\n",
+              "          required: true\n",
+              "          schema:\n",
+              "            type: string\n",
+              "          description: Comma-separated west,south,east,north in EPSG:3857 (Web Mercator).\n",
+              "        - name: mode\n",
+              "          in: query\n",
+              "          schema:\n",
+              "            type: string\n",
+              "            enum: [hillshade, tinted, slope]\n",
+              "            default: hillshade\n",
+              "      responses:\n",
+              "        '200':\n",
+              "          description: USGS 3DEP terrain raster PNG.\n",
+              "          content:\n",
+              "            image/png:\n",
+              "              schema:\n",
+              "                type: string\n",
+              "                format: binary\n",
+              "        '400':\n",
+              "          $ref: '#/components/responses/BadRequest'\n",
+              "        '500':\n",
+              "          $ref: '#/components/responses/InternalServerError'\n",
+              "        '503':\n",
+              "          $ref: '#/components/responses/ServiceUnavailable'\n",
+          ])
 
           path.write_text(text.replace(marker, terrain + marker, 1), encoding='utf-8')
           PY
