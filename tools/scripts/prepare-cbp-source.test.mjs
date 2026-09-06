@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   buildMetadata,
   parseCsv,
+  prepareCbpDataset,
   prepareCbpRows,
   serializeCbpRows,
 } from './prepare-cbp-source.mjs';
@@ -68,6 +69,21 @@ test('prepareCbpRows does not manufacture a missing county-industry row', () => 
   );
 });
 
+test('prepareCbpDataset excludes XX999 aggregate rows from county map data', () => {
+  const dataset = prepareCbpDataset(
+    source(
+      '01,001,------,G,100,G,200,G,800,10,4',
+      '01,999,------,G,70000,H,900000,H,4000000,700,10',
+      '01,999,11----,H,1000,J,12000,J,50000,20,3',
+      '01,999,113///,H,500,J,6000,J,25000,10,2',
+    ),
+  );
+
+  assert.deepEqual(dataset.rows.map((row) => row.geoid), ['01001']);
+  assert.equal(dataset.excludedStatewideRows, 2);
+  assert.equal(dataset.rows.some((row) => row.geoid.endsWith('999')), false);
+});
+
 test('prepareCbpRows rejects duplicate retained county-industry rows', () => {
   assert.throws(
     () =>
@@ -92,21 +108,26 @@ test('serializeCbpRows and metadata are deterministic', () => {
   const sourceText = source(
     '38,001,------,G,100,H,200,J,800,10,4',
     '38,001,11----,H,10,G,20,G,80,3,1',
+    '38,999,------,H,999,H,1999,H,7999,99,9',
   );
-  const rows = prepareCbpRows(sourceText);
-  const normalizedText = serializeCbpRows(rows);
+  const dataset = prepareCbpDataset(sourceText);
+  const normalizedText = serializeCbpRows(dataset.rows);
   const metadata = buildMetadata({
     sourceBytes: Buffer.from(sourceText),
     normalizedText,
-    retainedRows: rows,
+    retainedRows: dataset.rows,
+    excludedStatewideRows: dataset.excludedStatewideRows,
     capturedAt: '2026-09-06',
     sourceFileName: 'cbp23co.txt',
   });
 
   assert.match(normalizedText, /^GEOID,INDUSTRY_CODE,SOURCE_NAICS,/);
+  assert.doesNotMatch(normalizedText, /38999/);
   assert.equal(metadata.referenceYear, 2023);
   assert.equal(metadata.retainedRows, 2);
   assert.equal(metadata.retainedCounties, 1);
+  assert.equal(metadata.excludedStatewideRows, 1);
+  assert.equal(metadata.countyEligibilityRule, 'FIPSCTY != 999');
   assert.deepEqual(metadata.supportedIndustryCodes, ['TOTAL', '11']);
   assert.match(metadata.sourceFileSha256, /^[a-f0-9]{64}$/);
   assert.match(metadata.normalizedSha256, /^[a-f0-9]{64}$/);
