@@ -16,9 +16,7 @@ export type TerrainLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
       } @else if (!visible) {
         <p>USGS 3DEP terrain is available and currently off.</p>
       } @else {
-        <p
-          [attr.role]="status === 'loading' || status === 'error' ? null : 'status'"
-        >
+        <p [attr.role]="configuredStateRole">
           USGS 3DEP terrain is on — {{ modeLabel }}. Terrain is contextual
           imagery only; research and economic meaning remains available through
           the map's vector layers and semantic equivalents.
@@ -49,6 +47,10 @@ export class TerrainLayerStatusComponent {
   @Input() mode: UsgsTerrainMode = 'hillshade';
   @Input() status: TerrainLoadStatus = 'idle';
   @Input() sourceUrl: string | null = null;
+
+  protected get configuredStateRole(): 'status' | null {
+    return this.status === 'loading' || this.status === 'error' ? null : 'status';
+  }
 
   protected get modeLabel(): string {
     return usgsTerrainModeLabel(this.mode);
