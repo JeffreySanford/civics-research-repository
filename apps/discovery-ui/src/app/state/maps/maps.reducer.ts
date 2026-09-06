@@ -1,6 +1,9 @@
 import { createReducer, on } from '@ngrx/store';
 import type {
   CensusAreaBoundary,
+  CountyBusinessPatternsChoropleth,
+  CountyBusinessPatternsIndustry,
+  CountyBusinessPatternsMeasure,
   LodesFlowOverlay,
   LodesWorkplaceOverlay,
   MapLayer,
@@ -34,6 +37,12 @@ export interface MapsState {
   readonly populationEstimatesLoading: boolean;
   readonly populationEstimateMeasure: PopulationEstimateMeasure;
   readonly populationEstimateYear: number;
+  readonly countyBusinessPatternsChoropleth: CountyBusinessPatternsChoropleth | null;
+  readonly countyBusinessPatternsError: string | null;
+  readonly countyBusinessPatternsLoading: boolean;
+  readonly countyBusinessPatternsMeasure: CountyBusinessPatternsMeasure;
+  readonly countyBusinessPatternsIndustry: CountyBusinessPatternsIndustry;
+  readonly countyBusinessPatternsYear: number;
   readonly researchCoverageQuery: SearchQuery | null;
   readonly researchCoverageViewport: ResearchSpatialViewport | null;
   readonly researchCoverageResponse: ResearchSpatialCoverageResponse | null;
@@ -48,6 +57,7 @@ export interface MapsState {
   readonly terrainMode: UsgsTerrainMode;
   readonly saipeVisible: boolean;
   readonly populationVisible: boolean;
+  readonly countyBusinessPatternsVisible: boolean;
   readonly researchCoverageVisible: boolean;
   readonly selectedResearchCoverageId: string | null;
   /** Feature shared by the map and the accessible list; either view can set it. */
@@ -75,6 +85,12 @@ export const initialMapsState: MapsState = {
   populationEstimatesLoading: false,
   populationEstimateMeasure: 'ANNUAL_GROWTH_RATE',
   populationEstimateYear: 2025,
+  countyBusinessPatternsChoropleth: null,
+  countyBusinessPatternsError: null,
+  countyBusinessPatternsLoading: false,
+  countyBusinessPatternsMeasure: 'ESTABLISHMENTS',
+  countyBusinessPatternsIndustry: 'TOTAL',
+  countyBusinessPatternsYear: 2023,
   researchCoverageQuery: null,
   researchCoverageViewport: null,
   researchCoverageResponse: null,
@@ -89,6 +105,7 @@ export const initialMapsState: MapsState = {
   terrainMode: DEFAULT_USGS_TERRAIN_MODE,
   saipeVisible: false,
   populationVisible: false,
+  countyBusinessPatternsVisible: false,
   researchCoverageVisible: false,
   selectedResearchCoverageId: null,
   selectedFeatureId: null,
@@ -107,6 +124,7 @@ export const mapsReducer = createReducer(
     lodesFlowError: null,
     saipeChoroplethError: null,
     populationEstimatesError: null,
+    countyBusinessPatternsError: null,
     researchCoverageError: null,
   })),
   on(MapsActions.mapDataLoaded, (state, { censusAreaBoundaries }) => ({
@@ -119,6 +137,9 @@ export const mapsReducer = createReducer(
     );
     const populationAvailable = layers.some((layer) =>
       layer.id.startsWith('population-estimates-county-'),
+    );
+    const countyBusinessPatternsAvailable = layers.some((layer) =>
+      layer.id.startsWith('county-business-patterns-'),
     );
     const terrainAvailable = layers.some(
       (layer) => layer.id === 'usgs-3dep-terrain',
@@ -140,6 +161,18 @@ export const mapsReducer = createReducer(
         : null,
       populationEstimatesLoading: populationAvailable
         ? state.populationEstimatesLoading
+        : false,
+      countyBusinessPatternsVisible: countyBusinessPatternsAvailable
+        ? state.countyBusinessPatternsVisible
+        : false,
+      countyBusinessPatternsChoropleth: countyBusinessPatternsAvailable
+        ? state.countyBusinessPatternsChoropleth
+        : null,
+      countyBusinessPatternsError: countyBusinessPatternsAvailable
+        ? state.countyBusinessPatternsError
+        : null,
+      countyBusinessPatternsLoading: countyBusinessPatternsAvailable
+        ? state.countyBusinessPatternsLoading
         : false,
       terrainVisible: terrainAvailable ? state.terrainVisible : false,
     };
@@ -226,14 +259,42 @@ export const mapsReducer = createReducer(
     populationEstimatesLoading: false,
     populationEstimatesError: error.message,
   })),
+  on(
+    MapsActions.countyBusinessPatternsConfigurationChanged,
+    (state, { measure, industry, year }) => ({
+      ...state,
+      countyBusinessPatternsMeasure: measure,
+      countyBusinessPatternsIndustry: industry,
+      countyBusinessPatternsYear: year,
+      countyBusinessPatternsChoropleth: null,
+      countyBusinessPatternsError: null,
+    }),
+  ),
+  on(MapsActions.countyBusinessPatternsRequested, (state) => ({
+    ...state,
+    countyBusinessPatternsLoading: true,
+    countyBusinessPatternsError: null,
+  })),
+  on(
+    MapsActions.countyBusinessPatternsLoaded,
+    (state, { countyBusinessPatternsChoropleth }) => ({
+      ...state,
+      countyBusinessPatternsChoropleth,
+      countyBusinessPatternsLoading: false,
+      countyBusinessPatternsError: null,
+    }),
+  ),
+  on(MapsActions.countyBusinessPatternsFailed, (state, { error }) => ({
+    ...state,
+    countyBusinessPatternsChoropleth: null,
+    countyBusinessPatternsLoading: false,
+    countyBusinessPatternsError: error.message,
+  })),
   on(MapsActions.researchCoverageRequested, (state, { query, viewport }) => ({
     ...state,
     researchCoverageQuery: query,
     researchCoverageViewport: viewport,
     researchCoverageLoading: true,
-    // The previous response belongs to a different effective viewport or search. Clearing it
-    // prevents the map and semantic summary from describing a stale bounded result while the
-    // latest-request-wins effect is in flight.
     researchCoverageResponse: null,
     researchCoverageError: null,
   })),
@@ -265,6 +326,9 @@ export const mapsReducer = createReducer(
     populationEstimatesChoropleth: null,
     populationEstimatesError: null,
     populationEstimatesLoading: false,
+    countyBusinessPatternsChoropleth: null,
+    countyBusinessPatternsError: null,
+    countyBusinessPatternsLoading: false,
   })),
   on(MapsActions.mapDataFailed, (state, { error }) => ({
     ...state,
@@ -312,6 +376,10 @@ export const mapsReducer = createReducer(
   on(MapsActions.populationLayerToggled, (state, { visible }) => ({
     ...state,
     populationVisible: visible,
+  })),
+  on(MapsActions.countyBusinessPatternsLayerToggled, (state, { visible }) => ({
+    ...state,
+    countyBusinessPatternsVisible: visible,
   })),
   on(MapsActions.researchCoverageLayerToggled, (state, { visible }) => ({
     ...state,
