@@ -8,43 +8,58 @@ Add a county-level Census County Business Patterns (CBP) thematic layer that reu
 
 ## Source decision
 
-Use the U.S. Census Bureau **2023 County Business Patterns** county dataset as the pinned authoritative value source for this slice.
+Use the U.S. Census Bureau **2023 County Business Patterns county file** as the pinned authoritative value source for this slice.
 
-As of September 2026, Census identifies 2023 as the latest CBP reference year. The 2023 release was published June 26, 2025. Census also documents that all CBP API queries now require an API key.
+As of September 2026, Census identifies 2023 as the latest CBP reference year. The release was published June 26, 2025. Census also documents that all CBP API queries now require an API key, so this repository should retain a validated extract from the downloadable county file rather than introduce a runtime browser credential dependency.
 
-For this repository, prefer the published downloadable 2023 CSV over a runtime browser/API-key dependency:
+Authoritative references:
 
-- authoritative dataset landing page: `https://www.census.gov/data/datasets/2023/econ/cbp/2023-cbp.html`;
-- CBP program page: `https://www.census.gov/programs-surveys/cbp.html`;
-- API documentation: `https://www.census.gov/data/developers/data-sets/cbp-zbp/cbp-api.html`;
-- API variable metadata: `https://api.census.gov/data/2023/cbp/variables.html`.
+- dataset: `https://www.census.gov/data/datasets/2023/econ/cbp/2023-cbp.html`;
+- county archive: `https://www2.census.gov/programs-surveys/cbp/datasets/2023/cbp23co.zip`;
+- county record layout: `https://www2.census.gov/programs-surveys/cbp/technical-documentation/records-layouts/2020_record_layouts/county-layout-2020.txt`;
+- CBP program: `https://www.census.gov/programs-surveys/cbp.html`;
+- API documentation for comparison only: `https://www.census.gov/data/developers/data-sets/cbp-zbp/cbp-api.html`.
 
-The retained repository source metadata should record:
+The retained source metadata must record source identity, reference year, capture date, checksum, encoding, parsed row counts, supported county GEOIDs, supported NAICS codes, and validation failures.
 
-- source URL/file identity;
-- reference year = 2023;
-- capture/download date;
-- file checksum;
-- source encoding;
-- parsed row counts;
-- supported county GEOIDs;
-- supported NAICS levels/codes used by the application;
-- validation failures or unsupported rows.
+## File schema
 
-Do not mix CBP reference years within one rendered configuration.
+The downloadable county file and the Census API use different field names. This implementation follows the **county file schema**:
 
-## Data semantics
+- `FIPSTATE` — two-digit state FIPS;
+- `FIPSCTY` — three-digit county FIPS;
+- `NAICS` — industry code;
+- `EMP_NF` — employment noise flag;
+- `EMP` — mid-March employment;
+- `QP1_NF` — first-quarter payroll noise flag;
+- `QP1` — first-quarter payroll in $1,000;
+- `AP_NF` — annual payroll noise flag;
+- `AP` — annual payroll in $1,000;
+- `EST` — establishment count.
 
-The initial measure set is:
+Do not accidentally code the pinned-file parser against API-only names such as `ESTAB`, `PAYQTR1`, or `PAYANN`.
 
-1. **Establishments** — `ESTAB`.
-2. **Employment** — `EMP`, employment during the week of March 12.
-3. **First-quarter payroll** — `PAYQTR1`, reported in thousands of dollars.
-4. **Annual payroll** — `PAYANN`, reported in thousands of dollars.
+For 2020-2023 county files, Census defines the noise flags as:
 
-The 2023 API metadata also exposes the related flag/noise fields for employment and payroll. The implementation must preserve Census publication/confidentiality semantics and must never reinterpret a withheld, dropped, flagged, or unavailable value as zero.
+- `G` — 0 to less than 2% noise;
+- `H` — 2 to less than 5% noise;
+- `J` — at least 5% noise.
 
-Census documentation notes that beginning with reference year 2017 a cell is published only when it contains at least three establishments; otherwise the cell is dropped from the release. This means absence can be a publication/confidentiality condition rather than evidence of zero activity.
+The application may expose those flags semantically but must not imply they are ordinary measurement-error confidence intervals.
+
+## Publication/confidentiality semantics
+
+Census documentation states that beginning with reference year 2017 a cell is published only when it contains at least three establishments; otherwise the cell is dropped from the release. Therefore a missing county/industry row is not evidence of zero business activity.
+
+The implementation must distinguish:
+
+- published numeric zero;
+- published numeric value;
+- row/cell unavailable because it is absent from the release;
+- supported county with no published value for the selected industry;
+- invalid source data.
+
+Never manufacture zeroes for absent rows.
 
 ## User model
 
@@ -52,40 +67,39 @@ One conceptual checkbox:
 
 > County business activity
 
-Configuration belongs inside the layer.
+Configuration stays inside the layer.
 
 ### Measures
 
-Expose the four measures above. Recommended default: **Establishments** because it is directly interpretable and avoids implying that payroll/employment precision is stronger than the published confidentiality treatment allows.
+1. **Establishments** — `EST`.
+2. **Employment** — `EMP`.
+3. **First-quarter payroll** — `QP1` (`$1,000`).
+4. **Annual payroll** — `AP` (`$1,000`).
+
+Default: **Establishments**.
 
 ### Industry
 
-Initial industry configuration should be deliberately bounded.
+The first slice is deliberately bounded:
 
-Recommended first slice:
+- `00` — total for all sectors;
+- published 2-digit NAICS sectors available in the retained source;
+- authoritative labels from Census/NAICS reference metadata;
+- no browser delivery of the full 2- through 6-digit national industry cube.
 
-- `00` — Total for all sectors;
-- 2-digit NAICS sectors available in the retained source;
-- labels come from authoritative Census/NAICS metadata;
-- do not expose the entire 2- through 6-digit national industry cube in the browser.
-
-A later enhancement may add deeper NAICS drill-down if the bounded API and UX remain usable.
+Census documents that 2017-2023 CBP uses 2017 NAICS.
 
 ### Year
 
-Expose only the pinned 2023 reference year in the first implementation. Keep year explicit in state/URL/API so a later additional reference year does not require a contract redesign.
+The first implementation supports reference year **2023** only. Year remains explicit in API/state/URL so later vintages can be added without redesigning the contract.
 
 ## Data architecture
 
-Prefer an application-owned value service rather than embedding the source table directly in Angular.
-
-Conceptual flow:
-
 ```text
-pinned Census 2023 CBP county file
+pinned Census cbp23co-derived extract
         |
         v
-validated CBP values keyed by county GEOID + NAICS + year
+validated values keyed by county GEOID + NAICS + year
         |
         v
 selected state + measure + industry + year
@@ -93,32 +107,22 @@ selected state + measure + industry + year
         +--> AdministrativeGeometryService(state FIPS, compatible county vintage)
         |
         v
-join values to authoritative county polygons by GEOID
+strict GEOID join
         |
         v
-shared county-thematic API response
+county-thematic API response
         |
         v
 Angular / NgRx / MapLibre + semantic table
 ```
 
-Validation should reject or explicitly classify:
-
-- malformed state/county identifiers;
-- duplicate county + NAICS + year rows;
-- unsupported NAICS codes/levels;
-- nonnumeric values where a published numeric value is required;
-- source flags or publication states that cannot safely be represented as a normal numeric observation;
-- a published value whose county cannot be joined to authoritative geometry;
-- cross-year mixing.
-
-Do not synthesize missing county values or geometry.
+Validation must reject or explicitly classify malformed FIPS identifiers, duplicate county/NAICS rows, unsupported NAICS levels, malformed numeric values, impossible noise flags, source/geometry join failures, and cross-year mixing.
 
 ## API direction
 
-Generalize the existing county-thematic pattern where practical rather than creating a CBP-only map contract.
+Generalize the existing county-thematic pattern where practical rather than creating a CBP-specific rendering pipeline.
 
-The response should expose enough structure for a reusable county-thematic UI:
+The response needs:
 
 ```text
 layer id
@@ -133,123 +137,79 @@ values[]
   county GEOID
   county label
   value | unavailable
-  publication/flag metadata when applicable
+  noise/publication metadata where applicable
 provenance
 ```
 
-Geometry remains a separate authoritative concern even if the browser receives a joined GeoJSON representation.
+Geometry remains authoritative and separate even if the browser receives joined GeoJSON.
 
-## Angular/NgRx state
+## Angular / NgRx state
 
-State should make visible configuration explicit:
-
-- layer visible;
-- measure;
-- industry;
-- year;
-- loading/error;
-- selected county if supported by the existing Maps interaction model.
-
-Measure/industry/year should round-trip through URL state so a configured CBP map can be linked reproducibly.
+Track layer visibility, measure, industry, year, loading/error, and selected county where supported. Measure/industry/year must round-trip through URL state.
 
 ## Cartography
 
-Use deterministic county-value breaks derived from the returned state-level published values.
+Use deterministic state-level breaks from published numeric county values only.
 
-Recommended first behavior:
+- establishments/employment: sequential scale;
+- payroll: sequential scale with explicit `$1,000` units unless display normalization is clearly labeled;
+- unavailable rows: distinct non-value treatment, never the zero-value color.
 
-- establishments and employment: sequential scale;
-- payroll measures: sequential scale with units clearly stated as `$1,000` unless normalized for display;
-- unavailable/withheld/dropped cells: visually distinct non-value treatment, never the zero-value color.
-
-The legend must state:
-
-- measure;
-- units;
-- NAICS code/label;
-- reference year;
-- source;
-- break semantics;
-- unavailable/publication-state semantics where present.
+The legend must state measure, units, NAICS code/label, reference year, source, breaks, and unavailable semantics.
 
 ## Accessibility
 
-Provide a semantic equivalent containing at least:
+The semantic equivalent must expose county/FIPS, selected value or unavailable state, units, selected NAICS code/label, year, source, and relevant noise/publication metadata.
 
-- county name/FIPS;
-- selected value or unavailable/publication state;
-- units;
-- selected industry code/label;
-- selected year;
-- source/reference year;
-- relevant flag/publication metadata.
+Measure, industry, and year controls must be keyboard operable and named. Map color cannot be the only value/unavailable channel. Forced-colors and 320px reflow must preserve primary controls and semantic content.
 
-Requirements:
+## Evidence
 
-- measure, industry, and year controls have explicit labels and selected state;
-- changing configuration announces the updated layer context without excessive chatter;
-- map color is not the only channel for distinguishing values/unavailable cells;
-- forced-colors mode preserves controls and selected state;
-- 320px reflow does not force horizontal scrolling for primary controls or semantic content.
+Backend/service:
 
-## Tests
-
-### Backend/service
-
-- pinned fixture parsing;
-- county GEOID validation;
-- NAICS validation/bounding;
+- retained-source parsing;
+- county GEOID and NAICS validation;
 - measure/unit mapping;
-- duplicate-row failure behavior;
-- publication/unavailable semantics;
-- source/reference-year provenance;
+- duplicate-row failures;
+- noise/publication semantics;
+- source provenance;
 - strict value/geometry joins.
 
-### Angular/component
+Angular/Storybook:
 
-- measure/industry/year state transitions;
-- legend text/breaks;
-- semantic table equivalence;
-- unavailable/publication states;
-- loading/empty/error states;
-- NgRx reducer/effect/selectors.
+- measure/industry/year transitions;
+- legend and semantic-table equivalence;
+- published-zero versus unavailable behavior;
+- populated/loading/empty/error states;
+- axe coverage.
 
-### Storybook/axe
+Playwright:
 
-- establishments, all industries;
-- sector-filtered state;
-- payroll state;
-- unavailable/suppressed-like publication state;
-- loading/empty/error;
-- representative reflow/forced-colors state.
-
-### Playwright
-
-- layer capability appears only when supported;
-- configuration updates URL + legend + semantic table consistently;
-- URL/state round-trip;
-- published/unavailable values remain semantically distinct from zero;
-- raw MapLibre assertions remain Chromium-only under `@maps`;
-- semantic/accessibility behavior remains cross-browser.
+- capability appears only when supported;
+- controls, URL, legend, map, and semantic table stay aligned;
+- URL restoration;
+- unavailable values remain distinct from zero;
+- raw MapLibre checks remain Chromium-only under `@maps`;
+- semantic/accessibility checks remain cross-browser.
 
 ## Non-goals
 
 - no new county geometry service;
 - no browser-held Census API key;
-- no nationwide 6-digit NAICS cube delivered to Angular;
-- no nonemployer-statistics merge in this slice;
-- no derived business-location point data;
+- no nationwide 6-digit NAICS cube in Angular;
+- no nonemployer-statistics merge;
+- no business-location point synthesis;
 - no C2/C2.1 corpus or timing changes.
 
 ## Exit criteria
 
-- authoritative 2023 CBP county values render using shared county geometry;
-- map, legend, controls, URL/state, and semantic equivalent agree on measure/industry/year;
+- authoritative 2023 CBP values render against shared county geometry;
+- controls, URL, legend, map, and semantic table agree on measure/industry/year;
 - source/reference-year provenance is visible;
-- publication/confidentiality conditions remain explicit rather than manufactured as zero;
-- the implementation generalizes the reusable county-thematic pattern rather than duplicating it;
+- missing/publication states remain explicit rather than manufactured as zero;
+- the implementation reuses/generalizes the county-thematic architecture;
 - normal Maps workspace/API/Storybook/browser/accessibility gates pass.
 
 ## Implementation status
 
-Planned on branch `codex/maps-county-business-patterns` for issue #77.
+In progress on `codex/maps-county-business-patterns` / PR #78.
