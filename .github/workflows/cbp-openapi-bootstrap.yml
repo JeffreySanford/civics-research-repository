@@ -50,7 +50,6 @@ jobs:
 
           spec_path = Path('schemas/openapi/repository-api.yaml')
           text = spec_path.read_text()
-
           path_anchor = '  /overlays/usgs/earthquakes:\n'
           if path_anchor not in text:
               raise SystemExit('OpenAPI path anchor not found')
@@ -120,26 +119,11 @@ jobs:
               '      type: string',
               '      enum:',
               '        - TOTAL',
-              "        - '11'",
-              "        - '21'",
-              "        - '22'",
-              "        - '23'",
-              "        - '31'",
-              "        - '42'",
-              "        - '44'",
-              "        - '48'",
-              "        - '51'",
-              "        - '52'",
-              "        - '53'",
-              "        - '54'",
-              "        - '55'",
-              "        - '56'",
-              "        - '61'",
-              "        - '62'",
-              "        - '71'",
-              "        - '72'",
-              "        - '81'",
-              "        - '99'",
+              "        - '11'", "        - '21'", "        - '22'", "        - '23'",
+              "        - '31'", "        - '42'", "        - '44'", "        - '48'",
+              "        - '51'", "        - '52'", "        - '53'", "        - '54'",
+              "        - '55'", "        - '56'", "        - '61'", "        - '62'",
+              "        - '71'", "        - '72'", "        - '81'", "        - '99'",
               '      default: TOTAL',
               '    CountyBusinessPatternsCountyValue:',
               '      type: object',
@@ -169,92 +153,38 @@ jobs:
               '    CountyBusinessPatternsChoropleth:',
               '      type: object',
               '      required:',
-              '        - layerId',
-              '        - source',
-              '        - sourceUrl',
-              '        - attribution',
-              '        - geography',
-              '        - geographyLevel',
-              '        - sourceReferenceYear',
-              '        - sourceSha256',
-              '        - capturedAt',
-              '        - geometryVintage',
-              '        - geometrySourceUrl',
-              '        - geometryAttribution',
-              '        - measure',
-              '        - measureLabel',
-              '        - units',
-              '        - industryCode',
-              '        - industryLabel',
-              '        - year',
-              '        - availableCountyCount',
-              '        - unavailableCountyCount',
-              '        - excludedStatewideRows',
-              '        - missingRowSemantics',
-              '        - geoJson',
-              '        - counties',
+              '        - layerId', '        - source', '        - sourceUrl', '        - attribution',
+              '        - geography', '        - geographyLevel', '        - sourceReferenceYear',
+              '        - sourceSha256', '        - capturedAt', '        - geometryVintage',
+              '        - geometrySourceUrl', '        - geometryAttribution', '        - measure',
+              '        - measureLabel', '        - units', '        - industryCode', '        - industryLabel',
+              '        - year', '        - availableCountyCount', '        - unavailableCountyCount',
+              '        - excludedStatewideRows', '        - missingRowSemantics', '        - geoJson', '        - counties',
               '      properties:',
-              '        layerId:',
-              '          type: string',
-              '        source:',
-              '          type: string',
-              '        sourceUrl:',
-              '          type: string',
-              '          format: uri',
-              '        attribution:',
-              '          type: string',
-              '        geography:',
-              '          type: string',
-              '        geographyLevel:',
-              '          type: string',
-              '          enum: [COUNTY]',
-              '        sourceReferenceYear:',
-              '          type: integer',
-              '          enum: [2023]',
-              '        sourceSha256:',
-              '          type: string',
-              "          pattern: '^[a-f0-9]{64}$'",
-              '        capturedAt:',
-              '          type: string',
-              '          format: date',
-              '        geometryVintage:',
-              '          type: integer',
-              '          enum: [2023]',
-              '        geometrySourceUrl:',
-              '          type: string',
-              '          format: uri',
-              '        geometryAttribution:',
-              '          type: string',
-              '        measure:',
-              "          $ref: '#/components/schemas/CountyBusinessPatternsMeasure'",
-              '        measureLabel:',
-              '          type: string',
-              '        units:',
-              '          type: string',
-              '        industryCode:',
-              "          $ref: '#/components/schemas/CountyBusinessPatternsIndustry'",
-              '        industryLabel:',
-              '          type: string',
-              '        year:',
-              '          type: integer',
-              '          enum: [2023]',
-              '        availableCountyCount:',
-              '          type: integer',
-              '          minimum: 0',
-              '        unavailableCountyCount:',
-              '          type: integer',
-              '          minimum: 0',
-              '        excludedStatewideRows:',
-              '          type: integer',
-              '          minimum: 0',
-              '        missingRowSemantics:',
-              '          type: string',
-              '        geoJson:',
-              '          type: object',
-              '          additionalProperties: true',
-              '        counties:',
-              '          type: array',
-              '          items:',
+              '        layerId:', '          type: string',
+              '        source:', '          type: string',
+              '        sourceUrl:', '          type: string', '          format: uri',
+              '        attribution:', '          type: string',
+              '        geography:', '          type: string',
+              '        geographyLevel:', '          type: string', '          enum: [COUNTY]',
+              '        sourceReferenceYear:', '          type: integer', '          enum: [2023]',
+              '        sourceSha256:', '          type: string', "          pattern: '^[a-f0-9]{64}$'",
+              '        capturedAt:', '          type: string', '          format: date',
+              '        geometryVintage:', '          type: integer', '          enum: [2023]',
+              '        geometrySourceUrl:', '          type: string', '          format: uri',
+              '        geometryAttribution:', '          type: string',
+              '        measure:', "          $ref: '#/components/schemas/CountyBusinessPatternsMeasure'",
+              '        measureLabel:', '          type: string',
+              '        units:', '          type: string',
+              '        industryCode:', "          $ref: '#/components/schemas/CountyBusinessPatternsIndustry'",
+              '        industryLabel:', '          type: string',
+              '        year:', '          type: integer', '          enum: [2023]',
+              '        availableCountyCount:', '          type: integer', '          minimum: 0',
+              '        unavailableCountyCount:', '          type: integer', '          minimum: 0',
+              '        excludedStatewideRows:', '          type: integer', '          minimum: 0',
+              '        missingRowSemantics:', '          type: string',
+              '        geoJson:', '          type: object', '          additionalProperties: true',
+              '        counties:', '          type: array', '          items:',
               "            $ref: '#/components/schemas/CountyBusinessPatternsCountyValue'",
               '',
           ]
@@ -269,26 +199,22 @@ jobs:
           pnpm run openapi:generate
           python - <<'PY'
           from pathlib import Path
-
           path = Path('libs/repository/api-client/src/lib/repository-api-client.ts')
           text = path.read_text()
-
           type_anchor = "export type PopulationEstimatesChoropleth =\n  components['schemas']['PopulationEstimatesChoropleth'];\n"
           if type_anchor not in text:
               raise SystemExit('RepositoryMapsApi type anchor not found')
           type_lines = [
-              "export type CountyBusinessPatternsMeasure =",
+              'export type CountyBusinessPatternsMeasure =',
               "  components['schemas']['CountyBusinessPatternsMeasure'];",
-              "export type CountyBusinessPatternsIndustry =",
+              'export type CountyBusinessPatternsIndustry =',
               "  components['schemas']['CountyBusinessPatternsIndustry'];",
-              "export type CountyBusinessPatternsCountyValue =",
+              'export type CountyBusinessPatternsCountyValue =',
               "  components['schemas']['CountyBusinessPatternsCountyValue'];",
-              "export type CountyBusinessPatternsChoropleth =",
-              "  components['schemas']['CountyBusinessPatternsChoropleth'];",
-              '',
+              'export type CountyBusinessPatternsChoropleth =',
+              "  components['schemas']['CountyBusinessPatternsChoropleth'];", '',
           ]
           text = text.replace(type_anchor, type_anchor + '\n'.join(type_lines), 1)
-
           method_anchor = '  getSaipeCountyChoropleth(\n'
           if method_anchor not in text:
               raise SystemExit('RepositoryMapsApi method anchor not found')
@@ -301,18 +227,9 @@ jobs:
               '  ): Observable<CountyBusinessPatternsChoropleth> {',
               '    return this.http.get<CountyBusinessPatternsChoropleth>(',
               '      `${this.baseUrl}/overlays/census/county-business-patterns`,',
-              '      {',
-              '        params: {',
-              '          geography,',
-              '          measure,',
-              '          industry,',
-              '          year,',
-              '        },',
-              '      },',
+              '      { params: { geography, measure, industry, year } },',
               '    );',
-              '  }',
-              '',
-              '',
+              '  }', '', '',
           ]
           text = text.replace(method_anchor, '\n'.join(method_lines) + method_anchor, 1)
           path.write_text(text)
@@ -322,9 +239,8 @@ jobs:
             libs/repository/api-client/src/generated/repository-api.types.ts \
             libs/repository/api-client/src/lib/repository-api-client.ts
           pnpm run openapi:lint
-          pnpm run openapi:check
 
-      - name: Commit CBP contract and generated client
+      - name: Commit and verify CBP contract
         if: steps.current.outputs.current != 'true'
         run: |
           git config user.name "github-actions[bot]"
@@ -334,4 +250,5 @@ jobs:
             libs/repository/api-client/src/generated/repository-api.types.ts \
             libs/repository/api-client/src/lib/repository-api-client.ts
           git commit -m "feat(api): contract County Business Patterns overlay"
+          pnpm run openapi:check
           git push origin HEAD:codex/maps-county-business-patterns
