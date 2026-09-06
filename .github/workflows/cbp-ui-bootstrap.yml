@@ -44,7 +44,9 @@ jobs:
 
       - name: Patch Maps page
         if: steps.current.outputs.current != 'true'
-        run: python tools/scripts/cbp-ui-bootstrap.py
+        run: |
+          python tools/scripts/cbp-ui-bootstrap.py
+          python tools/scripts/cbp-ui-followup.py
 
       - name: Format and validate UI
         if: steps.current.outputs.current != 'true'
@@ -52,7 +54,8 @@ jobs:
           pnpm exec prettier --write \
             apps/discovery-ui/src/app/pages/maps-page.ts \
             apps/discovery-ui/src/app/pages/maps-page.html \
-            apps/discovery-ui/src/app/pages/maps-page.utils.ts
+            apps/discovery-ui/src/app/pages/maps-page.utils.ts \
+            apps/discovery-ui/src/app/pages/maps-page.utils.spec.ts
           pnpm run test
           pnpm run build
 
@@ -64,6 +67,7 @@ jobs:
           git add \
             apps/discovery-ui/src/app/pages/maps-page.ts \
             apps/discovery-ui/src/app/pages/maps-page.html \
-            apps/discovery-ui/src/app/pages/maps-page.utils.ts
+            apps/discovery-ui/src/app/pages/maps-page.utils.ts \
+            apps/discovery-ui/src/app/pages/maps-page.utils.spec.ts
           git commit -m "feat(maps): integrate County Business Patterns UI"
           git push origin HEAD:codex/maps-county-business-patterns
