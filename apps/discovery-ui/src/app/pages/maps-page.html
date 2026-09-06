@@ -338,7 +338,10 @@
                   >
                     @for ( industry of countyBusinessPatternsIndustries; track
                     industry.code ) {
-                    <option [value]="industry.code">
+                    <option
+                      [value]="industry.code"
+                      [selected]="industry.code === cbpIndustry"
+                    >
                       {{ industry.label }}
                     </option>
                     }
@@ -356,7 +359,9 @@
                     "
                   >
                     @for (year of countyBusinessPatternsYears; track year) {
-                    <option [value]="year">{{ year }}</option>
+                    <option [value]="year" [selected]="year === cbpYear">
+                      {{ year }}
+                    </option>
                     }
                   </select>
                 </label>

@@ -909,7 +909,12 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
     this.store.dispatch(
       MapsActions.countyBusinessPatternsLayerToggled({ visible }),
     );
-    this.updateMapUrl({ countyBusinessPatternsVisible: visible });
+    this.updateMapUrl({
+      countyBusinessPatternsVisible: visible,
+      countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+      countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+      countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+    });
   }
 
   protected changeCountyBusinessPatternsMeasure(value: string): void {
@@ -925,7 +930,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         year: this.countyBusinessPatternsYear,
       }),
     );
-    this.updateMapUrl({ countyBusinessPatternsMeasure: measure });
+    this.updateMapUrl({
+      countyBusinessPatternsMeasure: measure,
+      countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+      countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+    });
   }
 
   protected changeCountyBusinessPatternsIndustry(value: string): void {
@@ -941,7 +950,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         year: this.countyBusinessPatternsYear,
       }),
     );
-    this.updateMapUrl({ countyBusinessPatternsIndustry: industry });
+    this.updateMapUrl({
+      countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+      countyBusinessPatternsIndustry: industry,
+      countyBusinessPatternsYear: this.countyBusinessPatternsYear,
+    });
   }
 
   protected changeCountyBusinessPatternsYear(value: string): void {
@@ -957,7 +970,11 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
         year,
       }),
     );
-    this.updateMapUrl({ countyBusinessPatternsYear: year });
+    this.updateMapUrl({
+      countyBusinessPatternsMeasure: this.countyBusinessPatternsMeasure,
+      countyBusinessPatternsIndustry: this.countyBusinessPatternsIndustry,
+      countyBusinessPatternsYear: year,
+    });
   }
 
   protected toggleResearchCoverageLayer(visible: boolean): void {
