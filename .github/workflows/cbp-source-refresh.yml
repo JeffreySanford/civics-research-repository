@@ -66,8 +66,8 @@ jobs:
             .github/workflows/ci.yml \
             apps/repository-api/src/main/resources/maps/county-business-patterns/source.json
           node --test tools/scripts/prepare-cbp-source.test.mjs
-          if grep -q ',999,' apps/repository-api/src/main/resources/maps/county-business-patterns/cbp-2023-county.csv; then
-            echo 'Normalized CBP source still contains a 999 county aggregate.' >&2
+          if grep -Eq '^[0-9]{2}999,' apps/repository-api/src/main/resources/maps/county-business-patterns/cbp-2023-county.csv; then
+            echo 'Normalized CBP source still contains a 999 county aggregate GEOID.' >&2
             exit 1
           fi
 
