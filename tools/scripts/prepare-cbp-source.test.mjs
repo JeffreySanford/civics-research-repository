@@ -79,9 +79,15 @@ test('prepareCbpDataset excludes XX999 aggregate rows from county map data', () 
     ),
   );
 
-  assert.deepEqual(dataset.rows.map((row) => row.geoid), ['01001']);
+  assert.deepEqual(
+    dataset.rows.map((row) => row.geoid),
+    ['01001'],
+  );
   assert.equal(dataset.excludedStatewideRows, 2);
-  assert.equal(dataset.rows.some((row) => row.geoid.endsWith('999')), false);
+  assert.equal(
+    dataset.rows.some((row) => row.geoid.endsWith('999')),
+    false,
+  );
 });
 
 test('prepareCbpRows rejects duplicate retained county-industry rows', () => {

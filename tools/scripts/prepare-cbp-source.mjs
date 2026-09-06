@@ -272,7 +272,10 @@ export function buildMetadata({
 }) {
   requireCapturedAt(capturedAt);
 
-  if (!Number.isSafeInteger(excludedStatewideRows) || excludedStatewideRows < 0) {
+  if (
+    !Number.isSafeInteger(excludedStatewideRows) ||
+    excludedStatewideRows < 0
+  ) {
     throw new Error('excludedStatewideRows must be a nonnegative integer.');
   }
 
