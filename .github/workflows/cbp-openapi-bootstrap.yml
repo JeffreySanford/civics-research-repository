@@ -1,0 +1,321 @@
+name: Bootstrap CBP OpenAPI contract
+
+on:
+  push:
+    branches: [codex/maps-county-business-patterns]
+
+concurrency:
+  group: cbp-openapi-bootstrap
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/maps-county-business-patterns
+
+      - name: Check whether CBP OpenAPI contract already exists
+        id: current
+        run: |
+          if grep -q '^  /overlays/census/county-business-patterns:' schemas/openapi/repository-api.yaml; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.current.outputs.current != 'true'
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - if: steps.current.outputs.current != 'true'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.current.outputs.current != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Add CBP path and schemas
+        if: steps.current.outputs.current != 'true'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          spec_path = Path('schemas/openapi/repository-api.yaml')
+          text = spec_path.read_text()
+
+          path_anchor = '  /overlays/usgs/earthquakes:\n'
+          if path_anchor not in text:
+              raise SystemExit('OpenAPI path anchor not found')
+
+          cbp_path = '''  /overlays/census/county-business-patterns:
+            get:
+              tags: [Maps]
+              operationId: getCountyBusinessPatternsChoropleth
+              summary: Get 2023 County Business Patterns county values and authoritative county geometry.
+              description: >-
+                Joins the pinned 2023 Census County Business Patterns county-map extract to
+                compatible 2023 Census TIGERweb county geometry by GEOID. Missing county/industry
+                rows remain explicitly unavailable and are never manufactured as zero.
+              parameters:
+                - $ref: '#/components/parameters/Geography'
+                - name: measure
+                  in: query
+                  required: false
+                  schema:
+                    $ref: '#/components/schemas/CountyBusinessPatternsMeasure'
+                - name: industry
+                  in: query
+                  required: false
+                  schema:
+                    $ref: '#/components/schemas/CountyBusinessPatternsIndustry'
+                - name: year
+                  in: query
+                  required: false
+                  schema:
+                    type: integer
+                    enum: [2023]
+                    default: 2023
+              responses:
+                '200':
+                  description: County Business Patterns county thematic layer.
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/components/schemas/CountyBusinessPatternsChoropleth'
+                '400':
+                  $ref: '#/components/responses/BadRequest'
+                '404':
+                  $ref: '#/components/responses/NotFound'
+                '500':
+                  $ref: '#/components/responses/InternalServerError'
+                '503':
+                  $ref: '#/components/responses/ServiceUnavailable'
+          '''
+          text = text.replace(path_anchor, cbp_path + path_anchor, 1)
+
+          schema_anchor = '    PopulationEstimateMeasure:\n'
+          if schema_anchor not in text:
+              raise SystemExit('OpenAPI schema anchor not found')
+
+          cbp_schemas = '''    CountyBusinessPatternsMeasure:
+              type: string
+              enum:
+                - ESTABLISHMENTS
+                - EMPLOYMENT
+                - FIRST_QUARTER_PAYROLL
+                - ANNUAL_PAYROLL
+              default: ESTABLISHMENTS
+            CountyBusinessPatternsIndustry:
+              type: string
+              enum:
+                - TOTAL
+                - '11'
+                - '21'
+                - '22'
+                - '23'
+                - '31'
+                - '42'
+                - '44'
+                - '48'
+                - '51'
+                - '52'
+                - '53'
+                - '54'
+                - '55'
+                - '56'
+                - '61'
+                - '62'
+                - '71'
+                - '72'
+                - '81'
+                - '99'
+              default: TOTAL
+            CountyBusinessPatternsCountyValue:
+              type: object
+              required: [fips, name, available, value, noiseFlag]
+              properties:
+                fips:
+                  type: string
+                  pattern: '^\\d{5}$'
+                name:
+                  type: string
+                available:
+                  type: boolean
+                  description: True only when Census published a retained row for the selected county and industry.
+                value:
+                  oneOf:
+                    - type: integer
+                      format: int64
+                      minimum: 0
+                    - type: 'null'
+                  description: Selected published value, or null when the county/industry row is unavailable.
+                noiseFlag:
+                  oneOf:
+                    - type: string
+                      enum: [G, H, J]
+                    - type: 'null'
+                  description: Census noise flag for EMP/QP1/AP; null for establishments or unavailable rows.
+            CountyBusinessPatternsChoropleth:
+              type: object
+              required:
+                - layerId
+                - source
+                - sourceUrl
+                - attribution
+                - geography
+                - geographyLevel
+                - sourceReferenceYear
+                - sourceSha256
+                - capturedAt
+                - geometryVintage
+                - geometrySourceUrl
+                - geometryAttribution
+                - measure
+                - measureLabel
+                - units
+                - industryCode
+                - industryLabel
+                - year
+                - availableCountyCount
+                - unavailableCountyCount
+                - excludedStatewideRows
+                - missingRowSemantics
+                - geoJson
+                - counties
+              properties:
+                layerId:
+                  type: string
+                source:
+                  type: string
+                sourceUrl:
+                  type: string
+                  format: uri
+                attribution:
+                  type: string
+                geography:
+                  type: string
+                geographyLevel:
+                  type: string
+                  enum: [COUNTY]
+                sourceReferenceYear:
+                  type: integer
+                  enum: [2023]
+                sourceSha256:
+                  type: string
+                  pattern: '^[a-f0-9]{64}$'
+                capturedAt:
+                  type: string
+                  format: date
+                geometryVintage:
+                  type: integer
+                  enum: [2023]
+                geometrySourceUrl:
+                  type: string
+                  format: uri
+                geometryAttribution:
+                  type: string
+                measure:
+                  $ref: '#/components/schemas/CountyBusinessPatternsMeasure'
+                measureLabel:
+                  type: string
+                units:
+                  type: string
+                industryCode:
+                  $ref: '#/components/schemas/CountyBusinessPatternsIndustry'
+                industryLabel:
+                  type: string
+                year:
+                  type: integer
+                  enum: [2023]
+                availableCountyCount:
+                  type: integer
+                  minimum: 0
+                unavailableCountyCount:
+                  type: integer
+                  minimum: 0
+                excludedStatewideRows:
+                  type: integer
+                  minimum: 0
+                missingRowSemantics:
+                  type: string
+                geoJson:
+                  type: object
+                  additionalProperties: true
+                counties:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CountyBusinessPatternsCountyValue'
+          '''
+          text = text.replace(schema_anchor, cbp_schemas + schema_anchor, 1)
+          spec_path.write_text(text)
+          PY
+
+      - name: Generate typed clients and wire RepositoryMapsApi
+        if: steps.current.outputs.current != 'true'
+        run: |
+          pnpm run openapi:lint
+          pnpm run openapi:generate
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('libs/repository/api-client/src/lib/repository-api-client.ts')
+          text = path.read_text()
+
+          type_anchor = "export type PopulationEstimatesChoropleth =\n  components['schemas']['PopulationEstimatesChoropleth'];\n"
+          if type_anchor not in text:
+              raise SystemExit('RepositoryMapsApi type anchor not found')
+          type_block = type_anchor + "export type CountyBusinessPatternsMeasure =\n  components['schemas']['CountyBusinessPatternsMeasure'];\nexport type CountyBusinessPatternsIndustry =\n  components['schemas']['CountyBusinessPatternsIndustry'];\nexport type CountyBusinessPatternsCountyValue =\n  components['schemas']['CountyBusinessPatternsCountyValue'];\nexport type CountyBusinessPatternsChoropleth =\n  components['schemas']['CountyBusinessPatternsChoropleth'];\n"
+          text = text.replace(type_anchor, type_block, 1)
+
+          method_anchor = '  getSaipeCountyChoropleth(\n'
+          if method_anchor not in text:
+              raise SystemExit('RepositoryMapsApi method anchor not found')
+          method = '''  getCountyBusinessPatternsChoropleth(
+            geography: string,
+            measure: CountyBusinessPatternsMeasure = 'ESTABLISHMENTS',
+            industry: CountyBusinessPatternsIndustry = 'TOTAL',
+            year = 2023,
+          ): Observable<CountyBusinessPatternsChoropleth> {
+            return this.http.get<CountyBusinessPatternsChoropleth>(
+              `${this.baseUrl}/overlays/census/county-business-patterns`,
+              {
+                params: {
+                  geography,
+                  measure,
+                  industry,
+                  year,
+                },
+              },
+            );
+          }
+
+          '''
+          text = text.replace(method_anchor, method + method_anchor, 1)
+          path.write_text(text)
+          PY
+          pnpm exec prettier --write \
+            schemas/openapi/repository-api.yaml \
+            libs/repository/api-client/src/generated/repository-api.types.ts \
+            libs/repository/api-client/src/lib/repository-api-client.ts
+          pnpm run openapi:lint
+          pnpm run openapi:check
+
+      - name: Commit CBP contract and generated client
+        if: steps.current.outputs.current != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            schemas/openapi/repository-api.yaml \
+            libs/repository/api-client/src/generated/repository-api.types.ts \
+            libs/repository/api-client/src/lib/repository-api-client.ts
+          git commit -m "feat(api): contract County Business Patterns overlay"
+          git push origin HEAD:codex/maps-county-business-patterns
