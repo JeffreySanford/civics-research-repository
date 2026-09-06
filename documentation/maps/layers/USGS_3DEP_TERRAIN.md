@@ -35,6 +35,8 @@ The Angular application never constructs ArcGIS rendering rules and never calls 
 
 `UsgsTerrainTileService` translates the application mode to the allow-listed upstream raster function. Requests are bounded to the Web Mercator tile extent requested by MapLibre and fixed to a 256 by 256 PNG response.
 
+`repository-api.yaml` publishes the same proxy as `getUsgsTerrainTileExport`; OpenAPI lint, generated TypeScript output, and generated-file parity all pass for this contract.
+
 An unknown visualization mode or malformed bounding box is rejected rather than forwarded upstream. An upstream I/O, HTTP, or non-image failure is exposed as service unavailable instead of being disguised as valid transparent terrain.
 
 The browser therefore does not need:
