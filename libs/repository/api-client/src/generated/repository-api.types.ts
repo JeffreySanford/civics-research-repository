@@ -297,6 +297,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/overlays/usgs/terrain/export': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Proxy USGS 3DEP terrain raster tile export.
+     * @description Fetches a bounded PNG from the USGS 3DEP Bare Earth DEM dynamic ImageServer through the repository API so the discovery UI does not construct source-specific ArcGIS requests.
+     */
+    get: operations['getUsgsTerrainTileExport'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/accessibility/evidence': {
     parameters: {
       query?: never;
@@ -2416,6 +2436,33 @@ export interface operations {
       };
       400: components['responses']['BadRequest'];
       500: components['responses']['InternalServerError'];
+    };
+  };
+  getUsgsTerrainTileExport: {
+    parameters: {
+      query: {
+        /** @description Comma-separated west,south,east,north in EPSG:3857 (Web Mercator). */
+        bbox: string;
+        mode?: 'hillshade' | 'tinted' | 'slope';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description USGS 3DEP terrain raster PNG. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'image/png': string;
+        };
+      };
+      400: components['responses']['BadRequest'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
     };
   };
   getAccessibilityEvidence: {

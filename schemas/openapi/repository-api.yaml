@@ -521,6 +521,42 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /overlays/usgs/terrain/export:
+    get:
+      tags: [Maps]
+      operationId: getUsgsTerrainTileExport
+      summary: Proxy USGS 3DEP terrain raster tile export.
+      description: >-
+        Fetches a bounded PNG from the USGS 3DEP Bare Earth DEM dynamic ImageServer through
+        the repository API so the discovery UI does not construct source-specific ArcGIS
+        requests.
+      parameters:
+        - name: bbox
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated west,south,east,north in EPSG:3857 (Web Mercator).
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [hillshade, tinted, slope]
+            default: hillshade
+      responses:
+        '200':
+          description: USGS 3DEP terrain raster PNG.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /accessibility/evidence:
     get:
       tags: [Evidence]
