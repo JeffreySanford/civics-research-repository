@@ -1,4 +1,4 @@
-name: Bootstrap CBP Maps page integration
+name: Stabilize CBP branch
 
 on:
   push:
@@ -12,62 +12,42 @@ permissions:
   contents: write
 
 jobs:
-  bootstrap:
+  stabilize:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: codex/maps-county-business-patterns
 
-      - name: Check whether CBP page integration already exists
-        id: current
-        run: |
-          if grep -q 'pendingCountyBusinessPatterns' apps/discovery-ui/src/app/pages/maps-page.ts; then
-            echo "current=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "current=false" >> "$GITHUB_OUTPUT"
-          fi
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - if: steps.current.outputs.current != 'true'
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
-
-      - if: steps.current.outputs.current != 'true'
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
-        if: steps.current.outputs.current != 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Patch Maps page
-        if: steps.current.outputs.current != 'true'
+      - name: Normalize repository formatting
         run: |
-          python tools/scripts/cbp-ui-bootstrap.py
-          python tools/scripts/cbp-ui-followup.py
+          pnpm exec nx format:write --all
+          pnpm exec nx format:check --all
 
-      - name: Format and validate UI
-        if: steps.current.outputs.current != 'true'
+      - name: Validate discovery UI
         run: |
-          pnpm exec prettier --write \
-            apps/discovery-ui/src/app/pages/maps-page.ts \
-            apps/discovery-ui/src/app/pages/maps-page.html \
-            apps/discovery-ui/src/app/pages/maps-page.utils.ts \
-            apps/discovery-ui/src/app/pages/maps-page.utils.spec.ts
           pnpm run test
           pnpm run build
 
-      - name: Commit integrated Maps page
-        if: steps.current.outputs.current != 'true'
+      - name: Commit formatter output when needed
         run: |
+          if git diff --quiet; then
+            echo "Repository formatting already current."
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            apps/discovery-ui/src/app/pages/maps-page.ts \
-            apps/discovery-ui/src/app/pages/maps-page.html \
-            apps/discovery-ui/src/app/pages/maps-page.utils.ts \
-            apps/discovery-ui/src/app/pages/maps-page.utils.spec.ts
-          git commit -m "feat(maps): integrate County Business Patterns UI"
+          git add -A
+          git commit -m "chore(maps): format County Business Patterns slice"
           git push origin HEAD:codex/maps-county-business-patterns
