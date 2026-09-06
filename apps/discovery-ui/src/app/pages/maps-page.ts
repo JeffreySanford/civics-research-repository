@@ -1190,7 +1190,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
           }
 
           if (terrainMode !== null) {
-            this.store.dispatch(MapsActions.terrainModeChanged({ mode: terrainMode }));
+            this.store.dispatch(
+              MapsActions.terrainModeChanged({ mode: terrainMode }),
+            );
           }
 
           if (saipeVisible !== null) {
@@ -1918,7 +1920,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const data = this.pendingLodesFlowOverlay.geoJson as GeoJsonFeatureCollection;
+    const data = this.pendingLodesFlowOverlay
+      .geoJson as GeoJsonFeatureCollection;
     const existingSource = this.map.getSource(
       'lodes-workplace-flow',
     ) as GeoJSONSource | null;
@@ -1997,7 +2000,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const data = this.pendingSaipeChoropleth.geoJson as GeoJsonFeatureCollection;
+    const data = this.pendingSaipeChoropleth
+      .geoJson as GeoJsonFeatureCollection;
     const existingSource = this.map.getSource(
       'saipe-county-choropleth',
     ) as GeoJSONSource | null;
@@ -2134,7 +2138,9 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const data = this.createResearchCoverageGeoJson(this.pendingResearchCoverage);
+    const data = this.createResearchCoverageGeoJson(
+      this.pendingResearchCoverage,
+    );
     const existingSource = this.map.getSource(
       'repository-research-coverage',
     ) as GeoJSONSource | null;
@@ -2288,7 +2294,8 @@ export class MapsPage implements OnInit, AfterViewInit, OnDestroy {
   private createResearchCoverageSelectionGeoJson(): GeoJsonFeatureCollection {
     const selected =
       this.pendingResearchCoverage?.features.find(
-        (feature) => feature.sourceIdentifier === this.selectedResearchCoverageId,
+        (feature) =>
+          feature.sourceIdentifier === this.selectedResearchCoverageId,
       ) ?? null;
 
     if (!selected) {
