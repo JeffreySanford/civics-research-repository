@@ -236,4 +236,4 @@ Playwright:
 
 ## Implementation status
 
-In progress on `codex/maps-county-business-patterns` / PR #78.
+Implemented on `codex/maps-county-business-patterns` / PR #78. The focused Chromium Maps regression covering County Business Patterns, existing layer controls, and accessibility structure passes 52/52 after validating explicit URL restoration and isolating the CBP capability fixture from shared Maps mocks. Final repository CI and browser-evidence gates are required before merge.
