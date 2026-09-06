@@ -101,7 +101,7 @@ export function parseCsv(text) {
   return rows;
 }
 
-export function prepareCbpRows(sourceText) {
+export function prepareCbpDataset(sourceText) {
   const rows = parseCsv(sourceText.replace(/^\uFEFF/, ''));
   if (rows.length < 2) {
     throw new Error(
@@ -130,6 +130,7 @@ export function prepareCbpRows(sourceText) {
 
   const retained = [];
   const seen = new Set();
+  let excludedStatewideRows = 0;
 
   for (let rowIndex = 1; rowIndex < rows.length; rowIndex += 1) {
     const sourceRow = rows[rowIndex];
@@ -153,6 +154,15 @@ export function prepareCbpRows(sourceText) {
     const sourceNaics = field('NAICS');
 
     if (!isRetainedNaics(sourceNaics)) {
+      continue;
+    }
+
+    // The downloadable CBP county file includes XX999 aggregate records that are not county
+    // polygons. They are valid CBP records, but retaining them in a county map resource would
+    // create synthetic five-digit "county" GEOIDs that cannot join to TIGERweb. Exclude them at
+    // the source boundary and record the count in provenance instead of weakening geometry checks.
+    if (countyFips === '999') {
+      excludedStatewideRows += 1;
       continue;
     }
 
@@ -208,7 +218,7 @@ export function prepareCbpRows(sourceText) {
 
   if (retained.length === 0) {
     throw new Error(
-      'CBP source contained no all-sector or two-digit NAICS rows.',
+      'CBP source contained no county all-sector or two-digit NAICS rows.',
     );
   }
 
@@ -220,7 +230,11 @@ export function prepareCbpRows(sourceText) {
       ),
   );
 
-  return retained;
+  return { rows: retained, excludedStatewideRows };
+}
+
+export function prepareCbpRows(sourceText) {
+  return prepareCbpDataset(sourceText).rows;
 }
 
 export function serializeCbpRows(rows) {
@@ -252,10 +266,15 @@ export function buildMetadata({
   sourceBytes,
   normalizedText,
   retainedRows,
+  excludedStatewideRows = 0,
   capturedAt,
   sourceFileName,
 }) {
   requireCapturedAt(capturedAt);
+
+  if (!Number.isSafeInteger(excludedStatewideRows) || excludedStatewideRows < 0) {
+    throw new Error('excludedStatewideRows must be a nonnegative integer.');
+  }
 
   const countyGeoids = [
     ...new Set(retainedRows.map((row) => row.geoid)),
@@ -277,6 +296,8 @@ export function buildMetadata({
     normalizedSha256: sha256(Buffer.from(normalizedText, 'utf8')),
     retainedRows: retainedRows.length,
     retainedCounties: countyGeoids.length,
+    excludedStatewideRows,
+    countyEligibilityRule: 'FIPSCTY != 999',
     supportedIndustryCodes: industryCodes,
     retainedSourceNaicsRule: '------ or NN----',
     noiseFlags: {
@@ -373,12 +394,13 @@ function runCli() {
   const sourcePath = resolve(sourceArgument);
   const sourceBytes = readFileSync(sourcePath);
   const sourceText = sourceBytes.toString('utf8');
-  const retainedRows = prepareCbpRows(sourceText);
-  const normalizedText = serializeCbpRows(retainedRows);
+  const dataset = prepareCbpDataset(sourceText);
+  const normalizedText = serializeCbpRows(dataset.rows);
   const metadata = buildMetadata({
     sourceBytes,
     normalizedText,
-    retainedRows,
+    retainedRows: dataset.rows,
+    excludedStatewideRows: dataset.excludedStatewideRows,
     capturedAt,
     sourceFileName: sourcePath.split(/[\\/]/).at(-1),
   });
@@ -391,7 +413,7 @@ function runCli() {
   writeFileSync(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
 
   console.log(
-    `Retained ${metadata.retainedRows} CBP rows across ${metadata.retainedCounties} counties and ${metadata.supportedIndustryCodes.length} industry codes.`,
+    `Retained ${metadata.retainedRows} CBP rows across ${metadata.retainedCounties} counties and ${metadata.supportedIndustryCodes.length} industry codes; excluded ${metadata.excludedStatewideRows} non-county aggregate rows.`,
   );
   console.log(`Written ${csvPath}`);
   console.log(`Written ${metadataPath}`);
