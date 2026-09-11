@@ -43,23 +43,7 @@ jobs:
       - name: Add app-scoped module lint policy
         shell: bash
         run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = 'apps/census-mobile-frontend/eslint.config.mjs';
-          let source = fs.readFileSync(path, 'utf8');
-          const marker = '\n];';
-          const index = source.lastIndexOf(marker);
-          if (index === -1) throw new Error('Could not locate eslint config array terminator');
-          const override = `,
-  {
-    files: ['**/*.ts'],
-    rules: {
-      '@angular-eslint/prefer-standalone': 'off',
-    },
-  }`;
-          source = source.slice(0, index) + override + source.slice(index);
-          fs.writeFileSync(path, source);
-          NODE
+          node -e "const fs=require('node:fs');const p='apps/census-mobile-frontend/eslint.config.mjs';let s=fs.readFileSync(p,'utf8');const m='\\n];';const i=s.lastIndexOf(m);if(i<0)throw new Error('eslint config terminator not found');const o=',\\n  {\\n    files: [\"**/*.ts\"],\\n    rules: {\\n      \"@angular-eslint/prefer-standalone\": \"off\",\\n    },\\n  }';fs.writeFileSync(p,s.slice(0,i)+o+s.slice(i));"
 
       - name: Verify module-based bootstrap
         shell: bash
