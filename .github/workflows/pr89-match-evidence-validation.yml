@@ -30,18 +30,26 @@ jobs:
       - name: Apply match-evidence slice
         run: python tools/scripts/apply-pr89-match-evidence.py
 
-      - name: Correct backend evidence delimiters and optional-list assertion
+      - name: Correct backend evidence parameters and optional-list assertion
         run: |
           python - <<'PY'
           from pathlib import Path
 
           solr = Path('apps/repository-api/src/main/java/org/civicsrepo/search/SolrSearchClient.java')
           text = solr.read_text()
-          old = 'private static final String HIGHLIGHT_POST = "]]";'
-          new = 'private static final String HIGHLIGHT_POST = "]]]";'
-          if old not in text:
-              raise SystemExit('Expected temporary highlight delimiter was not found')
-          solr.write_text(text.replace(old, new, 1))
+          replacements = {
+              'private static final String HIGHLIGHT_POST = "]]";':
+                  'private static final String HIGHLIGHT_POST = "]]]";',
+              'params.add("hl.simple.pre=" + encode(HIGHLIGHT_PRE));':
+                  'params.add("hl.tag.pre=" + encode(HIGHLIGHT_PRE));',
+              'params.add("hl.simple.post=" + encode(HIGHLIGHT_POST));':
+                  'params.add("hl.tag.post=" + encode(HIGHLIGHT_POST));',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Expected generated Solr anchor not found: {old}')
+              text = text.replace(old, new, 1)
+          solr.write_text(text)
 
           test = Path('apps/repository-api/src/test/java/org/civicsrepo/search/SolrSearchClientCursorTest.java')
           text = test.read_text()
