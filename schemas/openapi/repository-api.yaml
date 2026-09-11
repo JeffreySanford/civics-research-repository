@@ -2113,6 +2113,13 @@ components:
           $ref: '#/components/schemas/SourceSystem'
         relevance:
           $ref: '#/components/schemas/SearchRelevance'
+        matchEvidence:
+          type: array
+          description: >-
+            Query-specific fields and terms highlighted by the search engine for this result.
+            This explains matched evidence only; it is not an exact score-contribution breakdown.
+          items:
+            $ref: '#/components/schemas/SearchMatchEvidence'
     FacetGroup:
       type: object
       required: [field, label, values]
@@ -2238,6 +2245,37 @@ components:
           description: Query-relative score normalized against the strongest result for this query.
         band:
           $ref: '#/components/schemas/SearchRelevanceBand'
+    SearchMatchField:
+      type: string
+      enum:
+        [
+          TITLE,
+          GEOGRAPHY,
+          SUBJECTS,
+          PROGRAM,
+          AUTHORS,
+          SUMMARY,
+          CITATION,
+          PUBLISHER,
+        ]
+    SearchMatchEvidence:
+      type: object
+      required: [field, label, matchedTerms]
+      properties:
+        field:
+          $ref: '#/components/schemas/SearchMatchField'
+        label:
+          type: string
+          minLength: 1
+          description: Human-readable indexed field label.
+        matchedTerms:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: string
+            minLength: 1
+          description: Query terms or phrases highlighted by the search engine in this field.
     SearchRelevanceModel:
       type: object
       required: [engine, normalization, calibrated]

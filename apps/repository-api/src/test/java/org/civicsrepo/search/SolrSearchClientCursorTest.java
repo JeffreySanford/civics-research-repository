@@ -10,6 +10,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import org.civicsrepo.generated.dto.SearchMatchField;
 import org.civicsrepo.generated.dto.SearchRelevanceBand;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,10 +55,24 @@ class SolrSearchClientCursorTest {
                 .isEqualTo(SearchRelevanceBand.STRONG);
         assertThat(execution.response().getResults().get(1).getRelevance().getBand())
                 .isEqualTo(SearchRelevanceBand.GOOD);
+        assertThat(execution.response().getResults().get(0).getMatchEvidence()).hasSize(2);
+        assertThat(execution.response().getResults().get(0).getMatchEvidence().get(0).getField())
+                .isEqualTo(SearchMatchField.TITLE);
+        assertThat(execution.response().getResults().get(0).getMatchEvidence().get(0).getMatchedTerms())
+                .containsExactly("climate");
+        assertThat(execution.response().getResults().get(0).getMatchEvidence().get(1).getField())
+                .isEqualTo(SearchMatchField.SUMMARY);
 
         String decodedQuery = URLDecoder.decode(requestQuery.get(), StandardCharsets.UTF_8);
         assertThat(decodedQuery)
-                .contains("cursorMark=*", "sort=score desc,id asc", "rows=2", "fl=*,score")
+                .contains(
+                        "cursorMark=*",
+                        "sort=score desc,id asc",
+                        "rows=2",
+                        "fl=*,score",
+                        "hl=true",
+                        "hl.method=unified",
+                        "hl.fl=title_txt,geography_txt,subjects_txt,programName_s,authors_txt,summary_txt,citation_txt,publisher_txt")
                 .doesNotContain("start=");
     }
 
@@ -107,9 +122,10 @@ class SolrSearchClientCursorTest {
 
         assertThat(execution.response().getRelevanceModel()).isNull();
         assertThat(execution.response().getResults().get(0).getRelevance()).isNull();
+        assertThat(execution.response().getResults().get(0).getMatchEvidence()).isNullOrEmpty();
 
         String decodedQuery = URLDecoder.decode(requestQuery.get(), StandardCharsets.UTF_8);
-        assertThat(decodedQuery).doesNotContain("fl=*,score");
+        assertThat(decodedQuery).doesNotContain("fl=*,score", "hl=true");
     }
 
     private SearchComparisonCriteria criteria(String query, int page, int pageSize) {
@@ -142,6 +158,16 @@ class SolrSearchClientCursorTest {
                       "contentType_s": [],
                       "vintageYear_i": []
                     }
+                  },
+                  "highlighting": {
+                    "alpha": {
+                      "title_txt": ["Alpha [[[climate]]] title"],
+                      "summary_txt": ["[[[climate]]] summary"]
+                    },
+                    "bravo": {"title_txt": ["Bravo [[[climate]]] title"]},
+                    "charlie": {"title_txt": ["Charlie [[[climate]]] title"]},
+                    "delta": {"title_txt": ["Delta [[[climate]]] title"]},
+                    "echo": {"title_txt": ["Echo [[[climate]]] title"]}
                   }
                 }
                 """.formatted(nextCursorMark, String.join(",", documents));

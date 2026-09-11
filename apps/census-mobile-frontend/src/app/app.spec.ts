@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { Store, StoreModule } from '@ngrx/store';
 import type { SearchResponse } from 'repository-api-client';
 import { App } from './app';
+import { SearchMatchEvidenceComponent } from './components/search-match-evidence/search-match-evidence.component';
 import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
 import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
 import { MobileSearchActions } from './state/search/search.actions';
@@ -17,6 +18,14 @@ const visibleResult = {
     normalizedScore: 1,
     band: 'STRONG',
   },
+  matchEvidence: [
+    { field: 'TITLE', label: 'Title', matchedTerms: ['migration'] },
+    {
+      field: 'GEOGRAPHY',
+      label: 'Geography',
+      matchedTerms: ['North Dakota'],
+    },
+  ],
 } as SearchResponse['results'][number];
 
 const searchResponse: SearchResponse = {
@@ -57,6 +66,7 @@ describe('App', () => {
       ],
       declarations: [
         App,
+        SearchMatchEvidenceComponent,
         SearchRelevanceBadgeComponent,
         SearchSummaryComponent,
       ],
@@ -120,6 +130,23 @@ describe('App', () => {
     expect(compiled.textContent).not.toContain('100%');
   });
 
+  it('renders API-provided match evidence as an accessible disclosure', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const disclosure = compiled.querySelector('app-search-match-evidence');
+    expect(disclosure?.textContent).toContain('Why this matched');
+    expect(disclosure?.textContent).toContain('Title');
+    expect(disclosure?.textContent).toContain('migration');
+    expect(disclosure?.textContent).toContain('North Dakota');
+  });
+
   it('summarizes query-wide result types rather than only the visible page', () => {
     const store = TestBed.inject(Store);
     const fixture = TestBed.createComponent(App);
@@ -166,7 +193,13 @@ describe('App', () => {
           query: '',
           totalResults: 644,
           relevanceModel: undefined,
-          results: [{ ...visibleResult, relevance: undefined }],
+          results: [
+            {
+              ...visibleResult,
+              relevance: undefined,
+              matchEvidence: undefined,
+            },
+          ],
         },
       }),
     );
@@ -178,6 +211,9 @@ describe('App', () => {
     );
     expect(compiled.querySelector('.relevance-badge')).toBeNull();
     expect(compiled.querySelector('.results__relevance-note')).toBeNull();
+    expect(
+      compiled.querySelector('app-search-match-evidence details'),
+    ).toBeNull();
   });
 
   it('shows result range and pagination after results load', () => {

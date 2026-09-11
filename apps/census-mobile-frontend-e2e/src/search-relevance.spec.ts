@@ -31,6 +31,17 @@ const result = (
   geography: 'North Dakota',
   vintageYear: 2025,
   relevance: { rawScore, normalizedScore, band },
+  matchEvidence:
+    id === 'strong-match'
+      ? [
+          { field: 'TITLE', label: 'Title', matchedTerms: ['migration'] },
+          {
+            field: 'GEOGRAPHY',
+            label: 'Geography',
+            matchedTerms: ['North Dakota'],
+          },
+        ]
+      : undefined,
 });
 
 async function mockCursorSearch(page: Page): Promise<void> {
@@ -160,6 +171,13 @@ test.describe('mobile relevance evidence', () => {
     ).toBeVisible();
     await expect(page.getByText('100%')).toHaveCount(0);
 
+    await page.getByText('Why this matched').first().click();
+    await expect(page.getByText('migration', { exact: true })).toBeVisible();
+    await expect(page.getByText('North Dakota', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('do not represent exact score contribution'),
+    ).toBeVisible();
+
     const strongBadge = page.getByLabel(
       'Strong match. Query-relative search match strength.',
     );
@@ -187,6 +205,7 @@ test.describe('mobile relevance evidence', () => {
     ).toBeVisible();
     await expect(page.locator('.relevance-badge')).toHaveCount(0);
     await expect(page.locator('.results__relevance-note')).toHaveCount(0);
+    await expect(page.locator('.match-evidence')).toHaveCount(0);
     await expect(page.getByText('644 matching records')).toBeVisible();
 
     const accessibility = await new AxeBuilder({ page })

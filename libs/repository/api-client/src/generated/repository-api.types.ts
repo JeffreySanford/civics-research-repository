@@ -1140,6 +1140,8 @@ export interface components {
       origin: components['schemas']['ResearchObjectOrigin'];
       sourceSystem: components['schemas']['SourceSystem'];
       relevance?: components['schemas']['SearchRelevance'];
+      /** @description Query-specific fields and terms highlighted by the search engine for this result. This explains matched evidence only; it is not an exact score-contribution breakdown. */
+      matchEvidence?: components['schemas']['SearchMatchEvidence'][];
     };
     FacetGroup: {
       field: string;
@@ -1210,6 +1212,23 @@ export interface components {
        */
       normalizedScore: number;
       band: components['schemas']['SearchRelevanceBand'];
+    };
+    /** @enum {string} */
+    SearchMatchField:
+      | 'TITLE'
+      | 'GEOGRAPHY'
+      | 'SUBJECTS'
+      | 'PROGRAM'
+      | 'AUTHORS'
+      | 'SUMMARY'
+      | 'CITATION'
+      | 'PUBLISHER';
+    SearchMatchEvidence: {
+      field: components['schemas']['SearchMatchField'];
+      /** @description Human-readable indexed field label. */
+      label: string;
+      /** @description Query terms or phrases highlighted by the search engine in this field. */
+      matchedTerms: string[];
     };
     SearchRelevanceModel: {
       engine: components['schemas']['SearchComparisonEngine'];

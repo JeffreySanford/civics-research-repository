@@ -62,6 +62,8 @@ export type SearchRelevance = components['schemas']['SearchRelevance'];
 export type SearchRelevanceBand = components['schemas']['SearchRelevanceBand'];
 export type SearchRelevanceModel =
   components['schemas']['SearchRelevanceModel'];
+export type SearchMatchEvidence = components['schemas']['SearchMatchEvidence'];
+export type SearchMatchField = components['schemas']['SearchMatchField'];
 export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
 export type ResearchProgram = components['schemas']['ResearchProgram'];
