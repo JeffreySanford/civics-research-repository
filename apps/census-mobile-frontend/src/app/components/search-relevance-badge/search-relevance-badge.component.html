@@ -1,0 +1,10 @@
+@if (relevance; as value) {
+  <span
+    class="relevance-badge"
+    [class]="'relevance-badge relevance-badge--' + value.band.toLowerCase()"
+    [attr.aria-label]="accessibleLabel(value)"
+  >
+    <span class="relevance-badge__marker" aria-hidden="true"></span>
+    <span>{{ label(value.band) }}</span>
+  </span>
+}
