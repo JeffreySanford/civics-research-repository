@@ -1115,6 +1115,7 @@ export interface components {
       totalResults: number;
       results: components['schemas']['SearchResult'][];
       facets: components['schemas']['FacetGroup'][];
+      relevanceModel?: components['schemas']['SearchRelevanceModel'];
     };
     SearchCursorPage: {
       search: components['schemas']['SearchResponse'];
@@ -1138,6 +1139,7 @@ export interface components {
       accessLevel?: components['schemas']['AccessLevel'];
       origin: components['schemas']['ResearchObjectOrigin'];
       sourceSystem: components['schemas']['SourceSystem'];
+      relevance?: components['schemas']['SearchRelevance'];
     };
     FacetGroup: {
       field: string;
@@ -1191,6 +1193,31 @@ export interface components {
     };
     /** @enum {string} */
     SearchComparisonEngine: 'SOLR' | 'OPENSEARCH';
+    /**
+     * @description Query-relative match-strength band. This is not an absolute relevance percentage.
+     * @enum {string}
+     */
+    SearchRelevanceBand: 'STRONG' | 'GOOD' | 'MODERATE' | 'WEAK' | 'LOW';
+    SearchRelevance: {
+      /**
+       * Format: double
+       * @description Engine-native relevance score. Values are not comparable across unrelated queries or engines.
+       */
+      rawScore: number;
+      /**
+       * Format: double
+       * @description Query-relative score normalized against the strongest result for this query.
+       */
+      normalizedScore: number;
+      band: components['schemas']['SearchRelevanceBand'];
+    };
+    SearchRelevanceModel: {
+      engine: components['schemas']['SearchComparisonEngine'];
+      /** @description Versioned normalization algorithm identifier. */
+      normalization: string;
+      /** @description True only after band thresholds have been calibrated against judged relevance queries. */
+      calibrated: boolean;
+    };
     SearchEngineComparison: {
       engine: components['schemas']['SearchComparisonEngine'];
       enabled: boolean;

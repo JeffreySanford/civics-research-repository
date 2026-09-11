@@ -364,9 +364,11 @@ public class SolrSearchClient implements DiscoveryIndex {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode response = root.path("response");
             List<SearchResult> results = new ArrayList<>();
+            boolean relevanceEnabled = !criteria.query().isBlank();
+            Double maxScore = relevanceEnabled ? decimal(response, "maxScore") : null;
 
             for (JsonNode document : response.path("docs")) {
-                results.add(new SearchResult(
+                results.add(withRelevance(new SearchResult(
                                 text(document, "id"),
                                 text(document, "title_s"),
                                 ResearchObjectType.fromValue(text(document, "contentType_s")),
@@ -379,10 +381,10 @@ public class SolrSearchClient implements DiscoveryIndex {
                         .programName(text(document, "programName_s"))
                         .geography(text(document, "geography_s"))
                         .vintageYear(integer(document, "vintageYear_i"))
-                        .accessLevel(accessLevel(document)));
+                        .accessLevel(accessLevel(document)), document, maxScore, relevanceEnabled));
             }
 
-            return new SearchResponse(
+            SearchResponse searchResponse = new SearchResponse(
                     RepositorySource.FIXTURE,
                     criteria.query(),
                     criteria.page(),
@@ -432,9 +434,28 @@ public class SolrSearchClient implements DiscoveryIndex {
                                     criteria.vintageYear() == null
                                             ? Set.of()
                                             : Set.of(normalize(String.valueOf(criteria.vintageYear())))))));
+            if (relevanceEnabled && maxScore != null && maxScore > 0) {
+                searchResponse.relevanceModel(SearchRelevanceClassifier.model());
+            }
+            return searchResponse;
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Solr search response could not be parsed.", exception);
         }
+    }
+
+    private SearchResult withRelevance(
+            SearchResult result, JsonNode document, Double maxScore, boolean relevanceEnabled) {
+        if (!relevanceEnabled) {
+            return result;
+        }
+
+        var relevance = SearchRelevanceClassifier.classify(decimal(document, "score"), maxScore);
+        return relevance == null ? result : result.relevance(relevance);
+    }
+
+    private Double decimal(JsonNode parent, String field) {
+        JsonNode value = parent.path(field);
+        return value.isNumber() ? value.asDouble() : null;
     }
 
     private Long engineReportedMillis(String responseBody) {
@@ -511,6 +532,9 @@ public class SolrSearchClient implements DiscoveryIndex {
         params.add("pf2=" + encode("title_txt^4 geography_txt^4"));
         params.add("mm=" + encode("2<67%"));
         params.add("q=" + encode(criteria.query().isBlank() ? "*:*" : criteria.query()));
+        if (!criteria.query().isBlank()) {
+            params.add("fl=" + encode("*,score"));
+        }
         if (cursorMark == null) {
             params.add("start=" + encode(Integer.toString(criteria.page() * criteria.pageSize())));
         } else {

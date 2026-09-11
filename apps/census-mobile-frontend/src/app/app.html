@@ -88,10 +88,9 @@
         </p>
         @if (searchResponse.relevanceModel && searchResponse.query.trim()) {
         <p class="results__relevance-note">
-          Match labels are query-relative search evidence, not percentages.
-          @if (!searchResponse.relevanceModel.calibrated) {
-          Thresholds are still being calibrated against judged queries.
-          }
+          Match labels are query-relative search evidence, not percentages. @if
+          (!searchResponse.relevanceModel.calibrated) { Thresholds are still
+          being calibrated against judged queries. }
         </p>
         }
       </div>

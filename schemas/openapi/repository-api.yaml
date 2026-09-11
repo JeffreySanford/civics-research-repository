@@ -2054,6 +2054,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FacetGroup'
+        relevanceModel:
+          $ref: '#/components/schemas/SearchRelevanceModel'
     SearchCursorPage:
       type: object
       required: [search, nextCursor]
@@ -2109,6 +2111,8 @@ components:
           $ref: '#/components/schemas/ResearchObjectOrigin'
         sourceSystem:
           $ref: '#/components/schemas/SourceSystem'
+        relevance:
+          $ref: '#/components/schemas/SearchRelevance'
     FacetGroup:
       type: object
       required: [field, label, values]
@@ -2213,6 +2217,40 @@ components:
     SearchComparisonEngine:
       type: string
       enum: [SOLR, OPENSEARCH]
+    SearchRelevanceBand:
+      type: string
+      description: Query-relative match-strength band. This is not an absolute relevance percentage.
+      enum: [STRONG, GOOD, MODERATE, WEAK, LOW]
+    SearchRelevance:
+      type: object
+      required: [rawScore, normalizedScore, band]
+      properties:
+        rawScore:
+          type: number
+          format: double
+          minimum: 0
+          description: Engine-native relevance score. Values are not comparable across unrelated queries or engines.
+        normalizedScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Query-relative score normalized against the strongest result for this query.
+        band:
+          $ref: '#/components/schemas/SearchRelevanceBand'
+    SearchRelevanceModel:
+      type: object
+      required: [engine, normalization, calibrated]
+      properties:
+        engine:
+          $ref: '#/components/schemas/SearchComparisonEngine'
+        normalization:
+          type: string
+          minLength: 1
+          description: Versioned normalization algorithm identifier.
+        calibrated:
+          type: boolean
+          description: True only after band thresholds have been calibrated against judged relevance queries.
     SearchEngineComparison:
       type: object
       required:

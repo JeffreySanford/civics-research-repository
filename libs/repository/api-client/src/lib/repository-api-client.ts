@@ -58,6 +58,10 @@ export type ResearchSpatialCoverageResponse =
 export type SearchResponse = components['schemas']['SearchResponse'];
 export type SearchCursorPage = components['schemas']['SearchCursorPage'];
 export type SearchResult = components['schemas']['SearchResult'];
+export type SearchRelevance = components['schemas']['SearchRelevance'];
+export type SearchRelevanceBand = components['schemas']['SearchRelevanceBand'];
+export type SearchRelevanceModel =
+  components['schemas']['SearchRelevanceModel'];
 export type FacetGroup = components['schemas']['FacetGroup'];
 export type FacetValue = components['schemas']['FacetValue'];
 export type ResearchProgram = components['schemas']['ResearchProgram'];

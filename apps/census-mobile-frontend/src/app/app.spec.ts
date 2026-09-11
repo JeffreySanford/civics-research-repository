@@ -95,9 +95,9 @@ describe('App', () => {
     expect(badge?.getAttribute('aria-label')).toContain(
       'Query-relative search match strength',
     );
-    expect(compiled.querySelector('.results__relevance-note')?.textContent).toContain(
-      'not percentages',
-    );
+    expect(
+      compiled.querySelector('.results__relevance-note')?.textContent,
+    ).toContain('not percentages');
     expect(compiled.textContent).not.toContain('100%');
   });
 
