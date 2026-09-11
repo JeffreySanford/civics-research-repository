@@ -10,40 +10,50 @@ Keep the existing mobile-first roadmap, but bias new work toward the remaining U
 
 - PR #87: query-relative relevance evidence, rank presentation, 320px browser evidence, and full-stack startup.
 - PR #88: query-wide result-type summary backed by server-provided facet counts.
+- PR #89: engine-provided field/term match evidence with an accessible `Why this matched?` disclosure.
+- PR #90: requirements traceability plus manual accessibility and usability-study protocols.
 
-## Next slices
+## Active mobile-first continuation
 
-### PR #89 — Search match evidence / “Why this matched?”
+### PR #91 — Shareable search/filter intent + accessible mobile filter drawer
 
-- Use engine highlighting rather than raw Solr `debug/explain`.
-- Add an additive typed `matchEvidence[]` API contract.
-- Keep evidence server-owned; Angular renders rather than infers it.
-- Explain matched indexed fields and terms without claiming exact score contribution.
-- Add component, Storybook, backend, 320px Playwright, and axe evidence.
+- Hydrate supported search/filter intent from URL query parameters.
+- Validate controlled source-system/content-type URL values instead of casting arbitrary strings into generated API types.
+- Serialize reproducible query/filter intent back to the URL after search or immediate facet changes.
+- Keep cursor traversal history session-owned rather than pretending a deep cursor page can be reconstructed from a URL alone.
+- Add active filter chips and immediate facet filtering backed by server-provided facets.
+- Add a modal mobile filter drawer with focus trapping, Escape close, explicit close action, and focus return to its trigger.
+- Validate the open drawer with axe and prove 320px reflow, URL reconstruction, immediate filter update, and focus restoration in Playwright.
 
-### PR #90 — Requirements traceability + manual accessibility/usability protocol
+## Post-convergence / post-main work
 
-- Add stable requirement IDs for the mobile search journey.
-- Map requirement -> acceptance criterion -> implementation surface -> automated evidence -> WCAG/Section 508 criterion where applicable.
-- Add manual keyboard, 200%/400% zoom/reflow, forced-colors, reduced-motion, NVDA/JAWS/VoiceOver evidence templates.
-- Add a small real usability-study protocol covering search, filtering, match explanation, and reproducible/shareable search state.
-- Do not manufacture results; record observations only when actual participants complete the tasks.
+### Shared `census-ui` primitives + desktop relevance adoption
 
-### PR #91 — Shared `census-ui` primitives + desktop relevance adoption
+Do this after the mobile stack reaches `main` with explicit approval rather than extracting shared UI from an unresolved stack.
 
 - Extract only components with demonstrated cross-app reuse.
-- First candidates: relevance badge, match-evidence disclosure, result metadata/rank primitives, pagination/search input only where interfaces truly align.
+- First candidates: relevance badge, result explainability entry point/dialog, result metadata/rank primitives, match-evidence presentation, and pagination/search input only where interfaces truly align.
 - Keep async/search-domain state in each app; shared UI stays presentational.
 - Consume the same server-owned rank/relevance/match-evidence contract from both Angular applications.
 - Preserve existing `discovery-ui` facets, URL state, focus management, map/detail navigation, and NgRx lifecycle.
 
-### Follow-on — Design lifecycle evidence
+### Result explainability dialog
+
+See `result-explainability-dialog-plan.md`.
+
+- Add an information control at the lower-right of every result listing in both mobile-first and `discovery-ui` frontends.
+- Use a real accessible modal/dialog rather than a tooltip because the intended ranking/search evidence is verbose.
+- Present query/filter context, ordinal rank, match-strength evidence, relevance-model/version/calibration metadata, and typed field/term match evidence.
+- Keep exact ranking-factor/contribution detail backend-owned and additive if it becomes available later.
+- Never expose raw Solr `debug/explain` trees as a general browser contract.
+
+### Design lifecycle evidence
 
 - Capture wireframe -> annotated component specification -> Storybook states -> production implementation.
 - Record breakpoint, touch-target, drawer, focus, rank-vs-match-strength, forced-colors, and maintenance decisions.
 - Add Figma only when it improves the design collaboration artifact; do not make Figma a runtime dependency.
 
-### Follow-on — Repository steward/internal workflow
+### Repository steward/internal workflow
 
 - Add a small internal-facing status/steward surface using existing repository authority, synchronization, projection, and search-health data.
 - Keep privileged mutations separate and explicitly protected; a read-only status slice is sufficient first.
