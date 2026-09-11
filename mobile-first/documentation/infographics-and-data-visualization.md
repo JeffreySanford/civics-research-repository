@@ -16,16 +16,16 @@ The visual layer should be evidence-driven:
 
 ## Visualization Candidates
 
-| Visualization | User Question | Data Needed | Placement | Priority |
-| --- | --- | --- | --- | --- |
-| Result type mix | What kinds of results did I find? | content type facet counts | Compact search summary | High |
-| Top programs | Which Census programs dominate this query? | program facet counts | Compact search summary or filter drawer | High |
-| Year distribution | Are results current or historical? | vintage year facets | Expandable summary | Medium |
-| Geography coverage | Which geographies appear most? | geography facets | Expandable summary | Medium |
-| Source/provenance summary | Where are these records coming from? | source system/provenance counts | Result summary and card badges | Medium |
-| Filter impact summary | How did my filters narrow results? | total before/after, active filters | After filter apply | Medium |
-| Query empty-state guidance | Why did I get no results? | zero result response and available facets if returned | Empty state | Medium |
-| Individual result metadata strip | What is this result at a glance? | type, program, year, geography, source | Result card | High |
+| Visualization                    | User Question                              | Data Needed                                           | Placement                               | Priority |
+| -------------------------------- | ------------------------------------------ | ----------------------------------------------------- | --------------------------------------- | -------- |
+| Result type mix                  | What kinds of results did I find?          | content type facet counts                             | Compact search summary                  | High     |
+| Top programs                     | Which Census programs dominate this query? | program facet counts                                  | Compact search summary or filter drawer | High     |
+| Year distribution                | Are results current or historical?         | vintage year facets                                   | Expandable summary                      | Medium   |
+| Geography coverage               | Which geographies appear most?             | geography facets                                      | Expandable summary                      | Medium   |
+| Source/provenance summary        | Where are these records coming from?       | source system/provenance counts                       | Result summary and card badges          | Medium   |
+| Filter impact summary            | How did my filters narrow results?         | total before/after, active filters                    | After filter apply                      | Medium   |
+| Query empty-state guidance       | Why did I get no results?                  | zero result response and available facets if returned | Empty state                             | Medium   |
+| Individual result metadata strip | What is this result at a glance?           | type, program, year, geography, source                | Result card                             | High     |
 
 ## Recommended First Visuals
 

@@ -94,14 +94,14 @@ The mobile app is responsible for:
 
 Use the same state-management split described in the project notes:
 
-| Concern | Recommended Tool |
-| --- | --- |
-| HTTP search requests | NgRx effects or RxJS service orchestration |
-| Search result state | NgRx store if the workflow grows beyond one page |
-| URL query synchronization | Router + NgRx/RxJS |
-| Local drawer state | Angular signals |
-| Display mode and ephemeral UI | Angular signals |
-| Layout responsiveness | CSS first; CDK BreakpointObserver only for behavior changes |
+| Concern                       | Recommended Tool                                            |
+| ----------------------------- | ----------------------------------------------------------- |
+| HTTP search requests          | NgRx effects or RxJS service orchestration                  |
+| Search result state           | NgRx store if the workflow grows beyond one page            |
+| URL query synchronization     | Router + NgRx/RxJS                                          |
+| Local drawer state            | Angular signals                                             |
+| Display mode and ephemeral UI | Angular signals                                             |
+| Layout responsiveness         | CSS first; CDK BreakpointObserver only for behavior changes |
 
 The new app does not need to copy the full existing app state architecture on day one. Start with the smallest maintainable state model, then promote to NgRx if URL state, facets, pagination, and cancellation become easier to reason about centrally.
 
@@ -109,18 +109,18 @@ The new app does not need to copy the full existing app state architecture on da
 
 Initial components:
 
-| Component | Responsibility |
-| --- | --- |
-| `MobileDiscoveryPage` | Route container, query coordination, search state |
-| `DiscoverySearchBarComponent` | Search input, submit, clear |
-| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count |
-| `DiscoveryFiltersComponent` | Facet groups and selected facet state |
-| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips |
-| `DiscoveryResultsHeaderComponent` | Result count, range, loading status |
-| `ResearchResultCardComponent` | One accessible research result |
-| `DiscoveryResultsComponent` | Result collection and empty/error/loading states |
-| `DiscoveryPaginationComponent` | Previous/current/next controls and focus behavior |
-| `DiscoveryShellComponent` | Drawer/sidebar layout composition |
+| Component                         | Responsibility                                    |
+| --------------------------------- | ------------------------------------------------- |
+| `MobileDiscoveryPage`             | Route container, query coordination, search state |
+| `DiscoverySearchBarComponent`     | Search input, submit, clear                       |
+| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count             |
+| `DiscoveryFiltersComponent`       | Facet groups and selected facet state             |
+| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips                   |
+| `DiscoveryResultsHeaderComponent` | Result count, range, loading status               |
+| `ResearchResultCardComponent`     | One accessible research result                    |
+| `DiscoveryResultsComponent`       | Result collection and empty/error/loading states  |
+| `DiscoveryPaginationComponent`    | Previous/current/next controls and focus behavior |
+| `DiscoveryShellComponent`         | Drawer/sidebar layout composition                 |
 
 Keep these components mostly presentational where possible so Storybook can render them without booting the entire search workflow.
 

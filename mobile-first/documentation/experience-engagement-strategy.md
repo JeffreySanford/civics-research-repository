@@ -14,13 +14,13 @@ search -> scan results -> refine filters -> inspect a result -> continue or shar
 
 ## Target Users
 
-| User | Need | Design Implication |
-| --- | --- | --- |
-| Policy analyst | Find current datasets and publications quickly | Prioritize search, filters, metadata, and provenance |
-| Researcher | Compare programs, years, geographies, and source systems | Expose facets and result context clearly |
-| Public user | Understand what Census research objects are available | Plain-language labels and guided empty states |
-| Accessibility reviewer | Verify operability and semantics | Strong keyboard, screen-reader, reflow, and contrast evidence |
-| Portfolio reviewer | See thoughtful Angular/frontend architecture | Storybook states, reusable components, and API-backed behavior |
+| User                   | Need                                                     | Design Implication                                             |
+| ---------------------- | -------------------------------------------------------- | -------------------------------------------------------------- |
+| Policy analyst         | Find current datasets and publications quickly           | Prioritize search, filters, metadata, and provenance           |
+| Researcher             | Compare programs, years, geographies, and source systems | Expose facets and result context clearly                       |
+| Public user            | Understand what Census research objects are available    | Plain-language labels and guided empty states                  |
+| Accessibility reviewer | Verify operability and semantics                         | Strong keyboard, screen-reader, reflow, and contrast evidence  |
+| Portfolio reviewer     | See thoughtful Angular/frontend architecture             | Storybook states, reusable components, and API-backed behavior |
 
 ## First Three Journeys
 

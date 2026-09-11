@@ -76,15 +76,15 @@ The plan explicitly avoids a dashboard-first mobile layout, decorative infograph
 
 Record local results before merging:
 
-| Check | Result |
-| --- | --- |
-| `pnpm install` from workspace root | |
-| `pnpm nx show projects` | |
-| Existing `discovery-ui` project visible | |
-| Existing app serves on `4200` | |
-| Existing repository API base URL reviewed | |
-| `pnpm start:all` reaches expected running state | |
-| Branch updated from `origin/main` or divergence documented | |
+| Check                                                      | Result |
+| ---------------------------------------------------------- | ------ |
+| `pnpm install` from workspace root                         |        |
+| `pnpm nx show projects`                                    |        |
+| Existing `discovery-ui` project visible                    |        |
+| Existing app serves on `4200`                              |        |
+| Existing repository API base URL reviewed                  |        |
+| `pnpm start:all` reaches expected running state            |        |
+| Branch updated from `origin/main` or divergence documented |        |
 
 ## Validation
 

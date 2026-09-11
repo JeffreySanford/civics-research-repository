@@ -33,18 +33,18 @@ Excluded:
 
 Before opening PR 1, record the result of each check in the PR description.
 
-| Check | Expected Result | Notes |
-| --- | --- | --- |
-| Dependencies installed | `node_modules` exists at workspace root | Run `pnpm install` from `D:\repos\civics-research-repository` |
-| Existing app target visible | Nx can show the `discovery-ui` project | Use repo-standard Nx wrapper if available |
-| Existing app port | `apps/discovery-ui` serves on `4200` | Confirm from `apps/discovery-ui/project.json` |
-| Existing API base URL shape | Repository API client target is understood | Confirm `REPOSITORY_API_BASE_URL` defaults to `http://localhost:8080/api` |
-| Local stack starts | `pnpm start:all` completes or reaches expected long-running state | Capture any expected warnings |
-| Git baseline | branch is up to date or known divergence is documented | Current branch should not hide unmerged runtime changes |
-| New app name | `census-mobile-frontend` | Document before generation |
-| New app port | `4300` | Avoids collision with existing frontend |
-| Existing Storybook port | `4400` | Used by `discovery-ui` |
-| Mobile Storybook port | `4500` | Avoids collision with existing Storybook |
+| Check                       | Expected Result                                                   | Notes                                                                     |
+| --------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Dependencies installed      | `node_modules` exists at workspace root                           | Run `pnpm install` from `D:\repos\civics-research-repository`             |
+| Existing app target visible | Nx can show the `discovery-ui` project                            | Use repo-standard Nx wrapper if available                                 |
+| Existing app port           | `apps/discovery-ui` serves on `4200`                              | Confirm from `apps/discovery-ui/project.json`                             |
+| Existing API base URL shape | Repository API client target is understood                        | Confirm `REPOSITORY_API_BASE_URL` defaults to `http://localhost:8080/api` |
+| Local stack starts          | `pnpm start:all` completes or reaches expected long-running state | Capture any expected warnings                                             |
+| Git baseline                | branch is up to date or known divergence is documented            | Current branch should not hide unmerged runtime changes                   |
+| New app name                | `census-mobile-frontend`                                          | Document before generation                                                |
+| New app port                | `4300`                                                            | Avoids collision with existing frontend                                   |
+| Existing Storybook port     | `4400`                                                            | Used by `discovery-ui`                                                    |
+| Mobile Storybook port       | `4500`                                                            | Avoids collision with existing Storybook                                  |
 
 ## Suggested PR 1 Description
 

@@ -44,13 +44,13 @@ Exact target names should be confirmed after generation.
 
 Expected local behavior:
 
-| Check | Expected |
-| --- | --- |
-| Existing app | `http://localhost:4200` |
-| Mobile app | `http://localhost:4300` |
-| Existing Storybook | `http://localhost:4400` |
-| Mobile Storybook | `http://localhost:4500` |
-| Repository API | `http://localhost:8080/api` by default |
+| Check              | Expected                               |
+| ------------------ | -------------------------------------- |
+| Existing app       | `http://localhost:4200`                |
+| Mobile app         | `http://localhost:4300`                |
+| Existing Storybook | `http://localhost:4400`                |
+| Mobile Storybook   | `http://localhost:4500`                |
+| Repository API     | `http://localhost:8080/api` by default |
 
 Both apps should be able to run at the same time.
 
@@ -58,14 +58,14 @@ Both apps should be able to run at the same time.
 
 Required viewport checks:
 
-| Width | Purpose |
-| ---: | --- |
-| 320px | WCAG reflow minimum |
-| 390px | common phone |
-| 430px | large phone |
-| 768px | tablet portrait |
-| 1024px | tablet landscape |
-| 1440px | desktop |
+|  Width | Purpose             |
+| -----: | ------------------- |
+|  320px | WCAG reflow minimum |
+|  390px | common phone        |
+|  430px | large phone         |
+|  768px | tablet portrait     |
+| 1024px | tablet landscape    |
+| 1440px | desktop             |
 
 Assertions:
 
