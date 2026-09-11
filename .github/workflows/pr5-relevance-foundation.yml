@@ -42,8 +42,10 @@ jobs:
             schemas/openapi/repository-api.yaml \
             libs/repository/api-client/src/lib/repository-api-client.ts \
             apps/census-mobile-frontend/project.json \
+            apps/census-mobile-frontend/tsconfig.json \
             apps/census-mobile-frontend/.storybook/main.ts \
             apps/census-mobile-frontend/.storybook/preview.ts \
+            apps/census-mobile-frontend/.storybook/tsconfig.json \
             apps/census-mobile-frontend/src/app/app-module.ts \
             apps/census-mobile-frontend/src/app/app.html \
             apps/census-mobile-frontend/src/app/app.scss \
