@@ -1,0 +1,48 @@
+name: PR92 shared search convergence v3
+
+on:
+  push:
+    branches:
+      - codex/census-ui-relevance-pr92
+    paths:
+      - .github/workflows/pr92-shared-search-convergence-v3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  converge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/census-ui-relevance-pr92
+          fetch-depth: 0
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with:
+          version: 10.14.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: python3 tools/scripts/pr92_converge.py
+      - run: pnpm exec prettier --write apps/census-mobile-frontend/src/app apps/discovery-ui/src/app/pages/discovery-page.ts apps/discovery-ui/src/app/pages/discovery-page.html apps/discovery-ui/src/app/pages/discovery-page.scss apps/discovery-ui-e2e/src/discovery-search-ranking.spec.ts libs/shared/ui/src mobile-first/planning/mobile-research-detail-navigation.md
+      - run: pnpm nx run-many -t lint -p shared-ui,census-mobile-frontend,discovery-ui
+      - run: pnpm nx test shared-ui
+      - run: pnpm nx test census-mobile-frontend
+      - run: pnpm nx test discovery-ui
+      - run: pnpm nx build census-mobile-frontend --configuration=production
+      - run: pnpm nx build-storybook census-mobile-frontend --configuration=ci
+      - run: pnpm nx build discovery-ui --configuration=production
+      - name: Commit validated convergence
+        run: |
+          rm tools/scripts/pr92_converge.py
+          rm .github/workflows/pr92-shared-search-convergence.yml
+          rm .github/workflows/pr92-shared-search-convergence-v2.yml
+          rm .github/workflows/pr92-shared-search-convergence-v3.yml
+          git config user.name "JeffreySanford"
+          git config user.email "JeffreySanford@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: share search rank and relevance across frontends"
+          git push origin HEAD:codex/census-ui-relevance-pr92
