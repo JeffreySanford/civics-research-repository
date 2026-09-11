@@ -4,7 +4,7 @@ Status: proposed
 
 This directory captures the plan for a new mobile-first Census/Civics frontend that lives beside the existing Angular application in the Nx workspace.
 
-The intent is to build a focused mobile-first discovery experience without destabilizing the existing Angular frontend. The new app should consume the existing repository search API and shared contracts, while the current application remains available on its existing development port.
+The intent is to build a focused mobile-first discovery experience without destabilizing the existing Angular frontend. The new app should consume the existing repository search API through the existing `repository-api-client`, while the current application remains available on its existing development port.
 
 ## Working Decision
 
@@ -12,14 +12,14 @@ Create an additional Angular app under `apps/` for the mobile-first Census front
 
 Suggested development ports:
 
-| Surface                       | Purpose                                        | Port   |
-| ----------------------------- | ---------------------------------------------- | ------ |
-| `apps/discovery-ui`           | Existing Angular application                   | `4200` |
-| `apps/census-mobile-frontend` | New mobile-first Census/Civics frontend        | `4300` |
-| `discovery-ui` Storybook      | Existing component state and responsive review | `4400` |
-| Mobile Storybook              | New mobile-first component review              | `4500` |
+| Surface | Purpose | Port |
+| --- | --- | --- |
+| `apps/discovery-ui` | Existing Angular application | `4200` |
+| `apps/census-mobile-frontend` | New mobile-first Census/Civics frontend | `4300` |
+| `discovery-ui` Storybook | Existing component state and responsive review | `4400` |
+| Mobile Storybook | New mobile-first component review | `4500` |
 
-The new frontend is a separate shell over the same backend capability. It is not a new backend, a duplicate search engine, or a throwaway mock.
+The new frontend is a separate shell over the same backend capability. It is not a new backend, a duplicate search engine, a duplicate API client, or a throwaway mock.
 
 ## Why This Direction
 
@@ -32,12 +32,15 @@ This also creates a clear portfolio story:
 ## Guiding Principles
 
 - Keep the existing Angular app working.
-- Reuse the existing API and shared contracts.
-- Do not add a second search backend.
-- Put reusable models, API clients, fixtures, and design tokens in `libs/`.
+- Reuse `RepositorySearchApi`, generated OpenAPI types, and `REPOSITORY_API_BASE_URL` from `repository-api-client`.
+- Do not add a second search backend, duplicate index, or duplicate search-contract library.
+- Use module-based Angular composition for the new app and Observable-first RxJS/NgRx state management.
+- Do not introduce Angular Signals into the new app's search or UI state.
+- Create new shared UI libraries only after real reuse across the two frontends is demonstrated.
 - Treat 320px reflow, keyboard access, focus management, touch targets, and screen-reader semantics as first-class requirements.
 - Use Storybook for isolated responsive states and Playwright for assembled app behavior.
 - Keep search semantics server-owned; the frontend expresses search intent and renders bounded responses.
+- Use infographics/data visualization only when they improve comprehension and are backed by trustworthy server-provided aggregate data or clearly labeled page-local data.
 
 ## Planned Documents
 
