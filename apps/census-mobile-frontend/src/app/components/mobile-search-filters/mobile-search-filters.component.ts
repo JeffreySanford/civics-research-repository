@@ -18,8 +18,7 @@ export class MobileSearchFiltersComponent {
   @Input() activeFilters: readonly MobileActiveFilter[] = [];
 
   @Output() readonly closeRequested = new EventEmitter<void>();
-  @Output() readonly filterSelected =
-    new EventEmitter<MobileFilterSelection>();
+  @Output() readonly filterSelected = new EventEmitter<MobileFilterSelection>();
   @Output() readonly clearRequested = new EventEmitter<void>();
 
   close(): void {

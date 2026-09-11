@@ -67,8 +67,8 @@ describe('SearchRouteQueryAdapter', () => {
     expect(adapter.hasSearchIntent(convertToParamMap({ q: 'migration' }))).toBe(
       true,
     );
-    expect(adapter.hasSearchIntent(convertToParamMap({ unrelated: 'value' }))).toBe(
-      false,
-    );
+    expect(
+      adapter.hasSearchIntent(convertToParamMap({ unrelated: 'value' })),
+    ).toBe(false);
   });
 });

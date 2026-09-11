@@ -258,7 +258,9 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const trigger = compiled.querySelector('.filter-trigger') as HTMLButtonElement;
+    const trigger = compiled.querySelector(
+      '.filter-trigger',
+    ) as HTMLButtonElement;
     trigger.click();
     fixture.detectChanges();
 
@@ -293,7 +295,11 @@ describe('App', () => {
     );
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('.filter-trigger') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector(
+        '.filter-trigger',
+      ) as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;

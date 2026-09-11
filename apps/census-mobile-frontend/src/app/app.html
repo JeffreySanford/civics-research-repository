@@ -44,10 +44,10 @@
         </button>
       </div>
       @if (!response() && !loading() && !error()) {
-        <p class="search-form__hint">
-          Natural-language questions work, but the current lexical search ranks
-          most precisely when the important concepts are prominent.
-        </p>
+      <p class="search-form__hint">
+        Natural-language questions work, but the current lexical search ranks
+        most precisely when the important concepts are prominent.
+      </p>
       }
     </form>
 
@@ -61,48 +61,43 @@
         [disabled]="!response() && !loading()"
         (click)="openFilters()"
       >
-        Filters
-        @if (activeFilters().length > 0) {
-          <span class="filter-count" aria-label="active filters">
-            {{ activeFilters().length }}
-          </span>
+        Filters @if (activeFilters().length > 0) {
+        <span class="filter-count" aria-label="active filters">
+          {{ activeFilters().length }}
+        </span>
         }
       </button>
       @if (response()) {
-        <span class="search-tools__status" aria-live="polite">
-          {{ resultCount() }} results
-        </span>
+      <span class="search-tools__status" aria-live="polite">
+        {{ resultCount() }} results
+      </span>
       } @else if (loading()) {
-        <span class="search-tools__status" role="status">Loading filters…</span>
+      <span class="search-tools__status" role="status">Loading filters…</span>
       }
     </div>
 
     @if (activeFilters().length > 0) {
-      <div class="active-filters" aria-label="Active filters">
-        @for (filter of activeFilters(); track filter.key) {
-          <button
-            type="button"
-            class="filter-chip"
-            (click)="removeFilter(filter)"
-          >
-            <span>{{ filter.label }}</span>
-            <span aria-hidden="true">×</span>
-            <span class="visually-hidden">Remove {{ filter.label }} filter</span>
-          </button>
-        }
-      </div>
+    <div class="active-filters" aria-label="Active filters">
+      @for (filter of activeFilters(); track filter.key) {
+      <button type="button" class="filter-chip" (click)="removeFilter(filter)">
+        <span>{{ filter.label }}</span>
+        <span aria-hidden="true">×</span>
+        <span class="visually-hidden">Remove {{ filter.label }} filter</span>
+      </button>
+      }
+    </div>
     }
   </section>
 
   @if (filtersOpen()) {
-    <app-mobile-search-filters
-      [facets]="facets()"
-      [query]="searchState().query"
-      [activeFilters]="activeFilters()"
-      (closeRequested)="closeFilters()"
-      (filterSelected)="selectFilter($event)"
-      (clearRequested)="clearFilters()"
-    ></app-mobile-search-filters>
+  <app-mobile-search-filters
+    [facets]="facets()"
+    [query]="searchState().query"
+    [activeFilters]="activeFilters()"
+    (closeRequested)="closeFilters()"
+    (filterSelected)="selectFilter($event)"
+    (clearRequested)="clearFilters()"
+  ></app-mobile-search-filters>
   }
 
   <section
@@ -111,152 +106,132 @@
     [attr.aria-busy]="loading()"
   >
     @if (loading()) {
-      <div class="status-card" role="status">
-        <strong>
-          @if (activeQueryText()) {
-            Searching for “{{ activeQueryText() }}”…
-          } @else {
-            Loading the current discovery set…
-          }
-        </strong>
-        <span>Loading the requested mobile result page.</span>
+    <div class="status-card" role="status">
+      <strong>
+        @if (activeQueryText()) { Searching for “{{ activeQueryText() }}”… }
+        @else { Loading the current discovery set… }
+      </strong>
+      <span>Loading the requested mobile result page.</span>
+    </div>
+    } @if (error()) {
+    <div class="status-card status-card--error" role="alert">
+      <strong>Search could not be completed.</strong>
+      <span>{{ error() }}</span>
+    </div>
+    } @if (response(); as searchResponse) {
+    <div class="results__heading">
+      <div>
+        <p class="section-heading__eyebrow">Results</p>
+        <h2 id="results-title" tabindex="-1">
+          {{ resultCount() }} matching records
+        </h2>
+        @if (searchResponse.query.trim()) {
+        <p class="results__query">Results for “{{ searchResponse.query }}”</p>
+        } @else {
+        <p class="results__query">
+          Browsing the repository's current discovery set.
+        </p>
+        }
+        <p class="results__range">
+          Showing {{ resultStart() }}–{{ resultEnd() }} · Page {{
+          currentPageNumber() }} of {{ totalPages() }}
+        </p>
+        @if (searchResponse.relevanceModel && searchResponse.query.trim()) {
+        <p class="results__relevance-note">
+          Match labels are query-relative search evidence, not percentages. @if
+          (!searchResponse.relevanceModel.calibrated) { Thresholds are still
+          being calibrated against judged queries. }
+        </p>
+        }
       </div>
-    }
-    @if (error()) {
-      <div class="status-card status-card--error" role="alert">
-        <strong>Search could not be completed.</strong>
-        <span>{{ error() }}</span>
-      </div>
-    }
-    @if (response(); as searchResponse) {
-      <div class="results__heading">
-        <div>
-          <p class="section-heading__eyebrow">Results</p>
-          <h2 id="results-title" tabindex="-1">
-            {{ resultCount() }} matching records
-          </h2>
-          @if (searchResponse.query.trim()) {
-            <p class="results__query">Results for “{{ searchResponse.query }}”</p>
-          } @else {
-            <p class="results__query">
-              Browsing the repository's current discovery set.
-            </p>
-          }
-          <p class="results__range">
-            Showing {{ resultStart() }}–{{ resultEnd() }} · Page
-            {{ currentPageNumber() }} of {{ totalPages() }}
-          </p>
-          @if (searchResponse.relevanceModel && searchResponse.query.trim()) {
-            <p class="results__relevance-note">
-              Match labels are query-relative search evidence, not percentages.
-              @if (!searchResponse.relevanceModel.calibrated) {
-                Thresholds are still being calibrated against judged queries.
-              }
-            </p>
+      <span class="results__source">
+        Source: {{ searchResponse.resultSource }}
+      </span>
+    </div>
+
+    @if (searchResponse.query.trim() && resultTypeFacet()) {
+    <app-search-summary
+      [facet]="resultTypeFacet()"
+      [totalResults]="searchResponse.totalResults"
+    ></app-search-summary>
+    } @if (paginationNotice()) {
+    <div class="status-card" role="status">
+      <strong>Pagination compatibility mode</strong>
+      <span>{{ paginationNotice() }}</span>
+    </div>
+    } @if (searchResponse.results.length === 0) {
+    <div class="status-card">
+      <strong>No results found.</strong>
+      <span>Try broader keywords or submit an empty search.</span>
+    </div>
+    } @else {
+    <ol class="result-list" [attr.start]="resultStart()">
+      @for ( result of searchResponse.results; track result.id; let index =
+      $index ) {
+      <li
+        class="result-card"
+        [class.result-card--top-ranked]="isTopRanked(index)"
+      >
+        <div class="result-card__rank-row">
+          <span
+            class="result-card__rank"
+            [class.result-card__rank--top]="isTopRanked(index)"
+          >
+            @if (isTopRanked(index)) {
+            <strong>Top ranked</strong>
+            } Rank {{ globalRank(index) }}
+          </span>
+          <app-search-relevance-badge
+            [relevance]="result.relevance"
+          ></app-search-relevance-badge>
+        </div>
+
+        <div class="result-card__meta">
+          <span>{{ result.contentType }}</span>
+          @if (result.publisher) {
+          <span>{{ result.publisher }}</span>
           }
         </div>
-        <span class="results__source">
-          Source: {{ searchResponse.resultSource }}
-        </span>
+
+        <h3>{{ result.title }}</h3>
+
+        @if (result.summary) {
+        <p class="result-card__summary">{{ result.summary }}</p>
+        } @if (result.geography) {
+        <p class="result-card__detail">Geography: {{ result.geography }}</p>
+        }
+
+        <app-search-match-evidence
+          [evidence]="result.matchEvidence"
+        ></app-search-match-evidence>
+      </li>
+      }
+    </ol>
+
+    <nav class="pagination" aria-label="Search result pages">
+      <p class="pagination__status">
+        Showing {{ resultStart() }}–{{ resultEnd() }} of {{ resultCount() }}
+        results
+      </p>
+      <div class="pagination__controls">
+        <button
+          type="button"
+          (click)="previousPage()"
+          [disabled]="!canPrevious()"
+        >
+          Previous
+        </button>
+        <span aria-current="page">Page {{ currentPageNumber() }}</span>
+        <button type="button" (click)="nextPage()" [disabled]="!canNext()">
+          Next
+        </button>
       </div>
-
-      @if (searchResponse.query.trim() && resultTypeFacet()) {
-        <app-search-summary
-          [facet]="resultTypeFacet()"
-          [totalResults]="searchResponse.totalResults"
-        ></app-search-summary>
-      }
-      @if (paginationNotice()) {
-        <div class="status-card" role="status">
-          <strong>Pagination compatibility mode</strong>
-          <span>{{ paginationNotice() }}</span>
-        </div>
-      }
-      @if (searchResponse.results.length === 0) {
-        <div class="status-card">
-          <strong>No results found.</strong>
-          <span>Try broader keywords or submit an empty search.</span>
-        </div>
-      } @else {
-        <ol class="result-list" [attr.start]="resultStart()">
-          @for (
-            result of searchResponse.results;
-            track result.id;
-            let index = $index
-          ) {
-            <li
-              class="result-card"
-              [class.result-card--top-ranked]="isTopRanked(index)"
-            >
-              <div class="result-card__rank-row">
-                <span
-                  class="result-card__rank"
-                  [class.result-card__rank--top]="isTopRanked(index)"
-                >
-                  @if (isTopRanked(index)) {
-                    <strong>Top ranked</strong>
-                  }
-                  Rank {{ globalRank(index) }}
-                </span>
-                <app-search-relevance-badge
-                  [relevance]="result.relevance"
-                ></app-search-relevance-badge>
-              </div>
-
-              <div class="result-card__meta">
-                <span>{{ result.contentType }}</span>
-                @if (result.publisher) {
-                  <span>{{ result.publisher }}</span>
-                }
-              </div>
-
-              <h3>{{ result.title }}</h3>
-
-              @if (result.summary) {
-                <p class="result-card__summary">{{ result.summary }}</p>
-              }
-              @if (result.geography) {
-                <p class="result-card__detail">
-                  Geography: {{ result.geography }}
-                </p>
-              }
-
-              <app-search-match-evidence
-                [evidence]="result.matchEvidence"
-              ></app-search-match-evidence>
-            </li>
-          }
-        </ol>
-
-        <nav class="pagination" aria-label="Search result pages">
-          <p class="pagination__status">
-            Showing {{ resultStart() }}–{{ resultEnd() }} of
-            {{ resultCount() }} results
-          </p>
-          <div class="pagination__controls">
-            <button
-              type="button"
-              (click)="previousPage()"
-              [disabled]="!canPrevious()"
-            >
-              Previous
-            </button>
-            <span aria-current="page">Page {{ currentPageNumber() }}</span>
-            <button
-              type="button"
-              (click)="nextPage()"
-              [disabled]="!canNext()"
-            >
-              Next
-            </button>
-          </div>
-        </nav>
-      }
-    } @else if (!loading() && !error()) {
-      <div class="status-card" role="status">
-        <strong>Search is ready.</strong>
-        <span>Submit a query to exercise the real repository API.</span>
-      </div>
+    </nav>
+    } } @else if (!loading() && !error()) {
+    <div class="status-card" role="status">
+      <strong>Search is ready.</strong>
+      <span>Submit a query to exercise the real repository API.</span>
+    </div>
     }
   </section>
 

@@ -76,7 +76,11 @@ export class SearchRouteQueryAdapter {
   toQueryParams(query: SearchQuery): Params {
     const q = query.q?.trim();
     const programs = query.programs
-      ? [...new Set(query.programs.map((value) => value.trim()).filter(Boolean))]
+      ? [
+          ...new Set(
+            query.programs.map((value) => value.trim()).filter(Boolean),
+          ),
+        ]
       : [];
 
     return {
