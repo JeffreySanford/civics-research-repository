@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - codex/mobile-first-census-pr4-search-vertical-slice
-    paths:
-      - .github/workflows/mobile-first-pr4-validate.yml
   workflow_dispatch:
 
 permissions:
