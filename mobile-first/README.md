@@ -34,8 +34,10 @@ This also creates a clear portfolio story:
 - Keep the existing Angular app working.
 - Reuse `RepositorySearchApi`, generated OpenAPI types, and `REPOSITORY_API_BASE_URL` from `repository-api-client`.
 - Do not add a second search backend, duplicate index, or duplicate search-contract library.
-- Use module-based Angular composition for the new app and Observable-first RxJS/NgRx state management.
-- Do not introduce Angular Signals into the new app's search or UI state.
+- Prefer module-based Angular composition for the new app (`standalone=false`).
+- Use NgRx/RxJS for asynchronous search workflows, effects, cancellation, URL synchronization, and shared feature state.
+- Embrace Angular Signals where they simplify local synchronous UI state and local computed presentation state.
+- Do not duplicate the same source of truth between Signals and NgRx.
 - Create new shared UI libraries only after real reuse across the two frontends is demonstrated.
 - Treat 320px reflow, keyboard access, focus management, touch targets, and screen-reader semantics as first-class requirements.
 - Use Storybook for isolated responsive states and Playwright for assembled app behavior.
