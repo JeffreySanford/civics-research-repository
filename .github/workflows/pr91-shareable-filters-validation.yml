@@ -48,7 +48,7 @@ jobs:
       - name: Lint mobile frontend
         run: pnpm nx run census-mobile-frontend:lint
 
-      - name: Test mobile frontend
+      - name: Test mobile frontend after typed filter correction
         run: pnpm nx run census-mobile-frontend:test
 
       - name: Build mobile frontend
