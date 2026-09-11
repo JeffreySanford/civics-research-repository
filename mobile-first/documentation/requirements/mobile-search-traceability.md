@@ -1,0 +1,53 @@
+# Mobile Search Requirements-to-Evidence Traceability
+
+Status: active evidence map
+
+This document connects the current mobile-first Census search requirements to implementation and verification evidence already present in the repository. It is intentionally narrower than a generic compliance checklist: a requirement is marked automated only when a concrete repository test or build currently exercises it.
+
+Manual checks and future work remain visibly separate. A blank cell is not evidence.
+
+## Evidence status
+
+- **Automated** — exercised by a current unit, integration, Storybook, API, or Playwright/axe path.
+- **Manual required** — automation can support the requirement but cannot establish the full user experience by itself.
+- **Planned** — requirement remains useful, but the current PR stack does not yet implement enough behavior to claim it.
+
+## Traceability matrix
+
+| ID | Requirement / acceptance criterion | Implementation surface | Automated evidence | Accessibility / quality mapping | Status |
+| --- | --- | --- | --- | --- | --- |
+| `REQ-MOB-001` | The search journey must work at 320 CSS px without document-level horizontal scrolling. | `apps/census-mobile-frontend`; component CSS | `apps/census-mobile-frontend-e2e/src/search-relevance.spec.ts` checks `scrollWidth <= clientWidth`. | WCAG 1.4.10 Reflow | Automated + manual zoom check |
+| `REQ-MOB-002` | Primary mobile controls must remain operable with touch-sized targets at narrow widths. | Search submit, pagination, summary and match-evidence disclosure styles | Component/Storybook rendering and 320px E2E establish layout presence. | WCAG 2.5.8 Target Size (Minimum), where applicable | Manual required for complete review |
+| `REQ-CONTRACT-001` | The mobile app must reuse the generated repository API contract rather than define a mobile-only search model. | `libs/repository/api-client`; `RepositorySearchApi` | OpenAPI generation/drift check; Angular compilation against generated types | Contract integrity / maintainability | Automated |
+| `REQ-STATE-001` | Asynchronous search-domain state remains NgRx/RxJS-owned; local Signals are limited to synchronous presentation state. | `state/search/*`; local disclosure Signals in summary components | Reducer tests; Angular tests; effects compile against `switchMap` search flow | Architecture boundary / stale-request control | Automated + code review |
+| `REQ-SEARCH-001` | Result ordering must remain search-engine/server-owned; the frontend must not re-sort results to manufacture relevance. | Repository API ordering; `App.globalRank()` renders the ordinal of that returned ordering | Backend search tests plus app tests for rank rendering | Search integrity | Automated |
+| `REQ-SEARCH-002` | Large-result traversal should prefer cursor search and retain offset compatibility only when cursor search is unavailable. | `MobileSearchEffects`; cursor state/reducer | Search reducer/effect behavior plus API cursor tests and mobile pagination tests | Scalability / deterministic navigation | Automated |
+| `REQ-REL-001` | Match strength must come from backend-owned relevance evidence, not frontend score math. | `SearchRelevanceClassifier`; OpenAPI `SearchRelevance`; mobile badge | Repository API relevance tests; badge unit/Storybook tests; 320px E2E | Trustworthy search semantics | Automated |
+| `REQ-REL-002` | Rank and match strength must be presented as different concepts. | Rank label + `SearchRelevanceBadgeComponent` | App unit tests and mobile Playwright assertions verify both independently | Understandability; color not sole signal | Automated + usability observation |
+| `REQ-REL-003` | A blank repository browse must not claim relevance or match strength. | Backend blank-query path; mobile conditional rendering | Backend tests and `keeps an empty repository browse explicitly unscored` E2E | Avoid misleading users | Automated |
+| `REQ-REL-004` | Relevance bands must never be presented as an absolute probability or percentage. | Result-list explanatory copy; relevance model metadata `calibrated: false` | Unit/E2E assertions ensure no `100%` relevance claim and preserve explanatory copy | Plain-language accuracy | Automated + content review |
+| `REQ-EXPLAIN-001` | For a non-empty query, the API may expose bounded engine-provided fields/terms explaining why a result matched. | Solr Unified Highlighter -> OpenAPI `SearchMatchEvidence[]` -> Angular disclosure | `SolrSearchClientCursorTest`; `SearchMatchEvidenceComponent` unit/Storybook; 320px E2E | Explainability without exposing raw debug output | Automated |
+| `REQ-EXPLAIN-002` | Match evidence must not claim to be an exact score-contribution explanation. | Match-evidence disclosure caution text | Unit and Playwright assertions check the caution language | Search transparency / avoiding false precision | Automated + usability observation |
+| `REQ-SUM-001` | Search-summary distributions must use server-provided query-wide facet counts, not counts inferred from the visible page. | `SearchSummaryComponent`; response `type` facet | App/component unit tests; 320px E2E | Data provenance / truthful visualization | Automated |
+| `REQ-SUM-002` | Visual bars are supplementary; equivalent count and percentage text must remain visible. | `SearchSummaryComponent` template | Component/Storybook tests and axe coverage | WCAG 1.4.1 Use of Color; nonvisual equivalence | Automated + forced-colors manual check |
+| `REQ-A11Y-001` | Match-strength meaning must survive without color. | Badge visible labels + forced-colors styles | Badge tests/Storybook + axe at assembled journey | WCAG 1.4.1 Use of Color | Automated + manual forced-colors check |
+| `REQ-A11Y-002` | “Why this matched?” must be keyboard-operable and expose disclosure state using native semantics. | Native `<details>/<summary>` in `SearchMatchEvidenceComponent` | Component render test and 320px Playwright/axe | WCAG 2.1.1 Keyboard; 4.1.2 Name, Role, Value | Automated + manual keyboard/screen-reader check |
+| `REQ-A11Y-003` | Dynamic search states must have understandable loading/error/result context. | App loading/error/results regions and query-context copy | App unit tests; assembled search E2E | WCAG 3.2.2 / 4.1.3 where live-status behavior applies | Automated partially; manual screen-reader check required |
+| `REQ-START-001` | `pnpm start:all` must start both Angular frontends against the same repository API. | `docker-compose.yml`; `tools/scripts/compose-stack.mjs`; `stack.mjs` | PR #87 startup validation checks both services/readiness URLs | Operational repeatability | Automated |
+
+## Known gaps — do not claim yet
+
+The following are useful target requirements but are **not** treated as completed evidence in the current #87–#89 mobile stack:
+
+| Candidate ID | Future requirement | Why it remains planned |
+| --- | --- | --- |
+| `REQ-FILTER-001` | Mobile facet/filter drawer traps focus, closes with Escape, and restores focus to the trigger. | Richer behavior exists in the separate PR84 design line, but it is not yet part of this current stacked mobile branch. |
+| `REQ-URL-001` | A search/filter state can be reconstructed from a shareable URL. | The current simple mobile shell does not yet provide the full route-query adapter/state round trip. |
+| `REQ-USABILITY-001` | Representative users can complete search, ranking interpretation, match-explanation, and summary tasks without facilitator correction. | Requires actual participant observations; no results should be recorded until sessions occur. |
+| `REQ-AT-001` | Core search flow is usable with NVDA/JAWS/VoiceOver. | Axe and semantic DOM are not substitutes for manual assistive-technology testing. |
+
+## Evidence maintenance rule
+
+When a behavior changes, update the requirement row in the same PR that changes the behavior whenever practical. Do not leave a requirement marked automated if its cited test is removed or no longer exercises the acceptance criterion.
+
+Manual evidence should record date, environment, assistive technology/browser version, steps, result, defects, and retest status. The companion manual protocol defines the minimum record.
