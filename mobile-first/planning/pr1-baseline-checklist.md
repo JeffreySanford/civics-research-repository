@@ -15,7 +15,8 @@ Included:
 - architecture decision for a parallel mobile-first Angular app
 - target workspace shape
 - existing API-client reuse boundary
-- module-based, Observable-first Angular direction
+- module-based Angular direction
+- hybrid Signals + RxJS/NgRx state boundary
 - local port plan
 - implementation sequence
 - UX engagement strategy
@@ -57,7 +58,7 @@ User-reported local results are useful readiness evidence but are not represente
 ```text
 This PR documents the planned mobile-first Census/Civics frontend architecture.
 
-It proposes a new Angular app under apps/census-mobile-frontend that runs beside the existing Angular app, uses port 4300 locally, and consumes the existing API through repository-api-client rather than introducing a second backend or duplicate search client. It also defines the first implementation sequence, Observable-first NgRx/RxJS direction, validation strategy, accessibility expectations, and a visualization/engagement plan for infographics and data visualizations.
+It proposes a new Angular app under apps/census-mobile-frontend that runs beside the existing Angular app, uses port 4300 locally, and consumes the existing API through repository-api-client rather than introducing a second backend or duplicate search client. It also defines the first implementation sequence, module-based Angular direction, a hybrid state model using Signals for appropriate local synchronous UI state and RxJS/NgRx for asynchronous/shared search state, validation strategy, accessibility expectations, and a visualization/engagement plan for infographics and data visualizations.
 
 No runtime app or backend code changes are included.
 ```
@@ -68,7 +69,10 @@ No runtime app or backend code changes are included.
 - Documentation names the app and development ports.
 - Documentation reuses `repository-api-client` as the existing typed data boundary.
 - Documentation avoids duplicate search contracts and client services.
-- Documentation freezes module-based Angular composition and Observable-first RxJS/NgRx state for the new app.
+- Documentation freezes module-based Angular composition for the new app.
+- Documentation defines Signals as appropriate for local synchronous UI state and local computed state.
+- Documentation keeps asynchronous/shared search state, effects, cancellation, and URL-linked state in RxJS/NgRx.
+- Documentation avoids duplicate ownership of the same source of truth between Signals and NgRx.
 - Documentation preserves the existing backend as the single source of search truth.
 - Documentation describes where infographics and visualizations belong and their data-integrity limits.
 - Documentation includes a phased implementation backlog.
@@ -79,6 +83,7 @@ No runtime app or backend code changes are included.
 
 - A second frontend increases ongoing maintenance and E2E surface area.
 - The existing app and new app will intentionally use different Angular bootstrap styles unless later convergence is justified.
+- The hybrid state model requires clear ownership boundaries so Signals and NgRx do not mirror the same state independently.
 - Visualization usefulness depends on server-provided facet/aggregate data; a paged response must not be misrepresented as a corpus-wide distribution.
 - Shared UI libraries should not be created prematurely; reuse should be demonstrated first.
 - Storybook and browser evidence for the new app will add CI cost and should be introduced incrementally.
