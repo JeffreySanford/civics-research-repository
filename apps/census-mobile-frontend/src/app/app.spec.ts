@@ -55,7 +55,9 @@ describe('App', () => {
     const store = TestBed.inject(Store);
     const fixture = TestBed.createComponent(App);
 
-    store.dispatch(MobileSearchActions.searchLoaded({ response: searchResponse }));
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
