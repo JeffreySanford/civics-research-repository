@@ -37,6 +37,7 @@ jobs:
           --standalone=false
           --port=4300
           --e2eTestRunner=none
+          --unitTestRunner=vitest-angular
           --zoneless=false
 
       - name: Verify module-based bootstrap
