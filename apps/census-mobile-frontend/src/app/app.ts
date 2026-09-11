@@ -10,27 +10,17 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import type { SearchQuery } from 'repository-api-client';
+import type {
+  MobileActiveFilter,
+  MobileFilterField,
+  MobileFilterSelection,
+} from './components/mobile-search-filters/mobile-search-filters.model';
 import { MobileSearchActions } from './state/search/search.actions';
 import {
   MOBILE_SEARCH_PAGE_SIZE,
   SearchRouteQueryAdapter,
 } from './state/search/search-route-query.adapter';
 import { selectMobileSearchState } from './state/search/search.selectors';
-
-type FilterField =
-  | 'program'
-  | 'publisher'
-  | 'sourceSystem'
-  | 'geography'
-  | 'type'
-  | 'vintageYear';
-
-interface ActiveFilter {
-  readonly key: string;
-  readonly field: FilterField;
-  readonly value: string;
-  readonly label: string;
-}
 
 @Component({
   selector: 'app-root',
@@ -54,9 +44,9 @@ export class App implements OnInit {
     () => this.searchState().query.q?.trim() ?? '',
   );
   readonly facets = computed(() => this.response()?.facets ?? []);
-  readonly activeFilters = computed<readonly ActiveFilter[]>(() => {
+  readonly activeFilters = computed<readonly MobileActiveFilter[]>(() => {
     const query = this.searchState().query;
-    const filters: ActiveFilter[] = [];
+    const filters: MobileActiveFilter[] = [];
 
     for (const program of query.programs ?? []) {
       filters.push({
@@ -155,37 +145,54 @@ export class App implements OnInit {
     queueMicrotask(() => this.filterTrigger?.nativeElement.focus());
   }
 
-  isSupportedFacet(field: string): field is FilterField {
-    return [
-      'program',
-      'publisher',
-      'sourceSystem',
-      'geography',
-      'type',
-      'vintageYear',
-    ].includes(field);
+  selectFilter(selection: MobileFilterSelection): void {
+    this.selectFacet(selection.field, selection.value);
   }
 
-  isFacetSelected(field: FilterField, value: string): boolean {
-    const query = this.searchState().query;
+  clearFilters(): void {
+    const q = this.searchState().query.q?.trim();
+    this.dispatchSearch({
+      page: 0,
+      pageSize: MOBILE_SEARCH_PAGE_SIZE,
+      ...(q ? { q } : {}),
+    });
+  }
 
-    switch (field) {
-      case 'program':
-        return query.programs?.includes(value) ?? false;
-      case 'publisher':
-        return query.publisher === value;
-      case 'sourceSystem':
-        return query.sourceSystem === value;
-      case 'geography':
-        return query.geography === value;
-      case 'type':
-        return query.contentType === value;
-      case 'vintageYear':
-        return String(query.vintageYear ?? '') === value;
+  removeFilter(filter: MobileActiveFilter): void {
+    this.selectFacet(filter.field, filter.value);
+  }
+
+  previousPage(): void {
+    const page = this.response()?.page ?? 0;
+    if (page > 0) {
+      this.store.dispatch(
+        MobileSearchActions.pageRequested({ page: page - 1 }),
+      );
     }
   }
 
-  selectFacet(field: FilterField, value: string): void {
+  nextPage(): void {
+    const page = this.response()?.page ?? 0;
+    if (this.canNext()) {
+      this.store.dispatch(
+        MobileSearchActions.pageRequested({ page: page + 1 }),
+      );
+    }
+  }
+
+  globalRank(index: number): number {
+    const response = this.response();
+    if (!response) {
+      return index + 1;
+    }
+    return response.page * response.pageSize + index + 1;
+  }
+
+  isTopRanked(index: number): boolean {
+    return this.globalRank(index) <= 3;
+  }
+
+  private selectFacet(field: MobileFilterField, value: string): void {
     const current = this.searchState().query;
     let query: SearchQuery = {
       ...current,
@@ -257,49 +264,6 @@ export class App implements OnInit {
     this.dispatchSearch(query);
   }
 
-  clearFilters(): void {
-    const q = this.searchState().query.q?.trim();
-    this.dispatchSearch({
-      page: 0,
-      pageSize: MOBILE_SEARCH_PAGE_SIZE,
-      ...(q ? { q } : {}),
-    });
-  }
-
-  removeFilter(filter: ActiveFilter): void {
-    this.selectFacet(filter.field, filter.value);
-  }
-
-  previousPage(): void {
-    const page = this.response()?.page ?? 0;
-    if (page > 0) {
-      this.store.dispatch(
-        MobileSearchActions.pageRequested({ page: page - 1 }),
-      );
-    }
-  }
-
-  nextPage(): void {
-    const page = this.response()?.page ?? 0;
-    if (this.canNext()) {
-      this.store.dispatch(
-        MobileSearchActions.pageRequested({ page: page + 1 }),
-      );
-    }
-  }
-
-  globalRank(index: number): number {
-    const response = this.response();
-    if (!response) {
-      return index + 1;
-    }
-    return response.page * response.pageSize + index + 1;
-  }
-
-  isTopRanked(index: number): boolean {
-    return this.globalRank(index) <= 3;
-  }
-
   private dispatchSearch(query: SearchQuery): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -327,8 +291,8 @@ export class App implements OnInit {
   }
 
   private addFilter(
-    filters: ActiveFilter[],
-    field: FilterField,
+    filters: MobileActiveFilter[],
+    field: MobileFilterField,
     value: string | undefined,
   ): void {
     if (!value) {
@@ -344,8 +308,28 @@ export class App implements OnInit {
   }
 
   private readableValue(value: string): string {
-    return value
-      .replaceAll('_', ' ')
-      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    const knownLabels: Readonly<Record<string, string>> = {
+      CENSUS: 'Census',
+      USGS: 'USGS',
+      DATA_GOV: 'Data.gov',
+      DOE_OSTI: 'DOE OSTI',
+      NASA_CMR: 'NASA CMR',
+      PUBMED: 'PubMed',
+      OPENALEX: 'OpenAlex',
+      OTHER: 'Other',
+      DATASET: 'Dataset',
+      PUBLICATION: 'Publication',
+      CODE: 'Code',
+      METHODOLOGY: 'Methodology',
+      SUPPORTING_MATERIAL: 'Supporting material',
+      PROJECT: 'Project',
+    };
+
+    return (
+      knownLabels[value] ??
+      value
+        .replaceAll('_', ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    );
   }
 }
