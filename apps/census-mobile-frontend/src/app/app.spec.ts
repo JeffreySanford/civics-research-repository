@@ -126,11 +126,10 @@ describe('App', () => {
     expect(compiled.querySelector('.search-form__hint')).not.toBeNull();
   });
 
-  it('hydrates a shareable query and supported filter from the URL', () => {
-    routeParamMap = convertToParamMap({
-      q: 'North Dakota migration',
-      type: 'DATASET',
-    });
+  it('hydrates a shareable query and supported filter from the URL', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/?q=North%20Dakota%20migration&type=DATASET');
+
     const store = TestBed.inject(Store);
     const dispatch = vi.spyOn(store, 'dispatch');
     const fixture = TestBed.createComponent(App);
