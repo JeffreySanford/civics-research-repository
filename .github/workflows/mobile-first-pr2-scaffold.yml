@@ -40,6 +40,27 @@ jobs:
           --unitTestRunner=vitest-angular
           --zoneless=false
 
+      - name: Add app-scoped module lint policy
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/census-mobile-frontend/eslint.config.mjs';
+          let source = fs.readFileSync(path, 'utf8');
+          const marker = '\n];';
+          const index = source.lastIndexOf(marker);
+          if (index === -1) throw new Error('Could not locate eslint config array terminator');
+          const override = `,
+  {
+    files: ['**/*.ts'],
+    rules: {
+      '@angular-eslint/prefer-standalone': 'off',
+    },
+  }`;
+          source = source.slice(0, index) + override + source.slice(index);
+          fs.writeFileSync(path, source);
+          NODE
+
       - name: Verify module-based bootstrap
         shell: bash
         run: |
