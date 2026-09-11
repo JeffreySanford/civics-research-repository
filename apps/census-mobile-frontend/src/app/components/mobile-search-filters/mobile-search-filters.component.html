@@ -1,0 +1,76 @@
+<div class="filter-layer">
+  <section
+    id="mobile-filter-drawer"
+    class="filter-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="filter-drawer-title"
+    aria-describedby="filter-drawer-help"
+    cdkTrapFocus
+    [cdkTrapFocusAutoCapture]="true"
+    (keydown.escape)="close()"
+  >
+    <div class="filter-drawer__header">
+      <div>
+        <p class="filter-drawer__eyebrow">Refine</p>
+        <h2 id="filter-drawer-title">Filter results</h2>
+      </div>
+      <button
+        type="button"
+        class="filter-drawer__close"
+        aria-label="Close filters"
+        (click)="close()"
+      >
+        ×
+      </button>
+    </div>
+
+    <p id="filter-drawer-help" class="filter-drawer__help">
+      Filters update the repository search immediately and are reflected in the
+      shareable URL.
+    </p>
+
+    @if (facets.length > 0) {
+      <div class="facet-list">
+        @for (facet of facets; track facet.field) {
+          @if (isSupportedFacet(facet.field)) {
+            <section
+              class="facet-group"
+              [attr.aria-labelledby]="'mobile-facet-' + facet.field"
+            >
+              <h3 [id]="'mobile-facet-' + facet.field">{{ facet.label }}</h3>
+              <div class="facet-values">
+                @for (value of facet.values; track value.value) {
+                  <button
+                    type="button"
+                    class="facet-option"
+                    [class.facet-option--selected]="
+                      isFacetSelected(facet.field, value.value)
+                    "
+                    [attr.aria-pressed]="
+                      isFacetSelected(facet.field, value.value)
+                    "
+                    (click)="select(facet.field, value.value)"
+                  >
+                    <span>{{ value.label }}</span>
+                    <span>{{ value.count }}</span>
+                  </button>
+                }
+              </div>
+            </section>
+          }
+        }
+      </div>
+      <button
+        type="button"
+        class="clear-filters"
+        [disabled]="activeFilters.length === 0"
+        (click)="clear()"
+      >
+        Clear all filters
+      </button>
+    } @else {
+      <p>No filters are available for this result set.</p>
+    }
+  </section>
+</div>

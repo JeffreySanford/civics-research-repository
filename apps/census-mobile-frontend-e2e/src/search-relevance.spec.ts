@@ -48,6 +48,7 @@ async function mockCursorSearch(page: Page): Promise<void> {
   await page.route('**/api/search/cursor*', async (route) => {
     const requestUrl = new URL(route.request().url());
     const query = requestUrl.searchParams.get('q')?.trim() ?? '';
+    const contentType = requestUrl.searchParams.get('contentType');
 
     if (!query) {
       await route.fulfill({
@@ -83,6 +84,27 @@ async function mockCursorSearch(page: Page): Promise<void> {
       return;
     }
 
+    const allResults = [
+      result(
+        'strong-match',
+        'Migration Flows for North Dakota',
+        10,
+        1,
+        'STRONG',
+      ),
+      result(
+        'weak-match',
+        'North Dakota Geographic Reference File',
+        3,
+        0.3,
+        'WEAK',
+        'PUBLICATION',
+      ),
+    ];
+    const results = contentType
+      ? allResults.filter((item) => item.contentType === contentType)
+      : allResults;
+
     await route.fulfill({
       contentType: 'application/json',
       json: {
@@ -91,24 +113,8 @@ async function mockCursorSearch(page: Page): Promise<void> {
           query,
           page: 0,
           pageSize: 10,
-          totalResults: 2,
-          results: [
-            result(
-              'strong-match',
-              'Migration Flows for North Dakota',
-              10,
-              1,
-              'STRONG',
-            ),
-            result(
-              'weak-match',
-              'North Dakota Geographic Reference File',
-              3,
-              0.3,
-              'WEAK',
-              'PUBLICATION',
-            ),
-          ],
+          totalResults: results.length,
+          results,
           facets: [
             {
               field: 'type',
@@ -118,13 +124,13 @@ async function mockCursorSearch(page: Page): Promise<void> {
                   value: 'DATASET',
                   label: 'Dataset',
                   count: 1,
-                  selected: false,
+                  selected: contentType === 'DATASET',
                 },
                 {
                   value: 'PUBLICATION',
                   label: 'Publication',
                   count: 1,
-                  selected: false,
+                  selected: contentType === 'PUBLICATION',
                 },
               ],
             },
@@ -141,7 +147,7 @@ async function mockCursorSearch(page: Page): Promise<void> {
   });
 }
 
-test.describe('mobile relevance evidence', () => {
+test.describe('mobile relevance and filter evidence', () => {
   test.beforeEach(async ({ page }) => {
     await mockCursorSearch(page);
     await page.goto('/');
@@ -193,6 +199,72 @@ test.describe('mobile relevance evidence', () => {
       .withTags(axeTags)
       .analyze();
     expect(accessibility.violations).toEqual([]);
+  });
+
+  test('hydrates a shareable URL into the same search and active filter @wcag', async ({
+    page,
+  }) => {
+    await page.goto('/?q=North%20Dakota%20migration&type=DATASET');
+
+    await expect(page.locator('#research-query')).toHaveValue(
+      'North Dakota migration',
+    );
+    await expect(
+      page.getByText('Results for “North Dakota migration”'),
+    ).toBeVisible();
+    await expect(page.locator('.active-filters')).toContainText('Dataset');
+    await expect(page.getByText('1 matching records')).toBeVisible();
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get('q')).toBe('North Dakota migration');
+    expect(url.searchParams.get('type')).toBe('DATASET');
+
+    const accessibility = await new AxeBuilder({ page })
+      .withTags(axeTags)
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+  });
+
+  test('updates filters immediately, preserves them in the URL, and restores focus @wcag', async ({
+    page,
+  }) => {
+    await page.locator('#research-query').fill('North Dakota migration');
+    await page.getByRole('button', { name: 'Search' }).click();
+    await expect(page.getByText('2 matching records')).toBeVisible();
+
+    const filterTrigger = page.getByRole('button', { name: 'Filters' });
+    await filterTrigger.click();
+
+    const dialog = page.getByRole('dialog', { name: 'Filter results' });
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText('reflected in the shareable URL'),
+    ).toBeVisible();
+
+    const openAccessibility = await new AxeBuilder({ page })
+      .withTags(axeTags)
+      .analyze();
+    expect(openAccessibility.violations).toEqual([]);
+
+    await dialog.getByRole('button', { name: /Dataset/ }).click();
+    await expect(page.getByText('1 matching records')).toBeVisible();
+    await expect(page.locator('.active-filters')).toContainText('Dataset');
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get('type'))
+      .toBe('DATASET');
+    expect(new URL(page.url()).searchParams.get('q')).toBe(
+      'North Dakota migration',
+    );
+
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(filterTrigger).toBeFocused();
   });
 
   test('keeps an empty repository browse explicitly unscored @wcag', async ({

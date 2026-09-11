@@ -1,3 +1,4 @@
+import { A11yModule } from '@angular/cdk/a11y';
 import { HttpClientModule } from '@angular/common/http';
 import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -6,6 +7,7 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { App } from './app';
 import { appRoutes } from './app.routes';
+import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
 import { SearchMatchEvidenceComponent } from './components/search-match-evidence/search-match-evidence.component';
 import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
 import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
@@ -15,6 +17,7 @@ import { mobileSearchReducer } from './state/search/search.reducer';
 @NgModule({
   declarations: [
     App,
+    MobileSearchFiltersComponent,
     SearchMatchEvidenceComponent,
     SearchRelevanceBadgeComponent,
     SearchSummaryComponent,
@@ -22,6 +25,7 @@ import { mobileSearchReducer } from './state/search/search.reducer';
   imports: [
     BrowserModule,
     HttpClientModule,
+    A11yModule,
     RouterModule.forRoot(appRoutes),
     StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
     EffectsModule.forRoot([MobileSearchEffects]),

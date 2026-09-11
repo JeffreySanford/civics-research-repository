@@ -1,8 +1,17 @@
+import { A11yModule } from '@angular/cdk/a11y';
 import { TestBed } from '@angular/core/testing';
-import { RouterModule } from '@angular/router';
+import {
+  ActivatedRoute,
+  convertToParamMap,
+  Router,
+  RouterModule,
+} from '@angular/router';
 import { Store, StoreModule } from '@ngrx/store';
 import type { SearchResponse } from 'repository-api-client';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
 import { App } from './app';
+import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
 import { SearchMatchEvidenceComponent } from './components/search-match-evidence/search-match-evidence.component';
 import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
 import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
@@ -57,20 +66,45 @@ const searchResponse: SearchResponse = {
   },
 };
 
+let routeParamMap = convertToParamMap({});
+const activatedRouteStub = {
+  get queryParamMap() {
+    return of(routeParamMap);
+  },
+  snapshot: {
+    get queryParamMap() {
+      return routeParamMap;
+    },
+  },
+};
+
 describe('App', () => {
   beforeEach(async () => {
+    routeParamMap = convertToParamMap({});
     await TestBed.configureTestingModule({
       imports: [
+        A11yModule,
         RouterModule.forRoot([]),
         StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
       ],
       declarations: [
         App,
+        MobileSearchFiltersComponent,
         SearchMatchEvidenceComponent,
         SearchRelevanceBadgeComponent,
         SearchSummaryComponent,
       ],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: activatedRouteStub,
+        },
+      ],
     }).compileComponents();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('renders the mobile-first Census search shell', () => {
@@ -90,6 +124,32 @@ describe('App', () => {
       'Search is ready.',
     );
     expect(compiled.querySelector('.search-form__hint')).not.toBeNull();
+  });
+
+  it('hydrates a shareable query and supported filter from the URL', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/?q=North%20Dakota%20migration&type=DATASET');
+
+    const store = TestBed.inject(Store);
+    const dispatch = vi.spyOn(store, 'dispatch');
+    const fixture = TestBed.createComponent(App);
+
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector(
+      '#research-query',
+    ) as HTMLInputElement;
+    expect(input.value).toBe('North Dakota migration');
+    expect(dispatch).toHaveBeenCalledWith(
+      MobileSearchActions.searchSubmitted({
+        query: {
+          q: 'North Dakota migration',
+          contentType: 'DATASET',
+          page: 0,
+          pageSize: 10,
+        },
+      }),
+    );
   });
 
   it('shows the query that produced the current ranked result set', () => {
@@ -179,6 +239,91 @@ describe('App', () => {
     expect(compiled.querySelector('.search-form__hint')).toBeNull();
     expect(compiled.querySelector('.status-card')?.textContent).toContain(
       `Searching for “${query}”`,
+    );
+  });
+
+  it('opens filters as a modal dialog and returns focus to the trigger', async () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    store.dispatch(
+      MobileSearchActions.searchSubmitted({
+        query: { q: 'North Dakota migration', page: 0, pageSize: 10 },
+      }),
+    );
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const trigger = compiled.querySelector(
+      '.filter-trigger',
+    ) as HTMLButtonElement;
+    trigger.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    const close = compiled.querySelector(
+      '.filter-drawer__close',
+    ) as HTMLButtonElement;
+    close.click();
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(compiled.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('writes an immediate facet selection into the shareable URL and active chips', () => {
+    const store = TestBed.inject(Store);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    store.dispatch(
+      MobileSearchActions.searchSubmitted({
+        query: { q: 'North Dakota migration', page: 0, pageSize: 10 },
+      }),
+    );
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    (
+      fixture.nativeElement.querySelector(
+        '.filter-trigger',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const datasetButton = Array.from(
+      compiled.querySelectorAll<HTMLButtonElement>('.facet-option'),
+    ).find((element) => element.textContent?.includes('Dataset'));
+    datasetButton?.click();
+    fixture.detectChanges();
+
+    expect(navigate).toHaveBeenCalledWith([], {
+      relativeTo: activatedRouteStub,
+      replaceUrl: true,
+      queryParams: {
+        q: 'North Dakota migration',
+        program: null,
+        publisher: null,
+        sourceSystem: null,
+        geography: null,
+        type: 'DATASET',
+        vintageYear: null,
+      },
+    });
+    expect(compiled.querySelector('.active-filters')?.textContent).toContain(
+      'Dataset',
     );
   });
 
