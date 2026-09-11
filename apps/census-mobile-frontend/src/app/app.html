@@ -13,58 +13,93 @@
 <main id="main-content" class="page-shell" tabindex="-1">
   <section class="hero" aria-labelledby="hero-title">
     <p class="hero__eyebrow">Mobile-first discovery</p>
-    <h1 id="hero-title">
-      Find Census research without fighting the interface.
-    </h1>
+    <h1 id="hero-title">Find Census research without fighting the interface.</h1>
     <p class="hero__summary">
-      A focused search experience for publications, data, code, and research
-      metadata — designed from 320px upward and backed by the repository API
-      already used by the desktop discovery app.
+      Search publications, data, code, and research metadata through the same
+      repository API used by the desktop discovery experience.
     </p>
-
-    <div class="status-card" role="status" aria-live="polite">
-      <strong>Frontend scaffold ready.</strong>
-      <span
-        >API-backed search, results, and filters are the next implementation
-        slice.</span
-      >
-    </div>
   </section>
 
-  <section class="journey" aria-labelledby="journey-title">
+  <section class="search-panel" aria-labelledby="search-title">
     <div class="section-heading">
-      <p class="section-heading__eyebrow">First journey</p>
-      <h2 id="journey-title">Search. Refine. Understand.</h2>
+      <p class="section-heading__eyebrow">Search the repository</p>
+      <h2 id="search-title">Start with one question.</h2>
     </div>
 
-    <ol class="journey__steps">
-      <li>
-        <span class="step-number" aria-hidden="true">1</span>
+    <form class="search-form" role="search" (submit)="submitSearch($event)">
+      <label for="research-query">Keywords</label>
+      <div class="search-form__controls">
+        <input
+          id="research-query"
+          type="search"
+          [value]="queryText()"
+          (input)="updateQuery($event)"
+          placeholder="Try population, housing, migration..."
+          autocomplete="off"
+        />
+        <button type="submit" [disabled]="loading()">
+          {{ loading() ? 'Searching…' : 'Search' }}
+        </button>
+      </div>
+      <p class="search-form__hint">
+        Empty search returns the repository's current discovery set.
+      </p>
+    </form>
+  </section>
+
+  <section class="results" aria-labelledby="results-title" aria-live="polite">
+    @if (loading()) {
+      <div class="status-card" role="status">
+        <strong>Searching repository…</strong>
+        <span>Loading the first mobile result page.</span>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="status-card status-card--error" role="alert">
+        <strong>Search could not be completed.</strong>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    @if (response(); as searchResponse) {
+      <div class="results__heading">
         <div>
-          <h3>Search quickly</h3>
-          <p>
-            Start with one clear query field and useful repository language.
-          </p>
+          <p class="section-heading__eyebrow">Results</p>
+          <h2 id="results-title">{{ resultCount() }} matching records</h2>
         </div>
-      </li>
-      <li>
-        <span class="step-number" aria-hidden="true">2</span>
-        <div>
-          <h3>Refine deliberately</h3>
-          <p>Move secondary facets into an accessible mobile filter drawer.</p>
+        <span class="results__source">Source: {{ searchResponse.resultSource }}</span>
+      </div>
+
+      @if (searchResponse.results.length === 0) {
+        <div class="status-card">
+          <strong>No results found.</strong>
+          <span>Try broader keywords or submit an empty search.</span>
         </div>
-      </li>
-      <li>
-        <span class="step-number" aria-hidden="true">3</span>
-        <div>
-          <h3>Understand the set</h3>
-          <p>
-            Show trustworthy result counts and compact summaries before optional
-            visualization.
-          </p>
-        </div>
-      </li>
-    </ol>
+      } @else {
+        <ol class="result-list">
+          @for (result of searchResponse.results; track result.id) {
+            <li class="result-card">
+              <div class="result-card__meta">
+                <span>{{ result.contentType }}</span>
+                @if (result.publisher) {
+                  <span>{{ result.publisher }}</span>
+                }
+              </div>
+              <h3>{{ result.title }}</h3>
+              @if (result.geography) {
+                <p class="result-card__detail">Geography: {{ result.geography }}</p>
+              }
+            </li>
+          }
+        </ol>
+      }
+    } @else if (!loading() && !error()) {
+      <div class="status-card" role="status">
+        <strong>Search is ready.</strong>
+        <span>Submit a query to exercise the real repository API.</span>
+      </div>
+    }
   </section>
 
   <router-outlet></router-outlet>
@@ -73,6 +108,6 @@
 <footer class="site-footer">
   <div class="site-footer__inner">
     <span>Mobile-first Census research prototype</span>
-    <span>Angular + repository-api-client</span>
+    <span>Angular + Signals + NgRx + repository-api-client</span>
   </div>
 </footer>
