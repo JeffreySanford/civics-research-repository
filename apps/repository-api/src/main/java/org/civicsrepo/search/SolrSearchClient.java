@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,8 @@ import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.generated.dto.SearchMatchEvidence;
+import org.civicsrepo.generated.dto.SearchMatchField;
 import org.civicsrepo.generated.dto.SearchResponse;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.generated.dto.SourceSystem;
@@ -37,6 +40,9 @@ public class SolrSearchClient implements DiscoveryIndex {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final String PHRASE_SYNTAX_CHARACTERS = "\\\"";
     private static final String CURSOR_SORT = "score desc,id asc";
+    private static final String HIGHLIGHT_PRE = "[[[";
+    private static final String HIGHLIGHT_POST = "]]]";
+    private static final int MAX_MATCH_TERMS_PER_FIELD = 5;
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -367,8 +373,9 @@ public class SolrSearchClient implements DiscoveryIndex {
             boolean relevanceEnabled = !criteria.query().isBlank();
             Double maxScore = relevanceEnabled ? decimal(response, "maxScore") : null;
 
+            JsonNode highlighting = root.path("highlighting");
             for (JsonNode document : response.path("docs")) {
-                results.add(withRelevance(new SearchResult(
+                SearchResult result = withRelevance(new SearchResult(
                                 text(document, "id"),
                                 text(document, "title_s"),
                                 ResearchObjectType.fromValue(text(document, "contentType_s")),
@@ -381,7 +388,9 @@ public class SolrSearchClient implements DiscoveryIndex {
                         .programName(text(document, "programName_s"))
                         .geography(text(document, "geography_s"))
                         .vintageYear(integer(document, "vintageYear_i"))
-                        .accessLevel(accessLevel(document)), document, maxScore, relevanceEnabled));
+                        .accessLevel(accessLevel(document)), document, maxScore, relevanceEnabled);
+                results.add(withMatchEvidence(
+                        result, highlighting.path(text(document, "id")), relevanceEnabled));
             }
 
             SearchResponse searchResponse = new SearchResponse(
@@ -451,6 +460,69 @@ public class SolrSearchClient implements DiscoveryIndex {
 
         var relevance = SearchRelevanceClassifier.classify(decimal(document, "score"), maxScore);
         return relevance == null ? result : result.relevance(relevance);
+    }
+
+    private SearchResult withMatchEvidence(
+            SearchResult result, JsonNode highlightedDocument, boolean relevanceEnabled) {
+        if (!relevanceEnabled || !highlightedDocument.isObject()) {
+            return result;
+        }
+
+        List<SearchMatchEvidence> evidence = new ArrayList<>();
+        addMatchEvidence(evidence, highlightedDocument, "title_txt", SearchMatchField.TITLE, "Title");
+        addMatchEvidence(
+                evidence, highlightedDocument, "geography_txt", SearchMatchField.GEOGRAPHY, "Geography");
+        addMatchEvidence(evidence, highlightedDocument, "subjects_txt", SearchMatchField.SUBJECTS, "Subjects");
+        addMatchEvidence(evidence, highlightedDocument, "programName_s", SearchMatchField.PROGRAM, "Program");
+        addMatchEvidence(evidence, highlightedDocument, "authors_txt", SearchMatchField.AUTHORS, "Authors");
+        addMatchEvidence(evidence, highlightedDocument, "summary_txt", SearchMatchField.SUMMARY, "Summary");
+        addMatchEvidence(
+                evidence, highlightedDocument, "citation_txt", SearchMatchField.CITATION, "Citation");
+        addMatchEvidence(
+                evidence, highlightedDocument, "publisher_txt", SearchMatchField.PUBLISHER, "Publisher");
+
+        return evidence.isEmpty() ? result : result.matchEvidence(evidence);
+    }
+
+    private void addMatchEvidence(
+            List<SearchMatchEvidence> evidence,
+            JsonNode highlightedDocument,
+            String solrField,
+            SearchMatchField field,
+            String label) {
+        LinkedHashSet<String> terms = new LinkedHashSet<>();
+        JsonNode snippets = highlightedDocument.path(solrField);
+        if (!snippets.isArray()) {
+            return;
+        }
+
+        for (JsonNode snippetNode : snippets) {
+            String snippet = snippetNode.asText("");
+            int offset = 0;
+            while (offset < snippet.length() && terms.size() < MAX_MATCH_TERMS_PER_FIELD) {
+                int start = snippet.indexOf(HIGHLIGHT_PRE, offset);
+                if (start < 0) {
+                    break;
+                }
+                int valueStart = start + HIGHLIGHT_PRE.length();
+                int end = snippet.indexOf(HIGHLIGHT_POST, valueStart);
+                if (end < 0) {
+                    break;
+                }
+                String term = snippet.substring(valueStart, end).replaceAll("\\s+", " ").trim();
+                if (!term.isBlank() && term.length() <= 120) {
+                    terms.add(term);
+                }
+                offset = end + HIGHLIGHT_POST.length();
+            }
+            if (terms.size() >= MAX_MATCH_TERMS_PER_FIELD) {
+                break;
+            }
+        }
+
+        if (!terms.isEmpty()) {
+            evidence.add(new SearchMatchEvidence(field, label, List.copyOf(terms)));
+        }
     }
 
     private Double decimal(JsonNode parent, String field) {
@@ -534,6 +606,15 @@ public class SolrSearchClient implements DiscoveryIndex {
         params.add("q=" + encode(criteria.query().isBlank() ? "*:*" : criteria.query()));
         if (!criteria.query().isBlank()) {
             params.add("fl=" + encode("*,score"));
+            params.add("hl=true");
+            params.add("hl.method=unified");
+            params.add("hl.fl="
+                    + encode("title_txt,geography_txt,subjects_txt,programName_s,authors_txt,"
+                            + "summary_txt,citation_txt,publisher_txt"));
+            params.add("hl.tag.pre=" + encode(HIGHLIGHT_PRE));
+            params.add("hl.tag.post=" + encode(HIGHLIGHT_POST));
+            params.add("hl.snippets=3");
+            params.add("hl.fragsize=160");
         }
         if (cursorMark == null) {
             params.add("start=" + encode(Integer.toString(criteria.page() * criteria.pageSize())));

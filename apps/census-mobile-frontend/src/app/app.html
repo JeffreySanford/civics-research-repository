@@ -150,6 +150,10 @@
         } @if (result.geography) {
         <p class="result-card__detail">Geography: {{ result.geography }}</p>
         }
+
+        <app-search-match-evidence
+          [evidence]="result.matchEvidence"
+        ></app-search-match-evidence>
       </li>
       }
     </ol>
