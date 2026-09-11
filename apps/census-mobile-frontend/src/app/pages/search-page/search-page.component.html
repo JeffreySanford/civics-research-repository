@@ -1,0 +1,215 @@
+<section class="search-intro" aria-labelledby="search-title">
+  <p class="eyebrow">Mobile-first discovery</p>
+  <h1 id="search-title">Find Census research.</h1>
+  <p class="lede">
+    Search publications, data, code, and research metadata through the same repository API as the
+    full discovery workspace.
+  </p>
+
+  <form
+    class="search-form"
+    role="search"
+    aria-label="Census research search"
+    (submit)="$event.preventDefault(); submitSearch()"
+  >
+    <label for="mobile-repository-search">Search terms</label>
+    <div class="search-row">
+      <input
+        id="mobile-repository-search"
+        type="search"
+        autocomplete="off"
+        [formControl]="searchControl"
+        placeholder="Try housing, North Dakota, ACS..."
+      />
+      <button class="primary-button" type="submit" [disabled]="loading()">Search</button>
+    </div>
+  </form>
+
+  <div class="result-tools">
+    <button
+      #filterTrigger
+      class="filter-trigger"
+      type="button"
+      aria-controls="mobile-filter-drawer"
+      [attr.aria-expanded]="filtersOpen()"
+      (click)="openFilters()"
+    >
+      Filters
+      @if (activeFilters().length > 0) {
+        <span class="filter-count" aria-label="active filters">{{ activeFilters().length }}</span>
+      }
+    </button>
+
+    @if (response()) {
+      <span class="result-count" aria-live="polite">{{ totalResults() }} results</span>
+    } @else if (loading()) {
+      <span class="result-count" role="status">Loading results</span>
+    }
+  </div>
+
+  @if (activeFilters().length > 0) {
+    <div class="active-filters" aria-label="Active filters">
+      @for (filter of activeFilters(); track filter.key) {
+        <button type="button" class="filter-chip" (click)="removeFilter(filter)">
+          <span>{{ filter.label }}</span>
+          <span aria-hidden="true">×</span>
+          <span class="visually-hidden">Remove {{ filter.label }} filter</span>
+        </button>
+      }
+    </div>
+  }
+</section>
+
+@if (filtersOpen()) {
+  <div class="filter-layer">
+    <section
+      id="mobile-filter-drawer"
+      class="filter-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="filter-drawer-title"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      (keydown.escape)="closeFilters()"
+    >
+      <div class="filter-drawer__header">
+        <div>
+          <p class="eyebrow">Refine</p>
+          <h2 id="filter-drawer-title">Filter results</h2>
+        </div>
+        <button type="button" class="icon-button" aria-label="Close filters" (click)="closeFilters()">
+          ×
+        </button>
+      </div>
+
+      @if (facets().length > 0) {
+        <div class="facet-list">
+          @for (facet of facets(); track facet.field) {
+            @if (isSupportedFacet(facet.field)) {
+              <section class="facet-group" [attr.aria-labelledby]="'mobile-facet-' + facet.field">
+                <h3 [id]="'mobile-facet-' + facet.field">{{ facet.label }}</h3>
+                <div class="facet-values">
+                  @for (value of facet.values; track value.value) {
+                    <button
+                      type="button"
+                      class="facet-option"
+                      [class.facet-option--selected]="isFacetSelected(facet.field, value.value)"
+                      [attr.aria-pressed]="isFacetSelected(facet.field, value.value)"
+                      (click)="selectFacet(facet.field, value.value)"
+                    >
+                      <span>{{ value.label }}</span>
+                      <span>{{ value.count }}</span>
+                    </button>
+                  }
+                </div>
+              </section>
+            }
+          }
+        </div>
+        <button type="button" class="secondary-button full-width" (click)="clearFilters()">
+          Clear filters
+        </button>
+      } @else if (loading()) {
+        <p role="status">Loading filters…</p>
+      } @else {
+        <p>No filters are available for this result set.</p>
+      }
+    </section>
+  </div>
+}
+
+@if (error(); as errorMessage) {
+  <p class="message message--error" role="alert">{{ errorMessage }}</p>
+}
+
+@if (resultSource() === 'FIXTURE') {
+  <p class="message" role="status">
+    <strong>Placeholder data.</strong> The repository API returned generated fixture records rather
+    than repository-backed content.
+  </p>
+}
+
+<section class="results" aria-labelledby="results-heading">
+  <div class="results__header">
+    <div>
+      <p class="eyebrow">Results</p>
+      <h2 id="results-heading" #resultsHeading tabindex="-1">
+        @if (response()) {
+          {{ totalResults() }} research objects
+        } @else {
+          Research objects
+        }
+      </h2>
+      @if (response() && pagination().visible) {
+        <p class="results-range">
+          Showing {{ pagination().firstResult }}–{{ pagination().lastResult }} of
+          {{ pagination().totalResults }}
+        </p>
+      }
+    </div>
+    @if (loading()) {
+      <span class="loading-status" role="status">Searching…</span>
+    }
+  </div>
+
+  @if (results().length > 0) {
+    <ol class="result-list">
+      @for (result of results(); track result.id) {
+        <li>
+          <article class="result-card">
+            <div class="result-meta">
+              <span>{{ result.programName ?? result.program }}</span>
+              <span>{{ result.contentType }}</span>
+              @if (result.geography) {
+                <span>{{ result.geography }}</span>
+              }
+              @if (result.vintageYear) {
+                <span>{{ result.vintageYear }}</span>
+              }
+            </div>
+            <h3>{{ result.title }}</h3>
+            <p>{{ result.summary }}</p>
+            <div class="result-provenance">
+              <span>{{ result.publisher }}</span>
+              <span>{{ result.sourceSystem }}</span>
+            </div>
+            <a class="source-link" [href]="result.sourceUrl" target="_blank" rel="noreferrer">
+              View authoritative source
+            </a>
+          </article>
+        </li>
+      }
+    </ol>
+
+    @if (pagination().visible) {
+      <nav class="pager" aria-label="Search results pages">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="!pagination().hasPrevious || loading()"
+          (click)="goToPage(pagination().page - 1)"
+        >
+          Previous
+        </button>
+        <span aria-current="page">Page {{ pagination().page + 1 }} of {{ pagination().pageCount }}</span>
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="!pagination().hasNext || loading()"
+          (click)="goToPage(pagination().page + 1)"
+        >
+          Next
+        </button>
+      </nav>
+    }
+  } @else if (response() && !loading()) {
+    <div class="empty-state">
+      <h3>No matching research objects</h3>
+      <p>Try a broader search or remove one of the active filters.</p>
+    </div>
+  } @else if (loading()) {
+    <div class="empty-state" role="status">
+      <p>Searching the repository…</p>
+    </div>
+  }
+</section>

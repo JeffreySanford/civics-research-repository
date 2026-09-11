@@ -5,7 +5,7 @@
 
 .skip-link {
   position: fixed;
-  z-index: 20;
+  z-index: 30;
   top: 0.5rem;
   left: 0.5rem;
   transform: translateY(-160%);
@@ -52,15 +52,11 @@
 }
 
 .masthead__eyebrow,
-.masthead__title,
-.hero__eyebrow,
-.section-heading__eyebrow {
+.masthead__title {
   margin: 0;
 }
 
-.masthead__eyebrow,
-.hero__eyebrow,
-.section-heading__eyebrow {
+.masthead__eyebrow {
   color: var(--civics-text-secondary);
   font-size: 0.75rem;
   font-weight: 700;
@@ -75,94 +71,7 @@
 }
 
 .page-shell {
-  padding-block: 2.5rem 4rem;
-}
-
-.hero {
-  max-width: 46rem;
-}
-
-.hero h1,
-.section-heading h2,
-.journey h3 {
-  text-wrap: balance;
-}
-
-.hero h1 {
-  margin: 0.6rem 0 1rem;
-  font-size: clamp(2rem, 9vw, 4.5rem);
-  line-height: 0.98;
-  letter-spacing: -0.04em;
-}
-
-.hero__summary {
-  margin: 0;
-  color: var(--civics-text-secondary);
-  font-size: clamp(1rem, 4.6vw, 1.25rem);
-  line-height: 1.6;
-}
-
-.status-card {
-  display: grid;
-  gap: 0.25rem;
-  margin-top: 1.5rem;
-  padding: 1rem;
-  border: 1px solid var(--civics-border);
-  border-radius: var(--civics-radius-md);
-  background: var(--civics-surface-accent);
-}
-
-.status-card span {
-  color: var(--civics-text-secondary);
-  line-height: 1.5;
-}
-
-.journey {
-  margin-top: 3.5rem;
-}
-
-.section-heading h2 {
-  margin: 0.35rem 0 0;
-  font-size: clamp(1.5rem, 7vw, 2.5rem);
-}
-
-.journey__steps {
-  display: grid;
-  gap: 0.75rem;
-  margin: 1.25rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.journey__steps li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.85rem;
-  padding: 1rem;
-  border: 1px solid var(--civics-border);
-  border-radius: var(--civics-radius-md);
-  background: var(--civics-surface-panel);
-}
-
-.step-number {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--civics-surface-teal);
-  font-weight: 800;
-}
-
-.journey h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.journey p {
-  margin: 0.35rem 0 0;
-  color: var(--civics-text-secondary);
-  line-height: 1.5;
+  padding-block: 2rem 4rem;
 }
 
 .site-footer {
@@ -180,11 +89,7 @@
 
 @media (min-width: 48rem) {
   .page-shell {
-    padding-block: 4.5rem 6rem;
-  }
-
-  .journey__steps {
-    grid-template-columns: repeat(3, 1fr);
+    padding-block: 3.5rem 5rem;
   }
 
   .site-footer__inner {
@@ -193,9 +98,7 @@
 }
 
 @media (forced-colors: active) {
-  .masthead__mark,
-  .step-number,
-  .status-card {
+  .masthead__mark {
     border: 1px solid CanvasText;
   }
 }

@@ -10,17 +10,17 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('renders the mobile-first Census shell', () => {
+  it('renders the mobile-first Census application shell', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
 
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Find Census research',
+    expect(compiled.querySelector('.masthead__title')?.textContent).toContain(
+      'Census Research',
     );
     expect(compiled.querySelector('.skip-link')?.getAttribute('href')).toBe(
       '#main-content',
     );
-    expect(compiled.querySelectorAll('.journey__steps > li')).toHaveLength(3);
+    expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });
 });
