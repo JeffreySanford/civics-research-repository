@@ -13,8 +13,7 @@ const LABELS: Record<SearchRelevanceBand, string> = {
 };
 
 @Component({
-  selector: 'civics-search-relevance-badge',
-  standalone: false,
+  selector: 'lib-search-relevance-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './search-relevance-badge.component.html',
   styleUrl: './search-relevance-badge.component.scss',
