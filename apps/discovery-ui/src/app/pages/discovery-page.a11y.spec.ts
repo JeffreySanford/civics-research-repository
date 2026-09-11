@@ -89,9 +89,15 @@ describe('DiscoveryPage accessibility', () => {
     });
 
     const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelector('.search-rank-badge')?.textContent).toContain('Rank 1');
-    expect(root.querySelector('.relevance-badge')?.textContent).toContain('Strong match');
-    expect(root.querySelector('.results-relevance-note')?.textContent).toContain('not percentages');
+    expect(root.querySelector('.search-rank-badge')?.textContent).toContain(
+      'Rank 1',
+    );
+    expect(root.querySelector('.relevance-badge')?.textContent).toContain(
+      'Strong match',
+    );
+    expect(
+      root.querySelector('.results-relevance-note')?.textContent,
+    ).toContain('not percentages');
     expect(root.textContent).not.toContain('100%');
     await expectNoAxeViolations(root);
   });
