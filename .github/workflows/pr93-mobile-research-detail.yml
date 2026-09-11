@@ -52,7 +52,7 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Mobile 320px Playwright and axe
-        run: pnpm nx e2e census-mobile-frontend-e2e -- --project=chromium
+        run: pnpm nx e2e census-mobile-frontend-e2e -- --project=chromium-320
       - name: Commit validated slice
         run: |
           rm tools/scripts/pr93_mobile_detail.py
