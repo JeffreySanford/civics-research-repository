@@ -27,6 +27,22 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: python3 tools/scripts/pr92_converge.py
+      - name: Make mobile TestBed scope explicit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('apps/census-mobile-frontend/src/app/app.spec.ts')
+          text = p.read_text()
+          text = text.replace(
+              "import { SearchBadgesModule } from 'shared-ui';",
+              "import { SearchRankBadgeComponent, SearchRelevanceBadgeComponent } from 'shared-ui';",
+          )
+          text = text.replace(
+              "        SearchBadgesModule,",
+              "        SearchRankBadgeComponent,\n        SearchRelevanceBadgeComponent,",
+          )
+          p.write_text(text)
+          PY
       - run: pnpm exec prettier --write apps/census-mobile-frontend/src/app apps/discovery-ui/src/app/pages/discovery-page.ts apps/discovery-ui/src/app/pages/discovery-page.html apps/discovery-ui/src/app/pages/discovery-page.scss apps/discovery-ui-e2e/src/discovery-search-ranking.spec.ts libs/shared/ui/src mobile-first/planning/mobile-research-detail-navigation.md
       - run: pnpm nx run-many -t lint -p shared-ui,census-mobile-frontend,discovery-ui
       - run: pnpm nx test shared-ui
