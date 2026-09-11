@@ -25,7 +25,8 @@ describe('SearchPageComponent', () => {
 
     expect(element.querySelector('form[role="search"]')).not.toBeNull();
 
-    const filterButton = element.querySelector<HTMLButtonElement>('.filter-trigger');
+    const filterButton =
+      element.querySelector<HTMLButtonElement>('.filter-trigger');
     filterButton?.click();
     fixture.detectChanges();
 

@@ -68,7 +68,9 @@ export class SearchPageComponent implements OnInit {
   protected readonly totalResults = this.store.selectSignal(
     selectSearchTotalResults,
   );
-  protected readonly pagination = this.store.selectSignal(selectSearchPagination);
+  protected readonly pagination = this.store.selectSignal(
+    selectSearchPagination,
+  );
   protected readonly resultSource = this.store.selectSignal(
     selectSearchResultSource,
   );
@@ -188,7 +190,9 @@ export class SearchPageComponent implements OnInit {
         query = {
           ...query,
           sourceSystem:
-            current.sourceSystem === value ? undefined : (value as SourceSystem),
+            current.sourceSystem === value
+              ? undefined
+              : (value as SourceSystem),
         };
         break;
       case 'geography':
@@ -280,7 +284,9 @@ export class SearchPageComponent implements OnInit {
       ...(params.get('type')
         ? { contentType: params.get('type') as ResearchObjectType }
         : {}),
-      ...(Number.isInteger(vintageYear) && vintageYear > 0 ? { vintageYear } : {}),
+      ...(Number.isInteger(vintageYear) && vintageYear > 0
+        ? { vintageYear }
+        : {}),
     };
   }
 
@@ -319,6 +325,8 @@ export class SearchPageComponent implements OnInit {
   }
 
   private readableValue(value: string): string {
-    return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+    return value
+      .replaceAll('_', ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 }
