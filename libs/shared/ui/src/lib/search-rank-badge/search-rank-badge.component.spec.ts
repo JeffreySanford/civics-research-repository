@@ -14,7 +14,7 @@ describe('SearchRankBadgeComponent', () => {
     fixture.detectChanges();
 
     const badge = fixture.nativeElement.querySelector(
-      '.rank-badge',
+      '.search-rank-badge',
     ) as HTMLElement | null;
 
     expect(badge?.textContent).toContain('Top ranked');
@@ -30,7 +30,7 @@ describe('SearchRankBadgeComponent', () => {
     fixture.detectChanges();
 
     const badge = fixture.nativeElement.querySelector(
-      '.rank-badge',
+      '.search-rank-badge',
     ) as HTMLElement | null;
 
     expect(badge?.textContent).not.toContain('Top ranked');
@@ -43,6 +43,8 @@ describe('SearchRankBadgeComponent', () => {
     fixture.componentInstance.rank = 0;
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.rank-badge')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('.search-rank-badge'),
+    ).toBeNull();
   });
 });
