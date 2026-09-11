@@ -17,7 +17,7 @@ The desired mobile experience has different priorities from the current desktop-
 - focused search/results flow
 - clean portfolio narrative around real API reuse
 
-At the same time, the search API and repository backend should remain authoritative. Creating a new backend would add avoidable complexity and weaken the architecture story.
+At the same time, the search API and repository backend should remain authoritative. The repository already provides a generated OpenAPI-backed `repository-api-client` with `RepositorySearchApi`, search models, and `REPOSITORY_API_BASE_URL`. Creating another backend or parallel client/contract layer would add avoidable complexity and weaken the architecture story.
 
 ## Decision
 
@@ -33,12 +33,18 @@ Suggested local ports:
 
 ```text
 apps/discovery-ui                 4200
-apps/census-mobile-frontend   4300
-discovery-ui storybook        4400
-mobile storybook              4500
+apps/census-mobile-frontend       4300
+discovery-ui storybook            4400
+mobile storybook                  4500
 ```
 
-The new app will consume the existing API and shared contract libraries. Reusable API models, fixtures, generated clients, or presentation components may be promoted to `libs/` when reuse is real.
+The new app will:
+
+- consume the existing backend through `repository-api-client`
+- use the existing generated search types rather than duplicate contracts
+- use module-based Angular composition (`standalone=false`)
+- use Observable-first RxJS/NgRx state management
+- add shared UI libraries only when genuine cross-app reuse is demonstrated
 
 ## Consequences
 
@@ -47,13 +53,15 @@ Positive:
 - The existing app remains stable.
 - Mobile-first work can proceed without broad regression risk.
 - The Census frontend can have a clean information architecture.
+- Both frontends share one typed API boundary.
 - Storybook and accessibility evidence can be developed around focused components.
 - The backend remains the single source of search truth.
 
 Tradeoffs:
 
 - Two frontend apps must be maintained.
-- Shared contracts need discipline to avoid copy/paste drift.
+- The new app and existing app may use different Angular bootstrap styles.
+- Shared contracts still require discipline even though the generated client removes most copy/paste risk.
 - Design-system decisions must be explicit so the apps do not diverge accidentally.
 - E2E coverage needs to cover both the current app and the mobile-first app.
 
@@ -64,6 +72,12 @@ Tradeoffs:
 This is architecturally elegant when an existing Discovery route already exists and is safe to refactor. It reduces duplication but increases risk if the current app is still needed as-is.
 
 This remains a future convergence option.
+
+### Create New `census-api-contracts` and `census-search-client` Libraries
+
+Rejected for the initial implementation. The repository already has a generated API-client library that owns the relevant search contracts and HTTP service. New libraries would duplicate an existing seam without adding capability.
+
+A future `census-ui` library remains possible if presentational components prove reusable across both frontends.
 
 ### Create a Separate Backend
 
@@ -77,7 +91,8 @@ Rejected. The goal is a credible repository extension, not a throwaway prototype
 
 - Existing Angular app still serves on its current port.
 - New Angular app serves independently on a separate port.
-- New app can call the existing API through the shared repository API client/base URL configuration.
+- New app can call the existing API through `repository-api-client` and the shared base URL token.
 - No new search backend is introduced.
-- Shared API types/fixtures are not duplicated ad hoc across apps.
+- No duplicate search contract/client library is introduced.
+- Search state is Observable-first and does not depend on Angular Signals.
 - First vertical slice works at 320px with no horizontal document scroll.
