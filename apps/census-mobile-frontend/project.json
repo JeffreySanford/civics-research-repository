@@ -44,6 +44,11 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "storybook": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": false
         }
       }
     },
@@ -80,6 +85,41 @@
         "port": 4300,
         "staticFilePath": "dist/apps/census-mobile-frontend/browser",
         "spa": true
+      }
+    },
+    "storybook": {
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "port": 4500,
+        "configDir": "apps/census-mobile-frontend/.storybook",
+        "browserTarget": "census-mobile-frontend:build:storybook",
+        "compodoc": false
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "outputDir": "dist/storybook/census-mobile-frontend",
+        "configDir": "apps/census-mobile-frontend/.storybook",
+        "browserTarget": "census-mobile-frontend:build:storybook",
+        "compodoc": false
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "test-storybook": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "test-storybook -c apps/census-mobile-frontend/.storybook --url=http://localhost:4500"
       }
     }
   }

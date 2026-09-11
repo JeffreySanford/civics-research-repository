@@ -35,6 +35,7 @@
     "start:all:recreate": "node tools/scripts/stack.mjs --recreate",
     "start:all:rebuild": "node tools/scripts/stack.mjs --rebuild",
     "start:ui": "pnpm nx run discovery-ui:serve",
+    "start:mobile": "pnpm nx run census-mobile-frontend:serve --port=4300",
     "start:api": "pnpm nx run repository-api:serve",
     "docker:up": "docker compose up",
     "docker:up:detached": "docker compose up -d",

@@ -86,6 +86,13 @@
           Showing {{ resultStart() }}–{{ resultEnd() }} · Page {{
           currentPageNumber() }} of {{ totalPages() }}
         </p>
+        @if (searchResponse.relevanceModel && searchResponse.query.trim()) {
+        <p class="results__relevance-note">
+          Match labels are query-relative search evidence, not percentages. @if
+          (!searchResponse.relevanceModel.calibrated) { Thresholds are still
+          being calibrated against judged queries. }
+        </p>
+        }
       </div>
       <span class="results__source">
         Source: {{ searchResponse.resultSource }}
@@ -119,6 +126,9 @@
             <strong>Top ranked</strong>
             } Rank {{ globalRank(index) }}
           </span>
+          <app-search-relevance-badge
+            [relevance]="result.relevance"
+          ></app-search-relevance-badge>
         </div>
 
         <div class="result-card__meta">

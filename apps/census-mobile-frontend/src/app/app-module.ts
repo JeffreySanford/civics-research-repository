@@ -6,11 +6,12 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { App } from './app';
 import { appRoutes } from './app.routes';
+import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
 import { MobileSearchEffects } from './state/search/search.effects';
 import { mobileSearchReducer } from './state/search/search.reducer';
 
 @NgModule({
-  declarations: [App],
+  declarations: [App, SearchRelevanceBadgeComponent],
   imports: [
     BrowserModule,
     HttpClientModule,

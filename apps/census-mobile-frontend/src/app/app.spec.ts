@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { Store, StoreModule } from '@ngrx/store';
 import type { SearchResponse } from 'repository-api-client';
 import { App } from './app';
+import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
 import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
 
@@ -10,6 +11,11 @@ const visibleResult = {
   id: 'north-dakota-migration-example',
   title: 'North Dakota migration example',
   contentType: 'DATASET',
+  relevance: {
+    rawScore: 10,
+    normalizedScore: 1,
+    band: 'STRONG',
+  },
 } as SearchResponse['results'][number];
 
 const searchResponse: SearchResponse = {
@@ -20,6 +26,11 @@ const searchResponse: SearchResponse = {
   totalResults: 5881,
   results: [visibleResult],
   facets: [],
+  relevanceModel: {
+    engine: 'SOLR',
+    normalization: 'SOLR_MAX_SCORE_RATIO_V1',
+    calibrated: false,
+  },
 };
 
 describe('App', () => {
@@ -29,7 +40,7 @@ describe('App', () => {
         RouterModule.forRoot([]),
         StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
       ],
-      declarations: [App],
+      declarations: [App, SearchRelevanceBadgeComponent],
     }).compileComponents();
   });
 
@@ -68,6 +79,28 @@ describe('App', () => {
     );
   });
 
+  it('shows query-relative relevance without presenting it as a percentage', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const badge = compiled.querySelector('.relevance-badge');
+
+    expect(badge?.textContent).toContain('Strong match');
+    expect(badge?.getAttribute('aria-label')).toContain(
+      'Query-relative search match strength',
+    );
+    expect(
+      compiled.querySelector('.results__relevance-note')?.textContent,
+    ).toContain('not percentages');
+    expect(compiled.textContent).not.toContain('100%');
+  });
+
   it('shows the submitted question while the repository is loading', () => {
     const store = TestBed.inject(Store);
     const fixture = TestBed.createComponent(App);
@@ -87,7 +120,7 @@ describe('App', () => {
     );
   });
 
-  it('labels a completed empty search as repository browsing', () => {
+  it('labels a completed empty search as repository browsing without relevance claims', () => {
     const store = TestBed.inject(Store);
     const fixture = TestBed.createComponent(App);
 
@@ -97,6 +130,8 @@ describe('App', () => {
           ...searchResponse,
           query: '',
           totalResults: 644,
+          relevanceModel: undefined,
+          results: [{ ...visibleResult, relevance: undefined }],
         },
       }),
     );
@@ -106,6 +141,8 @@ describe('App', () => {
     expect(compiled.querySelector('.results__query')?.textContent).toContain(
       "Browsing the repository's current discovery set.",
     );
+    expect(compiled.querySelector('.relevance-badge')).toBeNull();
+    expect(compiled.querySelector('.results__relevance-note')).toBeNull();
   });
 
   it('shows result range and pagination after results load', () => {
