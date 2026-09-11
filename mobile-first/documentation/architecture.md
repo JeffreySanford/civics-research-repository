@@ -68,6 +68,8 @@ Initial preferences:
 - SCSS
 - routing enabled
 - module-based Angular composition (`standalone=false`)
+- Angular Signals where they simplify local synchronous UI state
+- RxJS/NgRx for asynchronous workflows and shared feature state
 - Vitest/repository-standard Angular unit-test target
 - ESLint
 - serve port `4300`
@@ -112,19 +114,30 @@ The mobile app is responsible for:
 
 ## State Management
 
-Use Observable-first Angular state management. Do not introduce Angular Signals for this app's search or UI state.
+Use a deliberate hybrid state model rather than forcing every state shape into one primitive.
 
-| Concern                        | Recommended Tool                                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------------------------------- |
-| HTTP search requests           | `RepositorySearchApi` inside NgRx effects                                                         |
-| Search query/results/facets    | NgRx store, reducers, selectors, effects                                                          |
-| URL query synchronization      | Angular Router + NgRx/RxJS                                                                        |
-| Request cancellation           | RxJS `switchMap` in effects                                                                       |
-| Filter drawer/open-close state | RxJS/component observable state; promote to NgRx only if cross-component coordination warrants it |
-| Display mode and ephemeral UI  | RxJS/component observable state                                                                   |
-| Layout responsiveness          | CSS first; CDK `BreakpointObserver` only for behavior changes                                     |
+| Concern | Recommended Tool |
+| --- | --- |
+| HTTP search requests | `RepositorySearchApi` inside NgRx effects |
+| Search query/results/facets | NgRx store, reducers, selectors, effects |
+| URL query synchronization | Angular Router + NgRx/RxJS |
+| Request cancellation | RxJS `switchMap` in effects |
+| Filter drawer open/close | Angular `signal()` when state is local to the shell |
+| Summary disclosure expanded/collapsed | Angular `signal()` |
+| Small synchronous presentation derivations | `computed()` where the source state is already signal-based |
+| Shared derived search state | NgRx selectors; bridge to signals at the component boundary when useful |
+| Layout responsiveness | CSS first; CDK `BreakpointObserver` only for actual behavior changes |
 
-Starting with NgRx for the search workflow is justified here because query text, repeatable facets, pagination, URL state, loading/error state, and request cancellation already form one coherent state machine. Keep purely local presentation state local rather than putting every interaction in the global store.
+Starting with NgRx for the search workflow is justified because query text, repeatable facets, pagination, URL state, loading/error state, and request cancellation form one coherent asynchronous state machine. Signals are appropriate for local, synchronous interaction state that does not need effects, replay semantics, or cross-route ownership.
+
+The rule is not "Signals versus RxJS." It is:
+
+- use Signals for local UI state and simple synchronous derivation
+- use RxJS for asynchronous event streams and cancellation
+- use NgRx for shared search-domain state, effects, selectors, and reproducible transitions
+- bridge between them at component boundaries where that improves template clarity
+
+Avoid duplicating the same source of truth in both a Signal and the NgRx store.
 
 ## Initial Search State
 
@@ -157,25 +170,33 @@ Selectors should derive:
 
 Effects should own API orchestration and cancellation. Components should not manually coordinate competing search subscriptions.
 
+Local UI state should remain outside this feature state unless it becomes cross-component or route-significant. Good Signal candidates include:
+
+```text
+filtersOpen
+searchSummaryExpanded
+compactMetadataExpandedByResult
+```
+
 ## Component Model
 
 Initial components:
 
-| Component                         | Responsibility                                      |
-| --------------------------------- | --------------------------------------------------- |
-| `MobileDiscoveryPage`             | Route container and feature composition             |
-| `DiscoverySearchBarComponent`     | Search input, submit, clear                         |
-| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count               |
-| `DiscoveryFiltersComponent`       | Facet groups and selected facet state               |
-| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips                     |
-| `DiscoveryResultsHeaderComponent` | Result count, range, loading status                 |
-| `ResearchResultCardComponent`     | One accessible research result                      |
-| `DiscoveryResultsComponent`       | Result collection and empty/error/loading states    |
-| `DiscoveryPaginationComponent`    | Previous/current/next controls and focus behavior   |
+| Component | Responsibility |
+| --- | --- |
+| `MobileDiscoveryPage` | Route container and feature composition |
+| `DiscoverySearchBarComponent` | Search input, submit, clear |
+| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count |
+| `DiscoveryFiltersComponent` | Facet groups and selected facet state |
+| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips |
+| `DiscoveryResultsHeaderComponent` | Result count, range, loading status |
+| `ResearchResultCardComponent` | One accessible research result |
+| `DiscoveryResultsComponent` | Result collection and empty/error/loading states |
+| `DiscoveryPaginationComponent` | Previous/current/next controls and focus behavior |
 | `DiscoverySearchSummaryComponent` | Optional compact server-facet visualization summary |
-| `DiscoveryShellComponent`         | Drawer/sidebar layout composition                   |
+| `DiscoveryShellComponent` | Drawer/sidebar layout composition |
 
-Keep presentational components input/output driven where possible so Storybook can render them without booting the full search workflow.
+Keep presentational components input/output driven where possible so Storybook can render them without booting the full search workflow. Component-local Signals may manage purely internal interaction state without turning those components into independent application state stores.
 
 ## Responsive Behavior
 
@@ -248,3 +269,4 @@ Storybook should prove component states. Browser E2E should prove the assembled 
 - No separate mobile-only data model unless the API deliberately adds one.
 - No rewrite of the existing Angular app as a prerequisite.
 - No requirement to converge the two frontends before the mobile-first approach has evidence.
+- No ideological ban on Signals or RxJS; each should be used where its semantics fit.
