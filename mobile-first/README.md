@@ -42,6 +42,8 @@ This also creates a clear portfolio story:
 - Treat 320px reflow, keyboard access, focus management, touch targets, and screen-reader semantics as first-class requirements.
 - Use Storybook for isolated responsive states and Playwright for assembled app behavior.
 - Keep search semantics server-owned; the frontend expresses search intent and renders bounded responses.
+- Preserve search-engine rank as evidence, and treat score-based relevance bands as calibrated API data rather than client-invented percentages.
+- Never use relevance color as the only meaning; pair green/yellow/orange/red states with text labels and accessible semantics.
 - Use infographics/data visualization only when they improve comprehension and are backed by trustworthy server-provided aggregate data or clearly labeled page-local data.
 
 ## Planned Documents
@@ -54,5 +56,6 @@ This also creates a clear portfolio story:
 - [PR 1 Readiness Note](planning/pr1-readiness-note.md)
 - [PR 1 Description Draft](planning/pr1-description-draft.md)
 - [Implementation Plan](planning/implementation-plan.md)
+- [Search Relevance and Ranking Plan](planning/search-relevance-plan.md)
 - [Backlog](planning/backlog.md)
 - [Validation Plan](planning/validation-plan.md)
