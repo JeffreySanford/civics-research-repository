@@ -49,6 +49,63 @@ describe('App', () => {
     expect(compiled.querySelector('.status-card')?.textContent).toContain(
       'Search is ready.',
     );
+    expect(compiled.querySelector('.search-form__hint')).not.toBeNull();
+  });
+
+  it('shows the query that produced the current ranked result set', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.search-form__hint')).toBeNull();
+    expect(compiled.querySelector('.results__query')?.textContent).toContain(
+      'Results for “North Dakota migration”',
+    );
+  });
+
+  it('shows the submitted question while the repository is loading', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+    const query = 'Where are people migrating from North Dakota to?';
+
+    store.dispatch(
+      MobileSearchActions.searchSubmitted({
+        query: { q: query, page: 0, pageSize: 10 },
+      }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.search-form__hint')).toBeNull();
+    expect(compiled.querySelector('.status-card')?.textContent).toContain(
+      `Searching for “${query}”`,
+    );
+  });
+
+  it('labels a completed empty search as repository browsing', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(
+      MobileSearchActions.searchLoaded({
+        response: {
+          ...searchResponse,
+          query: '',
+          totalResults: 644,
+        },
+      }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.results__query')?.textContent).toContain(
+      "Browsing the repository's current discovery set.",
+    );
   });
 
   it('shows result range and pagination after results load', () => {
