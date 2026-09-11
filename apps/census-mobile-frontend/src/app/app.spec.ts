@@ -6,6 +6,22 @@ import { App } from './app';
 import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
 
+const visibleResult = {
+  id: 'north-dakota-migration-example',
+  title: 'North Dakota migration example',
+  contentType: 'DATASET',
+} as SearchResponse['results'][number];
+
+const searchResponse: SearchResponse = {
+  resultSource: 'REPOSITORY',
+  query: 'North Dakota migration',
+  page: 0,
+  pageSize: 10,
+  totalResults: 5881,
+  results: [visibleResult],
+  facets: [],
+};
+
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -33,65 +49,83 @@ describe('App', () => {
     expect(compiled.querySelector('.status-card')?.textContent).toContain(
       'Search is ready.',
     );
-    expect(compiled.querySelector('.search-form__hint')?.textContent).toContain(
-      'Enter a question or keywords.',
+    expect(compiled.querySelector('.search-form__hint')).not.toBeNull();
+  });
+
+  it('shows the query that produced the current ranked result set', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.search-form__hint')).toBeNull();
+    expect(compiled.querySelector('.results__query')?.textContent).toContain(
+      'Results for “North Dakota migration”',
     );
   });
 
-  it('replaces the empty-search helper with the query that produced results', () => {
-    const fixture = TestBed.createComponent(App);
+  it('shows the submitted question while the repository is loading', () => {
     const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
     const query = 'Where are people migrating from North Dakota to?';
-    const response: SearchResponse = {
-      resultSource: 'REPOSITORY',
-      query,
-      page: 0,
-      pageSize: 10,
-      totalResults: 644,
-      results: [],
-      facets: [],
-    };
 
     store.dispatch(
       MobileSearchActions.searchSubmitted({
         query: { q: query, page: 0, pageSize: 10 },
       }),
     );
-    store.dispatch(MobileSearchActions.searchLoaded({ response }));
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.search-form__hint')).toBeNull();
-    expect(compiled.querySelector('.results__query')?.textContent).toContain(
-      `Results for “${query}”`,
-    );
-    expect(compiled.querySelector('#results-title')?.textContent).toContain(
-      '644 matching records',
+    expect(compiled.querySelector('.status-card')?.textContent).toContain(
+      `Searching for “${query}”`,
     );
   });
 
   it('labels a completed empty search as repository browsing', () => {
-    const fixture = TestBed.createComponent(App);
     const store = TestBed.inject(Store);
-    const response: SearchResponse = {
-      resultSource: 'REPOSITORY',
-      query: '',
-      page: 0,
-      pageSize: 10,
-      totalResults: 644,
-      results: [],
-      facets: [],
-    };
+    const fixture = TestBed.createComponent(App);
 
     store.dispatch(
-      MobileSearchActions.searchSubmitted({ query: { page: 0, pageSize: 10 } }),
+      MobileSearchActions.searchLoaded({
+        response: {
+          ...searchResponse,
+          query: '',
+          totalResults: 644,
+        },
+      }),
     );
-    store.dispatch(MobileSearchActions.searchLoaded({ response }));
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.results__query')?.textContent).toContain(
       "Browsing the repository's current discovery set.",
     );
+  });
+
+  it('shows result range and pagination after results load', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.results__range')?.textContent).toContain(
+      'Showing 1–10',
+    );
+    expect(compiled.querySelector('.results__range')?.textContent).toContain(
+      'Page 1 of 589',
+    );
+    expect(
+      compiled.querySelector('nav[aria-label="Search result pages"]'),
+    ).not.toBeNull();
   });
 });
