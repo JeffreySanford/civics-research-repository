@@ -1,0 +1,243 @@
+name: PR5 relevance evidence foundation
+
+on:
+  push:
+    branches:
+      - codex/mobile-first-census-pr5-relevance-evidence
+    paths:
+      - .github/workflows/pr5-relevance-foundation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/mobile-first-census-pr5-relevance-evidence
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Patch OpenAPI and Solr score propagation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              return text.replace(old, new, 1)
+
+          spec_path = Path('schemas/openapi/repository-api.yaml')
+          spec = spec_path.read_text()
+
+          engine_schema = """    SearchComparisonEngine:
+            type: string
+            enum: [SOLR, OPENSEARCH]
+          """
+          relevance_schemas = engine_schema + """    SearchRelevanceBand:
+            type: string
+            description: Query-relative match-strength band. This is not an absolute relevance percentage.
+            enum: [STRONG, GOOD, MODERATE, WEAK, LOW]
+          SearchRelevance:
+            type: object
+            required: [rawScore, normalizedScore, band]
+            properties:
+              rawScore:
+                type: number
+                format: double
+                minimum: 0
+                description: Engine-native relevance score. Values are not comparable across unrelated queries or engines.
+              normalizedScore:
+                type: number
+                format: double
+                minimum: 0
+                maximum: 1
+                description: Query-relative score normalized against the strongest result for this query.
+              band:
+                $ref: '#/components/schemas/SearchRelevanceBand'
+          SearchRelevanceModel:
+            type: object
+            required: [engine, normalization, calibrated]
+            properties:
+              engine:
+                $ref: '#/components/schemas/SearchComparisonEngine'
+              normalization:
+                type: string
+                minLength: 1
+                description: Versioned normalization algorithm identifier.
+              calibrated:
+                type: boolean
+                description: True only after band thresholds have been calibrated against judged relevance queries.
+          """
+          spec = replace_once(spec, engine_schema, relevance_schemas, 'relevance schemas')
+
+          result_tail = """        origin:
+                  $ref: '#/components/schemas/ResearchObjectOrigin'
+                sourceSystem:
+                  $ref: '#/components/schemas/SourceSystem'
+            FacetGroup:
+          """
+          result_tail_with_relevance = """        origin:
+                  $ref: '#/components/schemas/ResearchObjectOrigin'
+                sourceSystem:
+                  $ref: '#/components/schemas/SourceSystem'
+                relevance:
+                  $ref: '#/components/schemas/SearchRelevance'
+            FacetGroup:
+          """
+          spec = replace_once(spec, result_tail, result_tail_with_relevance, 'SearchResult relevance property')
+
+          response_tail = """        facets:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FacetGroup'
+            SearchCursorPage:
+          """
+          response_tail_with_model = """        facets:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FacetGroup'
+                relevanceModel:
+                  $ref: '#/components/schemas/SearchRelevanceModel'
+            SearchCursorPage:
+          """
+          spec = replace_once(spec, response_tail, response_tail_with_model, 'SearchResponse relevance model')
+          spec_path.write_text(spec)
+
+          solr_path = Path('apps/repository-api/src/main/java/org/civicsrepo/search/SolrSearchClient.java')
+          solr = solr_path.read_text()
+
+          results_init = '            List<SearchResult> results = new ArrayList<>();\n'
+          results_init_new = results_init + """            boolean relevanceEnabled = !criteria.query().isBlank();
+                      Double maxScore = relevanceEnabled ? decimal(response, "maxScore") : null;
+          """
+          solr = replace_once(solr, results_init, results_init_new, 'Solr relevance setup')
+
+          solr = replace_once(
+              solr,
+              '                results.add(new SearchResult(\n',
+              '                results.add(withRelevance(new SearchResult(\n',
+              'Solr result wrapper',
+          )
+          solr = replace_once(
+              solr,
+              '                        .accessLevel(accessLevel(document)));\n',
+              '                        .accessLevel(accessLevel(document)), document, maxScore, relevanceEnabled));\n',
+              'Solr result relevance attachment',
+          )
+          solr = replace_once(
+              solr,
+              '            return new SearchResponse(\n',
+              '            SearchResponse searchResponse = new SearchResponse(\n',
+              'Solr response variable',
+          )
+          catch_marker = '        } catch (JsonProcessingException exception) {\n'
+          response_return = """            if (relevanceEnabled && maxScore != null && maxScore > 0) {
+                          searchResponse.relevanceModel(SearchRelevanceClassifier.model());
+                      }
+                      return searchResponse;
+                  } catch (JsonProcessingException exception) {
+          """
+          solr = replace_once(solr, catch_marker, response_return, 'Solr response relevance model')
+
+          score_helpers_marker = '    private Long engineReportedMillis(String responseBody) {\n'
+          score_helpers = """    private SearchResult withRelevance(
+                      SearchResult result,
+                      JsonNode document,
+                      Double maxScore,
+                      boolean relevanceEnabled) {
+                  if (!relevanceEnabled) {
+                      return result;
+                  }
+
+                  var relevance = SearchRelevanceClassifier.classify(decimal(document, "score"), maxScore);
+                  return relevance == null ? result : result.relevance(relevance);
+              }
+
+              private Double decimal(JsonNode parent, String field) {
+                  JsonNode value = parent.path(field);
+                  return value.isNumber() ? value.asDouble() : null;
+              }
+
+          """ + score_helpers_marker
+          solr = replace_once(solr, score_helpers_marker, score_helpers, 'Solr score helper methods')
+
+          query_line = '        params.add("q=" + encode(criteria.query().isBlank() ? "*:*" : criteria.query()));\n'
+          query_with_score = query_line + """        if (!criteria.query().isBlank()) {
+                      params.add("fl=" + encode("*,score"));
+                  }
+          """
+          solr = replace_once(solr, query_line, query_with_score, 'Solr score field request')
+          solr_path.write_text(solr)
+          PY
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate TypeScript API contract
+        run: pnpm run openapi:generate
+
+      - name: Format changed source
+        run: |
+          pnpm exec prettier --write \
+            schemas/openapi/repository-api.yaml \
+            apps/census-mobile-frontend/project.json \
+            apps/census-mobile-frontend/.storybook/main.ts \
+            apps/census-mobile-frontend/.storybook/preview.ts \
+            apps/census-mobile-frontend/src/app/app-module.ts \
+            apps/census-mobile-frontend/src/app/app.html \
+            apps/census-mobile-frontend/src/app/app.scss \
+            apps/census-mobile-frontend/src/app/app.spec.ts \
+            apps/census-mobile-frontend/src/app/components/search-relevance-badge/search-relevance-badge.component.ts \
+            apps/census-mobile-frontend/src/app/components/search-relevance-badge/search-relevance-badge.component.html \
+            apps/census-mobile-frontend/src/app/components/search-relevance-badge/search-relevance-badge.component.scss \
+            apps/census-mobile-frontend/src/app/components/search-relevance-badge/search-relevance-badge.component.spec.ts \
+            apps/census-mobile-frontend/src/app/components/search-relevance-badge/search-relevance-badge.component.stories.ts
+          docker run --rm -v "$PWD/apps/repository-api:/workspace" -w /workspace gradle:8.14-jdk21 gradle --no-daemon spotlessApply
+
+      - name: Lint OpenAPI contract
+        run: pnpm run openapi:lint
+
+      - name: Check generated TypeScript contract
+        run: pnpm run openapi:check
+
+      - name: Test repository API
+        run: docker build -f apps/repository-api/Dockerfile --target test .
+
+      - name: Lint mobile frontend
+        run: pnpm nx run census-mobile-frontend:lint
+
+      - name: Test mobile frontend
+        run: pnpm nx run census-mobile-frontend:test
+
+      - name: Build mobile frontend
+        run: pnpm nx run census-mobile-frontend:build
+
+      - name: Build mobile Storybook
+        run: pnpm nx run census-mobile-frontend:build-storybook --configuration=ci
+
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/pr5-relevance-foundation.yml
+
+      - name: Commit relevance foundation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "feat: expose query-relative search relevance evidence"
+          git push origin HEAD:codex/mobile-first-census-pr5-relevance-evidence
