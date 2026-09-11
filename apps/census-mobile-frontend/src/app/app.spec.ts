@@ -8,6 +8,7 @@ import {
 } from '@angular/router';
 import { Store, StoreModule } from '@ngrx/store';
 import type { SearchResponse } from 'repository-api-client';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { App } from './app';
 import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
@@ -67,6 +68,9 @@ const searchResponse: SearchResponse = {
 
 let routeParamMap = convertToParamMap({});
 const activatedRouteStub = {
+  get queryParamMap() {
+    return of(routeParamMap);
+  },
   snapshot: {
     get queryParamMap() {
       return routeParamMap;
