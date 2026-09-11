@@ -2,7 +2,7 @@
   display: inline-flex;
 }
 
-.rank-badge {
+.search-rank-badge {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 0.35rem;
@@ -16,15 +16,15 @@
   line-height: 1.2;
 }
 
-.rank-badge--top {
+.search-rank-badge--top {
   border-color: var(--civics-success-border, currentColor);
   background: var(--civics-success-bg, transparent);
   color: var(--civics-success-text, currentColor);
 }
 
 @media (forced-colors: active) {
-  .rank-badge,
-  .rank-badge--top {
+  .search-rank-badge,
+  .search-rank-badge--top {
     border-color: CanvasText;
     background: Canvas;
     color: CanvasText;
