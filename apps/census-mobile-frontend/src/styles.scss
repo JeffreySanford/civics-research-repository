@@ -1,0 +1,30 @@
+@use '../../../libs/shared/material/src/lib/theme/civics-theme';
+@use '../../../libs/shared/material/src/lib/theme/civics-tokens';
+
+html,
+body {
+  min-width: 20rem;
+  min-height: 100%;
+}
+
+html {
+  background: var(--civics-surface);
+}
+
+body {
+  margin: 0;
+  color: var(--civics-text-primary);
+  background: var(--civics-surface);
+  font-family: var(--civics-font-family);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 3px solid var(--civics-focus);
+  outline-offset: 3px;
+}
