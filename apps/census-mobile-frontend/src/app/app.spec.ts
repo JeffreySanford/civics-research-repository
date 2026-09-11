@@ -4,6 +4,7 @@ import { Store, StoreModule } from '@ngrx/store';
 import type { SearchResponse } from 'repository-api-client';
 import { App } from './app';
 import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
+import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
 import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
 
@@ -25,7 +26,21 @@ const searchResponse: SearchResponse = {
   pageSize: 10,
   totalResults: 5881,
   results: [visibleResult],
-  facets: [],
+  facets: [
+    {
+      field: 'type',
+      label: 'Type',
+      values: [
+        { value: 'DATASET', label: 'Dataset', count: 4000, selected: false },
+        {
+          value: 'PUBLICATION',
+          label: 'Publication',
+          count: 1881,
+          selected: false,
+        },
+      ],
+    },
+  ],
   relevanceModel: {
     engine: 'SOLR',
     normalization: 'SOLR_MAX_SCORE_RATIO_V1',
@@ -40,7 +55,11 @@ describe('App', () => {
         RouterModule.forRoot([]),
         StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
       ],
-      declarations: [App, SearchRelevanceBadgeComponent],
+      declarations: [
+        App,
+        SearchRelevanceBadgeComponent,
+        SearchSummaryComponent,
+      ],
     }).compileComponents();
   });
 
@@ -99,6 +118,22 @@ describe('App', () => {
       compiled.querySelector('.results__relevance-note')?.textContent,
     ).toContain('not percentages');
     expect(compiled.textContent).not.toContain('100%');
+  });
+
+  it('summarizes query-wide result types rather than only the visible page', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(
+      MobileSearchActions.searchLoaded({ response: searchResponse }),
+    );
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const summary = compiled.querySelector('app-search-summary');
+    expect(summary?.textContent).toContain('Result type mix');
+    expect(summary?.textContent).toContain('4000 · 68%');
+    expect(summary?.textContent).toContain('all records matching this search');
   });
 
   it('shows the submitted question while the repository is loading', () => {

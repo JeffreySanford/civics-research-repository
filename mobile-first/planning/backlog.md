@@ -1,6 +1,15 @@
 # Mobile-First Census Frontend Backlog
 
-Status: proposed
+Status: active development
+
+## Implementation Progress
+
+The original PR numbering below was a planning sequence, not a permanent branch contract. The implemented stack has intentionally combined some evidence work earlier where it reduced risk:
+
+- PR #86 delivered scalable mobile pagination, global rank, summaries, and the North Dakota migration acceptance query.
+- PR #87 delivers engine-backed query-relative relevance bands, mobile Storybook, 320px Playwright/axe evidence, and `start:all` integration for the mobile frontend.
+- The current PR 6 slice starts the planned search-summary work with an accessible query-wide result-type mix driven by server-returned facets.
+- Broader filter-drawer/URL orchestration from the separate richer search-container line is not being merged into this state machine implicitly; convergence must remain deliberate.
 
 ## PR 1: Planning and Workspace Baseline
 
