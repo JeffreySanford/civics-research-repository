@@ -56,8 +56,8 @@ export class SearchRouteQueryAdapter {
     ];
     const publisher = this.trimmed(params.get('publisher'));
     const geography = this.trimmed(params.get('geography'));
-    const sourceSystem = this.sourceSystem(params.get('sourceSystem'));
-    const contentType = this.contentType(params.get('type'));
+    const sourceSystem = this.parseSourceSystem(params.get('sourceSystem'));
+    const contentType = this.parseContentType(params.get('type'));
     const vintageYear = this.positiveInteger(params.get('vintageYear'));
 
     return {
@@ -90,11 +90,11 @@ export class SearchRouteQueryAdapter {
     };
   }
 
-  private sourceSystem(value: string | null): SourceSystem | undefined {
+  parseSourceSystem(value: string | null): SourceSystem | undefined {
     return SOURCE_SYSTEMS.find((candidate) => candidate === value);
   }
 
-  private contentType(value: string | null): ResearchObjectType | undefined {
+  parseContentType(value: string | null): ResearchObjectType | undefined {
     return CONTENT_TYPES.find((candidate) => candidate === value);
   }
 
