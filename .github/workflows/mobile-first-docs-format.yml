@@ -1,0 +1,41 @@
+name: Mobile-first planning formatter
+
+on:
+  push:
+    branches:
+      - codex/mobile-first-census-pr4-search-vertical-slice
+    paths:
+      - .github/workflows/mobile-first-docs-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/mobile-first-census-pr4-search-vertical-slice
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format mobile planning documents
+        run: >-
+          pnpm exec prettier --write
+          mobile-first/README.md
+          mobile-first/planning/search-relevance-plan.md
+          mobile-first/planning/post-pr4-refinement-plan.md
+          mobile-first/planning/validation-plan.md
+      - name: Remove one-shot formatter
+        run: git rm .github/workflows/mobile-first-docs-format.yml
+      - name: Commit canonical formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile-first/README.md mobile-first/planning/search-relevance-plan.md mobile-first/planning/post-pr4-refinement-plan.md mobile-first/planning/validation-plan.md
+          git commit -m "style: format mobile search planning docs"
+          git push
