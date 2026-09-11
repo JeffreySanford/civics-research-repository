@@ -32,9 +32,9 @@ export default [
     rules: {},
   },
   {
-    files: ["**/*.ts"],
+    files: ['**/*.ts'],
     rules: {
-      "@angular-eslint/prefer-standalone": "off",
+      '@angular-eslint/prefer-standalone': 'off',
     },
   },
 ];
