@@ -14,11 +14,13 @@
     },
     "onlyBuiltDependencies": [
       "@parcel/watcher",
+      "@swc/core",
       "esbuild",
       "less",
       "lmdb",
       "msgpackr-extract",
-      "nx"
+      "nx",
+      "unrs-resolver"
     ]
   },
   "scripts": {
