@@ -7,10 +7,15 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ActivatedRoute,
+  convertToParamMap,
+  NavigationEnd,
+  Router,
+} from '@angular/router';
 import { Store } from '@ngrx/store';
 import type { SearchQuery } from 'repository-api-client';
-import { take } from 'rxjs';
+import { filter, take } from 'rxjs';
 import type {
   MobileActiveFilter,
   MobileFilterField,
@@ -118,15 +123,20 @@ export class App implements OnInit {
   private readonly filterTrigger?: ElementRef<HTMLButtonElement>;
 
   ngOnInit(): void {
-    this.route.queryParamMap.pipe(take(1)).subscribe((params) => {
-      if (!this.routeQueryAdapter.hasSearchIntent(params)) {
-        return;
-      }
+    if (this.hydrateFromRouterUrl(this.router.url)) {
+      return;
+    }
 
-      const query = this.routeQueryAdapter.fromParamMap(params);
-      this.queryText.set(query.q ?? '');
-      this.store.dispatch(MobileSearchActions.searchSubmitted({ query }));
-    });
+    this.router.events
+      .pipe(
+        filter(
+          (event): event is NavigationEnd => event instanceof NavigationEnd,
+        ),
+        take(1),
+      )
+      .subscribe((event) => {
+        this.hydrateFromRouterUrl(event.urlAfterRedirects);
+      });
   }
 
   updateQuery(event: Event): void {
@@ -192,6 +202,18 @@ export class App implements OnInit {
 
   isTopRanked(index: number): boolean {
     return this.globalRank(index) <= 3;
+  }
+
+  private hydrateFromRouterUrl(url: string): boolean {
+    const params = convertToParamMap(this.router.parseUrl(url).queryParams);
+    if (!this.routeQueryAdapter.hasSearchIntent(params)) {
+      return false;
+    }
+
+    const query = this.routeQueryAdapter.fromParamMap(params);
+    this.queryText.set(query.q ?? '');
+    this.store.dispatch(MobileSearchActions.searchSubmitted({ query }));
+    return true;
   }
 
   private selectFacet(field: MobileFilterField, value: string): void {
