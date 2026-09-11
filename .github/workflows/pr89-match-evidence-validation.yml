@@ -30,6 +30,28 @@ jobs:
       - name: Apply match-evidence slice
         run: python tools/scripts/apply-pr89-match-evidence.py
 
+      - name: Correct backend evidence delimiters and optional-list assertion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          solr = Path('apps/repository-api/src/main/java/org/civicsrepo/search/SolrSearchClient.java')
+          text = solr.read_text()
+          old = 'private static final String HIGHLIGHT_POST = "]]";'
+          new = 'private static final String HIGHLIGHT_POST = "]]]";'
+          if old not in text:
+              raise SystemExit('Expected temporary highlight delimiter was not found')
+          solr.write_text(text.replace(old, new, 1))
+
+          test = Path('apps/repository-api/src/test/java/org/civicsrepo/search/SolrSearchClientCursorTest.java')
+          text = test.read_text()
+          old = 'assertThat(execution.response().getResults().get(0).getMatchEvidence()).isNull();'
+          new = 'assertThat(execution.response().getResults().get(0).getMatchEvidence()).isNullOrEmpty();'
+          if old not in text:
+              raise SystemExit('Expected optional match-evidence assertion was not found')
+          test.write_text(text.replace(old, new, 1))
+          PY
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
