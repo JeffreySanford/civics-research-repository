@@ -72,7 +72,7 @@ Observe:
 
 Prompt:
 
-> Without leaving the result list, find out why the first result matched the search. Tell me what evidence the interface gives you and what it does *not* tell you.
+> Without leaving the result list, find out why the first result matched the search. Tell me what evidence the interface gives you and what it does _not_ tell you.
 
 Observe:
 
@@ -108,23 +108,23 @@ Once those features enter the current stack, add tasks such as “filter to a pr
 
 For each task record:
 
-| Measure | Allowed values / guidance |
-| --- | --- |
-| Completion | Success / success with facilitator help / failure |
-| Time on task | Approximate elapsed time; useful for within-round comparison, not performance certification |
-| Wrong turns | Count obvious reversals or actions that do not advance the task |
-| Facilitator interventions | Count and describe |
-| Confidence | Optional 1–5 self-rating after the task |
-| Key quote/observation | Short note in participant's own words when useful |
-| Accessibility barrier | Yes / no + description |
+| Measure                   | Allowed values / guidance                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------- |
+| Completion                | Success / success with facilitator help / failure                                           |
+| Time on task              | Approximate elapsed time; useful for within-round comparison, not performance certification |
+| Wrong turns               | Count obvious reversals or actions that do not advance the task                             |
+| Facilitator interventions | Count and describe                                                                          |
+| Confidence                | Optional 1–5 self-rating after the task                                                     |
+| Key quote/observation     | Short note in participant's own words when useful                                           |
+| Accessibility barrier     | Yes / no + description                                                                      |
 
 Do not average tiny-sample metrics into claims such as “95% usable.” A small formative study is best reported as task outcomes, repeated patterns, and resulting design changes.
 
 ## Observation sheet
 
 | Participant | Task | Outcome | Time | Wrong turns | Intervention | Observation / quote | Candidate change |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | | |
+| ----------- | ---- | ------- | ---- | ----------- | ------------ | ------------------- | ---------------- |
+|             |      |         |      |             |              |                     |                  |
 
 ## Synthesis
 
@@ -140,8 +140,8 @@ After the round:
 A useful findings table is:
 
 | Finding | Participants affected | Task impact | Evidence | Change | Retest status |
-| --- | ---: | --- | --- | --- | --- |
-| | | | | | |
+| ------- | --------------------: | ----------- | -------- | ------ | ------------- |
+|         |                       |             |          |        |               |
 
 ## Reporting guardrails
 

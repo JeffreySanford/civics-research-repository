@@ -8,19 +8,19 @@ Automated axe, component, and Playwright checks are necessary evidence, but they
 
 Complete this block for every session:
 
-| Field | Value |
-| --- | --- |
-| Date / time | |
-| Tester | |
-| Branch / commit | |
-| Application URL | |
-| OS | |
-| Browser + version | |
-| Viewport / display scaling | |
-| Assistive technology + version | |
-| Input method | |
-| Search corpus/profile | |
-| Notes / known environmental limitations | |
+| Field                                   | Value |
+| --------------------------------------- | ----- |
+| Date / time                             |       |
+| Tester                                  |       |
+| Branch / commit                         |       |
+| Application URL                         |       |
+| OS                                      |       |
+| Browser + version                       |       |
+| Viewport / display scaling              |       |
+| Assistive technology + version          |       |
+| Input method                            |       |
+| Search corpus/profile                   |       |
+| Notes / known environmental limitations |       |
 
 Result values: **Pass**, **Fail**, **Blocked**, or **Not run**. A failure should reference a defect/issue or include enough reproduction detail to create one.
 
@@ -38,17 +38,17 @@ The goal is not to prove that the current repository answers a structured migrat
 
 ## Keyboard-only checklist
 
-| Check | Expected behavior | Result | Evidence / notes |
-| --- | --- | --- | --- |
-| Reach search field | Visible focus indicator; label and purpose are clear. | | |
-| Submit search | Enter/button activation works without pointer input. | | |
-| Traverse result metadata | Reading/focus order follows visual/logical order. | | |
-| Reach `Why this matched` | Summary is focusable and named. | | |
-| Toggle match evidence | Enter/Space opens and closes the native disclosure; content follows it in reading order. | | |
-| Reach pagination | Previous/Next names and disabled state are understandable. | | |
-| Operate summary disclosure when present | Expanded/collapsed state is available and does not trap focus. | | |
-| Focus visibility | Every interactive element has a clearly visible focus indication. | | |
-| No keyboard trap | User can move into and out of every interactive region. | | |
+| Check                                   | Expected behavior                                                                        | Result | Evidence / notes |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- | ------ | ---------------- |
+| Reach search field                      | Visible focus indicator; label and purpose are clear.                                    |        |                  |
+| Submit search                           | Enter/button activation works without pointer input.                                     |        |                  |
+| Traverse result metadata                | Reading/focus order follows visual/logical order.                                        |        |                  |
+| Reach `Why this matched`                | Summary is focusable and named.                                                          |        |                  |
+| Toggle match evidence                   | Enter/Space opens and closes the native disclosure; content follows it in reading order. |        |                  |
+| Reach pagination                        | Previous/Next names and disabled state are understandable.                               |        |                  |
+| Operate summary disclosure when present | Expanded/collapsed state is available and does not trap focus.                           |        |                  |
+| Focus visibility                        | Every interactive element has a clearly visible focus indication.                        |        |                  |
+| No keyboard trap                        | User can move into and out of every interactive region.                                  |        |                  |
 
 Relevant WCAG targets include 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focus Order, 2.4.7 Focus Visible, and 4.1.2 Name, Role, Value.
 
@@ -56,13 +56,13 @@ Relevant WCAG targets include 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focu
 
 Run with browser zoom rather than merely resizing the window.
 
-| Check | Expected behavior | Result | Evidence / notes |
-| --- | --- | --- | --- |
-| 200% zoom | Text scales without clipping, overlap, or loss of controls. | | |
-| 400% zoom / narrow reflow | Primary search/results remain usable without two-dimensional scrolling except where genuinely necessary. | | |
-| Long result title/metadata | Content wraps without covering rank/relevance controls. | | |
-| Match-evidence terms | Long field values/terms wrap inside the result card. | | |
-| Search summary | Labels/counts remain readable and bars do not carry unique meaning. | | |
+| Check                      | Expected behavior                                                                                        | Result | Evidence / notes |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 200% zoom                  | Text scales without clipping, overlap, or loss of controls.                                              |        |                  |
+| 400% zoom / narrow reflow  | Primary search/results remain usable without two-dimensional scrolling except where genuinely necessary. |        |                  |
+| Long result title/metadata | Content wraps without covering rank/relevance controls.                                                  |        |                  |
+| Match-evidence terms       | Long field values/terms wrap inside the result card.                                                     |        |                  |
+| Search summary             | Labels/counts remain readable and bars do not carry unique meaning.                                      |        |                  |
 
 Primary targets: WCAG 1.4.4 Resize Text and 1.4.10 Reflow.
 
@@ -97,18 +97,18 @@ Run at least one desktop screen reader before calling the core flow manually val
 
 ### Reading/interaction checks
 
-| Check | Expected announcement/behavior | Result | Evidence / notes |
-| --- | --- | --- | --- |
-| Page/search landmark | Search purpose can be located without visual scanning. | | |
-| Search field | Accessible name and current value are announced. | | |
-| Search submission/loading | State change is understandable; note whether additional live-region work is needed. | | |
-| Results heading/count | Result context and query are discoverable. | | |
-| Rank vs match strength | User can tell that `Rank 1` and `Strong match` are different concepts. | | |
-| Match badge | Text label is announced without dependence on color. | | |
-| `Why this matched` | Disclosure role/state is announced; expanded content reads in a useful order. | | |
-| Search summary | Counts and percentages are available as text; decorative bars do not add noise. | | |
-| Pagination | Previous/Next names and disabled state are announced. | | |
-| Empty browse | No relevance/match-evidence claim is announced for blank browse. | | |
+| Check                     | Expected announcement/behavior                                                      | Result | Evidence / notes |
+| ------------------------- | ----------------------------------------------------------------------------------- | ------ | ---------------- |
+| Page/search landmark      | Search purpose can be located without visual scanning.                              |        |                  |
+| Search field              | Accessible name and current value are announced.                                    |        |                  |
+| Search submission/loading | State change is understandable; note whether additional live-region work is needed. |        |                  |
+| Results heading/count     | Result context and query are discoverable.                                          |        |                  |
+| Rank vs match strength    | User can tell that `Rank 1` and `Strong match` are different concepts.              |        |                  |
+| Match badge               | Text label is announced without dependence on color.                                |        |                  |
+| `Why this matched`        | Disclosure role/state is announced; expanded content reads in a useful order.       |        |                  |
+| Search summary            | Counts and percentages are available as text; decorative bars do not add noise.     |        |                  |
+| Pagination                | Previous/Next names and disabled state are announced.                               |        |                  |
+| Empty browse              | No relevance/match-evidence claim is announced for blank browse.                    |        |                  |
 
 ## Defect record
 
