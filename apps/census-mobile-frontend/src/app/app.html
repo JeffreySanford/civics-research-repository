@@ -176,12 +176,12 @@
       >
         @if (searchResponse.query.trim()) {
         <div class="result-card__rank-row">
-          <civics-search-rank-badge
+          <lib-search-rank-badge
             [rank]="globalRank(index)"
-          ></civics-search-rank-badge>
-          <civics-search-relevance-badge
+          ></lib-search-rank-badge>
+          <lib-search-relevance-badge
             [relevance]="result.relevance"
-          ></civics-search-relevance-badge>
+          ></lib-search-relevance-badge>
         </div>
         }
 
