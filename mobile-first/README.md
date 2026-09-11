@@ -56,6 +56,7 @@ This also creates a clear portfolio story:
 - [PR 1 Readiness Note](planning/pr1-readiness-note.md)
 - [PR 1 Description Draft](planning/pr1-description-draft.md)
 - [Implementation Plan](planning/implementation-plan.md)
+- [Post-PR4 Refinement Plan](planning/post-pr4-refinement-plan.md)
 - [Search Relevance and Ranking Plan](planning/search-relevance-plan.md)
 - [Backlog](planning/backlog.md)
 - [Validation Plan](planning/validation-plan.md)
