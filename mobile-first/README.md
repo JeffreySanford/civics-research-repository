@@ -44,12 +44,15 @@ This also creates a clear portfolio story:
 - Keep search semantics server-owned; the frontend expresses search intent and renders bounded responses.
 - Use infographics/data visualization only when they improve comprehension and are backed by trustworthy server-provided aggregate data or clearly labeled page-local data.
 
-## Planned Documents
+## Evidence and Planning Documents
 
 - [Architecture](documentation/architecture.md)
 - [Architecture Decision Record](documentation/adr-001-parallel-mobile-first-frontend.md)
 - [Experience and Engagement Strategy](documentation/experience-engagement-strategy.md)
 - [Infographics and Data Visualization Plan](documentation/infographics-and-data-visualization.md)
+- [Mobile Search Requirements-to-Evidence Traceability](documentation/requirements/mobile-search-traceability.md)
+- [Manual Accessibility Validation Protocol](documentation/accessibility/manual-validation-protocol.md)
+- [Mobile Search Usability Study Protocol](documentation/usability/mobile-search-study-protocol.md)
 - [PR 1 Baseline Checklist](planning/pr1-baseline-checklist.md)
 - [PR 1 Readiness Note](planning/pr1-readiness-note.md)
 - [PR 1 Description Draft](planning/pr1-description-draft.md)
@@ -57,3 +60,4 @@ This also creates a clear portfolio story:
 - [Backlog](planning/backlog.md)
 - [Validation Plan](planning/validation-plan.md)
 - [Post-main Desktop Search Relevance Adoption](planning/post-main-desktop-relevance-adoption.md)
+- [Post-PR88 Census Role Alignment Roadmap](planning/post-pr88-role-alignment-roadmap.md)
