@@ -1,0 +1,77 @@
+name: Mobile PR5 final validation
+
+on:
+  push:
+    branches:
+      - codex/mobile-first-census-pr5-relevance-evidence
+    paths:
+      - .github/workflows/mobile-pr5-final-validation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/mobile-first-census-pr5-relevance-evidence
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate startup scripts
+        run: |
+          node --check tools/scripts/stack.mjs
+          node --check tools/scripts/compose-stack.mjs
+          node --input-type=module <<'NODE'
+          import {
+            MOBILE_UI_URL,
+            STACK_SERVICES,
+          } from './tools/scripts/compose-stack.mjs';
+
+          if (!STACK_SERVICES.includes('discovery-ui')) {
+            throw new Error('start:all no longer includes discovery-ui');
+          }
+          if (!STACK_SERVICES.includes('census-mobile-frontend')) {
+            throw new Error('start:all does not include census-mobile-frontend');
+          }
+          if (MOBILE_UI_URL !== 'http://localhost:4300') {
+            throw new Error(`Unexpected mobile UI URL: ${MOBILE_UI_URL}`);
+          }
+          NODE
+          docker compose config --services | grep -Fx 'discovery-ui'
+          docker compose config --services | grep -Fx 'census-mobile-frontend'
+
+      - name: Check generated API contract
+        run: pnpm run openapi:check
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run mobile 320px relevance and accessibility E2E
+        run: pnpm nx run census-mobile-frontend-e2e:e2e
+
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/mobile-pr5-final-validation.yml
+
+      - name: Commit validated cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: remove one-shot PR5 validation workflow"
+          git push origin HEAD:codex/mobile-first-census-pr5-relevance-evidence
