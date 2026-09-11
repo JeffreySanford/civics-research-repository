@@ -3,7 +3,7 @@ import { SearchRankBadgeComponent } from './search-rank-badge/search-rank-badge.
 import { SearchRelevanceBadgeComponent } from './search-relevance-badge/search-relevance-badge.component';
 
 @NgModule({
-  declarations: [SearchRankBadgeComponent, SearchRelevanceBadgeComponent],
+  imports: [SearchRankBadgeComponent, SearchRelevanceBadgeComponent],
   exports: [SearchRankBadgeComponent, SearchRelevanceBadgeComponent],
 })
 export class SearchBadgesModule {}
