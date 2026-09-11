@@ -27,6 +27,27 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Correct fixture DOM typing
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('apps/census-mobile-frontend/src/app/app.spec.ts')
+          text = path.read_text()
+          old = """    const datasetButton = Array.from(
+              fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.facet-option'),
+            ).find((element) => element.textContent?.includes('Dataset'));
+          """
+          new = """    const compiled = fixture.nativeElement as HTMLElement;
+            const datasetButton = Array.from(
+              compiled.querySelectorAll<HTMLButtonElement>('.facet-option'),
+            ).find((element) => element.textContent?.includes('Dataset'));
+          """
+          if old not in text:
+              raise SystemExit('Expected fixture DOM typing anchor not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -48,7 +69,7 @@ jobs:
       - name: Lint mobile frontend
         run: pnpm nx run census-mobile-frontend:lint
 
-      - name: Test mobile frontend after typed filter correction
+      - name: Test mobile frontend
         run: pnpm nx run census-mobile-frontend:test
 
       - name: Build mobile frontend
