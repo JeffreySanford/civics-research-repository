@@ -28,5 +28,8 @@ describe('App', () => {
     );
     expect(compiled.querySelector('form[role="search"]')).not.toBeNull();
     expect(compiled.querySelector('#research-query')).not.toBeNull();
+    expect(compiled.querySelector('.status-card')?.textContent).toContain(
+      'Search is ready.',
+    );
   });
 });
