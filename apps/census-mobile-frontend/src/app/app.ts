@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import type { SearchQuery } from 'repository-api-client';
+import { take } from 'rxjs';
 import type {
   MobileActiveFilter,
   MobileFilterField,
@@ -117,14 +118,15 @@ export class App implements OnInit {
   private readonly filterTrigger?: ElementRef<HTMLButtonElement>;
 
   ngOnInit(): void {
-    const params = this.route.snapshot.queryParamMap;
-    if (!this.routeQueryAdapter.hasSearchIntent(params)) {
-      return;
-    }
+    this.route.queryParamMap.pipe(take(1)).subscribe((params) => {
+      if (!this.routeQueryAdapter.hasSearchIntent(params)) {
+        return;
+      }
 
-    const query = this.routeQueryAdapter.fromParamMap(params);
-    this.queryText.set(query.q ?? '');
-    this.store.dispatch(MobileSearchActions.searchSubmitted({ query }));
+      const query = this.routeQueryAdapter.fromParamMap(params);
+      this.queryText.set(query.q ?? '');
+      this.store.dispatch(MobileSearchActions.searchSubmitted({ query }));
+    });
   }
 
   updateQuery(event: Event): void {
