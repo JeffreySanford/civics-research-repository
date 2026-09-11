@@ -1,0 +1,37 @@
+name: PR92 final format
+
+on:
+  push:
+    branches:
+      - codex/census-ui-relevance-pr92
+    paths:
+      - .github/workflows/pr92-final-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/census-ui-relevance-pr92
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with:
+          version: 10.14.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write apps/discovery-ui/src/app/pages/discovery-page.a11y.spec.ts
+      - run: pnpm exec nx format:check --all
+      - name: Commit formatted file
+        run: |
+          rm .github/workflows/pr92-final-format.yml
+          git config user.name "JeffreySanford"
+          git config user.email "JeffreySanford@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: format PR92 accessibility evidence"
+          git push origin HEAD:codex/census-ui-relevance-pr92
