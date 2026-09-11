@@ -8,6 +8,8 @@ export const DSPACE_URL =
 export const API_URL =
   process.env.CIVICS_API_URL ?? 'http://localhost:8080/api';
 export const UI_URL = process.env.CIVICS_UI_URL ?? 'http://localhost:4200';
+export const MOBILE_UI_URL =
+  process.env.CIVICS_MOBILE_UI_URL ?? 'http://localhost:4300';
 
 export const STACK_SERVICES = [
   'postgres',
@@ -15,6 +17,7 @@ export const STACK_SERVICES = [
   'opensearch',
   'repository-api',
   'discovery-ui',
+  'census-mobile-frontend',
 ];
 export const DSPACE_UP_SERVICES = ['dspace-rest'];
 export const DSPACE_SHUTDOWN_SERVICES = [
@@ -277,7 +280,7 @@ export function reportFailure(services, exitStatus, profile) {
   console.error(
     '\n  Full logs:\n' +
       '    pnpm run docker:logs\n\n' +
-      '  If discovery-ui reported ERR_PNPM_LOCKFILE_CONFIG_MISMATCH:\n' +
+      '  If an Angular UI reported ERR_PNPM_LOCKFILE_CONFIG_MISMATCH:\n' +
       '    pnpm install --no-frozen-lockfile\n',
   );
 }
@@ -564,6 +567,7 @@ export function printStartupUrls({ stopCommand = 'pnpm run demo:down' } = {}) {
 The stack is running.
 
   Discovery UI      ${UI_URL}
+  Mobile Census UI  ${MOBILE_UI_URL}
   Repository API    ${API_URL}
   DSpace REST       ${DSPACE_URL}/api
   Discovery Solr    http://localhost:8983/solr
@@ -576,13 +580,14 @@ Retained federated metadata remains preserved independently in application Postg
 
 Worth showing, in order:
 
-  1. ${UI_URL}/discovery          search and facets, served from the active corpus profile
-  2. ${UI_URL}/datasets/tiger-line-north-dakota-2025
+  1. ${MOBILE_UI_URL}                  mobile-first Census search, rank, and relevance evidence
+  2. ${UI_URL}/discovery          search and facets, served from the active corpus profile
+  3. ${UI_URL}/datasets/tiger-line-north-dakota-2025
                                              repository metadata, files, citation, related research
-  3. ${UI_URL}/maps               MapLibre with live USGS overlay and an accessible feature list
-  4. ${UI_URL}/admin/sync         sync plus corpus-profile/storage administration
-  5. ${UI_URL}/evidence           WCAG and Section 508 status
-  6. ${UI_URL}/search-lab         Solr/OpenSearch comparison on the active projection
+  4. ${UI_URL}/maps               MapLibre with live USGS overlay and an accessible feature list
+  5. ${UI_URL}/admin/sync         sync plus corpus-profile/storage administration
+  6. ${UI_URL}/evidence           WCAG and Section 508 status
+  7. ${UI_URL}/search-lab         Solr/OpenSearch comparison on the active projection
 
 Stop with: ${stopCommand}
 `);
@@ -639,7 +644,7 @@ export async function runFullStartup({
   docker(['compose', '--profile', 'dspace', 'run', '--rm', 'dspace-seed']);
 
   announce(
-    'Starting the application stack (PostgreSQL, Solr, OpenSearch, Java API, Angular UI)',
+    'Starting the application stack (PostgreSQL, Solr, OpenSearch, Java API, Angular UIs)',
   );
   const exitStatus = reconcileAndUp(STACK_SERVICES, {
     forceRecreate,
@@ -660,9 +665,12 @@ export async function runFullStartup({
     await verifyStartupProfile('CURATED_DEMO');
 
     announce(
-      'Waiting for the Angular UI (first run installs dependencies and builds)',
+      'Waiting for both Angular UIs (first run installs dependencies and builds)',
     );
-    await waitFor('Discovery UI', UI_URL, { timeoutMs: 300000 });
+    await Promise.all([
+      waitFor('Discovery UI', UI_URL, { timeoutMs: 300000 }),
+      waitFor('Mobile Census UI', MOBILE_UI_URL, { timeoutMs: 300000 }),
+    ]);
 
     printStartupUrls();
     return 0;

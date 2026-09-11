@@ -1,6 +1,6 @@
 # Mobile-First Census Frontend
 
-Status: proposed
+Status: active development
 
 This directory captures the plan for a new mobile-first Census/Civics frontend that lives beside the existing Angular application in the Nx workspace.
 
@@ -56,3 +56,4 @@ This also creates a clear portfolio story:
 - [Implementation Plan](planning/implementation-plan.md)
 - [Backlog](planning/backlog.md)
 - [Validation Plan](planning/validation-plan.md)
+- [Post-main Desktop Search Relevance Adoption](planning/post-main-desktop-relevance-adoption.md)

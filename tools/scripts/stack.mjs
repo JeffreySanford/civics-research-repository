@@ -50,8 +50,15 @@ if (exitStatus !== 0) {
 }
 
 if (!options.detach) {
-  console.log('\nAttaching to discovery-ui logs (Ctrl+C to stop)...\n');
-  docker(['compose', 'logs', '-f', '--tail=50', 'discovery-ui']);
+  console.log('\nAttaching to Angular frontend logs (Ctrl+C to stop)...\n');
+  docker([
+    'compose',
+    'logs',
+    '-f',
+    '--tail=50',
+    'discovery-ui',
+    'census-mobile-frontend',
+  ]);
 }
 
 process.exit(0);

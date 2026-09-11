@@ -85,6 +85,27 @@ services:
     depends_on:
       - repository-api
 
+  census-mobile-frontend:
+    image: node:24-bookworm-slim
+    working_dir: /workspace
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && rm -rf /tmp/nx-workspace-data-mobile && pnpm exec nx run census-mobile-frontend:serve --host=0.0.0.0 --port=4300"
+    environment:
+      NG_CLI_ANALYTICS: 'false'
+      NX_DAEMON: 'false'
+      NX_WORKSPACE_DATA_DIRECTORY: /tmp/nx-workspace-data-mobile
+      NX_CACHE_DIRECTORY: /nx-cache-mobile
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    ports:
+      - '4300:4300'
+    volumes:
+      - .:/workspace
+      - pnpm-store:/root/.local/share/pnpm/store
+      - census-mobile-node-modules:/workspace/node_modules
+      - corepack-cache:/root/.cache/node/corepack
+      - census-mobile-nx-cache:/nx-cache-mobile
+    depends_on:
+      - repository-api
+
   # Application operational state only — currently just sync_jobs. This is NOT the repository
   # database; DSpace owns its own PostgreSQL (dspace-postgres, :5433). Both were previously named
   # `dspace`, which invited the reading that the application writes into DSpace's schema.
@@ -312,5 +333,7 @@ volumes:
   civics-artifacts:
   pnpm-store:
   node-modules:
+  census-mobile-node-modules:
   corepack-cache:
+  census-mobile-nx-cache:
   nx-cache:
