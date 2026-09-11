@@ -168,9 +168,7 @@
       </h2>
       @if (response() && pagination().visible) {
         <p class="results-range">
-          Showing {{ pagination().firstResult }}–{{
-            pagination().lastResult
-          }}
+          Showing {{ pagination().firstResult }}–{{ pagination().lastResult }}
           of
           {{ pagination().totalResults }}
         </p>
