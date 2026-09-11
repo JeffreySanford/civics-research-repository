@@ -4,7 +4,7 @@
 
 This PR documents the planned mobile-first Census/Civics frontend architecture.
 
-It proposes a new Angular app under `apps/census-mobile-frontend` that runs beside the existing Angular app, uses port `4300` locally, and consumes the existing API rather than introducing a second backend. It also defines the first implementation sequence, validation strategy, accessibility expectations, and a visualization/engagement plan for infographics and data visualizations.
+It proposes a new Angular app under `apps/census-mobile-frontend` that runs beside the existing Angular app, uses port `4300` locally, and consumes the existing backend through `repository-api-client` rather than introducing a second backend or duplicate search client. It also defines the first implementation sequence, module-based Angular direction, hybrid Signals + RxJS/NgRx state boundaries, validation strategy, accessibility expectations, and a visualization/engagement plan.
 
 No runtime app or backend code changes are included.
 
@@ -15,9 +15,12 @@ The existing Angular application should remain functional while the mobile-first
 The new frontend should demonstrate:
 
 - Angular/Nx frontend architecture
+- module-based Angular composition for the new app
+- Angular Signals used appropriately for local synchronous UI state
+- NgRx/RxJS for asynchronous/shared search state and effects
 - mobile-first responsive design
 - federal accessibility expectations
-- reusable API contracts and fixtures
+- direct reuse of the generated repository API client and types
 - real API-backed search behavior
 - Storybook-driven component review
 - targeted infographics and visual summaries that improve search comprehension
@@ -52,12 +55,23 @@ Development ports:
 
 ```text
 apps/discovery-ui                 4200
-apps/census-mobile-frontend   4300
-discovery-ui storybook        4400
-mobile storybook              4500
+apps/census-mobile-frontend       4300
+discovery-ui storybook            4400
+mobile storybook                  4500
 ```
 
-The new app will reuse the existing API. It will not introduce a second search backend, duplicate index, or client-side corpus search.
+The new app will reuse `RepositorySearchApi`, `REPOSITORY_API_BASE_URL`, and generated search types from `repository-api-client`. It will not introduce a second search backend, duplicate index, duplicate API-contract/client library, or client-side corpus search.
+
+## Angular State Direction
+
+Use the right primitive for the state being modeled:
+
+- NgRx/RxJS for search requests, effects, cancellation, results, facets, loading/error state, pagination, and URL-linked state.
+- Angular Signals for appropriate local synchronous UI state such as filter-drawer open/close and compact summary disclosure state.
+- `computed()` for small local derivations when their source state is already signal-based.
+- Do not independently store the same source of truth in both NgRx and Signals.
+
+The new app should prefer module-based Angular composition (`standalone=false`); using Signals does not require adopting standalone components.
 
 ## Visualization Direction
 
@@ -65,38 +79,43 @@ The plan allows infographics and data visualizations where they support the sear
 
 - result type mix
 - top programs
-- year range
-- geography coverage
-- provenance badges
+- year range/distribution
+- source-system mix
+- geography coverage where supported by authoritative aggregate data
+- provenance indicators
 - filter impact summaries
 
-The plan explicitly avoids a dashboard-first mobile layout, decorative infographics, and client-side analysis beyond the bounded API response and server-provided facets.
+The plan explicitly avoids a dashboard-first mobile layout, decorative infographics, and client-side analysis beyond trustworthy bounded API data. A paged result slice must not be presented as a corpus-wide distribution, and every visualization requires a text/table equivalent.
 
 ## Baseline Checks
 
-Record local results before merging:
+| Check                           | Current Evidence                                                                 |
+| ------------------------------- | -------------------------------------------------------------------------------- |
+| `pnpm install`                  | User reported complete on 2026-09-11                                             |
+| `pnpm approve-builds`           | User reported complete; setup-only package change excluded from PR 1             |
+| `pnpm start:all`                | User reported reaching the expected running state                                |
+| Existing `discovery-ui` project | Repository-verified                                                              |
+| Existing app port `4200`        | Repository-verified                                                              |
+| Existing Storybook port `4400`  | Repository-verified                                                              |
+| Repository API base URL         | Repository-verified default `http://localhost:8080/api`                          |
+| Existing search client/types    | Repository-verified `RepositorySearchApi` and generated search contract surface  |
 
-| Check                                                      | Result |
-| ---------------------------------------------------------- | ------ |
-| `pnpm install` from workspace root                         |        |
-| `pnpm nx show projects`                                    |        |
-| Existing `discovery-ui` project visible                    |        |
-| Existing app serves on `4200`                              |        |
-| Existing repository API base URL reviewed                  |        |
-| `pnpm start:all` reaches expected running state            |        |
-| Branch updated from `origin/main` or divergence documented |        |
+User-reported local checks are recorded as such rather than represented as independently reproduced CI evidence.
 
 ## Validation
 
-Documentation-only PR. No build/test run is required for changed files, but local baseline checks should be recorded before moving to PR 2.
+PR 1 is documentation-only. Repository CI still applies, including formatting. Runtime implementation and app-specific build/test evidence begin with PR 2.
 
 ## Follow-Up
 
 PR 2 should scaffold `apps/census-mobile-frontend` with:
 
-- Angular app generated through Nx
-- SCSS/Vitest/ESLint defaults
+- module-based Angular generation
+- routing
+- SCSS
+- repository-standard lint/test/build targets
 - serve port `4300`
-- repository API client/base URL mirroring the existing app
+- existing `repository-api-client` importability
 - minimal mobile discovery shell
-- baseline unit test
+
+PR 3 should then add the shared search-domain NgRx/RxJS foundation plus appropriate component-local Signal state.
