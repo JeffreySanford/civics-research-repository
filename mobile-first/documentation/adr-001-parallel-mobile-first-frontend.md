@@ -43,8 +43,11 @@ The new app will:
 - consume the existing backend through `repository-api-client`
 - use the existing generated search types rather than duplicate contracts
 - use module-based Angular composition (`standalone=false`)
-- use Observable-first RxJS/NgRx state management
+- use NgRx/RxJS for asynchronous search workflows and shared feature state
+- use Angular Signals where they simplify local synchronous UI state and local derivation
 - add shared UI libraries only when genuine cross-app reuse is demonstrated
+
+The state architecture is intentionally hybrid. Signals are not a replacement for RxJS/NgRx, and RxJS/NgRx should not be used merely to avoid Signals where local synchronous state is simpler and clearer with `signal()` or `computed()`.
 
 ## Consequences
 
@@ -54,6 +57,7 @@ Positive:
 - Mobile-first work can proceed without broad regression risk.
 - The Census frontend can have a clean information architecture.
 - Both frontends share one typed API boundary.
+- Local UI state can use modern Angular primitives without forcing asynchronous search state out of NgRx/RxJS.
 - Storybook and accessibility evidence can be developed around focused components.
 - The backend remains the single source of search truth.
 
@@ -61,6 +65,7 @@ Tradeoffs:
 
 - Two frontend apps must be maintained.
 - The new app and existing app may use different Angular bootstrap styles.
+- Developers must keep Signal state and NgRx state boundaries explicit to avoid duplicate sources of truth.
 - Shared contracts still require discipline even though the generated client removes most copy/paste risk.
 - Design-system decisions must be explicit so the apps do not diverge accidentally.
 - E2E coverage needs to cover both the current app and the mobile-first app.
@@ -79,6 +84,14 @@ Rejected for the initial implementation. The repository already has a generated 
 
 A future `census-ui` library remains possible if presentational components prove reusable across both frontends.
 
+### Make All UI State NgRx/RxJS
+
+Rejected. Shared search state, effects, cancellation, and URL-linked state fit NgRx/RxJS well, but forcing every local drawer, disclosure, and synchronous presentation state through observable infrastructure adds ceremony without improving ownership.
+
+### Make All State Signal-Based
+
+Rejected. Search requests, cancellation, URL synchronization, and shared state transitions already fit RxJS/NgRx and should retain those semantics.
+
 ### Create a Separate Backend
 
 Rejected. The backend should continue to own search semantics, facets, pagination, provenance, and authorization behavior.
@@ -94,5 +107,8 @@ Rejected. The goal is a credible repository extension, not a throwaway prototype
 - New app can call the existing API through `repository-api-client` and the shared base URL token.
 - No new search backend is introduced.
 - No duplicate search contract/client library is introduced.
-- Search state is Observable-first and does not depend on Angular Signals.
+- The new app remains module-based rather than defaulting to standalone components.
+- Shared/asynchronous search state uses NgRx/RxJS.
+- Appropriate local synchronous UI state may use Angular Signals.
+- The same source of truth is not independently owned by both Signals and NgRx.
 - First vertical slice works at 320px with no horizontal document scroll.
