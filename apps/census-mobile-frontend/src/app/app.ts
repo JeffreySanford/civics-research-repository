@@ -18,6 +18,9 @@ export class App {
   readonly response = computed(() => this.searchState().response);
   readonly loading = computed(() => this.searchState().loading);
   readonly error = computed(() => this.searchState().error);
+  readonly activeQueryText = computed(
+    () => this.searchState().query.q?.trim() ?? '',
+  );
   readonly resultCount = computed(() => this.response()?.totalResults ?? 0);
   readonly totalPages = computed(() => {
     const response = this.response();
