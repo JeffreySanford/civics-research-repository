@@ -12,12 +12,12 @@ Create an additional Angular app under `apps/` for the mobile-first Census front
 
 Suggested development ports:
 
-| Surface | Purpose | Port |
-| --- | --- | --- |
-| `apps/discovery-ui` | Existing Angular application | `4200` |
-| `apps/census-mobile-frontend` | New mobile-first Census/Civics frontend | `4300` |
-| `discovery-ui` Storybook | Existing component state and responsive review | `4400` |
-| Mobile Storybook | New mobile-first component review | `4500` |
+| Surface                       | Purpose                                        | Port   |
+| ----------------------------- | ---------------------------------------------- | ------ |
+| `apps/discovery-ui`           | Existing Angular application                   | `4200` |
+| `apps/census-mobile-frontend` | New mobile-first Census/Civics frontend        | `4300` |
+| `discovery-ui` Storybook      | Existing component state and responsive review | `4400` |
+| Mobile Storybook              | New mobile-first component review              | `4500` |
 
 The new frontend is a separate shell over the same backend capability. It is not a new backend, a duplicate search engine, a duplicate API client, or a throwaway mock.
 

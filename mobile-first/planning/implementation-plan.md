@@ -214,14 +214,14 @@ Purpose: make responsive and accessibility states reviewable without running the
 
 Viewport presets:
 
-| Name | Width |
-| --- | ---: |
-| Reflow minimum | 320px |
-| Phone | 390px |
-| Large phone | 430px |
-| Tablet portrait | 768px |
+| Name             |  Width |
+| ---------------- | -----: |
+| Reflow minimum   |  320px |
+| Phone            |  390px |
+| Large phone      |  430px |
+| Tablet portrait  |  768px |
 | Tablet landscape | 1024px |
-| Desktop | 1440px |
+| Desktop          | 1440px |
 
 Story coverage:
 

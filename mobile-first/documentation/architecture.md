@@ -114,15 +114,15 @@ The mobile app is responsible for:
 
 Use Observable-first Angular state management. Do not introduce Angular Signals for this app's search or UI state.
 
-| Concern | Recommended Tool |
-| --- | --- |
-| HTTP search requests | `RepositorySearchApi` inside NgRx effects |
-| Search query/results/facets | NgRx store, reducers, selectors, effects |
-| URL query synchronization | Angular Router + NgRx/RxJS |
-| Request cancellation | RxJS `switchMap` in effects |
+| Concern                        | Recommended Tool                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| HTTP search requests           | `RepositorySearchApi` inside NgRx effects                                                         |
+| Search query/results/facets    | NgRx store, reducers, selectors, effects                                                          |
+| URL query synchronization      | Angular Router + NgRx/RxJS                                                                        |
+| Request cancellation           | RxJS `switchMap` in effects                                                                       |
 | Filter drawer/open-close state | RxJS/component observable state; promote to NgRx only if cross-component coordination warrants it |
-| Display mode and ephemeral UI | RxJS/component observable state |
-| Layout responsiveness | CSS first; CDK `BreakpointObserver` only for behavior changes |
+| Display mode and ephemeral UI  | RxJS/component observable state                                                                   |
+| Layout responsiveness          | CSS first; CDK `BreakpointObserver` only for behavior changes                                     |
 
 Starting with NgRx for the search workflow is justified here because query text, repeatable facets, pagination, URL state, loading/error state, and request cancellation already form one coherent state machine. Keep purely local presentation state local rather than putting every interaction in the global store.
 
@@ -161,19 +161,19 @@ Effects should own API orchestration and cancellation. Components should not man
 
 Initial components:
 
-| Component | Responsibility |
-| --- | --- |
-| `MobileDiscoveryPage` | Route container and feature composition |
-| `DiscoverySearchBarComponent` | Search input, submit, clear |
-| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count |
-| `DiscoveryFiltersComponent` | Facet groups and selected facet state |
-| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips |
-| `DiscoveryResultsHeaderComponent` | Result count, range, loading status |
-| `ResearchResultCardComponent` | One accessible research result |
-| `DiscoveryResultsComponent` | Result collection and empty/error/loading states |
-| `DiscoveryPaginationComponent` | Previous/current/next controls and focus behavior |
+| Component                         | Responsibility                                      |
+| --------------------------------- | --------------------------------------------------- |
+| `MobileDiscoveryPage`             | Route container and feature composition             |
+| `DiscoverySearchBarComponent`     | Search input, submit, clear                         |
+| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count               |
+| `DiscoveryFiltersComponent`       | Facet groups and selected facet state               |
+| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips                     |
+| `DiscoveryResultsHeaderComponent` | Result count, range, loading status                 |
+| `ResearchResultCardComponent`     | One accessible research result                      |
+| `DiscoveryResultsComponent`       | Result collection and empty/error/loading states    |
+| `DiscoveryPaginationComponent`    | Previous/current/next controls and focus behavior   |
 | `DiscoverySearchSummaryComponent` | Optional compact server-facet visualization summary |
-| `DiscoveryShellComponent` | Drawer/sidebar layout composition |
+| `DiscoveryShellComponent`         | Drawer/sidebar layout composition                   |
 
 Keep presentational components input/output driven where possible so Storybook can render them without booting the full search workflow.
 

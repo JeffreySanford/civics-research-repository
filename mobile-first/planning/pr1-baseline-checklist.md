@@ -35,20 +35,20 @@ Excluded:
 
 Local-runtime rows distinguish user-reported results from repository facts verified directly from the current repository.
 
-| Check | Expected Result | Current Evidence |
-| --- | --- | --- |
-| Dependencies installed | `pnpm install` completes at workspace root | User reported `pnpm install` completed on 2026-09-11 |
-| pnpm build approvals | Required local build scripts can run | User reported `pnpm approve-builds` completed; no package change is included in PR 1 |
-| Existing app target | Nx exposes `discovery-ui` | Repository-verified from `apps/discovery-ui/project.json` |
-| Existing app port | Existing app remains on `4200` | Repository-verified `serve-static` port is `4200`; existing app behavior is not changed by PR 1 |
-| Existing API base URL | Shared client defaults to `http://localhost:8080/api` | Repository-verified from `repository-api-client` |
-| Search client | Shared typed search client already exists | Repository-verified `RepositorySearchApi`, `SearchQuery`, `SearchResponse`, `SearchResult`, `FacetGroup`, and `FacetValue` |
-| Local stack starts | `pnpm start:all` reaches expected running state | User reported successful local startup on 2026-09-11 |
-| Git baseline | PR is based on current intended `main` baseline or divergence is explicit | PR #81 is open against `main`; mergeability remains a required pre-merge check |
-| New app name | `census-mobile-frontend` | Frozen for PR 2 |
-| New app port | `4300` | Frozen for PR 2 |
-| Existing Storybook port | `4400` | Repository-verified from `apps/discovery-ui/project.json` |
-| Mobile Storybook port | `4500` | Reserved for the mobile app |
+| Check                   | Expected Result                                                           | Current Evidence                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Dependencies installed  | `pnpm install` completes at workspace root                                | User reported `pnpm install` completed on 2026-09-11                                                                       |
+| pnpm build approvals    | Required local build scripts can run                                      | User reported `pnpm approve-builds` completed; no package change is included in PR 1                                       |
+| Existing app target     | Nx exposes `discovery-ui`                                                 | Repository-verified from `apps/discovery-ui/project.json`                                                                  |
+| Existing app port       | Existing app remains on `4200`                                            | Repository-verified `serve-static` port is `4200`; existing app behavior is not changed by PR 1                            |
+| Existing API base URL   | Shared client defaults to `http://localhost:8080/api`                     | Repository-verified from `repository-api-client`                                                                           |
+| Search client           | Shared typed search client already exists                                 | Repository-verified `RepositorySearchApi`, `SearchQuery`, `SearchResponse`, `SearchResult`, `FacetGroup`, and `FacetValue` |
+| Local stack starts      | `pnpm start:all` reaches expected running state                           | User reported successful local startup on 2026-09-11                                                                       |
+| Git baseline            | PR is based on current intended `main` baseline or divergence is explicit | PR #81 is open against `main`; mergeability remains a required pre-merge check                                             |
+| New app name            | `census-mobile-frontend`                                                  | Frozen for PR 2                                                                                                            |
+| New app port            | `4300`                                                                    | Frozen for PR 2                                                                                                            |
+| Existing Storybook port | `4400`                                                                    | Repository-verified from `apps/discovery-ui/project.json`                                                                  |
+| Mobile Storybook port   | `4500`                                                                    | Reserved for the mobile app                                                                                                |
 
 User-reported local results are useful readiness evidence but are not represented as independently reproduced CI results.
 
