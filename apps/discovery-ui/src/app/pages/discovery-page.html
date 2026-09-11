@@ -138,6 +138,14 @@
             Showing {{ pagination.firstResult }}-{{ pagination.lastResult }} of
             {{ pagination.totalResults }}
           </p>
+          } } @if (searchResponse$ | async; as searchResponse) { @if
+          (searchResponse.relevanceModel && searchResponse.query.trim()) {
+          <p class="results-relevance-note">
+            Rank shows the server-returned result order. Match labels are
+            query-relative search evidence, not percentages. @if
+            (!searchResponse.relevanceModel.calibrated) { Thresholds are still
+            being calibrated against judged queries. }
+          </p>
           } }
         </div>
 
@@ -164,9 +172,20 @@
       </p>
       } @if (results$ | async; as results) { @if (results.length > 0) {
       <ol class="result-list">
-        @for (result of results; track result.id) {
+        @for (result of results; track result.id; let index = $index) {
         <li>
           <article>
+            @if (searchResponse$ | async; as searchResponse) { @if
+            (searchResponse.query.trim()) {
+            <div class="result-ranking">
+              <lib-search-rank-badge
+                [rank]="searchResponse.page * searchResponse.pageSize + index + 1"
+              ></lib-search-rank-badge>
+              <lib-search-relevance-badge
+                [relevance]="result.relevance"
+              ></lib-search-relevance-badge>
+            </div>
+            } }
             <div class="result-meta">
               <span>{{ result.programName ?? result.program }}</span>
               <span>{{ result.contentType }}</span>

@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { SearchBadgesModule } from 'shared-ui';
 import type {
   ResearchObjectType,
   ResearchProgram,
@@ -28,6 +29,7 @@ import {
   selectSearchPagination,
   selectSearchPaginationNotice,
   selectSearchResultSource,
+  selectSearchResponse,
   selectSearchResults,
   selectSearchTotalResults,
 } from '../state/search/search.selectors';
@@ -40,6 +42,7 @@ const PAGE_SIZE = 25;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ActiveCorpusIdentityComponent,
+    SearchBadgesModule,
     AsyncPipe,
     ReactiveFormsModule,
     MatButtonModule,
@@ -47,6 +50,7 @@ const PAGE_SIZE = 25;
     RouterLink,
   ],
   templateUrl: './discovery-page.html',
+  styleUrl: './discovery-page.scss',
 })
 export class DiscoveryPage implements OnInit {
   private readonly store = inject(Store);
@@ -106,6 +110,7 @@ export class DiscoveryPage implements OnInit {
   });
 
   protected readonly results$ = this.store.select(selectSearchResults);
+  protected readonly searchResponse$ = this.store.select(selectSearchResponse);
   protected readonly resultSource$ = this.store.select(
     selectSearchResultSource,
   );

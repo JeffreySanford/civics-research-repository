@@ -309,25 +309,6 @@
   margin-bottom: 0.65rem;
 }
 
-.result-card__rank {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-  min-height: 1.75rem;
-  padding: 0.2rem 0.55rem;
-  border: 1px solid var(--civics-border);
-  border-radius: 999px;
-  color: var(--civics-text-secondary);
-  font-size: 0.75rem;
-}
-
-.result-card__rank--top {
-  border-color: var(--civics-success-border);
-  background: var(--civics-success-bg);
-  color: var(--civics-success-text);
-}
-
 .result-card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -447,7 +428,6 @@
   .search-form button,
   .pagination button,
   .result-card--top-ranked,
-  .result-card__rank--top,
   .filter-trigger,
   .filter-chip {
     border: 1px solid CanvasText;
