@@ -27,14 +27,14 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Correct fixture DOM typing
+      - name: Correct fixture DOM typing and filter labels
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          path = Path('apps/census-mobile-frontend/src/app/app.spec.ts')
-          text = path.read_text()
+          spec_path = Path('apps/census-mobile-frontend/src/app/app.spec.ts')
+          text = spec_path.read_text()
           pattern = re.compile(
               r"\s*const datasetButton = Array\.from\(\s*"
               r"fixture\.nativeElement\.querySelectorAll<HTMLButtonElement>\('\.facet-option'\),\s*"
@@ -46,10 +46,48 @@ jobs:
                 compiled.querySelectorAll<HTMLButtonElement>('.facet-option'),
               ).find((element) => element.textContent?.includes('Dataset'));
           """
-          updated, count = pattern.subn(replacement, text, count=1)
+          text, count = pattern.subn(replacement, text, count=1)
           if count != 1:
               raise SystemExit(f'Expected one fixture DOM typing match, found {count}')
-          path.write_text(updated)
+          spec_path.write_text(text)
+
+          app_path = Path('apps/census-mobile-frontend/src/app/app.ts')
+          text = app_path.read_text()
+          old = """  private readableValue(value: string): string {
+              return value
+                .replaceAll('_', ' ')
+                .replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+            }
+          """
+          new = """  private readableValue(value: string): string {
+              const knownLabels: Readonly<Record<string, string>> = {
+                CENSUS: 'Census',
+                USGS: 'USGS',
+                DATA_GOV: 'Data.gov',
+                DOE_OSTI: 'DOE OSTI',
+                NASA_CMR: 'NASA CMR',
+                PUBMED: 'PubMed',
+                OPENALEX: 'OpenAlex',
+                OTHER: 'Other',
+                DATASET: 'Dataset',
+                PUBLICATION: 'Publication',
+                CODE: 'Code',
+                METHODOLOGY: 'Methodology',
+                SUPPORTING_MATERIAL: 'Supporting material',
+                PROJECT: 'Project',
+              };
+
+              return (
+                knownLabels[value] ??
+                value
+                  .replaceAll('_', ' ')
+                  .replace(/\\b\\w/g, (letter) => letter.toUpperCase())
+              );
+            }
+          """
+          if old not in text:
+              raise SystemExit('Expected readableValue implementation not found')
+          app_path.write_text(text.replace(old, new, 1))
           PY
 
       - name: Install dependencies
