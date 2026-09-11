@@ -13,7 +13,9 @@
 <main id="main-content" class="page-shell" tabindex="-1">
   <section class="hero" aria-labelledby="hero-title">
     <p class="hero__eyebrow">Mobile-first discovery</p>
-    <h1 id="hero-title">Find Census research without fighting the interface.</h1>
+    <h1 id="hero-title">
+      Find Census research without fighting the interface.
+    </h1>
     <p class="hero__summary">
       Search publications, data, code, and research metadata through the same
       repository API used by the desktop discovery experience.
@@ -68,7 +70,9 @@
           <p class="section-heading__eyebrow">Results</p>
           <h2 id="results-title">{{ resultCount() }} matching records</h2>
         </div>
-        <span class="results__source">Source: {{ searchResponse.resultSource }}</span>
+        <span class="results__source">
+          Source: {{ searchResponse.resultSource }}
+        </span>
       </div>
 
       @if (searchResponse.results.length === 0) {
@@ -88,7 +92,9 @@
               </div>
               <h3>{{ result.title }}</h3>
               @if (result.geography) {
-                <p class="result-card__detail">Geography: {{ result.geography }}</p>
+                <p class="result-card__detail">
+                  Geography: {{ result.geography }}
+                </p>
               }
             </li>
           }
