@@ -5,6 +5,7 @@ import { MobileSearchActions } from './state/search/search.actions';
 import {
   selectMobileSearchError,
   selectMobileSearchLoading,
+  selectMobileSearchQuery,
   selectMobileSearchResponse,
 } from './state/search/search.selectors';
 
@@ -18,10 +19,14 @@ export class App {
   private readonly store = inject(Store);
 
   readonly queryText = signal('');
+  readonly submittedQuery = this.store.selectSignal(selectMobileSearchQuery);
   readonly response = this.store.selectSignal(selectMobileSearchResponse);
   readonly loading = this.store.selectSignal(selectMobileSearchLoading);
   readonly error = this.store.selectSignal(selectMobileSearchError);
   readonly resultCount = computed(() => this.response()?.totalResults ?? 0);
+  readonly activeQueryText = computed(
+    () => this.submittedQuery().q?.trim() ?? '',
+  );
 
   updateQuery(event: Event): void {
     this.queryText.set((event.target as HTMLInputElement).value);
