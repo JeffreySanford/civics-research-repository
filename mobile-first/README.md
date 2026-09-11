@@ -59,5 +59,6 @@ This also creates a clear portfolio story:
 - [Implementation Plan](planning/implementation-plan.md)
 - [Backlog](planning/backlog.md)
 - [Validation Plan](planning/validation-plan.md)
+- [Result Explainability Dialog Plan](planning/result-explainability-dialog-plan.md)
 - [Post-main Desktop Search Relevance Adoption](planning/post-main-desktop-relevance-adoption.md)
 - [Post-PR88 Census Role Alignment Roadmap](planning/post-pr88-role-alignment-roadmap.md)
