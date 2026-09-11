@@ -10,6 +10,7 @@ import { Store, StoreModule } from '@ngrx/store';
 import type { SearchResponse } from 'repository-api-client';
 import { vi } from 'vitest';
 import { App } from './app';
+import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
 import { SearchMatchEvidenceComponent } from './components/search-match-evidence/search-match-evidence.component';
 import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
 import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
@@ -84,6 +85,7 @@ describe('App', () => {
       ],
       declarations: [
         App,
+        MobileSearchFiltersComponent,
         SearchMatchEvidenceComponent,
         SearchRelevanceBadgeComponent,
         SearchSummaryComponent,
@@ -291,8 +293,9 @@ describe('App', () => {
     (fixture.nativeElement.querySelector('.filter-trigger') as HTMLButtonElement).click();
     fixture.detectChanges();
 
+    const compiled = fixture.nativeElement as HTMLElement;
     const datasetButton = Array.from(
-      fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.facet-option'),
+      compiled.querySelectorAll<HTMLButtonElement>('.facet-option'),
     ).find((element) => element.textContent?.includes('Dataset'));
     datasetButton?.click();
     fixture.detectChanges();
@@ -310,7 +313,7 @@ describe('App', () => {
         vintageYear: null,
       },
     });
-    expect(fixture.nativeElement.querySelector('.active-filters')?.textContent).toContain(
+    expect(compiled.querySelector('.active-filters')?.textContent).toContain(
       'Dataset',
     );
   });
