@@ -51,60 +51,53 @@
 
   <section class="results" aria-labelledby="results-title" aria-live="polite">
     @if (loading()) {
-      <div class="status-card" role="status">
-        <strong>Searching repository…</strong>
-        <span>Loading the first mobile result page.</span>
+    <div class="status-card" role="status">
+      <strong>Searching repository…</strong>
+      <span>Loading the first mobile result page.</span>
+    </div>
+    } @if (error()) {
+    <div class="status-card status-card--error" role="alert">
+      <strong>Search could not be completed.</strong>
+      <span>{{ error() }}</span>
+    </div>
+    } @if (response(); as searchResponse) {
+    <div class="results__heading">
+      <div>
+        <p class="section-heading__eyebrow">Results</p>
+        <h2 id="results-title">{{ resultCount() }} matching records</h2>
       </div>
-    }
+      <span class="results__source">
+        Source: {{ searchResponse.resultSource }}
+      </span>
+    </div>
 
-    @if (error()) {
-      <div class="status-card status-card--error" role="alert">
-        <strong>Search could not be completed.</strong>
-        <span>{{ error() }}</span>
-      </div>
-    }
-
-    @if (response(); as searchResponse) {
-      <div class="results__heading">
-        <div>
-          <p class="section-heading__eyebrow">Results</p>
-          <h2 id="results-title">{{ resultCount() }} matching records</h2>
-        </div>
-        <span class="results__source">
-          Source: {{ searchResponse.resultSource }}
-        </span>
-      </div>
-
-      @if (searchResponse.results.length === 0) {
-        <div class="status-card">
-          <strong>No results found.</strong>
-          <span>Try broader keywords or submit an empty search.</span>
-        </div>
-      } @else {
-        <ol class="result-list">
-          @for (result of searchResponse.results; track result.id) {
-            <li class="result-card">
-              <div class="result-card__meta">
-                <span>{{ result.contentType }}</span>
-                @if (result.publisher) {
-                  <span>{{ result.publisher }}</span>
-                }
-              </div>
-              <h3>{{ result.title }}</h3>
-              @if (result.geography) {
-                <p class="result-card__detail">
-                  Geography: {{ result.geography }}
-                </p>
-              }
-            </li>
+    @if (searchResponse.results.length === 0) {
+    <div class="status-card">
+      <strong>No results found.</strong>
+      <span>Try broader keywords or submit an empty search.</span>
+    </div>
+    } @else {
+    <ol class="result-list">
+      @for (result of searchResponse.results; track result.id) {
+      <li class="result-card">
+        <div class="result-card__meta">
+          <span>{{ result.contentType }}</span>
+          @if (result.publisher) {
+          <span>{{ result.publisher }}</span>
           }
-        </ol>
+        </div>
+        <h3>{{ result.title }}</h3>
+        @if (result.geography) {
+        <p class="result-card__detail">Geography: {{ result.geography }}</p>
+        }
+      </li>
       }
-    } @else if (!loading() && !error()) {
-      <div class="status-card" role="status">
-        <strong>Search is ready.</strong>
-        <span>Submit a query to exercise the real repository API.</span>
-      </div>
+    </ol>
+    } } @else if (!loading() && !error()) {
+    <div class="status-card" role="status">
+      <strong>Search is ready.</strong>
+      <span>Submit a query to exercise the real repository API.</span>
+    </div>
     }
   </section>
 
