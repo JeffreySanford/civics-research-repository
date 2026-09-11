@@ -292,10 +292,8 @@ describe('App', () => {
     fixture.detectChanges();
 
     const datasetButton = Array.from(
-      fixture.nativeElement.querySelectorAll('.facet-option'),
-    ).find((element) => element.textContent?.includes('Dataset')) as
-      | HTMLButtonElement
-      | undefined;
+      fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.facet-option'),
+    ).find((element) => element.textContent?.includes('Dataset'));
     datasetButton?.click();
     fixture.detectChanges();
 
