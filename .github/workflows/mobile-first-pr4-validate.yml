@@ -30,3 +30,5 @@ jobs:
         run: pnpm nx run census-mobile-frontend:test
       - name: Build mobile frontend
         run: pnpm nx run census-mobile-frontend:build
+
+# validation rerun after Nx template normalization
