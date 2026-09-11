@@ -1,16 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
+import { StoreModule } from '@ngrx/store';
 import { App } from './app';
+import { mobileSearchReducer } from './state/search/search.reducer';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterModule.forRoot([])],
+      imports: [
+        RouterModule.forRoot([]),
+        StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
+      ],
       declarations: [App],
     }).compileComponents();
   });
 
-  it('renders the mobile-first Census shell', () => {
+  it('renders the mobile-first Census search shell', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
@@ -21,6 +26,7 @@ describe('App', () => {
     expect(compiled.querySelector('.skip-link')?.getAttribute('href')).toBe(
       '#main-content',
     );
-    expect(compiled.querySelectorAll('.journey__steps > li')).toHaveLength(3);
+    expect(compiled.querySelector('form[role="search"]')).not.toBeNull();
+    expect(compiled.querySelector('#research-query')).not.toBeNull();
   });
 });
