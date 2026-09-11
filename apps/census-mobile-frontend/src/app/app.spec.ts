@@ -6,13 +6,19 @@ import { App } from './app';
 import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
 
+const visibleResult = {
+  id: 'north-dakota-migration-example',
+  title: 'North Dakota migration example',
+  contentType: 'DATASET',
+} as SearchResponse['results'][number];
+
 const searchResponse: SearchResponse = {
   resultSource: 'REPOSITORY',
   query: 'North Dakota migration',
   page: 0,
   pageSize: 10,
   totalResults: 5881,
-  results: [],
+  results: [visibleResult],
   facets: [],
 };
 
