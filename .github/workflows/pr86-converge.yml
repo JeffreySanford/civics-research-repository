@@ -1,0 +1,39 @@
+name: PR86 Convergence
+
+on:
+  push:
+    branches:
+      - codex/mobile-first-census-pr4-pagination-ranking
+    paths:
+      - .github/workflows/pr86-converge.yml
+
+permissions:
+  contents: write
+
+jobs:
+  converge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          ref: codex/mobile-first-census-pr4-pagination-ranking
+      - name: Merge current main into PR86
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-ff -X ours origin/main -m "chore: converge PR86 with merged mobile foundation"
+      - name: Verify preserved mobile search behavior
+        run: |
+          grep -q "activeQueryText" apps/census-mobile-frontend/src/app/app.html
+          grep -q "Results for" apps/census-mobile-frontend/src/app/app.html
+          grep -q "globalRank" apps/census-mobile-frontend/src/app/app.html
+          grep -q "nextPage" apps/census-mobile-frontend/src/app/app.html
+          git diff --check HEAD^ HEAD
+      - name: Remove one-shot workflow
+        run: |
+          git rm .github/workflows/pr86-converge.yml
+          git commit -m "ci: remove PR86 convergence workflow"
+      - name: Push converged branch
+        run: git push origin HEAD:codex/mobile-first-census-pr4-pagination-ranking
