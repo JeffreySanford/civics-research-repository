@@ -99,7 +99,12 @@
       </span>
     </div>
 
-    @if (paginationNotice()) {
+    @if (searchResponse.query.trim() && resultTypeFacet()) {
+    <app-search-summary
+      [facet]="resultTypeFacet()"
+      [totalResults]="searchResponse.totalResults"
+    ></app-search-summary>
+    } @if (paginationNotice()) {
     <div class="status-card" role="status">
       <strong>Pagination compatibility mode</strong>
       <span>{{ paginationNotice() }}</span>

@@ -1,0 +1,51 @@
+@if (values().length > 0 && totalResults() > 0) {
+  <section class="search-summary" aria-labelledby="search-summary-title">
+    <div class="search-summary__heading">
+      <div>
+        <p class="search-summary__eyebrow">Search snapshot</p>
+        <h3 id="search-summary-title">Result type mix</h3>
+      </div>
+      <span class="search-summary__total">{{ totalResults() }} records</span>
+    </div>
+
+    <p class="search-summary__scope">
+      Counts describe all records matching this search, not only the visible
+      page.
+    </p>
+
+    <ul id="search-summary-values" class="search-summary__values">
+      @for (value of visibleValues(); track value.value) {
+        <li class="search-summary__value">
+          <div class="search-summary__label-row">
+            <span class="search-summary__label">{{ value.label }}</span>
+            <span class="search-summary__count">
+              {{ value.count }} · {{ percentage(value) }}%
+            </span>
+          </div>
+          <div class="search-summary__track" aria-hidden="true">
+            <span
+              class="search-summary__bar"
+              [style.width.%]="percentage(value)"
+            ></span>
+          </div>
+        </li>
+      }
+    </ul>
+
+    @if (hasMore()) {
+      <button
+        class="search-summary__toggle"
+        type="button"
+        aria-controls="search-summary-values"
+        [attr.aria-expanded]="expanded()"
+        (click)="toggleExpanded()"
+      >
+        {{
+          expanded()
+            ? 'Show fewer types'
+            : 'Show all ' + values().length + ' types'
+        }}
+      </button>
+    }
+  </section>
+}

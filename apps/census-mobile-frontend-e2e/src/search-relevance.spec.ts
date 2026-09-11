@@ -16,10 +16,11 @@ const result = (
   rawScore: number,
   normalizedScore: number,
   band: 'STRONG' | 'GOOD' | 'MODERATE' | 'WEAK' | 'LOW',
+  contentType: 'DATASET' | 'PUBLICATION' = 'DATASET',
 ) => ({
   id,
   title,
-  contentType: 'DATASET',
+  contentType,
   program: 'OTHER',
   programName: 'Population Mobility',
   publisher: 'U.S. Census Bureau',
@@ -94,9 +95,29 @@ async function mockCursorSearch(page: Page): Promise<void> {
               3,
               0.3,
               'WEAK',
+              'PUBLICATION',
             ),
           ],
-          facets: [],
+          facets: [
+            {
+              field: 'type',
+              label: 'Type',
+              values: [
+                {
+                  value: 'DATASET',
+                  label: 'Dataset',
+                  count: 1,
+                  selected: false,
+                },
+                {
+                  value: 'PUBLICATION',
+                  label: 'Publication',
+                  count: 1,
+                  selected: false,
+                },
+              ],
+            },
+          ],
           relevanceModel: {
             engine: 'SOLR',
             normalization: 'SOLR_MAX_SCORE_RATIO_V1',
@@ -129,6 +150,13 @@ test.describe('mobile relevance evidence', () => {
     await expect(page.getByText('Weak match')).toBeVisible();
     await expect(
       page.getByText('Match labels are query-relative search evidence'),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Result type mix' }),
+    ).toBeVisible();
+    await expect(page.getByText('1 · 50%').first()).toBeVisible();
+    await expect(
+      page.getByText('Counts describe all records matching this search'),
     ).toBeVisible();
     await expect(page.getByText('100%')).toHaveCount(0);
 

@@ -22,6 +22,10 @@ export class App {
     () => this.searchState().query.q?.trim() ?? '',
   );
   readonly resultCount = computed(() => this.response()?.totalResults ?? 0);
+  readonly resultTypeFacet = computed(
+    () =>
+      this.response()?.facets.find((facet) => facet.field === 'type') ?? null,
+  );
   readonly totalPages = computed(() => {
     const response = this.response();
     return response
