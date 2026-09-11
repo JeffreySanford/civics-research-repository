@@ -60,8 +60,8 @@
     @if (loading()) {
     <div class="status-card" role="status">
       <strong>
-        @if (activeQueryText()) { Searching for “{{ activeQueryText() }}”… } @else
-        { Loading the current discovery set… }
+        @if (activeQueryText()) { Searching for “{{ activeQueryText() }}”… }
+        @else { Loading the current discovery set… }
       </strong>
       <span>Loading the requested mobile result page.</span>
     </div>
