@@ -4,7 +4,7 @@ import { SearchRankBadgeComponent } from './search-rank-badge.component';
 describe('SearchRankBadgeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [SearchRankBadgeComponent],
+      imports: [SearchRankBadgeComponent],
     }).compileComponents();
   });
 
