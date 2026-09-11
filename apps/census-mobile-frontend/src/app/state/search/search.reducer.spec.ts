@@ -17,7 +17,12 @@ describe('searchReducer', () => {
     const state = searchReducer(
       initialSearchState,
       SearchActions.searchSubmitted({
-        query: { q: 'housing', geography: 'North Dakota', page: 0, pageSize: 20 },
+        query: {
+          q: 'housing',
+          geography: 'North Dakota',
+          page: 0,
+          pageSize: 20,
+        },
       }),
     );
 
