@@ -12,34 +12,34 @@ The new app should prefer module-based Angular composition while using a hybrid 
 
 ## Repo Facts Verified From Source
 
-| Area                             | Current Finding                                                                 | Source                                                        |
-| -------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Existing app project             | `discovery-ui`                                                                  | `apps/discovery-ui/project.json`                              |
-| Existing app source root         | `apps/discovery-ui/src`                                                         | `apps/discovery-ui/project.json`                              |
-| Existing app serve/static port   | `4200`                                                                          | `apps/discovery-ui/project.json`                              |
-| Existing Storybook port          | `4400`                                                                          | `apps/discovery-ui/project.json`                              |
-| Existing API base URL            | `http://localhost:8080/api` by default                                          | `libs/repository/api-client/src/lib/repository-api-client.ts` |
-| Existing search client           | `RepositorySearchApi`                                                           | `libs/repository/api-client/src/lib/repository-api-client.ts` |
-| Existing search types            | `SearchQuery`, `SearchResponse`, `SearchResult`, `FacetGroup`, `FacetValue`      | `libs/repository/api-client/src/lib/repository-api-client.ts` |
-| Existing build executor          | `@angular/build:application`                                                    | `apps/discovery-ui/project.json`                              |
-| Existing style language          | SCSS                                                                            | `apps/discovery-ui/project.json`                              |
-| Existing unit test target        | Angular unit-test target                                                        | `apps/discovery-ui/project.json`                              |
-| Package manager                  | `pnpm@10.14.0`                                                                  | `package.json`                                                |
+| Area                           | Current Finding                                                             | Source                                                        |
+| ------------------------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Existing app project           | `discovery-ui`                                                              | `apps/discovery-ui/project.json`                              |
+| Existing app source root       | `apps/discovery-ui/src`                                                     | `apps/discovery-ui/project.json`                              |
+| Existing app serve/static port | `4200`                                                                      | `apps/discovery-ui/project.json`                              |
+| Existing Storybook port        | `4400`                                                                      | `apps/discovery-ui/project.json`                              |
+| Existing API base URL          | `http://localhost:8080/api` by default                                      | `libs/repository/api-client/src/lib/repository-api-client.ts` |
+| Existing search client         | `RepositorySearchApi`                                                       | `libs/repository/api-client/src/lib/repository-api-client.ts` |
+| Existing search types          | `SearchQuery`, `SearchResponse`, `SearchResult`, `FacetGroup`, `FacetValue` | `libs/repository/api-client/src/lib/repository-api-client.ts` |
+| Existing build executor        | `@angular/build:application`                                                | `apps/discovery-ui/project.json`                              |
+| Existing style language        | SCSS                                                                        | `apps/discovery-ui/project.json`                              |
+| Existing unit test target      | Angular unit-test target                                                    | `apps/discovery-ui/project.json`                              |
+| Package manager                | `pnpm@10.14.0`                                                              | `package.json`                                                |
 
 ## Proposed New App Facts
 
-| Area               | Proposed Value                                      | Reason                                                                        |
-| ------------------ | --------------------------------------------------- | ----------------------------------------------------------------------------- |
-| App name           | `census-mobile-frontend`                            | Clear, specific, and separate from existing app                               |
-| App path           | `apps/census-mobile-frontend`                       | Matches Nx app layout                                                         |
-| Angular composition| Module-based (`standalone=false`)                   | Preferred application/component organization for the new frontend             |
-| Serve port         | `4300`                                              | Avoids collision with existing `4200` app                                     |
-| API boundary       | Existing `repository-api-client`                    | Reuses typed OpenAPI contracts and `RepositorySearchApi`                      |
-| Shared search state| NgRx/RxJS                                            | Fits effects, cancellation, selectors, URL state, and asynchronous workflows  |
-| Local UI state     | Angular Signals where appropriate                   | Fits drawer/disclosure state and simple synchronous computed presentation      |
-| Styling            | SCSS                                                 | Matches repository conventions                                                 |
-| Unit tests         | Repository-standard Angular/Vitest setup            | Keeps validation consistent with the workspace                                 |
-| Storybook          | Port `4500`                                         | Avoids collision with existing `discovery-ui` Storybook on `4400`             |
+| Area                | Proposed Value                           | Reason                                                                       |
+| ------------------- | ---------------------------------------- | ---------------------------------------------------------------------------- |
+| App name            | `census-mobile-frontend`                 | Clear, specific, and separate from existing app                              |
+| App path            | `apps/census-mobile-frontend`            | Matches Nx app layout                                                        |
+| Angular composition | Module-based (`standalone=false`)        | Preferred application/component organization for the new frontend            |
+| Serve port          | `4300`                                   | Avoids collision with existing `4200` app                                    |
+| API boundary        | Existing `repository-api-client`         | Reuses typed OpenAPI contracts and `RepositorySearchApi`                     |
+| Shared search state | NgRx/RxJS                                | Fits effects, cancellation, selectors, URL state, and asynchronous workflows |
+| Local UI state      | Angular Signals where appropriate        | Fits drawer/disclosure state and simple synchronous computed presentation    |
+| Styling             | SCSS                                     | Matches repository conventions                                               |
+| Unit tests          | Repository-standard Angular/Vitest setup | Keeps validation consistent with the workspace                               |
+| Storybook           | Port `4500`                              | Avoids collision with existing `discovery-ui` Storybook on `4400`            |
 
 ## Local Environment Evidence
 

@@ -89,16 +89,16 @@ The plan explicitly avoids a dashboard-first mobile layout, decorative infograph
 
 ## Baseline Checks
 
-| Check                           | Current Evidence                                                                 |
-| ------------------------------- | -------------------------------------------------------------------------------- |
-| `pnpm install`                  | User reported complete on 2026-09-11                                             |
-| `pnpm approve-builds`           | User reported complete; setup-only package change excluded from PR 1             |
-| `pnpm start:all`                | User reported reaching the expected running state                                |
-| Existing `discovery-ui` project | Repository-verified                                                              |
-| Existing app port `4200`        | Repository-verified                                                              |
-| Existing Storybook port `4400`  | Repository-verified                                                              |
-| Repository API base URL         | Repository-verified default `http://localhost:8080/api`                          |
-| Existing search client/types    | Repository-verified `RepositorySearchApi` and generated search contract surface  |
+| Check                           | Current Evidence                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `pnpm install`                  | User reported complete on 2026-09-11                                            |
+| `pnpm approve-builds`           | User reported complete; setup-only package change excluded from PR 1            |
+| `pnpm start:all`                | User reported reaching the expected running state                               |
+| Existing `discovery-ui` project | Repository-verified                                                             |
+| Existing app port `4200`        | Repository-verified                                                             |
+| Existing Storybook port `4400`  | Repository-verified                                                             |
+| Repository API base URL         | Repository-verified default `http://localhost:8080/api`                         |
+| Existing search client/types    | Repository-verified `RepositorySearchApi` and generated search contract surface |
 
 User-reported local checks are recorded as such rather than represented as independently reproduced CI evidence.
 
