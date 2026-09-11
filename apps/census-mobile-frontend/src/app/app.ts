@@ -35,10 +35,7 @@ export class App {
   readonly resultEnd = computed(() => {
     const response = this.response();
     return response
-      ? Math.min(
-          (response.page + 1) * response.pageSize,
-          response.totalResults,
-        )
+      ? Math.min((response.page + 1) * response.pageSize, response.totalResults)
       : 0;
   });
   readonly canPrevious = computed(
@@ -80,14 +77,18 @@ export class App {
   previousPage(): void {
     const page = this.response()?.page ?? 0;
     if (page > 0) {
-      this.store.dispatch(MobileSearchActions.pageRequested({ page: page - 1 }));
+      this.store.dispatch(
+        MobileSearchActions.pageRequested({ page: page - 1 }),
+      );
     }
   }
 
   nextPage(): void {
     const page = this.response()?.page ?? 0;
     if (this.canNext()) {
-      this.store.dispatch(MobileSearchActions.pageRequested({ page: page + 1 }));
+      this.store.dispatch(
+        MobileSearchActions.pageRequested({ page: page + 1 }),
+      );
     }
   }
 

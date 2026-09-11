@@ -46,24 +46,26 @@ export class MobileSearchEffects {
                 );
               }
 
-              return this.searchApi.searchResearchObjects({ ...query, page: 0 }).pipe(
-                map((response) =>
-                  MobileSearchActions.cursorCompatibilityLoaded({
-                    response,
-                    notice: CURSOR_COMPATIBILITY_NOTICE,
-                  }),
-                ),
-                catchError((fallbackError: unknown) =>
-                  of(
-                    MobileSearchActions.searchFailed({
-                      message: parseRepositoryError(
-                        fallbackError,
-                        'Search results failed to load.',
-                      ).message,
+              return this.searchApi
+                .searchResearchObjects({ ...query, page: 0 })
+                .pipe(
+                  map((response) =>
+                    MobileSearchActions.cursorCompatibilityLoaded({
+                      response,
+                      notice: CURSOR_COMPATIBILITY_NOTICE,
                     }),
                   ),
-                ),
-              );
+                  catchError((fallbackError: unknown) =>
+                    of(
+                      MobileSearchActions.searchFailed({
+                        message: parseRepositoryError(
+                          fallbackError,
+                          'Search results failed to load.',
+                        ).message,
+                      }),
+                    ),
+                  ),
+                );
             }),
           ),
       ),

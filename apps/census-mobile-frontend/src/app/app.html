@@ -56,120 +56,101 @@
     [attr.aria-busy]="loading()"
   >
     @if (loading()) {
-      <div class="status-card" role="status">
-        <strong>Searching repository…</strong>
-        <span>Loading the requested mobile result page.</span>
+    <div class="status-card" role="status">
+      <strong>Searching repository…</strong>
+      <span>Loading the requested mobile result page.</span>
+    </div>
+    } @if (error()) {
+    <div class="status-card status-card--error" role="alert">
+      <strong>Search could not be completed.</strong>
+      <span>{{ error() }}</span>
+    </div>
+    } @if (response(); as searchResponse) {
+    <div class="results__heading">
+      <div>
+        <p class="section-heading__eyebrow">Results</p>
+        <h2 id="results-title">{{ resultCount() }} matching records</h2>
+        <p class="results__range">
+          Showing {{ resultStart() }}–{{ resultEnd() }} · Page {{
+          currentPageNumber() }} of {{ totalPages() }}
+        </p>
       </div>
-    }
+      <span class="results__source">
+        Source: {{ searchResponse.resultSource }}
+      </span>
+    </div>
 
-    @if (error()) {
-      <div class="status-card status-card--error" role="alert">
-        <strong>Search could not be completed.</strong>
-        <span>{{ error() }}</span>
-      </div>
-    }
-
-    @if (response(); as searchResponse) {
-      <div class="results__heading">
-        <div>
-          <p class="section-heading__eyebrow">Results</p>
-          <h2 id="results-title">{{ resultCount() }} matching records</h2>
-          <p class="results__range">
-            Showing {{ resultStart() }}–{{ resultEnd() }} · Page
-            {{ currentPageNumber() }} of {{ totalPages() }}
-          </p>
+    @if (paginationNotice()) {
+    <div class="status-card" role="status">
+      <strong>Pagination compatibility mode</strong>
+      <span>{{ paginationNotice() }}</span>
+    </div>
+    } @if (searchResponse.results.length === 0) {
+    <div class="status-card">
+      <strong>No results found.</strong>
+      <span>Try broader keywords or submit an empty search.</span>
+    </div>
+    } @else {
+    <ol class="result-list" [attr.start]="resultStart()">
+      @for ( result of searchResponse.results; track result.id; let index =
+      $index ) {
+      <li
+        class="result-card"
+        [class.result-card--top-ranked]="isTopRanked(index)"
+      >
+        <div class="result-card__rank-row">
+          <span
+            class="result-card__rank"
+            [class.result-card__rank--top]="isTopRanked(index)"
+          >
+            @if (isTopRanked(index)) {
+            <strong>Top ranked</strong>
+            } Rank {{ globalRank(index) }}
+          </span>
         </div>
-        <span class="results__source">
-          Source: {{ searchResponse.resultSource }}
-        </span>
-      </div>
 
-      @if (paginationNotice()) {
-        <div class="status-card" role="status">
-          <strong>Pagination compatibility mode</strong>
-          <span>{{ paginationNotice() }}</span>
-        </div>
-      }
-
-      @if (searchResponse.results.length === 0) {
-        <div class="status-card">
-          <strong>No results found.</strong>
-          <span>Try broader keywords or submit an empty search.</span>
-        </div>
-      } @else {
-        <ol class="result-list" [attr.start]="resultStart()">
-          @for (
-            result of searchResponse.results;
-            track result.id;
-            let index = $index
-          ) {
-            <li
-              class="result-card"
-              [class.result-card--top-ranked]="isTopRanked(index)"
-            >
-              <div class="result-card__rank-row">
-                <span
-                  class="result-card__rank"
-                  [class.result-card__rank--top]="isTopRanked(index)"
-                >
-                  @if (isTopRanked(index)) {
-                    <strong>Top ranked</strong>
-                  }
-                  Rank {{ globalRank(index) }}
-                </span>
-              </div>
-
-              <div class="result-card__meta">
-                <span>{{ result.contentType }}</span>
-                @if (result.publisher) {
-                  <span>{{ result.publisher }}</span>
-                }
-              </div>
-
-              <h3>{{ result.title }}</h3>
-
-              @if (result.summary) {
-                <p class="result-card__summary">{{ result.summary }}</p>
-              }
-
-              @if (result.geography) {
-                <p class="result-card__detail">
-                  Geography: {{ result.geography }}
-                </p>
-              }
-            </li>
+        <div class="result-card__meta">
+          <span>{{ result.contentType }}</span>
+          @if (result.publisher) {
+          <span>{{ result.publisher }}</span>
           }
-        </ol>
+        </div>
 
-        <nav class="pagination" aria-label="Search result pages">
-          <p class="pagination__status">
-            Showing {{ resultStart() }}–{{ resultEnd() }} of
-            {{ resultCount() }} results
-          </p>
-          <div class="pagination__controls">
-            <button
-              type="button"
-              (click)="previousPage()"
-              [disabled]="!canPrevious()"
-            >
-              Previous
-            </button>
-            <span aria-current="page">Page {{ currentPageNumber() }}</span>
-            <button
-              type="button"
-              (click)="nextPage()"
-              [disabled]="!canNext()"
-            >
-              Next
-            </button>
-          </div>
-        </nav>
+        <h3>{{ result.title }}</h3>
+
+        @if (result.summary) {
+        <p class="result-card__summary">{{ result.summary }}</p>
+        } @if (result.geography) {
+        <p class="result-card__detail">Geography: {{ result.geography }}</p>
+        }
+      </li>
       }
-    } @else if (!loading() && !error()) {
-      <div class="status-card" role="status">
-        <strong>Search is ready.</strong>
-        <span>Submit a query to exercise the real repository API.</span>
+    </ol>
+
+    <nav class="pagination" aria-label="Search result pages">
+      <p class="pagination__status">
+        Showing {{ resultStart() }}–{{ resultEnd() }} of {{ resultCount() }}
+        results
+      </p>
+      <div class="pagination__controls">
+        <button
+          type="button"
+          (click)="previousPage()"
+          [disabled]="!canPrevious()"
+        >
+          Previous
+        </button>
+        <span aria-current="page">Page {{ currentPageNumber() }}</span>
+        <button type="button" (click)="nextPage()" [disabled]="!canNext()">
+          Next
+        </button>
       </div>
+    </nav>
+    } } @else if (!loading() && !error()) {
+    <div class="status-card" role="status">
+      <strong>Search is ready.</strong>
+      <span>Submit a query to exercise the real repository API.</span>
+    </div>
     }
   </section>
 
