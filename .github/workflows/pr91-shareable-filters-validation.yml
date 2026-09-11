@@ -31,21 +31,25 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           path = Path('apps/census-mobile-frontend/src/app/app.spec.ts')
           text = path.read_text()
-          old = """    const datasetButton = Array.from(
-              fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.facet-option'),
-            ).find((element) => element.textContent?.includes('Dataset'));
+          pattern = re.compile(
+              r"\s*const datasetButton = Array\.from\(\s*"
+              r"fixture\.nativeElement\.querySelectorAll<HTMLButtonElement>\('\.facet-option'\),\s*"
+              r"\)\.find\(\(element\) => element\.textContent\?\.includes\('Dataset'\)\);"
+          )
+          replacement = """
+              const compiled = fixture.nativeElement as HTMLElement;
+              const datasetButton = Array.from(
+                compiled.querySelectorAll<HTMLButtonElement>('.facet-option'),
+              ).find((element) => element.textContent?.includes('Dataset'));
           """
-          new = """    const compiled = fixture.nativeElement as HTMLElement;
-            const datasetButton = Array.from(
-              compiled.querySelectorAll<HTMLButtonElement>('.facet-option'),
-            ).find((element) => element.textContent?.includes('Dataset'));
-          """
-          if old not in text:
-              raise SystemExit('Expected fixture DOM typing anchor not found')
-          path.write_text(text.replace(old, new, 1))
+          updated, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'Expected one fixture DOM typing match, found {count}')
+          path.write_text(updated)
           PY
 
       - name: Install dependencies
