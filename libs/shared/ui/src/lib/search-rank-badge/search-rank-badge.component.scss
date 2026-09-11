@@ -1,0 +1,32 @@
+:host {
+  display: inline-flex;
+}
+
+.rank-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--civics-border, currentColor);
+  border-radius: 999px;
+  color: var(--civics-text-secondary, currentColor);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.rank-badge--top {
+  border-color: var(--civics-success-border, currentColor);
+  background: var(--civics-success-bg, transparent);
+  color: var(--civics-success-text, currentColor);
+}
+
+@media (forced-colors: active) {
+  .rank-badge,
+  .rank-badge--top {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
