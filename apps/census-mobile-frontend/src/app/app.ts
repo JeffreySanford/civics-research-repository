@@ -15,7 +15,8 @@ import {
 } from '@angular/router';
 import { Store } from '@ngrx/store';
 import type { SearchQuery } from 'repository-api-client';
-import { filter, take } from 'rxjs';
+import { encodeResearchId } from 'repository-models';
+import { filter } from 'rxjs';
 import type {
   MobileActiveFilter,
   MobileFilterField,
@@ -42,6 +43,8 @@ export class App implements OnInit {
 
   readonly queryText = signal('');
   readonly filtersOpen = signal(false);
+  readonly detailRoute = signal(false);
+  private lastOpenedResultIndex: number | null = null;
   readonly searchState = this.store.selectSignal(selectMobileSearchState);
   readonly response = computed(() => this.searchState().response);
   readonly loading = computed(() => this.searchState().loading);
@@ -123,20 +126,14 @@ export class App implements OnInit {
   private readonly filterTrigger?: ElementRef<HTMLButtonElement>;
 
   ngOnInit(): void {
-    if (this.hydrateFromRouterUrl(this.router.url)) {
-      return;
-    }
-
+    this.syncRoute(this.router.url);
     this.router.events
       .pipe(
         filter(
           (event): event is NavigationEnd => event instanceof NavigationEnd,
         ),
-        take(1),
       )
-      .subscribe((event) => {
-        this.hydrateFromRouterUrl(event.urlAfterRedirects);
-      });
+      .subscribe((event) => this.syncRoute(event.urlAfterRedirects));
   }
 
   updateQuery(event: Event): void {
@@ -204,6 +201,47 @@ export class App implements OnInit {
     return this.globalRank(index) <= 3;
   }
 
+  researchRouteId(canonicalId: string): string {
+    return encodeResearchId(canonicalId);
+  }
+
+  searchReturnUrl(): string {
+    return this.router.url.startsWith('/research/') ? '/' : this.router.url;
+  }
+
+  rememberResultFocus(index: number): void {
+    this.lastOpenedResultIndex = index;
+  }
+
+  private syncRoute(url: string): void {
+    const wasDetail = this.detailRoute();
+    const isDetail =
+      this.router.parseUrl(url).root.children['primary']?.segments[0]?.path ===
+      'research';
+    this.detailRoute.set(isDetail);
+    if (isDetail) {
+      return;
+    }
+
+    this.hydrateFromRouterUrl(url);
+    if (wasDetail) {
+      this.restoreResultFocus();
+    }
+  }
+
+  private restoreResultFocus(): void {
+    const index = this.lastOpenedResultIndex;
+    if (index === null) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      const link = document.querySelector<HTMLAnchorElement>(
+        `[data-result-index="${index}"] .result-card__detail-link`,
+      );
+      link?.focus();
+    });
+  }
+
   private hydrateFromRouterUrl(url: string): boolean {
     const params = convertToParamMap(this.router.parseUrl(url).queryParams);
     if (!this.routeQueryAdapter.hasSearchIntent(params)) {
@@ -212,7 +250,16 @@ export class App implements OnInit {
 
     const query = this.routeQueryAdapter.fromParamMap(params);
     this.queryText.set(query.q ?? '');
-    this.store.dispatch(MobileSearchActions.searchSubmitted({ query }));
+    const currentParams = this.routeQueryAdapter.toQueryParams(
+      this.searchState().query,
+    );
+    const nextParams = this.routeQueryAdapter.toQueryParams(query);
+    if (
+      JSON.stringify(currentParams) !== JSON.stringify(nextParams) ||
+      (!this.response() && !this.loading())
+    ) {
+      this.store.dispatch(MobileSearchActions.searchSubmitted({ query }));
+    }
     return true;
   }
 

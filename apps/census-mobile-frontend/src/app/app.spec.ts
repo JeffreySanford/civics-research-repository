@@ -12,12 +12,14 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { App } from './app';
 import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
+import { MobileResearchDetailComponent } from './components/mobile-research-detail/mobile-research-detail.component';
 import { SearchMatchEvidenceComponent } from './components/search-match-evidence/search-match-evidence.component';
 import {
   SearchRankBadgeComponent,
   SearchRelevanceBadgeComponent,
 } from 'shared-ui';
 import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
+import { mobileResearchDetailReducer } from './state/research-detail/research-detail.reducer';
 import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
 
@@ -88,13 +90,17 @@ describe('App', () => {
       imports: [
         A11yModule,
         RouterModule.forRoot([]),
-        StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
+        StoreModule.forRoot({
+          mobileSearch: mobileSearchReducer,
+          researchDetail: mobileResearchDetailReducer,
+        }),
         SearchRankBadgeComponent,
         SearchRelevanceBadgeComponent,
       ],
       declarations: [
         App,
         MobileSearchFiltersComponent,
+        MobileResearchDetailComponent,
         SearchMatchEvidenceComponent,
         SearchSummaryComponent,
       ],

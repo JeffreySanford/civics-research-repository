@@ -11,6 +11,7 @@
 </header>
 
 <main id="main-content" class="page-shell" tabindex="-1">
+  @if (!detailRoute()) {
   <section class="hero" aria-labelledby="hero-title">
     <p class="hero__eyebrow">Mobile-first discovery</p>
     <h1 id="hero-title">
@@ -170,6 +171,7 @@
       $index ) {
       <li
         class="result-card"
+        [attr.data-result-index]="index"
         [class.result-card--top-ranked]="
           !!searchResponse.query.trim() && isTopRanked(index)
         "
@@ -192,7 +194,16 @@
           }
         </div>
 
-        <h3>{{ result.title }}</h3>
+        <h3>
+          <a
+            class="result-card__title-link"
+            [routerLink]="['/research', researchRouteId(result.id)]"
+            [queryParams]="{ returnUrl: searchReturnUrl() }"
+            [state]="{ fromSearch: true }"
+            (click)="rememberResultFocus(index)"
+            >{{ result.title }}</a
+          >
+        </h3>
 
         @if (result.summary) {
         <p class="result-card__summary">{{ result.summary }}</p>
@@ -203,6 +214,15 @@
         <app-search-match-evidence
           [evidence]="result.matchEvidence"
         ></app-search-match-evidence>
+        <a
+          class="result-card__detail-link"
+          [routerLink]="['/research', researchRouteId(result.id)]"
+          [queryParams]="{ returnUrl: searchReturnUrl() }"
+          [state]="{ fromSearch: true }"
+          (click)="rememberResultFocus(index)"
+          [attr.aria-label]="'View research object: ' + result.title"
+          >View research object</a
+        >
       </li>
       }
     </ol>
@@ -234,6 +254,7 @@
     }
   </section>
 
+  }
   <router-outlet></router-outlet>
 </main>
 

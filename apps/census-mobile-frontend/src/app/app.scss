@@ -437,3 +437,18 @@
     border: 2px solid CanvasText;
   }
 }
+
+.result-card__title-link,
+.result-card__detail-link {
+  color: var(--mat-sys-primary);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+}
+
+.result-card__detail-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  margin-top: 0.8rem;
+  font-weight: 800;
+}
