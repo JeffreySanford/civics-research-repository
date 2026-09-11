@@ -36,13 +36,13 @@ Only the third is direct evidence of actual usefulness. The product should there
 
 Prefer five discrete bands over a continuous rainbow:
 
-| Band | Visual direction | Meaning |
-| --- | --- | --- |
-| Strong match | green | highest-confidence query match for this result set |
-| Good match | yellow-green | clearly related, but weaker than the leading group |
-| Moderate match | amber/yellow | relevant enough to inspect, with broader or partial term coverage |
-| Weak match | orange | limited lexical/query evidence |
-| Low match | red | returned by the engine but weakly aligned with the submitted query |
+| Band           | Visual direction | Meaning                                                            |
+| -------------- | ---------------- | ------------------------------------------------------------------ |
+| Strong match   | green            | highest-confidence query match for this result set                 |
+| Good match     | yellow-green     | clearly related, but weaker than the leading group                 |
+| Moderate match | amber/yellow     | relevant enough to inspect, with broader or partial term coverage  |
+| Weak match     | orange           | limited lexical/query evidence                                     |
+| Low match      | red              | returned by the engine but weakly aligned with the submitted query |
 
 Rules:
 
