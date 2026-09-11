@@ -116,17 +116,17 @@ The mobile app is responsible for:
 
 Use a deliberate hybrid state model rather than forcing every state shape into one primitive.
 
-| Concern | Recommended Tool |
-| --- | --- |
-| HTTP search requests | `RepositorySearchApi` inside NgRx effects |
-| Search query/results/facets | NgRx store, reducers, selectors, effects |
-| URL query synchronization | Angular Router + NgRx/RxJS |
-| Request cancellation | RxJS `switchMap` in effects |
-| Filter drawer open/close | Angular `signal()` when state is local to the shell |
-| Summary disclosure expanded/collapsed | Angular `signal()` |
-| Small synchronous presentation derivations | `computed()` where the source state is already signal-based |
-| Shared derived search state | NgRx selectors; bridge to signals at the component boundary when useful |
-| Layout responsiveness | CSS first; CDK `BreakpointObserver` only for actual behavior changes |
+| Concern                                    | Recommended Tool                                                        |
+| ------------------------------------------ | ----------------------------------------------------------------------- |
+| HTTP search requests                       | `RepositorySearchApi` inside NgRx effects                               |
+| Search query/results/facets                | NgRx store, reducers, selectors, effects                                |
+| URL query synchronization                  | Angular Router + NgRx/RxJS                                              |
+| Request cancellation                       | RxJS `switchMap` in effects                                             |
+| Filter drawer open/close                   | Angular `signal()` when state is local to the shell                     |
+| Summary disclosure expanded/collapsed      | Angular `signal()`                                                      |
+| Small synchronous presentation derivations | `computed()` where the source state is already signal-based             |
+| Shared derived search state                | NgRx selectors; bridge to signals at the component boundary when useful |
+| Layout responsiveness                      | CSS first; CDK `BreakpointObserver` only for actual behavior changes    |
 
 Starting with NgRx for the search workflow is justified because query text, repeatable facets, pagination, URL state, loading/error state, and request cancellation form one coherent asynchronous state machine. Signals are appropriate for local, synchronous interaction state that does not need effects, replay semantics, or cross-route ownership.
 
@@ -182,19 +182,19 @@ compactMetadataExpandedByResult
 
 Initial components:
 
-| Component | Responsibility |
-| --- | --- |
-| `MobileDiscoveryPage` | Route container and feature composition |
-| `DiscoverySearchBarComponent` | Search input, submit, clear |
-| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count |
-| `DiscoveryFiltersComponent` | Facet groups and selected facet state |
-| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips |
-| `DiscoveryResultsHeaderComponent` | Result count, range, loading status |
-| `ResearchResultCardComponent` | One accessible research result |
-| `DiscoveryResultsComponent` | Result collection and empty/error/loading states |
-| `DiscoveryPaginationComponent` | Previous/current/next controls and focus behavior |
+| Component                         | Responsibility                                      |
+| --------------------------------- | --------------------------------------------------- |
+| `MobileDiscoveryPage`             | Route container and feature composition             |
+| `DiscoverySearchBarComponent`     | Search input, submit, clear                         |
+| `DiscoveryFilterTriggerComponent` | Mobile filter button and active count               |
+| `DiscoveryFiltersComponent`       | Facet groups and selected facet state               |
+| `DiscoveryActiveFiltersComponent` | Removable selected-filter chips                     |
+| `DiscoveryResultsHeaderComponent` | Result count, range, loading status                 |
+| `ResearchResultCardComponent`     | One accessible research result                      |
+| `DiscoveryResultsComponent`       | Result collection and empty/error/loading states    |
+| `DiscoveryPaginationComponent`    | Previous/current/next controls and focus behavior   |
 | `DiscoverySearchSummaryComponent` | Optional compact server-facet visualization summary |
-| `DiscoveryShellComponent` | Drawer/sidebar layout composition |
+| `DiscoveryShellComponent`         | Drawer/sidebar layout composition                   |
 
 Keep presentational components input/output driven where possible so Storybook can render them without booting the full search workflow. Component-local Signals may manage purely internal interaction state without turning those components into independent application state stores.
 
