@@ -1,0 +1,86 @@
+name: PR6 mobile search summary validation
+
+on:
+  push:
+    branches:
+      - codex/mobile-first-census-pr6-search-summary
+    paths:
+      - .github/workflows/pr6-search-summary-validation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/mobile-first-census-pr6-search-summary
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Apply search-summary slice
+        run: python tools/scripts/apply-pr6-search-summary.py
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format changed sources
+        run: |
+          pnpm exec prettier --write \
+            apps/census-mobile-frontend/src/app/app.ts \
+            apps/census-mobile-frontend/src/app/app.html \
+            apps/census-mobile-frontend/src/app/app-module.ts \
+            apps/census-mobile-frontend/src/app/app.spec.ts \
+            apps/census-mobile-frontend/src/app/components/search-summary/search-summary.component.ts \
+            apps/census-mobile-frontend/src/app/components/search-summary/search-summary.component.html \
+            apps/census-mobile-frontend/src/app/components/search-summary/search-summary.component.scss \
+            apps/census-mobile-frontend/src/app/components/search-summary/search-summary.component.spec.ts \
+            apps/census-mobile-frontend/src/app/components/search-summary/search-summary.component.stories.ts \
+            apps/census-mobile-frontend-e2e/src/search-relevance.spec.ts \
+            mobile-first/planning/backlog.md
+
+      - name: Check generated API contract
+        run: pnpm run openapi:check
+
+      - name: Lint mobile frontend
+        run: pnpm nx run census-mobile-frontend:lint
+
+      - name: Test mobile frontend
+        run: pnpm nx run census-mobile-frontend:test
+
+      - name: Build mobile frontend
+        run: pnpm nx run census-mobile-frontend:build
+
+      - name: Build mobile Storybook
+        run: pnpm nx run census-mobile-frontend:build-storybook --configuration=ci
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run 320px browser and axe evidence
+        run: pnpm nx run census-mobile-frontend-e2e:e2e
+
+      - name: Remove one-shot helpers
+        run: |
+          rm .github/workflows/pr6-search-summary-validation.yml
+          rm tools/scripts/apply-pr6-search-summary.py
+
+      - name: Commit validated search summary
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "feat: add query-wide mobile search summary"
+          git push origin HEAD:codex/mobile-first-census-pr6-search-summary
