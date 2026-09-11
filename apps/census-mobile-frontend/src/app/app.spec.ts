@@ -1,8 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
-import { StoreModule } from '@ngrx/store';
+import { Store, StoreModule } from '@ngrx/store';
+import type { SearchResponse } from 'repository-api-client';
 import { App } from './app';
+import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
+
+const searchResponse: SearchResponse = {
+  resultSource: 'REPOSITORY',
+  query: 'North Dakota migration',
+  page: 0,
+  pageSize: 10,
+  totalResults: 5881,
+  results: [],
+  facets: [],
+};
 
 describe('App', () => {
   beforeEach(async () => {
@@ -31,5 +43,24 @@ describe('App', () => {
     expect(compiled.querySelector('.status-card')?.textContent).toContain(
       'Search is ready.',
     );
+  });
+
+  it('shows result range and pagination after results load', () => {
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(App);
+
+    store.dispatch(MobileSearchActions.searchLoaded({ response: searchResponse }));
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.results__range')?.textContent).toContain(
+      'Showing 1–10',
+    );
+    expect(compiled.querySelector('.results__range')?.textContent).toContain(
+      'Page 1 of 589',
+    );
+    expect(
+      compiled.querySelector('nav[aria-label="Search result pages"]'),
+    ).not.toBeNull();
   });
 });
