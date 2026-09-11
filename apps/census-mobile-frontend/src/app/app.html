@@ -50,7 +50,127 @@
       </p>
       }
     </form>
+
+    <div class="search-tools">
+      <button
+        #filterTrigger
+        class="filter-trigger"
+        type="button"
+        aria-controls="mobile-filter-drawer"
+        [attr.aria-expanded]="filtersOpen()"
+        [disabled]="!response() && !loading()"
+        (click)="openFilters()"
+      >
+        Filters
+        @if (activeFilters().length > 0) {
+        <span class="filter-count" aria-label="active filters">
+          {{ activeFilters().length }}
+        </span>
+        }
+      </button>
+      @if (response()) {
+      <span class="search-tools__status" aria-live="polite">
+        {{ resultCount() }} results
+      </span>
+      } @else if (loading()) {
+      <span class="search-tools__status" role="status">Loading filters…</span>
+      }
+    </div>
+
+    @if (activeFilters().length > 0) {
+    <div class="active-filters" aria-label="Active filters">
+      @for (filter of activeFilters(); track filter.key) {
+      <button
+        type="button"
+        class="filter-chip"
+        (click)="removeFilter(filter)"
+      >
+        <span>{{ filter.label }}</span>
+        <span aria-hidden="true">×</span>
+        <span class="visually-hidden">Remove {{ filter.label }} filter</span>
+      </button>
+      }
+    </div>
+    }
   </section>
+
+  @if (filtersOpen()) {
+  <div class="filter-layer">
+    <section
+      id="mobile-filter-drawer"
+      class="filter-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="filter-drawer-title"
+      aria-describedby="filter-drawer-help"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      (keydown.escape)="closeFilters()"
+    >
+      <div class="filter-drawer__header">
+        <div>
+          <p class="section-heading__eyebrow">Refine</p>
+          <h2 id="filter-drawer-title">Filter results</h2>
+        </div>
+        <button
+          type="button"
+          class="filter-drawer__close"
+          aria-label="Close filters"
+          (click)="closeFilters()"
+        >
+          ×
+        </button>
+      </div>
+
+      <p id="filter-drawer-help" class="filter-drawer__help">
+        Filters update the repository search immediately and are reflected in
+        the shareable URL.
+      </p>
+
+      @if (facets().length > 0) {
+      <div class="facet-list">
+        @for (facet of facets(); track facet.field) { @if
+        (isSupportedFacet(facet.field)) {
+        <section
+          class="facet-group"
+          [attr.aria-labelledby]="'mobile-facet-' + facet.field"
+        >
+          <h3 [id]="'mobile-facet-' + facet.field">{{ facet.label }}</h3>
+          <div class="facet-values">
+            @for (value of facet.values; track value.value) {
+            <button
+              type="button"
+              class="facet-option"
+              [class.facet-option--selected]="
+                isFacetSelected(facet.field, value.value)
+              "
+              [attr.aria-pressed]="isFacetSelected(facet.field, value.value)"
+              (click)="selectFacet(facet.field, value.value)"
+            >
+              <span>{{ value.label }}</span>
+              <span>{{ value.count }}</span>
+            </button>
+            }
+          </div>
+        </section>
+        } }
+      </div>
+      <button
+        type="button"
+        class="clear-filters"
+        [disabled]="activeFilters().length === 0"
+        (click)="clearFilters()"
+      >
+        Clear all filters
+      </button>
+      } @else if (loading()) {
+      <p role="status">Loading available filters…</p>
+      } @else {
+      <p>No filters are available for this result set.</p>
+      }
+    </section>
+  </div>
+  }
 
   <section
     class="results"
@@ -74,7 +194,9 @@
     <div class="results__heading">
       <div>
         <p class="section-heading__eyebrow">Results</p>
-        <h2 id="results-title">{{ resultCount() }} matching records</h2>
+        <h2 id="results-title" tabindex="-1">
+          {{ resultCount() }} matching records
+        </h2>
         @if (searchResponse.query.trim()) {
         <p class="results__query">Results for “{{ searchResponse.query }}”</p>
         } @else {
