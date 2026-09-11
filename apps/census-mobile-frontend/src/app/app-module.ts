@@ -1,3 +1,4 @@
+import { A11yModule } from '@angular/cdk/a11y';
 import { HttpClientModule } from '@angular/common/http';
 import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -22,6 +23,7 @@ import { mobileSearchReducer } from './state/search/search.reducer';
   imports: [
     BrowserModule,
     HttpClientModule,
+    A11yModule,
     RouterModule.forRoot(appRoutes),
     StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
     EffectsModule.forRoot([MobileSearchEffects]),
