@@ -1,0 +1,95 @@
+name: PR5 mobile stack validation
+
+on:
+  push:
+    branches:
+      - codex/mobile-first-census-pr5-relevance-evidence
+    paths:
+      - .github/workflows/pr5-mobile-stack-validation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/mobile-first-census-pr5-relevance-evidence
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Apply start-all integration and planning docs
+        run: python tools/scripts/apply-mobile-start-all-and-docs.py
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format changed sources
+        run: |
+          pnpm exec prettier --write \
+            docker-compose.yml \
+            package.json \
+            tools/scripts/compose-stack.mjs \
+            tools/scripts/stack.mjs \
+            mobile-first/README.md \
+            mobile-first/planning/post-main-desktop-relevance-adoption.md \
+            apps/census-mobile-frontend-e2e/project.json \
+            apps/census-mobile-frontend-e2e/playwright.config.mts \
+            apps/census-mobile-frontend-e2e/src/search-relevance.spec.ts
+
+      - name: Verify Compose includes both frontends
+        run: |
+          docker compose config --services | tee /tmp/civics-services.txt
+          grep -qx 'discovery-ui' /tmp/civics-services.txt
+          grep -qx 'census-mobile-frontend' /tmp/civics-services.txt
+
+      - name: Check stack scripts
+        run: |
+          node --check tools/scripts/compose-stack.mjs
+          node --check tools/scripts/stack.mjs
+
+      - name: Check generated API contract
+        run: pnpm run openapi:check
+
+      - name: Lint mobile frontend
+        run: pnpm nx run census-mobile-frontend:lint
+
+      - name: Test mobile frontend
+        run: pnpm nx run census-mobile-frontend:test
+
+      - name: Build mobile frontend
+        run: pnpm nx run census-mobile-frontend:build
+
+      - name: Build mobile Storybook
+        run: pnpm nx run census-mobile-frontend:build-storybook --configuration=ci
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run mobile 320px Playwright and axe evidence
+        run: pnpm nx run census-mobile-frontend-e2e:e2e
+
+      - name: Remove one-shot helpers
+        run: |
+          rm .github/workflows/pr5-mobile-stack-validation.yml
+          rm tools/scripts/apply-mobile-start-all-and-docs.py
+
+      - name: Commit validated mobile stack integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "feat: start mobile Census frontend with full stack"
+          git push origin HEAD:codex/mobile-first-census-pr5-relevance-evidence
