@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 @Component({
-  selector: 'civics-search-rank-badge',
-  standalone: false,
+  selector: 'lib-search-rank-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './search-rank-badge.component.html',
   styleUrl: './search-rank-badge.component.scss',
