@@ -170,21 +170,20 @@
       $index ) {
       <li
         class="result-card"
-        [class.result-card--top-ranked]="isTopRanked(index)"
+        [class.result-card--top-ranked]="
+          !!searchResponse.query.trim() && isTopRanked(index)
+        "
       >
+        @if (searchResponse.query.trim()) {
         <div class="result-card__rank-row">
-          <span
-            class="result-card__rank"
-            [class.result-card__rank--top]="isTopRanked(index)"
-          >
-            @if (isTopRanked(index)) {
-            <strong>Top ranked</strong>
-            } Rank {{ globalRank(index) }}
-          </span>
-          <app-search-relevance-badge
+          <civics-search-rank-badge
+            [rank]="globalRank(index)"
+          ></civics-search-rank-badge>
+          <civics-search-relevance-badge
             [relevance]="result.relevance"
-          ></app-search-relevance-badge>
+          ></civics-search-relevance-badge>
         </div>
+        }
 
         <div class="result-card__meta">
           <span>{{ result.contentType }}</span>
