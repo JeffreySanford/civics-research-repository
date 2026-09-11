@@ -43,16 +43,22 @@
           {{ loading() ? 'Searching…' : 'Search' }}
         </button>
       </div>
+      @if (!response() && !loading() && !error()) {
       <p class="search-form__hint">
-        Empty search returns the repository's current discovery set.
+        Enter a question or keywords. You can also submit an empty search to
+        browse the current discovery set.
       </p>
+      }
     </form>
   </section>
 
   <section class="results" aria-labelledby="results-title" aria-live="polite">
     @if (loading()) {
     <div class="status-card" role="status">
-      <strong>Searching repository…</strong>
+      <strong>
+        @if (activeQueryText()) { Searching for “{{ activeQueryText() }}”… } @else
+        { Loading the current discovery set… }
+      </strong>
       <span>Loading the first mobile result page.</span>
     </div>
     } @if (error()) {
@@ -65,6 +71,13 @@
       <div>
         <p class="section-heading__eyebrow">Results</p>
         <h2 id="results-title">{{ resultCount() }} matching records</h2>
+        @if (searchResponse.query.trim()) {
+        <p class="results__query">Results for “{{ searchResponse.query }}”</p>
+        } @else {
+        <p class="results__query">
+          Browsing the repository's current discovery set.
+        </p>
+        }
       </div>
       <span class="results__source">
         Source: {{ searchResponse.resultSource }}
