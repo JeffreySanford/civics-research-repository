@@ -54,6 +54,8 @@ Expected configuration:
 - Module-based Angular composition (`standalone=false`).
 - Routing enabled.
 - SCSS styling.
+- Angular Signals available for appropriate local synchronous UI state.
+- RxJS/NgRx retained for asynchronous workflows and shared feature state.
 - Repository-standard Angular/Vitest unit-test target.
 - ESLint.
 - Serve port set to `4300`.
@@ -102,11 +104,11 @@ Deliverable:
 
 - The new app can issue a typed search request against the same backend contract as `discovery-ui`.
 
-## Phase 3: NgRx Search Foundation
+## Phase 3: NgRx Search Foundation + Local Signal State
 
-Purpose: establish one Observable-first state machine for query, facets, results, pagination, URL state, and cancellation.
+Purpose: establish one reproducible NgRx/RxJS search state machine while using Signals where they improve local synchronous UI state.
 
-Initial state:
+Shared search feature state:
 
 ```text
 query
@@ -125,6 +127,14 @@ loading
 error
 ```
 
+Good local Signal candidates:
+
+```text
+filtersOpen
+searchSummaryExpanded
+compactMetadataExpandedByResult
+```
+
 Tasks:
 
 - Add feature actions for query/filter/page changes and search lifecycle.
@@ -132,12 +142,23 @@ Tasks:
 - Add selectors for active filters, result range, paging availability, and summary inputs.
 - Add an effect using `RepositorySearchApi` and RxJS `switchMap` so stale searches are cancelled.
 - Synchronize shareable search state with Router query parameters.
-- Keep drawer/open-close state local unless cross-component coordination demonstrates that it belongs in NgRx.
-- Do not introduce Angular Signals.
+- Use `signal()` for local synchronous interaction state such as drawer/disclosure state.
+- Use `computed()` for small derivations when their source state is already signal-based.
+- Use NgRx selectors for shared search-domain derivations.
+- Bridge NgRx selector output to Signals at a component boundary when it improves template ergonomics without duplicating ownership.
+- Promote local Signal state to NgRx only if it becomes cross-component, shareable, route-significant, or effect-driven.
+
+State-selection rule:
+
+- Signals: local synchronous UI state and simple local derivation
+- RxJS: asynchronous streams, debouncing, cancellation, composition over time
+- NgRx: shared feature state, effects, reducer transitions, selectors, URL-linked state
+
+Do not keep the same source of truth independently in both a Signal and NgRx.
 
 Deliverable:
 
-- A deterministic, testable search state foundation that can drive both real API behavior and fixture-backed component stories.
+- A deterministic, testable search foundation with a clear boundary between shared domain state and local interaction state.
 
 ## Phase 4: Mobile Discovery Vertical Slice
 
@@ -161,6 +182,12 @@ First visual target:
 320px viewport
 search -> results -> filters drawer -> select facet -> active chip -> close drawer
 ```
+
+Implementation note:
+
+- NgRx/RxJS owns search behavior and returned data.
+- A local Signal can own whether the filter drawer is open.
+- Closing the drawer after applying filters must preserve correct focus-return behavior regardless of the state primitive used.
 
 Deliverable:
 
@@ -203,6 +230,7 @@ Rules:
 - Every chart has an equivalent text/table representation.
 - Color is never the sole encoding.
 - Summary content is secondary to the result list and may be collapsed on small screens.
+- A local Signal is appropriate for expanded/collapsed summary state; the chart data itself remains derived from authoritative search state.
 
 Deliverable:
 
@@ -255,6 +283,7 @@ Tasks:
 - Chart/text-equivalent parity where visualization is present.
 - Storybook axe coverage for component states.
 - Playwright/axe coverage for assembled journeys.
+- Verify Signal-driven local interactions expose the same correct DOM/ARIA state as any other implementation.
 
 Deliverable:
 
@@ -271,6 +300,7 @@ Decision points:
 - Does the existing app need the same Discovery UX?
 - Which presentational components have proved genuinely reusable?
 - Should those components move into a shared `libs/census-ui` library?
+- Are the Signal/NgRx boundaries remaining clear as the app grows?
 - Is there appetite to replace or merge the old discovery surface?
 
 Deliverable:
@@ -288,9 +318,10 @@ Keep implementation slices small enough that regressions are obvious:
    - `apps/census-mobile-frontend`
    - module-based Angular, SCSS, routing, lint/test/build
    - serve port `4300`
-3. **PR 3 — API + NgRx foundation**
+3. **PR 3 — API + NgRx/Signals foundation**
    - reuse `repository-api-client`
    - search feature actions/reducer/selectors/effects
+   - local Signal state for appropriate UI interactions
    - URL query-state contract
 4. **PR 4 — Mobile search vertical slice**
    - search/results/filter drawer/pagination
