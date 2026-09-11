@@ -1,0 +1,21 @@
+{
+  "name": "census-mobile-frontend-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/census-mobile-frontend-e2e/src",
+  "implicitDependencies": ["census-mobile-frontend"],
+  "targets": {
+    "e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec playwright test --config=apps/census-mobile-frontend-e2e/playwright.config.mts"
+      }
+    },
+    "accessibility": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec playwright test --config=apps/census-mobile-frontend-e2e/playwright.config.mts --grep @wcag"
+      }
+    }
+  }
+}
