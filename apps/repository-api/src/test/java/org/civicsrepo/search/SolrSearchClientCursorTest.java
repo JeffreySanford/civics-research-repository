@@ -10,6 +10,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import org.civicsrepo.generated.dto.SearchRelevanceBand;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,10 +37,10 @@ class SolrSearchClientCursorTest {
 
     @Test
     void firstCursorPageUsesUniqueIdTieBreakerAndReturnsNextMark() {
-        responseBody.set(response("mark-2", document("alpha"), document("bravo")));
+        responseBody.set(response("mark-2", document("alpha", 10.0), document("bravo", 7.0)));
 
         SearchContinuationExecution execution =
-                client.searchWithContinuation(criteria(0, 2), null);
+                client.searchWithContinuation(criteria("climate", 0, 2), null);
 
         assertThat(execution.response().getResults())
                 .extracting((result) -> result.getId())
@@ -47,19 +48,25 @@ class SolrSearchClientCursorTest {
         assertThat(execution.response().getPage()).isZero();
         assertThat(execution.nextPosition()).isEqualTo("mark-2");
         assertThat(execution.hasMore()).isTrue();
+        assertThat(execution.response().getRelevanceModel()).isNotNull();
+        assertThat(execution.response().getRelevanceModel().getCalibrated()).isFalse();
+        assertThat(execution.response().getResults().get(0).getRelevance().getBand())
+                .isEqualTo(SearchRelevanceBand.STRONG);
+        assertThat(execution.response().getResults().get(1).getRelevance().getBand())
+                .isEqualTo(SearchRelevanceBand.GOOD);
 
         String decodedQuery = URLDecoder.decode(requestQuery.get(), StandardCharsets.UTF_8);
         assertThat(decodedQuery)
-                .contains("cursorMark=*", "sort=score desc,id asc", "rows=2")
+                .contains("cursorMark=*", "sort=score desc,id asc", "rows=2", "fl=*,score")
                 .doesNotContain("start=");
     }
 
     @Test
     void continuationUsesProvidedMarkAndStopsOnPartialFinalPage() {
-        responseBody.set(response("mark-3", document("charlie")));
+        responseBody.set(response("mark-3", document("charlie", 5.0)));
 
         SearchContinuationExecution execution =
-                client.searchWithContinuation(criteria(1, 2), "mark-2");
+                client.searchWithContinuation(criteria("climate", 1, 2), "mark-2");
 
         assertThat(execution.response().getResults())
                 .extracting((result) -> result.getId())
@@ -67,27 +74,47 @@ class SolrSearchClientCursorTest {
         assertThat(execution.response().getPage()).isEqualTo(1);
         assertThat(execution.nextPosition()).isNull();
         assertThat(execution.hasMore()).isFalse();
+        assertThat(execution.response().getResults().get(0).getRelevance().getBand())
+                .isEqualTo(SearchRelevanceBand.MODERATE);
 
         String decodedQuery = URLDecoder.decode(requestQuery.get(), StandardCharsets.UTF_8);
         assertThat(decodedQuery)
-                .contains("cursorMark=mark-2", "sort=score desc,id asc", "rows=2")
+                .contains("cursorMark=mark-2", "sort=score desc,id asc", "rows=2", "fl=*,score")
                 .doesNotContain("start=");
     }
 
     @Test
     void repeatedSolrMarkIsTreatedAsExhaustedEvenWhenPageIsFull() {
-        responseBody.set(response("mark-2", document("delta"), document("echo")));
+        responseBody.set(response("mark-2", document("delta", 3.0), document("echo", 1.0)));
 
         SearchContinuationExecution execution =
-                client.searchWithContinuation(criteria(2, 2), "mark-2");
+                client.searchWithContinuation(criteria("climate", 2, 2), "mark-2");
 
         assertThat(execution.nextPosition()).isNull();
         assertThat(execution.hasMore()).isFalse();
+        assertThat(execution.response().getResults().get(0).getRelevance().getBand())
+                .isEqualTo(SearchRelevanceBand.WEAK);
+        assertThat(execution.response().getResults().get(1).getRelevance().getBand())
+                .isEqualTo(SearchRelevanceBand.LOW);
     }
 
-    private SearchComparisonCriteria criteria(int page, int pageSize) {
+    @Test
+    void emptyDiscoveryBrowseDoesNotClaimRelevance() {
+        responseBody.set(response("mark-2", document("alpha", 10.0)));
+
+        SearchContinuationExecution execution =
+                client.searchWithContinuation(criteria("", 0, 2), null);
+
+        assertThat(execution.response().getRelevanceModel()).isNull();
+        assertThat(execution.response().getResults().get(0).getRelevance()).isNull();
+
+        String decodedQuery = URLDecoder.decode(requestQuery.get(), StandardCharsets.UTF_8);
+        assertThat(decodedQuery).doesNotContain("fl=*,score");
+    }
+
+    private SearchComparisonCriteria criteria(String query, int page, int pageSize) {
         return new SearchComparisonCriteria(
-                "climate",
+                query,
                 List.of(),
                 null,
                 null,
@@ -105,7 +132,7 @@ class SolrSearchClientCursorTest {
                 {
                   "responseHeader": {"QTime": 4},
                   "nextCursorMark": "%s",
-                  "response": {"numFound": 5, "docs": [%s]},
+                  "response": {"numFound": 5, "maxScore": 10.0, "docs": [%s]},
                   "facet_counts": {
                     "facet_fields": {
                       "programName_s": [],
@@ -120,10 +147,11 @@ class SolrSearchClientCursorTest {
                 """.formatted(nextCursorMark, String.join(",", documents));
     }
 
-    private String document(String id) {
+    private String document(String id, double score) {
         return """
                 {
                   "id": "%s",
+                  "score": %s,
                   "title_s": "%s title",
                   "contentType_s": "DATASET",
                   "program_s": "TIGER_LINE",
@@ -137,7 +165,7 @@ class SolrSearchClientCursorTest {
                   "vintageYear_i": 2025,
                   "accessLevel_s": "PUBLIC"
                 }
-                """.formatted(id, id, id);
+                """.formatted(id, score, id, id);
     }
 
     private void handleSearch(HttpExchange exchange) throws IOException {
