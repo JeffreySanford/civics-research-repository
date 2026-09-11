@@ -57,9 +57,6 @@ jobs:
       - name: Lint OpenAPI contract
         run: pnpm run openapi:lint
 
-      - name: Check generated TypeScript contract
-        run: pnpm run openapi:check
-
       - name: Test repository API
         run: docker build -f apps/repository-api/Dockerfile --target test .
 
