@@ -1,7 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap } from 'rxjs';
-import { parseRepositoryError, RepositorySearchApi } from 'repository-api-client';
+import {
+  parseRepositoryError,
+  RepositorySearchApi,
+} from 'repository-api-client';
 import { MobileSearchActions } from './search.actions';
 
 @Injectable()
