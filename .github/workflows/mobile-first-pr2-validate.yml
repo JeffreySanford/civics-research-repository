@@ -1,0 +1,32 @@
+name: Mobile-first PR2 validation
+
+on:
+  push:
+    branches:
+      - codex/mobile-first-census-pr2-scaffold
+    paths:
+      - .github/workflows/mobile-first-pr2-validate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check formatting
+        run: pnpm exec nx format:check --all
+      - name: Lint mobile frontend
+        run: pnpm nx run census-mobile-frontend:lint
+      - name: Test mobile frontend
+        run: pnpm nx run census-mobile-frontend:test
+      - name: Build mobile frontend
+        run: pnpm nx run census-mobile-frontend:build
