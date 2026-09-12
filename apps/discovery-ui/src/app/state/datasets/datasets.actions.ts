@@ -1,7 +1,8 @@
 import { createActionGroup, props } from '@ngrx/store';
 import type {
   ResearchObjectDetail,
-  DatasetVersion,
+  ResearchArtifactVersion,
+  VersionHistoryStatus,
   MapLayer,
   RepositoryError,
 } from 'repository-api-client';
@@ -13,7 +14,8 @@ export const DatasetsActions = createActionGroup({
     'Research Opened': props<{ researchId: string }>(),
     'Dataset Loaded': props<{
       detail: ResearchObjectDetail;
-      versions: DatasetVersion[];
+      versions: ResearchArtifactVersion[];
+      versionHistoryStatus?: VersionHistoryStatus;
       mapLayers: MapLayer[];
     }>(),
     'Dataset Failed': props<{ error: RepositoryError }>(),

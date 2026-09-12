@@ -7,6 +7,7 @@ import {
   RepositorySearchApi,
   type ResearchObjectDetail,
   type DatasetVersion,
+  type ResearchArtifactVersionHistory,
   type MapLayer,
   type SearchResponse,
   type SyncJob,
@@ -98,10 +99,26 @@ describe('RepositoryDatasetsApi', () => {
         current: true,
       },
     ];
+    const versionHistory: ResearchArtifactVersionHistory = {
+      researchObjectId: detail.id,
+      status: 'OBSERVED_CURRENT_ONLY',
+      versions: [
+        {
+          id: detail.id,
+          label: detail.title,
+          current: true,
+          releasedOn: detail.releasedOn,
+          sourceUrl: detail.sourceUrl,
+        },
+      ],
+    };
     const http = {
-      get: vi.fn((url: string) =>
-        of(url.endsWith('/versions') ? versions : detail),
-      ),
+      get: vi.fn((url: string) => {
+        if (url.includes('/research/') && url.endsWith('/versions')) {
+          return of(versionHistory);
+        }
+        return of(url.endsWith('/versions') ? versions : detail);
+      }),
     };
     const api = new RepositoryDatasetsApi(http as never, 'http://api.test/api');
     const researchId = 'REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg';
@@ -111,6 +128,13 @@ describe('RepositoryDatasetsApi', () => {
     ).resolves.toEqual(detail);
     expect(http.get).toHaveBeenCalledWith(
       `http://api.test/api/research/${researchId}`,
+    );
+
+    await expect(
+      firstValueFrom(api.getResearchObjectVersions(researchId)),
+    ).resolves.toEqual(versionHistory);
+    expect(http.get).toHaveBeenCalledWith(
+      `http://api.test/api/research/${researchId}/versions`,
     );
 
     await expect(

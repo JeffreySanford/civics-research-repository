@@ -13,6 +13,7 @@ import { Store } from '@ngrx/store';
 import type {
   ResearchObjectType,
   ResearchRelation,
+  VersionHistoryStatus,
 } from 'repository-api-client';
 import { encodeResearchId } from '../research-id';
 import { DatasetsActions } from '../state/datasets/datasets.actions';
@@ -23,6 +24,7 @@ import {
   selectDatasetLoading,
   selectDatasetMapLayers,
   selectDatasetVersions,
+  selectVersionHistoryStatus,
 } from '../state/datasets/datasets.selectors';
 
 @Component({
@@ -40,6 +42,9 @@ export class ResearchObjectDetailPage implements OnInit {
   protected readonly detail$ = this.store.select(selectResearchObjectDetail);
   protected readonly datasetSource$ = this.store.select(selectDatasetSource);
   protected readonly versions$ = this.store.select(selectDatasetVersions);
+  protected readonly versionHistoryStatus$ = this.store.select(
+    selectVersionHistoryStatus,
+  );
   protected readonly mapLayers$ = this.store.select(selectDatasetMapLayers);
   protected readonly loading$ = this.store.select(selectDatasetLoading);
   protected readonly error$ = this.store.select(selectDatasetError);
@@ -81,6 +86,18 @@ export class ResearchObjectDetailPage implements OnInit {
       PROJECT: 'Research project',
     };
     return contentType ? labels[contentType] : 'Dataset';
+  }
+
+  protected versionHistoryMessage(status: VersionHistoryStatus): string {
+    const messages: Record<VersionHistoryStatus, string> = {
+      OBSERVED_CURRENT_ONLY:
+        'Only the current repository/source record has been observed. Earlier or later version history is not established.',
+      HISTORY_AVAILABLE:
+        'The repository has observed version-lineage records for this research artifact.',
+      UNAVAILABLE:
+        'Version provenance is not available for this research artifact.',
+    };
+    return messages[status];
   }
 
   /** Verbs read as sentences about this object, so the relation list needs no legend. */

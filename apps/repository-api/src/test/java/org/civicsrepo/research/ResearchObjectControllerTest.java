@@ -8,6 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.net.URI;
 import java.util.List;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
+import org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;
+import org.civicsrepo.generated.dto.VersionHistoryStatus;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchProgram;
@@ -39,6 +42,28 @@ class ResearchObjectControllerTest {
                 .andExpect(jsonPath("$.program").value("OTHER"))
                 .andExpect(jsonPath("$.programName").value("Federal Highway Administration"))
                 .andExpect(jsonPath("$.files.length()").value(0));
+    }
+
+    @Test
+    void serializesObservedVersionKnowledgeWithoutInventingHistory() throws Exception {
+        String token = "REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg";
+        ResearchArtifactVersion version = new ResearchArtifactVersion(
+                        "DATA_GOV:https://example.gov", "Example research object")
+                .current(true)
+                .sourceUrl(URI.create("https://catalog.data.gov/dataset/example"));
+        given(researchObjectService.getResearchObjectVersionHistory(token))
+                .willReturn(new ResearchArtifactVersionHistory(
+                                "DATA_GOV:https://example.gov",
+                                VersionHistoryStatus.OBSERVED_CURRENT_ONLY,
+                                List.of(version))
+                        .note("Earlier or later history is unknown."));
+
+        mockMvc.perform(get("/research/{researchId}/versions", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OBSERVED_CURRENT_ONLY"))
+                .andExpect(jsonPath("$.versions.length()").value(1))
+                .andExpect(jsonPath("$.versions[0].id").value("DATA_GOV:https://example.gov"))
+                .andExpect(jsonPath("$.versions[0].current").value(true));
     }
 
     private ResearchObjectDetail detail() {

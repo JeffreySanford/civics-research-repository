@@ -215,7 +215,7 @@ sequenceDiagram
     end
 ```
 
-`/datasets/:id` remains a compatibility UI route. Federated detail does not invent local versions, map layers or file preservation.
+`/datasets/:id` remains a compatibility UI route. Federated detail can report an explicit version-history knowledge state, but it does not invent version records, repository-only map layers, or local file preservation.
 
 ## Discovery to workforce map
 

@@ -169,18 +169,39 @@
       </section>
     </mat-tab>
 
-    @if (detail.source !== 'FEDERATED') {
     <mat-tab label="Versions">
       <section class="tab-panel" aria-labelledby="versions-heading">
-        <h2 id="versions-heading">Versions</h2>
-        @if (versions$ | async; as versions) {
+        <h2 id="versions-heading">Versions and provenance</h2>
+        @if (versionHistoryStatus$ | async; as historyStatus) {
+        <p class="version-history-note" role="note">
+          {{ versionHistoryMessage(historyStatus) }}
+        </p>
+        } @if (versions$ | async; as versions) {
         <ol class="version-list">
           @for (version of versions; track version.id) {
           <li>
             <strong>{{ version.label }}</strong>
             <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
             @if (version.current) {
-            <span class="status-pill">Current</span>
+            <span class="status-pill">Current observed record</span>
+            } @if (version.versionLabel) {
+            <span>Source version: {{ version.versionLabel }}</span>
+            } @if (version.doi) {
+            <a
+              class="source-link"
+              [href]="'https://doi.org/' + version.doi"
+              target="_blank"
+              rel="noreferrer"
+              >DOI {{ version.doi }}</a
+            >
+            } @if (version.sourceUrl) {
+            <a
+              class="source-link"
+              [href]="version.sourceUrl"
+              target="_blank"
+              rel="noreferrer"
+              >Version source</a
+            >
             }
           </li>
           }
@@ -188,8 +209,8 @@
         }
       </section>
     </mat-tab>
-    } @if ( detail.source !== 'FEDERATED' && (detail.contentType === 'DATASET'
-    || !detail.contentType) ) {
+    @if ( detail.source !== 'FEDERATED' && (detail.contentType === 'DATASET' ||
+    !detail.contentType) ) {
     <mat-tab label="Map Layers">
       <section class="tab-panel" aria-labelledby="map-layers-heading">
         <h2 id="map-layers-heading">Map Layers</h2>

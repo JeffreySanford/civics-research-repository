@@ -14,6 +14,11 @@ export const selectDatasetVersions = createSelector(
   (state) => state.versions,
 );
 
+export const selectVersionHistoryStatus = createSelector(
+  selectDatasetsState,
+  (state) => state.versionHistoryStatus,
+);
+
 export const selectDatasetMapLayers = createSelector(
   selectDatasetsState,
   (state) => state.mapLayers,
