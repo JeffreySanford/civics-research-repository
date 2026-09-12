@@ -1,6 +1,7 @@
 <section
   class="coverage-card"
   [class.coverage-card--expanded]="expanded"
+  [attr.data-selected-source]="selectedSourceIdentifier()"
   aria-labelledby="mobile-coverage-heading"
   data-testid="mobile-research-map-preview"
 >
@@ -173,6 +174,32 @@
   </p>
 
   @if (expanded) {
+    <section
+      class="coverage-selection"
+      aria-labelledby="mobile-selected-research-heading"
+      aria-live="polite"
+      data-testid="mobile-selected-research"
+    >
+      <h2 id="mobile-selected-research-heading">Selected research</h2>
+      @if (selectedResearch(); as selected) {
+        <strong>{{ selected.title }}</strong>
+        <span>{{ selected.publisher || 'Publisher not stated' }}</span>
+        @if (selected.program) {
+          <span>{{ selected.program }}</span>
+        }
+        @if (selected.sourceUrl) {
+          <a [href]="selected.sourceUrl" target="_blank" rel="noreferrer">
+            Open authoritative source
+          </a>
+        }
+      } @else {
+        <p>
+          Select a mapped research record below or tap a visible map feature to
+          inspect the same research here.
+        </p>
+      }
+    </section>
+
     @if (state$ | async; as expandedState) {
       @if (expandedState.status === 'loaded') {
         <section
@@ -190,11 +217,35 @@
                 feature of expandedState.response.features;
                 track feature.sourceIdentifier
               ) {
-                <li>
-                  <strong>{{ feature.title }}</strong>
-                  <span>
-                    {{ feature.publisher || 'Publisher not stated' }}
-                  </span>
+                <li
+                  [attr.data-selected]="isResearchSelected(feature)"
+                  [class.coverage-list__item--selected]="
+                    isResearchSelected(feature)
+                  "
+                >
+                  <button
+                    type="button"
+                    class="coverage-list__select"
+                    [attr.aria-pressed]="isResearchSelected(feature)"
+                    [attr.aria-label]="
+                      (isResearchSelected(feature)
+                        ? 'Selected on map: '
+                        : 'Show on map: ') + feature.title
+                    "
+                    (click)="selectResearchFeature(feature.sourceIdentifier)"
+                  >
+                    <strong>{{ feature.title }}</strong>
+                    <span>
+                      {{ feature.publisher || 'Publisher not stated' }}
+                    </span>
+                    <span class="coverage-list__action">
+                      {{
+                        isResearchSelected(feature)
+                          ? 'Selected on map'
+                          : 'Show on map'
+                      }}
+                    </span>
+                  </button>
                   @if (feature.sourceUrl) {
                     <a
                       [href]="feature.sourceUrl"
