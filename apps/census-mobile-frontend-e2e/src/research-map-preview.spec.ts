@@ -50,6 +50,38 @@ async function mockMobileMapRepository(page: Page): Promise<void> {
     });
   });
 
+  await page.route('**/api/maps/census-areas', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: [
+        {
+          id: 'north-dakota',
+          label: 'North Dakota Census area boundary preview',
+          geography: 'North Dakota',
+          west: -104.0489,
+          south: 45.9351,
+          east: -96.5545,
+          north: 49.0007,
+          centerLatitude: 47.5515,
+          centerLongitude: -101.002,
+          defaultZoom: 6,
+        },
+        {
+          id: 'minnesota',
+          label: 'Minnesota Census area boundary preview',
+          geography: 'Minnesota',
+          west: -97.2393,
+          south: 43.4994,
+          east: -89.4919,
+          north: 49.3844,
+          centerLatitude: 46.7296,
+          centerLongitude: -94.6859,
+          defaultZoom: 5.5,
+        },
+      ],
+    });
+  });
+
   await page.route('**/api/maps/research-coverage*', async (route) => {
     const url = new URL(route.request().url());
     const west = Number(url.searchParams.get('west') ?? -180);
@@ -169,6 +201,7 @@ test.describe('mobile research coverage map preview', () => {
     await expect(preview).toContainText(
       '4 matching records do not declare publisher geometry',
     );
+    await expect(page.locator('#mobile-map-preset')).toHaveCount(0);
 
     const openMap = page.getByRole('link', {
       name: 'Open research coverage map for the current search',
@@ -191,6 +224,45 @@ test.describe('mobile research coverage map preview', () => {
         name: 'Research mapped in this view',
       }),
     ).toBeVisible();
+
+    const preset = page.locator('#mobile-map-preset');
+    await expect(preset).toHaveValue('research');
+    await preset.selectOption('research-area-context');
+
+    const area = page.locator('#mobile-census-area');
+    await expect(area).toBeVisible();
+    await area.selectOption('north-dakota');
+    await expect(page.getByText('North Dakota area context:', { exact: false })).toBeVisible();
+    await expect(
+      page.getByText('It is not exact TIGER/Line administrative geometry', {
+        exact: false,
+      }),
+    ).toBeVisible();
+
+    const currentUrl = new URL(page.url());
+    expect(currentUrl.searchParams.get('q')).toBe('climate adaptation');
+    expect(currentUrl.searchParams.get('publisher')).toBe('Example Publisher');
+    expect(currentUrl.searchParams.get('type')).toBe('DATASET');
+    expect(currentUrl.searchParams.has('geography')).toBe(false);
+
+    await expectNoHorizontalOverflow(page);
+    await expectNoAxeViolations(page);
+  });
+
+  test('uses matching search geography as initial area context without weakening it @responsive @wcag', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto('/research-map?q=climate&geography=North%20Dakota');
+
+    await expect(page.locator('#mobile-map-preset')).toHaveValue(
+      'research-area-context',
+    );
+    await expect(page.locator('#mobile-census-area')).toHaveValue(
+      'north-dakota',
+    );
+    await expect(page.getByText('North Dakota area context:', { exact: false })).toBeVisible();
+    await expect(page).toHaveURL(/geography=North/);
     await expectNoHorizontalOverflow(page);
     await expectNoAxeViolations(page);
   });
