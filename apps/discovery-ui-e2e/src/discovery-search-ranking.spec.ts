@@ -86,7 +86,7 @@ test.describe('desktop search ranking presentation', () => {
     await page.goto('/discovery?q=North%20Dakota%20migration');
 
     await expect(page.getByText('Top ranked')).toBeVisible();
-    await expect(page.getByText('Rank 1')).toBeVisible();
+    await expect(page.getByText('Rank 1', { exact: true })).toBeVisible();
     await expect(page.getByText('Strong match')).toBeVisible();
     await expect(
       page.getByText('Match labels are query-relative search evidence'),
