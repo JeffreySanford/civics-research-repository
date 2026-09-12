@@ -25,7 +25,15 @@ export class DatasetsEffects {
           mapLayers: this.mapsApi.getDatasetMapLayers(datasetId),
         }).pipe(
           map(({ detail, versions, mapLayers }) =>
-            DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),
+            DatasetsActions.datasetLoaded({
+              detail,
+              versions,
+              versionHistoryStatus:
+                versions.length > 1
+                  ? 'HISTORY_AVAILABLE'
+                  : 'OBSERVED_CURRENT_ONLY',
+              mapLayers,
+            }),
           ),
           catchError((error: unknown) =>
             of(
@@ -47,7 +55,9 @@ export class DatasetsEffects {
       ofType(DatasetsActions.researchOpened),
       switchMap(({ researchId }) =>
         this.datasetsApi.getResearchObject(researchId).pipe(
-          switchMap((detail) => this.loadResearchEnrichments(detail)),
+          switchMap((detail) =>
+            this.loadResearchEnrichments(detail, researchId),
+          ),
           catchError((error: unknown) =>
             of(
               DatasetsActions.datasetFailed({
@@ -63,23 +73,36 @@ export class DatasetsEffects {
     ),
   );
 
-  private loadResearchEnrichments(detail: ResearchObjectDetail) {
+  private loadResearchEnrichments(
+    detail: ResearchObjectDetail,
+    researchId: string,
+  ) {
+    const history$ = this.datasetsApi.getResearchObjectVersions(researchId);
+
     if (detail.source === 'FEDERATED') {
-      return of(
-        DatasetsActions.datasetLoaded({
-          detail,
-          versions: [],
-          mapLayers: [],
-        }),
+      return history$.pipe(
+        map((history) =>
+          DatasetsActions.datasetLoaded({
+            detail,
+            versions: history.versions,
+            versionHistoryStatus: history.status,
+            mapLayers: [],
+          }),
+        ),
       );
     }
 
     return forkJoin({
-      versions: this.datasetsApi.getDatasetVersions(detail.id),
+      history: history$,
       mapLayers: this.mapsApi.getDatasetMapLayers(detail.id),
     }).pipe(
-      map(({ versions, mapLayers }) =>
-        DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),
+      map(({ history, mapLayers }) =>
+        DatasetsActions.datasetLoaded({
+          detail,
+          versions: history.versions,
+          versionHistoryStatus: history.status,
+          mapLayers,
+        }),
       ),
     );
   }

@@ -76,6 +76,12 @@ export type ResearchObjectDetail =
   components['schemas']['ResearchObjectDetail'];
 export type DatasetFile = components['schemas']['DatasetFile'];
 export type DatasetVersion = components['schemas']['DatasetVersion'];
+export type VersionHistoryStatus =
+  components['schemas']['VersionHistoryStatus'];
+export type ResearchArtifactVersion =
+  components['schemas']['ResearchArtifactVersion'];
+export type ResearchArtifactVersionHistory =
+  components['schemas']['ResearchArtifactVersionHistory'];
 export type DiscoveryProjectionState =
   components['schemas']['DiscoveryProjectionState'];
 export type DspaceOverview = components['schemas']['DspaceOverview'];
@@ -299,6 +305,14 @@ export class RepositoryDatasetsApi {
   getResearchObject(researchId: string): Observable<ResearchObjectDetail> {
     return this.http.get<ResearchObjectDetail>(
       `${this.baseUrl}/research/${researchId}`,
+    );
+  }
+
+  getResearchObjectVersions(
+    researchId: string,
+  ): Observable<ResearchArtifactVersionHistory> {
+    return this.http.get<ResearchArtifactVersionHistory>(
+      `${this.baseUrl}/research/${researchId}/versions`,
     );
   }
 
