@@ -86,7 +86,8 @@ async function mockDetail(page: Page): Promise<void> {
           program: 'ACS',
           programName: 'Population Mobility',
           publisher: 'U.S. Census Bureau',
-          abstractText: 'Methodology used to construct the migration-flow research product.',
+          abstractText:
+            'Methodology used to construct the migration-flow research product.',
           sourceSystem: 'DSPACE',
           geography: 'North Dakota',
           vintageYear: 2025,
@@ -260,7 +261,9 @@ test.describe('mobile research detail navigation', () => {
     });
     await expect(methodologyLink).toBeVisible();
     await expect(
-      page.getByText('Documents the methodology used by this migration product.'),
+      page.getByText(
+        'Documents the methodology used by this migration product.',
+      ),
     ).toBeVisible();
 
     await methodologyLink.click();

@@ -142,10 +142,7 @@
               <p class="relation-verb">{{ relationLabel(relation.verb) }}</p>
               <a
                 class="context-link"
-                [routerLink]="[
-                  '/research',
-                  researchRouteId(relation.targetId),
-                ]"
+                [routerLink]="['/research', researchRouteId(relation.targetId)]"
                 [queryParams]="{ returnUrl: returnUrl }"
                 [replaceUrl]="true"
                 >{{ relation.targetTitle }}</a
@@ -190,7 +187,9 @@
               >
               <p class="context-meta">
                 <span>{{ related.programName ?? related.program }}</span>
-                <span>{{ related.geography ?? 'Geography not specified' }}</span>
+                <span>{{
+                  related.geography ?? 'Geography not specified'
+                }}</span>
               </p>
             </li>
           }
