@@ -4,7 +4,9 @@ The repository holds research objects, not only datasets. A dataset is one kind 
 publication, a methodology report, and the project that ties a body of work together are others, and
 they carry different metadata because they are different things.
 
-This document describes that model and the one worked example the repository contains.
+This document describes that model and the one worked example the repository contains. The current
+post-#113 Open Census alignment sequence is planned separately in
+[open-census-alignment-roadmap.md](open-census-alignment-roadmap.md).
 
 ## Why this exists
 
@@ -122,14 +124,41 @@ application.
   a working paper has no geometry, and an empty map workspace reads as a failure to load rather than
   as nothing to draw.
 
+## Synchronization status
+
+The live synchronization boundary is now research-object capable.
+
+`ResearchObjectMetadata` replaced the earlier `PublicDatasetMetadata` shape and can carry resource
+type, access level/note, license, DOI, researchers/ORCID, and typed relations. The DSpace payload mapper
+and `DspaceManagedFields` reconcile those fields through the same idempotent apply/diff path used for
+ordinary descriptive/source metadata.
+
+A missing harvested value remains **no opinion**, not an instruction to erase richer seeded metadata.
+This lets dataset adapters remain intentionally sparse without clearing DOI, access, researcher, or
+relation data that a source does not authoritatively provide.
+
+The remaining synchronization gap is **adapter breadth**: the normalized model can represent richer
+research objects, but the live publisher/source coverage is still narrow. A future non-dataset adapter
+should prove the generalized path with a real CODE/replication object rather than rebuild the model.
+
 ## Known gaps
 
+- **Version history is not authoritative yet.** The current dataset version service synthesizes a
+  previous version from `vintageYear`. That is useful demo presentation but not acceptable provenance.
+  Issue #114 replaces inferred history with observed artifact/version/source facts and must represent
+  unknown history as unknown.
 - **Replication packages and code remain unmodelled in practice.** `CODE` is in the enum and nothing
-  uses it. Neither working paper ships a replication package, and authoring one would be the same
-  fabrication problem the rest of this design avoids.
+  uses it yet. Issue #118 will use a genuine Census public research-code/replication repository rather
+  than fabricate an object merely to exercise the type.
+- **Interoperability is not profiled explicitly.** The internal metadata model is rich, but the
+  repository does not yet publish one documented crosswalk/export profile for DataCite, Schema.org,
+  DCAT-US, and DSpace/Dublin Core. Issue #115 owns that boundary.
+- **Relationships are not yet presented as a complete reproducibility trail.** Typed package relations
+  exist and must remain distinct from heuristic `relatedResearch`; issue #116 will make their
+  provenance/version/access semantics easier to follow without adding a graph database.
 - **ORCID coverage is thin.** One of the six authors would need a verified public ORCID before the
-  field earns its place; absent is currently correct for all of them.
-- **Live sync is still dataset-centric.** `PublicDatasetMetadata` and the DSpace payload mapper do not
-  carry resource type, access, license, DOI, researchers or relations. The catalog and SAF path model
-  them fully; the harvest path does not. Generalising it to `ResearchObjectMetadata` would close the
-  loop.
+  field earns its place; absent is currently correct for all of them. Missing ORCID must not be
+  fabricated merely to make an export/profile look complete.
+
+See [Open Census Alignment Roadmap](open-census-alignment-roadmap.md) for the ordered #114–#119 plan,
+validation boundaries, and intentionally deferred work.
