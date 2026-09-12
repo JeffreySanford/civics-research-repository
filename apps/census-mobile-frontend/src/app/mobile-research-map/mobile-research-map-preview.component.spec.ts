@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import {
   RepositoryMapsApi,
   type CensusAreaBoundary,
+  type PopulationEstimatesChoropleth,
   type ResearchSpatialCoverageResponse,
 } from 'repository-api-client';
 import { BehaviorSubject, of } from 'rxjs';
@@ -87,11 +88,53 @@ const censusAreas = [
   },
 ] as CensusAreaBoundary[];
 
+const populationResponse = {
+  source: 'U.S. Census Bureau Population Estimates Program',
+  sourceUrl: 'https://example.test/co-est2025-alldata.csv',
+  attribution: 'U.S. Census Bureau Population Estimates Program',
+  geography: 'North Dakota',
+  sourceVintage: 2025,
+  sourceSha256: 'b'.repeat(64),
+  capturedAt: '2026-09-05',
+  geometryVintage: 2025,
+  geometrySourceUrl: 'https://example.test/tigerweb/counties',
+  geometryAttribution: 'U.S. Census Bureau TIGERweb',
+  measure: 'ANNUAL_GROWTH_RATE',
+  measureLabel: 'Annual population growth rate',
+  units: 'percent',
+  year: 2025,
+  priorYear: 2024,
+  supportedPopulationYears: [2020, 2021, 2022, 2023, 2024, 2025],
+  supportedChangeYears: [2021, 2022, 2023, 2024, 2025],
+  geoJson: {
+    type: 'FeatureCollection',
+    features: [],
+  },
+  counties: [
+    {
+      fips: '38001',
+      name: 'Adams County',
+      value: -2.5,
+      population: 2_100,
+      priorPopulation: 2_154,
+    },
+    {
+      fips: '38017',
+      name: 'Cass County',
+      value: 3.25,
+      population: 202_000,
+      priorPopulation: 195_640,
+    },
+  ],
+} as PopulationEstimatesChoropleth;
+
 describe('MobileResearchMapPreviewComponent', () => {
   let coverageResponses: BehaviorSubject<ResearchSpatialCoverageResponse>;
+  let populationRequests: string[];
 
   beforeEach(async () => {
     coverageResponses = new BehaviorSubject(response);
+    populationRequests = [];
 
     await TestBed.configureTestingModule({
       imports: [RouterModule.forRoot([]), MobileResearchMapPreviewModule],
@@ -101,6 +144,10 @@ describe('MobileResearchMapPreviewComponent', () => {
           useValue: {
             getResearchSpatialCoverage: () => coverageResponses.asObservable(),
             listCensusAreaBoundaries: () => of(censusAreas),
+            getPopulationEstimatesChoropleth: (geography: string) => {
+              populationRequests.push(geography);
+              return of(populationResponse);
+            },
           },
         },
       ],
@@ -159,6 +206,50 @@ describe('MobileResearchMapPreviewComponent', () => {
     expect(compiled.textContent).toContain(
       'It is not exact TIGER/Line administrative geometry',
     );
+  });
+
+  it('loads semantic Population Estimates context without changing repository query intent', async () => {
+    const fixture = TestBed.createComponent(MobileResearchMapPreviewComponent);
+    fixture.componentRef.setInput('expanded', true);
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('query', {
+      q: 'migration',
+      publisher: 'U.S. Census Bureau',
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const preset = compiled.querySelector(
+      '#mobile-map-preset',
+    ) as HTMLSelectElement;
+    preset.value = 'community-population';
+    preset.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const area = compiled.querySelector('#mobile-census-area') as HTMLSelectElement;
+    area.value = 'north-dakota';
+    area.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const population = compiled.querySelector(
+      '[data-testid="mobile-population-context"]',
+    );
+    expect(populationRequests).toEqual(['North Dakota']);
+    expect(preset.value).toBe('community-population');
+    expect(area.value).toBe('north-dakota');
+    expect(population?.textContent).toContain(
+      'Annual population growth rate for North Dakota, 2024–2025',
+    );
+    expect(population?.textContent).toContain('Adams County');
+    expect(population?.textContent).toContain('-2.5%');
+    expect(population?.textContent).toContain('Cass County');
+    expect(population?.textContent).toContain('+3.25%');
+    expect(population?.textContent).toContain('2025 population 202,000');
+    expect(population?.textContent).toContain('Vintage 2025');
   });
 
   it('uses one selected research state for the semantic list and detail panel', async () => {
