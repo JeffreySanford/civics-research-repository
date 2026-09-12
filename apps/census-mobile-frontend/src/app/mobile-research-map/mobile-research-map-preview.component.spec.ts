@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
 import {
   RepositoryMapsApi,
+  type CensusAreaBoundary,
   type ResearchSpatialCoverageResponse,
 } from 'repository-api-client';
 import { of } from 'rxjs';
@@ -59,6 +60,33 @@ const response = {
   ],
 } as unknown as ResearchSpatialCoverageResponse;
 
+const censusAreas = [
+  {
+    id: 'north-dakota',
+    label: 'North Dakota Census area boundary preview',
+    geography: 'North Dakota',
+    west: -104.0489,
+    south: 45.9351,
+    east: -96.5545,
+    north: 49.0007,
+    centerLatitude: 47.5515,
+    centerLongitude: -101.002,
+    defaultZoom: 6,
+  },
+  {
+    id: 'minnesota',
+    label: 'Minnesota Census area boundary preview',
+    geography: 'Minnesota',
+    west: -97.2393,
+    south: 43.4994,
+    east: -89.4919,
+    north: 49.3844,
+    centerLatitude: 46.7296,
+    centerLongitude: -94.6859,
+    defaultZoom: 5.5,
+  },
+] as CensusAreaBoundary[];
+
 describe('MobileResearchMapPreviewComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -68,6 +96,7 @@ describe('MobileResearchMapPreviewComponent', () => {
           provide: RepositoryMapsApi,
           useValue: {
             getResearchSpatialCoverage: () => of(response),
+            listCensusAreaBoundaries: () => of(censusAreas),
           },
         },
       ],
@@ -97,5 +126,34 @@ describe('MobileResearchMapPreviewComponent', () => {
       'a[aria-label="Open research coverage map for the current search"]',
     );
     expect(link).not.toBeNull();
+    expect(compiled.querySelector('#mobile-map-preset')).toBeNull();
+  });
+
+  it('matches a search geography to Census area context without changing search semantics', async () => {
+    const fixture = TestBed.createComponent(MobileResearchMapPreviewComponent);
+    fixture.componentRef.setInput('expanded', true);
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('query', {
+      q: 'migration',
+      geography: 'North Dakota',
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const preset = compiled.querySelector(
+      '#mobile-map-preset',
+    ) as HTMLSelectElement | null;
+    const area = compiled.querySelector(
+      '#mobile-census-area',
+    ) as HTMLSelectElement | null;
+
+    expect(preset?.value).toBe('research-area-context');
+    expect(area?.value).toBe('north-dakota');
+    expect(compiled.textContent).toContain('North Dakota area context');
+    expect(compiled.textContent).toContain(
+      'It is not exact TIGER/Line administrative geometry',
+    );
   });
 });
