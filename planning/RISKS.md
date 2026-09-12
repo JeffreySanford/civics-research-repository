@@ -99,27 +99,33 @@ Mitigation: cover it with Testcontainers against real PostgreSQL. That requires 
 
 Risk: advisories reaching the workspace through transitive dependencies.
 
-Status: reviewed 2026-08-12. Four of the five reported advisories are already mitigated by version overrides; one has no fix at any published version and is accepted with the reasoning below.
+Status: reviewed 2026-09-12. All currently patchable audit findings are mitigated by targeted `pnpm` overrides. Two high-severity `image-size` denial-of-service advisories remain because no patched release is available. The residual build-time risk is accepted with the reasoning below.
 
 ### Reading `pnpm audit` here
 
-`pnpm audit` reports an advisory when **any** package in the graph _requests_ a vulnerable range, even when an override resolves it to a patched version. The raw count is therefore misleading, and the number that matters is the resolved version. Verified on 2026-08-12:
+The resolved dependency version is the authoritative signal when evaluating an override. Verify security overrides with `pnpm why`, the lockfile, and `pnpm audit` together rather than relying on a raw advisory count alone. Verified on 2026-09-12:
 
-| Advisory                           | Vulnerable range | Patched from | Resolved here | Status                  |
-| ---------------------------------- | ---------------- | ------------ | ------------- | ----------------------- |
-| `uuid` bounds check                | `<11.1.1`        | 11.1.1       | **11.1.1**    | Mitigated by override   |
-| `@hono/node-server` path traversal | `<2.0.5`         | 2.0.5        | **2.0.10**    | Mitigated by override   |
-| `postcss` incomplete fix           | `<=8.5.22`       | 8.5.23       | **8.5.26**    | Mitigated by override   |
-| `brace-expansion` DoS              | `>=4.0.0 <5.0.9` | 5.0.9        | **5.0.9**     | Mitigated by override   |
-| `image-size` ICNS/JXL/HEIF DoS     | `<=2.0.2`        | none         | 0.5.5         | **Accepted, see below** |
+| Advisory / package                 | Vulnerable range        | Patched from | Resolved here | Status                  |
+| ---------------------------------- | ----------------------- | ------------ | ------------- | ----------------------- |
+| `uuid` bounds check                | `<11.1.1`               | 11.1.1       | **11.1.1**    | Mitigated by override   |
+| `@hono/node-server` path traversal | `<2.0.5`                | 2.0.5        | **2.0.10**    | Mitigated by override   |
+| `postcss` incomplete fix           | `<=8.5.22`              | 8.5.23       | **8.5.26**    | Mitigated by override   |
+| `brace-expansion` DoS              | `>=4.0.0 <5.0.9`        | 5.0.9        | **5.0.9**     | Mitigated by override   |
+| `fast-uri` advisories              | affected prior release  | 3.1.6        | **3.1.6**     | Mitigated by override   |
+| `hono` advisories                  | `<4.13.5`               | 4.13.5       | **4.13.5**    | Mitigated by override   |
+| `js-yaml` advisory                 | vulnerable 4.x to 4.3.1 | 4.3.2        | **4.3.2**     | Scoped 4.x override     |
+| `smol-toml` advisory               | `<1.7.1`                | 1.7.1        | **1.7.1**     | Mitigated by override   |
+| `svgo` advisories                  | `<4.1.0`                | 4.1.0        | **4.1.0**     | Mitigated by override   |
+| `qs` advisories                    | `<6.16.0`               | 6.16.0       | **6.16.0**    | Mitigated by override   |
+| `image-size` ICNS/JXL/HEIF DoS     | `<=2.0.2`               | none         | 0.5.5         | **Accepted, see below** |
 
-Do not remove the overrides on the strength of the audit output alone. Removing all four was tested on 2026-08-12 and immediately reintroduced every one of those four advisories with vulnerable resolved versions, so each override is currently load-bearing.
+The four original overrides were removal-tested on 2026-08-12 and immediately reintroduced their vulnerable resolved versions when removed, so they remain load-bearing. The September additions were verified by resolved-version inspection plus a clean `pnpm audit` for every patchable finding. Each security override should be removed only after its parent dependency chain resolves to a patched version without the override.
 
 ### Accepted risk: `image-size` (high, no fix available)
 
 Path: `@analogjs/vite-plugin-angular` -> `@angular-devkit/build-angular` -> `less` -> `image-size`.
 
-No patched version exists. The latest published `image-size` is 2.0.2 and the advisory covers `<=2.0.2`, so there is nothing to upgrade to and an override cannot help. Upgrading Analog to 2.7.0 was tried and does not change the path.
+Two advisories affect the same transitive package: ICNS parsing can enter an infinite loop, and JXL/HEIF parsing can enter infinite loops. No patched version exists. The latest published `image-size` is 2.0.2 and both advisories cover `<=2.0.2`, so there is nothing to upgrade to and an override cannot help. Upgrading Analog to 2.7.0 was tried and does not change the path.
 
 Accepted because the exposure is effectively nil:
 
