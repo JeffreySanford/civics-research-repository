@@ -301,7 +301,9 @@ test.describe('mobile research detail navigation', () => {
     });
     await expect(relatedHeading).toBeVisible();
     await expect(relatedHeading).toBeFocused();
-    await expect(page.getByText('Population Estimates')).toBeVisible();
+    await expect(
+      page.getByText('Population Estimates', { exact: true }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Back to results' }).click();
     await expectSearchContextRestored(page);
