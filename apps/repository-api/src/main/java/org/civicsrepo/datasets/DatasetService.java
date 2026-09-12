@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import org.civicsrepo.repository.FixtureCatalog;
 import org.civicsrepo.repository.RepositoryCatalog;
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetVersion;
 import org.civicsrepo.generated.dto.RepositorySource;
@@ -48,6 +49,13 @@ public class DatasetService {
         }
 
         return fixtureCatalog.findDataset(datasetId).orElseThrow(() -> notFound(datasetId));
+    }
+
+    /** Current observed artifact-version facts retained on the DSpace repository item. */
+    public Optional<ResearchArtifactVersion> findObservedRepositoryVersion(String researchObjectId) {
+        return repositoryCatalog == null
+                ? Optional.empty()
+                : repositoryCatalog.findObservedVersion(researchObjectId);
     }
 
     public List<DatasetVersion> getDatasetVersions(String datasetId) {
