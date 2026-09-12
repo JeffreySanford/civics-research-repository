@@ -14,8 +14,8 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import { Params } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Params } from '@angular/router';
 import type {
   GeoJSONSource,
   Map as MapLibreMap,
@@ -24,6 +24,7 @@ import type {
 import {
   parseRepositoryError,
   RepositoryMapsApi,
+  type CensusAreaBoundary,
   type ResearchSpatialCoverageFeature,
   type ResearchSpatialCoverageResponse,
   type ResearchSpatialViewport,
@@ -31,6 +32,7 @@ import {
 } from 'repository-api-client';
 import {
   catchError,
+  defer,
   map,
   of,
   ReplaySubject,
@@ -60,6 +62,11 @@ type CoverageState =
     }
   | { readonly status: 'error'; readonly message: string };
 
+type CensusAreaState =
+  | { readonly status: 'loading' }
+  | { readonly status: 'loaded'; readonly boundaries: CensusAreaBoundary[] }
+  | { readonly status: 'error'; readonly message: string };
+
 type CoverageFeatureCollection = {
   readonly type: 'FeatureCollection';
   readonly features: readonly {
@@ -69,6 +76,24 @@ type CoverageFeatureCollection = {
     readonly geometry: Readonly<Record<string, unknown>>;
   }[];
 };
+
+type AreaContextFeatureCollection = {
+  readonly type: 'FeatureCollection';
+  readonly features: readonly {
+    readonly type: 'Feature';
+    readonly properties: {
+      readonly id: string;
+      readonly geography: string;
+      readonly semantics: 'ORIENTATION_EXTENT_ONLY';
+    };
+    readonly geometry: {
+      readonly type: 'Polygon';
+      readonly coordinates: readonly (readonly [number, number])[][];
+    };
+  }[];
+};
+
+type MobileMapPreset = 'research' | 'research-area-context';
 
 @Component({
   selector: 'app-mobile-research-map-preview',
@@ -96,6 +121,10 @@ export class MobileResearchMapPreviewComponent
   protected queryParams: Params = {};
   protected readonly mapUnavailable = signal(false);
   protected readonly mapInitialized = signal(false);
+  protected readonly mapPreset = signal<MobileMapPreset>('research');
+  protected readonly selectedCensusArea = signal<CensusAreaBoundary | null>(
+    null,
+  );
   protected readonly state$ = this.requests.pipe(
     switchMap(({ query, viewport }) =>
       this.mapsApi
@@ -125,6 +154,27 @@ export class MobileResearchMapPreviewComponent
     ),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
+  protected readonly censusAreaState$ = defer(() =>
+    this.mapsApi.listCensusAreaBoundaries(),
+  ).pipe(
+    map(
+      (boundaries): CensusAreaState => ({
+        status: 'loaded',
+        boundaries,
+      }),
+    ),
+    startWith<CensusAreaState>({ status: 'loading' }),
+    catchError((error: unknown) =>
+      of<CensusAreaState>({
+        status: 'error',
+        message: parseRepositoryError(
+          error,
+          'Census area context could not be loaded.',
+        ).message,
+      }),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   private map: MapLibreMap | null = null;
   private mapModule: typeof import('maplibre-gl') | null = null;
@@ -132,6 +182,8 @@ export class MobileResearchMapPreviewComponent
   private pendingResponse: ResearchSpatialCoverageResponse | null = null;
   private currentViewport = INITIAL_VIEWPORT;
   private initialFitPending = true;
+  private censusAreas: readonly CensusAreaBoundary[] = [];
+  private censusAreasConnected = false;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['query'] || changes['interactive']) {
@@ -142,6 +194,11 @@ export class MobileResearchMapPreviewComponent
         query: this.query,
         viewport: this.currentViewport,
       });
+      this.applyQueryGeographyContext();
+    }
+
+    if (this.expanded) {
+      this.connectCensusAreas();
     }
   }
 
@@ -168,6 +225,87 @@ export class MobileResearchMapPreviewComponent
     return Boolean(this.query.geography || this.query.vintageYear);
   }
 
+  protected selectMapPreset(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    const preset: MobileMapPreset =
+      value === 'research-area-context' ? 'research-area-context' : 'research';
+    this.mapPreset.set(preset);
+
+    if (preset === 'research') {
+      this.selectedCensusArea.set(null);
+      this.renderCensusAreaContext(null);
+      if (this.pendingResponse) {
+        this.fitCoverage(this.pendingResponse);
+      }
+      return;
+    }
+
+    const queryMatch = this.findCensusArea(this.query.geography);
+    if (queryMatch && !this.selectedCensusArea()) {
+      this.selectArea(queryMatch);
+    }
+  }
+
+  protected selectCensusArea(event: Event): void {
+    const id = (event.target as HTMLSelectElement).value;
+    const boundary = this.censusAreas.find((candidate) => candidate.id === id);
+    if (!boundary) {
+      this.selectedCensusArea.set(null);
+      this.renderCensusAreaContext(null);
+      return;
+    }
+
+    this.mapPreset.set('research-area-context');
+    this.selectArea(boundary);
+  }
+
+  private connectCensusAreas(): void {
+    if (this.censusAreasConnected) {
+      return;
+    }
+    this.censusAreasConnected = true;
+
+    this.censusAreaState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state) => {
+        if (state.status !== 'loaded') {
+          return;
+        }
+        this.censusAreas = state.boundaries;
+        this.applyQueryGeographyContext();
+      });
+  }
+
+  private applyQueryGeographyContext(): void {
+    if (!this.expanded || this.censusAreas.length === 0) {
+      return;
+    }
+    const boundary = this.findCensusArea(this.query.geography);
+    if (!boundary) {
+      return;
+    }
+    this.mapPreset.set('research-area-context');
+    this.selectArea(boundary);
+  }
+
+  private findCensusArea(geography: string | undefined): CensusAreaBoundary | null {
+    const normalized = geography?.trim().toLocaleLowerCase();
+    if (!normalized) {
+      return null;
+    }
+    return (
+      this.censusAreas.find(
+        (boundary) => boundary.geography.toLocaleLowerCase() === normalized,
+      ) ?? null
+    );
+  }
+
+  private selectArea(boundary: CensusAreaBoundary): void {
+    this.selectedCensusArea.set(boundary);
+    this.renderCensusAreaContext(boundary);
+    this.fitCensusArea(boundary);
+  }
+
   private async renderCoverage(
     response: ResearchSpatialCoverageResponse,
   ): Promise<void> {
@@ -177,9 +315,15 @@ export class MobileResearchMapPreviewComponent
       return;
     }
 
+    this.renderCensusAreaContext(this.selectedCensusArea());
     this.updateCoverageSource(response);
     if (!this.interactive || this.initialFitPending) {
-      this.fitCoverage(response);
+      const selectedArea = this.selectedCensusArea();
+      if (selectedArea && this.mapPreset() === 'research-area-context') {
+        this.fitCensusArea(selectedArea);
+      } else {
+        this.fitCoverage(response);
+      }
       this.initialFitPending = false;
     }
   }
@@ -224,10 +368,19 @@ export class MobileResearchMapPreviewComponent
 
       map.once('style.load', () => {
         this.styleReady = true;
+        this.renderCensusAreaContext(this.selectedCensusArea());
         if (this.pendingResponse) {
           this.updateCoverageSource(this.pendingResponse);
           if (!this.interactive || this.initialFitPending) {
-            this.fitCoverage(this.pendingResponse);
+            const selectedArea = this.selectedCensusArea();
+            if (
+              selectedArea &&
+              this.mapPreset() === 'research-area-context'
+            ) {
+              this.fitCensusArea(selectedArea);
+            } else {
+              this.fitCoverage(this.pendingResponse);
+            }
             this.initialFitPending = false;
           }
         }
@@ -259,6 +412,87 @@ export class MobileResearchMapPreviewComponent
           type: 'raster',
           source: 'osm',
           paint: { 'raster-opacity': 0.7 },
+        },
+      ],
+    };
+  }
+
+  private renderCensusAreaContext(boundary: CensusAreaBoundary | null): void {
+    const map = this.map;
+    if (!map || !this.styleReady) {
+      return;
+    }
+
+    const source = map.getSource('mobile-census-area-context') as
+      | GeoJSONSource
+      | undefined;
+    const data = this.areaContextFeatureCollection(boundary);
+
+    if (source) {
+      source.setData(data as unknown as Parameters<GeoJSONSource['setData']>[0]);
+      if (map.getLayer('mobile-census-area-context-line')) {
+        map.setLayoutProperty(
+          'mobile-census-area-context-line',
+          'visibility',
+          boundary && this.mapPreset() === 'research-area-context'
+            ? 'visible'
+            : 'none',
+        );
+      }
+      return;
+    }
+
+    map.addSource('mobile-census-area-context', {
+      type: 'geojson',
+      data: data as never,
+    });
+    map.addLayer({
+      id: 'mobile-census-area-context-line',
+      type: 'line',
+      source: 'mobile-census-area-context',
+      layout: {
+        visibility:
+          boundary && this.mapPreset() === 'research-area-context'
+            ? 'visible'
+            : 'none',
+      },
+      paint: {
+        'line-color': '#6d28d9',
+        'line-width': 2.5,
+        'line-dasharray': [2, 2],
+      },
+    });
+  }
+
+  private areaContextFeatureCollection(
+    boundary: CensusAreaBoundary | null,
+  ): AreaContextFeatureCollection {
+    if (!boundary) {
+      return { type: 'FeatureCollection', features: [] };
+    }
+
+    return {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            id: boundary.id,
+            geography: boundary.geography,
+            semantics: 'ORIENTATION_EXTENT_ONLY',
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [boundary.west, boundary.south],
+                [boundary.east, boundary.south],
+                [boundary.east, boundary.north],
+                [boundary.west, boundary.north],
+                [boundary.west, boundary.south],
+              ],
+            ],
+          },
         },
       ],
     };
@@ -389,6 +623,23 @@ export class MobileResearchMapPreviewComponent
         duration: 0,
       });
     }
+  }
+
+  private fitCensusArea(boundary: CensusAreaBoundary): void {
+    if (!this.map) {
+      return;
+    }
+    this.map.fitBounds(
+      [
+        [boundary.west, boundary.south],
+        [boundary.east, boundary.north],
+      ],
+      {
+        padding: this.expanded ? 44 : 22,
+        maxZoom: boundary.defaultZoom,
+        duration: 0,
+      },
+    );
   }
 
   private collectCoordinates(
