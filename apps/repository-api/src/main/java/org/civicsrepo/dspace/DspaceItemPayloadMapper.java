@@ -43,6 +43,27 @@ public class DspaceItemPayloadMapper {
         putIfPresent(fields, DspaceManagedFields.LICENSE_FIELD, metadata.license());
         putIfPresent(fields, DspaceManagedFields.DOI_FIELD, metadata.doi());
 
+        ResearchObjectMetadata.ResearchArtifactProvenance provenance = metadata.versionProvenance();
+        if (provenance != null) {
+            putIfPresent(fields, DspaceManagedFields.VERSION_LABEL_FIELD, provenance.versionLabel());
+            putIfPresent(
+                    fields,
+                    DspaceManagedFields.VERSION_DATE_FIELD,
+                    provenance.versionDate() == null
+                            ? null
+                            : provenance.versionDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            putIfPresent(fields, DspaceManagedFields.SOURCE_SHA256_FIELD, provenance.sourceSha256());
+            putIfPresent(
+                    fields,
+                    DspaceManagedFields.CAPTURED_AT_FIELD,
+                    provenance.capturedAt() == null
+                            ? null
+                            : provenance.capturedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            putIfPresent(fields, DspaceManagedFields.IS_VERSION_OF_FIELD, provenance.isVersionOf());
+            putIfPresent(fields, DspaceManagedFields.SUPERSEDES_FIELD, provenance.supersedes());
+            putIfPresent(fields, DspaceManagedFields.CHANGE_NOTE_FIELD, provenance.changeNote());
+        }
+
         if (!metadata.authors().isEmpty()) {
             // dc as well as crr: dc.contributor.author is what every harvester and citation
             // exporter reads, and an author recorded only in a project schema is not deposited.
