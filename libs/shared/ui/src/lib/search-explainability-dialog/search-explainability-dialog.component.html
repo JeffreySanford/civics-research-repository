@@ -39,12 +39,12 @@
         <dd>{{ query || 'Repository browse' }}</dd>
       </div>
 
-      @if (activeFilters.length > 0) {
+      @if (filterItems.length > 0) {
         <div>
           <dt>Active filters</dt>
           <dd>
             <ul class="explainability-dialog__filters">
-              @for (filter of activeFilters; track filter.label) {
+              @for (filter of filterItems; track filter.label) {
                 <li>{{ filter.label }}</li>
               }
             </ul>
@@ -92,7 +92,7 @@
     @if (evidenceItems.length > 0) {
       <section
         class="explainability-dialog__matches"
-        aria-labelledby="{{ headingId }}-matches"
+        [attr.aria-labelledby]="headingId + '-matches'"
       >
         <h3 [id]="headingId + '-matches'">Matched fields</h3>
         <p>
