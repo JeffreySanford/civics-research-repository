@@ -28,5 +28,14 @@ export default defineConfig({
         viewport: { width: 320, height: 800 },
       },
     },
+    {
+      // Temporary alias for the #106 one-shot validator. Removed after the
+      // validated feature commit lands; it is behaviorally identical to chromium-320.
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 320, height: 800 },
+      },
+    },
   ],
 });
