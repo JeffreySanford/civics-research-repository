@@ -18,6 +18,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Params } from '@angular/router';
 import type {
+  DataDrivenPropertyValueSpecification,
   GeoJSONSource,
   Map as MapLibreMap,
   MapLayerMouseEvent,
@@ -27,6 +28,8 @@ import {
   parseRepositoryError,
   RepositoryMapsApi,
   type CensusAreaBoundary,
+  type PopulationEstimateCountyValue,
+  type PopulationEstimatesChoropleth,
   type ResearchSpatialCoverageFeature,
   type ResearchSpatialCoverageResponse,
   type ResearchSpatialViewport,
@@ -51,6 +54,14 @@ const INITIAL_VIEWPORT: ResearchSpatialViewport = {
   north: 85,
 };
 
+const POPULATION_DIVERGING_COLORS = [
+  '#9a3412',
+  '#fdba74',
+  '#f8fafc',
+  '#93c5fd',
+  '#1d4ed8',
+] as const;
+
 type CoverageRequest = {
   readonly query: SearchQuery;
   readonly viewport: ResearchSpatialViewport;
@@ -68,6 +79,18 @@ type CensusAreaState =
   | { readonly status: 'loading' }
   | { readonly status: 'loaded'; readonly boundaries: CensusAreaBoundary[] }
   | { readonly status: 'error'; readonly message: string };
+
+type PopulationState =
+  | { readonly status: 'loading'; readonly geography: string }
+  | {
+      readonly status: 'loaded';
+      readonly response: PopulationEstimatesChoropleth;
+    }
+  | {
+      readonly status: 'error';
+      readonly geography: string;
+      readonly message: string;
+    };
 
 type CoverageFeatureCollection = {
   readonly type: 'FeatureCollection';
@@ -95,7 +118,10 @@ type AreaContextFeatureCollection = {
   }[];
 };
 
-type MobileMapPreset = 'research' | 'research-area-context';
+type MobileMapPreset =
+  | 'research'
+  | 'research-area-context'
+  | 'community-population';
 
 @Component({
   selector: 'app-mobile-research-map-preview',
@@ -112,6 +138,7 @@ export class MobileResearchMapPreviewComponent
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly requests = new ReplaySubject<CoverageRequest>(1);
+  private readonly populationRequests = new ReplaySubject<string>(1);
 
   @Input() query: SearchQuery = {};
   @Input() interactive = false;
@@ -192,11 +219,42 @@ export class MobileResearchMapPreviewComponent
     ),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
+  protected readonly populationState$ = this.populationRequests.pipe(
+    switchMap((geography) =>
+      this.mapsApi
+        .getPopulationEstimatesChoropleth(
+          geography,
+          'ANNUAL_GROWTH_RATE',
+          2025,
+        )
+        .pipe(
+          map(
+            (response): PopulationState => ({
+              status: 'loaded',
+              response,
+            }),
+          ),
+          startWith<PopulationState>({ status: 'loading', geography }),
+          catchError((error: unknown) =>
+            of<PopulationState>({
+              status: 'error',
+              geography,
+              message: parseRepositoryError(
+                error,
+                'County population context could not be loaded.',
+              ).message,
+            }),
+          ),
+        ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   private map: MapLibreMap | null = null;
   private mapModule: typeof import('maplibre-gl') | null = null;
   private styleReady = false;
   private pendingResponse: ResearchSpatialCoverageResponse | null = null;
+  private pendingPopulationResponse: PopulationEstimatesChoropleth | null = null;
   private currentViewport = INITIAL_VIEWPORT;
   private initialFitPending = true;
   private censusAreas: readonly CensusAreaBoundary[] = [];
@@ -228,6 +286,18 @@ export class MobileResearchMapPreviewComponent
         void this.renderCoverage(state.response);
       }
     });
+
+    this.populationState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state) => {
+        if (state.status === 'loaded') {
+          this.pendingPopulationResponse = state.response;
+          this.renderPopulationContext(state.response);
+        } else if (state.status === 'error') {
+          this.pendingPopulationResponse = null;
+          this.renderPopulationContext(null);
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -249,6 +319,29 @@ export class MobileResearchMapPreviewComponent
     feature: ResearchSpatialCoverageFeature,
   ): boolean {
     return this.selectedSourceIdentifier() === feature.sourceIdentifier;
+  }
+
+  protected populationPeriod(response: PopulationEstimatesChoropleth): string {
+    return response.priorYear
+      ? `${response.priorYear}–${response.year}`
+      : `${response.year}`;
+  }
+
+  protected populationValueLabel(
+    response: PopulationEstimatesChoropleth,
+    county: PopulationEstimateCountyValue,
+  ): string {
+    const formatted = new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: response.units === 'percent' ? 2 : 0,
+    }).format(county.value);
+    const sign = county.value > 0 ? '+' : '';
+    return response.units === 'percent'
+      ? `${sign}${formatted}%`
+      : `${sign}${formatted} ${response.units}`;
+  }
+
+  protected populationCountLabel(population: number): string {
+    return new Intl.NumberFormat('en-US').format(population);
   }
 
   protected selectResearchFeature(sourceIdentifier: string | null): void {
@@ -276,21 +369,42 @@ export class MobileResearchMapPreviewComponent
   protected selectMapPreset(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
     const preset: MobileMapPreset =
-      value === 'research-area-context' ? 'research-area-context' : 'research';
+      value === 'community-population'
+        ? 'community-population'
+        : value === 'research-area-context'
+          ? 'research-area-context'
+          : 'research';
     this.mapPreset.set(preset);
 
     if (preset === 'research') {
       this.selectedCensusArea.set(null);
       this.renderCensusAreaContext(null);
+      this.pendingPopulationResponse = null;
+      this.renderPopulationContext(null);
       if (this.pendingResponse) {
         this.fitCoverage(this.pendingResponse);
       }
       return;
     }
 
+    if (preset === 'research-area-context') {
+      this.pendingPopulationResponse = null;
+      this.renderPopulationContext(null);
+    }
+
     const queryMatch = this.findCensusArea(this.query.geography);
-    if (queryMatch && !this.selectedCensusArea()) {
+    const selectedArea = this.selectedCensusArea();
+    if (queryMatch && !selectedArea) {
       this.selectArea(queryMatch);
+      return;
+    }
+
+    if (selectedArea) {
+      this.renderCensusAreaContext(selectedArea);
+      this.fitCensusArea(selectedArea);
+      if (preset === 'community-population') {
+        this.requestPopulationContext(selectedArea.geography);
+      }
     }
   }
 
@@ -299,11 +413,15 @@ export class MobileResearchMapPreviewComponent
     const boundary = this.censusAreas.find((candidate) => candidate.id === id);
     if (!boundary) {
       this.selectedCensusArea.set(null);
+      this.pendingPopulationResponse = null;
       this.renderCensusAreaContext(null);
+      this.renderPopulationContext(null);
       return;
     }
 
-    this.mapPreset.set('research-area-context');
+    if (this.mapPreset() === 'research') {
+      this.mapPreset.set('research-area-context');
+    }
     this.selectArea(boundary);
   }
 
@@ -332,7 +450,9 @@ export class MobileResearchMapPreviewComponent
     if (!boundary) {
       return;
     }
-    this.mapPreset.set('research-area-context');
+    if (this.mapPreset() === 'research') {
+      this.mapPreset.set('research-area-context');
+    }
     this.selectArea(boundary);
   }
 
@@ -354,6 +474,13 @@ export class MobileResearchMapPreviewComponent
     this.selectedCensusArea.set(boundary);
     this.renderCensusAreaContext(boundary);
     this.fitCensusArea(boundary);
+    if (this.mapPreset() === 'community-population') {
+      this.requestPopulationContext(boundary.geography);
+    }
+  }
+
+  private requestPopulationContext(geography: string): void {
+    this.populationRequests.next(geography);
   }
 
   private async renderCoverage(
@@ -369,10 +496,16 @@ export class MobileResearchMapPreviewComponent
     }
 
     this.renderCensusAreaContext(this.selectedCensusArea());
+    if (
+      this.mapPreset() === 'community-population' &&
+      this.pendingPopulationResponse
+    ) {
+      this.renderPopulationContext(this.pendingPopulationResponse);
+    }
     this.updateCoverageSource(response);
     if (!this.interactive || this.initialFitPending) {
       const selectedArea = this.selectedCensusArea();
-      if (selectedArea && this.mapPreset() === 'research-area-context') {
+      if (selectedArea && this.mapPreset() !== 'research') {
         this.fitCensusArea(selectedArea);
       } else {
         this.fitCoverage(response);
@@ -436,11 +569,17 @@ export class MobileResearchMapPreviewComponent
       map.once('style.load', () => {
         this.styleReady = true;
         this.renderCensusAreaContext(this.selectedCensusArea());
+        if (
+          this.mapPreset() === 'community-population' &&
+          this.pendingPopulationResponse
+        ) {
+          this.renderPopulationContext(this.pendingPopulationResponse);
+        }
         if (this.pendingResponse) {
           this.updateCoverageSource(this.pendingResponse);
           if (!this.interactive || this.initialFitPending) {
             const selectedArea = this.selectedCensusArea();
-            if (selectedArea && this.mapPreset() === 'research-area-context') {
+            if (selectedArea && this.mapPreset() !== 'research') {
               this.fitCensusArea(selectedArea);
             } else {
               this.fitCoverage(this.pendingResponse);
@@ -491,6 +630,7 @@ export class MobileResearchMapPreviewComponent
       | GeoJSONSource
       | undefined;
     const data = this.areaContextFeatureCollection(boundary);
+    const visible = Boolean(boundary && this.mapPreset() !== 'research');
 
     if (source) {
       source.setData(
@@ -500,9 +640,7 @@ export class MobileResearchMapPreviewComponent
         map.setLayoutProperty(
           'mobile-census-area-context-line',
           'visibility',
-          boundary && this.mapPreset() === 'research-area-context'
-            ? 'visible'
-            : 'none',
+          visible ? 'visible' : 'none',
         );
       }
       return;
@@ -517,10 +655,7 @@ export class MobileResearchMapPreviewComponent
       type: 'line',
       source: 'mobile-census-area-context',
       layout: {
-        visibility:
-          boundary && this.mapPreset() === 'research-area-context'
-            ? 'visible'
-            : 'none',
+        visibility: visible ? 'visible' : 'none',
       },
       paint: {
         'line-color': '#6d28d9',
@@ -562,6 +697,118 @@ export class MobileResearchMapPreviewComponent
         },
       ],
     };
+  }
+
+  private renderPopulationContext(
+    response: PopulationEstimatesChoropleth | null,
+  ): void {
+    const map = this.map;
+    if (!map || !this.styleReady) {
+      return;
+    }
+
+    const sourceId = 'mobile-population-estimates';
+    const fillLayerId = 'mobile-population-estimates-fill';
+    const outlineLayerId = 'mobile-population-estimates-outline';
+    const existing = map.getSource(sourceId) as GeoJSONSource | undefined;
+    const empty = { type: 'FeatureCollection', features: [] } as const;
+    const data = response?.geoJson ?? empty;
+    const visible = Boolean(
+      response && this.mapPreset() === 'community-population',
+    );
+
+    if (existing) {
+      existing.setData(
+        data as unknown as Parameters<GeoJSONSource['setData']>[0],
+      );
+      for (const layerId of [fillLayerId, outlineLayerId]) {
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(
+            layerId,
+            'visibility',
+            visible ? 'visible' : 'none',
+          );
+        }
+      }
+      if (response && map.getLayer(fillLayerId)) {
+        map.setPaintProperty(
+          fillLayerId,
+          'fill-color',
+          this.populationFillColor(response),
+        );
+      }
+      return;
+    }
+
+    if (!response) {
+      return;
+    }
+
+    map.addSource(sourceId, {
+      type: 'geojson',
+      data: data as never,
+    });
+
+    const beforeLayer = map.getLayer('mobile-research-coverage-fill')
+      ? 'mobile-research-coverage-fill'
+      : undefined;
+    map.addLayer(
+      {
+        id: fillLayerId,
+        type: 'fill',
+        source: sourceId,
+        layout: { visibility: visible ? 'visible' : 'none' },
+        paint: {
+          'fill-color': this.populationFillColor(response),
+          'fill-opacity': 0.48,
+        },
+      },
+      beforeLayer,
+    );
+    map.addLayer(
+      {
+        id: outlineLayerId,
+        type: 'line',
+        source: sourceId,
+        layout: { visibility: visible ? 'visible' : 'none' },
+        paint: {
+          'line-color': '#334155',
+          'line-width': 0.8,
+          'line-opacity': 0.85,
+        },
+      },
+      beforeLayer,
+    );
+  }
+
+  private populationFillColor(
+    response: PopulationEstimatesChoropleth,
+  ): DataDrivenPropertyValueSpecification<string> {
+    const values = response.counties
+      .map((county) => county.value)
+      .filter((value) => Number.isFinite(value));
+    const maxAbsolute = Math.max(0, ...values.map((value) => Math.abs(value)));
+
+    if (maxAbsolute === 0) {
+      return POPULATION_DIVERGING_COLORS[2];
+    }
+
+    const half = maxAbsolute / 2;
+    return [
+      'interpolate',
+      ['linear'],
+      ['to-number', ['get', 'value']],
+      -maxAbsolute,
+      POPULATION_DIVERGING_COLORS[0],
+      -half,
+      POPULATION_DIVERGING_COLORS[1],
+      0,
+      POPULATION_DIVERGING_COLORS[2],
+      half,
+      POPULATION_DIVERGING_COLORS[3],
+      maxAbsolute,
+      POPULATION_DIVERGING_COLORS[4],
+    ] as DataDrivenPropertyValueSpecification<string>;
   }
 
   private updateCoverageSource(
