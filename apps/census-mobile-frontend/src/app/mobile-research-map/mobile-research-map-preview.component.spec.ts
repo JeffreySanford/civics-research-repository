@@ -171,10 +171,14 @@ describe('MobileResearchMapPreviewComponent', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
+    const preview = compiled.querySelector(
+      '[data-testid="mobile-research-map-preview"]',
+    );
     const selectButton = compiled.querySelector(
       'button[aria-label="Show on map: North Dakota migration coverage"]',
     ) as HTMLButtonElement | null;
 
+    expect(preview).not.toBeNull();
     expect(selectButton).not.toBeNull();
     expect(selectButton?.getAttribute('aria-pressed')).toBe('false');
     selectButton?.click();
@@ -187,7 +191,7 @@ describe('MobileResearchMapPreviewComponent', () => {
       'button[aria-label="Selected on map: North Dakota migration coverage"]',
     );
 
-    expect(compiled.getAttribute('data-selected-source')).toBe(
+    expect(preview?.getAttribute('data-selected-source')).toBe(
       'nd-migration-map',
     );
     expect(selectedButton?.getAttribute('aria-pressed')).toBe('true');
@@ -211,12 +215,15 @@ describe('MobileResearchMapPreviewComponent', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
+    const preview = compiled.querySelector(
+      '[data-testid="mobile-research-map-preview"]',
+    );
     const selectButton = compiled.querySelector(
       'button[aria-label="Show on map: North Dakota migration coverage"]',
     ) as HTMLButtonElement | null;
     selectButton?.click();
     fixture.detectChanges();
-    expect(compiled.getAttribute('data-selected-source')).toBe(
+    expect(preview?.getAttribute('data-selected-source')).toBe(
       'nd-migration-map',
     );
 
@@ -233,7 +240,7 @@ describe('MobileResearchMapPreviewComponent', () => {
     });
     fixture.detectChanges();
 
-    expect(compiled.getAttribute('data-selected-source')).toBeNull();
+    expect(preview?.getAttribute('data-selected-source')).toBeNull();
     expect(
       compiled.querySelector('[data-testid="mobile-selected-research"]')
         ?.textContent,
