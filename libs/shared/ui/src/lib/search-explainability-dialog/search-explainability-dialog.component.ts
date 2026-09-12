@@ -109,4 +109,8 @@ export class SearchExplainabilityDialogComponent {
   protected get evidenceItems(): readonly SearchExplainabilityMatchEvidence[] {
     return this.matchEvidence ?? [];
   }
+
+  protected get filterItems(): readonly SearchExplainabilityFilter[] {
+    return this.activeFilters.filter((filter) => filter.label.trim().length > 0);
+  }
 }
