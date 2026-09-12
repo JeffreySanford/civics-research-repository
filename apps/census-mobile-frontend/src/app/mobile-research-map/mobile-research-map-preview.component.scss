@@ -34,7 +34,9 @@
 .coverage-card__attribution,
 .coverage-card h2,
 .coverage-list h2,
-.coverage-list p {
+.coverage-list p,
+.coverage-controls__note,
+.coverage-controls__status {
   margin: 0;
 }
 
@@ -63,19 +65,71 @@
 .coverage-card__note,
 .coverage-card__status,
 .coverage-card__message,
-.coverage-card__attribution {
+.coverage-card__attribution,
+.coverage-controls__note,
+.coverage-controls__status {
   color: var(--civics-text-secondary);
   line-height: 1.45;
 }
 
 .coverage-card__note,
-.coverage-card__attribution {
+.coverage-card__attribution,
+.coverage-controls__note,
+.coverage-controls__status {
   font-size: 0.82rem;
 }
 
 .coverage-card__message {
   display: grid;
   gap: 0.2rem;
+}
+
+.coverage-controls {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+}
+
+.coverage-controls legend {
+  padding-inline: 0.25rem;
+  font-weight: 800;
+}
+
+.coverage-controls__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.35rem;
+}
+
+.coverage-controls label {
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.coverage-controls select {
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--civics-border-strong);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+  color: var(--civics-text-primary);
+  font: inherit;
+}
+
+.coverage-controls select:focus-visible {
+  outline: 3px solid var(--civics-focus);
+  outline-offset: 2px;
+}
+
+.coverage-controls__note {
+  padding: 0.65rem;
+  border-inline-start: 3px solid var(--civics-border-strong);
+  background: var(--civics-surface-muted);
 }
 
 .coverage-map {
@@ -169,6 +223,11 @@
 }
 
 @media (min-width: 40rem) {
+  .coverage-controls__grid {
+    grid-template-columns: minmax(7rem, auto) minmax(12rem, 1fr);
+    align-items: center;
+  }
+
   .coverage-map:not(.coverage-map--expanded) {
     min-height: 13.5rem;
   }
@@ -177,6 +236,9 @@
 @media (forced-colors: active) {
   .coverage-card,
   .coverage-card__layer,
+  .coverage-controls,
+  .coverage-controls select,
+  .coverage-controls__note,
   .coverage-map,
   .coverage-list li {
     border-color: CanvasText;

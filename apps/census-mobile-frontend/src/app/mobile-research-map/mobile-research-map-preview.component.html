@@ -14,6 +14,72 @@
     <span class="coverage-card__layer">Research coverage</span>
   </div>
 
+  @if (expanded) {
+    <fieldset class="coverage-controls">
+      <legend>Map context</legend>
+      <div class="coverage-controls__grid">
+        <label for="mobile-map-preset">Preset</label>
+        <select
+          id="mobile-map-preset"
+          [value]="mapPreset()"
+          (change)="selectMapPreset($event)"
+        >
+          <option value="research">Research</option>
+          <option value="research-area-context">
+            Research + Census area context
+          </option>
+        </select>
+
+        @if (mapPreset() === 'research-area-context') {
+          @if (censusAreaState$ | async; as areaState) {
+            @if (areaState.status === 'loading') {
+              <p class="coverage-controls__status" role="status">
+                Loading Census area choices…
+              </p>
+            } @else if (areaState.status === 'error') {
+              <p class="coverage-controls__status" role="status">
+                {{ areaState.message }}
+              </p>
+            } @else {
+              <label for="mobile-census-area">Census area</label>
+              <select
+                id="mobile-census-area"
+                [value]="selectedCensusArea()?.id ?? ''"
+                (change)="selectCensusArea($event)"
+              >
+                <option value="" [selected]="!selectedCensusArea()">
+                  Choose an area
+                </option>
+                @for (boundary of areaState.boundaries; track boundary.id) {
+                  <option
+                    [value]="boundary.id"
+                    [selected]="selectedCensusArea()?.id === boundary.id"
+                  >
+                    {{ boundary.geography }}
+                  </option>
+                }
+              </select>
+            }
+          }
+        }
+      </div>
+
+      @if (selectedCensusArea(); as area) {
+        <p class="coverage-controls__note" role="note">
+          <strong>{{ area.geography }} area context:</strong>
+          the dashed rectangle is an orientation extent derived from the current
+          Census-area summary. It is not exact TIGER/Line administrative
+          geometry and does not change the repository search.
+        </p>
+      } @else if (mapPreset() === 'research-area-context') {
+        <p class="coverage-controls__note">
+          Choose a Census area to add an orientation extent while keeping the
+          research query unchanged.
+        </p>
+      }
+    </fieldset>
+  }
+
   @if (state$ | async; as state) {
     @if (state.status === 'loading') {
       <p class="coverage-card__status" role="status">

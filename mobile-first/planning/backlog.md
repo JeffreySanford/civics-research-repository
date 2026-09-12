@@ -20,60 +20,45 @@ Delivered capabilities now include:
 - shared rank/relevance presentation across both Angular frontends;
 - shared `Why this matched` explainability across both Angular frontends (#97 / PR #103);
 - one documented mobile search design lifecycle from wireframe through Storybook, production implementation and automated evidence (#98 / PR #104);
+- read-only repository steward/status surface (#99 / PR #105);
+- compact mobile Research Coverage preview plus lazy interactive `/research-map` route over the bounded spatial sidecar (#106 / PR #107);
 - Storybook/component evidence and Playwright/axe responsive coverage across representative phone/tablet widths;
 - full-stack startup integration.
 
 Historical PR1/scaffold documents remain implementation history, not open tasks.
 
-## #99 — Read-only repository steward/status surface
+## #108 — Mobile Census area context and map presets
 
-Goal: demonstrate an internal operational workflow without widening into privileged administration work.
-
-Tasks:
-
-- [x] Inventory existing API data for corpus/profile identity, projection identity, Solr/OpenSearch parity/status, synchronization/adapters and automated evidence state.
-- [x] Define a concise read-only steward workflow distinct from existing Admin mutation flows.
-- [x] Reuse the generated OpenAPI/client boundary without adding a backend schema for facts the current contract already exposes.
-- [x] Present authority boundaries, stale/degraded/fallback states and timestamps where available.
-- [x] Keep secrets, credentials and operator-only diagnostics out of the browser contract.
-- [x] Add loading, empty, degraded and error states.
-- [x] Add responsive/component/browser/axe evidence.
-- [x] Complete repository validation and merge the #99 implementation PR (#105).
-
-Implementation boundary:
-
-- `/steward` is a lazy read-only route in `discovery-ui`;
-- existing corpus-storage, DSpace/source-inventory, synchronization and evidence clients provide status facts;
-- the existing non-mutating Solr/OpenSearch projection-parity component is reused rather than duplicated;
-- Admin Sync retains sync/apply/reindex controls and is linked separately from the steward view.
-
-Acceptance:
-
-- A repository steward can understand current system/corpus/search status without privileged actions.
-- The surface does not duplicate Admin solely for portfolio breadth.
-- Authority/provenance and degraded-state wording remain explicit.
-- Narrow-width and axe evidence remain clean.
-
-## #106 — Mobile research coverage map preview
-
-Goal: make spatial research coverage discoverable from the mobile search journey without turning the initial screen into a miniature desktop map workspace.
+Goal: add useful geographic orientation to the mobile Research Coverage experience without copying the desktop GIS control tree or overstating the current boundary data.
 
 Tasks:
 
-- [x] Reuse the bounded `GET /maps/research-coverage` contract and current mobile `SearchQuery` intent.
-- [x] Add a compact non-interactive MapLibre preview after a populated query.
-- [x] Keep semantic matching/mapped/unmapped/truncation counts outside WebGL.
-- [x] Preserve query/filter state into a lazy `/research-map` route.
-- [x] Add MapLibre worker/style plumbing without changing backend contracts.
-- [x] Keep publisher/institution location inference out of the map.
-- [x] Add a first interactive research-coverage route with semantic in-view records; richer context layers remain follow-up work.
-- [ ] Complete repository validation and merge the #106 implementation PR.
+- [x] Keep the compact search-result preview free of extra Census-area requests and controls.
+- [x] Add a compact expanded-map preset control with `Research` as the default.
+- [x] Load existing `GET /maps/census-areas` summaries only for the expanded map.
+- [x] Allow explicit Census area selection independently of repository search filters.
+- [x] Use an exact search-geography match as initial map context when one exists, without weakening or rewriting the search query.
+- [x] Render the selected area as a dashed orientation extent and fit the map to it.
+- [x] State explicitly that the rectangle is not exact TIGER/Line administrative geometry.
+- [x] Keep Research Coverage visible and preserve bounded viewport refresh/semantic evidence.
+- [x] Add unit and focused 320px Playwright/axe coverage for preset selection, query preservation, reflow and forced-colors behavior.
+- [ ] Complete repository validation and merge the #108 implementation PR.
 
-Next map increments after #106:
+Important data boundary:
+
+- `CensusAreaBoundary` currently provides west/south/east/north/center/defaultZoom summaries, not exact administrative polygon geometry.
+- The mobile context layer therefore uses the word **extent** and must not be represented as an official TIGER/Line polygon.
+- Exact TIGER geometry requires a separate backend/data-contract increment.
+
+## Next map increments after #108
+
+Promote these only as separate, evidence-backed increments:
 
 1. synchronize selected mapped research with a mobile bottom sheet/list;
-2. add TIGER/Line boundary as the first contextual layer;
-3. introduce explicit Community / Workforce / Environment layer presets rather than copying the desktop toggle tree.
+2. add exact TIGER administrative geometry through an authoritative backend contract;
+3. add a `Community` preset using Census Population Estimates / SAIPE / County Business Patterns;
+4. add a `Workforce` preset using LODES workplace employment / commuting flows;
+5. add an `Environment` preset using USGS terrain / hydrography / earthquakes.
 
 ## Deferred / optional work
 
