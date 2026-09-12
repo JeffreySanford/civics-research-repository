@@ -51,7 +51,14 @@ test.describe('Repository steward status', () => {
     await expect(
       page.getByRole('heading', { name: 'Read-only repository status' }),
     ).toBeVisible();
-    await expect(page.getByText('FEDERATED_1M', { exact: true })).toBeVisible();
+
+    const corpusStatus = page.getByRole('region', {
+      name: 'Active profile and retained storage evidence',
+    });
+    await expect(
+      corpusStatus.getByText('FEDERATED_1M', { exact: true }),
+    ).toBeVisible();
+
     await expect(page.getByText('Projection parity verified.')).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'DSpace availability' }),
