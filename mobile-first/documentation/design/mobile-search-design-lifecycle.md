@@ -154,17 +154,17 @@ A research object's title, metadata, summary and detail link remain the primary 
 
 ## Annotated component and interaction map
 
-| Design responsibility | Production boundary | Why it lives there | Primary evidence |
-| --- | --- | --- | --- |
-| Mobile search shell, result ordering, result-card hierarchy and local presentation state | `apps/census-mobile-frontend/src/app/app.*` | Mobile-specific composition should not force the desktop application into the same visual shell | `app.spec.ts`; mobile E2E suites |
-| Shareable query/filter intent | mobile NgRx search flow + `SearchRouteQueryAdapter` | Search state is asynchronous/shared and the URL is an externalized reproducibility boundary | URL/filter unit and browser tests |
-| Modal filter workflow | `MobileSearchFiltersComponent` | Drawer interaction is mobile-shell behavior; server facet values remain authoritative | filter component tests; mobile Playwright focus/Escape checks |
-| Query-wide result-type context | `SearchSummaryComponent` | Summary is reusable inside the mobile experience but derives from authoritative response facets | Storybook `QueryWideTypeMix`, `Mobile320`, `SingleType` |
-| Ordinal rank semantics | `shared-ui/SearchRankBadgeComponent` | Both frontends need the same wording and non-color semantics | shared component tests; desktop/mobile browser tests |
-| Query-relative match-strength semantics | `shared-ui/SearchRelevanceBadgeComponent` | Both frontends must avoid divergent percentage/confidence language | Strong/Good/Moderate/Weak/Low Storybook states; browser tests |
-| Result explanation | `shared-ui/SearchExplainabilityDialogComponent` | The evidence contract is shared while app-specific query/filter adaptation stays outside `shared-ui` | Storybook strong/filtered/no-field-evidence/mobile states; component + browser/axe tests |
-| Research-object detail | `MobileResearchDetailComponent` | Object navigation is part of the mobile journey but consumes the shared typed API | detail unit/E2E coverage |
-| Search/relevance facts | `repository-api-client` generated types + Spring API | Rank/relevance/matched terms must remain server-owned rather than reconstructed in Angular | OpenAPI/generated-type checks + API tests |
+| Design responsibility                                                                    | Production boundary                                  | Why it lives there                                                                                   | Primary evidence                                                                         |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Mobile search shell, result ordering, result-card hierarchy and local presentation state | `apps/census-mobile-frontend/src/app/app.*`          | Mobile-specific composition should not force the desktop application into the same visual shell      | `app.spec.ts`; mobile E2E suites                                                         |
+| Shareable query/filter intent                                                            | mobile NgRx search flow + `SearchRouteQueryAdapter`  | Search state is asynchronous/shared and the URL is an externalized reproducibility boundary          | URL/filter unit and browser tests                                                        |
+| Modal filter workflow                                                                    | `MobileSearchFiltersComponent`                       | Drawer interaction is mobile-shell behavior; server facet values remain authoritative                | filter component tests; mobile Playwright focus/Escape checks                            |
+| Query-wide result-type context                                                           | `SearchSummaryComponent`                             | Summary is reusable inside the mobile experience but derives from authoritative response facets      | Storybook `QueryWideTypeMix`, `Mobile320`, `SingleType`                                  |
+| Ordinal rank semantics                                                                   | `shared-ui/SearchRankBadgeComponent`                 | Both frontends need the same wording and non-color semantics                                         | shared component tests; desktop/mobile browser tests                                     |
+| Query-relative match-strength semantics                                                  | `shared-ui/SearchRelevanceBadgeComponent`            | Both frontends must avoid divergent percentage/confidence language                                   | Strong/Good/Moderate/Weak/Low Storybook states; browser tests                            |
+| Result explanation                                                                       | `shared-ui/SearchExplainabilityDialogComponent`      | The evidence contract is shared while app-specific query/filter adaptation stays outside `shared-ui` | Storybook strong/filtered/no-field-evidence/mobile states; component + browser/axe tests |
+| Research-object detail                                                                   | `MobileResearchDetailComponent`                      | Object navigation is part of the mobile journey but consumes the shared typed API                    | detail unit/E2E coverage                                                                 |
+| Search/relevance facts                                                                   | `repository-api-client` generated types + Spring API | Rank/relevance/matched terms must remain server-owned rather than reconstructed in Angular           | OpenAPI/generated-type checks + API tests                                                |
 
 ## Responsive decisions
 
@@ -288,17 +288,17 @@ These states make semantic edge cases reviewable independently from network/data
 
 ## Evidence traceability
 
-| Decision | Implementation | Automated evidence |
-| --- | --- | --- |
-| 320px-first/no horizontal overflow | mobile app SCSS + stacked default layout | `apps/census-mobile-frontend-e2e/src/mobile-evidence.spec.ts` viewport matrix |
-| Search/filter state is shareable | route-query adapter + NgRx search state | mobile URL/filter unit tests and `search-relevance.spec.ts` |
-| Filter drawer is modal and reversible | `MobileSearchFiltersComponent` | filter component tests + Escape/focus-return Playwright checks |
-| Rank is ordinal | shared rank badge | shared unit tests + mobile/desktop ranking E2E |
-| Match strength is not probability | shared relevance badge + API relevance model | Storybook scale + unit/browser assertions excluding percentage language |
-| Explanation is inspectable and truthful | shared explainability dialog | component tests + open-dialog axe/focus assertions in both frontends |
-| Color is not sole meaning | textual labels + forced-colors borders | forced-colors Playwright evidence |
-| Search-to-detail remains usable across sizes | mobile app/detail components | 320/390/430/768 search/detail matrix |
-| Shared semantics do not become shared app state | `shared-ui` presentation + app-specific orchestration | Angular architecture and tests in both apps |
+| Decision                                        | Implementation                                        | Automated evidence                                                            |
+| ----------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 320px-first/no horizontal overflow              | mobile app SCSS + stacked default layout              | `apps/census-mobile-frontend-e2e/src/mobile-evidence.spec.ts` viewport matrix |
+| Search/filter state is shareable                | route-query adapter + NgRx search state               | mobile URL/filter unit tests and `search-relevance.spec.ts`                   |
+| Filter drawer is modal and reversible           | `MobileSearchFiltersComponent`                        | filter component tests + Escape/focus-return Playwright checks                |
+| Rank is ordinal                                 | shared rank badge                                     | shared unit tests + mobile/desktop ranking E2E                                |
+| Match strength is not probability               | shared relevance badge + API relevance model          | Storybook scale + unit/browser assertions excluding percentage language       |
+| Explanation is inspectable and truthful         | shared explainability dialog                          | component tests + open-dialog axe/focus assertions in both frontends          |
+| Color is not sole meaning                       | textual labels + forced-colors borders                | forced-colors Playwright evidence                                             |
+| Search-to-detail remains usable across sizes    | mobile app/detail components                          | 320/390/430/768 search/detail matrix                                          |
+| Shared semantics do not become shared app state | `shared-ui` presentation + app-specific orchestration | Angular architecture and tests in both apps                                   |
 
 ## Shared maintenance boundary
 

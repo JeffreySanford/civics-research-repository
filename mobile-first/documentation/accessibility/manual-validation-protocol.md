@@ -40,21 +40,21 @@ The goal is not to prove that the current repository answers a structured migrat
 
 ## Keyboard-only checklist
 
-| Check | Expected behavior | Result | Evidence / notes |
-| --- | --- | --- | --- |
-| Reach search field | Visible focus indicator; label and purpose are clear. | | |
-| Submit search | Enter/button activation works without pointer input. | | |
-| Traverse result metadata | Reading/focus order follows visual/logical order. | | |
-| Reach `Why this matched` | Result-specific explanation button is focusable and clearly named. | | |
-| Open explanation dialog | Enter/Space opens the modal and focus moves into its labelled reading surface. | | |
-| Inspect explanation | Query, filters when present, ordinal rank, match strength, model caveat and field evidence remain understandable as distinct concepts. | | |
-| Close explanation | Explicit Close and Escape dismiss the modal and focus returns to the invoking result control. | | |
-| Open filters | Filter button opens a labelled modal surface and focus is contained while it is active. | | |
-| Change/clear filter | Selection is operable without pointer input and current filter state is understandable. | | |
-| Close filters | Escape/Close returns focus to the Filters trigger. | | |
-| Reach pagination | Previous/Next names and disabled state are understandable. | | |
-| Focus visibility | Every interactive element has a clearly visible focus indication. | | |
-| No keyboard trap | User can move into/out of every non-modal region and can dismiss each modal. | | |
+| Check                    | Expected behavior                                                                                                                      | Result | Evidence / notes |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| Reach search field       | Visible focus indicator; label and purpose are clear.                                                                                  |        |                  |
+| Submit search            | Enter/button activation works without pointer input.                                                                                   |        |                  |
+| Traverse result metadata | Reading/focus order follows visual/logical order.                                                                                      |        |                  |
+| Reach `Why this matched` | Result-specific explanation button is focusable and clearly named.                                                                     |        |                  |
+| Open explanation dialog  | Enter/Space opens the modal and focus moves into its labelled reading surface.                                                         |        |                  |
+| Inspect explanation      | Query, filters when present, ordinal rank, match strength, model caveat and field evidence remain understandable as distinct concepts. |        |                  |
+| Close explanation        | Explicit Close and Escape dismiss the modal and focus returns to the invoking result control.                                          |        |                  |
+| Open filters             | Filter button opens a labelled modal surface and focus is contained while it is active.                                                |        |                  |
+| Change/clear filter      | Selection is operable without pointer input and current filter state is understandable.                                                |        |                  |
+| Close filters            | Escape/Close returns focus to the Filters trigger.                                                                                     |        |                  |
+| Reach pagination         | Previous/Next names and disabled state are understandable.                                                                             |        |                  |
+| Focus visibility         | Every interactive element has a clearly visible focus indication.                                                                      |        |                  |
+| No keyboard trap         | User can move into/out of every non-modal region and can dismiss each modal.                                                           |        |                  |
 
 Relevant WCAG targets include 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focus Order, 2.4.7 Focus Visible and 4.1.2 Name, Role, Value.
 
@@ -62,14 +62,14 @@ Relevant WCAG targets include 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focu
 
 Run with browser zoom rather than merely resizing the window.
 
-| Check | Expected behavior | Result | Evidence / notes |
-| --- | --- | --- | --- |
-| 200% zoom | Text scales without clipping, overlap or loss of controls. | | |
-| 400% zoom / narrow reflow | Primary search/results remain usable without two-dimensional scrolling except where genuinely necessary. | | |
-| Long result title/metadata | Content wraps without covering rank/relevance controls. | | |
-| Explainability content | Long field values/terms wrap within the dialog without horizontal document overflow. | | |
-| Filter drawer | Filter options and Close/Clear controls remain reachable and readable. | | |
-| Search summary | Labels/counts remain readable and visual bars do not carry unique meaning. | | |
+| Check                      | Expected behavior                                                                                        | Result | Evidence / notes |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 200% zoom                  | Text scales without clipping, overlap or loss of controls.                                               |        |                  |
+| 400% zoom / narrow reflow  | Primary search/results remain usable without two-dimensional scrolling except where genuinely necessary. |        |                  |
+| Long result title/metadata | Content wraps without covering rank/relevance controls.                                                  |        |                  |
+| Explainability content     | Long field values/terms wrap within the dialog without horizontal document overflow.                     |        |                  |
+| Filter drawer              | Filter options and Close/Clear controls remain reachable and readable.                                   |        |                  |
+| Search summary             | Labels/counts remain readable and visual bars do not carry unique meaning.                               |        |                  |
 
 Primary targets: WCAG 1.4.4 Resize Text and 1.4.10 Reflow.
 
@@ -104,20 +104,20 @@ If this protocol is scheduled in the future, run at least one desktop screen rea
 
 ### Reading/interaction checks
 
-| Check | Expected announcement/behavior | Result | Evidence / notes |
-| --- | --- | --- | --- |
-| Page/search landmark | Search purpose can be located without visual scanning. | | |
-| Search field | Accessible name and current value are announced. | | |
-| Search submission/loading | State change is understandable; note whether additional live-region work is needed. | | |
-| Results heading/count | Result context and query are discoverable. | | |
-| Rank vs match strength | User can tell that `Rank 1` and `Strong match` are different concepts. | | |
-| Match badge | Text label is announced without dependence on color. | | |
-| `Why this matched` trigger | Control is named for the specific result rather than as an ambiguous repeated button. | | |
-| Explainability dialog | Dialog name, query/filter context, rank, match strength, calibration caveat and matched fields read in a useful order; focus stays modal until dismissal. | | |
-| Filter dialog | Dialog purpose, facet headings, counts, selected state and Close/Clear controls are understandable. | | |
-| Search summary | Counts and percentages are available as text; decorative bars do not add unique meaning. | | |
-| Pagination | Previous/Next names and disabled state are announced. | | |
-| Empty browse | No relevance/match-evidence claim is announced for blank browse. | | |
+| Check                      | Expected announcement/behavior                                                                                                                            | Result | Evidence / notes |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| Page/search landmark       | Search purpose can be located without visual scanning.                                                                                                    |        |                  |
+| Search field               | Accessible name and current value are announced.                                                                                                          |        |                  |
+| Search submission/loading  | State change is understandable; note whether additional live-region work is needed.                                                                       |        |                  |
+| Results heading/count      | Result context and query are discoverable.                                                                                                                |        |                  |
+| Rank vs match strength     | User can tell that `Rank 1` and `Strong match` are different concepts.                                                                                    |        |                  |
+| Match badge                | Text label is announced without dependence on color.                                                                                                      |        |                  |
+| `Why this matched` trigger | Control is named for the specific result rather than as an ambiguous repeated button.                                                                     |        |                  |
+| Explainability dialog      | Dialog name, query/filter context, rank, match strength, calibration caveat and matched fields read in a useful order; focus stays modal until dismissal. |        |                  |
+| Filter dialog              | Dialog purpose, facet headings, counts, selected state and Close/Clear controls are understandable.                                                       |        |                  |
+| Search summary             | Counts and percentages are available as text; decorative bars do not add unique meaning.                                                                  |        |                  |
+| Pagination                 | Previous/Next names and disabled state are announced.                                                                                                     |        |                  |
+| Empty browse               | No relevance/match-evidence claim is announced for blank browse.                                                                                          |        |                  |
 
 ## Defect record
 
