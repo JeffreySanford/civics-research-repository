@@ -1,6 +1,6 @@
 # Program Increment Plan
 
-This plan reflects the repository's current state after the certified C2/C2.1 search-research program, frontend mission alignment, mobile-first frontend delivery, dependency-security cleanup and shared result-explainability delivery.
+This plan reflects the repository's current state after the certified C2/C2.1 search-research program, frontend mission alignment, mobile-first frontend delivery, dependency-security cleanup, shared result-explainability delivery and mobile design-lifecycle evidence.
 
 ```text
 PI-1 Federated Metadata Expansion / Standalone Evidence   COMPLETE
@@ -9,12 +9,10 @@ Frontend mission / portfolio alignment                   COMPLETE (#51)
 Mobile-first search-to-research experience               COMPLETE through PR #95
 Dependency security cleanup                              COMPLETE (#96)
 Shared result explainability                             COMPLETE (#97 / PR #103)
+Design lifecycle evidence                                COMPLETE (#98 / PR #104)
 Manual accessibility evidence                            NOT PLANNED (#49)
 
 Current continuation:
-#98 Design lifecycle evidence
-        |
-        v
 #99 Read-only steward/status workflow
 
 Local Kubernetes / clustered topology                    DEFERRED (#48 closed not planned)
@@ -80,22 +78,25 @@ The mobile-first increment delivered:
 
 Issue #97 / PR #103 completed one shared `Why this matched` interaction through `shared-ui`. It keeps ordinal rank, query-relative match strength, model/calibration metadata and matched-field evidence distinct while leaving query/filter adaptation, routing and application state in each frontend.
 
+Issue #98 / PR #104 then captured the mobile search design lifecycle from low-fidelity intent through annotated component ownership, Storybook states, production implementation and automated browser/accessibility evidence. ADR-002 records the resulting interaction/reuse decisions.
+
 The browser remains isolated from DSpace, Solr, OpenSearch and publisher APIs behind the Spring/OpenAPI boundary.
 
-## Current continuation — #98 and #99
-
-### #98 — Design lifecycle evidence
-
-Capture one representative UI slice from wireframe/intent through annotated specification, Storybook, implementation and automated evidence so the design/engineering decision path is reviewable.
-
-Primary artifacts:
-
-- [Mobile Search Design Lifecycle Case Study](../mobile-first/documentation/design/mobile-search-design-lifecycle.md)
-- [ADR-002 — Mobile Search Interaction and Shared Evidence Model](../mobile-first/documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
+## Current continuation — #99
 
 ### #99 — Read-only repository steward/status workflow
 
 Expose a focused internal-facing status experience from existing authority, synchronization, corpus/projection and search-health data. Keep the first slice read-only and typed through the application API.
+
+The first implementation composes existing contracts for active corpus/storage evidence, DSpace availability, source inventory, recent sync history, Solr/OpenSearch projection parity and retained automated evidence. It does not add a privileged mutation path or a new backend schema.
+
+Acceptance remains evidence-first:
+
+- no sync/reindex/harvest controls on the steward surface;
+- explicit unavailable/degraded states per status section;
+- narrow-width reflow and scroll containment;
+- component, browser and axe evidence;
+- no secrets, credentials or operator-only diagnostics in the browser contract.
 
 ## Accessibility evidence boundary
 
@@ -141,3 +142,4 @@ AWS/IaC is not part of the current continuation path. If deployment becomes a re
 12. Certified C2 and C2.1 remain immutable historical/control evidence; new experiments are versioned separately.
 13. Both Angular frontends consume typed application APIs rather than binding directly to repository/search internals.
 14. Cross-frontend UI reuse is promoted only after demonstrated semantic reuse; application state/routing remains app-owned.
+15. Read-only operational surfaces must not silently acquire privileged mutation controls.

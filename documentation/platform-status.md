@@ -10,14 +10,14 @@ The platform is not affiliated with, endorsed by, or sponsored by the U.S. Censu
 
 ## Frontend surfaces
 
-| Frontend                      | Development port | Current role                                                                    |
-| ----------------------------- | ---------------- | ------------------------------------------------------------------------------- |
-| `apps/discovery-ui`           | `4200`           | Full discovery, research detail, Maps, Evidence, Search Lab and admin workflows |
-| `apps/census-mobile-frontend` | `4300`           | Mobile-first search, filters, ranking evidence and research-context journey     |
+| Frontend                      | Development port | Current role                                                                                              |
+| ----------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
+| `apps/discovery-ui`           | `4200`           | Full discovery, research detail, Maps, Evidence, Search Lab, read-only Steward status and admin workflows |
+| `apps/census-mobile-frontend` | `4300`           | Mobile-first search, filters, ranking evidence and research-context journey                               |
 
 Both browser applications use the generated repository API client. Neither frontend calls DSpace, Solr, OpenSearch or external publishers directly.
 
-The mobile-first surface now includes shareable query/filter intent, scalable cursor traversal, server-owned rank/relevance evidence, query-wide result summaries, typed field/term match evidence, authority-neutral research detail, research-package/related-research navigation and responsive browser/axe evidence. Shared rank/relevance presentation is consumed by both Angular applications through `shared-ui`.
+The mobile-first surface now includes shareable query/filter intent, scalable cursor traversal, server-owned rank/relevance evidence, query-wide result summaries, typed field/term match evidence, authority-neutral research detail, research-package/related-research navigation and responsive browser/axe evidence. Shared rank/relevance/result-explainability presentation is consumed by both Angular applications through `shared-ui`, and the representative mobile search design lifecycle is documented from intent through implementation/evidence.
 
 ## Repository breadth
 
@@ -110,11 +110,9 @@ Manual keyboard/NVDA/JAWS/VoiceOver/cognitive evidence remains a separate eviden
 
 ## Current continuation
 
-The active product-facing sequence is:
+The current product-facing increment is #99 — the read-only repository steward/status workflow. It composes existing typed corpus/storage, DSpace, source-inventory, synchronization, Solr/OpenSearch projection-parity and retained-evidence facts while keeping privileged mutations in Admin workflows.
 
-1. #97 — shared result explainability dialog across both Angular frontends;
-2. #98 — design lifecycle evidence for a representative mobile-first slice;
-3. #99 — read-only repository steward/status workflow.
+Shared result explainability (#97 / PR #103) and design lifecycle evidence (#98 / PR #104) are complete.
 
 Additional federation, Maps breadth, clustered topology and cloud deployment remain optional until a concrete research or deployment question justifies them.
 

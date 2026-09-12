@@ -55,10 +55,9 @@ Automated evidence is intentionally separate from manual assistive-technology ve
 
 ## Active continuation
 
-The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103. Current work is tracked through repository issues:
+The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103, and design lifecycle evidence is complete through PR #104. Current work is tracked through repository issues:
 
-1. **#98 — Design lifecycle evidence (current)**: capture one representative mobile-first slice from design intent through Storybook, implementation and automated evidence.
-2. **#99 — Read-only repository steward/status surface (next)**: add a focused internal status workflow from existing authority, corpus/projection, synchronization and search-health data.
+1. **#99 — Read-only repository steward/status surface (current)**: compose existing authority, corpus/projection, synchronization, search-health and retained-evidence facts into a focused internal status workflow without privileged mutation.
 
 ## Evidence and planning documents
 

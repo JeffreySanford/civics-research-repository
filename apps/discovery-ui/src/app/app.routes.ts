@@ -40,6 +40,14 @@ export const appRoutes: Route[] = [
     title: 'Dataset Detail',
   },
   {
+    path: 'steward',
+    loadComponent: () =>
+      import('./pages/repository-steward-page').then(
+        (m) => m.RepositoryStewardPage,
+      ),
+    title: 'Repository Steward Status',
+  },
+  {
     path: 'admin/sync',
     loadComponent: () =>
       import('./pages/admin-sync-page').then((m) => m.AdminSyncPage),

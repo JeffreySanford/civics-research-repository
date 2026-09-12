@@ -173,25 +173,25 @@ Acceptance language must continue to state that automated lint/Storybook/Playwri
 
 ## Current continuation acceptance — #97 / #98 / #99
 
-These are the active future product-facing items and are intentionally not part of the already-certified C2/C2.1 baseline.
+These product-facing increments remain separate from the already-certified C2/C2.1 baseline. #97 and #98 are delivered; #99 is the current implementation increment.
 
-### #97 shared result explainability
+### #97 shared result explainability — complete via PR #103
 
-- [ ] Both Angular frontends expose one consistent, accessible `Why this matched` experience.
-- [ ] Presentational reuse stays in existing `shared-ui`; app-specific NgRx/routing ownership remains outside it.
-- [ ] Rank, match strength, relevance model/calibration caveats and typed field/term evidence remain server-owned/truthful.
-- [ ] 320px reflow, focus return, forced-colors, Storybook, browser and axe evidence pass.
+- [x] Both Angular frontends expose one consistent, accessible `Why this matched` experience.
+- [x] Presentational reuse stays in existing `shared-ui`; app-specific NgRx/routing ownership remains outside it.
+- [x] Rank, match strength, relevance model/calibration caveats and typed field/term evidence remain server-owned/truthful.
+- [x] 320px reflow, focus return, forced-colors, Storybook, browser and axe evidence pass.
 
-### #98 design lifecycle evidence
+### #98 design lifecycle evidence — complete via PR #104
 
-- [ ] One representative mobile-first slice is documented from design intent/wireframe through annotated specification, Storybook, implementation and automated evidence.
-- [ ] Design annotations link to actual components/tests and do not imply unperformed human research.
+- [x] One representative mobile-first slice is documented from design intent/wireframe through annotated specification, Storybook, implementation and automated evidence.
+- [x] Design annotations link to actual components/tests and do not imply unperformed human research.
 
 ### #99 read-only steward/status workflow
 
-- [ ] A focused internal read-only surface exposes truthful corpus/projection/synchronization/search-health context through typed APIs.
-- [ ] Secrets/operator-only diagnostics and privileged mutations stay outside the initial browser workflow.
-- [ ] Loading/degraded/error/responsive/browser/axe evidence passes.
+- [x] A focused internal read-only surface exposes truthful corpus/projection/synchronization/search-health context through typed APIs.
+- [x] Secrets/operator-only diagnostics and privileged mutations stay outside the initial browser workflow.
+- [x] Loading/degraded/error/responsive/browser/axe evidence passes in the focused branch validation.
 
 ## Deferred topology research
 

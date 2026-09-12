@@ -17,6 +17,7 @@ The major research and portfolio milestones are complete:
 - shareable search/filter state, scalable cursor traversal, server-owned rank/relevance, typed match evidence and query-wide search summary;
 - authority-neutral mobile research detail, typed research-package navigation and related-research traversal;
 - shared rank, relevance and `Why this matched` explainability semantics across both Angular frontends (#97 / PR #103);
+- one complete mobile search design lifecycle from wireframe through Storybook, production implementation and automated evidence (#98 / PR #104);
 - automated responsive/accessibility evidence across representative mobile/tablet widths;
 - current actionable Dependabot alert set reduced to zero; accepted no-fix build-chain advisories remain documented in `RISKS.md`.
 
@@ -25,30 +26,8 @@ The project does **not** need another million-record run merely to prove that th
 ## Active sequence
 
 ```text
-#98  Design lifecycle evidence
-        |
-        v
 #99  Read-only repository steward/status surface
 ```
-
-### #98 — Design lifecycle evidence
-
-Capture one representative mobile-first search/discovery slice from design intent through implementation and evidence.
-
-Outcome target:
-
-- low-fidelity/wireframe artifact;
-- annotated component/interaction specification;
-- Storybook states and responsive decisions;
-- production implementation links;
-- browser/accessibility evidence links;
-- concise decision record covering touch targets, breakpoints/reflow, focus behavior, ranking language, forced colors, async states and reuse/maintenance decisions.
-
-Primary artifact: [Mobile Search Design Lifecycle Case Study](../mobile-first/documentation/design/mobile-search-design-lifecycle.md)
-
-Decision record: [ADR-002 — Mobile Search Interaction and Shared Evidence Model](../mobile-first/documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
-
-Figma is optional. The durable repository documentation and Storybook evidence remain the source of truth.
 
 ### #99 — Read-only repository steward/status surface
 
@@ -63,6 +42,8 @@ Outcome target:
 - explicit degraded/fallback states;
 - typed API boundary, responsive behavior and browser/axe evidence;
 - read-only behavior first, with no secrets or privileged mutation surface.
+
+The first slice intentionally reuses existing generated API/client contracts and the existing non-mutating Solr/OpenSearch projection-parity presentation. Backend schema expansion is not required unless an actual missing fact is identified.
 
 ## Accessibility scope boundary
 
