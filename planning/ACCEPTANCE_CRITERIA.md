@@ -24,18 +24,23 @@ The repository rule remains: **testing/evidence precedes feature expansion**.
 - [x] Validation rejects invalid IDs/pagination/filter/enum inputs on implemented routes.
 - [x] Typed API/use-case/component tests cover the primary product paths.
 
-## Angular frontend
+## Angular frontends
 
+- [x] `apps/discovery-ui` remains the full discovery/research/Maps/Evidence/Search Lab/admin workspace.
+- [x] `apps/census-mobile-frontend` is a second module-based Angular application over the same generated API boundary.
 - [x] Discovery supports keyword search and facets.
-- [x] Search state is represented in URL parameters where practical.
+- [x] Search/filter intent is represented in URL parameters where practical.
 - [x] Loading, empty and error states are explicit.
 - [x] Research detail supports repository-backed and federated records through authority-neutral routing.
 - [x] Provenance/authority messaging distinguishes curated repository content from federated external-source metadata.
 - [x] Admin surfaces synchronization/corpus/projection state.
 - [x] Evidence surfaces automated/manual evidence boundaries and certified search-research evidence.
 - [x] Angular API usage relies on generated contracts rather than duplicate handwritten DTOs.
-- [x] NgRx/effects own asynchronous application workflows for primary search/detail/maps/evidence paths.
-- [x] Observable-driven shared state remains the primary application pattern.
+- [x] NgRx/effects own asynchronous/shared application workflows for primary search/detail/maps/evidence paths.
+- [x] Local Angular Signals are used only for appropriate synchronous presentation state and do not duplicate NgRx domain ownership.
+- [x] Mobile search supports shareable filters, scalable cursor traversal, rank/relevance evidence and query-wide result summaries.
+- [x] Mobile research detail preserves return-to-search state/focus and supports typed research-package plus related-research navigation.
+- [x] Shared rank/relevance presentation is consumed by both Angular frontends through the existing `shared-ui` boundary.
 
 ## Maps and data visualization
 
@@ -46,6 +51,7 @@ The repository rule remains: **testing/evidence precedes feature expansion**.
 - [x] Shared authoritative geography/value patterns prevent every thematic layer from inventing independent geometry semantics.
 - [x] Browser feature payloads for research coverage are bounded rather than attempting to render the million-record corpus as million map features.
 - [x] Research geography is not inferred merely from publisher/institution location.
+- [x] Population Estimates, County Business Patterns and USGS 3DEP additions preserve the shared geometry/evidence boundary rather than mutating C2/C2.1 identity.
 
 ## Federated authority and provenance
 
@@ -111,6 +117,23 @@ The repository rule remains: **testing/evidence precedes feature expansion**.
 - [x] The repository does not claim that either search engine is universally faster or more resource-efficient.
 - [x] Per-cell confidence intervals are not presented as a multiplicity-adjusted family-wide significance test.
 
+## C2.1 adversarial validation — #47 complete
+
+Certified C2 remains historical/control evidence. C2.1 is a separately versioned attempt to falsify the observed Solr advantage.
+
+- [x] Protocol was preregistered before timing evidence collection.
+- [x] Solr **9.10.1** and OpenSearch **2.19.6** were explicitly pinned for the controlled standalone topology.
+- [x] Equalized **512 MB JVM heap**, **4 CPU**, and **4 GiB container memory** controls were encoded/verified.
+- [x] Runtime evidence bound engine identity, JVM/version, index/core state, shard/replica settings, projection identity and read-state preparation before timing authorization.
+- [x] Optimized OpenSearch treatment was isolated and admitted only after semantic-equivalence checks.
+- [x] The preregistered **Q01-Q20** full-text matrix and broad/moderate/selective filter bands were executed under frozen controls.
+- [x] p50/p90/p95/p99 timing, independently warmed batches, balanced randomized order and multiple clean restart blocks were retained.
+- [x] Raw paired samples, block/batch identities, realized order and admitted cells were preserved in C2.1-only artifacts.
+- [x] Every preregistered result cell was retained rather than dropping unfavorable outcomes.
+- [x] C2.1 statistical synthesis and Evidence UI remain distinct from certified C2.
+- [x] All **24/24 API-latency workload cells** had lower Solr batch-median latency in the recorded standalone experiment.
+- [x] All **24/24 paired batch-level bootstrap intervals** excluded zero in Solr's direction, while the claim remains scoped to the tested corpus/configuration/topology.
+
 ## Search comparison testing/evidence gate
 
 - [x] Java service/use-case/controller tests cover dual-engine success, partial failure and projection mismatch behavior.
@@ -119,7 +142,7 @@ The repository rule remains: **testing/evidence precedes feature expansion**.
 - [x] Search Lab axe/WCAG/Section 508-oriented automated evidence exists.
 - [x] Real-stack browser smoke proves Angular -> Spring -> live Solr + live OpenSearch without substituting API route mocks for engine traffic.
 - [x] Browser evidence retains reports/traces/screenshots for failure diagnosis.
-- [x] Cross-browser Chromium/Firefox/WebKit evidence passed the certified C2 Evidence UI head before merge.
+- [x] Cross-browser Chromium/Firefox/WebKit evidence covers the mature comparison/frontend paths.
 
 ## Automated accessibility evidence
 
@@ -127,78 +150,70 @@ The repository rule remains: **testing/evidence precedes feature expansion**.
 - [x] Component-state accessibility evidence exists.
 - [x] Browser axe/structural evidence exists for primary workflows.
 - [x] Reflow/zoom/contrast/forced-colors/dark-mode conditions are part of the evidence architecture.
+- [x] Mobile responsive evidence covers representative 320/390/430/768px paths plus forced-colors/reduced-motion/keyboard-entry behavior.
 - [x] Map-equivalence automation checks visual/nonvisual state relationships.
 - [x] Automated evidence is explicitly distinguished from manual assistive-technology review.
 
-## Manual accessibility evidence — #49
+## Manual accessibility evidence — not planned (#49)
 
-- [ ] Full-application keyboard-only run is recorded with date/commit context.
-- [ ] Search Lab keyboard-only comparison flow is recorded.
-- [ ] Evidence page focus/read-order review is recorded.
-- [ ] Maps/MapLibre keyboard and visual/nonvisual equivalence review is recorded.
-- [ ] NVDA + Firefox evidence is recorded.
-- [ ] NVDA + Chrome/Chromium evidence is recorded.
-- [ ] JAWS is recorded or explicitly marked N/A with licensing reason.
-- [ ] Cognitive/workflow review is recorded.
-- [ ] WCAG 2.2 focus-not-obscured/dragging-alternative/target-size manual checks are recorded.
-- [ ] Current federal ICT Testing Baseline / Trusted Tester crosswalk is recorded.
+Issue #49 is closed **not planned** and manual AT execution is not part of the current acceptance boundary.
 
-## C2.1 adversarial validation — #47
+The repository retains keyboard/NVDA/JAWS/VoiceOver/map/cognitive testing protocols as reference templates, but their unexecuted checks are **not acceptance failures** and must not be converted into implied passes.
 
-Certified C2 remains historical/control evidence. C2.1 is a separately versioned attempt to falsify the observed Solr advantage. The pre-measurement fairness-control foundation merged in PR #53; timed execution/reporting remains a separate acceptance boundary.
+Acceptance language must continue to state that automated lint/Storybook/Playwright/axe/reflow/forced-colors evidence does **not** establish completed manual Section 508/Trusted Tester certification or completed NVDA/JAWS/VoiceOver verification.
 
-### Fairness controls — PR #53 complete
+## Final frontend mission alignment — #51 complete
 
-- [x] C2.1 protocol is preregistered before timing evidence collection.
-- [x] Solr **9.10.1** and OpenSearch **2.19.6** are explicitly pinned for the controlled standalone topology.
-- [x] Equalized **512 MB JVM heap**, **4 CPU**, and **4 GiB container memory** controls are encoded and verified by the C2.1 runtime manifest/preflight.
-- [x] Runtime evidence records/proves engine image identity, JVM/version, Solr core state, OpenSearch physical-index/alias state, shard/replica settings, projection identity and read-state preparation before timing is authorized.
-- [x] `BASELINE_SCOPED_FILTERS` and `C2_1_OPTIMIZED_EQUIVALENT` are explicit OpenSearch treatments; the optimized treatment is isolated from normal Search Lab/application behavior.
-- [x] OpenSearch-friendly aggregation/query optimization is admitted only after semantic-equivalence checks preserve total hits, top-N identity/order and facet bucket/count semantics.
-- [x] The preregistered **Q01-Q20** full-text matrix is frozen as executable C2.1 measurement cells.
-- [x] Broad **25-75%**, moderate **5-25%**, and selective **0.5-5%** filter bands are frozen with deterministic parity-only candidate selection and `NO_VALID_CANDIDATE` refusal rather than post-hoc widening.
-- [x] The C2.1 timing contract adds nearest-rank **p90** while retaining p50/p95/p99 and leaving certified C2 unchanged.
-- [x] The restart/order plan is deterministic and exactly balanced by construction: four restart blocks × four batches, two `SOLR_FIRST` and two `OPENSEARCH_FIRST` batches per block, eight/eight overall.
-- [x] `READY` timing authorization binds the exact runtime manifest and semantic admission artifacts and refuses projection/configuration/treatment/execution-plan drift.
-- [x] C2.1 fairness-control, manifest, semantic-admission and preflight refusal paths are part of the normal `performance:test` quality gate.
+- [x] README presents the Angular government/Open Science data-discovery frontend before deep federation/search-research detail.
+- [x] Frontend engineering case study documents Angular/NgRx/RxJS/OpenAPI/accessibility decisions with implementation/evidence references.
+- [x] Demo package contains a concise frontend-first 5-8 minute walkthrough.
+- [x] `/discovery`, research detail, `/maps`, `/evidence` and `/search-lab` received the final presentation/UX audit.
+- [x] Browser ownership boundary is explicit: Angular owns interaction/presentation/accessibility; Spring owns application use cases; DSpace/search engines remain behind typed APIs.
+- [x] Existing independence/non-affiliation disclaimer is preserved.
 
-### Timed execution/reporting — still required
+## Current continuation acceptance — #97 / #98 / #99
 
-- [ ] Execute the complete preregistered Q01-Q20, facet and broad/moderate/selective timing matrix under C2.1 authorization.
-- [ ] Complete the multiple independent clean engine/container restart blocks with separately warmed batches.
-- [ ] Preserve raw paired samples, block/batch identities, realized engine order and all admitted cells in C2.1-only artifacts.
-- [ ] Report every preregistered cell, including OpenSearch wins, ties and inconclusive effects; do not drop or rename unfavorable cells.
-- [ ] Produce C2.1 statistical synthesis with query-family/restart-block interpretation while retaining the existing multiplicity and local-topology guardrails.
-- [ ] Expose C2.1 reporting separately from certified C2 in the Evidence product so the historical baseline and adversarial experiment cannot be confused.
+These are the active future product-facing items and are intentionally not part of the already-certified C2/C2.1 baseline.
+
+### #97 shared result explainability
+
+- [ ] Both Angular frontends expose one consistent, accessible `Why this matched` experience.
+- [ ] Presentational reuse stays in existing `shared-ui`; app-specific NgRx/routing ownership remains outside it.
+- [ ] Rank, match strength, relevance model/calibration caveats and typed field/term evidence remain server-owned/truthful.
+- [ ] 320px reflow, focus return, forced-colors, Storybook, browser and axe evidence pass.
+
+### #98 design lifecycle evidence
+
+- [ ] One representative mobile-first slice is documented from design intent/wireframe through annotated specification, Storybook, implementation and automated evidence.
+- [ ] Design annotations link to actual components/tests and do not imply unperformed human research.
+
+### #99 read-only steward/status workflow
+
+- [ ] A focused internal read-only surface exposes truthful corpus/projection/synchronization/search-health context through typed APIs.
+- [ ] Secrets/operator-only diagnostics and privileged mutations stay outside the initial browser workflow.
+- [ ] Loading/degraded/error/responsive/browser/axe evidence passes.
 
 ## Deferred topology research
 
 Issue #48, the local Kubernetes search laboratory, is closed **not planned** for the current acceptance boundary. Docker Compose remains the default development/demo and standalone research topology. Clustered/Kubernetes acceptance criteria may be introduced later only if deployment/resilience becomes an explicit project requirement.
 
-## Final frontend mission alignment — #51
-
-- [ ] README presents the Angular government/Open Science data-discovery frontend before deep federation/search-research detail.
-- [ ] Frontend engineering case study documents Angular/NgRx/RxJS/OpenAPI/accessibility decisions with implementation/evidence references.
-- [ ] Demo package contains a concise frontend-first 5-8 minute walkthrough.
-- [ ] `/discovery`, research detail, `/maps`, `/evidence` and `/search-lab` receive final UX/accessibility presentation audit.
-- [ ] Browser ownership boundary is explicit: Angular owns interaction/presentation/accessibility; Spring owns application use cases; DSpace/search engines remain behind typed APIs.
-- [ ] Existing independence/non-affiliation disclaimer is preserved.
-
 ## Demo readiness
 
 - [x] `pnpm run start:all` starts the complete local development/demo stack.
+- [x] Both Angular frontends are part of the supported local stack.
 - [x] Persistent volumes preserve the mature local corpus/evidence across ordinary restart/rebuild operations.
 - [x] Small/demo Compose remains a supported product path independent of the million-record research corpus.
 - [x] Continuous integration runs deterministic repository quality gates.
 - [x] Dedicated browser evidence covers the current comparison/frontend workflows.
-- [ ] Final #51 demo narrative is frontend-first and aligned with the mature product presentation.
+- [x] Frontend-first demo narrative is aligned with the mature product presentation.
 
 ## Governance / optional future breadth
 
 - [ ] Decide whether `main` receives required-check branch protection.
 - [ ] Decide which browser/accessibility jobs become required merge checks.
-- [ ] Preserve prior known-good accessibility evidence if refresh fails.
+- [ ] Preserve prior known-good automated accessibility evidence if refresh fails.
 - [ ] Cross-source DOI/PMID reconciliation is explicit before large bibliographic-source expansion.
 - [ ] Additional NASA/PubMed/OpenAlex work remains bounded/evidence-first rather than a prerequisite for the certified standalone baseline.
-- [ ] Additional Maps thematic layers reuse shared authoritative geometry/value contracts and semantic equivalents.
+- [ ] Additional Maps thematic layers are promoted from issue #69 only when a concrete research question justifies them and they reuse shared authoritative geometry/value contracts/semantic equivalents.
 - [ ] Phrase/highlight/geo/suggest/synonym/nested/vector/hybrid search breadth remains evidence-gated.
+- [ ] Temporary dependency overrides are removed when upstream dependency trees naturally satisfy the patched ranges governed in `RISKS.md`.
