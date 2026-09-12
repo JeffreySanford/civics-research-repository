@@ -8,13 +8,13 @@ The app is no longer a proposal. `apps/census-mobile-frontend` is a working seco
 
 ## Current architecture
 
-| Surface                       | Purpose                                         | Port   |
-| ----------------------------- | ----------------------------------------------- | ------ |
-| `apps/discovery-ui`           | Existing full discovery/research application    | `4200` |
-| `apps/census-mobile-frontend` | Mobile-first Census/Civics discovery frontend  | `4300` |
-| Repository API                | Shared Spring/OpenAPI application boundary      | `8080` |
-| `discovery-ui` Storybook      | Existing component/evidence review              | `4400` |
-| Mobile Storybook              | Mobile-first component/responsive review        | `4500` |
+| Surface                       | Purpose                                       | Port   |
+| ----------------------------- | --------------------------------------------- | ------ |
+| `apps/discovery-ui`           | Existing full discovery/research application  | `4200` |
+| `apps/census-mobile-frontend` | Mobile-first Census/Civics discovery frontend | `4300` |
+| Repository API                | Shared Spring/OpenAPI application boundary    | `8080` |
+| `discovery-ui` Storybook      | Existing component/evidence review            | `4400` |
+| Mobile Storybook              | Mobile-first component/responsive review      | `4500` |
 
 The mobile frontend is a separate shell over the same backend capability. It is not a second backend, duplicate search engine, duplicate API client or throwaway mock.
 

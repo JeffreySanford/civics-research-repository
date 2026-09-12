@@ -42,7 +42,7 @@ The five curated objects are publications, methodology/project material, and res
 
 ## Source and preservation snapshot
 
-| Measure                             | Current value            |
+| Measure                             |            Current value |
 | ----------------------------------- | -----------------------: |
 | Source inventory checked            | 2026-08-19T20:57:42.503Z |
 | Distinct referenced files           |                      197 |
