@@ -6,7 +6,9 @@ import { mockRepositoryApi } from './support/repository-api-mocks';
 import { mockSearchComparisonApi } from './support/search-comparison-mocks';
 import { waitForStablePage } from './support/wait-for-stable-page';
 
-async function mockCorpusStorage(page: Parameters<typeof mockRepositoryApi>[0]) {
+async function mockCorpusStorage(
+  page: Parameters<typeof mockRepositoryApi>[0],
+) {
   await page.route('**/api/admin/corpus/storage', async (route) => {
     await route.fulfill({
       contentType: 'application/json',
@@ -69,7 +71,9 @@ test.describe('Repository steward status', () => {
     await expect(
       page.getByRole('heading', { name: 'Recent metadata sync history' }),
     ).toBeVisible();
-    await expect(page.getByText('No synchronization jobs are recorded.')).toBeVisible();
+    await expect(
+      page.getByText('No synchronization jobs are recorded.'),
+    ).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Retained engineering evidence' }),
     ).toBeVisible();
@@ -87,7 +91,9 @@ test.describe('Repository steward status', () => {
     await waitForStablePage(page);
 
     await expect(
-      page.getByText('Source inventory is unavailable from the repository API.'),
+      page.getByText(
+        'Source inventory is unavailable from the repository API.',
+      ),
     ).toBeVisible();
     await expect(page.getByText('Projection parity verified.')).toBeVisible();
     await expect(
@@ -106,7 +112,9 @@ test.describe('Repository steward status', () => {
     await waitForStablePage(page);
 
     const documentOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
     );
     expect(documentOverflow).toBeLessThanOrEqual(1);
 

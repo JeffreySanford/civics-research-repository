@@ -28,7 +28,7 @@ This project is not affiliated with, endorsed by, or sponsored by the U.S. Censu
 
 ### Full discovery workspace
 
-`apps/discovery-ui` provides the broader research workspace: Discovery, authority-neutral research detail, Maps, Evidence, Search Lab and repository/admin workflows.
+`apps/discovery-ui` provides the broader research workspace: Discovery, authority-neutral research detail, Maps, Evidence, Search Lab, a read-only Steward status view, and repository/admin workflows.
 
 `/discovery` searches curated DSpace research objects and retained federated publisher metadata through one typed application contract while keeping provenance visible.
 
@@ -230,13 +230,9 @@ The Admin data-flow view exposes **Authority → Retention → Projection**, and
 
 ## Current status
 
-The core product, C2/C2.1 search-research program, frontend portfolio alignment, mobile-first search-to-research experience and September dependency-security cleanup are implemented.
+The core product, C2/C2.1 search-research program, frontend portfolio alignment, mobile-first search-to-research experience, shared result explainability, design-lifecycle evidence and September dependency-security cleanup are implemented.
 
-The active product-facing continuation is:
-
-1. **#97 — Shared result explainability dialog** across both Angular frontends;
-2. **#98 — Design lifecycle evidence** for a representative mobile-first slice;
-3. **#99 — Read-only repository steward/status workflow**.
+The current product-facing increment is **#99 — Read-only repository steward/status workflow**. The `/steward` route composes existing typed corpus, repository, source-inventory, synchronization, Solr/OpenSearch projection-parity and retained-evidence facts without exposing privileged mutation controls.
 
 Additional federation, map breadth and production-cloud work are optional future scope rather than completion prerequisites.
 

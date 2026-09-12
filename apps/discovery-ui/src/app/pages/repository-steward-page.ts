@@ -9,10 +9,7 @@ import {
   type SourceInventory,
   type SyncJob,
 } from 'repository-api-client';
-import {
-  RepositoryCorpusStorageApi,
-  type CorpusStorageOverview,
-} from 'repository-api-client';
+import { RepositoryCorpusStorageApi } from 'repository-api-client';
 import { catchError, map, of, shareReplay } from 'rxjs';
 import { AdminSearchProjectionComponent } from './admin-search-projection.component';
 
@@ -32,12 +29,7 @@ function unavailable<T>(warning: string): Loadable<T> {
 @Component({
   selector: 'app-repository-steward-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    AsyncPipe,
-    DatePipe,
-    DecimalPipe,
-    AdminSearchProjectionComponent,
-  ],
+  imports: [AsyncPipe, DatePipe, DecimalPipe, AdminSearchProjectionComponent],
   template: `
     <div class="page-stack steward-page">
       <section class="hero-panel" aria-labelledby="steward-heading">
@@ -90,7 +82,9 @@ function unavailable<T>(warning: string): Loadable<T> {
 
       <section class="content-panel" aria-labelledby="corpus-heading">
         <p class="eyebrow">Corpus</p>
-        <h2 id="corpus-heading">Active profile and retained storage evidence</h2>
+        <h2 id="corpus-heading">
+          Active profile and retained storage evidence
+        </h2>
 
         @if (corpus$ | async; as result) {
           @if (result.data; as corpus) {
@@ -220,8 +214,8 @@ function unavailable<T>(warning: string): Loadable<T> {
             @if (inventory.unreachableFileCount > 0) {
               <p class="warning-message" role="status">
                 {{ inventory.unreachableFileCount }} source files were
-                unreachable during the last inventory measurement. The status
-                is historical until the inventory is measured again.
+                unreachable during the last inventory measurement. The status is
+                historical until the inventory is measured again.
               </p>
             }
           } @else {
@@ -243,7 +237,11 @@ function unavailable<T>(warning: string): Loadable<T> {
         @if (syncJobs$ | async; as result) {
           @if (result.data; as jobs) {
             @if (jobs.length > 0) {
-              <div class="table-scroll" tabindex="0" aria-label="Recent sync jobs">
+              <div
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Recent sync jobs"
+              >
                 <table>
                   <thead>
                     <tr>

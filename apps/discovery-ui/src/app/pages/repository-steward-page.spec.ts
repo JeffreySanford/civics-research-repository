@@ -199,13 +199,23 @@ describe('RepositoryStewardPage', () => {
     const fixture = await render({ degraded: true });
     const text = fixture.nativeElement.textContent as string;
 
-    expect(text).toContain('Corpus profile and storage evidence are unavailable.');
+    expect(text).toContain(
+      'Corpus profile and storage evidence are unavailable.',
+    );
     expect(text).toContain('Projection metadata is unavailable.');
-    expect(text).toContain('Search-target liveness and parity are unavailable.');
-    expect(text).toContain('DSpace status is unavailable from the repository API.');
-    expect(text).toContain('Source inventory is unavailable from the repository API.');
+    expect(text).toContain(
+      'Search-target liveness and parity are unavailable.',
+    );
+    expect(text).toContain(
+      'DSpace status is unavailable from the repository API.',
+    );
+    expect(text).toContain(
+      'Source inventory is unavailable from the repository API.',
+    );
     expect(text).toContain('Recent synchronization history is unavailable.');
     expect(text).toContain('Retained accessibility evidence is unavailable.');
-    expect(text).toContain('Certified search research evidence is unavailable.');
+    expect(text).toContain(
+      'Certified search research evidence is unavailable.',
+    );
   });
 });
