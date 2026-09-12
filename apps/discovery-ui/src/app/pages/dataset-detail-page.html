@@ -183,7 +183,7 @@
             <strong>{{ version.label }}</strong>
             <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
             @if (version.current) {
-            <span class="status-pill">Current repository record</span>
+            <span class="status-pill">Current observed record</span>
             } @if (version.versionLabel) {
             <span>Source version: {{ version.versionLabel }}</span>
             } @if (version.doi) {
