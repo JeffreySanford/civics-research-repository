@@ -22,16 +22,15 @@ Delivered capabilities now include:
 - one documented mobile search design lifecycle from wireframe through Storybook, production implementation and automated evidence (#98 / PR #104);
 - read-only repository steward/status surface (#99 / PR #105);
 - compact mobile Research Coverage preview plus lazy interactive `/research-map` route over the bounded spatial sidecar (#106 / PR #107);
+- mobile Census-area context/presets using truthful orientation extents rather than claiming exact TIGER/Line geometry (#108 / PR #109);
 - Storybook/component evidence and Playwright/axe responsive coverage across representative phone/tablet widths;
 - full-stack startup integration.
 
 Historical PR1/scaffold documents remain implementation history, not open tasks.
 
-## #108 — Mobile Census area context and map presets
+## #108 — Mobile Census area context and map presets — delivered
 
-Goal: add useful geographic orientation to the mobile Research Coverage experience without copying the desktop GIS control tree or overstating the current boundary data.
-
-Tasks:
+Delivered in PR #109:
 
 - [x] Keep the compact search-result preview free of extra Census-area requests and controls.
 - [x] Add a compact expanded-map preset control with `Research` as the default.
@@ -42,7 +41,7 @@ Tasks:
 - [x] State explicitly that the rectangle is not exact TIGER/Line administrative geometry.
 - [x] Keep Research Coverage visible and preserve bounded viewport refresh/semantic evidence.
 - [x] Add unit and focused 320px Playwright/axe coverage for preset selection, query preservation, reflow and forced-colors behavior.
-- [ ] Complete repository validation and merge the #108 implementation PR.
+- [x] Complete repository validation and merge the #108 implementation PR.
 
 Important data boundary:
 
@@ -50,15 +49,33 @@ Important data boundary:
 - The mobile context layer therefore uses the word **extent** and must not be represented as an official TIGER/Line polygon.
 - Exact TIGER geometry requires a separate backend/data-contract increment.
 
-## Next map increments after #108
+## #110 — Synchronize mobile map feature selection with research list — current
+
+Goal: make the interactive map and its semantic mapped-research list two views of the same selected research state without adding desktop-style popups or a duplicate state model.
+
+Implementation/evidence ready on the #110 branch:
+
+- [x] Own selection with one local `selectedSourceIdentifier` Signal.
+- [x] Let pointer clicks on mapped research polygons/points select the corresponding publisher-supplied record.
+- [x] Let keyboard-operable semantic-list buttons select the same record with explicit `aria-pressed` state.
+- [x] Render the selected record in a compact labelled detail region below the map.
+- [x] Provide the authoritative-source link when the selected feature supplies one.
+- [x] Use MapLibre feature-state to emphasize selected polygons/points with size/weight/opacity changes rather than color alone.
+- [x] Preserve search/filter URL intent; map selection is local presentation state, not a repository search filter.
+- [x] Reconcile bounded viewport refreshes by retaining selection only while the selected source identifier remains in the returned feature set.
+- [x] Keep the semantic list/detail path usable when WebGL is unavailable.
+- [x] Add unit coverage for list/detail synchronization and clear-on-refresh behavior.
+- [x] Add focused 320px Playwright evidence proving semantic-list selection, real MapLibre pointer selection, query preservation, reflow and axe checks.
+- [ ] Complete repository-wide PR validation and merge #110.
+
+## Next map increments after #110
 
 Promote these only as separate, evidence-backed increments:
 
-1. synchronize selected mapped research with a mobile bottom sheet/list;
-2. add exact TIGER administrative geometry through an authoritative backend contract;
-3. add a `Community` preset using Census Population Estimates / SAIPE / County Business Patterns;
-4. add a `Workforce` preset using LODES workplace employment / commuting flows;
-5. add an `Environment` preset using USGS terrain / hydrography / earthquakes.
+1. add exact TIGER administrative geometry through an authoritative backend contract;
+2. add a `Community` preset using Census Population Estimates / SAIPE / County Business Patterns;
+3. add a `Workforce` preset using LODES workplace employment / commuting flows;
+4. add an `Environment` preset using USGS terrain / hydrography / earthquakes.
 
 ## Deferred / optional work
 

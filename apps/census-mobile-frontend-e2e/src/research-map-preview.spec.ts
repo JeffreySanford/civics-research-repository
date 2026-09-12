@@ -251,6 +251,74 @@ test.describe('mobile research coverage map preview', () => {
     await expectNoAxeViolations(page);
   });
 
+  test('synchronizes semantic-list and pointer map selection @responsive @wcag', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto('/research-map?q=climate%20adaptation');
+
+    const preview = page.getByTestId('mobile-research-map-preview');
+    const selectedRegion = page.getByRole('region', {
+      name: 'Selected research',
+    });
+    const map = page.getByTestId('mobile-research-map-canvas');
+
+    await expect(page.locator('.coverage-map--expanded')).toHaveAttribute(
+      'data-map-initialized',
+      'true',
+    );
+    await expect(
+      page.getByRole('button', {
+        name: 'Show on map: Upper Midwest climate coverage',
+      }),
+    ).toBeVisible();
+
+    await page
+      .getByRole('button', {
+        name: 'Show on map: Upper Midwest climate coverage',
+      })
+      .click();
+
+    await expect(preview).toHaveAttribute('data-selected-source', 'coverage-2');
+    await expect(
+      page.getByRole('button', {
+        name: 'Selected on map: Upper Midwest climate coverage',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(selectedRegion).toContainText(
+      'Upper Midwest climate coverage',
+    );
+    await expect(selectedRegion).toContainText('Example Publisher');
+    await expect(
+      selectedRegion.getByRole('link', { name: 'Open authoritative source' }),
+    ).toHaveAttribute('href', 'https://example.test/coverage-2');
+
+    const mapBox = await map.boundingBox();
+    expect(mapBox).not.toBeNull();
+    await map.click({
+      position: {
+        x: Math.floor((mapBox?.width ?? 0) / 2),
+        y: Math.floor((mapBox?.height ?? 0) / 2),
+      },
+    });
+
+    await expect(preview).toHaveAttribute('data-selected-source', 'coverage-1');
+    await expect(selectedRegion).toContainText(
+      'Northern plains climate coverage',
+    );
+    await expect(
+      page.getByRole('button', {
+        name: 'Selected on map: Northern plains climate coverage',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    const currentUrl = new URL(page.url());
+    expect(currentUrl.searchParams.get('q')).toBe('climate adaptation');
+    expect(currentUrl.searchParams.has('selectedResearch')).toBe(false);
+    await expectNoHorizontalOverflow(page);
+    await expectNoAxeViolations(page);
+  });
+
   test('uses matching search geography as initial area context without weakening it @responsive @wcag', async ({
     page,
   }) => {

@@ -35,6 +35,8 @@
 .coverage-card h2,
 .coverage-list h2,
 .coverage-list p,
+.coverage-selection h2,
+.coverage-selection p,
 .coverage-controls__note,
 .coverage-controls__status {
   margin: 0;
@@ -67,7 +69,9 @@
 .coverage-card__message,
 .coverage-card__attribution,
 .coverage-controls__note,
-.coverage-controls__status {
+.coverage-controls__status,
+.coverage-selection p,
+.coverage-selection span {
   color: var(--civics-text-secondary);
   line-height: 1.45;
 }
@@ -75,7 +79,9 @@
 .coverage-card__note,
 .coverage-card__attribution,
 .coverage-controls__note,
-.coverage-controls__status {
+.coverage-controls__status,
+.coverage-selection p,
+.coverage-selection span {
   font-size: 0.82rem;
 }
 
@@ -121,7 +127,8 @@
   font: inherit;
 }
 
-.coverage-controls select:focus-visible {
+.coverage-controls select:focus-visible,
+.coverage-list__select:focus-visible {
   outline: 3px solid var(--civics-focus);
   outline-offset: 2px;
 }
@@ -181,8 +188,29 @@
 }
 
 .coverage-card__attribution a,
-.coverage-list a {
+.coverage-list a,
+.coverage-selection a {
   color: var(--mat-sys-primary);
+}
+
+.coverage-selection {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.8rem;
+  border: 1px solid var(--civics-border-strong);
+  border-inline-start-width: 4px;
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+}
+
+.coverage-selection h2 {
+  font-size: 1rem;
+}
+
+.coverage-selection strong,
+.coverage-selection span,
+.coverage-selection a {
+  overflow-wrap: anywhere;
 }
 
 .coverage-list {
@@ -204,16 +232,40 @@
 
 .coverage-list li {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.45rem;
   padding: 0.75rem;
   border: 1px solid var(--civics-border);
   border-radius: var(--civics-radius-sm);
   background: var(--civics-surface-panel);
 }
 
+.coverage-list__item--selected {
+  border-width: 3px;
+  border-color: var(--civics-border-strong);
+}
+
+.coverage-list__select {
+  display: grid;
+  gap: 0.2rem;
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--civics-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
 .coverage-list li span {
   color: var(--civics-text-secondary);
   font-size: 0.85rem;
+}
+
+.coverage-list .coverage-list__action {
+  color: var(--civics-text-primary);
+  font-weight: 800;
 }
 
 @media (min-width: 24rem) {
@@ -240,7 +292,9 @@
   .coverage-controls select,
   .coverage-controls__note,
   .coverage-map,
-  .coverage-list li {
+  .coverage-selection,
+  .coverage-list li,
+  .coverage-list__item--selected {
     border-color: CanvasText;
   }
 
@@ -248,5 +302,9 @@
     background: Canvas;
     color: LinkText;
     border: 2px solid CanvasText;
+  }
+
+  .coverage-list__select {
+    color: ButtonText;
   }
 }
