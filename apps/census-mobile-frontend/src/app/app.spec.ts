@@ -106,9 +106,9 @@ describe('App', () => {
       ],
       providers: [
         {
-          provide: ActivatedRoute,
-          useValue: activatedRouteStub,
-        },
+        provide: ActivatedRoute,
+        useValue: activatedRouteStub,
+      },
       ],
     }).compileComponents();
   });
