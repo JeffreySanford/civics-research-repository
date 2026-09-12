@@ -29,11 +29,74 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Reconcile steward status documentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old[:80]!r}")
+              file.write_text(text.replace(old, new, 1))
+
+          replace(
+              "apps/discovery-ui/src/app/pages/repository-steward-page.ts",
+              "import {\n  RepositoryCorpusStorageApi,\n  type CorpusStorageOverview,\n} from 'repository-api-client';",
+              "import { RepositoryCorpusStorageApi } from 'repository-api-client';",
+          )
+
+          replace(
+              "README.md",
+              "`apps/discovery-ui` provides the broader research workspace: Discovery, authority-neutral research detail, Maps, Evidence, Search Lab and repository/admin workflows.",
+              "`apps/discovery-ui` provides the broader research workspace: Discovery, authority-neutral research detail, Maps, Evidence, Search Lab, a read-only Steward status view, and repository/admin workflows.",
+          )
+          replace(
+              "README.md",
+              "The core product, C2/C2.1 search-research program, frontend portfolio alignment, mobile-first search-to-research experience and September dependency-security cleanup are implemented.\n\nThe active product-facing continuation is:\n\n1. **#97 — Shared result explainability dialog** across both Angular frontends;\n2. **#98 — Design lifecycle evidence** for a representative mobile-first slice;\n3. **#99 — Read-only repository steward/status workflow**.",
+              "The core product, C2/C2.1 search-research program, frontend portfolio alignment, mobile-first search-to-research experience, shared result explainability, design-lifecycle evidence and September dependency-security cleanup are implemented.\n\nThe current product-facing increment is **#99 — Read-only repository steward/status workflow**. The `/steward` route composes existing typed corpus, repository, source-inventory, synchronization, Solr/OpenSearch projection-parity and retained-evidence facts without exposing privileged mutation controls.",
+          )
+
+          replace(
+              "mobile-first/README.md",
+              "The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103. Current work is tracked through repository issues:\n\n1. **#98 — Design lifecycle evidence (current)**: capture one representative mobile-first slice from design intent through Storybook, implementation and automated evidence.\n2. **#99 — Read-only repository steward/status surface (next)**: add a focused internal status workflow from existing authority, corpus/projection, synchronization and search-health data.",
+              "The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103, and design lifecycle evidence is complete through PR #104. Current work is tracked through repository issues:\n\n1. **#99 — Read-only repository steward/status surface (current)**: compose existing authority, corpus/projection, synchronization, search-health and retained-evidence facts into a focused internal status workflow without privileged mutation.",
+          )
+
+          replace(
+              "planning/ACCEPTANCE_CRITERIA.md",
+              "## Current continuation acceptance — #97 / #98 / #99\n\nThese are the active future product-facing items and are intentionally not part of the already-certified C2/C2.1 baseline.\n\n### #97 shared result explainability\n\n- [ ] Both Angular frontends expose one consistent, accessible `Why this matched` experience.\n- [ ] Presentational reuse stays in existing `shared-ui`; app-specific NgRx/routing ownership remains outside it.\n- [ ] Rank, match strength, relevance model/calibration caveats and typed field/term evidence remain server-owned/truthful.\n- [ ] 320px reflow, focus return, forced-colors, Storybook, browser and axe evidence pass.\n\n### #98 design lifecycle evidence\n\n- [ ] One representative mobile-first slice is documented from design intent/wireframe through annotated specification, Storybook, implementation and automated evidence.\n- [ ] Design annotations link to actual components/tests and do not imply unperformed human research.\n\n### #99 read-only steward/status workflow\n\n- [ ] A focused internal read-only surface exposes truthful corpus/projection/synchronization/search-health context through typed APIs.\n- [ ] Secrets/operator-only diagnostics and privileged mutations stay outside the initial browser workflow.\n- [ ] Loading/degraded/error/responsive/browser/axe evidence passes.",
+              "## Current continuation acceptance — #97 / #98 / #99\n\nThese product-facing increments remain separate from the already-certified C2/C2.1 baseline. #97 and #98 are delivered; #99 is the current implementation increment.\n\n### #97 shared result explainability — complete via PR #103\n\n- [x] Both Angular frontends expose one consistent, accessible `Why this matched` experience.\n- [x] Presentational reuse stays in existing `shared-ui`; app-specific NgRx/routing ownership remains outside it.\n- [x] Rank, match strength, relevance model/calibration caveats and typed field/term evidence remain server-owned/truthful.\n- [x] 320px reflow, focus return, forced-colors, Storybook, browser and axe evidence pass.\n\n### #98 design lifecycle evidence — complete via PR #104\n\n- [x] One representative mobile-first slice is documented from design intent/wireframe through annotated specification, Storybook, implementation and automated evidence.\n- [x] Design annotations link to actual components/tests and do not imply unperformed human research.\n\n### #99 read-only steward/status workflow\n\n- [x] A focused internal read-only surface exposes truthful corpus/projection/synchronization/search-health context through typed APIs.\n- [x] Secrets/operator-only diagnostics and privileged mutations stay outside the initial browser workflow.\n- [x] Loading/degraded/error/responsive/browser/axe evidence passes in the focused branch validation.",
+          )
+
+          replace(
+              "tools/scripts/platform-status.mjs",
+              "role: 'Full discovery, research detail, Maps, Evidence, Search Lab and admin workflows',",
+              "role: 'Full discovery, research detail, Maps, Evidence, Search Lab, read-only Steward status and admin workflows',",
+          )
+          replace(
+              "tools/scripts/platform-status.mjs",
+              "The mobile-first surface now includes shareable query/filter intent, scalable cursor traversal, server-owned rank/relevance evidence, query-wide result summaries, typed field/term match evidence, authority-neutral research detail, research-package/related-research navigation and responsive browser/axe evidence. Shared rank/relevance presentation is consumed by both Angular applications through \\`shared-ui\\`.",
+              "The mobile-first surface now includes shareable query/filter intent, scalable cursor traversal, server-owned rank/relevance evidence, query-wide result summaries, typed field/term match evidence, authority-neutral research detail, research-package/related-research navigation and responsive browser/axe evidence. Shared rank/relevance/result-explainability presentation is consumed by both Angular applications through \\`shared-ui\\`, and the representative mobile search design lifecycle is documented from intent through implementation/evidence.",
+          )
+          replace(
+              "tools/scripts/platform-status.mjs",
+              "The active product-facing sequence is:\n\n1. #97 — shared result explainability dialog across both Angular frontends;\n2. #98 — design lifecycle evidence for a representative mobile-first slice;\n3. #99 — read-only repository steward/status workflow.",
+              "The current product-facing increment is #99 — the read-only repository steward/status workflow. It composes existing typed corpus/storage, DSpace, source-inventory, synchronization, Solr/OpenSearch projection-parity and retained-evidence facts while keeping privileged mutations in Admin workflows.\n\nShared result explainability (#97 / PR #103) and design lifecycle evidence (#98 / PR #104) are complete.",
+          )
+          PY
+
+      - name: Regenerate platform status
+        run: pnpm run docs:status
+
       - name: Format changed repository files
         run: pnpm exec nx format:write --all
 
-      - name: Check formatting
-        run: pnpm exec nx format:check --all
+      - name: Check formatting and generated status
+        run: |
+          pnpm exec nx format:check --all
+          pnpm run docs:check
 
       - name: Lint discovery UI
         run: pnpm exec nx lint discovery-ui
@@ -53,15 +116,12 @@ jobs:
       - name: Run focused steward browser evidence
         run: pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts apps/discovery-ui-e2e/src/repository-steward-status.spec.ts --project=chromium
 
-      - name: Commit formatting and remove one-shot workflow
+      - name: Commit finalized status and remove one-shot workflow
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/one-shot-validate-steward-status.yml
           git add -A
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "style: finalize repository steward status"
+          git commit -m "feat: finalize repository steward status"
           git push
