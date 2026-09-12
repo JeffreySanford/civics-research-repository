@@ -21,8 +21,8 @@ The repository has moved beyond its original scale/search completion path:
 - C2 adversarial follow-up C2.1 is complete (#47);
 - frontend mission/portfolio alignment is complete (#51);
 - a second mobile-first Angular frontend is implemented beside `discovery-ui`;
-- both frontends share server-owned rank/relevance presentation through `shared-ui`;
-- mobile search/filter/pagination, match evidence, research detail/context navigation and responsive accessibility automation are implemented;
+- both frontends share server-owned rank, relevance and result-explainability presentation through `shared-ui` (#97 / PR #103);
+- mobile search/filter/pagination, research detail/context navigation and responsive accessibility automation are implemented;
 - the September security cleanup is merged and the actionable Dependabot alert set is empty;
 - issue #49 manual accessibility evidence is closed **not planned** and is not a completion gate.
 
@@ -30,12 +30,11 @@ The architecture itself remains settled: DSpace owns curated repository records,
 
 ## Current priorities
 
-1. **#97 — shared result explainability.** Turn existing rank/relevance/match evidence into one accessible `Why this matched` dialog across both Angular frontends using the existing `shared-ui` boundary.
-2. **#98 — design lifecycle evidence.** Capture one representative mobile-first slice from wireframe/annotated specification through Storybook, implementation and automated evidence.
-3. **#99 — read-only repository steward/status workflow.** Expose focused corpus/projection/synchronization/search-health context without adding privileged mutation.
-4. **Keep planning and generated status accurate.** New delivered work should move into history/current-status documentation rather than remaining indefinitely in planning files.
-5. **Preserve evidence boundaries.** Automated accessibility evidence remains valuable but must not be represented as completed manual AT/Section 508 certification.
-6. **Promote optional map/federation/cloud work only for a concrete research or deployment question.** Do not add technology solely for breadth.
+1. **#98 — design lifecycle evidence (current).** Capture one representative mobile-first slice from wireframe/annotated specification through Storybook, implementation and automated evidence. The primary artifacts are the [Mobile Search Design Lifecycle Case Study](../mobile-first/documentation/design/mobile-search-design-lifecycle.md) and [ADR-002](../mobile-first/documentation/adr-002-mobile-search-interaction-and-evidence-model.md).
+2. **#99 — read-only repository steward/status workflow (next).** Expose focused corpus/projection/synchronization/search-health context without adding privileged mutation.
+3. **Keep planning and generated status accurate.** New delivered work should move into history/current-status documentation rather than remaining indefinitely in planning files.
+4. **Preserve evidence boundaries.** Automated accessibility evidence remains valuable but must not be represented as completed manual AT/Section 508 certification.
+5. **Promote optional map/federation/cloud work only for a concrete research or deployment question.** Do not add technology solely for breadth.
 
 ## Working rule
 
