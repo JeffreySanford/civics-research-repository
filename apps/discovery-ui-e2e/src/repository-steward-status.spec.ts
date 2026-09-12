@@ -1,4 +1,6 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { axeEngineeringTags } from './support/axe-tags';
 import { failRepositoryApi } from './support/repository-api-mocks-base';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 import { mockSearchComparisonApi } from './support/search-comparison-mocks';
@@ -89,7 +91,7 @@ test.describe('Repository steward status', () => {
     ).toBeVisible();
   });
 
-  test('contains wide status tables inside the page at 320px @wcag @section508', async ({
+  test('contains wide status tables inside the page at 320px with clean axe evidence @wcag @section508', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 800 });
@@ -105,5 +107,10 @@ test.describe('Repository steward status', () => {
       page.getByRole('heading', { name: 'Read-only repository status' }),
     ).toBeVisible();
     await expect(page.getByText('Projection parity verified.')).toBeVisible();
+
+    const results = await new AxeBuilder({ page })
+      .withTags(axeEngineeringTags)
+      .analyze();
+    expect(results.violations).toEqual([]);
   });
 });
