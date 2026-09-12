@@ -38,6 +38,8 @@ The delivered mobile experience includes:
 - typed research-package relationship navigation;
 - broader related-research navigation kept semantically distinct from package assertions;
 - shared rank/relevance/explainability components consumed by both Angular frontends;
+- a compact non-interactive Research Coverage preview and lazy interactive `/research-map` route over the existing bounded spatial sidecar (#106 / PR #107);
+- semantic mapped/unmapped/truncation evidence outside WebGL plus useful fallback content when map rendering is unavailable;
 - responsive browser/axe evidence at 320, 390, 430 and 768px plus forced-colors, reduced-motion and keyboard-entry checks.
 
 Automated evidence is intentionally separate from manual assistive-technology verification. Issue #49 is closed **not planned**; these automated checks must not be described as completed manual Section 508, Trusted Tester, NVDA, JAWS or VoiceOver verification.
@@ -55,9 +57,13 @@ Automated evidence is intentionally separate from manual assistive-technology ve
 
 ## Active continuation
 
-The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103, and design lifecycle evidence is complete through PR #104. Current work is tracked through repository issues:
+The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103, design lifecycle evidence through PR #104, the read-only steward/status surface through PR #105, and the first mobile Research Coverage map slice through PR #107.
 
-1. **#99 — Read-only repository steward/status surface (current)**: compose existing authority, corpus/projection, synchronization, search-health and retained-evidence facts into a focused internal status workflow without privileged mutation.
+Current work is tracked through repository issues:
+
+1. **#108 — Mobile Census area context and map presets (current)**: keep Research Coverage primary, add an explicit mobile context preset and Census-area orientation extent, and keep the current bounding-summary contract clearly distinct from exact TIGER/Line geometry.
+
+Exact TIGER administrative geometry, Community/Workforce/Environment thematic presets and richer selected-feature/bottom-sheet behavior remain follow-up increments rather than being bundled into #108.
 
 ## Evidence and planning documents
 
