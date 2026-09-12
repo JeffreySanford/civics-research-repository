@@ -1,0 +1,334 @@
+name: Implement artifact version history foundation
+
+on:
+  push:
+    branches:
+      - feat/artifact-version-provenance
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: feat/artifact-version-provenance
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - name: Set up Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply version-history foundation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"anchor not found in {path}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          # OpenAPI: authority-neutral research version history + explicit history knowledge state.
+          openapi = "schemas/openapi/repository-api.yaml"
+          replace_once(
+              openapi,
+              "  /search/comparison/scenarios:\n",
+              """  /research/{researchId}/versions:\n    get:\n      tags: [Datasets]\n      operationId: getResearchObjectVersionHistory\n      summary: Get observed research artifact version history.\n      description: >-\n        Returns only version facts observed from the repository or authoritative source metadata.\n        A singleton OBSERVED_CURRENT_ONLY response means earlier/later history is unknown; it does\n        not assert that no other versions exist.\n      parameters:\n        - $ref: '#/components/parameters/ResearchId'\n      responses:\n        '200':\n          description: Observed version history with an explicit knowledge state.\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/ResearchArtifactVersionHistory'\n        '400':\n          $ref: '#/components/responses/BadRequest'\n        '404':\n          $ref: '#/components/responses/NotFound'\n        '500':\n          $ref: '#/components/responses/InternalServerError'\n        '503':\n          $ref: '#/components/responses/ServiceUnavailable'\n  /search/comparison/scenarios:\n""",
+          )
+          replace_once(
+              openapi,
+              "    DatasetVersion:\n",
+              """    VersionHistoryStatus:\n      type: string\n      enum: [OBSERVED_CURRENT_ONLY, HISTORY_AVAILABLE, UNAVAILABLE]\n      description: >-\n        Describes what the repository actually knows about version lineage.\n        OBSERVED_CURRENT_ONLY explicitly means history beyond the observed record is unknown.\n    ResearchArtifactVersion:\n      type: object\n      required: [id, label]\n      properties:\n        id:\n          type: string\n          description: Stable repository/source identity for the observed artifact version.\n        label:\n          type: string\n        current:\n          type: boolean\n          description: True only when the repository can identify this as its current observed record.\n        versionLabel:\n          type: string\n          description: Source-provided release/version label; omitted when unknown.\n        versionDate:\n          type: string\n          format: date\n        releasedOn:\n          type: string\n          format: date\n        doi:\n          type: string\n        sourceUrl:\n          type: string\n          format: uri\n        sourceSha256:\n          type: string\n          pattern: '^[A-Fa-f0-9]{64}$'\n        capturedAt:\n          type: string\n          format: date-time\n        isVersionOf:\n          type: string\n        supersedes:\n          type: string\n        changeNote:\n          type: string\n    ResearchArtifactVersionHistory:\n      type: object\n      required: [researchObjectId, status, versions]\n      properties:\n        researchObjectId:\n          type: string\n        status:\n          $ref: '#/components/schemas/VersionHistoryStatus'\n        versions:\n          type: array\n          items:\n            $ref: '#/components/schemas/ResearchArtifactVersion'\n        note:\n          type: string\n    DatasetVersion:\n""",
+          )
+
+          # Legacy dataset endpoint: remove the invented vintageYear-1 release entirely.
+          replace_once(
+              "apps/repository-api/src/main/java/org/civicsrepo/datasets/DatasetService.java",
+              "import java.time.LocalDate;\n",
+              "",
+          )
+          replace_once(
+              "apps/repository-api/src/main/java/org/civicsrepo/datasets/DatasetService.java",
+              """    public List<DatasetVersion> getDatasetVersions(String datasetId) {\n        ResearchObjectDetail detail = getDataset(datasetId);\n        int currentYear = detail.getVintageYear() == null ? 2026 : detail.getVintageYear();\n\n        return List.of(\n                new DatasetVersion(datasetId + \"-current\", detail.getTitle(), true)\n                        .releasedOn(detail.getReleasedOn()),\n                new DatasetVersion(datasetId + \"-previous\", detail.getProgram() + \" \" + (currentYear - 1), false)\n                        .releasedOn(LocalDate.of(currentYear - 1, 8, 1)));\n    }\n""",
+              """    public List<DatasetVersion> getDatasetVersions(String datasetId) {\n        ResearchObjectDetail detail = getDataset(datasetId);\n        return List.of(new DatasetVersion(datasetId, detail.getTitle(), true)\n                .releasedOn(detail.getReleasedOn()));\n    }\n""",
+          )
+
+          # Research service: add the authority-neutral observed-version boundary.
+          replace_once(
+              "apps/repository-api/src/main/java/org/civicsrepo/research/ResearchObjectService.java",
+              "import org.civicsrepo.datasets.DatasetService;\n",
+              """import java.util.List;\nimport org.civicsrepo.datasets.DatasetService;\n""",
+          )
+          replace_once(
+              "apps/repository-api/src/main/java/org/civicsrepo/research/ResearchObjectService.java",
+              "import org.civicsrepo.generated.dto.ResearchObjectDetail;\n",
+              """import org.civicsrepo.generated.dto.ResearchArtifactVersion;\nimport org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;\nimport org.civicsrepo.generated.dto.ResearchObjectDetail;\nimport org.civicsrepo.generated.dto.VersionHistoryStatus;\n""",
+          )
+          replace_once(
+              "apps/repository-api/src/main/java/org/civicsrepo/research/ResearchObjectService.java",
+              """        return federatedMetadataCatalog\n                .findById(canonicalId)\n                .map(federatedMapper::toDetail)\n                .orElseGet(() -> datasetService.getDataset(canonicalId));\n    }\n}\n""",
+              """        return federatedMetadataCatalog\n                .findById(canonicalId)\n                .map(federatedMapper::toDetail)\n                .orElseGet(() -> datasetService.getDataset(canonicalId));\n    }\n\n    public ResearchArtifactVersionHistory getResearchObjectVersionHistory(String researchIdToken) {\n        ResearchObjectDetail detail = getResearchObject(researchIdToken);\n        ResearchArtifactVersion observed = new ResearchArtifactVersion(detail.getId(), detail.getTitle())\n                .current(true)\n                .releasedOn(detail.getReleasedOn())\n                .doi(detail.getDoi())\n                .sourceUrl(detail.getSourceUrl());\n\n        return new ResearchArtifactVersionHistory(\n                        detail.getId(), VersionHistoryStatus.OBSERVED_CURRENT_ONLY, List.of(observed))\n                .note(\"Only the current repository/source record has been observed; earlier or later version history is not established.\");\n    }\n}\n""",
+          )
+
+          # Controller exposes the research-oriented endpoint while the legacy dataset route remains.
+          replace_once(
+              "apps/repository-api/src/main/java/org/civicsrepo/research/ResearchObjectController.java",
+              "import org.civicsrepo.generated.dto.ResearchObjectDetail;\n",
+              """import org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;\nimport org.civicsrepo.generated.dto.ResearchObjectDetail;\n""",
+          )
+          replace_once(
+              "apps/repository-api/src/main/java/org/civicsrepo/research/ResearchObjectController.java",
+              """    public ResearchObjectDetail getResearchObject(@PathVariable String researchId) {\n        return researchObjectService.getResearchObject(researchId);\n    }\n}\n""",
+              """    public ResearchObjectDetail getResearchObject(@PathVariable String researchId) {\n        return researchObjectService.getResearchObject(researchId);\n    }\n\n    @GetMapping(\"/{researchId}/versions\")\n    public ResearchArtifactVersionHistory getResearchObjectVersionHistory(@PathVariable String researchId) {\n        return researchObjectService.getResearchObjectVersionHistory(researchId);\n    }\n}\n""",
+          )
+
+          # Java tests: prove the fabricated previous release is gone and the history state is explicit.
+          replace_once(
+              "apps/repository-api/src/test/java/org/civicsrepo/datasets/DatasetServiceTest.java",
+              """        assertThat(datasetService.getDatasetVersions(\"lodes-wac-texas-2023\"))\n                .hasSize(2)\n                .first()\n                .extracting(DatasetVersion::getCurrent)\n                .isEqualTo(true);\n""",
+              """        assertThat(datasetService.getDatasetVersions(\"lodes-wac-texas-2023\"))\n                .singleElement()\n                .satisfies(version -> {\n                    assertThat(version.getCurrent()).isTrue();\n                    assertThat(version.getId()).isEqualTo(\"lodes-wac-texas-2023\");\n                    assertThat(version.getReleasedOn()).isNotNull();\n                });\n""",
+          )
+          replace_once(
+              "apps/repository-api/src/test/java/org/civicsrepo/research/ResearchObjectControllerTest.java",
+              "import org.civicsrepo.generated.dto.RepositorySource;\n",
+              """import org.civicsrepo.generated.dto.RepositorySource;\nimport org.civicsrepo.generated.dto.ResearchArtifactVersion;\nimport org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;\nimport org.civicsrepo.generated.dto.VersionHistoryStatus;\n""",
+          )
+          replace_once(
+              "apps/repository-api/src/test/java/org/civicsrepo/research/ResearchObjectControllerTest.java",
+              """    private ResearchObjectDetail detail() {\n""",
+              """    @Test\n    void serializesObservedVersionKnowledgeWithoutInventingHistory() throws Exception {\n        String token = \"REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg\";\n        ResearchArtifactVersion version = new ResearchArtifactVersion(\n                        \"DATA_GOV:https://example.gov\", \"Example research object\")\n                .current(true)\n                .sourceUrl(URI.create(\"https://catalog.data.gov/dataset/example\"));\n        given(researchObjectService.getResearchObjectVersionHistory(token))\n                .willReturn(new ResearchArtifactVersionHistory(\n                                \"DATA_GOV:https://example.gov\",\n                                VersionHistoryStatus.OBSERVED_CURRENT_ONLY,\n                                List.of(version))\n                        .note(\"Earlier or later history is unknown.\"));\n\n        mockMvc.perform(get(\"/research/{researchId}/versions\", token))\n                .andExpect(status().isOk())\n                .andExpect(jsonPath(\"$.status\").value(\"OBSERVED_CURRENT_ONLY\"))\n                .andExpect(jsonPath(\"$.versions.length()\").value(1))\n                .andExpect(jsonPath(\"$.versions[0].id\").value(\"DATA_GOV:https://example.gov\"))\n                .andExpect(jsonPath(\"$.versions[0].current\").value(true));\n    }\n\n    private ResearchObjectDetail detail() {\n""",
+          )
+
+          # Typed TS client adds the new contract while retaining DatasetVersion compatibility.
+          client = "libs/repository/api-client/src/lib/repository-api-client.ts"
+          replace_once(
+              client,
+              "export type DatasetVersion = components['schemas']['DatasetVersion'];\n",
+              """export type DatasetVersion = components['schemas']['DatasetVersion'];\nexport type VersionHistoryStatus = components['schemas']['VersionHistoryStatus'];\nexport type ResearchArtifactVersion =\n  components['schemas']['ResearchArtifactVersion'];\nexport type ResearchArtifactVersionHistory =\n  components['schemas']['ResearchArtifactVersionHistory'];\n""",
+          )
+          replace_once(
+              client,
+              """  getDataset(datasetId: string): Observable<ResearchObjectDetail> {\n""",
+              """  getResearchObjectVersions(\n    researchId: string,\n  ): Observable<ResearchArtifactVersionHistory> {\n    return this.http.get<ResearchArtifactVersionHistory>(\n      `${this.baseUrl}/research/${researchId}/versions`,\n    );\n  }\n\n  getDataset(datasetId: string): Observable<ResearchObjectDetail> {\n""",
+          )
+
+          # NgRx state owns explicit history knowledge while rendering the richer research version model.
+          replace_once(
+              "apps/discovery-ui/src/app/state/datasets/datasets.actions.ts",
+              """  ResearchObjectDetail,\n  DatasetVersion,\n  MapLayer,\n""",
+              """  ResearchObjectDetail,\n  ResearchArtifactVersion,\n  VersionHistoryStatus,\n  MapLayer,\n""",
+          )
+          replace_once(
+              "apps/discovery-ui/src/app/state/datasets/datasets.actions.ts",
+              """      versions: DatasetVersion[];\n      mapLayers: MapLayer[];\n""",
+              """      versions: ResearchArtifactVersion[];\n      versionHistoryStatus?: VersionHistoryStatus;\n      mapLayers: MapLayer[];\n""",
+          )
+
+          replace_once(
+              "apps/discovery-ui/src/app/state/datasets/datasets.reducer.ts",
+              """  ResearchObjectDetail,\n  DatasetVersion,\n  MapLayer,\n""",
+              """  ResearchObjectDetail,\n  ResearchArtifactVersion,\n  VersionHistoryStatus,\n  MapLayer,\n""",
+          )
+          replace_once(
+              "apps/discovery-ui/src/app/state/datasets/datasets.reducer.ts",
+              """  readonly versions: readonly DatasetVersion[];\n  readonly mapLayers: readonly MapLayer[];\n""",
+              """  readonly versions: readonly ResearchArtifactVersion[];\n  readonly versionHistoryStatus: VersionHistoryStatus | null;\n  readonly mapLayers: readonly MapLayer[];\n""",
+          )
+          replace_once(
+              "apps/discovery-ui/src/app/state/datasets/datasets.reducer.ts",
+              """  versions: [],\n  mapLayers: [],\n""",
+              """  versions: [],\n  versionHistoryStatus: null,\n  mapLayers: [],\n""",
+          )
+          # Reset status on both open actions.
+          p = Path("apps/discovery-ui/src/app/state/datasets/datasets.reducer.ts")
+          text = p.read_text().replace("    versions: [],\n    mapLayers: [],", "    versions: [],\n    versionHistoryStatus: null,\n    mapLayers: [],", 2)
+          p.write_text(text)
+          replace_once(
+              "apps/discovery-ui/src/app/state/datasets/datasets.reducer.ts",
+              """    (state, { detail, versions, mapLayers }) => ({\n      ...state,\n      detail,\n      versions,\n      mapLayers,\n""",
+              """    (state, { detail, versions, versionHistoryStatus, mapLayers }) => ({\n      ...state,\n      detail,\n      versions,\n      versionHistoryStatus: versionHistoryStatus ?? null,\n      mapLayers,\n""",
+          )
+
+          replace_once(
+              "apps/discovery-ui/src/app/state/datasets/datasets.selectors.ts",
+              """export const selectDatasetMapLayers = createSelector(\n""",
+              """export const selectVersionHistoryStatus = createSelector(\n  selectDatasetsState,\n  (state) => state.versionHistoryStatus,\n);\n\nexport const selectDatasetMapLayers = createSelector(\n""",
+          )
+
+          # Effects: dataset compatibility route reports what it knows; canonical research route uses the new endpoint.
+          effects = "apps/discovery-ui/src/app/state/datasets/datasets.effects.ts"
+          replace_once(
+              effects,
+              """          map(({ detail, versions, mapLayers }) =>\n            DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),\n          ),\n""",
+              """          map(({ detail, versions, mapLayers }) =>\n            DatasetsActions.datasetLoaded({\n              detail,\n              versions,\n              versionHistoryStatus:\n                versions.length > 1\n                  ? 'HISTORY_AVAILABLE'\n                  : 'OBSERVED_CURRENT_ONLY',\n              mapLayers,\n            }),\n          ),\n""",
+          )
+          replace_once(
+              effects,
+              """        this.datasetsApi.getResearchObject(researchId).pipe(\n          switchMap((detail) => this.loadResearchEnrichments(detail)),\n""",
+              """        this.datasetsApi.getResearchObject(researchId).pipe(\n          switchMap((detail) =>\n            this.loadResearchEnrichments(detail, researchId),\n          ),\n""",
+          )
+          old_method = """  private loadResearchEnrichments(detail: ResearchObjectDetail) {\n    if (detail.source === 'FEDERATED') {\n      return of(\n        DatasetsActions.datasetLoaded({\n          detail,\n          versions: [],\n          mapLayers: [],\n        }),\n      );\n    }\n\n    return forkJoin({\n      versions: this.datasetsApi.getDatasetVersions(detail.id),\n      mapLayers: this.mapsApi.getDatasetMapLayers(detail.id),\n    }).pipe(\n      map(({ versions, mapLayers }) =>\n        DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),\n      ),\n    );\n  }\n"""
+          new_method = """  private loadResearchEnrichments(\n    detail: ResearchObjectDetail,\n    researchId: string,\n  ) {\n    const history$ = this.datasetsApi.getResearchObjectVersions(researchId);\n\n    if (detail.source === 'FEDERATED') {\n      return history$.pipe(\n        map((history) =>\n          DatasetsActions.datasetLoaded({\n            detail,\n            versions: history.versions,\n            versionHistoryStatus: history.status,\n            mapLayers: [],\n          }),\n        ),\n      );\n    }\n\n    return forkJoin({\n      history: history$,\n      mapLayers: this.mapsApi.getDatasetMapLayers(detail.id),\n    }).pipe(\n      map(({ history, mapLayers }) =>\n        DatasetsActions.datasetLoaded({\n          detail,\n          versions: history.versions,\n          versionHistoryStatus: history.status,\n          mapLayers,\n        }),\n      ),\n    );\n  }\n"""
+          replace_once(effects, old_method, new_method)
+
+          # Detail page presents status as evidence, including federated/restricted objects.
+          page = "apps/discovery-ui/src/app/pages/dataset-detail-page.ts"
+          replace_once(
+              page,
+              """  ResearchObjectType,\n  ResearchRelation,\n""",
+              """  ResearchObjectType,\n  ResearchRelation,\n  VersionHistoryStatus,\n""",
+          )
+          replace_once(
+              page,
+              """  selectDatasetVersions,\n} from '../state/datasets/datasets.selectors';\n""",
+              """  selectDatasetVersions,\n  selectVersionHistoryStatus,\n} from '../state/datasets/datasets.selectors';\n""",
+          )
+          replace_once(
+              page,
+              """  protected readonly versions$ = this.store.select(selectDatasetVersions);\n""",
+              """  protected readonly versions$ = this.store.select(selectDatasetVersions);\n  protected readonly versionHistoryStatus$ = this.store.select(\n    selectVersionHistoryStatus,\n  );\n""",
+          )
+          replace_once(
+              page,
+              """  /** Verbs read as sentences about this object, so the relation list needs no legend. */\n""",
+              """  protected versionHistoryMessage(status: VersionHistoryStatus): string {\n    const messages: Record<VersionHistoryStatus, string> = {\n      OBSERVED_CURRENT_ONLY:\n        'Only the current repository/source record has been observed. Earlier or later version history is not established.',\n      HISTORY_AVAILABLE:\n        'The repository has observed version-lineage records for this research artifact.',\n      UNAVAILABLE:\n        'Version provenance is not available for this research artifact.',\n    };\n    return messages[status];\n  }\n\n  /** Verbs read as sentences about this object, so the relation list needs no legend. */\n""",
+          )
+
+          template = "apps/discovery-ui/src/app/pages/dataset-detail-page.html"
+          p = Path(template)
+          text = p.read_text()
+          text = text.replace("    @if (detail.source !== 'FEDERATED') {\n    <mat-tab label=\"Versions\">", "    <mat-tab label=\"Versions\">", 1)
+          text = text.replace("    </mat-tab>\n    } @if ( detail.source !== 'FEDERATED' &&", "    </mat-tab>\n    @if ( detail.source !== 'FEDERATED' &&", 1)
+          text = text.replace(
+              """        <h2 id=\"versions-heading\">Versions</h2>\n        @if (versions$ | async; as versions) {\n""",
+              """        <h2 id=\"versions-heading\">Versions and provenance</h2>\n        @if (versionHistoryStatus$ | async; as historyStatus) {\n        <p class=\"version-history-note\" role=\"note\">\n          {{ versionHistoryMessage(historyStatus) }}\n        </p>\n        }\n        @if (versions$ | async; as versions) {\n""",
+              1,
+          )
+          text = text.replace(
+              """            @if (version.current) {\n            <span class=\"status-pill\">Current</span>\n            }\n""",
+              """            @if (version.current) {\n            <span class=\"status-pill\">Current repository record</span>\n            } @if (version.versionLabel) {\n            <span>Source version: {{ version.versionLabel }}</span>\n            } @if (version.doi) {\n            <a\n              class=\"source-link\"\n              [href]=\"'https://doi.org/' + version.doi\"\n              target=\"_blank\"\n              rel=\"noreferrer\"\n              >DOI {{ version.doi }}</a\n            >\n            } @if (version.sourceUrl) {\n            <a\n              class=\"source-link\"\n              [href]=\"version.sourceUrl\"\n              target=\"_blank\"\n              rel=\"noreferrer\"\n              >Version source</a\n            >\n            }\n""",
+              1,
+          )
+          p.write_text(text)
+
+          # Update focused TS tests for the canonical version-history endpoint.
+          spec = "apps/discovery-ui/src/app/state/datasets/datasets.effects.spec.ts"
+          replace_once(
+              spec,
+              """  type DatasetVersion,\n  type MapLayer,\n""",
+              """  type DatasetVersion,\n  type ResearchArtifactVersionHistory,\n  type MapLayer,\n""",
+          )
+          replace_once(
+              spec,
+              """const mapLayers = [\n""",
+              """const versionHistory: ResearchArtifactVersionHistory = {\n  researchObjectId: detail.id,\n  status: 'OBSERVED_CURRENT_ONLY',\n  versions,\n};\n\nconst mapLayers = [\n""",
+          )
+          # Existing dataset expectation now carries explicit status.
+          replace_once(
+              spec,
+              """      DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),\n""",
+              """      DatasetsActions.datasetLoaded({\n        detail,\n        versions,\n        versionHistoryStatus: 'OBSERVED_CURRENT_ONLY',\n        mapLayers,\n      }),\n""",
+          )
+          # Replace the federated test body expectations/mocks incrementally.
+          replace_once(
+              spec,
+              """    const getDataset = vi.fn();\n    const getDatasetVersions = vi.fn();\n    const getDatasetMapLayers = vi.fn();\n""",
+              """    const getDataset = vi.fn();\n    const getDatasetVersions = vi.fn();\n    const getResearchObjectVersions = vi.fn().mockReturnValue(of({\n      ...versionHistory,\n      researchObjectId: federatedDetail.id,\n      versions: [{\n        id: federatedDetail.id,\n        label: federatedDetail.title,\n        current: true,\n        sourceUrl: federatedDetail.sourceUrl,\n      }],\n    }));\n    const getDatasetMapLayers = vi.fn();\n""",
+          )
+          replace_once(
+              spec,
+              """        getDatasetVersions,\n      } as unknown as RepositoryDatasetsApi,\n""",
+              """        getDatasetVersions,\n        getResearchObjectVersions,\n      } as unknown as RepositoryDatasetsApi,\n""",
+          )
+          replace_once(
+              spec,
+              """    expect(getDatasetVersions).not.toHaveBeenCalled();\n    expect(getDatasetMapLayers).not.toHaveBeenCalled();\n""",
+              """    expect(getDatasetVersions).not.toHaveBeenCalled();\n    expect(getResearchObjectVersions).toHaveBeenCalledWith(researchId);\n    expect(getDatasetMapLayers).not.toHaveBeenCalled();\n""",
+          )
+          replace_once(
+              spec,
+              """        versions: [],\n        mapLayers: [],\n""",
+              """        versions: [\n          {\n            id: federatedDetail.id,\n            label: federatedDetail.title,\n            current: true,\n            sourceUrl: federatedDetail.sourceUrl,\n          },\n        ],\n        versionHistoryStatus: 'OBSERVED_CURRENT_ONLY',\n        mapLayers: [],\n""",
+          )
+          # Canonical repository route uses research version history rather than the dataset compatibility endpoint.
+          replace_once(
+              spec,
+              """    const getDatasetVersions = vi.fn().mockReturnValue(of(versions));\n    const getDatasetMapLayers = vi.fn().mockReturnValue(of(mapLayers));\n""",
+              """    const getDatasetVersions = vi.fn();\n    const getResearchObjectVersions = vi.fn().mockReturnValue(of(versionHistory));\n    const getDatasetMapLayers = vi.fn().mockReturnValue(of(mapLayers));\n""",
+          )
+          replace_once(
+              spec,
+              """        getDatasetVersions,\n      } as unknown as RepositoryDatasetsApi,\n      { getDatasetMapLayers } as unknown as RepositoryMapsApi,\n      of(DatasetsActions.researchOpened({ researchId })),\n""",
+              """        getDatasetVersions,\n        getResearchObjectVersions,\n      } as unknown as RepositoryDatasetsApi,\n      { getDatasetMapLayers } as unknown as RepositoryMapsApi,\n      of(DatasetsActions.researchOpened({ researchId })),\n""",
+          )
+          replace_once(
+              spec,
+              """    expect(getDatasetVersions).toHaveBeenCalledWith(detail.id);\n    expect(getDatasetMapLayers).toHaveBeenCalledWith(detail.id);\n    expect(emitted).toEqual(\n      DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),\n    );\n""",
+              """    expect(getDatasetVersions).not.toHaveBeenCalled();\n    expect(getResearchObjectVersions).toHaveBeenCalledWith(researchId);\n    expect(getDatasetMapLayers).toHaveBeenCalledWith(detail.id);\n    expect(emitted).toEqual(\n      DatasetsActions.datasetLoaded({\n        detail,\n        versions,\n        versionHistoryStatus: 'OBSERVED_CURRENT_ONLY',\n        mapLayers,\n      }),\n    );\n""",
+          )
+
+          # API client unit coverage.
+          client_spec = "libs/repository/api-client/src/lib/repository-api-client.spec.ts"
+          replace_once(
+              client_spec,
+              """  type DatasetVersion,\n  type MapLayer,\n""",
+              """  type DatasetVersion,\n  type ResearchArtifactVersionHistory,\n  type MapLayer,\n""",
+          )
+          replace_once(
+              client_spec,
+              """    const http = {\n      get: vi.fn((url: string) =>\n        of(url.endsWith('/versions') ? versions : detail),\n      ),\n    };\n""",
+              """    const versionHistory: ResearchArtifactVersionHistory = {\n      researchObjectId: detail.id,\n      status: 'OBSERVED_CURRENT_ONLY',\n      versions: [\n        {\n          id: detail.id,\n          label: detail.title,\n          current: true,\n          releasedOn: detail.releasedOn,\n          sourceUrl: detail.sourceUrl,\n        },\n      ],\n    };\n    const http = {\n      get: vi.fn((url: string) => {\n        if (url.includes('/research/') && url.endsWith('/versions')) {\n          return of(versionHistory);\n        }\n        return of(url.endsWith('/versions') ? versions : detail);\n      }),\n    };\n""",
+          )
+          replace_once(
+              client_spec,
+              """    await expect(\n      firstValueFrom(api.getDataset('tiger-line-north-dakota-2025')),\n    ).resolves.toEqual(detail);\n""",
+              """    await expect(\n      firstValueFrom(api.getResearchObjectVersions(researchId)),\n    ).resolves.toEqual(versionHistory);\n    expect(http.get).toHaveBeenCalledWith(\n      `http://api.test/api/research/${researchId}/versions`,\n    );\n\n    await expect(\n      firstValueFrom(api.getDataset('tiger-line-north-dakota-2025')),\n    ).resolves.toEqual(detail);\n""",
+          )
+          PY
+
+      - name: Regenerate OpenAPI TypeScript contract
+        run: pnpm run openapi:generate
+
+      - name: Format implementation
+        run: pnpm exec nx format:write --all
+
+      - name: Validate OpenAPI contract
+        run: |
+          pnpm run openapi:lint
+          pnpm run openapi:check
+
+      - name: Validate discovery UI and API client
+        run: |
+          pnpm exec nx test repository-api-client --skip-nx-cache
+          pnpm exec nx test discovery-ui --skip-nx-cache
+          pnpm exec nx lint discovery-ui
+          pnpm exec nx build discovery-ui --configuration=production --skip-nx-cache
+
+      - name: Validate repository API
+        run: pnpm exec nx test repository-api --skip-nx-cache
+
+      - name: Remove one-shot implementation workflow
+        run: rm .github/workflows/implement-version-history-phase-a.yml
+
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: add truthful artifact version history foundation"
+          git push origin HEAD:feat/artifact-version-provenance
