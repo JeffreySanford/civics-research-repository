@@ -28,6 +28,15 @@ public final class DspaceManagedFields {
     public static final String RESEARCHER_FIELD = "crr.contributor.researcher";
     public static final String RELATION_FIELD = "crr.relation.edge";
 
+    /** Artifact-version provenance. Values are written only when actually observed. */
+    public static final String VERSION_LABEL_FIELD = "crr.version.label";
+    public static final String VERSION_DATE_FIELD = "crr.version.date";
+    public static final String SOURCE_SHA256_FIELD = "crr.provenance.sha256";
+    public static final String CAPTURED_AT_FIELD = "crr.provenance.capturedat";
+    public static final String IS_VERSION_OF_FIELD = "crr.version.isversionof";
+    public static final String SUPERSEDES_FIELD = "crr.version.supersedes";
+    public static final String CHANGE_NOTE_FIELD = "crr.version.changenote";
+
     public static final List<String> ALL = List.of(
             "dc.title",
             "dc.contributor.author",
@@ -48,7 +57,7 @@ public final class DspaceManagedFields {
             DspaceFileManifest.FIELD,
             // Reconciled like every other managed field. Safe to add: a source payload with no
             // value for one of these is skipped rather than written empty, so a harvest that says
-            // nothing about access cannot clear the access level a seeded item carries.
+            // nothing about access/provenance cannot clear richer metadata a seeded item carries.
             RESOURCE_TYPE_FIELD,
             ACCESS_FIELD,
             ACCESS_NOTE_FIELD,
@@ -56,6 +65,13 @@ public final class DspaceManagedFields {
             DOI_FIELD,
             RESEARCHER_FIELD,
             RELATION_FIELD,
+            VERSION_LABEL_FIELD,
+            VERSION_DATE_FIELD,
+            SOURCE_SHA256_FIELD,
+            CAPTURED_AT_FIELD,
+            IS_VERSION_OF_FIELD,
+            SUPERSEDES_FIELD,
+            CHANGE_NOTE_FIELD,
             SOURCE_IDENTIFIER_FIELD);
 
     private DspaceManagedFields() {}
