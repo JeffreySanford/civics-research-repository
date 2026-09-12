@@ -38,7 +38,9 @@
 .coverage-selection h2,
 .coverage-selection p,
 .coverage-controls__note,
-.coverage-controls__status {
+.coverage-controls__status,
+.population-context h2,
+.population-context p {
   margin: 0;
 }
 
@@ -71,7 +73,9 @@
 .coverage-controls__note,
 .coverage-controls__status,
 .coverage-selection p,
-.coverage-selection span {
+.coverage-selection span,
+.population-context p,
+.population-context small {
   color: var(--civics-text-secondary);
   line-height: 1.45;
 }
@@ -81,7 +85,9 @@
 .coverage-controls__note,
 .coverage-controls__status,
 .coverage-selection p,
-.coverage-selection span {
+.coverage-selection span,
+.population-context p,
+.population-context small {
   font-size: 0.82rem;
 }
 
@@ -189,8 +195,66 @@
 
 .coverage-card__attribution a,
 .coverage-list a,
-.coverage-selection a {
+.coverage-selection a,
+.population-context a {
   color: var(--mat-sys-primary);
+}
+
+.population-context {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.8rem;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-panel);
+}
+
+.population-context h2 {
+  font-size: 1.05rem;
+}
+
+.population-context__method {
+  padding: 0.65rem;
+  border-inline-start: 3px solid var(--civics-border-strong);
+  background: var(--civics-surface-muted);
+}
+
+.population-context__source,
+.population-context__source a {
+  overflow-wrap: anywhere;
+}
+
+.population-context__counties {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.population-context__counties li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.15rem 0.65rem;
+  align-items: baseline;
+  padding: 0.6rem;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-muted);
+}
+
+.population-context__counties span,
+.population-context__counties strong,
+.population-context__counties small {
+  overflow-wrap: anywhere;
+}
+
+.population-context__counties strong {
+  text-align: end;
+}
+
+.population-context__counties small {
+  grid-column: 1 / -1;
 }
 
 .coverage-selection {
@@ -292,6 +356,9 @@
   .coverage-controls select,
   .coverage-controls__note,
   .coverage-map,
+  .population-context,
+  .population-context__method,
+  .population-context__counties li,
   .coverage-selection,
   .coverage-list li,
   .coverage-list__item--selected {
