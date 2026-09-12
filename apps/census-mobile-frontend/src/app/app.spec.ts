@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { TestBed } from '@angular/core/testing';
 import {
@@ -18,7 +19,10 @@ import {
   SearchRankBadgeComponent,
   SearchRelevanceBadgeComponent,
 } from 'shared-ui';
-import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
+import {
+  SearchSummaryComponent,
+} from './components/search-summary/search-summary.component';
+import { MobileResearchMapPreviewComponent } from './mobile-research-map/mobile-research-map-preview.component';
 import { mobileResearchDetailReducer } from './state/research-detail/research-detail.reducer';
 import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
@@ -97,12 +101,14 @@ describe('App', () => {
         SearchExplainabilityDialogComponent,
         SearchRankBadgeComponent,
         SearchRelevanceBadgeComponent,
+        CommonModule,
       ],
       declarations: [
         App,
         MobileSearchFiltersComponent,
         MobileResearchDetailComponent,
         SearchSummaryComponent,
+        MobileResearchMapPreviewComponent,
       ],
       providers: [
         {
