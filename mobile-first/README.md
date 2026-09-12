@@ -40,6 +40,7 @@ The delivered mobile experience includes:
 - shared rank/relevance/explainability components consumed by both Angular frontends;
 - a compact non-interactive Research Coverage preview and lazy interactive `/research-map` route over the existing bounded spatial sidecar (#106 / PR #107);
 - semantic mapped/unmapped/truncation evidence outside WebGL plus useful fallback content when map rendering is unavailable;
+- mobile `Research` and `Research + Census area context` presets using existing Census-area summary extents without misrepresenting them as exact TIGER/Line geometry (#108 / PR #109);
 - responsive browser/axe evidence at 320, 390, 430 and 768px plus forced-colors, reduced-motion and keyboard-entry checks.
 
 Automated evidence is intentionally separate from manual assistive-technology verification. Issue #49 is closed **not planned**; these automated checks must not be described as completed manual Section 508, Trusted Tester, NVDA, JAWS or VoiceOver verification.
@@ -57,13 +58,13 @@ Automated evidence is intentionally separate from manual assistive-technology ve
 
 ## Active continuation
 
-The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103, design lifecycle evidence through PR #104, the read-only steward/status surface through PR #105, and the first mobile Research Coverage map slice through PR #107.
+The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103, design lifecycle evidence through PR #104, the read-only steward/status surface through PR #105, the first mobile Research Coverage map slice through PR #107, and Census-area context/presets through PR #109.
 
 Current work is tracked through repository issues:
 
-1. **#108 — Mobile Census area context and map presets (current)**: keep Research Coverage primary, add an explicit mobile context preset and Census-area orientation extent, and keep the current bounding-summary contract clearly distinct from exact TIGER/Line geometry.
+1. **#110 — Synchronize mobile map feature selection with the research list (current)**: use one local selected source identifier so pointer map selection, the keyboard-operable semantic list, MapLibre feature-state emphasis and the compact selected-research panel remain two views of the same state. The implementation and focused 320px automated evidence are ready; repository-wide PR validation and merge remain pending.
 
-Exact TIGER administrative geometry, Community/Workforce/Environment thematic presets and richer selected-feature/bottom-sheet behavior remain follow-up increments rather than being bundled into #108.
+Exact TIGER administrative geometry and Community/Workforce/Environment thematic presets remain separate future increments rather than being bundled into #110.
 
 ## Evidence and planning documents
 
