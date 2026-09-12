@@ -1,0 +1,128 @@
+<section class="detail-page" aria-labelledby="mobile-detail-title">
+  <button class="detail-back" type="button" (click)="backToResults()">
+    ← Back to results
+  </button>
+
+  @if (loading$ | async) {
+    <div class="detail-status" role="status">
+      <strong>Loading research object…</strong>
+      <span>Retrieving repository metadata and provenance.</span>
+    </div>
+  }
+
+  @if (error$ | async; as error) {
+    <div class="detail-status detail-status--error" role="alert">
+      <strong>Research object could not be loaded.</strong>
+      <span>{{ error }}</span>
+    </div>
+  }
+
+  @if (detail$ | async; as detail) {
+    @if (detail.source === 'FEDERATED') {
+      <aside class="provenance-note" role="note">
+        <strong>Federated metadata.</strong>
+        The publisher remains authoritative for this research object and its
+        downloadable files.
+      </aside>
+    }
+
+    <div class="detail-heading">
+      <p class="detail-eyebrow">
+        {{ detail.contentType ?? 'Research object' }}
+      </p>
+      <h1 #detailHeading id="mobile-detail-title" tabindex="-1">
+        {{ detail.title }}
+      </h1>
+      @if (detail.authors?.length) {
+        <p class="detail-authors">
+          @for (author of detail.authors; track author.name; let last = $last) {
+            <span>{{ author.name }}</span
+            >{{ last ? '' : ', ' }}
+          }
+        </p>
+      }
+      <p class="detail-summary">{{ detail.abstractText }}</p>
+    </div>
+
+    @if (detail.accessLevel && detail.accessLevel !== 'PUBLIC') {
+      <aside class="access-note" role="note">
+        <strong>{{ detail.accessLevel }}</strong>
+        @if (detail.accessNote) {
+          <span>{{ detail.accessNote }}</span>
+        }
+      </aside>
+    }
+
+    <dl class="detail-list">
+      <div>
+        <dt>Program</dt>
+        <dd>{{ detail.programName ?? detail.program }}</dd>
+      </div>
+      <div>
+        <dt>Publisher</dt>
+        <dd>{{ detail.publisher }}</dd>
+      </div>
+      <div>
+        <dt>Source system</dt>
+        <dd>{{ detail.sourceSystem }}</dd>
+      </div>
+      <div>
+        <dt>Geography</dt>
+        <dd>{{ detail.geography ?? 'Not specified' }}</dd>
+      </div>
+      <div>
+        <dt>Vintage</dt>
+        <dd>{{ detail.vintageYear ?? 'Not specified' }}</dd>
+      </div>
+      <div>
+        <dt>Access</dt>
+        <dd>{{ detail.accessLevel ?? 'Not stated' }}</dd>
+      </div>
+      <div>
+        <dt>Reuse</dt>
+        <dd>{{ detail.license ?? 'Not stated' }}</dd>
+      </div>
+      @if (detail.doi) {
+        <div>
+          <dt>DOI</dt>
+          <dd>{{ detail.doi }}</dd>
+        </div>
+      }
+    </dl>
+
+    <section class="detail-section" aria-labelledby="citation-heading">
+      <h2 id="citation-heading">Citation</h2>
+      <p>{{ detail.citation }}</p>
+    </section>
+
+    <section class="detail-section" aria-labelledby="files-heading">
+      <h2 id="files-heading">Files and source</h2>
+      @if (detail.files.length) {
+        <ul class="detail-files">
+          @for (file of detail.files; track file.id) {
+            <li>
+              <strong>{{ file.label }}</strong>
+              <span>{{ file.format }}</span>
+              <a [href]="file.url" target="_blank" rel="noreferrer"
+                >Open file</a
+              >
+            </li>
+          }
+        </ul>
+      } @else if (detail.source === 'FEDERATED') {
+        <p>
+          No publisher files are preserved locally for this federated record.
+        </p>
+      } @else {
+        <p>No files are listed for this research object.</p>
+      }
+      <a
+        class="authoritative-link"
+        [href]="detail.sourceUrl"
+        target="_blank"
+        rel="noreferrer"
+        >View authoritative source</a
+      >
+    </section>
+  }
+</section>
