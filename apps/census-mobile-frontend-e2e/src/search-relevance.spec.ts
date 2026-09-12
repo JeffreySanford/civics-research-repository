@@ -161,9 +161,9 @@ test.describe('mobile relevance and filter evidence', () => {
     await page.getByRole('button', { name: 'Search' }).click();
 
     await expect(page.getByText(`Results for “${query}”`)).toBeVisible();
-    await expect(page.getByText('Rank 1')).toBeVisible();
+    await expect(page.getByText('Rank 1', { exact: true })).toBeVisible();
     await expect(page.getByText('Strong match')).toBeVisible();
-    await expect(page.getByText('Rank 2')).toBeVisible();
+    await expect(page.getByText('Rank 2', { exact: true })).toBeVisible();
     await expect(page.getByText('Weak match')).toBeVisible();
     await expect(
       page.getByText('Match labels are query-relative search evidence'),
