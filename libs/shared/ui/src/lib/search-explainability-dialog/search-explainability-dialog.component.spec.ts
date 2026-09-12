@@ -9,7 +9,9 @@ describe('SearchExplainabilityDialogComponent', () => {
   });
 
   it('renders server-owned ranking evidence with calibration caveats', () => {
-    const fixture = TestBed.createComponent(SearchExplainabilityDialogComponent);
+    const fixture = TestBed.createComponent(
+      SearchExplainabilityDialogComponent,
+    );
     const component = fixture.componentInstance;
     component.resultTitle = 'North Dakota migration example';
     component.query = 'North Dakota migration';
@@ -40,7 +42,9 @@ describe('SearchExplainabilityDialogComponent', () => {
   });
 
   it('uses a result-specific accessible name on the entry control', () => {
-    const fixture = TestBed.createComponent(SearchExplainabilityDialogComponent);
+    const fixture = TestBed.createComponent(
+      SearchExplainabilityDialogComponent,
+    );
     fixture.componentInstance.resultTitle = 'County migration estimates';
     fixture.componentInstance.query = 'migration';
     fixture.detectChanges();
@@ -54,7 +58,9 @@ describe('SearchExplainabilityDialogComponent', () => {
   });
 
   it('keeps missing field evidence explicit', () => {
-    const fixture = TestBed.createComponent(SearchExplainabilityDialogComponent);
+    const fixture = TestBed.createComponent(
+      SearchExplainabilityDialogComponent,
+    );
     fixture.componentInstance.resultTitle = 'Research object';
     fixture.componentInstance.query = 'workforce';
     fixture.componentInstance.rank = 4;

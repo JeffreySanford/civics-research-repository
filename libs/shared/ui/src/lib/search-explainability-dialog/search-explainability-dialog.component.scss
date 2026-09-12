@@ -85,7 +85,8 @@
   display: grid;
   gap: 0;
   margin: 0;
-  border-block-start: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-block-start: 1px solid
+    color-mix(in srgb, currentColor 25%, transparent);
 }
 
 .explainability-dialog__facts > div {

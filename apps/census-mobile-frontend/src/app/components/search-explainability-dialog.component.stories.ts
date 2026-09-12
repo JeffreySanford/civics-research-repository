@@ -31,10 +31,7 @@ export const StrongUncalibrated: Story = {};
 
 export const WithActiveFilters: Story = {
   args: {
-    activeFilters: [
-      { label: 'Dataset' },
-      { label: 'Geography: North Dakota' },
-    ],
+    activeFilters: [{ label: 'Dataset' }, { label: 'Geography: North Dakota' }],
   },
 };
 

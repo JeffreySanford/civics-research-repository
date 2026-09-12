@@ -111,6 +111,8 @@ export class SearchExplainabilityDialogComponent {
   }
 
   protected get filterItems(): readonly SearchExplainabilityFilter[] {
-    return this.activeFilters.filter((filter) => filter.label.trim().length > 0);
+    return this.activeFilters.filter(
+      (filter) => filter.label.trim().length > 0,
+    );
   }
 }

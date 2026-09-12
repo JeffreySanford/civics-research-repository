@@ -128,6 +128,8 @@ test.describe('desktop search ranking presentation', () => {
     await expect(page.locator('.search-rank-badge')).toHaveCount(0);
     await expect(page.locator('.relevance-badge')).toHaveCount(0);
     await expect(page.locator('.results-relevance-note')).toHaveCount(0);
-    await expect(page.locator('lib-search-explainability-dialog')).toHaveCount(0);
+    await expect(page.locator('lib-search-explainability-dialog')).toHaveCount(
+      0,
+    );
   });
 });

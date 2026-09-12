@@ -376,7 +376,9 @@ describe('App', () => {
     expect(compiled.querySelector('.relevance-badge')).toBeNull();
     expect(compiled.querySelector('.search-rank-badge')).toBeNull();
     expect(compiled.querySelector('.results__relevance-note')).toBeNull();
-    expect(compiled.querySelector('lib-search-explainability-dialog')).toBeNull();
+    expect(
+      compiled.querySelector('lib-search-explainability-dialog'),
+    ).toBeNull();
   });
 
   it('shows result range and pagination after results load', () => {

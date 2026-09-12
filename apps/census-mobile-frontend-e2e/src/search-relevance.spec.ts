@@ -188,7 +188,9 @@ test.describe('mobile relevance and filter evidence', () => {
     await expect(dialog).toContainText('Rank 1');
     await expect(dialog).toContainText('Strong');
     await expect(dialog.getByText('migration', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('North Dakota', { exact: true })).toBeVisible();
+    await expect(
+      dialog.getByText('North Dakota', { exact: true }),
+    ).toBeVisible();
     await expect(dialog).toContainText('not calibrated');
     await expect(dialog).toContainText('exact numerical contribution');
 
@@ -297,7 +299,9 @@ test.describe('mobile relevance and filter evidence', () => {
     ).toBeVisible();
     await expect(page.locator('.relevance-badge')).toHaveCount(0);
     await expect(page.locator('.results__relevance-note')).toHaveCount(0);
-    await expect(page.locator('lib-search-explainability-dialog')).toHaveCount(0);
+    await expect(page.locator('lib-search-explainability-dialog')).toHaveCount(
+      0,
+    );
     await expect(page.getByText('644 matching records')).toBeVisible();
 
     const accessibility = await new AxeBuilder({ page })
