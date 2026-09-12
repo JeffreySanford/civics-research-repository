@@ -29,9 +29,12 @@
           <option value="research-area-context">
             Research + Census area context
           </option>
+          <option value="community-population">
+            Community · Population growth
+          </option>
         </select>
 
-        @if (mapPreset() === 'research-area-context') {
+        @if (mapPreset() !== 'research') {
           @if (censusAreaState$ | async; as areaState) {
             @if (areaState.status === 'loading') {
               <p class="coverage-controls__status" role="status">
@@ -72,9 +75,9 @@
           Census-area summary. It is not exact TIGER/Line administrative
           geometry and does not change the repository search.
         </p>
-      } @else if (mapPreset() === 'research-area-context') {
+      } @else if (mapPreset() !== 'research') {
         <p class="coverage-controls__note">
-          Choose a Census area to add an orientation extent while keeping the
+          Choose a Census area to add geographic context while keeping the
           research query unchanged.
         </p>
       }
@@ -172,6 +175,88 @@
       >OpenStreetMap contributors</a
     >. Research geometry comes from publisher-supplied spatial metadata.
   </p>
+
+  @if (expanded && mapPreset() === 'community-population') {
+    <section
+      class="population-context"
+      aria-labelledby="mobile-population-context-heading"
+      data-testid="mobile-population-context"
+    >
+      <h2 id="mobile-population-context-heading">Community population context</h2>
+      @if (!selectedCensusArea()) {
+        <p>Choose a Census area above to load county population growth.</p>
+      } @else if (populationState$ | async; as populationState) {
+        @if (populationState.status === 'loading') {
+          <p role="status">
+            Loading county population growth for {{ populationState.geography }}…
+          </p>
+        } @else if (populationState.status === 'error') {
+          <p role="alert">
+            County population context unavailable: {{ populationState.message }}
+          </p>
+        } @else {
+          <p role="status" aria-label="County population context">
+            Showing {{ populationState.response.measureLabel }} for
+            {{ populationState.response.geography }},
+            {{ populationPeriod(populationState.response) }}.
+          </p>
+          <p class="population-context__method">
+            Orange indicates population loss, blue indicates population growth,
+            and the neutral midpoint is zero. Every county value is also listed
+            below, so color is not the only way the change is communicated.
+          </p>
+          <p class="population-context__source">
+            Values:
+            <a
+              [href]="populationState.response.sourceUrl"
+              target="_blank"
+              rel="noreferrer"
+              >{{ populationState.response.source }}</a
+            >
+            (Vintage {{ populationState.response.sourceVintage }}). Geometry:
+            <a
+              [href]="populationState.response.geometrySourceUrl"
+              target="_blank"
+              rel="noreferrer"
+              >{{ populationState.response.geometryAttribution }}</a
+            >
+            (Vintage {{ populationState.response.geometryVintage }}).
+          </p>
+
+          @if (populationState.response.counties.length === 0) {
+            <p>No county values are available for this Population Estimates view.</p>
+          } @else {
+            <ul
+              class="population-context__counties"
+              [attr.aria-label]="
+                populationState.response.measureLabel +
+                ' for ' +
+                populationState.response.geography +
+                ', ' +
+                populationPeriod(populationState.response)
+              "
+            >
+              @for (
+                county of populationState.response.counties;
+                track county.fips
+              ) {
+                <li>
+                  <span>{{ county.name }}</span>
+                  <strong>
+                    {{ populationValueLabel(populationState.response, county) }}
+                  </strong>
+                  <small>
+                    {{ populationState.response.year }} population
+                    {{ populationCountLabel(county.population) }}
+                  </small>
+                </li>
+              }
+            </ul>
+          }
+        }
+      }
+    </section>
+  }
 
   @if (expanded) {
     <section
