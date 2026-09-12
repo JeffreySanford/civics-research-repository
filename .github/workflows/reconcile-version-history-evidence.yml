@@ -46,7 +46,7 @@ jobs:
           replace_once(
               mock_path,
               """  await page.route(`**/api/research/*`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    const researchId = pathname.split('/research/')[1] ?? '';\n    const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: datasetDetail(canonicalId),\n    });\n  });\n\n  // Layers are geography-specific,""",
-              """  await page.route(`**/api/research/*`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    if (pathname.endsWith('/versions')) {\n      await route.fallback();\n      return;\n    }\n\n    const researchId = pathname.split('/research/')[1] ?? '';\n    const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: datasetDetail(canonicalId),\n    });\n  });\n\n  // Version-history knowledge is authority-neutral. The fixture intentionally exposes only the\n  // record we actually observed; it must never manufacture a previous year from vintage metadata.\n  await page.route(`**/api/research/*/versions`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    const encodedId =\n      pathname.split('/research/')[1]?.replace(/\\/versions$/, '') ?? '';\n    const canonicalId = Buffer.from(encodedId, 'base64url').toString('utf8');\n    const detail = datasetDetail(canonicalId);\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: {\n        researchObjectId: canonicalId,\n        status: 'OBSERVED_CURRENT_ONLY',\n        versions: [\n          {\n            id: `${canonicalId}-current`,\n            label: detail.title,\n            releasedOn: detail.releasedOn,\n            current: true,\n            sourceUrl: detail.sourceUrl,\n          },\n        ],\n      },\n    });\n  });\n\n  // Layers are geography-specific,""",
+              """  await page.route(`**/api/research/*`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    if (pathname.endsWith('/versions')) {\n      await route.fallback();\n      return;\n    }\n\n    const researchId = pathname.split('/research/')[1] ?? '';\n    const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: datasetDetail(canonicalId),\n    });\n  });\n\n  // Version-history knowledge is authority-neutral. This fixture exposes only the record that was\n  // actually observed; it must never manufacture a previous year from vintage metadata.\n  await page.route(`**/api/research/*/versions`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    const encodedId =\n      pathname.split('/research/')[1]?.replace(/\\/versions$/, '') ?? '';\n    const canonicalId = Buffer.from(encodedId, 'base64url').toString('utf8');\n    const detail = datasetDetail(canonicalId);\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: {\n        researchObjectId: canonicalId,\n        status: 'OBSERVED_CURRENT_ONLY',\n        versions: [\n          {\n            id: `${canonicalId}-current`,\n            label: detail.title,\n            releasedOn: detail.releasedOn,\n            current: true,\n            sourceUrl: detail.sourceUrl,\n          },\n        ],\n      },\n    });\n  });\n\n  // Layers are geography-specific,""",
           )
 
           replace_once(
@@ -74,7 +74,7 @@ jobs:
               '<span class="status-pill">Current observed record</span>',
           )
 
-          unit_spec = r'''import { provideNoopAnimations } from '@angular/platform-browser/animations';
+          Path('apps/discovery-ui/src/app/pages/dataset-detail-page.version-history.spec.ts').write_text(r'''import { provideNoopAnimations } from '@angular/platform-browser/animations';
           import { ComponentFixture, TestBed } from '@angular/core/testing';
           import { provideRouter } from '@angular/router';
           import { provideMockStore } from '@ngrx/store/testing';
@@ -143,9 +143,12 @@ jobs:
             await fixture.whenStable();
             fixture.detectChanges();
 
-            const versionsTab = Array.from(
-              fixture.nativeElement.querySelectorAll<HTMLElement>('[role="tab"]'),
-            ).find((tab) => tab.textContent?.trim() === 'Versions');
+            const tabs = Array.from(
+              fixture.nativeElement.querySelectorAll('[role="tab"]') as NodeListOf<HTMLElement>,
+            );
+            const versionsTab = tabs.find(
+              (tab) => tab.textContent?.trim() === 'Versions',
+            );
             expect(versionsTab).toBeTruthy();
             versionsTab?.click();
             fixture.detectChanges();
@@ -160,7 +163,6 @@ jobs:
                 currentVersion,
               ]);
               const text = fixture.nativeElement.textContent as string;
-
               expect(text).toContain(
                 'Only the current repository/source record has been observed. Earlier or later version history is not established.',
               );
@@ -176,15 +178,13 @@ jobs:
                 releasedOn: '2025-06-01',
                 current: false,
                 versionLabel: '2025.1',
-                sourceUrl:
-                  'https://example.gov/research/version-history-example/2025.1',
+                sourceUrl: 'https://example.gov/research/version-history-example/2025.1',
               };
               const fixture = await renderVersionHistory('HISTORY_AVAILABLE', [
                 currentVersion,
                 priorVersion,
               ]);
               const text = fixture.nativeElement.textContent as string;
-
               expect(text).toContain(
                 'The repository has observed version-lineage records for this research artifact.',
               );
@@ -195,19 +195,15 @@ jobs:
             it('states that provenance is unavailable instead of inferring history', async () => {
               const fixture = await renderVersionHistory('UNAVAILABLE', []);
               const text = fixture.nativeElement.textContent as string;
-
               expect(text).toContain(
                 'Version provenance is not available for this research artifact.',
               );
               expect(text).not.toContain('Current observed record');
             });
           });
-          '''
-          Path('apps/discovery-ui/src/app/pages/dataset-detail-page.version-history.spec.ts').write_text(
-              '\n'.join(line[10:] if line.startswith('          ') else line for line in unit_spec.splitlines()) + '\n'
-          )
+          '''.replace('          ', ''))
 
-          story = r'''import { provideNoopAnimations } from '@angular/platform-browser/animations';
+          Path('apps/discovery-ui/src/app/pages/dataset-detail-page.stories.ts').write_text(r'''import { provideNoopAnimations } from '@angular/platform-browser/animations';
           import { provideRouter } from '@angular/router';
           import { provideMockStore } from '@ngrx/store/testing';
           import {
@@ -235,8 +231,7 @@ jobs:
             title: 'Version provenance contract example',
             program: 'OTHER',
             publisher: 'Example Federal Publisher',
-            abstractText:
-              'Story fixture for observed, available, and unavailable version-history states.',
+            abstractText: 'Story fixture for observed, available, and unavailable version-history states.',
             geography: 'United States',
             files: [],
             citation: 'Version provenance contract example.',
@@ -255,27 +250,22 @@ jobs:
             sourceUrl: 'https://example.gov/research/version-history-story/2025.2',
           };
 
-          function versionState(
-            status: VersionHistoryStatus,
-            versions: readonly ResearchArtifactVersion[],
-          ) {
-            return {
-              [datasetsFeatureKey]: {
-                ...initialDatasetsState,
-                detail,
-                versions,
-                versionHistoryStatus: status,
-              },
-            };
-          }
-
           function withState(
             status: VersionHistoryStatus,
             versions: readonly ResearchArtifactVersion[],
           ) {
             return applicationConfig({
               providers: [
-                provideMockStore({ initialState: versionState(status, versions) }),
+                provideMockStore({
+                  initialState: {
+                    [datasetsFeatureKey]: {
+                      ...initialDatasetsState,
+                      detail,
+                      versions,
+                      versionHistoryStatus: status,
+                    },
+                  },
+                }),
               ],
             });
           }
@@ -309,9 +299,7 @@ jobs:
                   'Only the current repository/source record has been observed. Earlier or later version history is not established.',
                 ),
               ).toBeInTheDocument();
-              await expect(
-                canvas.getByText('Current observed record'),
-              ).toBeInTheDocument();
+              await expect(canvas.getByText('Current observed record')).toBeInTheDocument();
               await expect(canvas.queryByText('TIGER_LINE 2024')).toBeNull();
             },
           };
@@ -326,8 +314,7 @@ jobs:
                   releasedOn: '2025-06-01',
                   current: false,
                   versionLabel: '2025.1',
-                  sourceUrl:
-                    'https://example.gov/research/version-history-story/2025.1',
+                  sourceUrl: 'https://example.gov/research/version-history-story/2025.1',
                 },
               ]),
             ],
@@ -338,12 +325,8 @@ jobs:
                   'The repository has observed version-lineage records for this research artifact.',
                 ),
               ).toBeInTheDocument();
-              await expect(
-                canvas.getByText('Observed release 2025.2'),
-              ).toBeInTheDocument();
-              await expect(
-                canvas.getByText('Observed release 2025.1'),
-              ).toBeInTheDocument();
+              await expect(canvas.getByText('Observed release 2025.2')).toBeInTheDocument();
+              await expect(canvas.getByText('Observed release 2025.1')).toBeInTheDocument();
             },
           };
 
@@ -359,23 +342,18 @@ jobs:
               await expect(canvas.queryByText('Current observed record')).toBeNull();
             },
           };
-          '''
-          Path('apps/discovery-ui/src/app/pages/dataset-detail-page.stories.ts').write_text(
-              '\n'.join(line[10:] if line.startswith('          ') else line for line in story.splitlines()) + '\n'
-          )
+          '''.replace('          ', ''))
 
           replace_once(
               'documentation/architecture.md',
               """- does not invent local versions, map layers or file preservation.\n\nCurated repository detail retains DSpace-owned enrichments such as versions, files and repository-specific relationships.""",
               """- does not invent version records; the version-history contract can report observed, unknown, or unavailable history without turning inference into provenance;\n- does not invent repository-only map layers or local file preservation.\n\nCurated repository detail retains DSpace-owned persisted version facts, files and repository-specific relationships. The authority-neutral version-history API can also report observed source evidence for federated records, but DSpace remains authoritative for curated repository version metadata.""",
           )
-
           replace_once(
               'documentation/architecture-diagrams.md',
               "`/datasets/:id` remains a compatibility UI route. Federated detail does not invent local versions, map layers or file preservation.",
               "`/datasets/:id` remains a compatibility UI route. Federated detail can report an explicit version-history knowledge state, but it does not invent version records, repository-only map layers, or local file preservation.",
           )
-
           replace_once(
               'documentation/open-science-research-objects.md',
               """- **Version history is not authoritative yet.** The current dataset version service synthesizes a\n  previous version from `vintageYear`. That is useful demo presentation but not acceptable provenance.""",
@@ -395,9 +373,6 @@ jobs:
           documentation/architecture-diagrams.md,
           documentation/open-science-research-objects.md
 
-      - name: Install Chromium for focused browser evidence
-        run: pnpm exec playwright install --with-deps chromium
-
       - name: Validate discovery UI unit and lint gates
         run: |
           pnpm exec nx test discovery-ui
@@ -405,6 +380,9 @@ jobs:
 
       - name: Build Storybook
         run: pnpm exec nx build-storybook discovery-ui --configuration=ci
+
+      - name: Install Chromium for browser evidence
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run Storybook interactions and axe
         shell: bash
