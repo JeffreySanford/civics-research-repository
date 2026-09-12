@@ -2,27 +2,33 @@
 
 Civics Research Repository is an independent **federal Open Science reference implementation** focused on the public research experience: accessible Angular discovery, provenance-aware research detail, geospatial analysis, reviewable evidence, and typed frontend/backend integration over a real mixed-authority corpus.
 
-The browser application is intentionally designed as a **government-grade data discovery frontend**, not as a thin UI over one repository or search engine.
+The project now contains **two Angular frontends over one typed application boundary**:
 
 ```text
-Angular 22 / NgRx / RxJS / MapLibre
-        |
-        | generated typed REST contract
-        v
-Spring repository API
-        |
-        +--> DSpace
-        +--> application PostgreSQL
-        +--> Solr / OpenSearch
+apps/discovery-ui                 :4200
+apps/census-mobile-frontend       :4300
+          \                       /
+           \ generated REST API  /
+                    |
+                    v
+        Spring repository-api     :8080/api
+                    |
+        +-----------+-----------+
+        |           |           |
+        v           v           v
+      DSpace   application   Solr / OpenSearch
+               PostgreSQL
 ```
 
-The UI owns interaction state, discovery workflows, presentation, accessibility and visualization. It does **not** call DSpace, Solr, OpenSearch or external publisher APIs directly.
+The browser applications own interaction state, discovery workflows, presentation, accessibility and visualization. They do **not** call DSpace, Solr, OpenSearch or external publisher APIs directly.
 
 This project is not affiliated with, endorsed by, or sponsored by the U.S. Census Bureau, USGS, DSpace, Apache Solr, Data.gov, DOE OSTI, or OpenSearch.
 
-## What the frontend demonstrates
+## What the frontends demonstrate
 
-### Discovery that remains shareable and explainable
+### Full discovery workspace
+
+`apps/discovery-ui` provides the broader research workspace: Discovery, authority-neutral research detail, Maps, Evidence, Search Lab and repository/admin workflows.
 
 `/discovery` searches curated DSpace research objects and retained federated publisher metadata through one typed application contract while keeping provenance visible.
 
@@ -34,9 +40,34 @@ The Angular/NgRx workflow demonstrates:
 - source system, origin, access level and authoritative-source presentation;
 - bounded result pages rather than client-side million-record processing;
 - keyboard-aware paging that restores focus to changed results;
-- a context-preserving handoff from discovery into Maps.
+- a context-preserving handoff from discovery into Maps;
+- server-owned rank and query-relative match-strength evidence shared with the mobile frontend.
 
 The UI does not maintain a fixed allowlist for publisher program names. Values from the active search projection survive URL/deep-link round trips without being collapsed into a curated frontend enum.
+
+### Mobile-first Census/Civics discovery
+
+`apps/census-mobile-frontend` is a separate module-based Angular shell over the same API/search capability, designed from a 320px baseline without duplicating backend or search infrastructure.
+
+The delivered mobile search-to-research journey includes:
+
+- NgRx/RxJS ownership of asynchronous/shared search and research-detail state;
+- local Signals for appropriate synchronous presentation state only;
+- shareable query/filter URL intent;
+- accessible mobile filtering and active-filter removal;
+- scalable cursor traversal and global result rank;
+- server-owned `Strong / Good / Moderate / Weak / Low` query-relative relevance evidence;
+- query-wide result-type summaries from authoritative server facets;
+- typed field/term match evidence;
+- authority-neutral `/research/:researchId` detail navigation;
+- exact return-to-search/filter URL and focus behavior;
+- typed research-package relationships;
+- broader related-research navigation kept distinct from package assertions;
+- automated responsive/browser/axe evidence at representative phone/tablet widths plus forced-colors, reduced-motion and keyboard-entry checks.
+
+PR #92 promoted the proven rank/relevance presentation into the existing `shared-ui` library so both Angular applications consume the same server-owned semantics.
+
+See [Mobile-First Census Frontend](mobile-first/README.md) for the implementation/evidence record and current continuation.
 
 ### Research-object detail without repository coupling
 
@@ -44,13 +75,13 @@ Canonical `/research/:id` routing resolves either curated repository content or 
 
 Curated records can expose repository-owned files, relationships, versions, citations and access statements. Federated records identify their external source/publisher and authoritative resource without implying that publisher files are preserved locally.
 
-`/datasets/:id` remains a compatibility route.
+`/datasets/:id` remains a compatibility route in the full discovery frontend.
 
 ### Maps where the canvas is not the accessibility model
 
 `/maps` combines MapLibre visualization with equivalent semantic tables/lists driven from the same application state.
 
-TIGER/Line geography, LODES workplace employment and commuting flows, SAIPE context, optional USGS reference layers and Data.gov spatial coverage can be explored without making WebGL the only way to obtain the underlying research values.
+The map workspace includes Census/TIGER geometry, LODES workplace employment and commuting flows, SAIPE context, Data.gov research extents, Vintage 2025 Population Estimates, 2023 County Business Patterns, USGS hydrography/earthquakes and bounded USGS 3DEP terrain/reference imagery.
 
 Selection, geography, layer state, URL context, announcements and semantic equivalents are coordinated through Angular/NgRx rather than through direct map-to-DOM coupling.
 
@@ -64,12 +95,15 @@ The repository includes:
 - component-state tests for loading, failure, empty and restricted states;
 - Storybook interaction + axe evidence;
 - Playwright real-browser semantics and workflows;
-- reflow, zoom, contrast, dark-mode and forced-colors checks;
+- responsive/reflow, zoom, contrast, dark-mode and forced-colors checks;
+- reduced-motion and focus behavior where applicable;
 - map-equivalence and keyboard preconditions;
 - generated automated evidence;
-- explicit manual keyboard/NVDA/JAWS/map/cognitive checklists that remain separate from automated passes.
+- explicit manual keyboard/NVDA/JAWS/VoiceOver/map/cognitive protocols kept separate from automation.
 
-The project does **not** represent automated evidence as completed manual Section 508 certification.
+Issue #49 is closed **not planned**. Manual assistive-technology execution is not part of the current completion path.
+
+The project therefore does **not** represent automated evidence as completed manual Section 508/Trusted Tester certification or completed NVDA/JAWS/VoiceOver verification.
 
 ### Generated contracts instead of duplicated frontend DTOs
 
@@ -81,19 +115,20 @@ See [Frontend Engineering Case Study](documentation/frontend-engineering-case-st
 
 ## Primary demo paths
 
-The portfolio-facing route order is intentionally frontend-first:
+The portfolio-facing route order remains frontend-first:
 
-1. **Discovery** — search, facets, URL state and provenance;
+1. **Discovery** — search, facets, URL state, rank/relevance and provenance;
 2. **Research detail** — authority-neutral object presentation;
-3. **Maps** — visual/nonvisual state equivalence;
-4. **Evidence** — accessibility and scientific claim boundaries;
-5. **Search Lab** — supporting Solr/OpenSearch engineering depth.
+3. **Mobile-first search/research journey** — 320px-first filtering, evidence and context navigation;
+4. **Maps** — visual/nonvisual state equivalence;
+5. **Evidence** — accessibility and scientific claim boundaries;
+6. **Search Lab** — supporting Solr/OpenSearch engineering depth.
 
 For interviews or stakeholder review, use the [5–8 minute frontend-first walkthrough](documentation/demo/frontend-first-walkthrough.md). The deeper [15–20 minute demo](documentation/demo/demo-script.md) remains available for repository, synchronization and search-architecture discussion.
 
 ## Scale validates the frontend; it does not define the product
 
-The current certified C2 corpus is:
+The certified C2 corpus is:
 
 - **500,000 Data.gov + 500,000 DOE OSTI** retained federated records;
 - **1,000,000** federated records in application PostgreSQL;
@@ -119,7 +154,7 @@ Within the certified 1,000,181-object standalone Docker experiment:
 
 The claim remains scoped to the exact corpus, engine versions, resources, mappings, treatment, workload and standalone topology. It is **not** a universal claim that Solr is faster than OpenSearch.
 
-Historical C2 and adversarial C2.1 remain separate evidence layers in `/evidence`.
+Historical C2 and adversarial C2.1 remain separate immutable evidence layers in `/evidence`.
 
 See [Federated Scale Evidence](documentation/federation/scale-evidence.md) and the Evidence UI for the measured storage, projection and search-research record.
 
@@ -128,12 +163,18 @@ See [Federated Scale Evidence](documentation/federation/scale-evidence.md) and t
 ```text
 Public researcher / repository steward
                   |
-                  v
-Angular 22 + NgRx + RxJS + MapLibre
-Discovery | Research detail | Maps | Evidence | Search Lab
-                  |
-                  | generated OpenAPI REST contract
-                  v
+          +-------+-------+
+          |               |
+          v               v
+  discovery-ui      census-mobile-frontend
+ Angular / NgRx      Angular / NgRx
+ RxJS / MapLibre     RxJS / local Signals
+          \               /
+           \             /
+            typed OpenAPI
+                REST
+                 |
+                 v
 Java 21 / Spring Boot repository-api
        |                 |                    |
        |                 |                    v
@@ -174,6 +215,8 @@ The Admin data-flow view exposes **Authority → Retention → Projection**, and
 ## Stack
 
 - Angular 22, Angular Material, NgRx, RxJS, and MapLibre GL.
+- Two Angular applications: `discovery-ui` and `census-mobile-frontend`.
+- Existing `shared-ui`, `shared-material`, `shared-accessibility`, `repository-models` and generated `repository-api-client` libraries provide bounded reuse.
 - Nx 23 for workspace orchestration.
 - Java 21 and Spring Boot for the typed API, repository synchronization and federated harvesting.
 - OpenAPI-generated TypeScript and Java DTOs.
@@ -187,9 +230,17 @@ The Admin data-flow view exposes **Authority → Retention → Projection**, and
 
 ## Current status
 
-The core product, C2/C2.1 search-research program, and frontend portfolio presentation are implemented. The remaining recorded verification gap is optional human assistive-technology evidence under #49; additional federation or production-cloud work is future scope rather than a completion prerequisite.
+The core product, C2/C2.1 search-research program, frontend portfolio alignment, mobile-first search-to-research experience and September dependency-security cleanup are implemented.
 
-The generated repository/platform baseline is [documentation/platform-status.md](documentation/platform-status.md). It derives volatile curated-catalog, source-inventory, mirror, adapter-registry and accessibility facts from committed artifacts.
+The active product-facing continuation is:
+
+1. **#97 — Shared result explainability dialog** across both Angular frontends;
+2. **#98 — Design lifecycle evidence** for a representative mobile-first slice;
+3. **#99 — Read-only repository steward/status workflow**.
+
+Additional federation, map breadth and production-cloud work are optional future scope rather than completion prerequisites.
+
+The generated repository/platform baseline is [documentation/platform-status.md](documentation/platform-status.md). It derives volatile curated-catalog, source-inventory, mirror, adapter-registry and accessibility facts from committed artifacts while keeping explicit delivered-surface/runtime facts centralized in its generator.
 
 Heavy live scale facts are recorded separately because a million-record local corpus and its storage measurements are intentionally not committed to Git.
 
@@ -214,25 +265,30 @@ pnpm run start:all
 
 Primary endpoints:
 
-| Service        | URL                                |
-| -------------- | ---------------------------------- |
-| Discovery UI   | `http://localhost:4200`            |
-| Repository API | `http://localhost:8080/api`        |
-| DSpace REST    | `http://localhost:8081/server/api` |
-| Discovery Solr | `http://localhost:8983/solr`       |
-| OpenSearch     | `http://localhost:9200`            |
-| DSpace Solr    | `http://localhost:8984/solr`       |
+| Service                | URL                                |
+| ---------------------- | ---------------------------------- |
+| Discovery UI           | `http://localhost:4200`            |
+| Mobile-first Census UI | `http://localhost:4300`            |
+| Repository API         | `http://localhost:8080/api`        |
+| DSpace REST            | `http://localhost:8081/server/api` |
+| Discovery Solr         | `http://localhost:8983/solr`       |
+| OpenSearch             | `http://localhost:9200`            |
+| DSpace Solr            | `http://localhost:8984/solr`       |
 
-If the Angular container is running but serving a stale/unresponsive UI, restart only that service:
+If an Angular container is running but serving a stale/unresponsive UI, restart only the affected service:
 
 ```bash
 docker compose restart discovery-ui
+# or
+docker compose restart census-mobile-frontend
 ```
 
 If a simple restart is insufficient:
 
 ```bash
 docker compose up -d --force-recreate discovery-ui
+# or
+docker compose up -d --force-recreate census-mobile-frontend
 ```
 
 Stop the full stack without deleting volumes:
@@ -247,6 +303,7 @@ Do not use the destructive `docker:reset:everything` command as an ordinary rest
 
 ```bash
 pnpm run start:all                 # complete local platform
+pnpm run start:mobile              # direct mobile-first frontend startup
 pnpm run start:all:rebuild         # rebuild/recreate app stack while retaining volumes
 pnpm run sync:diff                 # compare adapter metadata with DSpace
 pnpm run sync:apply                # apply owned metadata changes
@@ -254,7 +311,7 @@ pnpm run reindex                   # rebuild the selected public discovery proje
 pnpm run research:preflight        # non-mutating FEDERATED_1M/C2 readiness check
 pnpm run research:report           # current FEDERATED_1M research report
 pnpm run federation:sample:all     # bounded source-adapter sample verification
-pnpm run evidence:refresh          # run and record automated accessibility evidence
+pnpm run evidence:refresh          # run and record configured automated accessibility evidence
 pnpm run docs:status               # regenerate current platform status
 pnpm run quality:all               # deterministic ordinary repository quality gate
 ```
@@ -264,6 +321,7 @@ Heavy harvest/projection/measurement operations remain explicit. Ordinary PR CI 
 ## Documentation
 
 - [Frontend engineering case study](documentation/frontend-engineering-case-study.md)
+- [Mobile-first Census frontend](mobile-first/README.md)
 - [Frontend-first demo walkthrough](documentation/demo/frontend-first-walkthrough.md)
 - [Current generated platform status](documentation/platform-status.md)
 - [Federated scale evidence](documentation/federation/scale-evidence.md)
@@ -272,7 +330,7 @@ Heavy harvest/projection/measurement operations remain explicit. Ordinary PR CI 
 - [Open Science research objects](documentation/open-science-research-objects.md)
 - [Mapping and visualization](documentation/mapping-visualization.md)
 - [Section 508 and WCAG evidence](documentation/accessibility-508-wcag.md)
-- [Manual accessibility evidence](documentation/accessibility-manual-evidence.md)
+- [Manual accessibility protocol/reference](documentation/accessibility-manual-evidence.md)
 - [Full interview/demo package](documentation/demo/README.md)
 - [AWS modernization](documentation/aws-modernization.md)
 - [Future roadmap](planning/ROADMAP.md)

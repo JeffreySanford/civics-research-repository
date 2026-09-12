@@ -1,184 +1,104 @@
 # Mobile-First Census Frontend Backlog
 
-Status: active development
+Status: active continuation after the search-to-research delivery
 
-## Implementation Progress
+## Delivered baseline
 
-The original PR numbering below was a planning sequence, not a permanent branch contract. The implemented stack has intentionally combined some evidence work earlier where it reduced risk:
+The original PR1–PR7 planning sequence is complete and has been superseded by the implemented stack on `main`.
 
-- PR #86 delivered scalable mobile pagination, global rank, summaries, and the North Dakota migration acceptance query.
-- PR #87 delivers engine-backed query-relative relevance bands, mobile Storybook, 320px Playwright/axe evidence, and `start:all` integration for the mobile frontend.
-- The current PR 6 slice starts the planned search-summary work with an accessible query-wide result-type mix driven by server-returned facets.
-- Broader filter-drawer/URL orchestration from the separate richer search-container line is not being merged into this state machine implicitly; convergence must remain deliberate.
+Delivered capabilities now include:
 
-## PR 1: Planning and Workspace Baseline
+- `apps/census-mobile-frontend` on port `4300` beside `apps/discovery-ui` on `4200`;
+- generated repository API client reuse with no duplicate backend/search contract;
+- NgRx/RxJS search and research-detail state;
+- local Signals for appropriate synchronous presentation state;
+- shareable query/filter URL intent and accessible mobile filtering;
+- scalable cursor traversal, global rank and server-owned relevance evidence;
+- query-wide result-type summary and typed field/term match evidence;
+- mobile research detail with return-to-search/focus behavior;
+- typed research-package relationships and related-research traversal;
+- shared rank/relevance presentation across both Angular frontends;
+- Storybook/component evidence and Playwright/axe responsive coverage across representative phone/tablet widths;
+- full-stack startup integration.
 
-Goal: document the architectural choice and confirm the current app remains stable.
+Historical PR1/scaffold documents remain implementation history, not open tasks.
 
-Tasks:
+## #97 — Shared result explainability dialog
 
-- Add mobile-first planning docs.
-- Add PR 1 baseline checklist.
-- Add PR 1 readiness note with repository-verified app/API facts.
-- Add experience and engagement strategy.
-- Add infographics and data visualization plan.
-- Confirm current frontend and Storybook ports.
-- Confirm the existing `repository-api-client` search boundary.
-- Record the module-based Angular preference.
-- Define the Signals versus RxJS/NgRx ownership boundary.
-- Record the intended app name, port, Storybook role, and first vertical slice.
-
-Acceptance:
-
-- Docs explain why a second app exists.
-- Docs reuse the existing generated API client rather than proposing duplicate search contracts.
-- Docs prefer module-based Angular composition for the new app.
-- Docs allow Signals for appropriate local synchronous UI state while retaining NgRx/RxJS for shared/asynchronous search state.
-- Docs explain how infographics and data visualizations support search without becoming a separate analytics product.
-- Existing runtime code is not modified by the planning PR.
-
-## PR 2: Scaffold `census-mobile-frontend`
-
-Goal: create the new Angular app under `apps/` without implementing search behavior yet.
+Goal: give both Angular frontends one consistent, truthful `Why this matched` experience.
 
 Tasks:
 
-- Generate the app through Nx with module-based Angular composition (`standalone=false`).
-- Enable routing and SCSS.
-- Configure serve port `4300`.
-- Add a minimal mobile discovery shell/route.
-- Confirm the existing `repository-api-client` can be imported.
-- Add baseline lint/test/build coverage.
+- Add shared presentational information-control/dialog content to the existing `shared-ui` library.
+- Keep query/filter context and dialog orchestration in each application.
+- Present global ordinal rank separately from match strength.
+- Present server-owned relevance model/version/calibration metadata and caveats.
+- Render typed field/term match evidence.
+- Avoid raw Solr/OpenSearch explain/debug payloads in the browser contract.
+- Support mobile near-full-screen and larger-screen modal layouts through one semantic dialog contract.
+- Add keyboard open/close/Escape/focus-return coverage.
+- Add 320px reflow, forced-colors, Storybook, Playwright and axe evidence in both apps.
 
 Acceptance:
 
-- `apps/discovery-ui` remains unchanged and available on `4200`.
-- `apps/census-mobile-frontend` builds and can serve on `4300`.
-- No backend changes are required.
-- No duplicate API type/client library is created.
+- Both frontends explain the same API-owned ranking evidence consistently.
+- No client-side relevance formula or probability claim is introduced.
+- Focus behavior and narrow-width behavior are proven automatically.
+- Automated accessibility evidence is not described as manual AT verification.
 
-## PR 3: Repository API + NgRx/Signals State Foundation
+## #98 — Design lifecycle evidence
 
-Goal: establish the typed search boundary and state ownership model before building the full UI.
+Goal: make the frontend design/decision path reviewable rather than showing only final code/tests.
 
 Tasks:
 
-- Reuse `RepositorySearchApi`, `SearchQuery`, `SearchResponse`, `SearchResult`, `FacetGroup`, and `FacetValue` from `repository-api-client`.
-- Add search feature actions, reducer, selectors, and effects.
-- Use RxJS `switchMap` for stale-request cancellation.
-- Define Router query-parameter synchronization for shareable search state.
-- Add local Signals for appropriate synchronous UI state such as filter-drawer open/close and summary disclosure state.
-- Add tests proving NgRx and Signal state do not independently own the same source of truth.
-- Add realistic fixture responses only where component/Storybook testing requires them.
+- Select one representative mobile-first search/discovery slice.
+- Capture a low-fidelity wireframe or equivalent design-intent artifact.
+- Add an annotated component/interaction specification.
+- Link Storybook states and responsive breakpoints.
+- Link production implementation and automated browser/accessibility evidence.
+- Document touch-target, focus, breakpoint/reflow, rank-vs-match-strength, forced-colors, async-state and reuse/maintenance decisions.
+- Use Figma only if it improves the artifact; do not add it as a runtime dependency.
 
 Acceptance:
 
-- Search-domain state has one authoritative NgRx source of truth.
-- Local synchronous UI state can use Signals without being mirrored into NgRx unnecessarily.
-- Typed search requests use the existing repository API client.
-- URL serialization and request cancellation are testable.
+- One complete design lifecycle is visible from intent through implementation/evidence.
+- Design annotations point to real components/tests rather than generic UX claims.
+- No user-research or assistive-technology findings are fabricated or implied.
 
-## PR 4: Mobile Search Vertical Slice
+## #99 — Read-only repository steward/status surface
 
-Goal: deliver the first complete 320px-first discovery workflow.
+Goal: demonstrate an internal operational workflow without widening into privileged administration work.
 
 Tasks:
 
-- Build `DiscoverySearchBarComponent`.
-- Build `DiscoveryResultsHeaderComponent`.
-- Build `ResearchResultCardComponent`.
-- Build `DiscoveryResultsComponent`.
-- Build `DiscoveryFilterTriggerComponent`.
-- Build `DiscoveryFiltersComponent`.
-- Build `DiscoveryActiveFiltersComponent`.
-- Build `DiscoveryPaginationComponent`.
-- Build the mobile drawer/shell behavior.
-- Connect the components to the PR 3 state foundation.
+- Inventory existing API data for corpus/profile identity, projection identity, Solr/OpenSearch parity/status, synchronization/adapters and automated evidence state.
+- Define a concise read-only steward workflow distinct from existing Admin mutation flows.
+- Reuse the generated OpenAPI/client boundary.
+- Add API fields only where current contracts cannot truthfully express required status.
+- Present authority boundaries, stale/degraded/fallback states and timestamps where available.
+- Keep secrets, credentials and operator-only diagnostics out of the browser contract.
+- Add loading, empty, degraded and error states.
+- Add responsive/component/browser/axe evidence.
 
 Acceptance:
 
-- The workflow works at 320px without horizontal document overflow.
-- Search form is keyboard operable.
-- Filter drawer traps focus, supports Escape, and returns focus to the trigger.
-- Active filters are removable and result state remains synchronized.
-- Loading, empty, error, and populated states are explicit.
+- A repository steward can understand current system/corpus/search status without privileged actions.
+- The surface does not duplicate Admin solely for portfolio breadth.
+- Authority/provenance and degraded-state wording remain explicit.
 
-## PR 5: Storybook Responsive Matrix
+## Deferred / optional work
 
-Goal: make mobile/tablet/desktop component states reviewable in isolation.
+The following remain optional and should be promoted only when a concrete question justifies them:
 
-Tasks:
+- additional map layers from repository issue #69;
+- NASA CMR/PubMed/OpenAlex federation breadth after durable identity rules;
+- vector/hybrid search experiments;
+- local Kubernetes/search clustering;
+- AWS/IaC deployment work.
 
-- Configure mobile Storybook on port `4500`.
-- Add viewport presets for 320px, 390px, 430px, 768px, 1024px, and 1440px.
-- Add stories for result cards, filters, results, pagination, shell, and search-summary states.
-- Add stories for loading, empty, error, long content, missing metadata, restricted, and federated results.
-- Add Storybook axe checks where practical.
+## Accessibility boundary
 
-Acceptance:
+Issue #49 is closed **not planned**. Existing manual accessibility/usability protocols remain reference templates only.
 
-- Reviewers can inspect all target widths without running the full application.
-- Presentational states are testable independently from live backend availability.
-- Signal-driven local state behaves correctly in interactive stories.
-
-## PR 6: Search Summary and Data Visualization
-
-Goal: add the first useful, trustworthy, accessible visual summary of a search result set.
-
-Candidate visualizations:
-
-- result-type mix
-- top programs
-- year distribution/range
-- source-system mix
-- filter-impact summary
-
-Tasks:
-
-- Choose one visualization backed by server-provided facets/aggregate data.
-- Add `DiscoverySearchSummaryComponent` or equivalent.
-- Keep expanded/collapsed summary state local, with a Signal if appropriate.
-- Add a text/table equivalent for all visual information.
-- Verify color is not the sole encoding.
-- Explicitly label any page-local analysis; do not present it as corpus-wide evidence.
-
-Acceptance:
-
-- Visualization answers a real search-comprehension question.
-- Data provenance/scope is clear.
-- Text/table equivalence is complete.
-- The visualization does not displace the primary search/results workflow on mobile.
-
-## PR 7: Browser and Accessibility Evidence
-
-Goal: validate the assembled mobile-first frontend across the key user journeys.
-
-Tasks:
-
-- Add E2E coverage for search, filters drawer, pagination, and URL state.
-- Add 320px reflow assertions.
-- Add keyboard-flow assertions.
-- Add focus restoration assertions.
-- Add live-region/status assertions where stable.
-- Validate Signal-driven drawer/disclosure state through observable DOM/ARIA behavior rather than implementation details.
-- Add Playwright/axe coverage for assembled journeys.
-- Record manual keyboard, zoom/reflow, forced-colors, reduced-motion, and screen-reader checks separately from automated evidence.
-
-Acceptance:
-
-- Mobile discovery workflow has automated browser/accessibility evidence.
-- Manual accessibility evidence remains clearly distinguished from automated checks.
-- Existing `discovery-ui` regressions are not introduced.
-
-## Deferred: Convergence Decision
-
-After the mobile-first app has real implementation evidence, decide whether it remains a parallel frontend or informs a future refactor of `discovery-ui`.
-
-Possible outcomes:
-
-- keep both frontends independent
-- promote genuinely shared presentational components to a `census-ui` library
-- converge selected mobile-first patterns into the existing app
-- eventually replace the older discovery surface if evidence justifies it
-
-Do not make convergence a prerequisite for completing the mobile-first experiment.
+Continue automated keyboard/focus/reflow/forced-colors/axe evidence where it directly supports implementation quality, but do not label it as completed manual Section 508, Trusted Tester, NVDA, JAWS or VoiceOver validation.

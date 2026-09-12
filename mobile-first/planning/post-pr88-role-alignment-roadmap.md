@@ -1,67 +1,74 @@
-# Post-PR88 Census Role Alignment Roadmap
+# Census UI Role Alignment Roadmap
 
-Status: active continuation plan after the relevance/startup and search-summary slices.
+Status: active continuation after PR #95
 
 ## Principle
 
-Keep the existing mobile-first roadmap, but bias new work toward the remaining UI/federal-engineering evidence rather than adding another major search technology. The repository already demonstrates Angular, NgRx/RxJS, Signals, REST/OpenAPI, Solr, DSpace, Spring, PostgreSQL, responsive design, and automated accessibility deeply. The highest-value additions now make the human and requirements process equally visible.
+Keep the repository focused on demonstrable Angular/federal UI engineering rather than adding new technologies for novelty. The mobile-first frontend and desktop discovery frontend already demonstrate Angular, NgRx/RxJS, local Signals, generated REST/OpenAPI contracts, Solr-backed discovery, DSpace authority boundaries, responsive design and extensive automated accessibility/browser evidence.
 
-## Current stack
+The highest-value continuation is now explainability, design-process evidence and an internal steward workflow.
 
-- PR #87: query-relative relevance evidence, rank presentation, 320px browser evidence, and full-stack startup.
-- PR #88: query-wide result-type summary backed by server-provided facet counts.
-- PR #89: engine-provided field/term match evidence with an accessible `Why this matched?` disclosure.
-- PR #90: requirements traceability plus manual accessibility and usability-study protocols.
+## Delivered stack
 
-## Active mobile-first continuation
+The mobile-first line has converged to `main`:
 
-### PR #91 — Shareable search/filter intent + accessible mobile filter drawer
+- PR #81 — architecture/planning baseline;
+- PR #82 — `census-mobile-frontend` scaffold;
+- PR #85/#86 — API-backed search, scalable traversal and rank presentation;
+- PR #87 — server-owned relevance evidence, Storybook/browser evidence and full-stack startup;
+- PR #88 — query-wide result-type summary;
+- PR #89 — typed field/term match evidence;
+- PR #90 — traceability and explicit manual/usability protocol boundaries;
+- PR #91 — shareable search/filter intent and accessible filter dialog;
+- PR #92 — shared rank/relevance primitives adopted by both Angular frontends through the existing `shared-ui` library;
+- PR #93 — authority-neutral mobile research detail navigation;
+- PR #94 — typed research-package and related-research context navigation;
+- PR #95 — expanded responsive/accessibility browser evidence.
 
-- Hydrate supported search/filter intent from URL query parameters.
-- Validate controlled source-system/content-type URL values instead of casting arbitrary strings into generated API types.
-- Serialize reproducible query/filter intent back to the URL after search or immediate facet changes.
-- Keep cursor traversal history session-owned rather than pretending a deep cursor page can be reconstructed from a URL alone.
-- Add active filter chips and immediate facet filtering backed by server-provided facets.
-- Add a modal mobile filter drawer with focus trapping, Escape close, explicit close action, and focus return to its trigger.
-- Validate the open drawer with axe and prove 320px reflow, URL reconstruction, immediate filter update, and focus restoration in Playwright.
+The earlier proposal to create a separate `census-ui` library is superseded. Cross-app presentational reuse now belongs in the existing `shared-ui` library unless a later architectural need proves otherwise.
 
-## Post-convergence / post-main work
+## Active continuation
 
-### Shared `census-ui` primitives + desktop relevance adoption
+### #97 — Shared result explainability dialog
 
-Do this after the mobile stack reaches `main` with explicit approval rather than extracting shared UI from an unresolved stack.
+See [result-explainability-dialog-plan.md](result-explainability-dialog-plan.md).
 
-- Extract only components with demonstrated cross-app reuse.
-- First candidates: relevance badge, result explainability entry point/dialog, result metadata/rank primitives, match-evidence presentation, and pagination/search input only where interfaces truly align.
-- Keep async/search-domain state in each app; shared UI stays presentational.
-- Consume the same server-owned rank/relevance/match-evidence contract from both Angular applications.
-- Preserve existing `discovery-ui` facets, URL state, focus management, map/detail navigation, and NgRx lifecycle.
+- Add a consistent information control for search results in both frontends.
+- Use a real accessible modal/dialog rather than a tooltip for verbose search evidence.
+- Present query/filter context, ordinal rank, match-strength evidence, relevance-model/version/calibration metadata and typed field/term match evidence.
+- Keep exact ranking contribution backend-owned and additive only if a stable contract becomes available later.
+- Never expose raw Solr/OpenSearch debug/explain trees as a general browser contract.
+- Reuse `shared-ui` for presentational dialog content/entry primitives; keep NgRx/routing/application orchestration app-specific.
 
-### Result explainability dialog
+### #98 — Design lifecycle evidence
 
-See `result-explainability-dialog-plan.md`.
+- Capture one representative slice from low-fidelity design intent through annotated component specification, Storybook states, production implementation and automated evidence.
+- Record breakpoint/reflow, touch-target, filter/dialog focus, rank-vs-match-strength, forced-colors, async-state and maintenance/reuse decisions.
+- Use Figma only when it materially improves the collaboration artifact; do not make it a runtime dependency.
+- Do not imply participant usability or assistive-technology findings that were not collected.
 
-- Add an information control at the lower-right of every result listing in both mobile-first and `discovery-ui` frontends.
-- Use a real accessible modal/dialog rather than a tooltip because the intended ranking/search evidence is verbose.
-- Present query/filter context, ordinal rank, match-strength evidence, relevance-model/version/calibration metadata, and typed field/term match evidence.
-- Keep exact ranking-factor/contribution detail backend-owned and additive if it becomes available later.
-- Never expose raw Solr `debug/explain` trees as a general browser contract.
+### #99 — Read-only repository steward/status workflow
 
-### Design lifecycle evidence
+- Add a focused internal status surface using existing repository authority, synchronization, corpus/projection and search-health data.
+- Prefer existing generated OpenAPI/client contracts and add fields only where needed for truthful status.
+- Keep the initial workflow read-only; no privileged mutation is required.
+- Preserve explicit authority/provenance and degraded/fallback language.
+- Add responsive/browser/axe evidence without implying manual AT verification.
 
-- Capture wireframe -> annotated component specification -> Storybook states -> production implementation.
-- Record breakpoint, touch-target, drawer, focus, rank-vs-match-strength, forced-colors, and maintenance decisions.
-- Add Figma only when it improves the design collaboration artifact; do not make Figma a runtime dependency.
+## Accessibility boundary
 
-### Repository steward/internal workflow
+Issue #49 is closed **not planned**.
 
-- Add a small internal-facing status/steward surface using existing repository authority, synchronization, projection, and search-health data.
-- Keep privileged mutations separate and explicitly protected; a read-only status slice is sufficient first.
+Automated template, Storybook, Playwright, axe, reflow, keyboard/focus and forced-colors evidence remains part of engineering quality. It is not a substitute for or claim of completed manual NVDA/JAWS/VoiceOver testing, Trusted Tester execution or Section 508 certification.
+
+The existing manual validation documents remain templates/reference material only.
 
 ## Explicitly deferred
 
-- Semantic/vector search.
-- Additional OpenSearch sophistication solely for novelty.
-- Client-owned relevance algorithms.
+- semantic/vector search solely for novelty;
+- additional OpenSearch sophistication without a concrete user/research question;
+- client-owned relevance algorithms;
+- local Kubernetes/search clustering without a deployment/resilience question;
+- AWS/IaC without an actual deployment requirement.
 
-Those are lower-value for the current Census UI-engineering alignment than explainability, traceability, design evidence, user feedback, shared UI discipline, and an internal workflow.
+Those are lower-value for the current UI-engineering story than explainability, design evidence, shared UI discipline and an internal operational workflow.

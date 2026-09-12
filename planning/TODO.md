@@ -1,103 +1,67 @@
 # Active Backlog
 
-This file contains **open work only**. Delivered history belongs in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md), generated repository facts belong in [documentation/platform-status.md](../documentation/platform-status.md), and the certified C2 standalone milestone is recorded in [documentation/federation/scale-evidence.md](../documentation/federation/scale-evidence.md).
+This file contains **open work only**. Delivered history belongs in [documentation/history/platform-evolution.md](../documentation/history/platform-evolution.md), generated repository facts belong in [documentation/platform-status.md](../documentation/platform-status.md), and certified C2/C2.1 evidence remains historical/control evidence.
 
-The repository follows an evidence-first rule: define the contract, controls and evidence boundary before broadening a feature surface or running a new performance experiment.
+The repository follows an evidence-first rule: define the contract, controls and evidence boundary before broadening a feature surface.
 
 ## Current position
 
-The certified standalone C2 baseline is complete, and the C2.1 pre-measurement fairness-control foundation is complete through PR #53.
+The standalone C2 baseline, adversarial C2.1 validation, frontend mission/portfolio alignment, the mobile-first search-to-research journey, shared rank/relevance presentation and the September dependency-security cleanup are complete.
 
-These are no longer active backlog items:
+Issue #49 is closed **not planned**. Manual assistive-technology testing is therefore not an active backlog requirement. Existing automated accessibility evidence remains valuable but must not be represented as completed manual Section 508/Trusted Tester/AT verification.
 
-- exact 500K Data.gov + 500K DOE OSTI million-record composition;
-- deterministic 1,000,181-document Solr/OpenSearch projection parity;
-- deep cursor/search-after traversal without gaps or duplicates;
-- versioned lexical workload matrix;
-- raw paired timing samples and bootstrap confidence evidence;
-- independently warmed batches and seeded randomized execution order;
-- concurrency 1 / 8 / 32;
-- CPU, memory, JVM/GC and container telemetry;
-- automated statistical research synthesis;
-- certified C2 Evidence UI productization;
-- C2 closeout/planning realignment from #46;
-- C2.1 preregistration;
-- C2.1 exact engine-version and equalized resource controls;
-- C2.1 runtime identity/refusal manifest;
-- C2.1 optimized OpenSearch treatment plus semantic-admission gate;
-- C2.1 Q01-Q20 workload definitions and deterministic selectivity bands;
-- C2.1 p90 timing contract;
-- C2.1 deterministic balanced restart/order plan and READY authorization.
+## #97 — Shared result explainability dialog
 
-Those results remain historical/control or frozen pre-measurement evidence. New work must not silently rewrite them.
+Plan: [Result Explainability Dialog Plan](../mobile-first/planning/result-explainability-dialog-plan.md)
 
-## #47 — C2.1 adversarial Solr/OpenSearch fairness validation
+- [ ] Add a shared presentational information control and dialog content surface in the existing `shared-ui` boundary.
+- [ ] Keep query/filter context adaptation and dialog orchestration app-specific.
+- [ ] Present global ordinal rank separately from query-relative match strength.
+- [ ] Present relevance model/version/calibration metadata and truthful caveats.
+- [ ] Render typed field/term `matchEvidence` without exposing raw Solr/OpenSearch explain trees.
+- [ ] Support a mobile near-full-screen presentation and larger-screen modal through one semantic dialog contract.
+- [ ] Prove focus entry/trap/Escape/Close/focus-return behavior.
+- [ ] Add 320px reflow, forced-colors, Storybook, component, browser and axe evidence in both frontends.
 
-Protocol: [C2 Adversarial Validation Protocol](C2_ADVERSARIAL_VALIDATION_PROTOCOL.md)
+## #98 — Design lifecycle evidence
 
-The goal is to try to **falsify** the current Solr-favoring observation, not strengthen it by construction. PR #53 completed the fairness-control foundation; the remaining work is timed execution, synthesis and productization.
+- [ ] Select one representative mobile-first discovery/search slice.
+- [ ] Capture a low-fidelity/wireframe artifact.
+- [ ] Add an annotated component/interaction specification.
+- [ ] Link the corresponding Storybook states and responsive breakpoints.
+- [ ] Link the production components and browser/accessibility evidence.
+- [ ] Document touch-target, focus, breakpoint/reflow, rank-vs-match-strength, forced-colors, async-state and reuse decisions.
+- [ ] Keep Figma optional; do not add a runtime dependency for documentation.
+- [ ] Avoid implying human usability or assistive-technology findings that were not collected.
 
-- [ ] Execute the preregistered Q01-Q20 full-text matrix under READY authorization.
-- [ ] Execute facets plus broad, moderate and genuinely selective filter cells under the frozen semantic admission.
-- [ ] Run all planned clean engine/container restart blocks with separately warmed batches and the frozen balanced seeded order.
-- [ ] Preserve raw paired samples, restart-block identities, batch identities, realized order and runtime-manifest identity in C2.1-only artifacts.
-- [ ] Report every preregistered cell, including cells where OpenSearch wins, ties or the result is inconclusive.
-- [ ] Extend statistical synthesis for query-family and restart-block interpretation while retaining the existing multiplicity/local-topology guardrails.
-- [ ] Keep C2.1 artifacts visibly distinct from certified C2 artifacts.
-- [ ] Extend the Evidence UI/report so certified C2 and C2.1 cannot be confused.
+## #99 — Read-only repository steward/status surface
 
-## #49 — Manual accessibility evidence
-
-Automated axe/browser evidence remains separate from human assistive-technology evidence.
-
-- [ ] Full-application keyboard-only review.
-- [ ] Search Lab keyboard-only comparison flow.
-- [ ] Evidence page focus/read-order review, including C2/C2.1 sections.
-- [ ] Maps keyboard path and visual/nonvisual equivalence review.
-- [ ] MapLibre canvas tab-stop/focus-path review.
-- [ ] NVDA + Firefox.
-- [ ] NVDA + Chrome/Chromium.
-- [ ] JAWS, or explicit N/A with licensing reason.
-- [ ] Cognitive/workflow review for dense search/evidence/map surfaces.
-- [ ] WCAG 2.2 manual checks for focus not obscured, dragging alternatives and target size.
-- [ ] Crosswalk the checklist against the current federal ICT Testing Baseline / Trusted Tester structure used by the project.
-- [ ] Bind every manual run to date, commit, browser/AT/OS context and remediation evidence.
-
-## #51 — Final frontend mission alignment and portfolio polish
-
-This is the intended final portfolio-facing slice after #47 and #49.
-
-- [ ] Reorder the README so the Angular government data-discovery frontend is the primary story.
-- [ ] Add a frontend engineering case study covering Angular, NgRx/RxJS, OpenAPI-generated clients, URL state, async states, accessibility and Maps equivalence.
-- [ ] Add a concise 5-8 minute frontend-first demo path.
-- [ ] Audit `/discovery`, representative research detail, `/maps`, `/evidence` and `/search-lab` for final hierarchy, dense-data usability, responsive/reflow and keyboard/focus quality.
-- [ ] Make the browser/API ownership boundary explicit: Angular owns interaction/presentation/accessibility; Spring owns application API/use cases; DSpace and search engines remain behind the typed boundary.
-- [ ] Preserve the repository's non-affiliation disclaimer and avoid implying this is official Census Bureau software.
-
-## Deferred topology work
-
-Issue #48, the local Kubernetes search laboratory, is closed **not planned** for the current completion path.
-
-Reopen clustered/Kubernetes work only if a concrete deployment, resilience or cloud-migration requirement appears. A one-host kind cluster is a different topology experiment; it is not required to make C2.1 statistically defensible.
+- [ ] Inventory existing API data for corpus/profile identity, projection status, search-engine parity, synchronization/adapters and automated evidence status.
+- [ ] Define a small read-only steward workflow rather than duplicating the existing Admin surface.
+- [ ] Reuse the generated OpenAPI/client boundary and add fields only where the current contract cannot truthfully express required status.
+- [ ] Show authority boundaries and degraded/fallback conditions explicitly.
+- [ ] Add loading, empty, degraded and error states.
+- [ ] Keep secrets, credentials and operator-only diagnostics out of the browser contract.
+- [ ] Add responsive/component/browser/axe evidence.
 
 ## Optional federation and map expansion
 
-These are legitimate future directions, but they are not prerequisites for calling the current standalone platform successful.
+These are legitimate future directions, but they are not prerequisites for calling the current platform successful.
 
 - [ ] Define DOI/PMID/other durable cross-source reconciliation rules; never silently merge by title.
 - [ ] Add configurable publisher request concurrency/rate-limit policy where needed.
 - [ ] Extend bounded NASA CMR collection/granule evidence when it answers a new spatial/temporal question.
 - [ ] Add PubMed/OpenAlex only after durable identity and bounded-harvest contracts are ready.
-- [ ] Add new Maps thematic measures only through shared authoritative geometry/value contracts with semantic list/table equivalents.
-- [ ] Keep Data.gov spatial enrichment in a versioned sidecar so the C2 Gold Master identity is unchanged.
+- [ ] Promote additional Maps work from issue #69 only when a concrete research question justifies it.
+- [ ] Keep new spatial enrichment outside certified C2/C2.1 identity unless explicitly versioned as a new research experiment.
 
 ## Optional product/governance hardening
 
 - [ ] Decide which browser/accessibility jobs become required merge checks.
 - [ ] Decide whether `main` receives branch protection.
-- [ ] Preserve the prior known-good accessibility baseline when an evidence refresh fails.
-- [ ] Move NgRx dependencies from release candidates to stable versions after validation.
+- [ ] Preserve prior known-good automated accessibility evidence when a refresh fails.
 - [ ] Continue typed API error and contract/integration-test hardening.
+- [ ] Remove temporary transitive dependency overrides when upstream packages naturally satisfy the patched ranges documented in `RISKS.md`.
 
 ## Optional infrastructure / AWS
 

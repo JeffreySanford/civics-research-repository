@@ -1,70 +1,32 @@
 # Post-main Desktop Search Relevance Adoption
 
-Status: deferred until the mobile-first relevance stack is merged to `main`.
+Status: **completed by PR #92**
 
-## Goal
+This document is retained as implementation history for the cross-frontend rank/relevance convergence.
 
-Bring the rank + relevance presentation proven in `apps/census-mobile-frontend` into the existing `apps/discovery-ui` search results without creating a second relevance algorithm or changing engine ranking behavior.
+## Delivered outcome
 
-The desktop application should present the same evidence the API already returns:
+PR #92 promoted the proven mobile search rank/relevance presentation into the existing `shared-ui` library and consumed the same semantics from both Angular frontends.
 
-- global result rank;
-- engine-native raw score as diagnostic data, not user-facing percentage copy;
-- query-relative normalized score owned by the backend;
-- `STRONG`, `GOOD`, `MODERATE`, `WEAK`, and `LOW` bands;
-- the same green -> yellow-green -> amber -> orange -> red visual progression;
-- visible text for every band so color is never the only meaning;
-- forced-colors/high-contrast behavior;
-- the same explanation that match labels are query-relative evidence, not absolute percentages.
+Delivered behavior:
 
-Empty repository browse (`q` blank / engine `*:*`) remains explicitly unscored.
+- global result rank is presented as ordinal position in the server-returned result set;
+- query-relative match strength remains server-owned;
+- `STRONG`, `GOOD`, `MODERATE`, `WEAK`, and `LOW` bands share one presentational implementation;
+- empty repository browse remains unranked/unscored;
+- color is supplementary to visible text and forced-colors semantics;
+- `discovery-ui` does not calculate relevance, re-sort results or reinterpret raw engine scores as percentages;
+- existing desktop facets, URL state, focus management, map/detail navigation and NgRx lifecycle remain intact;
+- component and browser/axe evidence cover the shared presentation.
 
-## Why wait until main
+## Current reuse boundary
 
-The mobile implementation is the proving ground for this presentation. Keeping the desktop change out of the stacked mobile PRs avoids widening the current review surface and lets the new API contract, score transport, normalization metadata, Storybook states, and 320px browser evidence settle first.
+The cross-frontend presentational boundary is the existing `shared-ui` library. A separate `census-ui` library is not needed for the current architecture.
 
-Once that work is on `main`, desktop adoption becomes a small convergence change rather than another branch in the search architecture.
+Async/search-domain state remains owned by each application. Shared UI accepts semantic inputs and does not own routing, NgRx lifecycle or search requests.
 
-## Implementation sequence
+## Follow-on
 
-1. **Consume the shared contract as-is**
-   - Do not calculate relevance in `discovery-ui`.
-   - Preserve `SearchResult.relevance` and `SearchResponse.relevanceModel` through the existing NgRx state/selectors.
-   - Preserve engine ordering; rank is the returned global position, not a client-side sort.
+Issue #97 now extends this convergence from badges/rank presentation into the richer shared result-explainability dialog.
 
-2. **Promote the proven badge into shared search presentation**
-   - The second real consumer justifies extracting the mobile relevance badge into a small shared Angular library/module.
-   - Keep the public input semantic (`STRONG | GOOD | MODERATE | WEAK | LOW`) rather than passing colors into the component.
-   - Keep rank visually distinct from match strength. Rank answers _where did the engine place this?_ Match strength answers _how strong is this result relative to the best hit in this query?_
-
-3. **Integrate with `apps/discovery-ui/src/app/pages/discovery-page.html`**
-   - Add global rank near the existing result metadata.
-   - Add the shared relevance badge only when `result.relevance` exists.
-   - Add one concise result-list explanation when `relevanceModel` is present.
-   - Do not show a badge or relevance explanation for empty browse results.
-   - Do not replace provenance, access-level, content-type, or authoritative-source metadata.
-
-4. **Retain desktop behavior**
-   - Keep the existing URL-addressable facets, NgRx search lifecycle, pagination focus management, map links, and result-detail navigation unchanged.
-   - Do not re-sort results in the component.
-   - Do not expose raw Solr/OpenSearch score as a percentage.
-
-5. **Validate parity**
-   - Unit/component tests for all five bands and missing relevance.
-   - Storybook states for the shared badge and representative result cards.
-   - Existing discovery Playwright coverage plus assertions for rank, text label, forced-colors semantics where supported, and no relevance on empty browse.
-   - Axe/Section 508 sweep with the badge present.
-
-## Acceptance criteria
-
-- The same API response produces the same rank and match label in both frontends.
-- No frontend owns normalization thresholds or score math.
-- Empty browse remains unscored in both frontends.
-- Rank and match strength remain separate concepts.
-- Color is supplementary; text survives monochrome/forced-colors rendering.
-- No user-facing copy implies that a normalized score is an absolute probability or percent relevance.
-- Existing desktop search, facets, pagination, focus behavior, and research-detail links remain intact.
-
-## Follow-on calibration
-
-The current normalization remains `calibrated: false`. A later judged-query corpus should use representative natural-language and keyword queries (including North Dakota migration) to measure Precision@10, nDCG@10, and reciprocal rank before changing band thresholds or marking a model calibrated.
+The current relevance normalization remains explicitly uncalibrated. Any future threshold/model change should be driven by a judged-query evaluation corpus rather than frontend preference, and should preserve the distinction between engine evidence and probability/confidence.
