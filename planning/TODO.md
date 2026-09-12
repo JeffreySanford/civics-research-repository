@@ -6,37 +6,26 @@ The repository follows an evidence-first rule: define the contract, controls and
 
 ## Current position
 
-The standalone C2 baseline, adversarial C2.1 validation, frontend mission/portfolio alignment, the mobile-first search-to-research journey, shared rank/relevance/result-explainability presentation and the September dependency-security cleanup are complete.
+The standalone C2 baseline, adversarial C2.1 validation, frontend mission/portfolio alignment, the mobile-first search-to-research journey, shared rank/relevance/result-explainability presentation, design-lifecycle evidence and the September dependency-security cleanup are complete.
 
-Shared result explainability was delivered through issue #97 / PR #103. Both Angular frontends now consume the same presentational explanation semantics from `shared-ui` while retaining application-specific state/routing orchestration.
+Shared result explainability was delivered through issue #97 / PR #103. Design lifecycle evidence was delivered through issue #98 / PR #104, including the mobile search case study and ADR-002.
 
 Issue #49 is closed **not planned**. Manual assistive-technology testing is therefore not an active backlog requirement. Existing automated accessibility evidence remains valuable but must not be represented as completed manual Section 508/Trusted Tester/AT verification.
 
-## #98 — Design lifecycle evidence
-
-- [x] Select one representative mobile-first discovery/search slice.
-- [x] Capture a low-fidelity/wireframe artifact.
-- [x] Add an annotated component/interaction specification.
-- [x] Link the corresponding Storybook states and responsive breakpoints.
-- [x] Link the production components and browser/accessibility evidence.
-- [x] Document touch-target, focus, breakpoint/reflow, rank-vs-match-strength, forced-colors, async-state and reuse decisions.
-- [x] Keep Figma optional; do not add a runtime dependency for documentation.
-- [x] Avoid implying human usability or assistive-technology findings that were not collected.
-- [ ] Merge the design-lifecycle case study and decision record after repository validation.
-
-Primary artifact: [Mobile Search Design Lifecycle Case Study](../mobile-first/documentation/design/mobile-search-design-lifecycle.md)
-
-Decision record: [ADR-002 — Mobile Search Interaction and Shared Evidence Model](../mobile-first/documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
-
 ## #99 — Read-only repository steward/status surface
 
-- [ ] Inventory existing API data for corpus/profile identity, projection status, search-engine parity, synchronization/adapters and automated evidence status.
-- [ ] Define a small read-only steward workflow rather than duplicating the existing Admin surface.
-- [ ] Reuse the generated OpenAPI/client boundary and add fields only where the current contract cannot truthfully express required status.
-- [ ] Show authority boundaries and degraded/fallback conditions explicitly.
-- [ ] Add loading, empty, degraded and error states.
-- [ ] Keep secrets, credentials and operator-only diagnostics out of the browser contract.
-- [ ] Add responsive/component/browser/axe evidence.
+- [x] Inventory existing API data for corpus/profile identity, projection status, search-engine parity, synchronization/adapters and automated evidence status.
+- [x] Define a small read-only steward workflow rather than duplicating the existing Admin mutation surface.
+- [x] Reuse the generated OpenAPI/client boundary; no new backend schema is required for the first slice.
+- [x] Show authority boundaries and degraded/fallback conditions explicitly.
+- [x] Add loading, empty, degraded and error states.
+- [x] Keep secrets, credentials and operator-only diagnostics out of the browser contract.
+- [x] Add responsive/component/browser/axe evidence.
+- [ ] Complete repository validation and merge the #99 implementation PR.
+
+Primary implementation: `apps/discovery-ui/src/app/pages/repository-steward-page.ts`
+
+The steward route composes existing non-mutating status/evidence contracts and reuses the existing Solr/OpenSearch projection-parity presentation. Privileged sync/reindex/harvest actions remain confined to Admin workflows.
 
 ## Optional federation and map expansion
 
