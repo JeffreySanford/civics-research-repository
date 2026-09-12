@@ -47,9 +47,14 @@
                 [value]="selectedCensusArea()?.id ?? ''"
                 (change)="selectCensusArea($event)"
               >
-                <option value="">Choose an area</option>
+                <option value="" [selected]="!selectedCensusArea()">
+                  Choose an area
+                </option>
                 @for (boundary of areaState.boundaries; track boundary.id) {
-                  <option [value]="boundary.id">
+                  <option
+                    [value]="boundary.id"
+                    [selected]="selectedCensusArea()?.id === boundary.id"
+                  >
                     {{ boundary.geography }}
                   </option>
                 }
