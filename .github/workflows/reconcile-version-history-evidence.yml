@@ -1,0 +1,454 @@
+name: Reconcile Phase A version history evidence
+
+on:
+  push:
+    branches:
+      - feat/artifact-version-provenance
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/artifact-version-provenance
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply Phase A evidence reconciliation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f'Expected text not found in {path}: {old[:120]!r}')
+              file.write_text(text.replace(old, new, 1))
+
+          mock_path = 'apps/discovery-ui-e2e/src/support/repository-api-mocks-base.ts'
+          replace_once(
+              mock_path,
+              """  await page.route(`**/api/research/*`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    const researchId = pathname.split('/research/')[1] ?? '';\n    const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: datasetDetail(canonicalId),\n    });\n  });\n\n  // Layers are geography-specific,""",
+              """  await page.route(`**/api/research/*`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    if (pathname.endsWith('/versions')) {\n      await route.fallback();\n      return;\n    }\n\n    const researchId = pathname.split('/research/')[1] ?? '';\n    const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: datasetDetail(canonicalId),\n    });\n  });\n\n  // Version-history knowledge is authority-neutral. The fixture intentionally exposes only the\n  // record we actually observed; it must never manufacture a previous year from vintage metadata.\n  await page.route(`**/api/research/*/versions`, async (route) => {\n    const pathname = new URL(route.request().url()).pathname;\n    const encodedId =\n      pathname.split('/research/')[1]?.replace(/\\/versions$/, '') ?? '';\n    const canonicalId = Buffer.from(encodedId, 'base64url').toString('utf8');\n    const detail = datasetDetail(canonicalId);\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: {\n        researchObjectId: canonicalId,\n        status: 'OBSERVED_CURRENT_ONLY',\n        versions: [\n          {\n            id: `${canonicalId}-current`,\n            label: detail.title,\n            releasedOn: detail.releasedOn,\n            current: true,\n            sourceUrl: detail.sourceUrl,\n          },\n        ],\n      },\n    });\n  });\n\n  // Layers are geography-specific,""",
+          )
+
+          replace_once(
+              mock_path,
+              """  await page.route(`**/api/datasets/*/versions`, async (route) => {\n    const datasetId = datasetIdFromUrl(route.request().url(), '/versions');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: [\n        {\n          id: `${datasetId}-current`,\n          label: datasetTitle(datasetId),\n          releasedOn: '2025-08-01',\n          current: true,\n        },\n        {\n          id: `${datasetId}-previous`,\n          label: 'TIGER_LINE 2024',\n          releasedOn: '2024-08-01',\n          current: false,\n        },\n      ],\n    });\n  });""",
+              """  await page.route(`**/api/datasets/*/versions`, async (route) => {\n    const datasetId = datasetIdFromUrl(route.request().url(), '/versions');\n\n    await route.fulfill({\n      contentType: 'application/json',\n      json: [\n        {\n          id: `${datasetId}-current`,\n          label: datasetTitle(datasetId),\n          releasedOn: '2025-08-01',\n          current: true,\n        },\n      ],\n    });\n  });""",
+          )
+
+          accessibility_path = 'apps/discovery-ui-e2e/src/accessibility.spec.ts'
+          replace_once(
+              accessibility_path,
+              """    await page.route(`**/api/research/*`, async (route) => {\n      const token = new URL(route.request().url()).pathname.split(\n        '/research/',\n      )[1];\n      if (token !== federatedResearchId) {""",
+              """    await page.route(`**/api/research/*`, async (route) => {\n      const pathname = new URL(route.request().url()).pathname;\n      if (pathname.endsWith('/versions')) {\n        await route.fallback();\n        return;\n      }\n\n      const token = pathname.split('/research/')[1];\n      if (token !== federatedResearchId) {""",
+          )
+
+          replace_once(
+              accessibility_path,
+              """  test('federated detail discloses external authority without repository-only tabs @wcag @section508', async ({\n    page,\n  }) => {\n    await page.goto(`/research/${federatedResearchId}`);\n\n    await expect(\n      page.getByText('Federated metadata.', { exact: true }),\n    ).toBeVisible();\n    await expect(\n      page.getByRole('link', { name: 'View authoritative source' }),\n    ).toHaveAttribute(\n      'href',\n      'https://catalog.data.gov/dataset/workforce-example',\n    );\n    await expect(page.getByRole('tab', { name: 'Versions' })).toHaveCount(0);\n    await expect(page.getByRole('tab', { name: 'Map Layers' })).toHaveCount(0);\n    await expect(page.getByRole('tab', { name: 'Map Preview' })).toHaveCount(0);\n  });\n\n  test('curated detail keeps repository enrichments on the authority-neutral route @wcag @section508', async ({\n    page,\n  }) => {\n    await page.goto(`/research/${curatedResearchId}`);\n\n    await expect(\n      page.getByRole('heading', {\n        name: '2025 TIGER/Line - Census Tracts - California',\n      }),\n    ).toBeVisible();\n    await page.getByRole('tab', { name: 'Versions' }).click();\n    await expect(page.getByText('Current')).toBeVisible();\n    await page.getByRole('tab', { name: 'Map Layers' }).click();\n    await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();\n    await expect(page.getByRole('tab', { name: 'Map Preview' })).toBeVisible();\n  });""",
+              """  test('federated detail exposes truthful version knowledge without repository-only map enrichments @wcag @section508', async ({\n    page,\n  }) => {\n    await page.goto(`/research/${federatedResearchId}`);\n\n    await expect(\n      page.getByText('Federated metadata.', { exact: true }),\n    ).toBeVisible();\n    await expect(\n      page.getByRole('link', { name: 'View authoritative source' }),\n    ).toHaveAttribute(\n      'href',\n      'https://catalog.data.gov/dataset/workforce-example',\n    );\n\n    await page.getByRole('tab', { name: 'Versions' }).click();\n    await expect(\n      page.getByText(\n        'Only the current repository/source record has been observed. Earlier or later version history is not established.',\n      ),\n    ).toBeVisible();\n    await expect(page.getByText('Current observed record')).toBeVisible();\n    await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);\n\n    const results = await new AxeBuilder({ page })\n      .withTags(axeEngineeringTags)\n      .analyze();\n    expect(results.violations).toEqual([]);\n\n    await expect(page.getByRole('tab', { name: 'Map Layers' })).toHaveCount(0);\n    await expect(page.getByRole('tab', { name: 'Map Preview' })).toHaveCount(0);\n  });\n\n  test('curated detail reports observed-current-only history and keeps repository map enrichments @wcag @section508', async ({\n    page,\n  }) => {\n    await page.goto(`/research/${curatedResearchId}`);\n\n    await expect(\n      page.getByRole('heading', {\n        name: '2025 TIGER/Line - Census Tracts - California',\n      }),\n    ).toBeVisible();\n    await page.getByRole('tab', { name: 'Versions' }).click();\n    await expect(\n      page.getByText(\n        'Only the current repository/source record has been observed. Earlier or later version history is not established.',\n      ),\n    ).toBeVisible();\n    await expect(page.getByText('Current observed record')).toBeVisible();\n    await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);\n\n    const results = await new AxeBuilder({ page })\n      .withTags(axeEngineeringTags)\n      .analyze();\n    expect(results.violations).toEqual([]);\n\n    await page.getByRole('tab', { name: 'Map Layers' }).click();\n    await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();\n    await expect(page.getByRole('tab', { name: 'Map Preview' })).toBeVisible();\n  });""",
+          )
+
+          replace_once(
+              'apps/discovery-ui/src/app/pages/dataset-detail-page.html',
+              '<span class="status-pill">Current repository record</span>',
+              '<span class="status-pill">Current observed record</span>',
+          )
+
+          unit_spec = r'''import { provideNoopAnimations } from '@angular/platform-browser/animations';
+          import { ComponentFixture, TestBed } from '@angular/core/testing';
+          import { provideRouter } from '@angular/router';
+          import { provideMockStore } from '@ngrx/store/testing';
+          import type {
+            ResearchArtifactVersion,
+            ResearchObjectDetail,
+            VersionHistoryStatus,
+          } from 'repository-api-client';
+          import {
+            datasetsFeatureKey,
+            initialDatasetsState,
+          } from '../state/datasets/datasets.reducer';
+          import { ResearchObjectDetailPage } from './dataset-detail-page';
+
+          const detail = {
+            source: 'REPOSITORY',
+            origin: 'REPOSITORY',
+            sourceSystem: 'CENSUS',
+            id: 'version-history-example',
+            title: 'Version history example',
+            program: 'OTHER',
+            publisher: 'Example Federal Publisher',
+            abstractText: 'Fixture used only to prove version-history presentation semantics.',
+            files: [],
+            citation: 'Version history example.',
+            sourceUrl: 'https://example.gov/research/version-history-example',
+            relatedResearch: [],
+            contentType: 'DATASET',
+            accessLevel: 'PUBLIC',
+          } as ResearchObjectDetail;
+
+          const currentVersion: ResearchArtifactVersion = {
+            id: 'version-history-example-current',
+            label: 'Observed release 2025.2',
+            releasedOn: '2025-09-01',
+            current: true,
+            versionLabel: '2025.2',
+            sourceUrl: 'https://example.gov/research/version-history-example/2025.2',
+          };
+
+          async function renderVersionHistory(
+            status: VersionHistoryStatus,
+            versions: readonly ResearchArtifactVersion[],
+          ): Promise<ComponentFixture<ResearchObjectDetailPage>> {
+            TestBed.resetTestingModule();
+            await TestBed.configureTestingModule({
+              imports: [ResearchObjectDetailPage],
+              providers: [
+                provideNoopAnimations(),
+                provideRouter([]),
+                provideMockStore({
+                  initialState: {
+                    [datasetsFeatureKey]: {
+                      ...initialDatasetsState,
+                      detail,
+                      versions,
+                      versionHistoryStatus: status,
+                    },
+                  },
+                }),
+              ],
+            }).compileComponents();
+
+            const fixture = TestBed.createComponent(ResearchObjectDetailPage);
+            fixture.detectChanges();
+            await fixture.whenStable();
+            fixture.detectChanges();
+
+            const versionsTab = Array.from(
+              fixture.nativeElement.querySelectorAll<HTMLElement>('[role="tab"]'),
+            ).find((tab) => tab.textContent?.trim() === 'Versions');
+            expect(versionsTab).toBeTruthy();
+            versionsTab?.click();
+            fixture.detectChanges();
+            await fixture.whenStable();
+            fixture.detectChanges();
+            return fixture;
+          }
+
+          describe('ResearchObjectDetailPage version-history semantics', () => {
+            it('states that broader history is unknown when only the current record was observed', async () => {
+              const fixture = await renderVersionHistory('OBSERVED_CURRENT_ONLY', [
+                currentVersion,
+              ]);
+              const text = fixture.nativeElement.textContent as string;
+
+              expect(text).toContain(
+                'Only the current repository/source record has been observed. Earlier or later version history is not established.',
+              );
+              expect(text).toContain('Observed release 2025.2');
+              expect(text).toContain('Current observed record');
+              expect(text).not.toContain('TIGER_LINE 2024');
+            });
+
+            it('renders multiple versions only when history is explicitly available', async () => {
+              const priorVersion: ResearchArtifactVersion = {
+                id: 'version-history-example-prior',
+                label: 'Observed release 2025.1',
+                releasedOn: '2025-06-01',
+                current: false,
+                versionLabel: '2025.1',
+                sourceUrl:
+                  'https://example.gov/research/version-history-example/2025.1',
+              };
+              const fixture = await renderVersionHistory('HISTORY_AVAILABLE', [
+                currentVersion,
+                priorVersion,
+              ]);
+              const text = fixture.nativeElement.textContent as string;
+
+              expect(text).toContain(
+                'The repository has observed version-lineage records for this research artifact.',
+              );
+              expect(text).toContain('Observed release 2025.2');
+              expect(text).toContain('Observed release 2025.1');
+            });
+
+            it('states that provenance is unavailable instead of inferring history', async () => {
+              const fixture = await renderVersionHistory('UNAVAILABLE', []);
+              const text = fixture.nativeElement.textContent as string;
+
+              expect(text).toContain(
+                'Version provenance is not available for this research artifact.',
+              );
+              expect(text).not.toContain('Current observed record');
+            });
+          });
+          '''
+          Path('apps/discovery-ui/src/app/pages/dataset-detail-page.version-history.spec.ts').write_text(
+              '\n'.join(line[10:] if line.startswith('          ') else line for line in unit_spec.splitlines()) + '\n'
+          )
+
+          story = r'''import { provideNoopAnimations } from '@angular/platform-browser/animations';
+          import { provideRouter } from '@angular/router';
+          import { provideMockStore } from '@ngrx/store/testing';
+          import {
+            applicationConfig,
+            type Meta,
+            type StoryObj,
+          } from '@storybook/angular';
+          import { expect, userEvent, within } from 'storybook/test';
+          import type {
+            ResearchArtifactVersion,
+            ResearchObjectDetail,
+            VersionHistoryStatus,
+          } from 'repository-api-client';
+          import {
+            datasetsFeatureKey,
+            initialDatasetsState,
+          } from '../state/datasets/datasets.reducer';
+          import { ResearchObjectDetailPage } from './dataset-detail-page';
+
+          const detail = {
+            source: 'REPOSITORY',
+            origin: 'REPOSITORY',
+            sourceSystem: 'CENSUS',
+            id: 'version-history-story',
+            title: 'Version provenance contract example',
+            program: 'OTHER',
+            publisher: 'Example Federal Publisher',
+            abstractText:
+              'Story fixture for observed, available, and unavailable version-history states.',
+            geography: 'United States',
+            files: [],
+            citation: 'Version provenance contract example.',
+            sourceUrl: 'https://example.gov/research/version-history-story',
+            relatedResearch: [],
+            contentType: 'DATASET',
+            accessLevel: 'PUBLIC',
+          } as ResearchObjectDetail;
+
+          const currentVersion: ResearchArtifactVersion = {
+            id: 'version-history-story-current',
+            label: 'Observed release 2025.2',
+            releasedOn: '2025-09-01',
+            current: true,
+            versionLabel: '2025.2',
+            sourceUrl: 'https://example.gov/research/version-history-story/2025.2',
+          };
+
+          function versionState(
+            status: VersionHistoryStatus,
+            versions: readonly ResearchArtifactVersion[],
+          ) {
+            return {
+              [datasetsFeatureKey]: {
+                ...initialDatasetsState,
+                detail,
+                versions,
+                versionHistoryStatus: status,
+              },
+            };
+          }
+
+          function withState(
+            status: VersionHistoryStatus,
+            versions: readonly ResearchArtifactVersion[],
+          ) {
+            return applicationConfig({
+              providers: [
+                provideMockStore({ initialState: versionState(status, versions) }),
+              ],
+            });
+          }
+
+          async function openVersions(canvasElement: HTMLElement) {
+            const canvas = within(canvasElement);
+            await userEvent.click(canvas.getByRole('tab', { name: 'Versions' }));
+            return canvas;
+          }
+
+          const meta: Meta<ResearchObjectDetailPage> = {
+            title: 'Accessibility/Research detail/Version provenance',
+            component: ResearchObjectDetailPage,
+            decorators: [
+              applicationConfig({
+                providers: [provideNoopAnimations(), provideRouter([])],
+              }),
+            ],
+            parameters: { layout: 'fullscreen' },
+          };
+
+          export default meta;
+          type Story = StoryObj<ResearchObjectDetailPage>;
+
+          export const ObservedCurrentOnly: Story = {
+            decorators: [withState('OBSERVED_CURRENT_ONLY', [currentVersion])],
+            play: async ({ canvasElement }) => {
+              const canvas = await openVersions(canvasElement);
+              await expect(
+                canvas.getByText(
+                  'Only the current repository/source record has been observed. Earlier or later version history is not established.',
+                ),
+              ).toBeInTheDocument();
+              await expect(
+                canvas.getByText('Current observed record'),
+              ).toBeInTheDocument();
+              await expect(canvas.queryByText('TIGER_LINE 2024')).toBeNull();
+            },
+          };
+
+          export const HistoryAvailable: Story = {
+            decorators: [
+              withState('HISTORY_AVAILABLE', [
+                currentVersion,
+                {
+                  id: 'version-history-story-prior',
+                  label: 'Observed release 2025.1',
+                  releasedOn: '2025-06-01',
+                  current: false,
+                  versionLabel: '2025.1',
+                  sourceUrl:
+                    'https://example.gov/research/version-history-story/2025.1',
+                },
+              ]),
+            ],
+            play: async ({ canvasElement }) => {
+              const canvas = await openVersions(canvasElement);
+              await expect(
+                canvas.getByText(
+                  'The repository has observed version-lineage records for this research artifact.',
+                ),
+              ).toBeInTheDocument();
+              await expect(
+                canvas.getByText('Observed release 2025.2'),
+              ).toBeInTheDocument();
+              await expect(
+                canvas.getByText('Observed release 2025.1'),
+              ).toBeInTheDocument();
+            },
+          };
+
+          export const ProvenanceUnavailable: Story = {
+            decorators: [withState('UNAVAILABLE', [])],
+            play: async ({ canvasElement }) => {
+              const canvas = await openVersions(canvasElement);
+              await expect(
+                canvas.getByText(
+                  'Version provenance is not available for this research artifact.',
+                ),
+              ).toBeInTheDocument();
+              await expect(canvas.queryByText('Current observed record')).toBeNull();
+            },
+          };
+          '''
+          Path('apps/discovery-ui/src/app/pages/dataset-detail-page.stories.ts').write_text(
+              '\n'.join(line[10:] if line.startswith('          ') else line for line in story.splitlines()) + '\n'
+          )
+
+          replace_once(
+              'documentation/architecture.md',
+              """- does not invent local versions, map layers or file preservation.\n\nCurated repository detail retains DSpace-owned enrichments such as versions, files and repository-specific relationships.""",
+              """- does not invent version records; the version-history contract can report observed, unknown, or unavailable history without turning inference into provenance;\n- does not invent repository-only map layers or local file preservation.\n\nCurated repository detail retains DSpace-owned persisted version facts, files and repository-specific relationships. The authority-neutral version-history API can also report observed source evidence for federated records, but DSpace remains authoritative for curated repository version metadata.""",
+          )
+
+          replace_once(
+              'documentation/architecture-diagrams.md',
+              "`/datasets/:id` remains a compatibility UI route. Federated detail does not invent local versions, map layers or file preservation.",
+              "`/datasets/:id` remains a compatibility UI route. Federated detail can report an explicit version-history knowledge state, but it does not invent version records, repository-only map layers, or local file preservation.",
+          )
+
+          replace_once(
+              'documentation/open-science-research-objects.md',
+              """- **Version history is not authoritative yet.** The current dataset version service synthesizes a\n  previous version from `vintageYear`. That is useful demo presentation but not acceptable provenance.""",
+              """- **Version history is becoming authoritative in #114.** Phase A removes the synthetic\n  `vintageYear - 1` record and introduces explicit `OBSERVED_CURRENT_ONLY`, `HISTORY_AVAILABLE`, and\n  `UNAVAILABLE` knowledge states. Source-to-DSpace provenance persistence and genuinely observed\n  multi-version lineage remain follow-on phases; unknown history stays unknown until then.""",
+          )
+          PY
+
+      - name: Format changed evidence files
+        run: >-
+          pnpm exec nx format:write --files=
+          apps/discovery-ui-e2e/src/support/repository-api-mocks-base.ts,
+          apps/discovery-ui-e2e/src/accessibility.spec.ts,
+          apps/discovery-ui/src/app/pages/dataset-detail-page.html,
+          apps/discovery-ui/src/app/pages/dataset-detail-page.version-history.spec.ts,
+          apps/discovery-ui/src/app/pages/dataset-detail-page.stories.ts,
+          documentation/architecture.md,
+          documentation/architecture-diagrams.md,
+          documentation/open-science-research-objects.md
+
+      - name: Install Chromium for focused browser evidence
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Validate discovery UI unit and lint gates
+        run: |
+          pnpm exec nx test discovery-ui
+          pnpm exec nx lint discovery-ui
+
+      - name: Build Storybook
+        run: pnpm exec nx build-storybook discovery-ui --configuration=ci
+
+      - name: Run Storybook interactions and axe
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec http-server dist/storybook/discovery-ui -p 4400 -c-1 --cors > storybook-phase-a.log 2>&1 &
+          storybook_pid=$!
+          trap 'kill "$storybook_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4400/index.json >/dev/null; then
+              pnpm exec nx test-storybook discovery-ui
+              exit 0
+            fi
+            sleep 1
+          done
+          cat storybook-phase-a.log
+          exit 1
+
+      - name: Run focused Chromium Playwright and axe evidence
+        run: >-
+          pnpm exec playwright test
+          apps/discovery-ui-e2e/src/accessibility.spec.ts
+          --config=apps/discovery-ui-e2e/playwright.config.mts
+          --project=chromium
+          --reporter=line
+
+      - name: Ensure formatting remains clean
+        run: pnpm exec nx format:check --all
+
+      - name: Commit validated Phase A evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            apps/discovery-ui-e2e/src/support/repository-api-mocks-base.ts \
+            apps/discovery-ui-e2e/src/accessibility.spec.ts \
+            apps/discovery-ui/src/app/pages/dataset-detail-page.html \
+            apps/discovery-ui/src/app/pages/dataset-detail-page.version-history.spec.ts \
+            apps/discovery-ui/src/app/pages/dataset-detail-page.stories.ts \
+            documentation/architecture.md \
+            documentation/architecture-diagrams.md \
+            documentation/open-science-research-objects.md
+          git diff --cached --check
+          git commit -m 'test: reconcile Phase A version history evidence'
+          git push origin HEAD:feat/artifact-version-provenance
