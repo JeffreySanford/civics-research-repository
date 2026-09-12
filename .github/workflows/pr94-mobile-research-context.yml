@@ -1,0 +1,59 @@
+name: PR94 mobile research context validation
+
+on:
+  push:
+    branches:
+      - codex/mobile-research-context-pr94
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/mobile-research-context-pr94
+          fetch-depth: 0
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with:
+          version: 10.14.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format mobile research context
+        run: |
+          pnpm exec prettier --write \
+            apps/census-mobile-frontend/src/app/components/mobile-research-detail/mobile-research-detail.component.ts \
+            apps/census-mobile-frontend/src/app/components/mobile-research-detail/mobile-research-detail.component.html \
+            apps/census-mobile-frontend/src/app/components/mobile-research-detail/mobile-research-detail.component.scss \
+            apps/census-mobile-frontend-e2e/src/research-detail.spec.ts
+      - name: Lint mobile frontend
+        run: pnpm nx lint census-mobile-frontend
+      - name: Unit tests
+        run: pnpm nx test census-mobile-frontend
+      - name: Build mobile frontend
+        run: pnpm nx build census-mobile-frontend --configuration=production
+      - name: Build mobile Storybook
+        run: pnpm nx build-storybook census-mobile-frontend --configuration=ci
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Mobile 320px Playwright and axe
+        run: pnpm exec playwright test --config=apps/census-mobile-frontend-e2e/playwright.config.mts --project=chromium-320
+      - name: Commit validated tree and remove workflow
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/pr94-mobile-research-context.yml
+          git add \
+            apps/census-mobile-frontend/src/app/components/mobile-research-detail/mobile-research-detail.component.ts \
+            apps/census-mobile-frontend/src/app/components/mobile-research-detail/mobile-research-detail.component.html \
+            apps/census-mobile-frontend/src/app/components/mobile-research-detail/mobile-research-detail.component.scss \
+            apps/census-mobile-frontend-e2e/src/research-detail.spec.ts
+          git commit -m "chore: finalize PR94 research context validation"
+          git push origin HEAD:codex/mobile-research-context-pr94
