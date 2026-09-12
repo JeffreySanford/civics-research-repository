@@ -1,6 +1,6 @@
 # Mobile-First Census Frontend Backlog
 
-Status: active continuation after shared result explainability
+Status: active continuation after design lifecycle evidence
 
 ## Delivered baseline
 
@@ -19,37 +19,11 @@ Delivered capabilities now include:
 - typed research-package relationships and related-research traversal;
 - shared rank/relevance presentation across both Angular frontends;
 - shared `Why this matched` explainability across both Angular frontends (#97 / PR #103);
+- one documented mobile search design lifecycle from wireframe through Storybook, production implementation and automated evidence (#98 / PR #104);
 - Storybook/component evidence and Playwright/axe responsive coverage across representative phone/tablet widths;
 - full-stack startup integration.
 
 Historical PR1/scaffold documents remain implementation history, not open tasks.
-
-## #98 — Design lifecycle evidence
-
-Goal: make the frontend design/decision path reviewable rather than showing only final code/tests.
-
-Current artifacts:
-
-- [Mobile Search Design Lifecycle Case Study](../documentation/design/mobile-search-design-lifecycle.md)
-- [ADR-002 — Mobile Search Interaction and Shared Evidence Model](../documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
-
-Tasks:
-
-- [x] Select one representative mobile-first search/discovery slice.
-- [x] Capture a low-fidelity wireframe or equivalent design-intent artifact.
-- [x] Add an annotated component/interaction specification.
-- [x] Link Storybook states and responsive breakpoints.
-- [x] Link production implementation and automated browser/accessibility evidence.
-- [x] Document touch-target, focus, breakpoint/reflow, rank-vs-match-strength, forced-colors, async-state and reuse/maintenance decisions.
-- [x] Keep Figma optional and out of the runtime dependency graph.
-- [x] Keep user-research/manual-AT claims outside the automated evidence boundary.
-- [ ] Complete repository validation and merge the case-study PR.
-
-Acceptance:
-
-- One complete design lifecycle is visible from intent through implementation/evidence.
-- Design annotations point to real components/tests rather than generic UX claims.
-- No user-research or assistive-technology findings are fabricated or implied.
 
 ## #99 — Read-only repository steward/status surface
 
@@ -57,20 +31,28 @@ Goal: demonstrate an internal operational workflow without widening into privile
 
 Tasks:
 
-- Inventory existing API data for corpus/profile identity, projection identity, Solr/OpenSearch parity/status, synchronization/adapters and automated evidence state.
-- Define a concise read-only steward workflow distinct from existing Admin mutation flows.
-- Reuse the generated OpenAPI/client boundary.
-- Add API fields only where current contracts cannot truthfully express required status.
-- Present authority boundaries, stale/degraded/fallback states and timestamps where available.
-- Keep secrets, credentials and operator-only diagnostics out of the browser contract.
-- Add loading, empty, degraded and error states.
-- Add responsive/component/browser/axe evidence.
+- [x] Inventory existing API data for corpus/profile identity, projection identity, Solr/OpenSearch parity/status, synchronization/adapters and automated evidence state.
+- [x] Define a concise read-only steward workflow distinct from existing Admin mutation flows.
+- [x] Reuse the generated OpenAPI/client boundary without adding a backend schema for facts the current contract already exposes.
+- [x] Present authority boundaries, stale/degraded/fallback states and timestamps where available.
+- [x] Keep secrets, credentials and operator-only diagnostics out of the browser contract.
+- [x] Add loading, empty, degraded and error states.
+- [x] Add responsive/component/browser/axe evidence.
+- [ ] Complete repository validation and merge the #99 implementation PR.
+
+Implementation boundary:
+
+- `/steward` is a lazy read-only route in `discovery-ui`;
+- existing corpus-storage, DSpace/source-inventory, synchronization and evidence clients provide status facts;
+- the existing non-mutating Solr/OpenSearch projection-parity component is reused rather than duplicated;
+- Admin Sync retains sync/apply/reindex controls and is linked separately from the steward view.
 
 Acceptance:
 
 - A repository steward can understand current system/corpus/search status without privileged actions.
 - The surface does not duplicate Admin solely for portfolio breadth.
 - Authority/provenance and degraded-state wording remain explicit.
+- Narrow-width and axe evidence remain clean.
 
 ## Deferred / optional work
 
