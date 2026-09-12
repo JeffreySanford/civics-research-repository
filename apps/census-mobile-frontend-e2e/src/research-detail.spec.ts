@@ -66,8 +66,71 @@ async function mockSearch(page: Page): Promise<void> {
   });
 }
 
+function researchIdFromRequest(url: string): string {
+  const token = new URL(url).pathname.split('/').at(-1) ?? '';
+  return Buffer.from(token, 'base64url').toString('utf8');
+}
+
 async function mockDetail(page: Page): Promise<void> {
   await page.route('**/api/research/*', async (route) => {
+    const researchId = researchIdFromRequest(route.request().url());
+
+    if (researchId === 'north-dakota-methodology') {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          source: 'REPOSITORY',
+          id: researchId,
+          title: 'North Dakota Migration Methodology',
+          contentType: 'METHODOLOGY',
+          program: 'ACS',
+          programName: 'Population Mobility',
+          publisher: 'U.S. Census Bureau',
+          abstractText: 'Methodology used to construct the migration-flow research product.',
+          sourceSystem: 'DSPACE',
+          geography: 'North Dakota',
+          vintageYear: 2025,
+          accessLevel: 'PUBLIC',
+          license: 'Public domain',
+          citation: 'U.S. Census Bureau. North Dakota Migration Methodology.',
+          sourceUrl: 'https://www.census.gov/topics/population/migration.html',
+          files: [],
+          authors: [],
+          relations: [],
+          relatedResearch: [],
+        },
+      });
+      return;
+    }
+
+    if (researchId === 'north-dakota-population-estimates') {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          source: 'REPOSITORY',
+          id: researchId,
+          title: 'North Dakota Population Estimates',
+          contentType: 'DATASET',
+          program: 'PEP',
+          programName: 'Population Estimates',
+          publisher: 'U.S. Census Bureau',
+          abstractText: 'Related population estimates for North Dakota.',
+          sourceSystem: 'DSPACE',
+          geography: 'North Dakota',
+          vintageYear: 2025,
+          accessLevel: 'PUBLIC',
+          license: 'Public domain',
+          citation: 'U.S. Census Bureau. North Dakota Population Estimates.',
+          sourceUrl: 'https://www.census.gov/programs-surveys/popest.html',
+          files: [],
+          authors: [],
+          relations: [],
+          relatedResearch: [],
+        },
+      });
+      return;
+    }
+
     await route.fulfill({
       contentType: 'application/json',
       json: {
@@ -96,10 +159,56 @@ async function mockDetail(page: Page): Promise<void> {
           },
         ],
         authors: [],
-        relatedResearch: [],
+        relations: [
+          {
+            verb: 'uses',
+            targetId: 'north-dakota-methodology',
+            targetTitle: 'North Dakota Migration Methodology',
+            targetType: 'METHODOLOGY',
+            targetAccessLevel: 'PUBLIC',
+            note: 'Documents the methodology used by this migration product.',
+          },
+        ],
+        relatedResearch: [
+          {
+            id: 'north-dakota-population-estimates',
+            title: 'North Dakota Population Estimates',
+            contentType: 'DATASET',
+            program: 'PEP',
+            programName: 'Population Estimates',
+            publisher: 'U.S. Census Bureau',
+            summary: 'Related population estimates for North Dakota.',
+            sourceUrl: 'https://www.census.gov/programs-surveys/popest.html',
+            origin: 'CURATED',
+            sourceSystem: 'DSPACE',
+            geography: 'North Dakota',
+            vintageYear: 2025,
+          },
+        ],
       },
     });
   });
+}
+
+async function openMigrationDetail(page: Page) {
+  await page.goto('/?q=North%20Dakota%20migration&type=DATASET');
+  const viewLink = page.getByRole('link', {
+    name: 'View research object: Migration Flows for North Dakota',
+  });
+  await expect(viewLink).toBeVisible();
+  await viewLink.click();
+  return viewLink;
+}
+
+async function expectSearchContextRestored(page: Page): Promise<void> {
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('q'))
+    .toBe('North Dakota migration');
+  expect(new URL(page.url()).searchParams.get('type')).toBe('DATASET');
+  await expect(page.locator('#research-query')).toHaveValue(
+    'North Dakota migration',
+  );
+  await expect(page.locator('.active-filters')).toContainText('Dataset');
 }
 
 test.describe('mobile research detail navigation', () => {
@@ -111,12 +220,7 @@ test.describe('mobile research detail navigation', () => {
   test('opens a result and returns to the exact filtered search at 320px @wcag', async ({
     page,
   }) => {
-    await page.goto('/?q=North%20Dakota%20migration&type=DATASET');
-    const viewLink = page.getByRole('link', {
-      name: 'View research object: Migration Flows for North Dakota',
-    });
-    await expect(viewLink).toBeVisible();
-    await viewLink.click();
+    const viewLink = await openMigrationDetail(page);
 
     await expect(page).toHaveURL(/\/research\//);
     const heading = page.getByRole('heading', {
@@ -138,15 +242,69 @@ test.describe('mobile research detail navigation', () => {
     expect(accessibility.violations).toEqual([]);
 
     await page.getByRole('button', { name: 'Back to results' }).click();
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get('q'))
-      .toBe('North Dakota migration');
-    expect(new URL(page.url()).searchParams.get('type')).toBe('DATASET');
-    await expect(page.locator('#research-query')).toHaveValue(
-      'North Dakota migration',
-    );
-    await expect(page.locator('.active-filters')).toContainText('Dataset');
+    await expectSearchContextRestored(page);
     await expect(viewLink).toBeFocused();
+  });
+
+  test('traverses a typed research package and returns directly to search @wcag', async ({
+    page,
+  }) => {
+    const viewLink = await openMigrationDetail(page);
+
+    await expect(
+      page.getByRole('heading', { name: 'Research package' }),
+    ).toBeVisible();
+    await expect(page.getByText('Uses', { exact: true })).toBeVisible();
+    const methodologyLink = page.getByRole('link', {
+      name: 'North Dakota Migration Methodology',
+    });
+    await expect(methodologyLink).toBeVisible();
+    await expect(
+      page.getByText('Documents the methodology used by this migration product.'),
+    ).toBeVisible();
+
+    await methodologyLink.click();
+    const methodologyHeading = page.getByRole('heading', {
+      level: 1,
+      name: 'North Dakota Migration Methodology',
+    });
+    await expect(methodologyHeading).toBeVisible();
+    await expect(methodologyHeading).toBeFocused();
+    await expect(page.getByText('Methodology', { exact: true })).toBeVisible();
+
+    const accessibility = await new AxeBuilder({ page })
+      .withTags(axeTags)
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+
+    await page.getByRole('button', { name: 'Back to results' }).click();
+    await expectSearchContextRestored(page);
+    await expect(viewLink).toBeFocused();
+  });
+
+  test('opens broader related research without losing the search origin @wcag', async ({
+    page,
+  }) => {
+    await openMigrationDetail(page);
+
+    await expect(
+      page.getByRole('heading', { name: 'Related research' }),
+    ).toBeVisible();
+    const relatedLink = page.getByRole('link', {
+      name: 'North Dakota Population Estimates',
+    });
+    await relatedLink.click();
+
+    const relatedHeading = page.getByRole('heading', {
+      level: 1,
+      name: 'North Dakota Population Estimates',
+    });
+    await expect(relatedHeading).toBeVisible();
+    await expect(relatedHeading).toBeFocused();
+    await expect(page.getByText('Population Estimates')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back to results' }).click();
+    await expectSearchContextRestored(page);
   });
 
   test('deep-links to federated provenance and uses the return URL fallback @wcag', async ({
@@ -170,6 +328,7 @@ test.describe('mobile research detail navigation', () => {
           sourceUrl: 'https://example.test/federated',
           files: [],
           authors: [],
+          relations: [],
           relatedResearch: [],
         },
       });
