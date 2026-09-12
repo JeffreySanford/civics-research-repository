@@ -127,9 +127,10 @@ Federated detail:
 - labels the object as federated,
 - identifies the source system/publisher,
 - links to the authoritative external resource,
-- does not invent local versions, map layers or file preservation.
+- does not invent version records; the version-history contract can report observed, unknown, or unavailable history without turning inference into provenance;
+- does not invent repository-only map layers or local file preservation.
 
-Curated repository detail retains DSpace-owned enrichments such as versions, files and repository-specific relationships.
+Curated repository detail retains DSpace-owned persisted version facts, files and repository-specific relationships. The authority-neutral version-history API can also report observed source evidence for federated records, but DSpace remains authoritative for curated repository version metadata.
 
 ### Browser integrations are typed and centralized
 

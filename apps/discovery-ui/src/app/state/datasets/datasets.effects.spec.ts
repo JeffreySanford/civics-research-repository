@@ -6,6 +6,7 @@ import {
   RepositoryMapsApi,
   type ResearchObjectDetail,
   type DatasetVersion,
+  type ResearchArtifactVersionHistory,
   type MapLayer,
 } from 'repository-api-client';
 import { DatasetsActions } from './datasets.actions';
@@ -51,6 +52,12 @@ const versions: DatasetVersion[] = [
     current: true,
   },
 ];
+
+const versionHistory: ResearchArtifactVersionHistory = {
+  researchObjectId: detail.id,
+  status: 'OBSERVED_CURRENT_ONLY',
+  versions,
+};
 
 const mapLayers = [
   {
@@ -105,7 +112,12 @@ describe('DatasetsEffects', () => {
       'tiger-line-north-dakota-2025',
     );
     expect(emitted).toEqual(
-      DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),
+      DatasetsActions.datasetLoaded({
+        detail,
+        versions,
+        versionHistoryStatus: 'OBSERVED_CURRENT_ONLY',
+        mapLayers,
+      }),
     );
   });
 
@@ -113,6 +125,20 @@ describe('DatasetsEffects', () => {
     const getResearchObject = vi.fn().mockReturnValue(of(federatedDetail));
     const getDataset = vi.fn();
     const getDatasetVersions = vi.fn();
+    const getResearchObjectVersions = vi.fn().mockReturnValue(
+      of({
+        ...versionHistory,
+        researchObjectId: federatedDetail.id,
+        versions: [
+          {
+            id: federatedDetail.id,
+            label: federatedDetail.title,
+            current: true,
+            sourceUrl: federatedDetail.sourceUrl,
+          },
+        ],
+      }),
+    );
     const getDatasetMapLayers = vi.fn();
     const researchId = 'REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg';
     const effects = setup(
@@ -120,6 +146,7 @@ describe('DatasetsEffects', () => {
         getResearchObject,
         getDataset,
         getDatasetVersions,
+        getResearchObjectVersions,
       } as unknown as RepositoryDatasetsApi,
       { getDatasetMapLayers } as unknown as RepositoryMapsApi,
       of(DatasetsActions.researchOpened({ researchId })),
@@ -130,11 +157,20 @@ describe('DatasetsEffects', () => {
     expect(getResearchObject).toHaveBeenCalledWith(researchId);
     expect(getDataset).not.toHaveBeenCalled();
     expect(getDatasetVersions).not.toHaveBeenCalled();
+    expect(getResearchObjectVersions).toHaveBeenCalledWith(researchId);
     expect(getDatasetMapLayers).not.toHaveBeenCalled();
     expect(emitted).toEqual(
       DatasetsActions.datasetLoaded({
         detail: federatedDetail,
-        versions: [],
+        versions: [
+          {
+            id: federatedDetail.id,
+            label: federatedDetail.title,
+            current: true,
+            sourceUrl: federatedDetail.sourceUrl,
+          },
+        ],
+        versionHistoryStatus: 'OBSERVED_CURRENT_ONLY',
         mapLayers: [],
       }),
     );
@@ -142,13 +178,17 @@ describe('DatasetsEffects', () => {
 
   it('preserves repository versions and map layers through the canonical research route', async () => {
     const getResearchObject = vi.fn().mockReturnValue(of(detail));
-    const getDatasetVersions = vi.fn().mockReturnValue(of(versions));
+    const getDatasetVersions = vi.fn();
+    const getResearchObjectVersions = vi
+      .fn()
+      .mockReturnValue(of(versionHistory));
     const getDatasetMapLayers = vi.fn().mockReturnValue(of(mapLayers));
     const researchId = 'dGlnZXItbGluZS1ub3J0aC1kYWtvdGEtMjAyNQ';
     const effects = setup(
       {
         getResearchObject,
         getDatasetVersions,
+        getResearchObjectVersions,
       } as unknown as RepositoryDatasetsApi,
       { getDatasetMapLayers } as unknown as RepositoryMapsApi,
       of(DatasetsActions.researchOpened({ researchId })),
@@ -157,10 +197,16 @@ describe('DatasetsEffects', () => {
     const emitted = await firstValueFrom(effects.openResearch$);
 
     expect(getResearchObject).toHaveBeenCalledWith(researchId);
-    expect(getDatasetVersions).toHaveBeenCalledWith(detail.id);
+    expect(getDatasetVersions).not.toHaveBeenCalled();
+    expect(getResearchObjectVersions).toHaveBeenCalledWith(researchId);
     expect(getDatasetMapLayers).toHaveBeenCalledWith(detail.id);
     expect(emitted).toEqual(
-      DatasetsActions.datasetLoaded({ detail, versions, mapLayers }),
+      DatasetsActions.datasetLoaded({
+        detail,
+        versions,
+        versionHistoryStatus: 'OBSERVED_CURRENT_ONLY',
+        mapLayers,
+      }),
     );
   });
 

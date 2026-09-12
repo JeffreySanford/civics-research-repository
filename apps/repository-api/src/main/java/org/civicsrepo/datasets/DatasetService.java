@@ -1,6 +1,5 @@
 package org.civicsrepo.datasets;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.civicsrepo.repository.FixtureCatalog;
@@ -53,13 +52,8 @@ public class DatasetService {
 
     public List<DatasetVersion> getDatasetVersions(String datasetId) {
         ResearchObjectDetail detail = getDataset(datasetId);
-        int currentYear = detail.getVintageYear() == null ? 2026 : detail.getVintageYear();
-
-        return List.of(
-                new DatasetVersion(datasetId + "-current", detail.getTitle(), true)
-                        .releasedOn(detail.getReleasedOn()),
-                new DatasetVersion(datasetId + "-previous", detail.getProgram() + " " + (currentYear - 1), false)
-                        .releasedOn(LocalDate.of(currentYear - 1, 8, 1)));
+        return List.of(new DatasetVersion(datasetId, detail.getTitle(), true)
+                .releasedOn(detail.getReleasedOn()));
     }
 
     private ResponseStatusException notFound(String datasetId) {

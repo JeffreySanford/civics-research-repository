@@ -28,10 +28,12 @@ class DatasetServiceTest {
     @Test
     void loadsVersionHistoryForDataset() {
         assertThat(datasetService.getDatasetVersions("lodes-wac-texas-2023"))
-                .hasSize(2)
-                .first()
-                .extracting(DatasetVersion::getCurrent)
-                .isEqualTo(true);
+                .singleElement()
+                .satisfies(version -> {
+                    assertThat(version.getCurrent()).isTrue();
+                    assertThat(version.getId()).isEqualTo("lodes-wac-texas-2023");
+                    assertThat(version.getReleasedOn()).isNotNull();
+                });
     }
 
     @Test

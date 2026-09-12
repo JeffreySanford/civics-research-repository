@@ -85,12 +85,44 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
   // the authority-neutral route without duplicating fixture data.
   await page.route(`**/api/research/*`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
+    if (pathname.endsWith('/versions')) {
+      await route.fallback();
+      return;
+    }
+
     const researchId = pathname.split('/research/')[1] ?? '';
     const canonicalId = Buffer.from(researchId, 'base64url').toString('utf8');
 
     await route.fulfill({
       contentType: 'application/json',
       json: datasetDetail(canonicalId),
+    });
+  });
+
+  // Version-history knowledge is authority-neutral. This fixture exposes only the record that was
+  // actually observed; it must never manufacture a previous year from vintage metadata.
+  await page.route(`**/api/research/*/versions`, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    const encodedId =
+      pathname.split('/research/')[1]?.replace(/\/versions$/, '') ?? '';
+    const canonicalId = Buffer.from(encodedId, 'base64url').toString('utf8');
+    const detail = datasetDetail(canonicalId);
+
+    await route.fulfill({
+      contentType: 'application/json',
+      json: {
+        researchObjectId: canonicalId,
+        status: 'OBSERVED_CURRENT_ONLY',
+        versions: [
+          {
+            id: `${canonicalId}-current`,
+            label: detail.title,
+            releasedOn: detail.releasedOn,
+            current: true,
+            sourceUrl: detail.sourceUrl,
+          },
+        ],
+      },
     });
   });
 
@@ -180,12 +212,6 @@ export async function mockRepositoryApi(page: Page): Promise<void> {
           label: datasetTitle(datasetId),
           releasedOn: '2025-08-01',
           current: true,
-        },
-        {
-          id: `${datasetId}-previous`,
-          label: 'TIGER_LINE 2024',
-          releasedOn: '2024-08-01',
-          current: false,
         },
       ],
     });

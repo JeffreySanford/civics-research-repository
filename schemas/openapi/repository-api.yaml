@@ -109,6 +109,32 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /research/{researchId}/versions:
+    get:
+      tags: [Datasets]
+      operationId: getResearchObjectVersionHistory
+      summary: Get observed research artifact version history.
+      description: >-
+        Returns only version facts observed from the repository or authoritative source metadata.
+        A singleton OBSERVED_CURRENT_ONLY response means earlier/later history is unknown; it does
+        not assert that no other versions exist.
+      parameters:
+        - $ref: '#/components/parameters/ResearchId'
+      responses:
+        '200':
+          description: Observed version history with an explicit knowledge state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchArtifactVersionHistory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /search/comparison/scenarios:
     get:
       tags: [Search]
@@ -2454,6 +2480,64 @@ components:
           # int64: a repository file can exceed 2 GB, and int32 would silently cap it.
           type: integer
           format: int64
+    VersionHistoryStatus:
+      type: string
+      enum: [OBSERVED_CURRENT_ONLY, HISTORY_AVAILABLE, UNAVAILABLE]
+      description: >-
+        Describes what the repository actually knows about version lineage.
+        OBSERVED_CURRENT_ONLY explicitly means history beyond the observed record is unknown.
+    ResearchArtifactVersion:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          description: Stable repository/source identity for the observed artifact version.
+        label:
+          type: string
+        current:
+          type: boolean
+          description: True only when the repository can identify this as its current observed record.
+        versionLabel:
+          type: string
+          description: Source-provided release/version label; omitted when unknown.
+        versionDate:
+          type: string
+          format: date
+        releasedOn:
+          type: string
+          format: date
+        doi:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        sourceSha256:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        capturedAt:
+          type: string
+          format: date-time
+        isVersionOf:
+          type: string
+        supersedes:
+          type: string
+        changeNote:
+          type: string
+    ResearchArtifactVersionHistory:
+      type: object
+      required: [researchObjectId, status, versions]
+      properties:
+        researchObjectId:
+          type: string
+        status:
+          $ref: '#/components/schemas/VersionHistoryStatus'
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchArtifactVersion'
+        note:
+          type: string
     DatasetVersion:
       type: object
       required: [id, label, current]

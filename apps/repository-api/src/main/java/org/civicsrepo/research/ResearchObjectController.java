@@ -1,5 +1,6 @@
 package org.civicsrepo.research;
 
+import org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,5 +19,10 @@ public final class ResearchObjectController {
     @GetMapping("/{researchId}")
     public ResearchObjectDetail getResearchObject(@PathVariable String researchId) {
         return researchObjectService.getResearchObject(researchId);
+    }
+
+    @GetMapping("/{researchId}/versions")
+    public ResearchArtifactVersionHistory getResearchObjectVersionHistory(@PathVariable String researchId) {
+        return researchObjectService.getResearchObjectVersionHistory(researchId);
     }
 }

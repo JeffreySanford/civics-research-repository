@@ -14,9 +14,13 @@ test.describe('accessibility evidence', () => {
     await mockRepositoryApi(page);
     await mockSearchComparisonApi(page);
     await page.route(`**/api/research/*`, async (route) => {
-      const token = new URL(route.request().url()).pathname.split(
-        '/research/',
-      )[1];
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname.endsWith('/versions')) {
+        await route.fallback();
+        return;
+      }
+
+      const token = pathname.split('/research/')[1];
       if (token !== federatedResearchId) {
         await route.fallback();
         return;
@@ -84,7 +88,7 @@ test.describe('accessibility evidence', () => {
     });
   }
 
-  test('federated detail discloses external authority without repository-only tabs @wcag @section508', async ({
+  test('federated detail exposes truthful version knowledge without repository-only map enrichments @wcag @section508', async ({
     page,
   }) => {
     await page.goto(`/research/${federatedResearchId}`);
@@ -98,12 +102,26 @@ test.describe('accessibility evidence', () => {
       'href',
       'https://catalog.data.gov/dataset/workforce-example',
     );
-    await expect(page.getByRole('tab', { name: 'Versions' })).toHaveCount(0);
+
+    await page.getByRole('tab', { name: 'Versions' }).click();
+    await expect(
+      page.getByText(
+        'Only the current repository/source record has been observed. Earlier or later version history is not established.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByText('Current observed record')).toBeVisible();
+    await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);
+
+    const results = await new AxeBuilder({ page })
+      .withTags(axeEngineeringTags)
+      .analyze();
+    expect(results.violations).toEqual([]);
+
     await expect(page.getByRole('tab', { name: 'Map Layers' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'Map Preview' })).toHaveCount(0);
   });
 
-  test('curated detail keeps repository enrichments on the authority-neutral route @wcag @section508', async ({
+  test('curated detail reports observed-current-only history and keeps repository map enrichments @wcag @section508', async ({
     page,
   }) => {
     await page.goto(`/research/${curatedResearchId}`);
@@ -114,7 +132,19 @@ test.describe('accessibility evidence', () => {
       }),
     ).toBeVisible();
     await page.getByRole('tab', { name: 'Versions' }).click();
-    await expect(page.getByText('Current')).toBeVisible();
+    await expect(
+      page.getByText(
+        'Only the current repository/source record has been observed. Earlier or later version history is not established.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByText('Current observed record')).toBeVisible();
+    await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);
+
+    const results = await new AxeBuilder({ page })
+      .withTags(axeEngineeringTags)
+      .analyze();
+    expect(results.violations).toEqual([]);
+
     await page.getByRole('tab', { name: 'Map Layers' }).click();
     await expect(page.getByText('2023 LODES commuting flows')).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Map Preview' })).toBeVisible();

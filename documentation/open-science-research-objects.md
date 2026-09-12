@@ -143,8 +143,10 @@ should prove the generalized path with a real CODE/replication object rather tha
 
 ## Known gaps
 
-- **Version history is not authoritative yet.** The current dataset version service synthesizes a
-  previous version from `vintageYear`. That is useful demo presentation but not acceptable provenance.
+- **Version history is becoming authoritative in #114.** Phase A removes the synthetic
+  `vintageYear - 1` record and introduces explicit `OBSERVED_CURRENT_ONLY`, `HISTORY_AVAILABLE`, and
+  `UNAVAILABLE` knowledge states. Source-to-DSpace provenance persistence and genuinely observed
+  multi-version lineage remain follow-on phases; unknown history stays unknown until then.
   Issue #114 replaces inferred history with observed artifact/version/source facts and must represent
   unknown history as unknown.
 - **Replication packages and code remain unmodelled in practice.** `CODE` is in the enum and nothing

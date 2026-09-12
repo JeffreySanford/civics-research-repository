@@ -61,6 +61,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/research/{researchId}/versions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get observed research artifact version history.
+     * @description Returns only version facts observed from the repository or authoritative source metadata. A singleton OBSERVED_CURRENT_ONLY response means earlier/later history is unknown; it does not assert that no other versions exist.
+     */
+    get: operations['getResearchObjectVersionHistory'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/search/comparison/scenarios': {
     parameters: {
       query?: never;
@@ -1307,6 +1327,42 @@ export interface components {
       /** Format: int64 */
       sizeBytes?: number;
     };
+    /**
+     * @description Describes what the repository actually knows about version lineage. OBSERVED_CURRENT_ONLY explicitly means history beyond the observed record is unknown.
+     * @enum {string}
+     */
+    VersionHistoryStatus:
+      | 'OBSERVED_CURRENT_ONLY'
+      | 'HISTORY_AVAILABLE'
+      | 'UNAVAILABLE';
+    ResearchArtifactVersion: {
+      /** @description Stable repository/source identity for the observed artifact version. */
+      id: string;
+      label: string;
+      /** @description True only when the repository can identify this as its current observed record. */
+      current?: boolean;
+      /** @description Source-provided release/version label; omitted when unknown. */
+      versionLabel?: string;
+      /** Format: date */
+      versionDate?: string;
+      /** Format: date */
+      releasedOn?: string;
+      doi?: string;
+      /** Format: uri */
+      sourceUrl?: string;
+      sourceSha256?: string;
+      /** Format: date-time */
+      capturedAt?: string;
+      isVersionOf?: string;
+      supersedes?: string;
+      changeNote?: string;
+    };
+    ResearchArtifactVersionHistory: {
+      researchObjectId: string;
+      status: components['schemas']['VersionHistoryStatus'];
+      versions: components['schemas']['ResearchArtifactVersion'][];
+      note?: string;
+    };
     DatasetVersion: {
       id: string;
       label: string;
@@ -2219,6 +2275,33 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ResearchObjectDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getResearchObjectVersionHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description URL-safe Base64 identity token for the canonical local research-object identifier. The token keeps namespaced external identifiers containing slashes and URLs inside one path segment without changing the underlying identity used by persistence and discovery. */
+        researchId: components['parameters']['ResearchId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Observed version history with an explicit knowledge state. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ResearchArtifactVersionHistory'];
         };
       };
       400: components['responses']['BadRequest'];
