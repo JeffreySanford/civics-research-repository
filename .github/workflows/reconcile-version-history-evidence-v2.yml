@@ -1,0 +1,102 @@
+name: Reconcile Phase A version history evidence v2
+
+on:
+  push:
+    branches:
+      - feat/artifact-version-provenance
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/artifact-version-provenance
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Reuse the validated Phase A evidence patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          workflow = Path('.github/workflows/reconcile-version-history-evidence.yml').read_text()
+          start_marker = "          python - <<'PY'\n"
+          end_marker = "\n          PY\n"
+          start = workflow.index(start_marker) + len(start_marker)
+          end = workflow.index(end_marker, start)
+          script = dedent(workflow[start:end])
+          exec(compile(script, 'phase-a-evidence-patch.py', 'exec'), {})
+          PY
+
+      - name: Canonically format all Phase A evidence files
+        run: pnpm exec nx format:write --files=apps/discovery-ui-e2e/src/support/repository-api-mocks-base.ts,apps/discovery-ui-e2e/src/accessibility.spec.ts,apps/discovery-ui/src/app/pages/dataset-detail-page.html,apps/discovery-ui/src/app/pages/dataset-detail-page.version-history.spec.ts,apps/discovery-ui/src/app/pages/dataset-detail-page.stories.ts,documentation/architecture.md,documentation/architecture-diagrams.md,documentation/open-science-research-objects.md
+
+      - name: Validate discovery UI unit and lint gates
+        run: |
+          pnpm exec nx test discovery-ui
+          pnpm exec nx lint discovery-ui
+
+      - name: Build Storybook
+        run: pnpm exec nx build-storybook discovery-ui --configuration=ci
+
+      - name: Install Chromium for browser evidence
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Storybook interactions and axe
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec http-server dist/storybook/discovery-ui -p 4400 -c-1 --cors > storybook-phase-a.log 2>&1 &
+          storybook_pid=$!
+          trap 'kill "$storybook_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4400/index.json >/dev/null; then
+              pnpm exec nx test-storybook discovery-ui
+              exit 0
+            fi
+            sleep 1
+          done
+          cat storybook-phase-a.log
+          exit 1
+
+      - name: Run focused Chromium Playwright and axe evidence
+        run: pnpm exec playwright test apps/discovery-ui-e2e/src/accessibility.spec.ts --config=apps/discovery-ui-e2e/playwright.config.mts --project=chromium --reporter=line
+
+      - name: Ensure repository formatting remains clean
+        run: pnpm exec nx format:check --all
+
+      - name: Commit validated Phase A evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            apps/discovery-ui-e2e/src/support/repository-api-mocks-base.ts \
+            apps/discovery-ui-e2e/src/accessibility.spec.ts \
+            apps/discovery-ui/src/app/pages/dataset-detail-page.html \
+            apps/discovery-ui/src/app/pages/dataset-detail-page.version-history.spec.ts \
+            apps/discovery-ui/src/app/pages/dataset-detail-page.stories.ts \
+            documentation/architecture.md \
+            documentation/architecture-diagrams.md \
+            documentation/open-science-research-objects.md
+          git diff --cached --check
+          git commit -m 'test: reconcile Phase A version history evidence'
+          git push origin HEAD:feat/artifact-version-provenance
