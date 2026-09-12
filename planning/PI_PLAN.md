@@ -1,6 +1,6 @@
 # Program Increment Plan
 
-This plan reflects the repository's current state after the certified C2/C2.1 search-research program, frontend mission alignment, mobile-first frontend delivery and dependency-security cleanup.
+This plan reflects the repository's current state after the certified C2/C2.1 search-research program, frontend mission alignment, mobile-first frontend delivery, dependency-security cleanup and shared result-explainability delivery.
 
 ```text
 PI-1 Federated Metadata Expansion / Standalone Evidence   COMPLETE
@@ -8,12 +8,10 @@ C2.1 adversarial standalone validation                   COMPLETE (#47)
 Frontend mission / portfolio alignment                   COMPLETE (#51)
 Mobile-first search-to-research experience               COMPLETE through PR #95
 Dependency security cleanup                              COMPLETE (#96)
+Shared result explainability                             COMPLETE (#97 / PR #103)
 Manual accessibility evidence                            NOT PLANNED (#49)
 
 Current continuation:
-#97 Shared result explainability
-        |
-        v
 #98 Design lifecycle evidence
         |
         v
@@ -54,7 +52,7 @@ The search-engine claims remain scoped to the documented corpus, mappings, workl
 
 ## Product/UI increment delivered
 
-The project now contains two Angular frontends over the same generated API boundary:
+The project contains two Angular frontends over the same generated API boundary:
 
 ```text
 apps/discovery-ui                 :4200
@@ -78,21 +76,22 @@ The mobile-first increment delivered:
 - authority-neutral research detail;
 - typed research-package relationships and related-research navigation;
 - responsive/axe/browser evidence at representative mobile/tablet widths;
-- shared rank/relevance primitives consumed by both Angular frontends.
+- shared rank, relevance and result-explainability primitives consumed by both Angular frontends.
+
+Issue #97 / PR #103 completed one shared `Why this matched` interaction through `shared-ui`. It keeps ordinal rank, query-relative match strength, model/calibration metadata and matched-field evidence distinct while leaving query/filter adaptation, routing and application state in each frontend.
 
 The browser remains isolated from DSpace, Solr, OpenSearch and publisher APIs behind the Spring/OpenAPI boundary.
 
-## Current continuation — #97, #98, #99
-
-### #97 — Shared result explainability
-
-Turn existing backend-owned rank/relevance/match evidence into one consistent accessible explanation experience across both Angular frontends using the existing `shared-ui` library.
-
-The frontend must not invent ranking formulas, probabilities or raw engine explain contracts.
+## Current continuation — #98 and #99
 
 ### #98 — Design lifecycle evidence
 
 Capture one representative UI slice from wireframe/intent through annotated specification, Storybook, implementation and automated evidence so the design/engineering decision path is reviewable.
+
+Primary artifacts:
+
+- [Mobile Search Design Lifecycle Case Study](../mobile-first/documentation/design/mobile-search-design-lifecycle.md)
+- [ADR-002 — Mobile Search Interaction and Shared Evidence Model](../mobile-first/documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
 
 ### #99 — Read-only repository steward/status workflow
 
@@ -141,3 +140,4 @@ AWS/IaC is not part of the current continuation path. If deployment becomes a re
 11. Failed evidence runs never overwrite a prior known-good baseline.
 12. Certified C2 and C2.1 remain immutable historical/control evidence; new experiments are versioned separately.
 13. Both Angular frontends consume typed application APIs rather than binding directly to repository/search internals.
+14. Cross-frontend UI reuse is promoted only after demonstrated semantic reuse; application state/routing remains app-owned.

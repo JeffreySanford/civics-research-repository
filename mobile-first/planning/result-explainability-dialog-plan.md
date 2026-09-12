@@ -1,6 +1,6 @@
 # Result Explainability Dialog Plan
 
-Status: active as issue #97
+Status: completed by issue #97 / PR #103
 
 ## Goal
 
@@ -8,56 +8,71 @@ Give every search result in both Angular frontends a consistent, discoverable wa
 
 > Why did this result match this query, and what does its ranking evidence actually mean?
 
-This is search-engine evidence presented in a user-comprehensible way. It must remain truthful about what the backend can prove and must not turn engine scores into probabilities.
+This is search-engine evidence presented in a user-comprehensible way. It remains truthful about what the backend can prove and does not turn engine scores into probabilities.
 
-## Current reuse boundary
+## Implemented outcome
 
-The mobile stack is already converged to `main`, and PR #92 established the existing `shared-ui` library as the cross-frontend presentational reuse boundary.
+PR #103 implemented the plan through the existing `shared-ui` boundary:
 
-Use that existing boundary rather than creating a new `census-ui` library.
+- `SearchExplainabilityDialogComponent` owns shared presentational semantics;
+- both Angular frontends use the same result-specific `Why this matched` interaction;
+- query/filter context remains adapted by each application;
+- ordinal rank remains distinct from query-relative match strength;
+- relevance model/normalization/calibration metadata is rendered with explicit caveats;
+- typed field/term `matchEvidence` is rendered without exposing raw engine explain trees;
+- native modal-dialog behavior provides explicit Close/Escape behavior and focus return;
+- Storybook/component/browser/axe evidence covers representative explanation states and both frontend consumers.
 
-A good split is:
+Manual assistive-technology testing was not a completion requirement and is not implied by the automated evidence.
+
+## Reuse boundary
+
+The mobile stack is converged to `main`, and PR #92 established the existing `shared-ui` library as the cross-frontend presentational reuse boundary.
+
+That existing boundary is used rather than creating a new `census-ui` library.
+
+The split remains:
 
 - shared presentational information button;
 - shared dialog content component;
 - shared dialog data interface;
-- app-specific adapter/orchestration that supplies query/filter context and opens the dialog.
+- app-specific adapter/orchestration that supplies query/filter context.
 
-Do not move NgRx search state, routing or app-specific workflow ownership into `shared-ui`.
+NgRx search state, routing and app-specific workflow ownership remain outside `shared-ui`.
 
 ## Entry point
 
-Each result card/listing should expose a small information control associated with the result.
+Each result card/listing exposes a small information control associated with the result.
 
-Recommended accessible name:
+Accessible name:
 
 `Why this result matched: <result title>`
 
-The visible control may use an information icon, but the accessible name must not depend on the glyph.
+The accessible name does not depend on a glyph or repeated generic button label.
 
 ## Interaction model
 
-Use a modal dialog rather than a tooltip.
+The implementation uses a modal dialog rather than a tooltip.
 
-A tooltip is appropriate only for short supplemental text. The intended explanation can contain multiple evidence sections, ranking context, caveats and model/version metadata. A dialog gives keyboard and screen-reader users a stable reading surface.
+A tooltip is appropriate only for short supplemental text. The explanation contains multiple evidence sections, ranking context, caveats and model/version metadata. A dialog gives keyboard and screen-reader users a stable reading surface.
 
-Mobile may visually present the dialog as a near-full-screen sheet, while larger screens may use a centered modal. Both surfaces should share the same semantic dialog contract and content model.
+Mobile can visually present the dialog as a near-full-screen sheet while larger screens use a centered modal. Both surfaces share the same semantic dialog contract and content model.
 
-Required dialog behavior:
+Required behavior delivered by the shared component/browser evidence includes:
 
-- framework-equivalent accessible dialog semantics (`role="dialog"` / `aria-modal="true"` when modal);
-- visible heading such as `Why this matched`;
-- focus moves into the dialog when opened;
-- focus remains within the modal while open;
-- Escape and an explicit Close button dismiss it;
-- focus returns to the invoking information control;
-- long content scrolls inside the dialog without document-level horizontal overflow at 320px;
-- forced-colors/high-contrast mode retains boundaries and controls;
+- accessible native modal-dialog semantics;
+- visible `Why this matched` heading;
+- focus movement into the dialog when opened;
+- modal focus containment through native dialog behavior;
+- Escape and an explicit Close button;
+- focus return to the invoking information control;
+- narrow-screen content wrapping without document-level horizontal overflow;
+- forced-colors/high-contrast boundaries and controls;
 - no color-only ranking meaning.
 
-## Initial content model
+## Content model
 
-The first implementation should reuse evidence already owned by the API rather than infer ranking in Angular.
+The implementation reuses evidence already owned by the API rather than inferring ranking in Angular.
 
 ### Search context
 
@@ -74,8 +89,7 @@ The first implementation should reuse evidence already owned by the API rather t
 When `SearchResult.relevance` is present:
 
 - relevance band (`Strong`, `Good`, `Moderate`, `Weak`, `Low`);
-- normalized score only when the product language remains explicit that it is bounded search-engine evidence, not probability/confidence;
-- raw engine score only as an advanced/developer detail if retained at all, never as the primary user-facing number.
+- normalized evidence with explicit wording that it is not probability/confidence.
 
 When `SearchResponse.relevanceModel` is present:
 
@@ -86,7 +100,7 @@ When `SearchResponse.relevanceModel` is present:
 
 ### Field-match evidence
 
-Render the existing typed `matchEvidence[]` data:
+The dialog renders the existing typed `matchEvidence[]` data:
 
 - field label;
 - matched term(s)/phrase(s).
@@ -128,21 +142,21 @@ SearchResponse
 
 Raw engine explain trees remain diagnostic/admin evidence, not a browser contract.
 
-## Validation
+## Validation delivered
 
-Required automated evidence:
+Automated evidence includes:
 
 - component tests for conditional sections and truthful caveats;
 - Storybook states for strong/weak/uncalibrated/no-evidence cases;
-- keyboard open/close/Escape/focus-return tests;
-- 320px Playwright reflow test;
-- axe scan with the dialog open;
-- forced-colors visual/semantic checks where automation is practical;
+- keyboard open/close/focus-return browser assertions;
+- narrow/mobile presentation evidence;
+- axe scans with the dialog open;
+- forced-colors-compatible styling/non-color semantics;
 - equivalent semantics in both `census-mobile-frontend` and `discovery-ui`.
 
 Manual assistive-technology testing is **not** a completion requirement for #97. Automated evidence must not be described as manual NVDA/JAWS/VoiceOver validation or complete Section 508 conformance.
 
-## Explicit non-goals
+## Explicit non-goals retained
 
 - no frontend-created relevance formula;
 - no `95% relevant` language unless a future calibrated probability model genuinely supports it;

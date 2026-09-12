@@ -2,7 +2,7 @@
 
 Status: implemented; continuation work active
 
-This directory documents the mobile-first Census/Civics frontend that now lives beside the existing Angular application in the Nx workspace.
+This directory documents the mobile-first Census/Civics frontend that lives beside the existing Angular application in the Nx workspace.
 
 The app is no longer a proposal. `apps/census-mobile-frontend` is a working second Angular frontend over the same repository API and search infrastructure as `apps/discovery-ui`.
 
@@ -31,12 +31,13 @@ The delivered mobile experience includes:
 - server-owned query-relative relevance evidence;
 - query-wide result-type summary from server facets;
 - typed field/term match evidence;
+- one shared `Why this matched` explanation model across both Angular frontends;
 - accessible modal mobile filters and active filter chips;
 - authority-neutral `/research/:researchId` detail navigation;
 - preservation of the originating search/filter URL and focus behavior;
 - typed research-package relationship navigation;
 - broader related-research navigation kept semantically distinct from package assertions;
-- shared rank/relevance components consumed by both Angular frontends;
+- shared rank/relevance/explainability components consumed by both Angular frontends;
 - responsive browser/axe evidence at 320, 390, 430 and 768px plus forced-colors, reduced-motion and keyboard-entry checks.
 
 Automated evidence is intentionally separate from manual assistive-technology verification. Issue #49 is closed **not planned**; these automated checks must not be described as completed manual Section 508, Trusted Tester, NVDA, JAWS or VoiceOver verification.
@@ -54,23 +55,24 @@ Automated evidence is intentionally separate from manual assistive-technology ve
 
 ## Active continuation
 
-The original scaffold/search/evidence PR sequence is complete. Current work is tracked through repository issues:
+The original scaffold/search/evidence PR sequence is complete. Shared result explainability is complete through PR #103. Current work is tracked through repository issues:
 
-1. **#97 — Shared result explainability dialog**: one consistent `Why this matched` experience across both Angular frontends using the existing `shared-ui` boundary.
-2. **#98 — Design lifecycle evidence**: capture one representative mobile-first slice from design intent through Storybook, implementation and automated evidence.
-3. **#99 — Read-only repository steward/status surface**: add a focused internal status workflow from existing authority, corpus/projection, synchronization and search-health data.
+1. **#98 — Design lifecycle evidence (current)**: capture one representative mobile-first slice from design intent through Storybook, implementation and automated evidence.
+2. **#99 — Read-only repository steward/status surface (next)**: add a focused internal status workflow from existing authority, corpus/projection, synchronization and search-health data.
 
 ## Evidence and planning documents
 
 - [Architecture](documentation/architecture.md)
-- [Architecture Decision Record](documentation/adr-001-parallel-mobile-first-frontend.md)
+- [ADR-001 — Parallel Mobile-First Frontend](documentation/adr-001-parallel-mobile-first-frontend.md)
+- [ADR-002 — Mobile Search Interaction and Shared Evidence Model](documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
+- [Mobile Search Design Lifecycle Case Study](documentation/design/mobile-search-design-lifecycle.md)
 - [Experience and Engagement Strategy](documentation/experience-engagement-strategy.md)
 - [Infographics and Data Visualization Plan](documentation/infographics-and-data-visualization.md)
 - [Mobile Search Requirements-to-Evidence Traceability](documentation/requirements/mobile-search-traceability.md)
 - [Manual Accessibility Validation Protocol](documentation/accessibility/manual-validation-protocol.md) — reference/template only; manual execution is not an active completion gate
 - [Mobile Search Usability Study Protocol](documentation/usability/mobile-search-study-protocol.md) — protocol only; do not imply participant findings that were not collected
 - [Mobile Browser and Accessibility Evidence](planning/mobile-browser-accessibility-evidence.md)
-- [Result Explainability Dialog Plan](planning/result-explainability-dialog-plan.md)
+- [Result Explainability Dialog Plan](planning/result-explainability-dialog-plan.md) — completed implementation plan for #97 / PR #103
 - [Current Mobile Backlog](planning/backlog.md)
 - [Role Alignment Roadmap](planning/post-pr88-role-alignment-roadmap.md)
 

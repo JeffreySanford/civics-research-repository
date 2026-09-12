@@ -1,35 +1,37 @@
 # ADR-001: Parallel Mobile-First Census Frontend
 
-Status: proposed
+Status: accepted and implemented
 
-Date: 2026-09-11
+Decision date: 2026-09-11
+
+Implementation status confirmed: 2026-09-12
 
 ## Context
 
-The project needs a mobile-first Census/Civics research discovery experience. The existing Angular app should remain functional while this new UX is explored and validated.
+The project needed a mobile-first Census/Civics research discovery experience while the existing Angular application remained functional during exploration and validation.
 
-The desired mobile experience has different priorities from the current desktop-oriented application:
+The desired mobile experience had different priorities from the desktop-oriented application:
 
-- 320px-first layout
-- mobile filter drawer
-- federal accessibility evidence
-- Storybook viewport matrix
-- focused search/results flow
-- clean portfolio narrative around real API reuse
+- 320px-first layout;
+- mobile filter drawer;
+- federal accessibility engineering evidence;
+- Storybook viewport/state review;
+- focused search/results flow;
+- clean portfolio narrative around real API reuse.
 
-At the same time, the search API and repository backend should remain authoritative. The repository already provides a generated OpenAPI-backed `repository-api-client` with `RepositorySearchApi`, search models, and `REPOSITORY_API_BASE_URL`. Creating another backend or parallel client/contract layer would add avoidable complexity and weaken the architecture story.
+At the same time, the search API and repository backend needed to remain authoritative. The repository already provided a generated OpenAPI-backed `repository-api-client` with `RepositorySearchApi`, search models and `REPOSITORY_API_BASE_URL`. Creating another backend or parallel client/contract layer would add avoidable complexity and weaken the architecture story.
 
 ## Decision
 
 Create a new Angular app under `apps/` for the mobile-first Census frontend while keeping the existing Angular app intact.
 
-Suggested app name:
+Implemented app:
 
 ```text
 apps/census-mobile-frontend
 ```
 
-Suggested local ports:
+Local ports:
 
 ```text
 apps/discovery-ui                 4200
@@ -38,14 +40,14 @@ discovery-ui storybook            4400
 mobile storybook                  4500
 ```
 
-The new app will:
+The app:
 
-- consume the existing backend through `repository-api-client`
-- use the existing generated search types rather than duplicate contracts
-- use module-based Angular composition (`standalone=false`)
-- use NgRx/RxJS for asynchronous search workflows and shared feature state
-- use Angular Signals where they simplify local synchronous UI state and local derivation
-- add shared UI libraries only when genuine cross-app reuse is demonstrated
+- consumes the existing backend through `repository-api-client`;
+- uses the existing generated search types rather than duplicate contracts;
+- uses module-based Angular composition (`standalone=false`);
+- uses NgRx/RxJS for asynchronous search workflows and shared feature state;
+- uses Angular Signals where they simplify local synchronous UI state and local derivation;
+- promotes UI into shared libraries only when genuine cross-app reuse is demonstrated.
 
 The state architecture is intentionally hybrid. Signals are not a replacement for RxJS/NgRx, and RxJS/NgRx should not be used merely to avoid Signals where local synchronous state is simpler and clearer with `signal()` or `computed()`.
 
@@ -53,62 +55,69 @@ The state architecture is intentionally hybrid. Signals are not a replacement fo
 
 Positive:
 
-- The existing app remains stable.
-- Mobile-first work can proceed without broad regression risk.
-- The Census frontend can have a clean information architecture.
+- The existing app remained stable.
+- Mobile-first work proceeded without a broad rewrite.
+- The Census frontend has its own focused information architecture.
 - Both frontends share one typed API boundary.
 - Local UI state can use modern Angular primitives without forcing asynchronous search state out of NgRx/RxJS.
 - Storybook and accessibility evidence can be developed around focused components.
 - The backend remains the single source of search truth.
+- Demonstrated cross-app search semantics can converge into `shared-ui` without forcing the two shells to become identical.
 
 Tradeoffs:
 
 - Two frontend apps must be maintained.
-- The new app and existing app may use different Angular bootstrap styles.
-- Developers must keep Signal state and NgRx state boundaries explicit to avoid duplicate sources of truth.
+- The two apps may use different Angular composition/bootstrap styles.
+- Developers must keep Signal and NgRx ownership boundaries explicit to avoid duplicate sources of truth.
 - Shared contracts still require discipline even though the generated client removes most copy/paste risk.
 - Design-system decisions must be explicit so the apps do not diverge accidentally.
-- E2E coverage needs to cover both the current app and the mobile-first app.
+- E2E evidence needs to cover both the current app and the mobile-first app.
 
-## Alternatives Considered
+## Alternatives considered
 
-### Enhance the Existing `/discovery` Route Only
+### Enhance the existing `/discovery` route only
 
-This is architecturally elegant when an existing Discovery route already exists and is safe to refactor. It reduces duplication but increases risk if the current app is still needed as-is.
+This is architecturally elegant when an existing Discovery route is safe to refactor. It reduces duplication but would have increased risk while the existing app was still needed as-is.
 
-This remains a future convergence option.
+Future convergence remains possible if a concrete maintenance/product reason justifies it.
 
-### Create New `census-api-contracts` and `census-search-client` Libraries
+### Create new `census-api-contracts` and `census-search-client` libraries
 
-Rejected for the initial implementation. The repository already has a generated API-client library that owns the relevant search contracts and HTTP service. New libraries would duplicate an existing seam without adding capability.
+Rejected. The repository already has a generated API-client library that owns the relevant search contracts and HTTP service. New libraries would duplicate an existing seam without adding capability.
 
-A future `census-ui` library remains possible if presentational components prove reusable across both frontends.
+A separate `census-ui` library was also unnecessary. Presentational components that later demonstrated cross-app reuse were promoted into the existing `shared-ui` boundary instead.
 
-### Make All UI State NgRx/RxJS
+### Make all UI state NgRx/RxJS
 
-Rejected. Shared search state, effects, cancellation, and URL-linked state fit NgRx/RxJS well, but forcing every local drawer, disclosure, and synchronous presentation state through observable infrastructure adds ceremony without improving ownership.
+Rejected. Shared search state, effects, cancellation and URL-linked state fit NgRx/RxJS well, but forcing every local drawer/disclosure/synchronous presentation state through observable infrastructure adds ceremony without improving ownership.
 
-### Make All State Signal-Based
+### Make all state Signal-based
 
-Rejected. Search requests, cancellation, URL synchronization, and shared state transitions already fit RxJS/NgRx and should retain those semantics.
+Rejected. Search requests, cancellation, URL synchronization and shared state transitions already fit RxJS/NgRx and retain those semantics.
 
-### Create a Separate Backend
+### Create a separate backend
 
-Rejected. The backend should continue to own search semantics, facets, pagination, provenance, and authorization behavior.
+Rejected. The backend continues to own search semantics, facets, pagination, provenance and authorization behavior.
 
-### Build a Static Demo
+### Build a static demo
 
-Rejected. The goal is a credible repository extension, not a throwaway prototype.
+Rejected. The delivered frontend is a real repository extension over the production-shaped typed API boundary rather than a throwaway prototype.
 
-## Acceptance Criteria
+## Implemented acceptance evidence
 
-- Existing Angular app still serves on its current port.
-- New Angular app serves independently on a separate port.
-- New app can call the existing API through `repository-api-client` and the shared base URL token.
-- No new search backend is introduced.
-- No duplicate search contract/client library is introduced.
-- The new app remains module-based rather than defaulting to standalone components.
-- Shared/asynchronous search state uses NgRx/RxJS.
-- Appropriate local synchronous UI state may use Angular Signals.
-- The same source of truth is not independently owned by both Signals and NgRx.
-- First vertical slice works at 320px with no horizontal document scroll.
+The original acceptance criteria are now implemented:
+
+- existing Angular app still serves on its own port;
+- mobile Angular app serves independently on a separate port;
+- mobile app calls the existing API through `repository-api-client` and the shared base-URL token;
+- no new search backend was introduced;
+- no duplicate search contract/client library was introduced;
+- the mobile app remains module-based;
+- shared/asynchronous search state uses NgRx/RxJS;
+- appropriate local synchronous UI state uses Signals without duplicating NgRx-owned state;
+- the narrow baseline is exercised at 320px with automated no-horizontal-overflow evidence;
+- responsive/browser/axe evidence covers representative mobile/tablet widths.
+
+Manual assistive-technology verification is intentionally outside this ADR's completion claim. Issue #49 is closed **not planned**; automated evidence must not be represented as completed manual Section 508/Trusted Tester/AT verification.
+
+The subsequent interaction/shared-evidence decision is recorded in [ADR-002](adr-002-mobile-search-interaction-and-evidence-model.md).

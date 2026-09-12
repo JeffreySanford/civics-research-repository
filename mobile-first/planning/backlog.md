@@ -1,6 +1,6 @@
 # Mobile-First Census Frontend Backlog
 
-Status: active continuation after the search-to-research delivery
+Status: active continuation after shared result explainability
 
 ## Delivered baseline
 
@@ -18,47 +18,32 @@ Delivered capabilities now include:
 - mobile research detail with return-to-search/focus behavior;
 - typed research-package relationships and related-research traversal;
 - shared rank/relevance presentation across both Angular frontends;
+- shared `Why this matched` explainability across both Angular frontends (#97 / PR #103);
 - Storybook/component evidence and Playwright/axe responsive coverage across representative phone/tablet widths;
 - full-stack startup integration.
 
 Historical PR1/scaffold documents remain implementation history, not open tasks.
 
-## #97 — Shared result explainability dialog
-
-Goal: give both Angular frontends one consistent, truthful `Why this matched` experience.
-
-Tasks:
-
-- Add shared presentational information-control/dialog content to the existing `shared-ui` library.
-- Keep query/filter context and dialog orchestration in each application.
-- Present global ordinal rank separately from match strength.
-- Present server-owned relevance model/version/calibration metadata and caveats.
-- Render typed field/term match evidence.
-- Avoid raw Solr/OpenSearch explain/debug payloads in the browser contract.
-- Support mobile near-full-screen and larger-screen modal layouts through one semantic dialog contract.
-- Add keyboard open/close/Escape/focus-return coverage.
-- Add 320px reflow, forced-colors, Storybook, Playwright and axe evidence in both apps.
-
-Acceptance:
-
-- Both frontends explain the same API-owned ranking evidence consistently.
-- No client-side relevance formula or probability claim is introduced.
-- Focus behavior and narrow-width behavior are proven automatically.
-- Automated accessibility evidence is not described as manual AT verification.
-
 ## #98 — Design lifecycle evidence
 
 Goal: make the frontend design/decision path reviewable rather than showing only final code/tests.
 
+Current artifacts:
+
+- [Mobile Search Design Lifecycle Case Study](../documentation/design/mobile-search-design-lifecycle.md)
+- [ADR-002 — Mobile Search Interaction and Shared Evidence Model](../documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
+
 Tasks:
 
-- Select one representative mobile-first search/discovery slice.
-- Capture a low-fidelity wireframe or equivalent design-intent artifact.
-- Add an annotated component/interaction specification.
-- Link Storybook states and responsive breakpoints.
-- Link production implementation and automated browser/accessibility evidence.
-- Document touch-target, focus, breakpoint/reflow, rank-vs-match-strength, forced-colors, async-state and reuse/maintenance decisions.
-- Use Figma only if it improves the artifact; do not add it as a runtime dependency.
+- [x] Select one representative mobile-first search/discovery slice.
+- [x] Capture a low-fidelity wireframe or equivalent design-intent artifact.
+- [x] Add an annotated component/interaction specification.
+- [x] Link Storybook states and responsive breakpoints.
+- [x] Link production implementation and automated browser/accessibility evidence.
+- [x] Document touch-target, focus, breakpoint/reflow, rank-vs-match-strength, forced-colors, async-state and reuse/maintenance decisions.
+- [x] Keep Figma optional and out of the runtime dependency graph.
+- [x] Keep user-research/manual-AT claims outside the automated evidence boundary.
+- [ ] Complete repository validation and merge the case-study PR.
 
 Acceptance:
 
