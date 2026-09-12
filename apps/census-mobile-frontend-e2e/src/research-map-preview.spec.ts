@@ -285,7 +285,9 @@ test.describe('mobile research coverage map preview', () => {
         name: 'Selected on map: Upper Midwest climate coverage',
       }),
     ).toHaveAttribute('aria-pressed', 'true');
-    await expect(selectedRegion).toContainText('Upper Midwest climate coverage');
+    await expect(selectedRegion).toContainText(
+      'Upper Midwest climate coverage',
+    );
     await expect(selectedRegion).toContainText('Example Publisher');
     await expect(
       selectedRegion.getByRole('link', { name: 'Open authoritative source' }),
@@ -301,7 +303,9 @@ test.describe('mobile research coverage map preview', () => {
     });
 
     await expect(preview).toHaveAttribute('data-selected-source', 'coverage-1');
-    await expect(selectedRegion).toContainText('Northern plains climate coverage');
+    await expect(selectedRegion).toContainText(
+      'Northern plains climate coverage',
+    );
     await expect(
       page.getByRole('button', {
         name: 'Selected on map: Northern plains climate coverage',

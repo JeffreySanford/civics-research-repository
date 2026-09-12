@@ -245,7 +245,9 @@ export class MobileResearchMapPreviewComponent
     return Boolean(this.query.geography || this.query.vintageYear);
   }
 
-  protected isResearchSelected(feature: ResearchSpatialCoverageFeature): boolean {
+  protected isResearchSelected(
+    feature: ResearchSpatialCoverageFeature,
+  ): boolean {
     return this.selectedSourceIdentifier() === feature.sourceIdentifier;
   }
 
