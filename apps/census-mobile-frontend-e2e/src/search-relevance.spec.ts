@@ -153,7 +153,7 @@ test.describe('mobile relevance and filter evidence', () => {
     await page.goto('/');
   });
 
-  test('shows engine rank and accessible relevance bands at 320px @wcag', async ({
+  test('shows engine rank and shared explainability evidence at 320px @wcag', async ({
     page,
   }) => {
     const query = 'North Dakota migration';
@@ -177,12 +177,20 @@ test.describe('mobile relevance and filter evidence', () => {
     ).toBeVisible();
     await expect(page.getByText('100%')).toHaveCount(0);
 
-    await page.getByText('Why this matched').first().click();
-    await expect(page.getByText('migration', { exact: true })).toBeVisible();
-    await expect(page.getByText('North Dakota', { exact: true })).toBeVisible();
-    await expect(
-      page.getByText('do not represent exact score contribution'),
-    ).toBeVisible();
+    const explainabilityTrigger = page.getByRole('button', {
+      name: 'Why this result matched: Migration Flows for North Dakota',
+    });
+    await explainabilityTrigger.click();
+
+    const dialog = page.getByRole('dialog', { name: 'Why this matched' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText(query);
+    await expect(dialog).toContainText('Rank 1');
+    await expect(dialog).toContainText('Strong');
+    await expect(dialog.getByText('migration', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('North Dakota', { exact: true })).toBeVisible();
+    await expect(dialog).toContainText('not calibrated');
+    await expect(dialog).toContainText('exact numerical contribution');
 
     const strongBadge = page.getByLabel(
       'Strong match. Query-relative search match strength.',
@@ -199,6 +207,10 @@ test.describe('mobile relevance and filter evidence', () => {
       .withTags(axeTags)
       .analyze();
     expect(accessibility.violations).toEqual([]);
+
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(explainabilityTrigger).toBeFocused();
   });
 
   test('hydrates a shareable URL into the same search and active filter @wcag', async ({
@@ -214,6 +226,14 @@ test.describe('mobile relevance and filter evidence', () => {
     ).toBeVisible();
     await expect(page.locator('.active-filters')).toContainText('Dataset');
     await expect(page.getByText('1 matching records')).toBeVisible();
+
+    const explainabilityTrigger = page.getByRole('button', {
+      name: 'Why this result matched: Migration Flows for North Dakota',
+    });
+    await explainabilityTrigger.click();
+    await expect(
+      page.getByRole('dialog', { name: 'Why this matched' }),
+    ).toContainText('Dataset');
 
     const url = new URL(page.url());
     expect(url.searchParams.get('q')).toBe('North Dakota migration');
@@ -277,7 +297,7 @@ test.describe('mobile relevance and filter evidence', () => {
     ).toBeVisible();
     await expect(page.locator('.relevance-badge')).toHaveCount(0);
     await expect(page.locator('.results__relevance-note')).toHaveCount(0);
-    await expect(page.locator('.match-evidence')).toHaveCount(0);
+    await expect(page.locator('lib-search-explainability-dialog')).toHaveCount(0);
     await expect(page.getByText('644 matching records')).toBeVisible();
 
     const accessibility = await new AxeBuilder({ page })
