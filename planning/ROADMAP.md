@@ -15,8 +15,8 @@ The major research and portfolio milestones are complete:
 - frontend-first portfolio/mission alignment (#51 complete);
 - second Angular mobile-first discovery frontend (`apps/census-mobile-frontend`);
 - shareable search/filter state, scalable cursor traversal, server-owned rank/relevance, typed match evidence and query-wide search summary;
-- shared rank/relevance presentation across both Angular frontends;
 - authority-neutral mobile research detail, typed research-package navigation and related-research traversal;
+- shared rank, relevance and `Why this matched` explainability semantics across both Angular frontends (#97 / PR #103);
 - automated responsive/accessibility evidence across representative mobile/tablet widths;
 - current actionable Dependabot alert set reduced to zero; accepted no-fix build-chain advisories remain documented in `RISKS.md`.
 
@@ -25,30 +25,11 @@ The project does **not** need another million-record run merely to prove that th
 ## Active sequence
 
 ```text
-#97  Shared result explainability dialog
-        |
-        v
 #98  Design lifecycle evidence
         |
         v
 #99  Read-only repository steward/status surface
 ```
-
-### #97 — Shared result explainability dialog
-
-Create one consistent `Why this matched` experience in both Angular frontends using the existing server-owned search evidence and the existing `shared-ui` boundary.
-
-Outcome target:
-
-- shared presentational entry control and dialog content;
-- app-specific query/filter context adapters;
-- clear distinction between ordinal rank and query-relative match strength;
-- relevance model/version/calibration caveats rendered truthfully;
-- typed field/term match evidence;
-- no raw Solr/OpenSearch explain trees in the browser contract;
-- accessible modal behavior, focus return, 320px reflow, forced-colors support and automated axe/browser evidence.
-
-Manual assistive-technology testing is not a completion requirement for this issue and must not be implied by automated evidence.
 
 ### #98 — Design lifecycle evidence
 
@@ -62,6 +43,10 @@ Outcome target:
 - production implementation links;
 - browser/accessibility evidence links;
 - concise decision record covering touch targets, breakpoints/reflow, focus behavior, ranking language, forced colors, async states and reuse/maintenance decisions.
+
+Primary artifact: [Mobile Search Design Lifecycle Case Study](../mobile-first/documentation/design/mobile-search-design-lifecycle.md)
+
+Decision record: [ADR-002 — Mobile Search Interaction and Shared Evidence Model](../mobile-first/documentation/adr-002-mobile-search-interaction-and-evidence-model.md)
 
 Figma is optional. The durable repository documentation and Storybook evidence remain the source of truth.
 
