@@ -179,8 +179,9 @@ test.describe('keyboard operability', () => {
       await openRoute(page, route.path);
 
       const controls = page.locator(INTERACTIVE);
+      const controlCount = await controls.count();
       const unnamed: string[] = [];
-      for (let index = 0; index < (await controls.count()); index += 1) {
+      for (let index = 0; index < controlCount; index += 1) {
         const control = controls.nth(index);
         if (!(await control.isVisible())) {
           continue;
