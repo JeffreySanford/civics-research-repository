@@ -228,7 +228,9 @@ describe('MobileResearchMapPreviewComponent', () => {
     preset.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
-    const area = compiled.querySelector('#mobile-census-area') as HTMLSelectElement;
+    const area = compiled.querySelector(
+      '#mobile-census-area',
+    ) as HTMLSelectElement;
     area.value = 'north-dakota';
     area.dispatchEvent(new Event('change'));
     fixture.detectChanges();

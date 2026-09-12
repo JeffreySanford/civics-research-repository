@@ -222,11 +222,7 @@ export class MobileResearchMapPreviewComponent
   protected readonly populationState$ = this.populationRequests.pipe(
     switchMap((geography) =>
       this.mapsApi
-        .getPopulationEstimatesChoropleth(
-          geography,
-          'ANNUAL_GROWTH_RATE',
-          2025,
-        )
+        .getPopulationEstimatesChoropleth(geography, 'ANNUAL_GROWTH_RATE', 2025)
         .pipe(
           map(
             (response): PopulationState => ({
@@ -254,7 +250,8 @@ export class MobileResearchMapPreviewComponent
   private mapModule: typeof import('maplibre-gl') | null = null;
   private styleReady = false;
   private pendingResponse: ResearchSpatialCoverageResponse | null = null;
-  private pendingPopulationResponse: PopulationEstimatesChoropleth | null = null;
+  private pendingPopulationResponse: PopulationEstimatesChoropleth | null =
+    null;
   private currentViewport = INITIAL_VIEWPORT;
   private initialFitPending = true;
   private censusAreas: readonly CensusAreaBoundary[] = [];

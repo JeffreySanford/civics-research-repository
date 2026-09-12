@@ -182,13 +182,16 @@
       aria-labelledby="mobile-population-context-heading"
       data-testid="mobile-population-context"
     >
-      <h2 id="mobile-population-context-heading">Community population context</h2>
+      <h2 id="mobile-population-context-heading">
+        Community population context
+      </h2>
       @if (!selectedCensusArea()) {
         <p>Choose a Census area above to load county population growth.</p>
       } @else if (populationState$ | async; as populationState) {
         @if (populationState.status === 'loading') {
           <p role="status">
-            Loading county population growth for {{ populationState.geography }}…
+            Loading county population growth for
+            {{ populationState.geography }}…
           </p>
         } @else if (populationState.status === 'error') {
           <p role="alert">
@@ -224,7 +227,9 @@
           </p>
 
           @if (populationState.response.counties.length === 0) {
-            <p>No county values are available for this Population Estimates view.</p>
+            <p>
+              No county values are available for this Population Estimates view.
+            </p>
           } @else {
             <ul
               class="population-context__counties"
