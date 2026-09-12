@@ -1,6 +1,6 @@
 # Mobile-First Census Frontend Backlog
 
-Status: active continuation after design lifecycle evidence
+Status: active mobile geospatial discovery continuation
 
 ## Delivered baseline
 
@@ -38,7 +38,7 @@ Tasks:
 - [x] Keep secrets, credentials and operator-only diagnostics out of the browser contract.
 - [x] Add loading, empty, degraded and error states.
 - [x] Add responsive/component/browser/axe evidence.
-- [ ] Complete repository validation and merge the #99 implementation PR.
+- [x] Complete repository validation and merge the #99 implementation PR (#105).
 
 Implementation boundary:
 
@@ -53,6 +53,27 @@ Acceptance:
 - The surface does not duplicate Admin solely for portfolio breadth.
 - Authority/provenance and degraded-state wording remain explicit.
 - Narrow-width and axe evidence remain clean.
+
+## #106 — Mobile research coverage map preview
+
+Goal: make spatial research coverage discoverable from the mobile search journey without turning the initial screen into a miniature desktop map workspace.
+
+Tasks:
+
+- [x] Reuse the bounded `GET /maps/research-coverage` contract and current mobile `SearchQuery` intent.
+- [x] Add a compact non-interactive MapLibre preview after a populated query.
+- [x] Keep semantic matching/mapped/unmapped/truncation counts outside WebGL.
+- [x] Preserve query/filter state into a lazy `/research-map` route.
+- [x] Add MapLibre worker/style plumbing without changing backend contracts.
+- [x] Keep publisher/institution location inference out of the map.
+- [x] Add a first interactive research-coverage route with semantic in-view records; richer context layers remain follow-up work.
+- [ ] Complete repository validation and merge the #106 implementation PR.
+
+Next map increments after #106:
+
+1. synchronize selected mapped research with a mobile bottom sheet/list;
+2. add TIGER/Line boundary as the first contextual layer;
+3. introduce explicit Community / Workforce / Environment layer presets rather than copying the desktop toggle tree.
 
 ## Deferred / optional work
 

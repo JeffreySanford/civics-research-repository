@@ -1,0 +1,63 @@
+:host {
+  display: block;
+}
+
+.research-map-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.research-map-page__back {
+  width: fit-content;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  color: var(--mat-sys-primary);
+  font-weight: 800;
+}
+
+.research-map-page__heading p,
+.research-map-page__heading h1,
+.research-map-page__heading span {
+  margin: 0;
+}
+
+.research-map-page__heading {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.research-map-page__heading p {
+  color: var(--civics-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.research-map-page__heading h1 {
+  font-size: clamp(2rem, 10vw, 3.5rem);
+  line-height: 1;
+}
+
+.research-map-page__heading span {
+  color: var(--civics-text-secondary);
+}
+
+.research-map-page__layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.7rem;
+  border: 1px solid var(--civics-border);
+  border-radius: var(--civics-radius-sm);
+  background: var(--civics-surface-accent);
+  font-size: 0.8rem;
+}
+
+.research-map-page__layers span {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--civics-border-strong);
+  border-radius: 999px;
+}

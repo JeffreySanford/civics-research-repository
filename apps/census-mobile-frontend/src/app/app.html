@@ -155,6 +155,10 @@
       [facet]="resultTypeFacet()"
       [totalResults]="searchResponse.totalResults"
     ></app-search-summary>
+    } @if (searchResponse.query.trim()) {
+    <app-mobile-research-map-preview
+      [query]="searchState().query"
+    ></app-mobile-research-map-preview>
     } @if (paginationNotice()) {
     <div class="status-card" role="status">
       <strong>Pagination compatibility mode</strong>

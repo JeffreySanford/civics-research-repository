@@ -214,17 +214,18 @@ export class App implements OnInit {
   }
 
   private syncRoute(url: string): void {
-    const wasDetail = this.detailRoute();
-    const isDetail =
-      this.router.parseUrl(url).root.children['primary']?.segments[0]?.path ===
-      'research';
-    this.detailRoute.set(isDetail);
-    if (isDetail) {
+    const wasRoutedPage = this.detailRoute();
+    const primaryPath =
+      this.router.parseUrl(url).root.children['primary']?.segments[0]?.path;
+    const isRoutedPage =
+      primaryPath === 'research' || primaryPath === 'research-map';
+    this.detailRoute.set(isRoutedPage);
+    if (isRoutedPage) {
       return;
     }
 
     this.hydrateFromRouterUrl(url);
-    if (wasDetail) {
+    if (wasRoutedPage) {
       this.restoreResultFocus();
     }
   }

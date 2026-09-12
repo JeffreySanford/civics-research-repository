@@ -11,6 +11,7 @@ import { appRoutes } from './app.routes';
 import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
 import { MobileResearchDetailComponent } from './components/mobile-research-detail/mobile-research-detail.component';
 import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
+import { MobileResearchMapPreviewModule } from './mobile-research-map/mobile-research-map-preview.module';
 import { MobileResearchDetailEffects } from './state/research-detail/research-detail.effects';
 import { mobileResearchDetailReducer } from './state/research-detail/research-detail.reducer';
 import { MobileSearchEffects } from './state/search/search.effects';
@@ -28,6 +29,7 @@ import { mobileSearchReducer } from './state/search/search.reducer';
     HttpClientModule,
     A11yModule,
     SearchBadgesModule,
+    MobileResearchMapPreviewModule,
     RouterModule.forRoot(appRoutes),
     StoreModule.forRoot({
       mobileSearch: mobileSearchReducer,

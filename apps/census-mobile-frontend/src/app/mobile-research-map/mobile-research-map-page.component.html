@@ -1,0 +1,28 @@
+@if (query$ | async; as query) {
+  <section class="research-map-page" aria-labelledby="research-map-heading">
+    <a
+      class="research-map-page__back"
+      [routerLink]="['/']"
+      [queryParams]="queryParams(query)"
+      >← Back to search results</a
+    >
+
+    <header class="research-map-page__heading">
+      <p>Mobile geospatial discovery</p>
+      <h1 id="research-map-heading">Research map</h1>
+      <span>Coverage for “{{ queryLabel(query) }}”</span>
+    </header>
+
+    <aside class="research-map-page__layers" aria-label="Visible layers">
+      <strong>Visible layers</strong>
+      <span>Research coverage</span>
+      <span>OpenStreetMap reference</span>
+    </aside>
+
+    <app-mobile-research-map-preview
+      [query]="query"
+      [expanded]="true"
+      [interactive]="true"
+    ></app-mobile-research-map-preview>
+  </section>
+}
