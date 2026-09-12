@@ -1,64 +1,77 @@
 # Mobile-First Census Frontend
 
-Status: active development
+Status: implemented; continuation work active
 
-This directory captures the plan for a new mobile-first Census/Civics frontend that lives beside the existing Angular application in the Nx workspace.
+This directory documents the mobile-first Census/Civics frontend that now lives beside the existing Angular application in the Nx workspace.
 
-The intent is to build a focused mobile-first discovery experience without destabilizing the existing Angular frontend. The new app should consume the existing repository search API through the existing `repository-api-client`, while the current application remains available on its existing development port.
+The app is no longer a proposal. `apps/census-mobile-frontend` is a working second Angular frontend over the same repository API and search infrastructure as `apps/discovery-ui`.
 
-## Working Decision
+## Current architecture
 
-Create an additional Angular app under `apps/` for the mobile-first Census frontend.
+| Surface                       | Purpose                                         | Port   |
+| ----------------------------- | ----------------------------------------------- | ------ |
+| `apps/discovery-ui`           | Existing full discovery/research application    | `4200` |
+| `apps/census-mobile-frontend` | Mobile-first Census/Civics discovery frontend  | `4300` |
+| Repository API                | Shared Spring/OpenAPI application boundary      | `8080` |
+| `discovery-ui` Storybook      | Existing component/evidence review              | `4400` |
+| Mobile Storybook              | Mobile-first component/responsive review        | `4500` |
 
-Suggested development ports:
+The mobile frontend is a separate shell over the same backend capability. It is not a second backend, duplicate search engine, duplicate API client or throwaway mock.
 
-| Surface                       | Purpose                                        | Port   |
-| ----------------------------- | ---------------------------------------------- | ------ |
-| `apps/discovery-ui`           | Existing Angular application                   | `4200` |
-| `apps/census-mobile-frontend` | New mobile-first Census/Civics frontend        | `4300` |
-| `discovery-ui` Storybook      | Existing component state and responsive review | `4400` |
-| Mobile Storybook              | New mobile-first component review              | `4500` |
+## Implemented journey
 
-The new frontend is a separate shell over the same backend capability. It is not a new backend, a duplicate search engine, a duplicate API client, or a throwaway mock.
+The delivered mobile experience includes:
 
-## Why This Direction
+- module-based Angular composition (`standalone=false`);
+- NgRx/RxJS for asynchronous/shared search and research-detail state;
+- Signals only for appropriate local synchronous presentation state;
+- search backed by `repository-api-client`;
+- shareable query/filter URL intent;
+- scalable cursor traversal and global result rank;
+- server-owned query-relative relevance evidence;
+- query-wide result-type summary from server facets;
+- typed field/term match evidence;
+- accessible modal mobile filters and active filter chips;
+- authority-neutral `/research/:researchId` detail navigation;
+- preservation of the originating search/filter URL and focus behavior;
+- typed research-package relationship navigation;
+- broader related-research navigation kept semantically distinct from package assertions;
+- shared rank/relevance components consumed by both Angular frontends;
+- responsive browser/axe evidence at 320, 390, 430 and 768px plus forced-colors, reduced-motion and keyboard-entry checks.
 
-The existing app can remain functional while the new Census experience develops independently. That lets the mobile-first work move quickly, keep its own information architecture, and prove Section 508/WCAG behavior at 320px without forcing broad changes into the current desktop-oriented application.
+Automated evidence is intentionally separate from manual assistive-technology verification. Issue #49 is closed **not planned**; these automated checks must not be described as completed manual Section 508, Trusted Tester, NVDA, JAWS or VoiceOver verification.
 
-This also creates a clear portfolio story:
+## State and ownership rules
 
-> Built a mobile-first federal research discovery frontend in Angular, backed by the existing Civics Research Repository API, with responsive Storybook evidence and accessibility-focused browser validation.
+- Reuse `RepositorySearchApi`, generated OpenAPI types and `REPOSITORY_API_BASE_URL` from `repository-api-client`.
+- Keep search/research domain state in NgRx/RxJS when it is asynchronous, shared or effect-driven.
+- Use Signals for local synchronous UI state only when they simplify presentation without creating a second source of truth.
+- Keep search ranking/relevance semantics server-owned.
+- Keep both frontends behind the generated application API; browsers do not call DSpace, Solr, OpenSearch or publishers directly.
+- Promote presentational components to the existing `shared-ui` library only after demonstrated cross-app reuse.
+- Treat 320px reflow, keyboard access, focus management, touch targets and non-color semantics as first-class engineering requirements.
+- Use Storybook for isolated states and Playwright for assembled behavior.
 
-## Guiding Principles
+## Active continuation
 
-- Keep the existing Angular app working.
-- Reuse `RepositorySearchApi`, generated OpenAPI types, and `REPOSITORY_API_BASE_URL` from `repository-api-client`.
-- Do not add a second search backend, duplicate index, or duplicate search-contract library.
-- Prefer module-based Angular composition for the new app (`standalone=false`).
-- Use NgRx/RxJS for asynchronous search workflows, effects, cancellation, URL synchronization, and shared feature state.
-- Embrace Angular Signals where they simplify local synchronous UI state and local computed presentation state.
-- Do not duplicate the same source of truth between Signals and NgRx.
-- Create new shared UI libraries only after real reuse across the two frontends is demonstrated.
-- Treat 320px reflow, keyboard access, focus management, touch targets, and screen-reader semantics as first-class requirements.
-- Use Storybook for isolated responsive states and Playwright for assembled app behavior.
-- Keep search semantics server-owned; the frontend expresses search intent and renders bounded responses.
-- Use infographics/data visualization only when they improve comprehension and are backed by trustworthy server-provided aggregate data or clearly labeled page-local data.
+The original scaffold/search/evidence PR sequence is complete. Current work is tracked through repository issues:
 
-## Evidence and Planning Documents
+1. **#97 — Shared result explainability dialog**: one consistent `Why this matched` experience across both Angular frontends using the existing `shared-ui` boundary.
+2. **#98 — Design lifecycle evidence**: capture one representative mobile-first slice from design intent through Storybook, implementation and automated evidence.
+3. **#99 — Read-only repository steward/status surface**: add a focused internal status workflow from existing authority, corpus/projection, synchronization and search-health data.
+
+## Evidence and planning documents
 
 - [Architecture](documentation/architecture.md)
 - [Architecture Decision Record](documentation/adr-001-parallel-mobile-first-frontend.md)
 - [Experience and Engagement Strategy](documentation/experience-engagement-strategy.md)
 - [Infographics and Data Visualization Plan](documentation/infographics-and-data-visualization.md)
 - [Mobile Search Requirements-to-Evidence Traceability](documentation/requirements/mobile-search-traceability.md)
-- [Manual Accessibility Validation Protocol](documentation/accessibility/manual-validation-protocol.md)
-- [Mobile Search Usability Study Protocol](documentation/usability/mobile-search-study-protocol.md)
-- [PR 1 Baseline Checklist](planning/pr1-baseline-checklist.md)
-- [PR 1 Readiness Note](planning/pr1-readiness-note.md)
-- [PR 1 Description Draft](planning/pr1-description-draft.md)
-- [Implementation Plan](planning/implementation-plan.md)
-- [Backlog](planning/backlog.md)
-- [Validation Plan](planning/validation-plan.md)
+- [Manual Accessibility Validation Protocol](documentation/accessibility/manual-validation-protocol.md) — reference/template only; manual execution is not an active completion gate
+- [Mobile Search Usability Study Protocol](documentation/usability/mobile-search-study-protocol.md) — protocol only; do not imply participant findings that were not collected
+- [Mobile Browser and Accessibility Evidence](planning/mobile-browser-accessibility-evidence.md)
 - [Result Explainability Dialog Plan](planning/result-explainability-dialog-plan.md)
-- [Post-main Desktop Search Relevance Adoption](planning/post-main-desktop-relevance-adoption.md)
-- [Post-PR88 Census Role Alignment Roadmap](planning/post-pr88-role-alignment-roadmap.md)
+- [Current Mobile Backlog](planning/backlog.md)
+- [Role Alignment Roadmap](planning/post-pr88-role-alignment-roadmap.md)
+
+Historical PR1/scaffold planning documents remain useful implementation history, but they are not the current backlog.
