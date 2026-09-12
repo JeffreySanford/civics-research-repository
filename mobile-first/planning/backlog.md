@@ -1,6 +1,6 @@
 # Mobile-First Census Frontend Backlog
 
-Status: active mobile geospatial discovery continuation
+Status: implemented mobile geospatial baseline; Open Science alignment continuation active
 
 ## Delivered baseline
 
@@ -23,6 +23,8 @@ Delivered capabilities now include:
 - read-only repository steward/status surface (#99 / PR #105);
 - compact mobile Research Coverage preview plus lazy interactive `/research-map` route over the bounded spatial sidecar (#106 / PR #107);
 - mobile Census-area context/presets using truthful orientation extents rather than claiming exact TIGER/Line geometry (#108 / PR #109);
+- synchronized MapLibre research selection, keyboard-operable semantic-list selection, and selected-research detail over one local selected-source state (#110 / PR #111);
+- the first real data-bearing `Community · Population growth` context using Census Population Estimates plus authoritative county geometry, provenance, semantic county values, and non-WebGL equivalents (#112 / PR #113);
 - Storybook/component evidence and Playwright/axe responsive coverage across representative phone/tablet widths;
 - full-stack startup integration.
 
@@ -43,17 +45,9 @@ Delivered in PR #109:
 - [x] Add unit and focused 320px Playwright/axe coverage for preset selection, query preservation, reflow and forced-colors behavior.
 - [x] Complete repository validation and merge the #108 implementation PR.
 
-Important data boundary:
+## #110 — Synchronize mobile map feature selection with research list — delivered
 
-- `CensusAreaBoundary` currently provides west/south/east/north/center/defaultZoom summaries, not exact administrative polygon geometry.
-- The mobile context layer therefore uses the word **extent** and must not be represented as an official TIGER/Line polygon.
-- Exact TIGER geometry requires a separate backend/data-contract increment.
-
-## #110 — Synchronize mobile map feature selection with research list — current
-
-Goal: make the interactive map and its semantic mapped-research list two views of the same selected research state without adding desktop-style popups or a duplicate state model.
-
-Implementation/evidence ready on the #110 branch:
+Delivered in PR #111:
 
 - [x] Own selection with one local `selectedSourceIdentifier` Signal.
 - [x] Let pointer clicks on mapped research polygons/points select the corresponding publisher-supplied record.
@@ -66,29 +60,114 @@ Implementation/evidence ready on the #110 branch:
 - [x] Keep the semantic list/detail path usable when WebGL is unavailable.
 - [x] Add unit coverage for list/detail synchronization and clear-on-refresh behavior.
 - [x] Add focused 320px Playwright evidence proving semantic-list selection, real MapLibre pointer selection, query preservation, reflow and axe checks.
-- [ ] Complete repository-wide PR validation and merge #110.
+- [x] Complete repository-wide validation, including the stabilized cross-browser accessible-name harness and required MapLibre regression, and merge PR #111.
 
-## Next map increments after #110
+The PR exposed an existing desktop E2E reliability problem: the accessible-name loop recomputed the complete interactive-control locator count for every iteration. The fix computed that stable count once while preserving the assertion, application behavior, and timeouts. That is the preferred CI-reliability pattern: remove redundant harness work rather than weakening evidence.
 
-Promote these only as separate, evidence-backed increments:
+## #112 — Community population context — delivered
 
-1. add exact TIGER administrative geometry through an authoritative backend contract;
-2. add a `Community` preset using Census Population Estimates / SAIPE / County Business Patterns;
-3. add a `Workforce` preset using LODES workplace employment / commuting flows;
-4. add an `Environment` preset using USGS terrain / hydrography / earthquakes.
+Delivered in PR #113:
+
+- [x] Add `Community · Population growth` to the expanded mobile research map.
+- [x] Reuse the existing Population Estimates contract rather than add a duplicate client-side data path.
+- [x] Default to annual population growth 2024–2025 from Vintage 2025 source data.
+- [x] Use authoritative Census county geometry and join values by stable geography identity.
+- [x] Keep Research Coverage above the contextual layer.
+- [x] Keep the explicit Census-area selector and repository search URL intent independent.
+- [x] Provide textual county values and scale meaning so the layer remains useful without color/WebGL.
+- [x] Surface source/vintage and geometry provenance.
+- [x] Preserve selected-research map/list/detail synchronization.
+- [x] Complete focused mobile evidence and full repository gates.
+
+This is the point where the mobile map has demonstrated the intended federal geospatial skill. More thematic presets are now secondary to the Open Science alignment work below.
+
+## Active continuation — Open Science interoperability and reproducibility
+
+The canonical plan is [Open Census Alignment Roadmap](../../documentation/open-census-alignment-roadmap.md).
+
+The ordered implementation sequence is:
+
+1. **#114 — Make artifact version identity and provenance authoritative — current**
+   - remove synthetic prior-version generation from `vintageYear`;
+   - represent observed version/release/PID/source/fixity/capture facts;
+   - preserve unknown history as unknown;
+   - carry the model through repository/API/UI boundaries without turning the search index into the authority.
+
+2. **#115 — Define Open Census metadata profile and structured exports — next**
+   - keep the `crr.*` authority model;
+   - document a DSpace/Dublin Core + DataCite 4.7 + Schema.org JSON-LD + dataset-scoped DCAT-US 3.0 crosswalk;
+   - add Cite/Export behavior from normalized metadata;
+   - structure legitimate restricted-use access guidance without simulating authorization.
+
+3. **#116 — Expose a reproducibility trail across related research artifacts**
+   - build on asserted Research Package edges;
+   - keep heuristic `relatedResearch` separate;
+   - expose publication/data/methodology/code/supporting-material lineage with PID/version/access/provenance semantics;
+   - keep semantic HTML authoritative rather than requiring a graph database or canvas visualization.
+
+4. **#117 — Add Open Science metadata-quality findings to Steward**
+   - deterministic rule IDs, severity, evidence, and remediation;
+   - missing/malformed identity/citation/access/version/relation checks;
+   - no opaque quality percentage and no browser-side auto-repair.
+
+5. **#118 — Integrate a real Census CODE object and replication package**
+   - use a real Census public research-code source rather than fabricate one;
+   - selected candidate: `uscensusbureau/recon_replication`;
+   - prove CODE through source → sync/DSpace → API → search → Angular;
+   - preserve public/restricted dependency semantics and do not invent license/DOI/authorship facts.
+
+6. **#119 — Make analytical and map context shareably reproducible**
+   - promote PR #113 provenance into typed, reconstructable analytical state;
+   - preserve research query separately from geography/measure/data vintage/geometry vintage/source evidence;
+   - no new thematic layer is required.
+
+## Why the map roadmap is no longer primary
+
+The previously listed map sequence—more Community layers, Workforce layers, Environment layers—is still technically viable, but it is no longer the strongest alignment path.
+
+The current mobile map already demonstrates:
+
+- MapLibre integration;
+- responsive map UX;
+- authoritative geometry;
+- a real Census contextual measure;
+- provenance and vintage labeling;
+- semantic/non-WebGL equivalents;
+- keyboard-accessible research selection;
+- search/map state separation;
+- cross-browser regression evidence.
+
+Adding five more visual layers mostly proves the same capability again. The larger repository gap is now metadata → identity → versioning → provenance → reproducibility → stewardship.
 
 ## Deferred / optional work
 
-The following remain optional and should be promoted only when a concrete question justifies them:
+The following remain optional and should be promoted only when a concrete product/role question justifies them:
 
-- additional map layers from repository issue #69;
+- additional map layers from repository issue #69, including SAIPE/CBP/LODES/USGS context;
 - NASA CMR/PubMed/OpenAlex federation breadth after durable identity rules;
 - vector/hybrid search experiments;
 - local Kubernetes/search clustering;
-- AWS/IaC deployment work.
+- AWS/IaC deployment work;
+- graph-database experiments;
+- generative-AI features;
+- another frontend;
+- another scale milestone.
+
+The existence of a technology is not a reason to add it.
+
+## Two frontend roles
+
+The two Angular frontends should increasingly demonstrate progressive disclosure for different users rather than feature duplication:
+
+- `discovery-ui`: denser research/power-user evidence, stewardship, structured metadata, richer provenance;
+- `census-mobile-frontend`: concise search/research flow, explainability, progressive disclosure, and small-screen reproducibility/access context.
+
+They remain two experiences over one typed application and repository authority model.
 
 ## Accessibility boundary
 
 Issue #49 is closed **not planned**. Existing manual accessibility/usability protocols remain reference templates only.
 
 Continue automated keyboard/focus/reflow/forced-colors/axe evidence where it directly supports implementation quality, but do not label it as completed manual Section 508, Trusted Tester, NVDA, JAWS or VoiceOver validation.
+
+The same truth boundary applies to future Open Science work: machine-readable metadata does not replace a human-readable accessible experience, and a visual reproducibility diagram must never be the only representation of research relationships.
