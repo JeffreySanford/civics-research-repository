@@ -1,15 +1,22 @@
+import { Location } from '@angular/common';
 import {
   AfterViewChecked,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { Location } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
+import type {
+  ResearchObjectType,
+  ResearchRelation,
+} from 'repository-api-client';
+import { encodeResearchId } from 'repository-models';
 import { MobileResearchDetailActions } from '../../state/research-detail/research-detail.actions';
 import {
   selectMobileResearchDetail,
@@ -29,6 +36,7 @@ export class MobileResearchDetailComponent implements OnInit, AfterViewChecked {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly store = inject(Store);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly openedFromSearch =
     this.router.getCurrentNavigation()?.extras.state?.['fromSearch'] === true;
   private focusPending = true;
@@ -48,19 +56,25 @@ export class MobileResearchDetailComponent implements OnInit, AfterViewChecked {
   private readonly detailHeading?: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
-    const researchId = this.route.snapshot.paramMap.get('researchId')?.trim();
-    if (!researchId) {
-      this.store.dispatch(
-        MobileResearchDetailActions.detailFailed({
-          message: 'The research object identifier is missing.',
-        }),
-      );
-      return;
-    }
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const researchId = params.get('researchId')?.trim();
+        this.focusPending = true;
 
-    this.store.dispatch(
-      MobileResearchDetailActions.detailOpened({ researchId }),
-    );
+        if (!researchId) {
+          this.store.dispatch(
+            MobileResearchDetailActions.detailFailed({
+              message: 'The research object identifier is missing.',
+            }),
+          );
+          return;
+        }
+
+        this.store.dispatch(
+          MobileResearchDetailActions.detailOpened({ researchId }),
+        );
+      });
   }
 
   ngAfterViewChecked(): void {
@@ -77,6 +91,34 @@ export class MobileResearchDetailComponent implements OnInit, AfterViewChecked {
       return;
     }
     void this.router.navigateByUrl(this.returnUrl);
+  }
+
+  protected researchRouteId(canonicalId: string): string {
+    return encodeResearchId(canonicalId);
+  }
+
+  protected relationLabel(verb: ResearchRelation['verb']): string {
+    const labels: Record<ResearchRelation['verb'], string> = {
+      hasPart: 'Includes',
+      uses: 'Uses',
+      documents: 'Documents',
+      isDerivedFrom: 'Public product derived from',
+    };
+    return labels[verb];
+  }
+
+  protected contentTypeLabel(
+    contentType: ResearchObjectType | undefined,
+  ): string {
+    const labels: Record<ResearchObjectType, string> = {
+      DATASET: 'Dataset',
+      PUBLICATION: 'Publication',
+      CODE: 'Code',
+      METHODOLOGY: 'Methodology',
+      SUPPORTING_MATERIAL: 'Supporting material',
+      PROJECT: 'Research project',
+    };
+    return contentType ? labels[contentType] : 'Research object';
   }
 
   private safeReturnUrl(value: string | null): string {

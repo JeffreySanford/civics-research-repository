@@ -28,7 +28,7 @@
 
     <div class="detail-heading">
       <p class="detail-eyebrow">
-        {{ detail.contentType ?? 'Research object' }}
+        {{ contentTypeLabel(detail.contentType) }}
       </p>
       <h1 #detailHeading id="mobile-detail-title" tabindex="-1">
         {{ detail.title }}
@@ -124,5 +124,77 @@
         >View authoritative source</a
       >
     </section>
+
+    @if (detail.relations?.length) {
+      <section
+        class="detail-section research-context"
+        aria-labelledby="research-package-heading"
+      >
+        <h2 id="research-package-heading">Research package</h2>
+        <p class="context-explainer">
+          Typed relationships declared by this research object. These links
+          describe the package itself rather than a broader discovery
+          suggestion.
+        </p>
+        <ul class="context-list">
+          @for (relation of detail.relations; track relation.targetId) {
+            <li>
+              <p class="relation-verb">{{ relationLabel(relation.verb) }}</p>
+              <a
+                class="context-link"
+                [routerLink]="['/research', researchRouteId(relation.targetId)]"
+                [queryParams]="{ returnUrl: returnUrl }"
+                [replaceUrl]="true"
+                >{{ relation.targetTitle }}</a
+              >
+              <p class="context-meta">
+                <span>{{ contentTypeLabel(relation.targetType) }}</span>
+                @if (
+                  relation.targetAccessLevel &&
+                  relation.targetAccessLevel !== 'PUBLIC'
+                ) {
+                  <span>{{ relation.targetAccessLevel }}</span>
+                }
+              </p>
+              @if (relation.note) {
+                <p class="context-note">{{ relation.note }}</p>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (detail.relatedResearch.length) {
+      <section
+        class="detail-section research-context"
+        aria-labelledby="related-research-heading"
+      >
+        <h2 id="related-research-heading">Related research</h2>
+        <p class="context-explainer">
+          Broader discovery links from the repository. Unlike the research
+          package above, these are not typed assertions about this object.
+        </p>
+        <ul class="context-list">
+          @for (related of detail.relatedResearch; track related.id) {
+            <li>
+              <a
+                class="context-link"
+                [routerLink]="['/research', researchRouteId(related.id)]"
+                [queryParams]="{ returnUrl: returnUrl }"
+                [replaceUrl]="true"
+                >{{ related.title }}</a
+              >
+              <p class="context-meta">
+                <span>{{ related.programName ?? related.program }}</span>
+                <span>{{
+                  related.geography ?? 'Geography not specified'
+                }}</span>
+              </p>
+            </li>
+          }
+        </ul>
+      </section>
+    }
   }
 </section>
