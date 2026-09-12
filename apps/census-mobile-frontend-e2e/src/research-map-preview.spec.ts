@@ -82,6 +82,111 @@ async function mockMobileMapRepository(page: Page): Promise<void> {
     });
   });
 
+  await page.route(
+    '**/api/overlays/census/population-estimates*',
+    async (route) => {
+      const url = new URL(route.request().url());
+      const geography = url.searchParams.get('geography');
+      expect(geography).toBe('North Dakota');
+      expect(url.searchParams.get('measure')).toBe('ANNUAL_GROWTH_RATE');
+      expect(url.searchParams.get('year')).toBe('2025');
+
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          source: 'U.S. Census Bureau Population Estimates Program',
+          sourceUrl: 'https://example.test/co-est2025-alldata.csv',
+          attribution: 'U.S. Census Bureau Population Estimates Program',
+          geography: 'North Dakota',
+          sourceVintage: 2025,
+          sourceSha256: 'b'.repeat(64),
+          capturedAt: '2026-09-05',
+          geometryVintage: 2025,
+          geometrySourceUrl: 'https://example.test/tigerweb/counties',
+          geometryAttribution: 'U.S. Census Bureau TIGERweb',
+          measure: 'ANNUAL_GROWTH_RATE',
+          measureLabel: 'Annual population growth rate',
+          units: 'percent',
+          year: 2025,
+          priorYear: 2024,
+          supportedPopulationYears: [2020, 2021, 2022, 2023, 2024, 2025],
+          supportedChangeYears: [2021, 2022, 2023, 2024, 2025],
+          geoJson: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: {
+                  fips: '38001',
+                  name: 'Adams County',
+                  value: -2.5,
+                  population: 2100,
+                  measure: 'ANNUAL_GROWTH_RATE',
+                  year: 2025,
+                  priorYear: 2024,
+                  priorPopulation: 2154,
+                },
+                geometry: {
+                  type: 'Polygon',
+                  coordinates: [
+                    [
+                      [-102.2, 45.9],
+                      [-101.2, 45.9],
+                      [-101.2, 46.6],
+                      [-102.2, 46.6],
+                      [-102.2, 45.9],
+                    ],
+                  ],
+                },
+              },
+              {
+                type: 'Feature',
+                properties: {
+                  fips: '38017',
+                  name: 'Cass County',
+                  value: 3.25,
+                  population: 202000,
+                  measure: 'ANNUAL_GROWTH_RATE',
+                  year: 2025,
+                  priorYear: 2024,
+                  priorPopulation: 195640,
+                },
+                geometry: {
+                  type: 'Polygon',
+                  coordinates: [
+                    [
+                      [-97.2, 46.5],
+                      [-96.6, 46.5],
+                      [-96.6, 47.1],
+                      [-97.2, 47.1],
+                      [-97.2, 46.5],
+                    ],
+                  ],
+                },
+              },
+            ],
+          },
+          counties: [
+            {
+              fips: '38001',
+              name: 'Adams County',
+              value: -2.5,
+              population: 2100,
+              priorPopulation: 2154,
+            },
+            {
+              fips: '38017',
+              name: 'Cass County',
+              value: 3.25,
+              population: 202000,
+              priorPopulation: 195640,
+            },
+          ],
+        },
+      });
+    },
+  );
+
   await page.route('**/api/maps/research-coverage*', async (route) => {
     const url = new URL(route.request().url());
     const west = Number(url.searchParams.get('west') ?? -180);
@@ -240,6 +345,21 @@ test.describe('mobile research coverage map preview', () => {
         exact: false,
       }),
     ).toBeVisible();
+
+    await preset.selectOption('community-population');
+    const population = page.getByTestId('mobile-population-context');
+    await expect(population).toContainText(
+      'Annual population growth rate for North Dakota, 2024–2025',
+    );
+    await expect(population).toContainText('Adams County');
+    await expect(population).toContainText('-2.5%');
+    await expect(population).toContainText('Cass County');
+    await expect(population).toContainText('+3.25%');
+    await expect(population).toContainText('2025 population 202,000');
+    await expect(population).toContainText(
+      'U.S. Census Bureau Population Estimates Program',
+    );
+    await expect(population).toContainText('U.S. Census Bureau TIGERweb');
 
     const currentUrl = new URL(page.url());
     expect(currentUrl.searchParams.get('q')).toBe('climate adaptation');
