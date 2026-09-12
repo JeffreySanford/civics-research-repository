@@ -1,0 +1,67 @@
+name: One-shot validate repository steward status
+
+on:
+  push:
+    branches: [feat/repository-steward-status]
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/repository-steward-status
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: Set up Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format changed repository files
+        run: pnpm exec nx format:write --all
+
+      - name: Check formatting
+        run: pnpm exec nx format:check --all
+
+      - name: Lint discovery UI
+        run: pnpm exec nx lint discovery-ui
+
+      - name: Test discovery UI
+        run: pnpm exec nx test discovery-ui --skip-nx-cache
+
+      - name: Build discovery UI
+        run: pnpm exec nx build discovery-ui --configuration=production --skip-nx-cache
+
+      - name: Lint discovery UI E2E
+        run: pnpm exec nx lint discovery-ui-e2e
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run focused steward browser evidence
+        run: pnpm exec playwright test --config=apps/discovery-ui-e2e/playwright.config.mts apps/discovery-ui-e2e/src/repository-steward-status.spec.ts --project=chromium
+
+      - name: Commit formatting and remove one-shot workflow
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-validate-steward-status.yml
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "style: finalize repository steward status"
+          git push
