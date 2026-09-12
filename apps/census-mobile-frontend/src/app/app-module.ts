@@ -5,10 +5,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
-import {
-  SearchBadgesModule,
-  SearchExplainabilityDialogComponent,
-} from 'shared-ui';
+import { SearchBadgesModule } from 'shared-ui';
 import { App } from './app';
 import { appRoutes } from './app.routes';
 import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
@@ -31,7 +28,6 @@ import { mobileSearchReducer } from './state/search/search.reducer';
     HttpClientModule,
     A11yModule,
     SearchBadgesModule,
-    SearchExplainabilityDialogComponent,
     RouterModule.forRoot(appRoutes),
     StoreModule.forRoot({
       mobileSearch: mobileSearchReducer,
