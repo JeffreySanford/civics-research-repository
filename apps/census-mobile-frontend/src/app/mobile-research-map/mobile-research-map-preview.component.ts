@@ -288,7 +288,9 @@ export class MobileResearchMapPreviewComponent
     this.selectArea(boundary);
   }
 
-  private findCensusArea(geography: string | undefined): CensusAreaBoundary | null {
+  private findCensusArea(
+    geography: string | undefined,
+  ): CensusAreaBoundary | null {
     const normalized = geography?.trim().toLocaleLowerCase();
     if (!normalized) {
       return null;
@@ -373,10 +375,7 @@ export class MobileResearchMapPreviewComponent
           this.updateCoverageSource(this.pendingResponse);
           if (!this.interactive || this.initialFitPending) {
             const selectedArea = this.selectedCensusArea();
-            if (
-              selectedArea &&
-              this.mapPreset() === 'research-area-context'
-            ) {
+            if (selectedArea && this.mapPreset() === 'research-area-context') {
               this.fitCensusArea(selectedArea);
             } else {
               this.fitCoverage(this.pendingResponse);
@@ -429,7 +428,9 @@ export class MobileResearchMapPreviewComponent
     const data = this.areaContextFeatureCollection(boundary);
 
     if (source) {
-      source.setData(data as unknown as Parameters<GeoJSONSource['setData']>[0]);
+      source.setData(
+        data as unknown as Parameters<GeoJSONSource['setData']>[0],
+      );
       if (map.getLayer('mobile-census-area-context-line')) {
         map.setLayoutProperty(
           'mobile-census-area-context-line',

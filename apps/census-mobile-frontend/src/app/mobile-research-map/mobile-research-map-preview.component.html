@@ -67,9 +67,9 @@
       @if (selectedCensusArea(); as area) {
         <p class="coverage-controls__note" role="note">
           <strong>{{ area.geography }} area context:</strong>
-          the dashed rectangle is an orientation extent derived from the
-          current Census-area summary. It is not exact TIGER/Line
-          administrative geometry and does not change the repository search.
+          the dashed rectangle is an orientation extent derived from the current
+          Census-area summary. It is not exact TIGER/Line administrative
+          geometry and does not change the repository search.
         </p>
       } @else if (mapPreset() === 'research-area-context') {
         <p class="coverage-controls__note">

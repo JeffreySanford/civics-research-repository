@@ -232,7 +232,9 @@ test.describe('mobile research coverage map preview', () => {
     const area = page.locator('#mobile-census-area');
     await expect(area).toBeVisible();
     await area.selectOption('north-dakota');
-    await expect(page.getByText('North Dakota area context:', { exact: false })).toBeVisible();
+    await expect(
+      page.getByText('North Dakota area context:', { exact: false }),
+    ).toBeVisible();
     await expect(
       page.getByText('It is not exact TIGER/Line administrative geometry', {
         exact: false,
@@ -261,7 +263,9 @@ test.describe('mobile research coverage map preview', () => {
     await expect(page.locator('#mobile-census-area')).toHaveValue(
       'north-dakota',
     );
-    await expect(page.getByText('North Dakota area context:', { exact: false })).toBeVisible();
+    await expect(
+      page.getByText('North Dakota area context:', { exact: false }),
+    ).toBeVisible();
     await expect(page).toHaveURL(/geography=North/);
     await expectNoHorizontalOverflow(page);
     await expectNoAxeViolations(page);
