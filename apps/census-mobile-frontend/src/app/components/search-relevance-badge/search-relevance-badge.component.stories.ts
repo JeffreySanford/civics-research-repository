@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { SearchRelevanceBadgeComponent } from './search-relevance-badge.component';
+import { SearchRelevanceBadgeComponent } from 'shared-ui';
 
 const meta: Meta<SearchRelevanceBadgeComponent> = {
   title: 'Mobile Search/Relevance Badge',
@@ -46,11 +46,11 @@ export const Mobile320Scale: Story = {
   render: () => ({
     template: `
       <div style="width: 320px; display: grid; gap: 12px; padding: 16px; box-sizing: border-box;">
-        <app-search-relevance-badge [relevance]="strong"></app-search-relevance-badge>
-        <app-search-relevance-badge [relevance]="good"></app-search-relevance-badge>
-        <app-search-relevance-badge [relevance]="moderate"></app-search-relevance-badge>
-        <app-search-relevance-badge [relevance]="weak"></app-search-relevance-badge>
-        <app-search-relevance-badge [relevance]="low"></app-search-relevance-badge>
+        <lib-search-relevance-badge [relevance]="strong"></lib-search-relevance-badge>
+        <lib-search-relevance-badge [relevance]="good"></lib-search-relevance-badge>
+        <lib-search-relevance-badge [relevance]="moderate"></lib-search-relevance-badge>
+        <lib-search-relevance-badge [relevance]="weak"></lib-search-relevance-badge>
+        <lib-search-relevance-badge [relevance]="low"></lib-search-relevance-badge>
       </div>
     `,
     props: {

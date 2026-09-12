@@ -1,0 +1,12 @@
+@if (rank > 0) {
+  <span
+    class="search-rank-badge"
+    [class.search-rank-badge--top]="topRanked"
+    [attr.aria-label]="accessibleLabel"
+  >
+    @if (topRanked) {
+      <strong>Top ranked</strong>
+    }
+    <span>Rank {{ rank }}</span>
+  </span>
+}

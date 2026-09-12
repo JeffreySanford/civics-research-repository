@@ -13,7 +13,10 @@ import { vi } from 'vitest';
 import { App } from './app';
 import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
 import { SearchMatchEvidenceComponent } from './components/search-match-evidence/search-match-evidence.component';
-import { SearchRelevanceBadgeComponent } from './components/search-relevance-badge/search-relevance-badge.component';
+import {
+  SearchRankBadgeComponent,
+  SearchRelevanceBadgeComponent,
+} from 'shared-ui';
 import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
 import { MobileSearchActions } from './state/search/search.actions';
 import { mobileSearchReducer } from './state/search/search.reducer';
@@ -86,12 +89,13 @@ describe('App', () => {
         A11yModule,
         RouterModule.forRoot([]),
         StoreModule.forRoot({ mobileSearch: mobileSearchReducer }),
+        SearchRankBadgeComponent,
+        SearchRelevanceBadgeComponent,
       ],
       declarations: [
         App,
         MobileSearchFiltersComponent,
         SearchMatchEvidenceComponent,
-        SearchRelevanceBadgeComponent,
         SearchSummaryComponent,
       ],
       providers: [
@@ -355,6 +359,7 @@ describe('App', () => {
       "Browsing the repository's current discovery set.",
     );
     expect(compiled.querySelector('.relevance-badge')).toBeNull();
+    expect(compiled.querySelector('.search-rank-badge')).toBeNull();
     expect(compiled.querySelector('.results__relevance-note')).toBeNull();
     expect(
       compiled.querySelector('app-search-match-evidence details'),

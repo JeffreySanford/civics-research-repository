@@ -14,7 +14,7 @@ const relevance = (
 describe('SearchRelevanceBadgeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [SearchRelevanceBadgeComponent],
+      imports: [SearchRelevanceBadgeComponent],
     }).compileComponents();
   });
 

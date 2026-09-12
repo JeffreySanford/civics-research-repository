@@ -1,0 +1,14 @@
+.result-ranking {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.results-relevance-note {
+  max-width: 70ch;
+  margin: 0.5rem 0 0;
+  color: var(--civics-text-secondary);
+  line-height: 1.5;
+}

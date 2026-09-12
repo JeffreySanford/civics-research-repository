@@ -56,6 +56,52 @@ describe('DiscoveryPage accessibility', () => {
   });
 
   /** No results means no facet list and no pager: what remains must still be a coherent page. */
+  it('presents server-owned rank and relevance accessibly for a real query', async () => {
+    const fixture = await renderWith({
+      loading: false,
+      response: {
+        resultSource: 'REPOSITORY',
+        query: 'North Dakota migration',
+        page: 0,
+        pageSize: 25,
+        totalResults: 1,
+        results: [
+          {
+            id: 'north-dakota-migration',
+            title: 'Migration Flows for North Dakota',
+            contentType: 'DATASET',
+            program: 'ACS',
+            publisher: 'U.S. Census Bureau',
+            summary: 'Migration research metadata for North Dakota.',
+            sourceUrl: 'https://www.census.gov/',
+            sourceSystem: 'DSPACE',
+            origin: 'CURATED',
+            relevance: { rawScore: 10, normalizedScore: 1, band: 'STRONG' },
+          },
+        ],
+        facets: [],
+        relevanceModel: {
+          engine: 'SOLR',
+          normalization: 'SOLR_MAX_SCORE_RATIO_V1',
+          calibrated: false,
+        },
+      },
+    });
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.search-rank-badge')?.textContent).toContain(
+      'Rank 1',
+    );
+    expect(root.querySelector('.relevance-badge')?.textContent).toContain(
+      'Strong match',
+    );
+    expect(
+      root.querySelector('.results-relevance-note')?.textContent,
+    ).toContain('not percentages');
+    expect(root.textContent).not.toContain('100%');
+    await expectNoAxeViolations(root);
+  });
+
   it('is accessible with no results', async () => {
     const fixture = await renderWith({
       loading: false,
