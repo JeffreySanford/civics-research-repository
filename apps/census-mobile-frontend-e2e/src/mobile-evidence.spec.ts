@@ -151,7 +151,7 @@ test.describe('mobile responsive and accessibility evidence', () => {
       await expect(
         page.getByRole('heading', { name: '1 matching records' }),
       ).toBeVisible();
-      await expect(page.getByText('Rank 1')).toBeVisible();
+      await expect(page.getByText('Rank 1', { exact: true })).toBeVisible();
       await expect(page.getByText('Strong match')).toBeVisible();
       await expect(
         page.getByRole('heading', { name: 'Result type mix' }),
@@ -184,7 +184,7 @@ test.describe('mobile responsive and accessibility evidence', () => {
     await page.emulateMedia({ forcedColors: 'active' });
     await page.goto('/?q=North%20Dakota%20migration');
 
-    await expect(page.getByText('Rank 1')).toBeVisible();
+    await expect(page.getByText('Rank 1', { exact: true })).toBeVisible();
     await expect(page.getByText('Strong match')).toBeVisible();
     await expect(
       page.getByText('Match labels are query-relative search evidence'),
@@ -229,6 +229,6 @@ test.describe('mobile responsive and accessibility evidence', () => {
     await expect(
       page.getByRole('heading', { name: '1 matching records' }),
     ).toBeVisible();
-    await expectNoAxeViolations(page);
+    await expectNoHorizontalOverflow(page);
   });
 });

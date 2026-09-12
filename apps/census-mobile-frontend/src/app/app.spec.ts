@@ -13,8 +13,8 @@ import { vi } from 'vitest';
 import { App } from './app';
 import { MobileSearchFiltersComponent } from './components/mobile-search-filters/mobile-search-filters.component';
 import { MobileResearchDetailComponent } from './components/mobile-research-detail/mobile-research-detail.component';
-import { SearchMatchEvidenceComponent } from './components/search-match-evidence/search-match-evidence.component';
 import {
+  SearchExplainabilityDialogComponent,
   SearchRankBadgeComponent,
   SearchRelevanceBadgeComponent,
 } from 'shared-ui';
@@ -94,6 +94,7 @@ describe('App', () => {
           mobileSearch: mobileSearchReducer,
           researchDetail: mobileResearchDetailReducer,
         }),
+        SearchExplainabilityDialogComponent,
         SearchRankBadgeComponent,
         SearchRelevanceBadgeComponent,
       ],
@@ -101,7 +102,6 @@ describe('App', () => {
         App,
         MobileSearchFiltersComponent,
         MobileResearchDetailComponent,
-        SearchMatchEvidenceComponent,
         SearchSummaryComponent,
       ],
       providers: [
@@ -200,7 +200,7 @@ describe('App', () => {
     expect(compiled.textContent).not.toContain('100%');
   });
 
-  it('renders API-provided match evidence as an accessible disclosure', () => {
+  it('passes API-owned search evidence into the shared explainability dialog', () => {
     const store = TestBed.inject(Store);
     const fixture = TestBed.createComponent(App);
 
@@ -210,11 +210,20 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const disclosure = compiled.querySelector('app-search-match-evidence');
-    expect(disclosure?.textContent).toContain('Why this matched');
-    expect(disclosure?.textContent).toContain('Title');
-    expect(disclosure?.textContent).toContain('migration');
-    expect(disclosure?.textContent).toContain('North Dakota');
+    const explainability = compiled.querySelector(
+      'lib-search-explainability-dialog',
+    );
+    const trigger = explainability?.querySelector('.explainability-trigger');
+
+    expect(trigger?.getAttribute('aria-label')).toBe(
+      'Why this result matched: North Dakota migration example',
+    );
+    expect(explainability?.textContent).toContain('Rank 1');
+    expect(explainability?.textContent).toContain('Strong');
+    expect(explainability?.textContent).toContain('Title');
+    expect(explainability?.textContent).toContain('migration');
+    expect(explainability?.textContent).toContain('North Dakota');
+    expect(explainability?.textContent).toContain('not calibrated');
   });
 
   it('summarizes query-wide result types rather than only the visible page', () => {
@@ -368,7 +377,7 @@ describe('App', () => {
     expect(compiled.querySelector('.search-rank-badge')).toBeNull();
     expect(compiled.querySelector('.results__relevance-note')).toBeNull();
     expect(
-      compiled.querySelector('app-search-match-evidence details'),
+      compiled.querySelector('lib-search-explainability-dialog'),
     ).toBeNull();
   });
 

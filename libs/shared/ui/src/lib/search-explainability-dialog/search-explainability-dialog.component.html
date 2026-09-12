@@ -1,0 +1,119 @@
+<button
+  #trigger
+  class="explainability-trigger"
+  type="button"
+  [attr.aria-label]="accessibleName"
+  (click)="openDialog()"
+>
+  Why this matched
+</button>
+
+<dialog
+  #dialog
+  class="explainability-dialog"
+  [attr.aria-labelledby]="headingId"
+  (close)="restoreTriggerFocus()"
+>
+  <div class="explainability-dialog__surface">
+    <header class="explainability-dialog__header">
+      <div>
+        <p class="explainability-dialog__eyebrow">Search evidence</p>
+        <h2 #dialogHeading [id]="headingId" tabindex="-1">Why this matched</h2>
+      </div>
+      <button
+        class="explainability-dialog__close"
+        type="button"
+        (click)="closeDialog()"
+      >
+        Close
+      </button>
+    </header>
+
+    <p class="explainability-dialog__result-title">{{ resultTitle }}</p>
+
+    <dl class="explainability-dialog__facts">
+      <div>
+        <dt>Query</dt>
+        <dd>{{ query || 'Repository browse' }}</dd>
+      </div>
+
+      @if (filterItems.length > 0) {
+        <div>
+          <dt>Active filters</dt>
+          <dd>
+            <ul class="explainability-dialog__filters">
+              @for (filter of filterItems; track filter.label) {
+                <li>{{ filter.label }}</li>
+              }
+            </ul>
+          </dd>
+        </div>
+      }
+
+      @if (rank && rank > 0) {
+        <div>
+          <dt>Result position</dt>
+          <dd>
+            Rank {{ rank }}. Rank is an ordering position in this result set,
+            not a percentage or probability.
+          </dd>
+        </div>
+      }
+
+      @if (relevance) {
+        <div>
+          <dt>Match strength</dt>
+          <dd>
+            {{ bandLabel }} · normalized evidence {{ normalizedScoreLabel }}.
+            This value is query-relative search evidence, not confidence or a
+            probability of relevance.
+          </dd>
+        </div>
+      }
+
+      @if (relevanceModel) {
+        <div>
+          <dt>Search model</dt>
+          <dd>
+            {{ relevanceModel.engine }} · {{ relevanceModel.normalization }}.
+            @if (relevanceModel.calibrated) {
+              The model is marked calibrated by the API.
+            } @else {
+              The model is not calibrated against judged-query outcomes, so its
+              score bands must not be interpreted as probabilities.
+            }
+          </dd>
+        </div>
+      }
+    </dl>
+
+    @if (evidenceItems.length > 0) {
+      <section
+        class="explainability-dialog__matches"
+        [attr.aria-labelledby]="headingId + '-matches'"
+      >
+        <h3 [id]="headingId + '-matches'">Matched fields</h3>
+        <p>
+          The search engine highlighted query terms in these indexed fields.
+        </p>
+        <ul>
+          @for (item of evidenceItems; track item.label) {
+            <li>
+              <strong>{{ item.label }}</strong>
+              <span>{{ item.matchedTerms.join(', ') }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    } @else {
+      <p class="explainability-dialog__no-evidence">
+        No field-level match evidence was returned for this result.
+      </p>
+    }
+
+    <p class="explainability-dialog__caveat">
+      Matched fields explain retrieval evidence. They do not expose the exact
+      numerical contribution of each field to the engine's final ranking.
+    </p>
+  </div>
+</dialog>

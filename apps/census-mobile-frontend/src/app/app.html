@@ -209,11 +209,18 @@
         <p class="result-card__summary">{{ result.summary }}</p>
         } @if (result.geography) {
         <p class="result-card__detail">Geography: {{ result.geography }}</p>
+        } @if (searchResponse.query.trim()) {
+        <lib-search-explainability-dialog
+          [resultTitle]="result.title"
+          [query]="searchResponse.query"
+          [rank]="globalRank(index)"
+          [relevance]="result.relevance"
+          [relevanceModel]="searchResponse.relevanceModel"
+          [matchEvidence]="result.matchEvidence"
+          [activeFilters]="activeFilters()"
+        ></lib-search-explainability-dialog>
         }
 
-        <app-search-match-evidence
-          [evidence]="result.matchEvidence"
-        ></app-search-match-evidence>
         <a
           class="result-card__detail-link"
           [routerLink]="['/research', researchRouteId(result.id)]"
