@@ -3,4 +3,11 @@ import { MobileResearchDetailComponent } from './components/mobile-research-deta
 
 export const appRoutes: Routes = [
   { path: 'research/:researchId', component: MobileResearchDetailComponent },
+  {
+    path: 'research-map',
+    loadChildren: () =>
+      import('./mobile-research-map/mobile-research-map.module').then(
+        (module) => module.MobileResearchMapModule,
+      ),
+  },
 ];

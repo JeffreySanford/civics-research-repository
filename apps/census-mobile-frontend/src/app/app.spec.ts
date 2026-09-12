@@ -8,7 +8,11 @@ import {
   RouterModule,
 } from '@angular/router';
 import { Store, StoreModule } from '@ngrx/store';
-import type { SearchResponse } from 'repository-api-client';
+import {
+  RepositoryMapsApi,
+  type ResearchSpatialCoverageResponse,
+  type SearchResponse,
+} from 'repository-api-client';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { App } from './app';
@@ -19,9 +23,7 @@ import {
   SearchRankBadgeComponent,
   SearchRelevanceBadgeComponent,
 } from 'shared-ui';
-import {
-  SearchSummaryComponent,
-} from './components/search-summary/search-summary.component';
+import { SearchSummaryComponent } from './components/search-summary/search-summary.component';
 import { MobileResearchMapPreviewComponent } from './mobile-research-map/mobile-research-map-preview.component';
 import { mobileResearchDetailReducer } from './state/research-detail/research-detail.reducer';
 import { MobileSearchActions } from './state/search/search.actions';
@@ -45,6 +47,31 @@ const visibleResult = {
     },
   ],
 } as SearchResponse['results'][number];
+
+const spatialResponse = {
+  buildId: 'app-spec-map',
+  sourceSystem: 'DATA_GOV',
+  schemaVersion: 1,
+  sourceSnapshotAt: '2026-09-12T12:00:00Z',
+  capturedAt: '2026-09-12T12:05:00Z',
+  compositionSha256: 'a'.repeat(64),
+  projectionId: 'projection-app-spec',
+  criteriaFingerprint: 'criteria-app-spec',
+  viewport: { west: -180, south: -85, east: 180, north: 85 },
+  summary: {
+    matchingRecords: 0,
+    mappedRecords: 0,
+    unmappedRecords: 0,
+    quarantinedRecords: 0,
+    unanchoredAntimeridianRecords: 0,
+    viewportMappedRecords: 0,
+    returnedFeatures: 0,
+    omittedFeatures: 0,
+    featureLimit: 80,
+    truncated: false,
+  },
+  features: [],
+} as unknown as ResearchSpatialCoverageResponse;
 
 const searchResponse: SearchResponse = {
   resultSource: 'REPOSITORY',
@@ -112,9 +139,15 @@ describe('App', () => {
       ],
       providers: [
         {
-        provide: ActivatedRoute,
-        useValue: activatedRouteStub,
-      },
+          provide: ActivatedRoute,
+          useValue: activatedRouteStub,
+        },
+        {
+          provide: RepositoryMapsApi,
+          useValue: {
+            getResearchSpatialCoverage: () => of(spatialResponse),
+          },
+        },
       ],
     }).compileComponents();
   });

@@ -1,0 +1,148 @@
+<section
+  class="coverage-card"
+  [class.coverage-card--expanded]="expanded"
+  aria-labelledby="mobile-coverage-heading"
+  data-testid="mobile-research-map-preview"
+>
+  <div class="coverage-card__heading">
+    <div>
+      <p class="coverage-card__eyebrow">Publisher spatial coverage</p>
+      <h2 id="mobile-coverage-heading">
+        {{ expanded ? 'Publisher spatial coverage' : 'Map matching research' }}
+      </h2>
+    </div>
+    <span class="coverage-card__layer">Research coverage</span>
+  </div>
+
+  @if (state$ | async; as state) {
+    @if (state.status === 'loading') {
+      <p class="coverage-card__status" role="status">
+        Loading bounded spatial coverage…
+      </p>
+    } @else if (state.status === 'error') {
+      <div class="coverage-card__message" role="status">
+        <strong>Spatial preview unavailable.</strong>
+        <span>{{ state.message }}</span>
+        <span>Search results remain available without the map.</span>
+      </div>
+    } @else {
+      <p class="coverage-card__summary">
+        <strong>{{ state.response.summary.mappedRecords }}</strong>
+        of
+        <strong>{{ state.response.summary.matchingRecords }}</strong>
+        matching {{ sourceLabel(state.response) }} spatial records have
+        publisher-supplied map coverage.
+        <strong>{{ state.response.summary.viewportMappedRecords }}</strong>
+        are mapped in the current view.
+      </p>
+
+      @if (state.response.summary.unmappedRecords > 0) {
+        <p class="coverage-card__note">
+          {{ state.response.summary.unmappedRecords }} matching records do not
+          declare publisher geometry and are not forced onto the map.
+        </p>
+      }
+
+      @if (state.response.summary.truncated) {
+        <p class="coverage-card__note" role="status">
+          Showing {{ state.response.summary.returnedFeatures }} of
+          {{ state.response.summary.viewportMappedRecords }} mapped records in
+          this bounded view.
+        </p>
+      }
+
+      @if (
+        state.response.summary.matchingRecords === 0 &&
+        hasCompatibilityBoundary()
+      ) {
+        <p class="coverage-card__note">
+          The current spatial source does not project every Discovery
+          geography/vintage field. Those filters are preserved rather than
+          silently weakened.
+        </p>
+      }
+    }
+  }
+
+  <div
+    class="coverage-map"
+    [class.coverage-map--expanded]="expanded"
+    [attr.data-map-initialized]="mapInitialized()"
+  >
+    <div
+      #mapCanvas
+      class="coverage-map__canvas"
+      data-testid="mobile-research-map-canvas"
+      [attr.aria-hidden]="interactive ? null : 'true'"
+    ></div>
+
+    @if (!expanded) {
+      <a
+        class="coverage-map__open"
+        [routerLink]="['/research-map']"
+        [queryParams]="queryParams"
+        aria-label="Open research coverage map for the current search"
+      >
+        <span>Open research map</span>
+        <span aria-hidden="true">↗</span>
+      </a>
+    }
+
+    @if (mapUnavailable()) {
+      <div class="coverage-map__fallback" role="note">
+        Map rendering is unavailable. Spatial counts and the accessible record
+        list remain available.
+      </div>
+    }
+  </div>
+
+  <p class="coverage-card__attribution">
+    Reference map ©
+    <a
+      href="https://www.openstreetmap.org/copyright"
+      target="_blank"
+      rel="noreferrer"
+      >OpenStreetMap contributors</a
+    >. Research geometry comes from publisher-supplied spatial metadata.
+  </p>
+
+  @if (expanded) {
+    @if (state$ | async; as expandedState) {
+      @if (expandedState.status === 'loaded') {
+        <section
+          class="coverage-list"
+          aria-labelledby="mobile-coverage-list-heading"
+        >
+          <h2 id="mobile-coverage-list-heading">
+            Research mapped in this view
+          </h2>
+          @if (expandedState.response.features.length === 0) {
+            <p>No publisher-supplied research geometry is visible here.</p>
+          } @else {
+            <ul>
+              @for (
+                feature of expandedState.response.features;
+                track feature.sourceIdentifier
+              ) {
+                <li>
+                  <strong>{{ feature.title }}</strong>
+                  <span>
+                    {{ feature.publisher || 'Publisher not stated' }}
+                  </span>
+                  @if (feature.sourceUrl) {
+                    <a
+                      [href]="feature.sourceUrl"
+                      target="_blank"
+                      rel="noreferrer"
+                      >Open authoritative source</a
+                    >
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+    }
+  }
+</section>
