@@ -3,6 +3,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -19,6 +20,7 @@ import { Params } from '@angular/router';
 import type {
   GeoJSONSource,
   Map as MapLibreMap,
+  MapLayerMouseEvent,
   StyleSpecification,
 } from 'maplibre-gl';
 import {
@@ -125,6 +127,21 @@ export class MobileResearchMapPreviewComponent
   protected readonly selectedCensusArea = signal<CensusAreaBoundary | null>(
     null,
   );
+  protected readonly selectedSourceIdentifier = signal<string | null>(null);
+  protected readonly visibleResearchFeatures = signal<
+    readonly ResearchSpatialCoverageFeature[]
+  >([]);
+  protected readonly selectedResearch = computed(() => {
+    const selectedSourceIdentifier = this.selectedSourceIdentifier();
+    if (!selectedSourceIdentifier) {
+      return null;
+    }
+    return (
+      this.visibleResearchFeatures().find(
+        (feature) => feature.sourceIdentifier === selectedSourceIdentifier,
+      ) ?? null
+    );
+  });
   protected readonly state$ = this.requests.pipe(
     switchMap(({ query, viewport }) =>
       this.mapsApi
@@ -190,6 +207,9 @@ export class MobileResearchMapPreviewComponent
       this.queryParams = this.routeQueryAdapter.toQueryParams(this.query);
       this.currentViewport = INITIAL_VIEWPORT;
       this.initialFitPending = true;
+      if (changes['query']) {
+        this.selectResearchFeature(null);
+      }
       this.requests.next({
         query: this.query,
         viewport: this.currentViewport,
@@ -223,6 +243,32 @@ export class MobileResearchMapPreviewComponent
 
   protected hasCompatibilityBoundary(): boolean {
     return Boolean(this.query.geography || this.query.vintageYear);
+  }
+
+  protected isResearchSelected(feature: ResearchSpatialCoverageFeature): boolean {
+    return this.selectedSourceIdentifier() === feature.sourceIdentifier;
+  }
+
+  protected selectResearchFeature(sourceIdentifier: string | null): void {
+    if (
+      sourceIdentifier &&
+      !this.visibleResearchFeatures().some(
+        (feature) => feature.sourceIdentifier === sourceIdentifier,
+      )
+    ) {
+      return;
+    }
+
+    const previousSourceIdentifier = this.selectedSourceIdentifier();
+    if (previousSourceIdentifier === sourceIdentifier) {
+      return;
+    }
+
+    this.selectedSourceIdentifier.set(sourceIdentifier);
+    this.updateResearchSelectionFeatureState(
+      previousSourceIdentifier,
+      sourceIdentifier,
+    );
   }
 
   protected selectMapPreset(event: Event): void {
@@ -312,6 +358,9 @@ export class MobileResearchMapPreviewComponent
     response: ResearchSpatialCoverageResponse,
   ): Promise<void> {
     this.pendingResponse = response;
+    this.visibleResearchFeatures.set(response.features);
+    this.reconcileResearchSelection(response);
+
     const map = await this.ensureMap();
     if (!map || !this.styleReady) {
       return;
@@ -327,6 +376,20 @@ export class MobileResearchMapPreviewComponent
         this.fitCoverage(response);
       }
       this.initialFitPending = false;
+    }
+  }
+
+  private reconcileResearchSelection(
+    response: ResearchSpatialCoverageResponse,
+  ): void {
+    const selectedSourceIdentifier = this.selectedSourceIdentifier();
+    if (
+      selectedSourceIdentifier &&
+      !response.features.some(
+        (feature) => feature.sourceIdentifier === selectedSourceIdentifier,
+      )
+    ) {
+      this.selectResearchFeature(null);
     }
   }
 
@@ -515,6 +578,7 @@ export class MobileResearchMapPreviewComponent
       existing.setData(
         data as unknown as Parameters<GeoJSONSource['setData']>[0],
       );
+      this.applyResearchSelectionFeatureState();
       return;
     }
 
@@ -529,7 +593,12 @@ export class MobileResearchMapPreviewComponent
       filter: ['==', ['geometry-type'], 'Polygon'],
       paint: {
         'fill-color': '#0f766e',
-        'fill-opacity': 0.26,
+        'fill-opacity': [
+          'case',
+          ['boolean', ['feature-state', 'selected'], false],
+          0.52,
+          0.26,
+        ],
       },
     });
     map.addLayer({
@@ -539,7 +608,12 @@ export class MobileResearchMapPreviewComponent
       filter: ['==', ['geometry-type'], 'Polygon'],
       paint: {
         'line-color': '#115e59',
-        'line-width': 2,
+        'line-width': [
+          'case',
+          ['boolean', ['feature-state', 'selected'], false],
+          4,
+          2,
+        ],
       },
     });
     map.addLayer({
@@ -549,11 +623,91 @@ export class MobileResearchMapPreviewComponent
       filter: ['==', ['geometry-type'], 'Point'],
       paint: {
         'circle-color': '#0f766e',
-        'circle-radius': this.expanded ? 6 : 4,
+        'circle-radius': [
+          'case',
+          ['boolean', ['feature-state', 'selected'], false],
+          this.expanded ? 9 : 6,
+          this.expanded ? 6 : 4,
+        ],
         'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 1.5,
+        'circle-stroke-width': [
+          'case',
+          ['boolean', ['feature-state', 'selected'], false],
+          3,
+          1.5,
+        ],
       },
     });
+
+    this.bindCoverageSelectionHandlers(map);
+    this.applyResearchSelectionFeatureState();
+  }
+
+  private bindCoverageSelectionHandlers(map: MapLibreMap): void {
+    if (!this.expanded || !this.interactive) {
+      return;
+    }
+
+    const selectFeature = (event: MapLayerMouseEvent): void => {
+      const sourceIdentifier =
+        event.features?.[0]?.properties?.['sourceIdentifier'];
+      if (typeof sourceIdentifier === 'string') {
+        this.selectResearchFeature(sourceIdentifier);
+      }
+    };
+
+    map.on('click', 'mobile-research-coverage-fill', selectFeature);
+    map.on('click', 'mobile-research-coverage-point', selectFeature);
+    map.on('mouseenter', 'mobile-research-coverage-fill', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseenter', 'mobile-research-coverage-point', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'mobile-research-coverage-fill', () => {
+      map.getCanvas().style.cursor = '';
+    });
+    map.on('mouseleave', 'mobile-research-coverage-point', () => {
+      map.getCanvas().style.cursor = '';
+    });
+  }
+
+  private updateResearchSelectionFeatureState(
+    previousSourceIdentifier: string | null,
+    sourceIdentifier: string | null,
+  ): void {
+    const map = this.map;
+    if (
+      !map ||
+      !this.styleReady ||
+      !map.getSource('mobile-research-coverage')
+    ) {
+      return;
+    }
+
+    if (previousSourceIdentifier) {
+      map.setFeatureState(
+        {
+          source: 'mobile-research-coverage',
+          id: previousSourceIdentifier,
+        },
+        { selected: false },
+      );
+    }
+    if (sourceIdentifier) {
+      map.setFeatureState(
+        { source: 'mobile-research-coverage', id: sourceIdentifier },
+        { selected: true },
+      );
+    }
+  }
+
+  private applyResearchSelectionFeatureState(): void {
+    const sourceIdentifier = this.selectedSourceIdentifier();
+    if (!sourceIdentifier) {
+      return;
+    }
+    this.updateResearchSelectionFeatureState(null, sourceIdentifier);
   }
 
   private featureCollection(
