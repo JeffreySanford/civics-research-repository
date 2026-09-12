@@ -5,7 +5,7 @@ import {
   type CensusAreaBoundary,
   type ResearchSpatialCoverageResponse,
 } from 'repository-api-client';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { MobileResearchMapPreviewComponent } from './mobile-research-map-preview.component';
 import { MobileResearchMapPreviewModule } from './mobile-research-map-preview.module';
 
@@ -88,14 +88,18 @@ const censusAreas = [
 ] as CensusAreaBoundary[];
 
 describe('MobileResearchMapPreviewComponent', () => {
+  let coverageResponses: BehaviorSubject<ResearchSpatialCoverageResponse>;
+
   beforeEach(async () => {
+    coverageResponses = new BehaviorSubject(response);
+
     await TestBed.configureTestingModule({
       imports: [RouterModule.forRoot([]), MobileResearchMapPreviewModule],
       providers: [
         {
           provide: RepositoryMapsApi,
           useValue: {
-            getResearchSpatialCoverage: () => of(response),
+            getResearchSpatialCoverage: () => coverageResponses.asObservable(),
             listCensusAreaBoundaries: () => of(censusAreas),
           },
         },
@@ -155,5 +159,84 @@ describe('MobileResearchMapPreviewComponent', () => {
     expect(compiled.textContent).toContain(
       'It is not exact TIGER/Line administrative geometry',
     );
+  });
+
+  it('uses one selected research state for the semantic list and detail panel', async () => {
+    const fixture = TestBed.createComponent(MobileResearchMapPreviewComponent);
+    fixture.componentRef.setInput('expanded', true);
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('query', { q: 'migration' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const selectButton = compiled.querySelector(
+      'button[aria-label="Show on map: North Dakota migration coverage"]',
+    ) as HTMLButtonElement | null;
+
+    expect(selectButton).not.toBeNull();
+    expect(selectButton?.getAttribute('aria-pressed')).toBe('false');
+    selectButton?.click();
+    fixture.detectChanges();
+
+    const selectedPanel = compiled.querySelector(
+      '[data-testid="mobile-selected-research"]',
+    );
+    const selectedButton = compiled.querySelector(
+      'button[aria-label="Selected on map: North Dakota migration coverage"]',
+    );
+
+    expect(compiled.getAttribute('data-selected-source')).toBe(
+      'nd-migration-map',
+    );
+    expect(selectedButton?.getAttribute('aria-pressed')).toBe('true');
+    expect(selectedPanel?.textContent).toContain(
+      'North Dakota migration coverage',
+    );
+    expect(selectedPanel?.textContent).toContain('U.S. Census Bureau');
+    expect(selectedPanel?.textContent).toContain('ACS');
+    expect(
+      selectedPanel?.querySelector('a[href="https://example.test/research"]'),
+    ).not.toBeNull();
+  });
+
+  it('clears selected research when a bounded refresh no longer returns it', async () => {
+    const fixture = TestBed.createComponent(MobileResearchMapPreviewComponent);
+    fixture.componentRef.setInput('expanded', true);
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('query', { q: 'migration' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const selectButton = compiled.querySelector(
+      'button[aria-label="Show on map: North Dakota migration coverage"]',
+    ) as HTMLButtonElement | null;
+    selectButton?.click();
+    fixture.detectChanges();
+    expect(compiled.getAttribute('data-selected-source')).toBe(
+      'nd-migration-map',
+    );
+
+    coverageResponses.next({
+      ...response,
+      summary: {
+        ...response.summary,
+        viewportMappedRecords: 0,
+        returnedFeatures: 0,
+        omittedFeatures: 0,
+        truncated: false,
+      },
+      features: [],
+    });
+    fixture.detectChanges();
+
+    expect(compiled.getAttribute('data-selected-source')).toBeNull();
+    expect(
+      compiled.querySelector('[data-testid="mobile-selected-research"]')
+        ?.textContent,
+    ).toContain('Select a mapped research record');
   });
 });
