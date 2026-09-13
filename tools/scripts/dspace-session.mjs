@@ -39,8 +39,6 @@ export async function requestWithDspaceCsrfRetry({
   refreshSession,
 }) {
   let response = await request();
-  const responseCsrfToken = response.headers.get('DSPACE-XSRF-TOKEN');
-  const responseCookie = dspaceSessionCookie(response);
   refreshDspaceSession(session, response);
 
   if (response.status !== 403) {
@@ -52,9 +50,7 @@ export async function requestWithDspaceCsrfRetry({
     return response;
   }
 
-  if (!responseCsrfToken || !responseCookie) {
-    await refreshSession(session);
-  }
+  await refreshSession(session);
   response = await request();
   refreshDspaceSession(session, response);
   return response;
