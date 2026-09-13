@@ -17,7 +17,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# TEMPORARY write permission is removed by the self-cleaning Phase B formatter job below.
+# TEMPORARY write permission is removed after the one-shot formatter commits the non-workflow files.
 permissions:
   contents: write
 
@@ -44,44 +44,27 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Format only the files named by the failed workspace gate
-        run: >-
-          pnpm exec nx format:write
-          --files=apps/discovery-ui-e2e/src/version-provenance.spec.ts,documentation/open-science-research-objects.md,tools/scripts/dspace-provenance-idempotence.mjs
-
-      - name: Remove temporary formatter hooks and restore read-only CI permissions
-        shell: bash
         run: |
-          set -euo pipefail
-          rm -f .github/workflows/phase-b-format.yml
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('.github/workflows/ci.yml')
-          text = path.read_text()
-          begin = text.index('  # BEGIN TEMP PHASE B FORMAT JOB\n')
-          end_marker = '  # END TEMP PHASE B FORMAT JOB\n'
-          end = text.index(end_marker, begin) + len(end_marker)
-          text = text[:begin] + text[end:]
-          text = text.replace(
-              '# TEMPORARY write permission is removed by the self-cleaning Phase B formatter job below.\npermissions:\n  contents: write\n',
-              'permissions:\n  contents: read\n',
-              1,
-          )
-          path.write_text(text)
-          PY
+          pnpm exec prettier --write \
+            apps/discovery-ui-e2e/src/version-provenance.spec.ts \
+            documentation/open-science-research-objects.md \
+            tools/scripts/dspace-provenance-idempotence.mjs
 
-      - name: Commit canonical formatting
+      - name: Commit canonical formatting without touching workflow files
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/workflows/ci.yml \
-            apps/discovery-ui-e2e/src/version-provenance.spec.ts \
+          git add apps/discovery-ui-e2e/src/version-provenance.spec.ts \
             documentation/open-science-research-objects.md \
             tools/scripts/dspace-provenance-idempotence.mjs
-          git add -u .github/workflows
           git diff --cached --check
           git diff --cached --stat
+          if git diff --cached --quiet; then
+            echo 'No formatting changes remain.'
+            exit 0
+          fi
           git commit -m 'style: format Phase B provenance evidence'
           git push origin HEAD:feat/artifact-provenance-persistence
   # END TEMP PHASE B FORMAT JOB
