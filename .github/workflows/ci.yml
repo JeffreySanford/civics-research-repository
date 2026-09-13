@@ -41,10 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: |
-          pnpm exec prettier --write tools/scripts/dspace-workflow.test.mjs
-          git --no-pager diff -- tools/scripts/dspace-workflow.test.mjs
-          exit 1
+        run: pnpm exec nx format:check --all
 
       - name: Lint the OpenAPI contract
         run: pnpm run openapi:lint
