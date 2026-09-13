@@ -32,6 +32,13 @@ const INTERACTIVE = [
   '[role="tab"]:not([aria-disabled="true"])',
 ].join(', ');
 
+const ACCESSIBLE_NAME_EVIDENCE_ATTRIBUTE = 'data-e2e-accessible-name-id';
+
+interface VisibleControlEvidence {
+  id: string;
+  outerHtml: string;
+}
+
 async function openRoute(page: Page, path: string): Promise<void> {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
   expect(
@@ -70,6 +77,32 @@ async function visibleControlIndexes(page: Page): Promise<number[]> {
         ? [index]
         : [];
     }),
+  );
+}
+
+async function visibleControlEvidence(
+  page: Page,
+): Promise<VisibleControlEvidence[]> {
+  return page.locator(INTERACTIVE).evaluateAll(
+    (nodes, attributeName) =>
+      nodes.flatMap((node, index) => {
+        const element = node as HTMLElement;
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        if (
+          style.display === 'none' ||
+          style.visibility === 'hidden' ||
+          rect.width <= 0 ||
+          rect.height <= 0
+        ) {
+          return [];
+        }
+
+        const id = `control-${index}`;
+        element.setAttribute(attributeName, id);
+        return [{ id, outerHtml: element.outerHTML.slice(0, 160) }];
+      }),
+    ACCESSIBLE_NAME_EVIDENCE_ATTRIBUTE,
   );
 }
 
@@ -175,24 +208,30 @@ test.describe('keyboard operability', () => {
      * Do not reimplement the accessible-name algorithm here. Native `<label for>`, wrapping labels,
      * aria-labelledby, aria-label, and Material-generated relationships all belong to the browser's
      * accessibility computation, which is exactly what Playwright's assertion exercises.
+     * Stable temporary ids avoid re-resolving numeric nth() locators while MapLibre mutates controls.
      */
     test(`${route.name} names every control it focuses @wcag @section508`, async ({
       page,
     }) => {
       await openRoute(page, route.path);
 
-      const controls = page.locator(INTERACTIVE);
-      const visibleIndexes = await visibleControlIndexes(page);
+      const evidence = await visibleControlEvidence(page);
       const unnamed: string[] = [];
-      for (const index of visibleIndexes) {
-        const control = controls.nth(index);
+      for (const candidate of evidence) {
+        const control = page.locator(
+          `[${ACCESSIBLE_NAME_EVIDENCE_ATTRIBUTE}="${candidate.id}"]`,
+        );
 
         try {
           await expect(control).toHaveAccessibleName(/\S+/, { timeout: 2_000 });
         } catch {
-          unnamed.push(
-            (await control.evaluate((node) => node.outerHTML)).slice(0, 160),
-          );
+          // Dynamic MapLibre controls may legitimately be replaced after the visibility snapshot.
+          // A vanished element is no longer an exposed control; importantly, count() does not wait
+          // for the old nth() position to reappear. Persist the pre-captured HTML only for controls
+          // that still exist and genuinely fail the browser's accessible-name computation.
+          if ((await control.count()) > 0) {
+            unnamed.push(candidate.outerHtml);
+          }
         }
       }
 
