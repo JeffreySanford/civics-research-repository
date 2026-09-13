@@ -24,7 +24,8 @@ const observedCurrentOnly = {
       sourceSha256: checksum,
       capturedAt: '2026-09-12T18:45:00-05:00',
       isVersionOf: 'tiger-line-north-dakota',
-      changeNote: 'Retained repository capture used for provenance UI evidence.',
+      changeNote:
+        'Retained repository capture used for provenance UI evidence.',
     },
   ],
 };
@@ -61,9 +62,13 @@ test.describe('artifact version provenance', () => {
     await expect(
       page.getByRole('heading', { name: 'Authority and evidence trail' }),
     ).toBeVisible();
-    await expect(page.getByText('DSpace curated repository record')).toBeVisible();
     await expect(
-      page.getByText('Derived projections only; Solr/OpenSearch are not authority.'),
+      page.getByText('DSpace curated repository record'),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        'Derived projections only; Solr/OpenSearch are not authority.',
+      ),
     ).toBeVisible();
     await expect(page.getByText('Current observed record')).toBeVisible();
     await expect(page.getByText('TIGER2025')).toBeVisible();
@@ -82,7 +87,9 @@ test.describe('artifact version provenance', () => {
       page.getByText(/Established by an actual retained observation timestamp/),
     ).toBeVisible();
     await expect(
-      page.getByText(/current-record evidence does not prove earlier or later versions/),
+      page.getByText(
+        /current-record evidence does not prove earlier or later versions/,
+      ),
     ).toBeVisible();
     await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);
 

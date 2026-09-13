@@ -129,7 +129,9 @@ export const ObservedCurrentOnly: Story = {
       canvas.getByText(/Established by the recorded SHA-256 digest/),
     ).toBeInTheDocument();
     await expect(
-      canvas.getByText(/current-record evidence does not prove earlier or later versions/),
+      canvas.getByText(
+        /current-record evidence does not prove earlier or later versions/,
+      ),
     ).toBeInTheDocument();
     await expect(canvas.queryByText('TIGER_LINE 2024')).toBeNull();
   },
@@ -181,7 +183,9 @@ export const HistoryAvailable: Story = {
         'The repository has observed version-lineage records for this research artifact.',
       ),
     ).toBeInTheDocument();
-    await expect(canvas.getByText('Observed multi-version lineage')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('Observed multi-version lineage'),
+    ).toBeInTheDocument();
     await expect(
       canvas.getByText('Observed release 2025.2'),
     ).toBeInTheDocument();
@@ -210,7 +214,9 @@ export const ProvenanceUnavailable: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Authority and evidence trail' }),
     ).toBeInTheDocument();
-    await expect(canvas.getByText('Version provenance unavailable')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('Version provenance unavailable'),
+    ).toBeInTheDocument();
     await expect(canvas.queryByText('Current observed record')).toBeNull();
     await expect(
       canvas.queryByRole('heading', { name: 'What this record proves' }),

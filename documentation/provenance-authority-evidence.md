@@ -32,7 +32,7 @@ Every provenance-sensitive fact is evaluated across four distinct concepts.
 
 ### 1. Authority
 
-**Authority** answers: _Which system or publisher is entitled to assert this fact?_ 
+**Authority** answers: _Which system or publisher is entitled to assert this fact?_
 
 Examples:
 
@@ -45,7 +45,7 @@ Authority is contextual. One system does not become authoritative for every fiel
 
 ### 2. Observation
 
-**Observation** answers: _What did the system actually see?_ 
+**Observation** answers: _What did the system actually see?_
 
 Examples include:
 
@@ -59,7 +59,7 @@ Observation is intentionally narrower than inference. A vintage year, URL path, 
 
 ### 3. Evidence
 
-**Evidence** answers: _What durable material supports the observation?_ 
+**Evidence** answers: _What durable material supports the observation?_
 
 Evidence can include:
 
@@ -78,7 +78,7 @@ Evidence strength is not binary. A source label proves something different from 
 
 ### 4. Claim
 
-**Claim** answers: _What may the API and UI truthfully say?_ 
+**Claim** answers: _What may the API and UI truthfully say?_
 
 Claims must be no stronger than the combined authority and evidence permit.
 
@@ -91,16 +91,16 @@ For example:
 
 ## Authority matrix
 
-| Information | Primary authority | Persisted copy / evidence | Derived consumers | What must not happen |
-| --- | --- | --- | --- | --- |
-| Curated research-object metadata | DSpace repository record after managed reconciliation | DSpace PostgreSQL / REST metadata | API, Angular UI, Solr, OpenSearch | Search indexes must not become the source of truth |
-| Federated research-object metadata | External publisher/catalog | Application PostgreSQL bounded harvest record and checkpoints | Combined discovery, API, UI, indexes | Local storage must not imply ownership of publisher content |
-| Sync outcomes | Repository synchronization service | Application PostgreSQL sync jobs/actions | Steward UI, CI evidence | A successful HTTP response must not replace recorded reconciliation state |
-| Search ranking/facets | No independent domain authority; they are derived behavior | Solr/OpenSearch projection plus deterministic fixtures/evidence | Discovery UI | Ranking output must not overwrite repository metadata |
-| Version label/date | Source or repository evidence | Managed DSpace version fields | Version API/UI | Vintage or naming conventions must not fabricate history |
-| SHA-256 fixity | Retained bytes or authoritative supplied digest | Managed provenance metadata / evidence artifact | Version API/UI | URL/file size must not masquerade as a digest |
-| Capture time | Actual retained observation | Managed provenance metadata / evidence artifact | Version API/UI | Current sync time must not be substituted |
-| Version lineage | Observed repository/source relationship | Managed version relationship metadata | Version API/UI | Earlier/later versions must not be guessed |
+| Information                        | Primary authority                                          | Persisted copy / evidence                                       | Derived consumers                    | What must not happen                                                      |
+| ---------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------- |
+| Curated research-object metadata   | DSpace repository record after managed reconciliation      | DSpace PostgreSQL / REST metadata                               | API, Angular UI, Solr, OpenSearch    | Search indexes must not become the source of truth                        |
+| Federated research-object metadata | External publisher/catalog                                 | Application PostgreSQL bounded harvest record and checkpoints   | Combined discovery, API, UI, indexes | Local storage must not imply ownership of publisher content               |
+| Sync outcomes                      | Repository synchronization service                         | Application PostgreSQL sync jobs/actions                        | Steward UI, CI evidence              | A successful HTTP response must not replace recorded reconciliation state |
+| Search ranking/facets              | No independent domain authority; they are derived behavior | Solr/OpenSearch projection plus deterministic fixtures/evidence | Discovery UI                         | Ranking output must not overwrite repository metadata                     |
+| Version label/date                 | Source or repository evidence                              | Managed DSpace version fields                                   | Version API/UI                       | Vintage or naming conventions must not fabricate history                  |
+| SHA-256 fixity                     | Retained bytes or authoritative supplied digest            | Managed provenance metadata / evidence artifact                 | Version API/UI                       | URL/file size must not masquerade as a digest                             |
+| Capture time                       | Actual retained observation                                | Managed provenance metadata / evidence artifact                 | Version API/UI                       | Current sync time must not be substituted                                 |
+| Version lineage                    | Observed repository/source relationship                    | Managed version relationship metadata                           | Version API/UI                       | Earlier/later versions must not be guessed                                |
 
 ## Authority flow
 
@@ -254,14 +254,14 @@ Current FedRAMP material emphasizes concepts such as:
 
 That pattern is directly useful here:
 
-| FedRAMP-style engineering pattern | Research provenance analogue |
-| --- | --- |
-| Machine-readable authorization evidence | Typed provenance/version API and future evidence manifest |
-| Persistent validation | Replay/idempotence checks against authoritative repository state |
-| Automated technical validation | DSpace APPLY→DIFF proof, API read-back, browser assertions |
-| Ongoing decision support | Researcher/steward can determine exactly what provenance is established |
-| Evidence-backed assertion | UI/API claim strength cannot exceed persisted evidence |
-| Reusable assessment material | Provenance facts can be consumed by UI, APIs, exports, and future automation |
+| FedRAMP-style engineering pattern       | Research provenance analogue                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------- |
+| Machine-readable authorization evidence | Typed provenance/version API and future evidence manifest                    |
+| Persistent validation                   | Replay/idempotence checks against authoritative repository state             |
+| Automated technical validation          | DSpace APPLY→DIFF proof, API read-back, browser assertions                   |
+| Ongoing decision support                | Researcher/steward can determine exactly what provenance is established      |
+| Evidence-backed assertion               | UI/API claim strength cannot exceed persisted evidence                       |
+| Reusable assessment material            | Provenance facts can be consumed by UI, APIs, exports, and future automation |
 
 Official references reviewed for this architectural comparison (September 2026):
 

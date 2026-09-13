@@ -185,7 +185,8 @@
           <h3 id="provenance-proof-heading">Authority and evidence trail</h3>
           <p>
             This view separates authority from derived discovery data and states
-            unsupported evidence explicitly instead of filling gaps by inference.
+            unsupported evidence explicitly instead of filling gaps by
+            inference.
           </p>
           <dl class="provenance-proof-list">
             <div>
@@ -204,13 +205,15 @@
               <dd>
                 @if (historyStatus === 'HISTORY_AVAILABLE') { Observed
                 multi-version lineage } @else if (historyStatus ===
-                'OBSERVED_CURRENT_ONLY') { Current observed record only } @else {
-                Version provenance unavailable }
+                'OBSERVED_CURRENT_ONLY') { Current observed record only } @else
+                { Version provenance unavailable }
               </dd>
             </div>
             <div>
               <dt>Discovery indexes</dt>
-              <dd>Derived projections only; Solr/OpenSearch are not authority.</dd>
+              <dd>
+                Derived projections only; Solr/OpenSearch are not authority.
+              </dd>
             </div>
           </dl>
         </section>
