@@ -101,6 +101,9 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
     expect(text).toContain(
       'Only the current repository/source record has been observed. Earlier or later version history is not established.',
     );
+    expect(text).toContain('Authority and evidence trail');
+    expect(text).toContain('DSpace curated repository record');
+    expect(text).toContain('Derived projections only');
     expect(text).toContain('Observed release 2025.2');
     expect(text).toContain('Current observed record');
     expect(text).toContain('Source version');
@@ -112,6 +115,11 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
     expect(text).toContain('Version of');
     expect(text).toContain('version-history-example');
     expect(text).toContain('Publisher-issued metadata revision.');
+    expect(text).toContain('What this record proves');
+    expect(text).toContain('Fixity:');
+    expect(text).toContain('Capture:');
+    expect(text).toContain('Lineage:');
+    expect(text).toContain('Not established');
     expect(text).not.toContain('TIGER_LINE 2024');
   });
 
@@ -133,10 +141,12 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
     expect(text).toContain(
       'The repository has observed version-lineage records for this research artifact.',
     );
+    expect(text).toContain('Observed multi-version lineage');
     expect(text).toContain('Observed release 2025.2');
     expect(text).toContain('Observed release 2025.1');
     expect(text).toContain('Supersedes');
     expect(text).toContain('version-history-example-prior');
+    expect(text).toContain('Established from');
   });
 
   it('states that provenance is unavailable instead of inferring history', async () => {
@@ -145,7 +155,10 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
     expect(text).toContain(
       'Version provenance is not available for this research artifact.',
     );
+    expect(text).toContain('Authority and evidence trail');
+    expect(text).toContain('Version provenance unavailable');
     expect(text).not.toContain('Current observed record');
     expect(text).not.toContain('Source SHA-256');
+    expect(text).not.toContain('What this record proves');
   });
 });
