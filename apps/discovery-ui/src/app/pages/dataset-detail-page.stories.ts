@@ -214,8 +214,9 @@ export const HistoryAvailable: Story = {
       ),
     ).toBeInTheDocument();
     await expect(
-      canvas.getAllByText(/Established from observed DSpace-native version-lineage records/)
-        .length,
+      canvas.getAllByText(
+        /Established from observed DSpace-native version-lineage records/,
+      ).length,
     ).toBeGreaterThan(0);
   },
 };

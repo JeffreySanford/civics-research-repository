@@ -107,13 +107,9 @@ async function authenticate() {
   );
 
   const authorization = loginResponse.headers.get('Authorization');
-  const csrfToken =
-    loginResponse.headers.get('DSPACE-XSRF-TOKEN') ?? firstCsrf;
+  const csrfToken = loginResponse.headers.get('DSPACE-XSRF-TOKEN') ?? firstCsrf;
   const cookie = dspaceSessionCookie(loginResponse) ?? firstCookie;
-  requireCondition(
-    authorization,
-    'DSpace login did not return Authorization.',
-  );
+  requireCondition(authorization, 'DSpace login did not return Authorization.');
   requireCondition(csrfToken, 'DSpace login did not retain a CSRF token.');
   requireCondition(cookie, 'DSpace login did not retain the XSRF cookie.');
 

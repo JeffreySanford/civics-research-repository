@@ -69,16 +69,16 @@ For each DSpace version, source URL, DOI, fixity, capture time, and release fact
 
 For genuine DSpace multi-version history, the public `ResearchArtifactVersion` mapping is:
 
-| Public field | Evidence basis |
-| --- | --- |
-| `id` | `dspace-version:{DSpace version id}` |
-| `versionLabel` | `Repository version {DSpace version number}` |
-| `versionDate` | DSpace Version `created` date |
-| `changeNote` | DSpace Version `summary` |
-| `current` | newest archived DSpace version only when the VersionHistory reports no newer draft |
-| `isVersionOf` | canonical CRR research-object identity |
-| `supersedes` | immediately preceding observed DSpace version |
-| DOI/source URL/fixity/capture/release | archived item metadata for that specific version, when present |
+| Public field                          | Evidence basis                                                                     |
+| ------------------------------------- | ---------------------------------------------------------------------------------- |
+| `id`                                  | `dspace-version:{DSpace version id}`                                               |
+| `versionLabel`                        | `Repository version {DSpace version number}`                                       |
+| `versionDate`                         | DSpace Version `created` date                                                      |
+| `changeNote`                          | DSpace Version `summary`                                                           |
+| `current`                             | newest archived DSpace version only when the VersionHistory reports no newer draft |
+| `isVersionOf`                         | canonical CRR research-object identity                                             |
+| `supersedes`                          | immediately preceding observed DSpace version                                      |
+| DOI/source URL/fixity/capture/release | archived item metadata for that specific version, when present                     |
 
 For zero or singleton history, the API deliberately preserves the Phase B current-record representation, including an observed source release such as `TIGER2025`. Seeing one DSpace version is not proof that broader history exists.
 
