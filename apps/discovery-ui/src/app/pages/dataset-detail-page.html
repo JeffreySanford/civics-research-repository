@@ -235,8 +235,11 @@
               <strong>{{ version.label }}</strong>
               @if (version.current) {
               <span class="status-pill"
-                >{{ historyStatus === 'HISTORY_AVAILABLE' ? 'Current repository
-                version' : 'Current observed record' }}</span
+                >{{
+                  historyStatus === 'HISTORY_AVAILABLE'
+                    ? 'Current repository version'
+                    : 'Current observed record'
+                }}</span
               >
               }
             </div>
@@ -244,8 +247,11 @@
               @if (version.versionLabel) {
               <div>
                 <dt>
-                  {{ historyStatus === 'HISTORY_AVAILABLE' ? 'Repository
-                  version' : 'Source version' }}
+                  {{
+                    historyStatus === 'HISTORY_AVAILABLE'
+                      ? 'Repository version'
+                      : 'Source version'
+                  }}
                 </dt>
                 <dd>{{ version.versionLabel }}</dd>
               </div>
