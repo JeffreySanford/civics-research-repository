@@ -164,15 +164,25 @@ export const ObservedWithoutFixityOrCapture: Story = {
 export const HistoryAvailable: Story = {
   decorators: [
     withState('HISTORY_AVAILABLE', [
-      { ...currentVersion, supersedes: 'version-history-story-prior' },
       {
-        id: 'version-history-story-prior',
-        label: 'Observed release 2025.1',
-        releasedOn: '2025-06-01',
-        current: false,
-        versionLabel: '2025.1',
+        ...currentVersion,
+        id: 'dspace-version:102',
+        label: 'Version provenance contract example',
+        versionLabel: 'Repository version 2',
+        versionDate: '2026-09-13',
         isVersionOf: 'version-history-story',
-        sourceUrl: 'https://example.gov/research/version-history-story/2025.1',
+        supersedes: 'dspace-version:101',
+        changeNote: 'Phase C observed DSpace lineage proof',
+      },
+      {
+        id: 'dspace-version:101',
+        label: 'Version provenance contract example',
+        releasedOn: '2025-09-01',
+        current: false,
+        versionLabel: 'Repository version 1',
+        versionDate: '2026-08-13',
+        isVersionOf: 'version-history-story',
+        sourceUrl: 'https://example.gov/research/version-history-story/2025.2',
       },
     ]),
   ],
@@ -187,16 +197,24 @@ export const HistoryAvailable: Story = {
       canvas.getByText('Observed multi-version lineage'),
     ).toBeInTheDocument();
     await expect(
-      canvas.getByText('Observed release 2025.2'),
+      canvas.getByText('DSpace native item version history'),
     ).toBeInTheDocument();
     await expect(
-      canvas.getByText('Observed release 2025.1'),
+      canvas.getByText('Current repository version'),
+    ).toBeInTheDocument();
+    await expect(canvas.getByText('Repository version 2')).toBeInTheDocument();
+    await expect(canvas.getByText('Repository version 1')).toBeInTheDocument();
+    await expect(canvas.getByText('dspace-version:101')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('Phase C observed DSpace lineage proof'),
     ).toBeInTheDocument();
     await expect(
-      canvas.getByText('version-history-story-prior'),
+      canvas.getByText(
+        /Prior repository version is established by the observed DSpace version history/,
+      ),
     ).toBeInTheDocument();
     await expect(
-      canvas.getAllByText(/Established from observed version-lineage records/)
+      canvas.getAllByText(/Established from observed DSpace-native version-lineage records/)
         .length,
     ).toBeGreaterThan(0);
   },
