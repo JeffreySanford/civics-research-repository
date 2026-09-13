@@ -80,6 +80,33 @@ async function login(csrfToken, cookie) {
   });
 }
 
+async function refreshCsrf(session) {
+  const response = await fetch(`${dspaceBaseUrl}/api/security/csrf`, {
+    method: 'GET',
+    headers: { Authorization: session.authorization },
+  });
+  const body = await response.text();
+  requireCondition(
+    response.ok,
+    `DSpace CSRF refresh failed with HTTP ${response.status}: ${body}`,
+  );
+
+  const csrfToken = response.headers.get('DSPACE-XSRF-TOKEN');
+  const cookie = dspaceSessionCookie(response);
+  requireCondition(
+    csrfToken,
+    'DSpace CSRF refresh did not return DSPACE-XSRF-TOKEN.',
+  );
+  requireCondition(
+    cookie,
+    'DSpace CSRF refresh did not return the XSRF cookie.',
+  );
+
+  session.csrfToken = csrfToken;
+  session.cookie = cookie;
+  return session;
+}
+
 async function authenticate() {
   const csrfResponse = await login(null, null);
   const firstCsrf = csrfResponse.headers.get('DSPACE-XSRF-TOKEN');
@@ -103,7 +130,7 @@ async function authenticate() {
   requireCondition(csrfToken, 'DSpace login did not retain a CSRF token.');
   requireCondition(cookie, 'DSpace login did not retain the XSRF cookie.');
 
-  return { authorization, csrfToken, cookie };
+  return refreshCsrf({ authorization, csrfToken, cookie });
 }
 
 function authenticatedHeaders(session, extra = {}) {
@@ -127,7 +154,7 @@ async function dspace(pathOrUrl, session, init = {}, accepted = [200]) {
         headers: authenticatedHeaders(session, init.headers ?? {}),
       }),
     refreshSession: async () => {
-      Object.assign(session, await authenticate());
+      await refreshCsrf(session);
     },
   });
   const text = await response.text();
