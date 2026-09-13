@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.civicsrepo.dspace.DspaceManagedFields;
+import org.civicsrepo.dspace.DspaceRestClient.DspaceVersionRecord;
 import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +48,58 @@ class RepositoryArtifactVersionMapperTest {
         assertThat(version.getIsVersionOf()).isEqualTo("example-artifact");
         assertThat(version.getSupersedes()).isEqualTo("example-artifact-2025-1");
         assertThat(version.getChangeNote()).isEqualTo("Publisher-issued revision.");
+    }
+
+    @Test
+    void mapsDspaceNativeVersionFactsAndPreservesObservedSourceProvenance() {
+        Map<String, String> metadata = new LinkedHashMap<>();
+        metadata.put("dc.title", "Observed research artifact");
+        metadata.put("dc.date.issued", "2025-09-23");
+        metadata.put(DspaceManagedFields.SOURCE_URL_FIELD, "https://example.gov/releases/2025");
+        metadata.put(DspaceManagedFields.DOI_FIELD, "10.1234/example.2025");
+        metadata.put(
+                DspaceManagedFields.SOURCE_SHA256_FIELD,
+                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+        metadata.put(DspaceManagedFields.CAPTURED_AT_FIELD, "2026-09-12T18:45:00-05:00");
+        var item = RepositoryFixtures.item("version-item-uuid", "Observed research artifact", metadata);
+        var repositoryVersion =
+                new DspaceVersionRecord("102", "2", "2026-09-13T10:15:30.000", "Repository revision", true, item);
+
+        ResearchArtifactVersion version = RepositoryArtifactVersionMapper.toRepositoryVersion(
+                repositoryVersion, "example-artifact", "Fallback title", "101");
+
+        assertThat(version.getId()).isEqualTo("dspace-version:102");
+        assertThat(version.getLabel()).isEqualTo("Observed research artifact");
+        assertThat(version.getCurrent()).isTrue();
+        assertThat(version.getVersionLabel()).isEqualTo("Repository version 2");
+        assertThat(version.getVersionDate()).isEqualTo(LocalDate.of(2026, 9, 13));
+        assertThat(version.getIsVersionOf()).isEqualTo("example-artifact");
+        assertThat(version.getSupersedes()).isEqualTo("dspace-version:101");
+        assertThat(version.getChangeNote()).isEqualTo("Repository revision");
+        assertThat(version.getDoi()).isEqualTo("10.1234/example.2025");
+        assertThat(version.getSourceUrl()).hasToString("https://example.gov/releases/2025");
+        assertThat(version.getSourceSha256())
+                .isEqualTo("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+        assertThat(version.getCapturedAt())
+                .isEqualTo(OffsetDateTime.parse("2026-09-12T18:45:00-05:00"));
+    }
+
+    @Test
+    void mapsRepositoryVersionWithoutInventingMissingArchivedSourceFacts() {
+        var repositoryVersion = new DspaceVersionRecord(
+                "101", "1", "2025-11-03T09:44:46.617", null, false, null);
+
+        ResearchArtifactVersion version = RepositoryArtifactVersionMapper.toRepositoryVersion(
+                repositoryVersion, "example-artifact", "Known current title", null);
+
+        assertThat(version.getId()).isEqualTo("dspace-version:101");
+        assertThat(version.getLabel()).isEqualTo("Known current title");
+        assertThat(version.getCurrent()).isFalse();
+        assertThat(version.getVersionLabel()).isEqualTo("Repository version 1");
+        assertThat(version.getSourceUrl()).isNull();
+        assertThat(version.getSourceSha256()).isNull();
+        assertThat(version.getCapturedAt()).isNull();
+        assertThat(version.getSupersedes()).isNull();
     }
 
     @Test
