@@ -112,24 +112,28 @@ public class DspaceRestItemWriteGateway implements DspaceItemWriteGateway {
      * <p>DSpace orders repeated values by {@code place}, which is not guaranteed to match the order
      * the adapter emits. An index-by-index comparison would therefore report a difference on every
      * run and re-PATCH unchanged metadata, breaking the idempotence that {@code sync:apply} relies
-     * on.
+     * on. Fields that DSpace itself augments, such as {@code dc.identifier.uri} with a persistent
+     * handle, require every source value to remain present but allow repository-owned extras.
      */
     boolean hasEquivalentMetadataValues(JsonNode item, String field, List<DspaceMetadataValue> sourceValues) {
         JsonNode existingValues = item.path("metadata").path(field);
-        if (!existingValues.isArray() || existingValues.size() != sourceValues.size()) {
+        if (!existingValues.isArray()) {
             return false;
         }
 
-        List<List<String>> remaining =
-                new ArrayList<>(sourceValues.stream().map(this::comparisonKey).toList());
+        List<List<String>> remainingExisting = new ArrayList<>();
         for (JsonNode existingValue : existingValues) {
-            List<String> key = comparisonKey(
-                    existingValue.path("value").asText(), existingValue.path("language").asText(null));
-            if (!remaining.remove(key)) {
+            remainingExisting.add(comparisonKey(
+                    existingValue.path("value").asText(), existingValue.path("language").asText(null)));
+        }
+
+        for (DspaceMetadataValue sourceValue : sourceValues) {
+            if (!remainingExisting.remove(comparisonKey(sourceValue))) {
                 return false;
             }
         }
-        return remaining.isEmpty();
+
+        return DspaceManagedFields.allowsRepositoryAdditionalValues(field) || remainingExisting.isEmpty();
     }
 
     private List<String> comparisonKey(DspaceMetadataValue value) {
