@@ -124,6 +124,48 @@ class DspaceRestItemWriteGatewayTest {
     }
 
     @Test
+    void treatsRepositoryAddedIdentifierUriAsEquivalentWhenSourceUriRemainsPresent() {
+        String sourceUri = sourcePayload.metadata().get("dc.identifier.uri").getFirst().value();
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "dc.identifier.uri": [
+                      {"value": "%s", "language": "en_US", "authority": null, "confidence": -1},
+                      {"value": "http://localhost:4000/handle/123456789/160.2", "language": null, "authority": null, "confidence": -1}
+                    ]
+                  }
+                }
+                """.formatted(sourceUri));
+
+        assertThat(gateway.hasEquivalentMetadataValues(
+                        item, "dc.identifier.uri", sourcePayload.metadata().get("dc.identifier.uri")))
+                .isTrue();
+    }
+
+    @Test
+    void requiresSourceIdentifierUriEvenWhenRepositoryHandleExists() {
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "dc.identifier.uri": [
+                      {"value": "http://localhost:4000/handle/123456789/160.2", "language": null, "authority": null, "confidence": -1}
+                    ]
+                  }
+                }
+                """);
+
+        assertThat(gateway.hasEquivalentMetadataValues(
+                        item, "dc.identifier.uri", sourcePayload.metadata().get("dc.identifier.uri")))
+                .isFalse();
+    }
+
+    @Test
     void detectsChangedRepeatedValuesRegardlessOfOrder() {
         JsonNode item = firstItem(
                 """
