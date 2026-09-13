@@ -36,6 +36,67 @@ class DspaceRestClientTest {
     }
 
     @Test
+    void parsesNativeVersionHistoryInDspaceOrderAndMarksOnlyTheCurrentVersion() {
+        DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
+
+        List<DspaceRestClient.DspaceVersionRecord> versions = client.toVersionRecords(
+                """
+                {
+                  "_embedded": {
+                    "versions": [
+                      {
+                        "id": "102",
+                        "version": "2",
+                        "created": "2019-10-31T09:44:46.617",
+                        "summary": "Author order"
+                      },
+                      {
+                        "id": "101",
+                        "version": "1",
+                        "created": "2015-11-03T09:44:46.617",
+                        "summary": "Fixing some typos"
+                      }
+                    ]
+                  }
+                }
+                """,
+                "102");
+
+        assertThat(versions).extracting(DspaceRestClient.DspaceVersionRecord::id)
+                .containsExactly("102", "101");
+        assertThat(versions).extracting(DspaceRestClient.DspaceVersionRecord::version)
+                .containsExactly("2", "1");
+        assertThat(versions).extracting(DspaceRestClient.DspaceVersionRecord::current)
+                .containsExactly(true, false);
+        assertThat(versions.getFirst().summary()).isEqualTo("Author order");
+        assertThat(versions.get(1).created()).isEqualTo("2015-11-03T09:44:46.617");
+    }
+
+    @Test
+    void skipsVersionRowsWithoutAuthoritativeIdentityOrVersionNumber() {
+        DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
+
+        List<DspaceRestClient.DspaceVersionRecord> versions = client.toVersionRecords(
+                """
+                {
+                  "_embedded": {
+                    "versions": [
+                      {"id": "102", "version": "2", "created": "2019-10-31T09:44:46.617"},
+                      {"id": "", "version": "1"},
+                      {"id": "100", "version": ""}
+                    ]
+                  }
+                }
+                """,
+                "102");
+
+        assertThat(versions).singleElement().satisfies(version -> {
+            assertThat(version.id()).isEqualTo("102");
+            assertThat(version.current()).isTrue();
+        });
+    }
+
+    @Test
     void readsAreEnabledByBaseUrlAlone() {
         DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
 
