@@ -32,3 +32,26 @@ export function refreshDspaceSession(session, response) {
   }
   return session;
 }
+
+export async function requestWithDspaceCsrfRetry({
+  session,
+  request,
+  refreshSession,
+}) {
+  let response = await request();
+  refreshDspaceSession(session, response);
+
+  if (response.status !== 403) {
+    return response;
+  }
+
+  const body = await response.clone().text();
+  if (!/invalid csrf token/i.test(body)) {
+    return response;
+  }
+
+  await refreshSession(session);
+  response = await request();
+  refreshDspaceSession(session, response);
+  return response;
+}
