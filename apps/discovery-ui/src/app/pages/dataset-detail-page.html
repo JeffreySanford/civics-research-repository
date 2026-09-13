@@ -176,7 +176,46 @@
         <p class="version-history-note" role="note">
           {{ versionHistoryMessage(historyStatus) }}
         </p>
-        } @if (versions$ | async; as versions) {
+
+        <section
+          class="provenance-proof"
+          aria-labelledby="provenance-proof-heading"
+        >
+          <p class="eyebrow">Proof-oriented provenance</p>
+          <h3 id="provenance-proof-heading">Authority and evidence trail</h3>
+          <p>
+            This view separates authority from derived discovery data and states
+            unsupported evidence explicitly instead of filling gaps by inference.
+          </p>
+          <dl class="provenance-proof-list">
+            <div>
+              <dt>Authority</dt>
+              <dd>
+                @if (detail.source === 'FEDERATED') { External publisher — {{
+                detail.publisher }} } @else { DSpace curated repository record }
+              </dd>
+            </div>
+            <div>
+              <dt>Authority source</dt>
+              <dd>{{ detail.sourceSystem }}</dd>
+            </div>
+            <div>
+              <dt>History knowledge</dt>
+              <dd>
+                @if (historyStatus === 'HISTORY_AVAILABLE') { Observed
+                multi-version lineage } @else if (historyStatus ===
+                'OBSERVED_CURRENT_ONLY') { Current observed record only } @else {
+                Version provenance unavailable }
+              </dd>
+            </div>
+            <div>
+              <dt>Discovery indexes</dt>
+              <dd>Derived projections only; Solr/OpenSearch are not authority.</dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (versions$ | async; as versions) {
         <ol class="version-list">
           @for (version of versions; track version.id) {
           <li>
@@ -229,6 +268,36 @@
               </div>
               }
             </dl>
+
+            <section class="evidence-strength" aria-label="Evidence strength">
+              <h4>What this record proves</h4>
+              <ul class="evidence-checks">
+                <li>
+                  <strong>Observation:</strong> Current record is established by
+                  the authority path shown above.
+                </li>
+                <li>
+                  <strong>Fixity:</strong>
+                  @if (version.sourceSha256) { Established by the recorded
+                  SHA-256 digest. } @else { Not established; no source digest is
+                  recorded. }
+                </li>
+                <li>
+                  <strong>Capture:</strong>
+                  @if (version.capturedAt) { Established by an actual retained
+                  observation timestamp. } @else { Not established; sync time is
+                  not substituted for capture evidence. }
+                </li>
+                <li>
+                  <strong>Lineage:</strong>
+                  @if (historyStatus === 'HISTORY_AVAILABLE') { Established from
+                  observed version-lineage records. } @else { Not established;
+                  current-record evidence does not prove earlier or later
+                  versions. }
+                </li>
+              </ul>
+            </section>
+
             <div class="version-links">
               @if (version.doi) {
               <a
@@ -251,7 +320,7 @@
           </li>
           }
         </ol>
-        }
+        } }
       </section>
     </mat-tab>
     @if ( detail.source !== 'FEDERATED' && (detail.contentType === 'DATASET' ||
