@@ -1,12 +1,9 @@
 package org.civicsrepo.repository;
 
-import org.civicsrepo.generated.dto.ResearchArtifactVersion;
-import org.civicsrepo.generated.dto.ResearchObjectDetail;
-import org.civicsrepo.generated.dto.SearchResult;
-import org.civicsrepo.search.DiscoveryDocument;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,7 +11,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.civicsrepo.dspace.DspaceRestClient;
+import org.civicsrepo.dspace.DspaceRestClient.DspaceVersionRecord;
 import org.civicsrepo.dspace.DspaceUnavailableException;
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
+import org.civicsrepo.generated.dto.SearchResult;
+import org.civicsrepo.search.DiscoveryDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,9 +81,7 @@ public class RepositoryCatalog {
     public Optional<ResearchObjectDetail> findDataset(String datasetId) {
         List<JsonNode> items = readItems();
 
-        Optional<JsonNode> match = items.stream()
-                .filter((item) -> repositoryObjectMapper.identifier(item).equalsIgnoreCase(datasetId))
-                .findFirst();
+        Optional<JsonNode> match = findItem(items, datasetId);
         if (match.isEmpty()) {
             return Optional.empty();
         }
@@ -106,16 +106,69 @@ public class RepositoryCatalog {
     /**
      * The current artifact-version evidence recorded on the matching DSpace item.
      *
-     * <p>This returns one observed repository record, not reconstructed history. Phase C can add
-     * genuinely observed earlier/later records without changing the authority boundary established
-     * here.
+     * <p>This returns one observed repository record, not reconstructed history. Phase C callers
+     * should prefer {@link #findObservedVersionHistory(String)} when they need first-class DSpace
+     * lineage.
      */
     public Optional<ResearchArtifactVersion> findObservedVersion(String researchObjectId) {
-        return readItems().stream()
-                .filter((item) -> repositoryObjectMapper.identifier(item).equalsIgnoreCase(researchObjectId))
-                .findFirst()
+        return findItem(readItems(), researchObjectId)
                 .map((item) -> RepositoryArtifactVersionMapper.toVersion(
                         item, repositoryObjectMapper.identifier(item)));
+    }
+
+    /**
+     * Returns genuinely observed DSpace-native lineage when at least two repository versions exist.
+     *
+     * <p>A missing or singleton DSpace history deliberately collapses to the Phase B current-record
+     * representation. That preserves source provenance such as TIGER2025 and, more importantly,
+     * does not turn "one repository version observed" into a claim that history is available.
+     */
+    public List<ResearchArtifactVersion> findObservedVersionHistory(String researchObjectId) {
+        Optional<JsonNode> match = findItem(readItems(), researchObjectId);
+        if (match.isEmpty()) {
+            return List.of();
+        }
+
+        JsonNode currentItem = match.orElseThrow();
+        String canonicalId = repositoryObjectMapper.identifier(currentItem);
+        ResearchArtifactVersion observedCurrent = RepositoryArtifactVersionMapper.toVersion(currentItem, canonicalId);
+        String itemUuid = currentItem.path("uuid").asText("").trim();
+        if (itemUuid.isEmpty()) {
+            return List.of(observedCurrent);
+        }
+
+        final List<DspaceVersionRecord> repositoryVersions;
+        try {
+            repositoryVersions = dspaceRestClient.listItemVersions(itemUuid);
+        } catch (DspaceUnavailableException exception) {
+            LOGGER.warn(
+                    "DSpace version-history read failed for {}; preserving current observed provenance: {}",
+                    canonicalId,
+                    exception.getMessage());
+            return List.of(observedCurrent);
+        }
+
+        if (repositoryVersions.size() < 2) {
+            return List.of(observedCurrent);
+        }
+
+        String fallbackTitle = observedCurrent.getLabel();
+        List<ResearchArtifactVersion> history = new ArrayList<>(repositoryVersions.size());
+        for (int index = 0; index < repositoryVersions.size(); index++) {
+            DspaceVersionRecord repositoryVersion = repositoryVersions.get(index);
+            String supersedesId = index + 1 < repositoryVersions.size()
+                    ? repositoryVersions.get(index + 1).id()
+                    : null;
+            history.add(RepositoryArtifactVersionMapper.toRepositoryVersion(
+                    repositoryVersion, canonicalId, fallbackTitle, supersedesId));
+        }
+        return List.copyOf(history);
+    }
+
+    private Optional<JsonNode> findItem(List<JsonNode> items, String researchObjectId) {
+        return items.stream()
+                .filter((item) -> repositoryObjectMapper.identifier(item).equalsIgnoreCase(researchObjectId))
+                .findFirst();
     }
 
     /**
