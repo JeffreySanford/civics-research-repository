@@ -6,7 +6,6 @@ import org.civicsrepo.federation.FederatedMetadataCatalog;
 import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
-import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.VersionHistoryStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -48,10 +47,12 @@ public final class ResearchObjectService {
     public ResearchArtifactVersionHistory getResearchObjectVersionHistory(String researchIdToken) {
         ResearchObjectDetail detail = getResearchObject(researchIdToken);
 
-        ResearchArtifactVersion observed = detail.getOrigin() == ResearchObjectOrigin.REPOSITORY
-                ? datasetService.findObservedRepositoryVersion(detail.getId())
-                        .orElseGet(() -> observedFromDetail(detail))
-                : observedFromDetail(detail);
+        // Detail presentation may resolve through a federated authority first, but persisted DSpace
+        // provenance remains authoritative for version evidence when the same canonical identity is
+        // present in the repository.
+        ResearchArtifactVersion observed = datasetService
+                .findObservedRepositoryVersion(detail.getId())
+                .orElseGet(() -> observedFromDetail(detail));
 
         return new ResearchArtifactVersionHistory(
                         detail.getId(), VersionHistoryStatus.OBSERVED_CURRENT_ONLY, List.of(observed))
