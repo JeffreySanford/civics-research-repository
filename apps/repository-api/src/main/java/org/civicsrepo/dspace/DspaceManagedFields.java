@@ -1,6 +1,7 @@
 package org.civicsrepo.dspace;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * The metadata fields synchronization owns.
@@ -36,6 +37,15 @@ public final class DspaceManagedFields {
     public static final String IS_VERSION_OF_FIELD = "crr.version.isversionof";
     public static final String SUPERSEDES_FIELD = "crr.version.supersedes";
     public static final String CHANGE_NOTE_FIELD = "crr.version.changenote";
+
+    /**
+     * Fields for which DSpace legitimately appends repository-owned values after deposit.
+     *
+     * <p>For example, DSpace adds its persistent handle URL to {@code dc.identifier.uri} when an
+     * item is archived. Synchronization still requires every source URI to be present, but must not
+     * remove or continuously diff against repository identifiers that DSpace owns.
+     */
+    private static final Set<String> REPOSITORY_AUGMENTED_FIELDS = Set.of("dc.identifier.uri");
 
     public static final List<String> ALL = List.of(
             "dc.title",
@@ -73,6 +83,10 @@ public final class DspaceManagedFields {
             SUPERSEDES_FIELD,
             CHANGE_NOTE_FIELD,
             SOURCE_IDENTIFIER_FIELD);
+
+    public static boolean allowsRepositoryAdditionalValues(String field) {
+        return REPOSITORY_AUGMENTED_FIELDS.contains(field);
+    }
 
     private DspaceManagedFields() {}
 }
