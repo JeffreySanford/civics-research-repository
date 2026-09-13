@@ -302,37 +302,39 @@ public class DspaceRestClient {
     /**
      * Reads DSpace's first-class item version history. No chronology is inferred when an item has no
      * accessible version relation; callers retain their current-record fallback in that case.
+     *
+     * <p>When administrative credentials are configured, history reads use them so metadata on
+     * withdrawn archived versions remains visible. Credentials are never required for repositories
+     * whose version history is public; failed optional authentication falls back to anonymous reads.
      */
     public List<DspaceVersionRecord> listItemVersions(String itemUuid) {
         if (!isReadEnabled() || normalize(itemUuid).isBlank()) {
             return List.of();
         }
 
-        HttpResponse<String> currentResponse = send(HttpRequest.newBuilder(itemVersionUri(itemUuid))
-                .timeout(REQUEST_TIMEOUT)
-                .GET());
-        if (currentResponse.statusCode() == 204 || currentResponse.statusCode() == 404) {
+        Optional<AuthSession> readSession = optionalReadSession();
+        HttpResponse<String> itemVersionResponse = get(itemVersionUri(itemUuid), readSession);
+        if (itemVersionResponse.statusCode() == 204 || itemVersionResponse.statusCode() == 404) {
             return List.of();
         }
-        if (currentResponse.statusCode() >= 300) {
-            return List.of();
-        }
-
-        JsonNode currentVersion = readTree(currentResponse.body(), "DSpace item-version response could not be parsed.");
-        String currentVersionId = currentVersion.path("id").asText("").trim();
-        String historyHref = currentVersion.path("_links").path("versionhistory").path("href").asText("").trim();
-        if (currentVersionId.isEmpty() || historyHref.isEmpty()) {
+        if (itemVersionResponse.statusCode() >= 300) {
             return List.of();
         }
 
-        HttpResponse<String> historyResponse = send(HttpRequest.newBuilder(URI.create(historyHref))
-                .timeout(REQUEST_TIMEOUT)
-                .GET());
+        JsonNode itemVersion = readTree(
+                itemVersionResponse.body(), "DSpace item-version response could not be parsed.");
+        String historyHref = itemVersion.path("_links").path("versionhistory").path("href").asText("").trim();
+        if (historyHref.isEmpty()) {
+            return List.of();
+        }
+
+        HttpResponse<String> historyResponse = get(URI.create(historyHref), readSession);
         if (historyResponse.statusCode() >= 300) {
             return List.of();
         }
 
         JsonNode history = readTree(historyResponse.body(), "DSpace version-history response could not be parsed.");
+        boolean draftVersion = history.path("draftVersion").asBoolean(false);
         String versionsHref = history.path("_links").path("versions").path("href").asText("").trim();
         if (versionsHref.isEmpty()) {
             return List.of();
@@ -340,16 +342,17 @@ public class DspaceRestClient {
 
         List<DspaceVersionRecord> versions = new ArrayList<>();
         for (int page = 0; ; page++) {
-            HttpResponse<String> response = send(HttpRequest.newBuilder(pageUri(versionsHref, page, VERSION_PAGE_SIZE))
-                    .timeout(REQUEST_TIMEOUT)
-                    .GET());
+            HttpResponse<String> response = get(pageUri(versionsHref, page, VERSION_PAGE_SIZE), readSession);
             if (response.statusCode() >= 300) {
                 return List.of();
             }
 
-            List<DspaceVersionRecord> pageVersions = toVersionRecords(response.body(), currentVersionId);
+            // DSpace orders the collection by version number descending. The first archived version
+            // is current only when the authoritative history says there is no newer draft version.
+            List<DspaceVersionRecord> pageVersions =
+                    toVersionRecords(response.body(), page == 0 && !draftVersion);
             for (DspaceVersionRecord version : pageVersions) {
-                versions.add(version.withItem(fetchVersionItem(version.id())));
+                versions.add(version.withItem(fetchVersionItem(version.id(), readSession)));
             }
             if (pageVersions.size() < VERSION_PAGE_SIZE) {
                 break;
@@ -359,7 +362,7 @@ public class DspaceRestClient {
     }
 
     /** Parses one version-history collection page in the DSpace-defined descending version order. */
-    List<DspaceVersionRecord> toVersionRecords(String responseBody, String currentVersionId) {
+    List<DspaceVersionRecord> toVersionRecords(String responseBody, boolean markFirstCurrent) {
         JsonNode nodes = readTree(responseBody, "DSpace version-list response could not be parsed.")
                 .path("_embedded")
                 .path("versions");
@@ -370,25 +373,46 @@ public class DspaceRestClient {
             if (id.isEmpty() || version.isEmpty()) {
                 continue;
             }
+            boolean current = markFirstCurrent && versions.isEmpty();
             versions.add(new DspaceVersionRecord(
                     id,
                     version,
                     node.path("created").asText("").trim(),
                     blankToNull(node.path("summary").asText(null)),
-                    id.equals(currentVersionId),
+                    current,
                     null));
         }
         return List.copyOf(versions);
     }
 
-    private JsonNode fetchVersionItem(String versionId) {
-        HttpResponse<String> response = send(HttpRequest.newBuilder(versionItemUri(versionId))
-                .timeout(REQUEST_TIMEOUT)
-                .GET());
+    private JsonNode fetchVersionItem(String versionId, Optional<AuthSession> readSession) {
+        HttpResponse<String> response = get(versionItemUri(versionId), readSession);
         if (response.statusCode() >= 300) {
             return null;
         }
         return readTree(response.body(), "DSpace version-item response could not be parsed.");
+    }
+
+    private HttpResponse<String> get(URI uri, Optional<AuthSession> readSession) {
+        HttpRequest.Builder request = HttpRequest.newBuilder(uri).timeout(REQUEST_TIMEOUT);
+        readSession.ifPresent(session -> request
+                .header("Authorization", session.authorization())
+                .header("X-XSRF-TOKEN", session.xsrfToken())
+                .header("Cookie", session.cookie()));
+        return send(request.GET());
+    }
+
+    private Optional<AuthSession> optionalReadSession() {
+        if (!isWriteEnabled()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(authenticate());
+        } catch (RuntimeException exception) {
+            // Authentication is an enrichment for version-history reads, not a requirement for
+            // repositories configured to expose history publicly.
+            return Optional.empty();
+        }
     }
 
     private JsonNode readTree(String responseBody, String message) {
