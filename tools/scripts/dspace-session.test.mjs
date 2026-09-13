@@ -18,7 +18,7 @@ function responseWith({ csrfToken, cookies = [] } = {}) {
   };
 }
 
-test('refreshes the DSpace CSRF token and matching cookie from every response', () => {
+test('refreshes DSpace CSRF token and cookie', () => {
   const session = {
     authorization: 'Bearer test',
     csrfToken: 'login-token',
@@ -29,9 +29,7 @@ test('refreshes the DSpace CSRF token and matching cookie from every response', 
     session,
     responseWith({
       csrfToken: 'rotated-token',
-      cookies: [
-        'DSPACE-XSRF-COOKIE=rotated-token; Path=/server; SameSite=Lax',
-      ],
+      cookies: ['DSPACE-XSRF-COOKIE=rotated-token; Path=/server'],
     }),
   );
 
@@ -39,7 +37,7 @@ test('refreshes the DSpace CSRF token and matching cookie from every response', 
   assert.equal(session.cookie, 'DSPACE-XSRF-COOKIE=rotated-token');
 });
 
-test('retains prior DSpace session fields when a response does not rotate them', () => {
+test('retains DSpace session fields without rotation', () => {
   const session = {
     authorization: 'Bearer test',
     csrfToken: 'current-token',
