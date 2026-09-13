@@ -4,6 +4,8 @@
 # frontend coverage, and a production Storybook build. Browser accessibility evidence remains
 # separate because it needs real browsers and longer failure artifacts.
 # `api` builds and tests the Spring Boot service inside its Gradle container image.
+# `dspace-provenance` proves observed version metadata survives a real DSpace APPLY and settles to
+# a no-op DIFF instead of relying only on mapper mocks.
 name: CI
 
 on:
@@ -91,3 +93,81 @@ jobs:
 
       - name: Build the runtime image
         run: docker build -f apps/repository-api/Dockerfile --target runtime -t civics-repository-api:ci .
+
+  dspace-provenance:
+    name: DSpace provenance replay
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CIVICS_SYNC_STARTUP_ENABLED: 'false'
+      CIVICS_DSPACE_ADMIN_EMAIL: admin@civics.local
+      CIVICS_DSPACE_ADMIN_PASSWORD: local-demo-not-a-secret
+      DSPACE_SEED_ADMIN_EMAIL: admin@civics.local
+      DSPACE_SEED_ADMIN_PASSWORD: local-demo-not-a-secret
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate deterministic DSpace SAF packages
+        run: pnpm run dspace:saf:generate
+
+      - name: Start and seed DSpace 9
+        run: |
+          docker compose --profile dspace up -d dspace-rest
+          docker compose --profile dspace run --rm dspace-seed
+          node tools/scripts/wait-dspace-ready.mjs
+
+      - name: Start repository API dependencies
+        run: |
+          mkdir -p browser-evidence-artifacts/corpus-archives
+          docker compose up -d --build postgres solr opensearch repository-api
+
+      - name: Wait for repository API
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 80); do
+            if curl -fsS http://localhost:8080/api/admin/sync >/dev/null; then
+              exit 0
+            fi
+            sleep 3
+          done
+          docker compose ps
+          docker compose --profile dspace logs --tail=200 repository-api dspace-rest dspace-postgres dspace-solr
+          exit 1
+
+      - name: Prove APPLY then DIFF settles and provenance reads back
+        run: node tools/scripts/dspace-provenance-idempotence.mjs
+
+      - name: Capture DSpace diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p browser-evidence-artifacts
+          docker compose --profile dspace ps > browser-evidence-artifacts/dspace-compose-ps.txt || true
+          docker compose --profile dspace logs --no-color repository-api postgres solr opensearch dspace-rest dspace-postgres dspace-solr \
+            > browser-evidence-artifacts/dspace-provenance.log 2>&1 || true
+
+      - name: Upload DSpace provenance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dspace-provenance-${{ github.run_id }}
+          path: browser-evidence-artifacts
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Stop DSpace and application stack
+        if: always()
+        run: docker compose --profile dspace down --volumes --remove-orphans
