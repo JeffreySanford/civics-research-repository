@@ -1,7 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-const baseUrl = process.env.CIVICS_EVIDENCE_API_URL ?? 'http://localhost:8080/api';
+const baseUrl =
+  process.env.CIVICS_EVIDENCE_API_URL ?? 'http://localhost:8080/api';
 const output = resolve(
   process.env.CIVICS_EVIDENCE_OUTPUT ??
     'browser-evidence-artifacts/dspace-provenance-idempotence.json',
@@ -12,7 +13,9 @@ async function requestJson(path, init = {}) {
   const response = await fetch(`${baseUrl}${path}`, init);
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(`${init.method ?? 'GET'} ${path} failed with HTTP ${response.status}: ${text}`);
+    throw new Error(
+      `${init.method ?? 'GET'} ${path} failed with HTTP ${response.status}: ${text}`,
+    );
   }
   return text ? JSON.parse(text) : null;
 }
@@ -58,12 +61,16 @@ requireCondition(
 
 const token = Buffer.from(researchObjectId, 'utf8').toString('base64url');
 const history = await requestJson(`/research/${token}/versions`);
-const current = history.versions?.find((version) => version.current) ?? history.versions?.[0];
+const current =
+  history.versions?.find((version) => version.current) ?? history.versions?.[0];
 requireCondition(
   history.status === 'OBSERVED_CURRENT_ONLY',
   `Phase B must not claim multi-version history; received ${history.status}`,
 );
-requireCondition(current, 'Expected one observed current version after DSpace APPLY.');
+requireCondition(
+  current,
+  'Expected one observed current version after DSpace APPLY.',
+);
 requireCondition(
   current.versionLabel === 'TIGER2025',
   `Expected DSpace-backed source version TIGER2025; received ${current.versionLabel ?? 'absent'}`,

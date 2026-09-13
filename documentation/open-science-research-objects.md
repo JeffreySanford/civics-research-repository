@@ -23,22 +23,22 @@ not architectural.
 
 ## The object model
 
-| Field | Metadata | Notes |
-| --- | --- | --- |
-| Type | `crr.resource.type` | `DATASET`, `PUBLICATION`, `CODE`, `METHODOLOGY`, `SUPPORTING_MATERIAL`, `PROJECT`. Absent means `DATASET` — a fact, not a guess: the catalog held nothing else before this. |
-| Access | `crr.rights.access` | `PUBLIC`, `RESTRICTED`, `METADATA_ONLY`, `EMBARGOED`. Unreadable values fall back to `RESTRICTED`, never `PUBLIC`. |
-| Access note | `crr.rights.accessnote` | How to legitimately obtain a restricted object. Present only when access is not public. |
-| License | `crr.rights.license` | Stated rather than assumed. Federal works are public domain under 17 U.S.C. 105, and saying so is what makes an object reusable rather than merely downloadable. |
-| DOI | `crr.identifier.doi` | Omitted rather than emitted blank. A present-but-empty field asserts that no DOI exists, which is a claim. |
-| Researchers | `crr.contributor.researcher` | One JSON entry per author: name, and ORCID where the researcher has a public one. Authors are also written to `dc.contributor.author`, the field every harvester and citation exporter already reads. |
-| Relations | `crr.relation.edge` | One JSON entry per typed edge: verb, target source identifier, note. |
-| Source version | `crr.version.label` | Source-provided release/version identity only. A vintage year is not silently promoted to a version label. |
-| Version date | `crr.version.date` | Version-specific date only when observed from the source or repository evidence. |
-| Fixity | `crr.provenance.sha256` | SHA-256 only when supplied or computed from retained source bytes; never inferred from a URL, file name, or byte count. |
-| Capture time | `crr.provenance.capturedat` | Timestamp of an actual retained observation. The current sync clock is not substituted because that would create false provenance and perpetual diff churn. |
-| Version identity | `crr.version.isversionof` | Stable artifact identity this observed version belongs to, when evidenced. |
-| Supersession | `crr.version.supersedes` | Earlier observed version superseded by this version, when evidenced. |
-| Change note | `crr.version.changenote` | Source/repository change note associated with the observed version. |
+| Field            | Metadata                     | Notes                                                                                                                                                                                                 |
+| ---------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Type             | `crr.resource.type`          | `DATASET`, `PUBLICATION`, `CODE`, `METHODOLOGY`, `SUPPORTING_MATERIAL`, `PROJECT`. Absent means `DATASET` — a fact, not a guess: the catalog held nothing else before this.                           |
+| Access           | `crr.rights.access`          | `PUBLIC`, `RESTRICTED`, `METADATA_ONLY`, `EMBARGOED`. Unreadable values fall back to `RESTRICTED`, never `PUBLIC`.                                                                                    |
+| Access note      | `crr.rights.accessnote`      | How to legitimately obtain a restricted object. Present only when access is not public.                                                                                                               |
+| License          | `crr.rights.license`         | Stated rather than assumed. Federal works are public domain under 17 U.S.C. 105, and saying so is what makes an object reusable rather than merely downloadable.                                      |
+| DOI              | `crr.identifier.doi`         | Omitted rather than emitted blank. A present-but-empty field asserts that no DOI exists, which is a claim.                                                                                            |
+| Researchers      | `crr.contributor.researcher` | One JSON entry per author: name, and ORCID where the researcher has a public one. Authors are also written to `dc.contributor.author`, the field every harvester and citation exporter already reads. |
+| Relations        | `crr.relation.edge`          | One JSON entry per typed edge: verb, target source identifier, note.                                                                                                                                  |
+| Source version   | `crr.version.label`          | Source-provided release/version identity only. A vintage year is not silently promoted to a version label.                                                                                            |
+| Version date     | `crr.version.date`           | Version-specific date only when observed from the source or repository evidence.                                                                                                                      |
+| Fixity           | `crr.provenance.sha256`      | SHA-256 only when supplied or computed from retained source bytes; never inferred from a URL, file name, or byte count.                                                                               |
+| Capture time     | `crr.provenance.capturedat`  | Timestamp of an actual retained observation. The current sync clock is not substituted because that would create false provenance and perpetual diff churn.                                           |
+| Version identity | `crr.version.isversionof`    | Stable artifact identity this observed version belongs to, when evidenced.                                                                                                                            |
+| Supersession     | `crr.version.supersedes`     | Earlier observed version superseded by this version, when evidenced.                                                                                                                                  |
+| Change note      | `crr.version.changenote`     | Source/repository change note associated with the observed version.                                                                                                                                   |
 
 ### Relationships
 
@@ -47,11 +47,11 @@ nothing more. The target's title, type and access level belong to the target and
 at read time by `ResearchRelationResolver`. Copying them into the edge would let the two drift: rename
 a paper, and every relation pointing at it would still show the old name.
 
-| Verb | Meaning |
-| --- | --- |
-| `hasPart` | A project to its members. |
-| `uses` | Research to the data it ran on. |
-| `documents` | Methodology to what it describes. |
+| Verb            | Meaning                                    |
+| --------------- | ------------------------------------------ |
+| `hasPart`       | A project to its members.                  |
+| `uses`          | Research to the data it ran on.            |
+| `documents`     | Methodology to what it describes.          |
 | `isDerivedFrom` | A public product to its restricted source. |
 
 `generate-saf.mjs` refuses to emit an edge whose target is not a catalog object, and the resolver drops
@@ -112,12 +112,12 @@ interfaces, its administrative tools, and its OAI-PMH sets organise by — a rep
 of type lives in a project-specific metadata field looks structureless to everything except this
 application.
 
-| Collection | SAF group | Holds |
-| --- | --- | --- |
-| TIGER/Line Geospatial Files | `datasets` | 177 |
-| Research Publications | `publications` | 2 |
-| Methodology and Code | `methodology` | 1 |
-| Research Projects | `projects` | 1 |
+| Collection                  | SAF group      | Holds |
+| --------------------------- | -------------- | ----- |
+| TIGER/Line Geospatial Files | `datasets`     | 177   |
+| Research Publications       | `publications` | 2     |
+| Methodology and Code        | `methodology`  | 1     |
+| Research Projects           | `projects`     | 1     |
 
 ## How it surfaces
 

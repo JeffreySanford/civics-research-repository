@@ -34,7 +34,8 @@ test.describe('artifact version provenance', () => {
               sourceSha256: checksum,
               capturedAt: '2026-09-12T18:45:00-05:00',
               isVersionOf: 'tiger-line-north-dakota',
-              changeNote: 'Retained repository capture used for provenance UI evidence.',
+              changeNote:
+                'Retained repository capture used for provenance UI evidence.',
             },
           ],
         },
@@ -61,7 +62,9 @@ test.describe('artifact version provenance', () => {
     await expect(page.getByText(checksum)).toBeVisible();
     await expect(page.getByText('tiger-line-north-dakota')).toBeVisible();
     await expect(
-      page.getByText('Retained repository capture used for provenance UI evidence.'),
+      page.getByText(
+        'Retained repository capture used for provenance UI evidence.',
+      ),
     ).toBeVisible();
     await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);
 
