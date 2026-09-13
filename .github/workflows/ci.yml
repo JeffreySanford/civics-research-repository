@@ -136,19 +136,9 @@ jobs:
           mkdir -p browser-evidence-artifacts/corpus-archives
           docker compose up -d --build postgres solr opensearch repository-api
 
-      - name: Wait for repository API
-        shell: bash
+      - name: Wait for repository startup search projection
         run: |
-          set -euo pipefail
-          for attempt in $(seq 1 80); do
-            if curl -fsS http://localhost:8080/api/admin/sync >/dev/null; then
-              exit 0
-            fi
-            sleep 3
-          done
-          docker compose ps
-          docker compose --profile dspace logs --tail=200 repository-api dspace-rest dspace-postgres dspace-solr
-          exit 1
+          node --input-type=module -e "import { verifyStartupProfile } from './tools/scripts/compose-stack.mjs'; await verifyStartupProfile('CURATED_DEMO');"
 
       - name: Prove APPLY then DIFF settles and provenance reads back
         run: node tools/scripts/dspace-provenance-idempotence.mjs
