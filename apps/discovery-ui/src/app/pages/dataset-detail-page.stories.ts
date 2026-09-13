@@ -104,6 +104,17 @@ export const ObservedCurrentOnly: Story = {
       ),
     ).toBeInTheDocument();
     await expect(
+      canvas.getByRole('heading', { name: 'Authority and evidence trail' }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByText('DSpace curated repository record'),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByText(
+        'Derived projections only; Solr/OpenSearch are not authority.',
+      ),
+    ).toBeInTheDocument();
+    await expect(
       canvas.getByText('Current observed record'),
     ).toBeInTheDocument();
     await expect(canvas.getByText('2025.2')).toBeInTheDocument();
@@ -111,7 +122,40 @@ export const ObservedCurrentOnly: Story = {
     await expect(
       canvas.getByText('Publisher-issued metadata revision.'),
     ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('heading', { name: 'What this record proves' }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByText(/Established by the recorded SHA-256 digest/),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByText(/current-record evidence does not prove earlier or later versions/),
+    ).toBeInTheDocument();
     await expect(canvas.queryByText('TIGER_LINE 2024')).toBeNull();
+  },
+};
+
+export const ObservedWithoutFixityOrCapture: Story = {
+  decorators: [
+    withState('OBSERVED_CURRENT_ONLY', [
+      {
+        id: 'version-history-story-current',
+        label: 'Observed release 2025.2',
+        current: true,
+        versionLabel: '2025.2',
+        sourceUrl: 'https://example.gov/research/version-history-story/2025.2',
+      },
+    ]),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = await openVersions(canvasElement);
+    await expect(
+      canvas.getByText(/Not established; no source digest is recorded/),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByText(/sync time is not substituted for capture evidence/),
+    ).toBeInTheDocument();
+    await expect(canvas.queryByText(checksum)).toBeNull();
   },
 };
 
@@ -137,6 +181,7 @@ export const HistoryAvailable: Story = {
         'The repository has observed version-lineage records for this research artifact.',
       ),
     ).toBeInTheDocument();
+    await expect(canvas.getByText('Observed multi-version lineage')).toBeInTheDocument();
     await expect(
       canvas.getByText('Observed release 2025.2'),
     ).toBeInTheDocument();
@@ -146,6 +191,10 @@ export const HistoryAvailable: Story = {
     await expect(
       canvas.getByText('version-history-story-prior'),
     ).toBeInTheDocument();
+    await expect(
+      canvas.getAllByText(/Established from observed version-lineage records/)
+        .length,
+    ).toBeGreaterThan(0);
   },
 };
 
@@ -158,6 +207,13 @@ export const ProvenanceUnavailable: Story = {
         'Version provenance is not available for this research artifact.',
       ),
     ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('heading', { name: 'Authority and evidence trail' }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByText('Version provenance unavailable')).toBeInTheDocument();
     await expect(canvas.queryByText('Current observed record')).toBeNull();
+    await expect(
+      canvas.queryByRole('heading', { name: 'What this record proves' }),
+    ).toBeNull();
   },
 };
