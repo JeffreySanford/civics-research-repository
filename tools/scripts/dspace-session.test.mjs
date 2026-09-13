@@ -100,7 +100,7 @@ test('refreshes a stale DSpace CSRF session once and retries the request', async
   assert.deepEqual(seenTokens, ['stale', 'fresh']);
 });
 
-test('retries with the CSRF pair returned by DSpace before reauthenticating', async () => {
+test('uses the authoritative refresh callback even when the forbidden response includes a CSRF pair', async () => {
   const session = {
     authorization: 'Bearer original',
     csrfToken: 'stale',
@@ -117,25 +117,25 @@ test('retries with the CSRF pair returned by DSpace before reauthenticating', as
       seenTokens.push(session.csrfToken);
       return attempts === 1
         ? httpResponse(403, 'Invalid CSRF token', {
-            csrfToken: 'response-fresh',
-            cookie: 'response-fresh',
+            csrfToken: 'forbidden-response-token',
+            cookie: 'forbidden-response-token',
           })
         : httpResponse(201, '{"id":102}');
     },
     refreshSession: async () => {
       refreshes += 1;
       Object.assign(session, {
-        authorization: 'Bearer reauthenticated',
-        csrfToken: 'login-token',
-        cookie: 'DSPACE-XSRF-COOKIE=login-token',
+        authorization: 'Bearer original',
+        csrfToken: 'authoritative-fresh',
+        cookie: 'DSPACE-XSRF-COOKIE=authoritative-fresh',
       });
     },
   });
 
   assert.equal(result.status, 201);
   assert.equal(attempts, 2);
-  assert.equal(refreshes, 0);
-  assert.deepEqual(seenTokens, ['stale', 'response-fresh']);
+  assert.equal(refreshes, 1);
+  assert.deepEqual(seenTokens, ['stale', 'authoritative-fresh']);
 });
 
 test('does not retry an unrelated DSpace 403', async () => {
