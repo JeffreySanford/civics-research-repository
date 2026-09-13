@@ -27,6 +27,40 @@ test('reads first task from a DSpace HAL task search', () => {
   assert.equal(firstWorkflowTask({}, 'pooltasks'), null);
 });
 
+test('returns no approval transitions when DSpace archives immediately', async () => {
+  const calls = [];
+  const dspace = async (path) => {
+    calls.push(path);
+    if (path.startsWith('/api/eperson/epersons/search/byEmail')) {
+      return {
+        response: { status: 200 },
+        json: { uuid: 'person-1' },
+      };
+    }
+    if (path === '/api/core/items/item-1') {
+      return {
+        response: { status: 200 },
+        json: { inArchive: true },
+      };
+    }
+    throw new Error(`Unexpected DSpace call: ${path}`);
+  };
+
+  const transitions = await advanceDspaceWorkflow({
+    dspace,
+    session: {},
+    itemUuid: 'item-1',
+    adminEmail: 'admin@example.test',
+    dspaceBaseUrl: 'http://dspace',
+  });
+
+  assert.deepEqual(transitions, []);
+  assert.equal(
+    calls.some((path) => path.includes('/api/workflow/pooltasks/')),
+    false,
+  );
+});
+
 test('resolves the default workflow role through the workflow item collection before claiming', async () => {
   const calls = [];
   let itemReads = 0;
