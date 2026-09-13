@@ -70,7 +70,9 @@ test.describe('artifact version provenance', () => {
         'Derived projections only; Solr/OpenSearch are not authority.',
       ),
     ).toBeVisible();
-    await expect(page.getByText('Current observed record')).toBeVisible();
+    await expect(
+      page.getByText('Current observed record', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('TIGER2025')).toBeVisible();
     await expect(page.getByText(checksum)).toBeVisible();
     await expect(page.getByText('tiger-line-north-dakota')).toBeVisible();
