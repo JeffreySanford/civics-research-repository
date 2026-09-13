@@ -102,9 +102,7 @@ test('resolves the default workflow role through the workflow item collection be
         },
       };
     }
-    if (
-      path === 'http://dspace/api/eperson/groups/group-1/epersons?size=100'
-    ) {
+    if (path === 'http://dspace/api/eperson/groups/group-1/epersons?size=100') {
       return {
         response: { status: 200 },
         json: { _embedded: { epersons: [] } },
