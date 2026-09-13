@@ -7,7 +7,7 @@ function responseWith({ csrfToken, cookies = [] } = {}) {
     headers: {
       get(name) {
         return name.toLowerCase() === 'dspace-xsrf-token'
-          ? (csrfToken ?? null)
+          ? csrfToken ?? null
           : null;
       },
       getSetCookie() {
