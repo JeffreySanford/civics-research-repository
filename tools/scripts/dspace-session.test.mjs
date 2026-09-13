@@ -100,6 +100,44 @@ test('refreshes a stale DSpace CSRF session once and retries the request', async
   assert.deepEqual(seenTokens, ['stale', 'fresh']);
 });
 
+test('retries with the CSRF pair returned by DSpace before reauthenticating', async () => {
+  const session = {
+    authorization: 'Bearer original',
+    csrfToken: 'stale',
+    cookie: 'DSPACE-XSRF-COOKIE=stale',
+  };
+  let attempts = 0;
+  let refreshes = 0;
+  const seenTokens = [];
+
+  const result = await requestWithDspaceCsrfRetry({
+    session,
+    request: async () => {
+      attempts += 1;
+      seenTokens.push(session.csrfToken);
+      return attempts === 1
+        ? httpResponse(403, 'Invalid CSRF token', {
+            csrfToken: 'response-fresh',
+            cookie: 'response-fresh',
+          })
+        : httpResponse(201, '{"id":102}');
+    },
+    refreshSession: async () => {
+      refreshes += 1;
+      Object.assign(session, {
+        authorization: 'Bearer reauthenticated',
+        csrfToken: 'login-token',
+        cookie: 'DSPACE-XSRF-COOKIE=login-token',
+      });
+    },
+  });
+
+  assert.equal(result.status, 201);
+  assert.equal(attempts, 2);
+  assert.equal(refreshes, 0);
+  assert.deepEqual(seenTokens, ['stale', 'response-fresh']);
+});
+
 test('does not retry an unrelated DSpace 403', async () => {
   const session = {
     authorization: 'Bearer original',
