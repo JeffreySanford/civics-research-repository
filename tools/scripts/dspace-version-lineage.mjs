@@ -4,6 +4,7 @@ import {
   dspaceSessionCookie,
   refreshDspaceSession,
 } from './dspace-session.mjs';
+import { advanceDspaceWorkflow } from './dspace-workflow.mjs';
 
 const apiBaseUrl =
   process.env.CIVICS_EVIDENCE_API_URL ?? 'http://localhost:8080/api';
@@ -312,6 +313,18 @@ await dspace(
   [201],
 );
 
+const workflowTransitions = await advanceDspaceWorkflow({
+  dspace,
+  session,
+  itemUuid: draftItem.uuid,
+  adminEmail,
+  dspaceBaseUrl,
+});
+requireCondition(
+  workflowTransitions.length > 0,
+  'DSpace did not require or record a real workflow approval transition.',
+);
+
 const archivedItem = await waitForArchivedItem(draftItem.uuid, session);
 await waitForDiscoveryItem(draftItem.uuid, session);
 
@@ -403,6 +416,7 @@ const evidence = {
     createdVersionId: String(createdVersion.id),
     createdVersionNumber: String(createdVersion.version ?? ''),
     summary: versionSummary,
+    workflowTransitions,
   },
   observedHistory: {
     status: history.status,
