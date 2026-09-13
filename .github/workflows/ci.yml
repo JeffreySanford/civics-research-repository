@@ -55,8 +55,8 @@ jobs:
       - name: Test CBP source preparation
         run: node --test tools/scripts/prepare-cbp-source.test.mjs
 
-      - name: Test DSpace session token rotation
-        run: node --test tools/scripts/dspace-session.test.mjs
+      - name: Test DSpace REST helpers
+        run: node --test tools/scripts/dspace-session.test.mjs tools/scripts/dspace-workflow.test.mjs
 
       - name: Check the accessibility evidence manifest is current
         run: pnpm run evidence:check
