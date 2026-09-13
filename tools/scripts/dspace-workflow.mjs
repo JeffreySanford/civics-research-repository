@@ -12,7 +12,9 @@ export function firstWorkflowTask(json, relation) {
 
 export function workflowApprovalBody(action) {
   if (!approvalActions.has(action)) {
-    throw new Error(`Unsupported DSpace workflow action: ${action ?? 'absent'}`);
+    throw new Error(
+      `Unsupported DSpace workflow action: ${action ?? 'absent'}`,
+    );
   }
   return new URLSearchParams({ submit_approve: 'true' }).toString();
 }
@@ -20,7 +22,9 @@ export function workflowApprovalBody(action) {
 export function workflowRoleForAction(action) {
   const role = workflowRolesByAction.get(action);
   if (!role) {
-    throw new Error(`Unsupported DSpace workflow action: ${action ?? 'absent'}`);
+    throw new Error(
+      `Unsupported DSpace workflow action: ${action ?? 'absent'}`,
+    );
   }
   return role;
 }
