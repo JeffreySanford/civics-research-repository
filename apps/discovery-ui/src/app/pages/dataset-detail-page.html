@@ -210,6 +210,15 @@
               </dd>
             </div>
             <div>
+              <dt>Lineage authority</dt>
+              <dd>
+                @if (historyStatus === 'HISTORY_AVAILABLE') { DSpace native item
+                version history } @else if (historyStatus ===
+                'OBSERVED_CURRENT_ONLY') { Not established beyond the current
+                observed record } @else { Not available }
+              </dd>
+            </div>
+            <div>
               <dt>Discovery indexes</dt>
               <dd>
                 Derived projections only; Solr/OpenSearch are not authority.
@@ -225,13 +234,19 @@
             <div class="version-heading">
               <strong>{{ version.label }}</strong>
               @if (version.current) {
-              <span class="status-pill">Current observed record</span>
+              <span class="status-pill"
+                >{{ historyStatus === 'HISTORY_AVAILABLE' ? 'Current repository
+                version' : 'Current observed record' }}</span
+              >
               }
             </div>
             <dl class="version-provenance-list">
               @if (version.versionLabel) {
               <div>
-                <dt>Source version</dt>
+                <dt>
+                  {{ historyStatus === 'HISTORY_AVAILABLE' ? 'Repository
+                  version' : 'Source version' }}
+                </dt>
                 <dd>{{ version.versionLabel }}</dd>
               </div>
               } @if (version.versionDate) {
@@ -276,8 +291,10 @@
               <h4>What this record proves</h4>
               <ul class="evidence-checks">
                 <li>
-                  <strong>Observation:</strong> Current record is established by
-                  the authority path shown above.
+                  <strong>Observation:</strong>
+                  @if (version.current) { Current record is established by the
+                  authority path shown above. } @else { Prior repository version
+                  is established by the observed DSpace version history. }
                 </li>
                 <li>
                   <strong>Fixity:</strong>
@@ -294,9 +311,9 @@
                 <li>
                   <strong>Lineage:</strong>
                   @if (historyStatus === 'HISTORY_AVAILABLE') { Established from
-                  observed version-lineage records. } @else { Not established;
-                  current-record evidence does not prove earlier or later
-                  versions. }
+                  observed DSpace-native version-lineage records. } @else { Not
+                  established; current-record evidence does not prove earlier or
+                  later versions. }
                 </li>
               </ul>
             </div>
