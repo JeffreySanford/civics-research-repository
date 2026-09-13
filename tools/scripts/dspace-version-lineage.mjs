@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import {
   dspaceSessionCookie,
-  refreshDspaceSession,
+  requestWithDspaceCsrfRetry,
 } from './dspace-session.mjs';
 import { advanceDspaceWorkflow } from './dspace-workflow.mjs';
 
@@ -119,11 +119,17 @@ async function dspace(pathOrUrl, session, init = {}, accepted = [200]) {
   const url = pathOrUrl.startsWith('http')
     ? pathOrUrl
     : `${dspaceBaseUrl}${pathOrUrl}`;
-  const response = await fetch(url, {
-    ...init,
-    headers: authenticatedHeaders(session, init.headers ?? {}),
+  const response = await requestWithDspaceCsrfRetry({
+    session,
+    request: () =>
+      fetch(url, {
+        ...init,
+        headers: authenticatedHeaders(session, init.headers ?? {}),
+      }),
+    refreshSession: async () => {
+      Object.assign(session, await authenticate());
+    },
   });
-  refreshDspaceSession(session, response);
   const text = await response.text();
   if (!accepted.includes(response.status)) {
     throw new Error(
