@@ -1,59 +1,77 @@
 package org.civicsrepo.sync;
 
-import org.civicsrepo.generated.dto.SyncAction;
-import org.civicsrepo.sources.OfflineSourceFileProbe;
-import org.civicsrepo.generated.dto.SyncMode;
-import org.civicsrepo.generated.dto.SyncRequest;
-import org.civicsrepo.generated.dto.SyncSource;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import java.util.List;
 import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemPayloadMapper;
 import org.civicsrepo.dspace.DspaceItemWriteGateway;
-import org.civicsrepo.sources.TigerLineMetadataAdapter;
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncRequest;
+import org.civicsrepo.generated.dto.SyncSource;
+import org.civicsrepo.repository.RepositoryCatalog;
 import org.civicsrepo.sources.CatalogMetadataReader;
+import org.civicsrepo.sources.OfflineSourceFileProbe;
+import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.junit.jupiter.api.Test;
 
 class LoggingSyncActionRunnerTest {
     @Test
-    void applyModeReconcilesDspaceSourceIdentifier() {
+    void applyModeReconcilesDspaceSourceIdentifierAndInvalidatesRepositoryCache() {
         TestDspaceItemWriteGateway writeGateway = new TestDspaceItemWriteGateway();
-        LoggingSyncActionRunner runner = new LoggingSyncActionRunner(writeGateway);
+        RepositoryCatalog repositoryCatalog = mock(RepositoryCatalog.class);
+        LoggingSyncActionRunner runner = new LoggingSyncActionRunner(writeGateway, repositoryCatalog);
 
         runner.run(
                 new SyncRequest(SyncMode.APPLY, SyncSource.TIGER_LINE),
                 List.of(
                         new SyncAction(
-                        SyncAction.ActionTypeEnum.UPSERT_ITEM, "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
+                                SyncAction.ActionTypeEnum.UPSERT_ITEM,
+                                "2025 TIGER/Line - Census Tracts - North Dakota",
+                                "Ensure item."),
                         new SyncAction(
-                        SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST, "tiger-line-north-dakota-2025", "Track files.")),
+                                SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST,
+                                "tiger-line-north-dakota-2025",
+                                "Track files.")),
                 List.of(new SourceObject("tiger-line-north-dakota-2025", sourcePayload())));
 
         assertThat(writeGateway.sourceIdentifier).isEqualTo("tiger-line-north-dakota-2025");
         assertThat(writeGateway.sourcePayload.name()).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
+        verify(repositoryCatalog).invalidate();
     }
 
     @Test
-    void dryRunModeDoesNotWriteToDspace() {
+    void dryRunModeDoesNotWriteToDspaceOrInvalidateRepositoryCache() {
         TestDspaceItemWriteGateway writeGateway = new TestDspaceItemWriteGateway();
-        LoggingSyncActionRunner runner = new LoggingSyncActionRunner(writeGateway);
+        RepositoryCatalog repositoryCatalog = mock(RepositoryCatalog.class);
+        LoggingSyncActionRunner runner = new LoggingSyncActionRunner(writeGateway, repositoryCatalog);
 
         runner.run(
                 new SyncRequest(SyncMode.DRY_RUN, SyncSource.TIGER_LINE),
                 List.of(
                         new SyncAction(
-                        SyncAction.ActionTypeEnum.UPSERT_ITEM, "2025 TIGER/Line - Census Tracts - North Dakota", "Ensure item."),
+                                SyncAction.ActionTypeEnum.UPSERT_ITEM,
+                                "2025 TIGER/Line - Census Tracts - North Dakota",
+                                "Ensure item."),
                         new SyncAction(
-                        SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST, "tiger-line-north-dakota-2025", "Track files.")),
+                                SyncAction.ActionTypeEnum.UPSERT_FILE_MANIFEST,
+                                "tiger-line-north-dakota-2025",
+                                "Track files.")),
                 List.of(new SourceObject("tiger-line-north-dakota-2025", sourcePayload())));
 
         assertThat(writeGateway.sourceIdentifier).isNull();
         assertThat(writeGateway.sourcePayload).isNull();
+        verify(repositoryCatalog, never()).invalidate();
     }
 
     private DspaceItemPayload sourcePayload() {
-        return new DspaceItemPayloadMapper().toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader()).firstVisualSlice());
+        return new DspaceItemPayloadMapper()
+                .toItemPayload(new TigerLineMetadataAdapter(new OfflineSourceFileProbe(), new CatalogMetadataReader())
+                        .firstVisualSlice());
     }
 
     private static final class TestDspaceItemWriteGateway implements DspaceItemWriteGateway {
