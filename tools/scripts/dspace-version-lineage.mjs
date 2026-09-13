@@ -245,6 +245,29 @@ requireCondition(
   'DSpace version creation did not produce a distinct item UUID.',
 );
 
+const issueDate = metadataValues(originalItem, 'dc.date.issued')[0];
+requireCondition(
+  issueDate,
+  'The archived source item did not expose the required dc.date.issued metadata.',
+);
+if (!metadataValues(draftItem, 'dc.date.issued').includes(issueDate)) {
+  await dspace(
+    `/api/core/items/${encodeURIComponent(draftItem.uuid)}`,
+    session,
+    {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json-patch+json' },
+      body: JSON.stringify([
+        {
+          op: 'add',
+          path: '/metadata/dc.date.issued/-',
+          value: { value: issueDate },
+        },
+      ]),
+    },
+  );
+}
+
 let workspace = (
   await dspace(
     `/api/submission/workspaceitems/search/item?uuid=${encodeURIComponent(draftItem.uuid)}`,
