@@ -180,29 +180,74 @@
         <ol class="version-list">
           @for (version of versions; track version.id) {
           <li>
-            <strong>{{ version.label }}</strong>
-            <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
-            @if (version.current) {
-            <span class="status-pill">Current observed record</span>
-            } @if (version.versionLabel) {
-            <span>Source version: {{ version.versionLabel }}</span>
-            } @if (version.doi) {
-            <a
-              class="source-link"
-              [href]="'https://doi.org/' + version.doi"
-              target="_blank"
-              rel="noreferrer"
-              >DOI {{ version.doi }}</a
-            >
-            } @if (version.sourceUrl) {
-            <a
-              class="source-link"
-              [href]="version.sourceUrl"
-              target="_blank"
-              rel="noreferrer"
-              >Version source</a
-            >
-            }
+            <div class="version-heading">
+              <strong>{{ version.label }}</strong>
+              @if (version.current) {
+              <span class="status-pill">Current observed record</span>
+              }
+            </div>
+            <dl class="version-provenance-list">
+              @if (version.versionLabel) {
+              <div>
+                <dt>Source version</dt>
+                <dd>{{ version.versionLabel }}</dd>
+              </div>
+              } @if (version.versionDate) {
+              <div>
+                <dt>Version date</dt>
+                <dd>{{ version.versionDate | date: 'mediumDate' }}</dd>
+              </div>
+              } @if (version.releasedOn) {
+              <div>
+                <dt>Released</dt>
+                <dd>{{ version.releasedOn | date: 'mediumDate' }}</dd>
+              </div>
+              } @if (version.capturedAt) {
+              <div>
+                <dt>Provenance captured</dt>
+                <dd>{{ version.capturedAt | date: 'medium' }}</dd>
+              </div>
+              } @if (version.sourceSha256) {
+              <div>
+                <dt>Source SHA-256</dt>
+                <dd><code>{{ version.sourceSha256 }}</code></dd>
+              </div>
+              } @if (version.isVersionOf) {
+              <div>
+                <dt>Version of</dt>
+                <dd>{{ version.isVersionOf }}</dd>
+              </div>
+              } @if (version.supersedes) {
+              <div>
+                <dt>Supersedes</dt>
+                <dd>{{ version.supersedes }}</dd>
+              </div>
+              } @if (version.changeNote) {
+              <div>
+                <dt>Change note</dt>
+                <dd>{{ version.changeNote }}</dd>
+              </div>
+              }
+            </dl>
+            <div class="version-links">
+              @if (version.doi) {
+              <a
+                class="source-link"
+                [href]="'https://doi.org/' + version.doi"
+                target="_blank"
+                rel="noreferrer"
+                >DOI {{ version.doi }}</a
+              >
+              } @if (version.sourceUrl) {
+              <a
+                class="source-link"
+                [href]="version.sourceUrl"
+                target="_blank"
+                rel="noreferrer"
+                >Version source</a
+              >
+              }
+            </div>
           </li>
           }
         </ol>
