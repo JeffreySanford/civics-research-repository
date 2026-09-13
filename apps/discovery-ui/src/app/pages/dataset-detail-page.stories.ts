@@ -18,6 +18,9 @@ import {
 } from '../state/datasets/datasets.reducer';
 import { ResearchObjectDetailPage } from './dataset-detail-page';
 
+const checksum =
+  '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+
 const detail = {
   source: 'REPOSITORY',
   origin: 'REPOSITORY',
@@ -43,6 +46,11 @@ const currentVersion: ResearchArtifactVersion = {
   releasedOn: '2025-09-01',
   current: true,
   versionLabel: '2025.2',
+  versionDate: '2025-08-29',
+  sourceSha256: checksum,
+  capturedAt: '2026-09-12T18:45:00-05:00',
+  isVersionOf: 'version-history-story',
+  changeNote: 'Publisher-issued metadata revision.',
   sourceUrl: 'https://example.gov/research/version-history-story/2025.2',
 };
 
@@ -98,6 +106,11 @@ export const ObservedCurrentOnly: Story = {
     await expect(
       canvas.getByText('Current observed record'),
     ).toBeInTheDocument();
+    await expect(canvas.getByText('2025.2')).toBeInTheDocument();
+    await expect(canvas.getByText(checksum)).toBeInTheDocument();
+    await expect(
+      canvas.getByText('Publisher-issued metadata revision.'),
+    ).toBeInTheDocument();
     await expect(canvas.queryByText('TIGER_LINE 2024')).toBeNull();
   },
 };
@@ -105,13 +118,14 @@ export const ObservedCurrentOnly: Story = {
 export const HistoryAvailable: Story = {
   decorators: [
     withState('HISTORY_AVAILABLE', [
-      currentVersion,
+      { ...currentVersion, supersedes: 'version-history-story-prior' },
       {
         id: 'version-history-story-prior',
         label: 'Observed release 2025.1',
         releasedOn: '2025-06-01',
         current: false,
         versionLabel: '2025.1',
+        isVersionOf: 'version-history-story',
         sourceUrl: 'https://example.gov/research/version-history-story/2025.1',
       },
     ]),
@@ -128,6 +142,9 @@ export const HistoryAvailable: Story = {
     ).toBeInTheDocument();
     await expect(
       canvas.getByText('Observed release 2025.1'),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByText('version-history-story-prior'),
     ).toBeInTheDocument();
   },
 };
