@@ -57,21 +57,24 @@ async function openMapLayerCategories(page: Page): Promise<void> {
   });
 }
 
-async function visibleControlCount(page: Page): Promise<number> {
-  return page.locator(INTERACTIVE).evaluateAll(
-    (nodes) =>
-      nodes.filter((node) => {
-        const element = node as HTMLElement;
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return (
-          style.display !== 'none' &&
-          style.visibility !== 'hidden' &&
-          rect.width > 0 &&
-          rect.height > 0
-        );
-      }).length,
+async function visibleControlIndexes(page: Page): Promise<number[]> {
+  return page.locator(INTERACTIVE).evaluateAll((nodes) =>
+    nodes.flatMap((node, index) => {
+      const element = node as HTMLElement;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        rect.width > 0 &&
+        rect.height > 0
+        ? [index]
+        : [];
+    }),
   );
+}
+
+async function visibleControlCount(page: Page): Promise<number> {
+  return (await visibleControlIndexes(page)).length;
 }
 
 async function focusedStamp(page: Page): Promise<string | null> {
@@ -179,13 +182,10 @@ test.describe('keyboard operability', () => {
       await openRoute(page, route.path);
 
       const controls = page.locator(INTERACTIVE);
-      const controlCount = await controls.count();
+      const visibleIndexes = await visibleControlIndexes(page);
       const unnamed: string[] = [];
-      for (let index = 0; index < controlCount; index += 1) {
+      for (const index of visibleIndexes) {
         const control = controls.nth(index);
-        if (!(await control.isVisible())) {
-          continue;
-        }
 
         try {
           await expect(control).toHaveAccessibleName(/\S+/, { timeout: 2_000 });
