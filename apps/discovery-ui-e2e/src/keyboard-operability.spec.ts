@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { waitForRegisteredMapLayers } from './support/map-layer-visibility';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 
 /**
@@ -32,13 +33,6 @@ const INTERACTIVE = [
   '[role="tab"]:not([aria-disabled="true"])',
 ].join(', ');
 
-const ACCESSIBLE_NAME_EVIDENCE_ATTRIBUTE = 'data-e2e-accessible-name-id';
-
-interface VisibleControlEvidence {
-  id: string;
-  outerHtml: string;
-}
-
 async function openRoute(page: Page, path: string): Promise<void> {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
   expect(
@@ -54,6 +48,10 @@ async function openRoute(page: Page, path: string): Promise<void> {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible({
     timeout: 10_000,
   });
+
+  if (path === '/maps') {
+    await waitForRegisteredMapLayers(page);
+  }
 }
 
 async function openMapLayerCategories(page: Page): Promise<void> {
@@ -64,50 +62,12 @@ async function openMapLayerCategories(page: Page): Promise<void> {
   });
 }
 
-async function visibleControlIndexes(page: Page): Promise<number[]> {
-  return page.locator(INTERACTIVE).evaluateAll((nodes) =>
-    nodes.flatMap((node, index) => {
-      const element = node as HTMLElement;
-      const style = getComputedStyle(element);
-      const rect = element.getBoundingClientRect();
-      return style.display !== 'none' &&
-        style.visibility !== 'hidden' &&
-        rect.width > 0 &&
-        rect.height > 0
-        ? [index]
-        : [];
-    }),
-  );
-}
-
-async function visibleControlEvidence(
-  page: Page,
-): Promise<VisibleControlEvidence[]> {
-  return page.locator(INTERACTIVE).evaluateAll(
-    (nodes, attributeName) =>
-      nodes.flatMap((node, index) => {
-        const element = node as HTMLElement;
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        if (
-          style.display === 'none' ||
-          style.visibility === 'hidden' ||
-          rect.width <= 0 ||
-          rect.height <= 0
-        ) {
-          return [];
-        }
-
-        const id = `control-${index}`;
-        element.setAttribute(attributeName, id);
-        return [{ id, outerHtml: element.outerHTML.slice(0, 160) }];
-      }),
-    ACCESSIBLE_NAME_EVIDENCE_ATTRIBUTE,
-  );
+function visibleControls(page: Page): Locator {
+  return page.locator(INTERACTIVE).filter({ visible: true });
 }
 
 async function visibleControlCount(page: Page): Promise<number> {
-  return (await visibleControlIndexes(page)).length;
+  return visibleControls(page).count();
 }
 
 async function focusedStamp(page: Page): Promise<string | null> {
@@ -203,34 +163,29 @@ test.describe('keyboard operability', () => {
     });
 
     /**
-     * K13/N19: ask the browser accessibility tree for each control's computed name.
+     * K13/N19: ask the browser accessibility tree for each exposed control's computed name.
      *
-     * Do not reimplement the accessible-name algorithm here. Native `<label for>`, wrapping labels,
-     * aria-labelledby, aria-label, and Material-generated relationships all belong to the browser's
-     * accessibility computation, which is exactly what Playwright's assertion exercises.
-     * Stable temporary ids avoid re-resolving numeric nth() locators while MapLibre mutates controls.
+     * Do not reimplement visibility or the accessible-name algorithm here. Closed `<details>`
+     * descendants can retain ordinary CSS box metrics while being excluded from the accessibility
+     * tree. Playwright owns both the visibility filter and the browser accessible-name computation.
+     * The maps route waits for application-owned MapLibre layers before snapshotting its controls so
+     * locator.all() is only used once the dynamic control list has settled.
      */
     test(`${route.name} names every control it focuses @wcag @section508`, async ({
       page,
     }) => {
       await openRoute(page, route.path);
 
-      const evidence = await visibleControlEvidence(page);
+      const controls = await visibleControls(page).all();
       const unnamed: string[] = [];
-      for (const candidate of evidence) {
-        const control = page.locator(
-          `[${ACCESSIBLE_NAME_EVIDENCE_ATTRIBUTE}="${candidate.id}"]`,
-        );
-
+      for (const control of controls) {
         try {
           await expect(control).toHaveAccessibleName(/\S+/, { timeout: 2_000 });
         } catch {
-          // Dynamic MapLibre controls may legitimately be replaced after the visibility snapshot.
-          // A vanished element is no longer an exposed control; importantly, count() does not wait
-          // for the old nth() position to reappear. Persist the pre-captured HTML only for controls
-          // that still exist and genuinely fail the browser's accessible-name computation.
-          if ((await control.count()) > 0) {
-            unnamed.push(candidate.outerHtml);
+          if (await control.isVisible()) {
+            unnamed.push(
+              (await control.evaluate((node) => node.outerHTML)).slice(0, 160),
+            );
           }
         }
       }
