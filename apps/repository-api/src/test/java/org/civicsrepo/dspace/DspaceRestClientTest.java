@@ -36,31 +36,10 @@ class DspaceRestClientTest {
     }
 
     @Test
-    void parsesNativeVersionHistoryInDspaceOrderAndMarksOnlyTheCurrentVersion() {
+    void parsesNativeVersionHistoryInDspaceOrderAndMarksOnlyTheNewestArchivedVersionCurrent() {
         DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
 
-        List<DspaceRestClient.DspaceVersionRecord> versions = client.toVersionRecords(
-                """
-                {
-                  "_embedded": {
-                    "versions": [
-                      {
-                        "id": "102",
-                        "version": "2",
-                        "created": "2019-10-31T09:44:46.617",
-                        "summary": "Author order"
-                      },
-                      {
-                        "id": "101",
-                        "version": "1",
-                        "created": "2015-11-03T09:44:46.617",
-                        "summary": "Fixing some typos"
-                      }
-                    ]
-                  }
-                }
-                """,
-                "102");
+        List<DspaceRestClient.DspaceVersionRecord> versions = client.toVersionRecords(versionHistoryResponse(), true);
 
         assertThat(versions).extracting(DspaceRestClient.DspaceVersionRecord::id)
                 .containsExactly("102", "101");
@@ -70,6 +49,16 @@ class DspaceRestClientTest {
                 .containsExactly(true, false);
         assertThat(versions.getFirst().summary()).isEqualTo("Author order");
         assertThat(versions.get(1).created()).isEqualTo("2015-11-03T09:44:46.617");
+    }
+
+    @Test
+    void doesNotMarkAnArchivedVersionCurrentWhenHistoryReportsANewerDraft() {
+        DspaceRestClient client = new DspaceRestClient("http://localhost:8081/server", "", "");
+
+        List<DspaceRestClient.DspaceVersionRecord> versions = client.toVersionRecords(versionHistoryResponse(), false);
+
+        assertThat(versions).extracting(DspaceRestClient.DspaceVersionRecord::current)
+                .containsExactly(false, false);
     }
 
     @Test
@@ -88,7 +77,7 @@ class DspaceRestClientTest {
                   }
                 }
                 """,
-                "102");
+                true);
 
         assertThat(versions).singleElement().satisfies(version -> {
             assertThat(version.id()).isEqualTo("102");
@@ -121,5 +110,28 @@ class DspaceRestClientTest {
 
         assertThat(client.isReadEnabled()).isFalse();
         assertThat(client.isWriteEnabled()).isFalse();
+    }
+
+    private String versionHistoryResponse() {
+        return """
+                {
+                  "_embedded": {
+                    "versions": [
+                      {
+                        "id": "102",
+                        "version": "2",
+                        "created": "2019-10-31T09:44:46.617",
+                        "summary": "Author order"
+                      },
+                      {
+                        "id": "101",
+                        "version": "1",
+                        "created": "2015-11-03T09:44:46.617",
+                        "summary": "Fixing some typos"
+                      }
+                    ]
+                  }
+                }
+                """;
     }
 }
