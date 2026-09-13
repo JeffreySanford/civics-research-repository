@@ -7,6 +7,7 @@ import {
   RepositoryMapsApi,
   type ResearchObjectDetail,
 } from 'repository-api-client';
+import { encodeResearchId } from '../../research-id';
 import { DatasetsActions } from './datasets.actions';
 
 @Injectable()
@@ -19,21 +20,23 @@ export class DatasetsEffects {
     this.actions$.pipe(
       ofType(DatasetsActions.datasetOpened),
       switchMap(({ datasetId }) =>
-        forkJoin({
-          detail: this.datasetsApi.getDataset(datasetId),
-          versions: this.datasetsApi.getDatasetVersions(datasetId),
-          mapLayers: this.mapsApi.getDatasetMapLayers(datasetId),
-        }).pipe(
-          map(({ detail, versions, mapLayers }) =>
-            DatasetsActions.datasetLoaded({
-              detail,
-              versions,
-              versionHistoryStatus:
-                versions.length > 1
-                  ? 'HISTORY_AVAILABLE'
-                  : 'OBSERVED_CURRENT_ONLY',
-              mapLayers,
-            }),
+        this.datasetsApi.getDataset(datasetId).pipe(
+          switchMap((detail) =>
+            forkJoin({
+              history: this.datasetsApi.getResearchObjectVersions(
+                encodeResearchId(detail.id),
+              ),
+              mapLayers: this.mapsApi.getDatasetMapLayers(datasetId),
+            }).pipe(
+              map(({ history, mapLayers }) =>
+                DatasetsActions.datasetLoaded({
+                  detail,
+                  versions: history.versions,
+                  versionHistoryStatus: history.status,
+                  mapLayers,
+                }),
+              ),
+            ),
           ),
           catchError((error: unknown) =>
             of(
