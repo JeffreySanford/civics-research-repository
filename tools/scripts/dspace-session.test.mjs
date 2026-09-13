@@ -6,9 +6,10 @@ function responseWith({ csrfToken, cookies = [] } = {}) {
   return {
     headers: {
       get(name) {
-        return name.toLowerCase() === 'dspace-xsrf-token'
-          ? csrfToken ?? null
-          : null;
+        if (name.toLowerCase() === 'dspace-xsrf-token') {
+          return csrfToken ?? null;
+        }
+        return null;
       },
       getSetCookie() {
         return cookies;
