@@ -94,7 +94,10 @@ async function authenticate() {
   const csrfResponse = await login(null, null);
   const firstCsrf = csrfResponse.headers.get('DSPACE-XSRF-TOKEN');
   const firstCookie = dspaceSessionCookie(csrfResponse);
-  requireCondition(firstCsrf, 'DSpace CSRF bootstrap did not return DSPACE-XSRF-TOKEN.');
+  requireCondition(
+    firstCsrf,
+    'DSpace CSRF bootstrap did not return DSPACE-XSRF-TOKEN.',
+  );
 
   const loginResponse = await login(firstCsrf, firstCookie);
   const body = await loginResponse.text();
@@ -107,7 +110,10 @@ async function authenticate() {
   const csrfToken =
     loginResponse.headers.get('DSPACE-XSRF-TOKEN') ?? firstCsrf;
   const cookie = dspaceSessionCookie(loginResponse) ?? firstCookie;
-  requireCondition(authorization, 'DSpace login did not return Authorization.');
+  requireCondition(
+    authorization,
+    'DSpace login did not return Authorization.',
+  );
   requireCondition(csrfToken, 'DSpace login did not retain a CSRF token.');
   requireCondition(cookie, 'DSpace login did not retain the XSRF cookie.');
 
@@ -163,8 +169,7 @@ async function discoverCurrentItem(session) {
     `/api/discover/search/objects?query=${query}&size=25`,
     session,
   );
-  const objects =
-    json?._embedded?.searchResult?._embedded?.objects ?? [];
+  const objects = json?._embedded?.searchResult?._embedded?.objects ?? [];
   return objects
     .map((object) => object?._embedded?.indexableObject)
     .filter((item) => item?.type === 'item' && !item?.withdrawn)
@@ -223,7 +228,10 @@ requireCondition(
 
 const session = await authenticate();
 const originalItem = await discoverCurrentItem(session);
-requireCondition(originalItem?.uuid, 'Could not resolve the current TIGER item UUID from DSpace discovery.');
+requireCondition(
+  originalItem?.uuid,
+  'Could not resolve the current TIGER item UUID from DSpace discovery.',
+);
 
 const createVersion = await dspace(
   `/api/versioning/versions?summary=${encodeURIComponent(versionSummary)}`,
@@ -242,7 +250,10 @@ const linkedItemHref =
   createdVersion?._links?.item?.href ??
   `${dspaceBaseUrl}/api/versioning/versions/${createdVersion.id}/item`;
 const draftItem = (await dspace(linkedItemHref, session)).json;
-requireCondition(draftItem?.uuid, 'New DSpace version did not expose its linked item UUID.');
+requireCondition(
+  draftItem?.uuid,
+  'New DSpace version did not expose its linked item UUID.',
+);
 requireCondition(
   draftItem.uuid !== originalItem.uuid,
   'DSpace version creation did not produce a distinct item UUID.',
@@ -254,9 +265,15 @@ let workspace = (
     session,
   )
 ).json;
-requireCondition(workspace?.id, 'New DSpace version was not represented by a WorkspaceItem.');
+requireCondition(
+  workspace?.id,
+  'New DSpace version was not represented by a WorkspaceItem.',
+);
 
-if (workspace.sections?.license && workspace.sections.license.granted !== true) {
+if (
+  workspace.sections?.license &&
+  workspace.sections.license.granted !== true
+) {
   workspace = (
     await dspace(
       `/api/submission/workspaceitems/${encodeURIComponent(workspace.id)}`,
@@ -305,8 +322,14 @@ requireCondition(
 );
 
 const [current, previous] = history.versions;
-requireCondition(current.current === true, 'Newest DSpace version must be marked current.');
-requireCondition(previous.current !== true, 'Prior DSpace version must not be marked current.');
+requireCondition(
+  current.current === true,
+  'Newest DSpace version must be marked current.',
+);
+requireCondition(
+  previous.current !== true,
+  'Prior DSpace version must not be marked current.',
+);
 requireCondition(
   current.id?.startsWith('dspace-version:'),
   `Expected DSpace-native current version identity; received ${current.id}`,
