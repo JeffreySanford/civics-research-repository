@@ -4,8 +4,8 @@
 # frontend coverage, and a production Storybook build. Browser accessibility evidence remains
 # separate because it needs real browsers and longer failure artifacts.
 # `api` builds and tests the Spring Boot service inside its Gradle container image.
-# `dspace-provenance` proves observed version metadata survives a real DSpace APPLY and settles to
-# a no-op DIFF instead of relying only on mapper mocks.
+# `dspace-provenance` proves observed version metadata survives a real DSpace APPLY, settles to a
+# no-op DIFF, and then proves first-class DSpace multi-version lineage through the public API.
 name: CI
 
 on:
@@ -152,6 +152,9 @@ jobs:
 
       - name: Prove APPLY then DIFF settles and provenance reads back
         run: node tools/scripts/dspace-provenance-idempotence.mjs
+
+      - name: Prove real DSpace multi-version lineage reads back
+        run: node tools/scripts/dspace-version-lineage.mjs
 
       - name: Capture DSpace diagnostics on failure
         if: failure()
