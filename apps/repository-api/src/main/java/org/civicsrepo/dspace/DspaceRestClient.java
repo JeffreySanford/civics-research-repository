@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Single owner of DSpace REST transport: discovery search, authentication, and item PATCH.
+ * Single owner of DSpace REST transport: discovery search, version history, authentication, and item PATCH.
  *
  * <p>The read (diff) and write (apply) paths both depend on identical URI construction, response
  * parsing, and item-resolution rules, so they share this client rather than each carrying a copy.
@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DspaceRestClient {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
+    private static final int VERSION_PAGE_SIZE = 100;
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -298,6 +299,119 @@ public class DspaceRestClient {
         }
     }
 
+    /**
+     * Reads DSpace's first-class item version history. No chronology is inferred when an item has no
+     * accessible version relation; callers retain their current-record fallback in that case.
+     */
+    public List<DspaceVersionRecord> listItemVersions(String itemUuid) {
+        if (!isReadEnabled() || normalize(itemUuid).isBlank()) {
+            return List.of();
+        }
+
+        HttpResponse<String> currentResponse = send(HttpRequest.newBuilder(itemVersionUri(itemUuid))
+                .timeout(REQUEST_TIMEOUT)
+                .GET());
+        if (currentResponse.statusCode() == 204 || currentResponse.statusCode() == 404) {
+            return List.of();
+        }
+        if (currentResponse.statusCode() >= 300) {
+            return List.of();
+        }
+
+        JsonNode currentVersion = readTree(currentResponse.body(), "DSpace item-version response could not be parsed.");
+        String currentVersionId = currentVersion.path("id").asText("").trim();
+        String historyHref = currentVersion.path("_links").path("versionhistory").path("href").asText("").trim();
+        if (currentVersionId.isEmpty() || historyHref.isEmpty()) {
+            return List.of();
+        }
+
+        HttpResponse<String> historyResponse = send(HttpRequest.newBuilder(URI.create(historyHref))
+                .timeout(REQUEST_TIMEOUT)
+                .GET());
+        if (historyResponse.statusCode() >= 300) {
+            return List.of();
+        }
+
+        JsonNode history = readTree(historyResponse.body(), "DSpace version-history response could not be parsed.");
+        String versionsHref = history.path("_links").path("versions").path("href").asText("").trim();
+        if (versionsHref.isEmpty()) {
+            return List.of();
+        }
+
+        List<DspaceVersionRecord> versions = new ArrayList<>();
+        for (int page = 0; ; page++) {
+            HttpResponse<String> response = send(HttpRequest.newBuilder(pageUri(versionsHref, page, VERSION_PAGE_SIZE))
+                    .timeout(REQUEST_TIMEOUT)
+                    .GET());
+            if (response.statusCode() >= 300) {
+                return List.of();
+            }
+
+            List<DspaceVersionRecord> pageVersions = toVersionRecords(response.body(), currentVersionId);
+            for (DspaceVersionRecord version : pageVersions) {
+                versions.add(version.withItem(fetchVersionItem(version.id())));
+            }
+            if (pageVersions.size() < VERSION_PAGE_SIZE) {
+                break;
+            }
+        }
+        return List.copyOf(versions);
+    }
+
+    /** Parses one version-history collection page in the DSpace-defined descending version order. */
+    List<DspaceVersionRecord> toVersionRecords(String responseBody, String currentVersionId) {
+        JsonNode nodes = readTree(responseBody, "DSpace version-list response could not be parsed.")
+                .path("_embedded")
+                .path("versions");
+        List<DspaceVersionRecord> versions = new ArrayList<>();
+        for (JsonNode node : nodes) {
+            String id = node.path("id").asText("").trim();
+            String version = node.path("version").asText("").trim();
+            if (id.isEmpty() || version.isEmpty()) {
+                continue;
+            }
+            versions.add(new DspaceVersionRecord(
+                    id,
+                    version,
+                    node.path("created").asText("").trim(),
+                    blankToNull(node.path("summary").asText(null)),
+                    id.equals(currentVersionId),
+                    null));
+        }
+        return List.copyOf(versions);
+    }
+
+    private JsonNode fetchVersionItem(String versionId) {
+        HttpResponse<String> response = send(HttpRequest.newBuilder(versionItemUri(versionId))
+                .timeout(REQUEST_TIMEOUT)
+                .GET());
+        if (response.statusCode() >= 300) {
+            return null;
+        }
+        return readTree(response.body(), "DSpace version-item response could not be parsed.");
+    }
+
+    private JsonNode readTree(String responseBody, String message) {
+        try {
+            return objectMapper.readTree(responseBody);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException(message, exception);
+        }
+    }
+
+    /** One DSpace-native version plus the archived item it identifies when that item is readable. */
+    public record DspaceVersionRecord(
+            String id,
+            String version,
+            String created,
+            String summary,
+            boolean current,
+            JsonNode item) {
+        DspaceVersionRecord withItem(JsonNode linkedItem) {
+            return new DspaceVersionRecord(id, version, created, summary, current, linkedItem);
+        }
+    }
+
     public void patchItemMetadata(String itemUuid, List<Map<String, Object>> patchOperations) {
         AuthSession authSession = authenticate();
         HttpResponse<String> response = send(HttpRequest.newBuilder(itemUri(itemUuid))
@@ -381,6 +495,18 @@ public class DspaceRestClient {
         return URI.create(baseUrl + "/api/core/items/" + encode(itemUuid));
     }
 
+    private URI itemVersionUri(String itemUuid) {
+        return URI.create(baseUrl + "/api/core/items/" + encode(itemUuid) + "/version");
+    }
+
+    private URI versionItemUri(String versionId) {
+        return URI.create(baseUrl + "/api/versioning/versions/" + encode(versionId) + "/item");
+    }
+
+    private URI pageUri(String href, int page, int size) {
+        return URI.create(href + (href.contains("?") ? "&" : "?") + "page=" + page + "&size=" + size);
+    }
+
     private URI loginUri() {
         return URI.create(baseUrl + "/api/authn/login");
     }
@@ -395,6 +521,11 @@ public class DspaceRestClient {
                 .filter((value) -> value.startsWith("DSPACE-XSRF-COOKIE="))
                 .filter((value) -> value.length() > "DSPACE-XSRF-COOKIE=".length())
                 .reduce((first, second) -> second);
+    }
+
+    private String blankToNull(String value) {
+        String normalized = normalize(value);
+        return normalized.isEmpty() ? null : normalized;
     }
 
     private String normalize(String value) {
