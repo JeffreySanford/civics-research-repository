@@ -1,5 +1,4 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { waitForRegisteredMapLayers } from './support/map-layer-visibility';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 
 /**
@@ -50,7 +49,15 @@ async function openRoute(page: Page, path: string): Promise<void> {
   });
 
   if (path === '/maps') {
-    await waitForRegisteredMapLayers(page);
+    // Keyboard evidence depends on the application-owned control DOM, not on MapLibre's later
+    // overlay registration lifecycle. Wait for the map surface and all category controls so the
+    // visible-control snapshot is stable without turning rendering into an accessibility precondition.
+    await expect(page.getByTestId('discovery-map-canvas')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.locator('details.layer-category')).toHaveCount(4, {
+      timeout: 10_000,
+    });
   }
 }
 
@@ -168,8 +175,8 @@ test.describe('keyboard operability', () => {
      * Do not reimplement visibility or the accessible-name algorithm here. Closed `<details>`
      * descendants can retain ordinary CSS box metrics while being excluded from the accessibility
      * tree. Playwright owns both the visibility filter and the browser accessible-name computation.
-     * The maps route waits for application-owned MapLibre layers before snapshotting its controls so
-     * locator.all() is only used once the dynamic control list has settled.
+     * Route readiness above waits only for the application-owned control DOM before locator.all()
+     * snapshots the dynamic control list.
      */
     test(`${route.name} names every control it focuses @wcag @section508`, async ({
       page,
