@@ -1,18 +1,19 @@
 package org.civicsrepo.datasets;
 
-import org.civicsrepo.generated.dto.ResearchArtifactVersion;
-import org.civicsrepo.generated.dto.ResearchObjectDetail;
-import org.civicsrepo.generated.dto.DatasetFile;
-import org.civicsrepo.generated.dto.FileFormat;
-import org.civicsrepo.generated.dto.ResearchProgram;
-import org.civicsrepo.repository.FixtureCatalog;
-import org.civicsrepo.repository.RepositoryCatalog;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
+import org.civicsrepo.generated.dto.DatasetFile;
+import org.civicsrepo.generated.dto.FileFormat;
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
+import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.repository.FixtureCatalog;
+import org.civicsrepo.repository.RepositoryCatalog;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -54,8 +55,26 @@ class DatasetServiceTest {
     }
 
     @Test
+    void delegatesObservedVersionHistoryToRepositoryAuthority() {
+        RepositoryCatalog repositoryCatalog = mock(RepositoryCatalog.class);
+        DatasetService service = new DatasetService(repositoryCatalog, new FixtureCatalog());
+        ResearchArtifactVersion current = new ResearchArtifactVersion("dspace-version:2", "Artifact")
+                .current(true)
+                .versionLabel("Repository version 2");
+        ResearchArtifactVersion previous = new ResearchArtifactVersion("dspace-version:1", "Artifact")
+                .current(false)
+                .versionLabel("Repository version 1");
+        when(repositoryCatalog.findObservedVersionHistory("artifact-2025"))
+                .thenReturn(List.of(current, previous));
+
+        assertThat(service.findObservedRepositoryVersionHistory("artifact-2025"))
+                .containsExactly(current, previous);
+    }
+
+    @Test
     void hasNoObservedRepositoryVersionWhenRepositoryAuthorityIsUnavailable() {
         assertThat(datasetService.findObservedRepositoryVersion("fixture-only")).isEmpty();
+        assertThat(datasetService.findObservedRepositoryVersionHistory("fixture-only")).isEmpty();
     }
 
     @Test
