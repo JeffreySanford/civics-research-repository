@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.civicsrepo.sources.TigerLineMetadataAdapter;
 import org.civicsrepo.sources.OfflineSourceFileProbe;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.ResearchObjectType;
@@ -33,10 +34,15 @@ class DspaceItemPayloadMapperTest {
                 "dc.identifier.citation",
                 "crr.identifier.source",
                 "crr.geography.level",
-                "crr.vintage");
+                "crr.vintage",
+                DspaceManagedFields.VERSION_LABEL_FIELD);
         assertThat(firstValue(payload, "dc.title")).isEqualTo("2025 TIGER/Line - Census Tracts - North Dakota");
         assertThat(firstValue(payload, "dc.date.issued")).isEqualTo("2025-09-23");
         assertThat(firstValue(payload, "crr.identifier.source")).isEqualTo("tiger-line-north-dakota-2025");
+        assertThat(firstValue(payload, DspaceManagedFields.VERSION_LABEL_FIELD)).isEqualTo("TIGER2025");
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.VERSION_DATE_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.SOURCE_SHA256_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.CAPTURED_AT_FIELD);
         assertThat(payload.bitstreams()).hasSize(3);
         assertThat(payload.bitstreams())
                 .extracting(DspaceBitstreamPayload::bundleName)
@@ -48,7 +54,8 @@ class DspaceItemPayloadMapperTest {
     }
 
     /**
-     * A dataset adapter says nothing about DOIs or access, and must not write those fields empty.
+     * A dataset adapter says nothing about DOIs or most provenance fields, and must not write those
+     * fields empty.
      *
      * <p>An empty value is not "no opinion" to the reconciliation: it is a value, and writing one
      * would clear whatever the seed recorded on the item.
@@ -76,6 +83,49 @@ class DspaceItemPayloadMapperTest {
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.LICENSE_FIELD);
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.RESEARCHER_FIELD);
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.RELATION_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.VERSION_LABEL_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.VERSION_DATE_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.SOURCE_SHA256_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.CAPTURED_AT_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.IS_VERSION_OF_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.SUPERSEDES_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.CHANGE_NOTE_FIELD);
+    }
+
+    @Test
+    void mapsOnlyExplicitlyObservedArtifactProvenance() {
+        var payload = mapper.toItemPayload(ResearchObjectMetadata.dataset(
+                "observed-artifact-2025-2",
+                "Observed artifact",
+                ResearchProgram.TIGER_LINE,
+                "U.S. Census Bureau",
+                "Observed artifact provenance fixture.",
+                "United States",
+                "National",
+                2025,
+                LocalDate.of(2025, 9, 23),
+                "https://example.gov/releases/2025.2",
+                "https://example.gov/docs",
+                "Observed artifact, 2025.2.",
+                List.of(),
+                new ResearchObjectMetadata.ResearchArtifactProvenance(
+                        "2025.2",
+                        LocalDate.of(2025, 9, 22),
+                        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                        OffsetDateTime.parse("2026-09-12T18:45:00-05:00"),
+                        "observed-artifact",
+                        "observed-artifact-2025-1",
+                        "Publisher-issued revision.")));
+
+        assertThat(firstValue(payload, DspaceManagedFields.VERSION_LABEL_FIELD)).isEqualTo("2025.2");
+        assertThat(firstValue(payload, DspaceManagedFields.VERSION_DATE_FIELD)).isEqualTo("2025-09-22");
+        assertThat(firstValue(payload, DspaceManagedFields.SOURCE_SHA256_FIELD))
+                .isEqualTo("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+        assertThat(firstValue(payload, DspaceManagedFields.CAPTURED_AT_FIELD))
+                .isEqualTo("2026-09-12T18:45:00-05:00");
+        assertThat(firstValue(payload, DspaceManagedFields.IS_VERSION_OF_FIELD)).isEqualTo("observed-artifact");
+        assertThat(firstValue(payload, DspaceManagedFields.SUPERSEDES_FIELD)).isEqualTo("observed-artifact-2025-1");
+        assertThat(firstValue(payload, DspaceManagedFields.CHANGE_NOTE_FIELD)).isEqualTo("Publisher-issued revision.");
     }
 
     /**

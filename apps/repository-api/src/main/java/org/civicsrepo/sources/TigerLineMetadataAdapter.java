@@ -17,11 +17,15 @@ import org.springframework.stereotype.Component;
  * Bureau reissues the archive.
  *
  * <p>When the host cannot be reached the compiled release date is used and sizes are left absent.
- * A sync must not fail, or hang, because census.gov is slow.
+ * A sync must not fail, or hang, because census.gov is slow. Version provenance is stricter: the
+ * explicit TIGER2025 source identity can still be recorded, but a version-specific date is retained
+ * only when the publisher actually reports Last-Modified; the fallback release date is not promoted
+ * into observed provenance.
  */
 @Component
 public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
     private static final int VINTAGE_YEAR = 2025;
+    private static final String VERSION_LABEL = "TIGER2025";
     private static final String GEOGRAPHY = "North Dakota";
     private static final String STATE_FIPS = "38";
     private static final String TIGER_BASE_URL = "https://www2.census.gov/geo/tiger/TIGER2025/TRACT/";
@@ -65,6 +69,7 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
         String sourceUrl = TIGER_BASE_URL + "tl_" + VINTAGE_YEAR + "_" + STATE_FIPS + "_tract.zip";
         Optional<SourceFileFacts> sourceFacts = sourceFileProbe.probe(sourceUrl);
         Optional<SourceFileFacts> documentationFacts = sourceFileProbe.probe(TECHNICAL_DOCUMENTATION_URL);
+        LocalDate observedVersionDate = sourceFacts.map(SourceFileFacts::lastModified).orElse(null);
 
         return ResearchObjectMetadata.dataset(
                 "tiger-line-north-dakota-2025",
@@ -98,7 +103,15 @@ public class TigerLineMetadataAdapter implements PublicMetadataAdapter {
                                 FileFormat.OTHER,
                                 DOCUMENTATION_URL,
                                 // A landing page, not a file. Its byte count would mean nothing.
-                                null)));
+                                null)),
+                new ResearchObjectMetadata.ResearchArtifactProvenance(
+                        VERSION_LABEL,
+                        observedVersionDate,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null));
     }
 
     /** The publisher's Last-Modified when it offers one, otherwise the compiled release date. */

@@ -23,15 +23,22 @@ not architectural.
 
 ## The object model
 
-| Field       | Metadata                     | Notes                                                                                                                                                                                                 |
-| ----------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Type        | `crr.resource.type`          | `DATASET`, `PUBLICATION`, `CODE`, `METHODOLOGY`, `SUPPORTING_MATERIAL`, `PROJECT`. Absent means `DATASET` — a fact, not a guess: the catalog held nothing else before this.                           |
-| Access      | `crr.rights.access`          | `PUBLIC`, `RESTRICTED`, `METADATA_ONLY`, `EMBARGOED`. Unreadable values fall back to `RESTRICTED`, never `PUBLIC`.                                                                                    |
-| Access note | `crr.rights.accessnote`      | How to legitimately obtain a restricted object. Present only when access is not public.                                                                                                               |
-| License     | `crr.rights.license`         | Stated rather than assumed. Federal works are public domain under 17 U.S.C. 105, and saying so is what makes an object reusable rather than merely downloadable.                                      |
-| DOI         | `crr.identifier.doi`         | Omitted rather than emitted blank. A present-but-empty field asserts that no DOI exists, which is a claim.                                                                                            |
-| Researchers | `crr.contributor.researcher` | One JSON entry per author: name, and ORCID where the researcher has a public one. Authors are also written to `dc.contributor.author`, the field every harvester and citation exporter already reads. |
-| Relations   | `crr.relation.edge`          | One JSON entry per typed edge: verb, target source identifier, note.                                                                                                                                  |
+| Field            | Metadata                     | Notes                                                                                                                                                                                                 |
+| ---------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Type             | `crr.resource.type`          | `DATASET`, `PUBLICATION`, `CODE`, `METHODOLOGY`, `SUPPORTING_MATERIAL`, `PROJECT`. Absent means `DATASET` — a fact, not a guess: the catalog held nothing else before this.                           |
+| Access           | `crr.rights.access`          | `PUBLIC`, `RESTRICTED`, `METADATA_ONLY`, `EMBARGOED`. Unreadable values fall back to `RESTRICTED`, never `PUBLIC`.                                                                                    |
+| Access note      | `crr.rights.accessnote`      | How to legitimately obtain a restricted object. Present only when access is not public.                                                                                                               |
+| License          | `crr.rights.license`         | Stated rather than assumed. Federal works are public domain under 17 U.S.C. 105, and saying so is what makes an object reusable rather than merely downloadable.                                      |
+| DOI              | `crr.identifier.doi`         | Omitted rather than emitted blank. A present-but-empty field asserts that no DOI exists, which is a claim.                                                                                            |
+| Researchers      | `crr.contributor.researcher` | One JSON entry per author: name, and ORCID where the researcher has a public one. Authors are also written to `dc.contributor.author`, the field every harvester and citation exporter already reads. |
+| Relations        | `crr.relation.edge`          | One JSON entry per typed edge: verb, target source identifier, note.                                                                                                                                  |
+| Source version   | `crr.version.label`          | Source-provided release/version identity only. A vintage year is not silently promoted to a version label.                                                                                            |
+| Version date     | `crr.version.date`           | Version-specific date only when observed from the source or repository evidence.                                                                                                                      |
+| Fixity           | `crr.provenance.sha256`      | SHA-256 only when supplied or computed from retained source bytes; never inferred from a URL, file name, or byte count.                                                                               |
+| Capture time     | `crr.provenance.capturedat`  | Timestamp of an actual retained observation. The current sync clock is not substituted because that would create false provenance and perpetual diff churn.                                           |
+| Version identity | `crr.version.isversionof`    | Stable artifact identity this observed version belongs to, when evidenced.                                                                                                                            |
+| Supersession     | `crr.version.supersedes`     | Earlier observed version superseded by this version, when evidenced.                                                                                                                                  |
+| Change note      | `crr.version.changenote`     | Source/repository change note associated with the observed version.                                                                                                                                   |
 
 ### Relationships
 
@@ -123,32 +130,64 @@ application.
   license and access, and a Research Package tab listing its typed edges. It does not show Map Layers:
   a working paper has no geometry, and an empty map workspace reads as a failure to load rather than
   as nothing to draw.
+- **Versions and provenance** is an evidence view, not a generated timeline. It displays observed
+  source-version identity, dates, fixity, capture time, artifact identity, supersession, and change
+  notes only when those facts are present. The same screen explicitly distinguishes
+  `OBSERVED_CURRENT_ONLY`, `HISTORY_AVAILABLE`, and `UNAVAILABLE`.
 
 ## Synchronization status
 
-The live synchronization boundary is now research-object capable.
+The live synchronization boundary is research-object capable and Phase B of #114 now extends that
+same boundary to artifact provenance.
 
-`ResearchObjectMetadata` replaced the earlier `PublicDatasetMetadata` shape and can carry resource
-type, access level/note, license, DOI, researchers/ORCID, and typed relations. The DSpace payload mapper
-and `DspaceManagedFields` reconcile those fields through the same idempotent apply/diff path used for
-ordinary descriptive/source metadata.
+`ResearchObjectMetadata` can carry resource type, access level/note, license, DOI, researchers/ORCID,
+typed relations, and one optional `ResearchArtifactProvenance` record. `DspaceItemPayloadMapper` writes
+the observed provenance fields through `DspaceManagedFields`; `RepositoryCatalog` reads the same DSpace
+item back into the public `ResearchArtifactVersion` contract. There is no second provenance store.
 
 A missing harvested value remains **no opinion**, not an instruction to erase richer seeded metadata.
-This lets dataset adapters remain intentionally sparse without clearing DOI, access, researcher, or
-relation data that a source does not authoritatively provide.
+This is particularly important for provenance: a source adapter that knows a release label but does not
+compute a checksum writes the label and leaves SHA-256 absent. It does not manufacture fixity merely to
+make the record look complete.
+
+TIGER/Line demonstrates that boundary conservatively. The path itself explicitly identifies the source
+family as `TIGER2025`, so the representative object can persist that label. The HTTP source probe can
+observe `Last-Modified` and byte size but does not download/hash the archive, so the adapter does not
+claim SHA-256 or a retained capture timestamp. Its compiled fallback release date is useful for detail
+when the publisher is unreachable, but is not promoted into `crr.version.date` as if it were observed.
+
+The Phase B CI gate uses a real DSpace 9 profile rather than a mock: seed the repository and custom
+metadata registry, APPLY TIGER metadata, run DIFF again, require `SKIP_ITEM` with no create/update, then
+read `/research/{id}/versions` through the running API and require the persisted `TIGER2025` value to
+come back while unsupported SHA/capture facts remain absent. This is the replay/idempotence proof for
+the authority path.
 
 The remaining synchronization gap is **adapter breadth**: the normalized model can represent richer
-research objects, but the live publisher/source coverage is still narrow. A future non-dataset adapter
+research objects, but live publisher/source coverage is still narrow. A future non-dataset adapter
 should prove the generalized path with a real CODE/replication object rather than rebuild the model.
+
+## Version-history phases
+
+#114 deliberately separates three claims that are easy to conflate:
+
+1. **Phase A — truthful history contract (merged in #121).** Synthetic `vintageYear - 1` history was
+   removed. The API/UI now distinguishes current-only knowledge, actual history, and unavailable
+   provenance, with unit, Storybook+axe, Playwright+axe, cross-browser, live-search, and MapLibre
+   evidence.
+2. **Phase B — authoritative current provenance (this slice).** Observed version/provenance facts are
+   persisted through DSpace, read back from DSpace, rendered in the main Angular application, and
+   subjected to a real DSpace APPLY→DIFF replay test. Phase B still returns
+   `OBSERVED_CURRENT_ONLY`; richer metadata does not magically establish earlier versions.
+3. **Phase C — genuinely observed multi-version lineage.** `HISTORY_AVAILABLE`, `supersedes`, and
+   multiple records become a production claim only after an adapter/repository source can supply
+   distinct observed versions and their lineage. Negative tests must continue proving that vintage,
+   naming, or UI fixtures cannot promote themselves into history.
 
 ## Known gaps
 
-- **Version history is becoming authoritative in #114.** Phase A removes the synthetic
-  `vintageYear - 1` record and introduces explicit `OBSERVED_CURRENT_ONLY`, `HISTORY_AVAILABLE`, and
-  `UNAVAILABLE` knowledge states. Source-to-DSpace provenance persistence and genuinely observed
-  multi-version lineage remain follow-on phases; unknown history stays unknown until then.
-  Issue #114 replaces inferred history with observed artifact/version/source facts and must represent
-  unknown history as unknown.
+- **Multi-version history is not yet a production fact.** Phase B can describe the current observed
+  artifact more precisely, but Phase C of #114 still owns genuinely observed earlier/later versions
+  and the production transition to `HISTORY_AVAILABLE`.
 - **Replication packages and code remain unmodelled in practice.** `CODE` is in the enum and nothing
   uses it yet. Issue #118 will use a genuine Census public research-code/replication repository rather
   than fabricate an object merely to exercise the type.
@@ -158,9 +197,8 @@ should prove the generalized path with a real CODE/replication object rather tha
 - **Relationships are not yet presented as a complete reproducibility trail.** Typed package relations
   exist and must remain distinct from heuristic `relatedResearch`; issue #116 will make their
   provenance/version/access semantics easier to follow without adding a graph database.
-- **ORCID coverage is thin.** One of the six authors would need a verified public ORCID before the
-  field earns its place; absent is currently correct for all of them. Missing ORCID must not be
-  fabricated merely to make an export/profile look complete.
+- **ORCID coverage is thin.** Missing ORCID remains unknown and must not be fabricated merely to make
+  an export/profile look complete.
 
 See [Open Census Alignment Roadmap](open-census-alignment-roadmap.md) for the ordered #114–#119 plan,
 validation boundaries, and intentionally deferred work.

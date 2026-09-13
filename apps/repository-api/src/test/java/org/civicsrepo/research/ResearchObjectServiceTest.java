@@ -18,10 +18,13 @@ import org.civicsrepo.federation.FederatedMetadataCatalog;
 import org.civicsrepo.federation.FederatedResearchRecord;
 import org.civicsrepo.federation.FederatedSourceSystem;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SourceSystem;
+import org.civicsrepo.generated.dto.VersionHistoryStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -74,6 +77,100 @@ class ResearchObjectServiceTest {
 
         assertThat(service.getResearchObject(codec.encode(id))).isSameAs(expected);
         verify(datasetService).getDataset(id);
+    }
+
+    @Test
+    void versionHistoryUsesManagedRepositoryProvenanceWhenDspaceRecordedIt() {
+        String id = "tiger-line-north-dakota-2025";
+        ResearchObjectDetail detail = new ResearchObjectDetail(
+                        RepositorySource.REPOSITORY,
+                        id,
+                        "2025 TIGER/Line - Census Tracts - North Dakota",
+                        ResearchProgram.TIGER_LINE,
+                        "U.S. Census Bureau",
+                        "Census tract boundaries.",
+                        List.of(),
+                        "U.S. Census Bureau. 2025 TIGER/Line.",
+                        URI.create("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip"),
+                        List.of(),
+                        ResearchObjectOrigin.REPOSITORY,
+                        SourceSystem.CENSUS)
+                .releasedOn(LocalDate.of(2025, 9, 23));
+        ResearchArtifactVersion repositoryVersion = new ResearchArtifactVersion(
+                        id, "2025 TIGER/Line - Census Tracts - North Dakota")
+                .current(true)
+                .versionLabel("TIGER2025")
+                .versionDate(LocalDate.of(2025, 9, 22))
+                .sourceSha256("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+                .capturedAt(OffsetDateTime.parse("2026-09-12T18:45:00-05:00"))
+                .sourceUrl(detail.getSourceUrl());
+
+        when(federatedCatalog.findById(id)).thenReturn(Optional.empty());
+        when(datasetService.getDataset(id)).thenReturn(detail);
+        when(datasetService.findObservedRepositoryVersion(id)).thenReturn(Optional.of(repositoryVersion));
+
+        var history = service.getResearchObjectVersionHistory(codec.encode(id));
+
+        assertThat(history.getStatus()).isEqualTo(VersionHistoryStatus.OBSERVED_CURRENT_ONLY);
+        assertThat(history.getVersions()).containsExactly(repositoryVersion);
+        assertThat(history.getVersions().getFirst().getVersionLabel()).isEqualTo("TIGER2025");
+        assertThat(history.getVersions().getFirst().getSourceSha256())
+                .isEqualTo("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    }
+
+    @Test
+    void versionHistoryUsesManagedRepositoryProvenanceEvenWhenFederatedDetailWinsResolution() {
+        FederatedResearchRecord record = record(Map.of());
+        String id = record.id();
+        ResearchArtifactVersion repositoryVersion = new ResearchArtifactVersion(id, "Persisted repository snapshot")
+                .current(true)
+                .versionLabel("TIGER2025")
+                .versionDate(LocalDate.of(2025, 9, 22))
+                .sourceUrl(URI.create("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip"));
+
+        when(federatedCatalog.findById(id)).thenReturn(Optional.of(record));
+        when(datasetService.findObservedRepositoryVersion(id)).thenReturn(Optional.of(repositoryVersion));
+
+        var history = service.getResearchObjectVersionHistory(codec.encode(id));
+
+        assertThat(history.getStatus()).isEqualTo(VersionHistoryStatus.OBSERVED_CURRENT_ONLY);
+        assertThat(history.getVersions()).containsExactly(repositoryVersion);
+        assertThat(history.getVersions().getFirst().getVersionLabel()).isEqualTo("TIGER2025");
+        verify(datasetService, never()).getDataset(id);
+        verify(datasetService).findObservedRepositoryVersion(id);
+    }
+
+    @Test
+    void versionHistoryDoesNotInventRepositoryProvenanceWhenItWasNotRecorded() {
+        String id = "fixture-only";
+        ResearchObjectDetail detail = new ResearchObjectDetail(
+                        RepositorySource.FIXTURE,
+                        id,
+                        "Fixture object",
+                        ResearchProgram.OTHER,
+                        "Example publisher",
+                        "Fixture detail.",
+                        List.of(),
+                        "Fixture object.",
+                        URI.create("https://example.gov/fixture"),
+                        List.of(),
+                        ResearchObjectOrigin.FIXTURE,
+                        SourceSystem.OTHER)
+                .releasedOn(LocalDate.of(2025, 1, 1));
+
+        when(federatedCatalog.findById(id)).thenReturn(Optional.empty());
+        when(datasetService.getDataset(id)).thenReturn(detail);
+        when(datasetService.findObservedRepositoryVersion(id)).thenReturn(Optional.empty());
+
+        var history = service.getResearchObjectVersionHistory(codec.encode(id));
+
+        assertThat(history.getVersions()).singleElement().satisfies(version -> {
+            assertThat(version.getVersionLabel()).isNull();
+            assertThat(version.getSourceSha256()).isNull();
+            assertThat(version.getCapturedAt()).isNull();
+            assertThat(version.getSupersedes()).isNull();
+        });
+        verify(datasetService).findObservedRepositoryVersion(id);
     }
 
     @Test

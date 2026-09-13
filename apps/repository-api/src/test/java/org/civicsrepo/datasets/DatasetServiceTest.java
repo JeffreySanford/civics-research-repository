@@ -1,13 +1,18 @@
 package org.civicsrepo.datasets;
 
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetFile;
-import org.civicsrepo.generated.dto.DatasetVersion;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.repository.FixtureCatalog;
+import org.civicsrepo.repository.RepositoryCatalog;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,6 +39,23 @@ class DatasetServiceTest {
                     assertThat(version.getId()).isEqualTo("lodes-wac-texas-2023");
                     assertThat(version.getReleasedOn()).isNotNull();
                 });
+    }
+
+    @Test
+    void delegatesObservedVersionFactsToRepositoryAuthority() {
+        RepositoryCatalog repositoryCatalog = mock(RepositoryCatalog.class);
+        DatasetService service = new DatasetService(repositoryCatalog, new FixtureCatalog());
+        ResearchArtifactVersion expected =
+                new ResearchArtifactVersion("artifact-2025", "Artifact 2025").versionLabel("2025.2");
+        when(repositoryCatalog.findObservedVersion("artifact-2025")).thenReturn(Optional.of(expected));
+
+        assertThat(service.findObservedRepositoryVersion("artifact-2025"))
+                .containsSame(expected);
+    }
+
+    @Test
+    void hasNoObservedRepositoryVersionWhenRepositoryAuthorityIsUnavailable() {
+        assertThat(datasetService.findObservedRepositoryVersion("fixture-only")).isEmpty();
     }
 
     @Test

@@ -7,6 +7,7 @@ Civics Research Repository is documented as a federal Open Science reference pla
 - [Current Platform Status](platform-status.md): generated counts, evidence date, source inventory, preservation snapshot, adapter coverage and open governance/deployment boundaries.
 - [Architecture](architecture.md): current system model, datastore ownership, synchronization, discovery, mapping, preservation and accessibility evidence.
 - [Architecture Diagrams](architecture-diagrams.md): current C4 and sequence diagrams.
+- [Provenance, Authority, and Evidence](provenance-authority-evidence.md): authority boundaries, observation/evidence semantics, claim-strength ladder, replay proof and the FedRAMP 20x evidence-engineering analogy.
 - [Demo Package](demo/README.md): audience-specific walkthroughs and tradeoffs.
 
 ## Product and domain

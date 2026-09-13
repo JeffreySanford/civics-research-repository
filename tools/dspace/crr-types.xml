@@ -3,7 +3,7 @@
   <dspace-header>
     <title>Civics Research Repository Metadata Registry</title>
     <contributor.author>Civics Research Repository</contributor.author>
-    <description>Project-specific metadata fields used to track public source identity, geography, vintage, and documentation links.</description>
+    <description>Project-specific metadata fields used to track public source identity, geography, vintage, version provenance, and documentation links.</description>
   </dspace-header>
 
   <dc-schema>
@@ -34,7 +34,7 @@
   <dc-type>
     <schema>crr</schema>
     <element>vintage</element>
-    <scope_note>Source dataset vintage or release year.</scope_note>
+    <scope_note>Source dataset vintage or release year. Vintage alone does not establish version lineage.</scope_note>
   </dc-type>
 
   <dc-type>
@@ -104,5 +104,54 @@
     <element>contributor</element>
     <qualifier>researcher</qualifier>
     <scope_note>One JSON entry per author: name, and ORCID where the researcher has a public one. The ORCID key is absent rather than blank when unknown.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>version</element>
+    <qualifier>label</qualifier>
+    <scope_note>Source-provided version or release label. Omitted when the source does not identify a version.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>version</element>
+    <qualifier>date</qualifier>
+    <scope_note>Observed version-specific date, distinct from a generalized dataset vintage.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>provenance</element>
+    <qualifier>sha256</qualifier>
+    <scope_note>SHA-256 fixity value only where supplied or computed from retained source bytes. Never inferred from a URL, file name, or size.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>provenance</element>
+    <qualifier>capturedat</qualifier>
+    <scope_note>Timestamp of an actual retained source observation. A sync clock is not substituted when no capture time is known.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>version</element>
+    <qualifier>isversionof</qualifier>
+    <scope_note>Stable artifact identity this observed version is a version of, when asserted by repository/source evidence.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>version</element>
+    <qualifier>supersedes</qualifier>
+    <scope_note>Identifier of an observed earlier version superseded by this version, when evidenced.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>version</element>
+    <qualifier>changenote</qualifier>
+    <scope_note>Human-readable source/repository change note associated with this observed version.</scope_note>
   </dc-type>
 </dspace-dc-types>

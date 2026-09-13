@@ -13,6 +13,9 @@ import {
 } from '../state/datasets/datasets.reducer';
 import { ResearchObjectDetailPage } from './dataset-detail-page';
 
+const checksum =
+  '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+
 const detail = {
   source: 'REPOSITORY',
   origin: 'REPOSITORY',
@@ -37,6 +40,11 @@ const currentVersion: ResearchArtifactVersion = {
   releasedOn: '2025-09-01',
   current: true,
   versionLabel: '2025.2',
+  versionDate: '2025-08-29',
+  sourceSha256: checksum,
+  capturedAt: '2026-09-12T18:45:00-05:00',
+  isVersionOf: 'version-history-example',
+  changeNote: 'Publisher-issued metadata revision.',
   sourceUrl: 'https://example.gov/research/version-history-example/2025.2',
 };
 
@@ -85,7 +93,7 @@ async function renderVersionHistory(
 }
 
 describe('ResearchObjectDetailPage version-history semantics', () => {
-  it('states that broader history is unknown when only the current record was observed', async () => {
+  it('renders observed provenance while stating broader history remains unknown', async () => {
     const fixture = await renderVersionHistory('OBSERVED_CURRENT_ONLY', [
       currentVersion,
     ]);
@@ -93,30 +101,52 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
     expect(text).toContain(
       'Only the current repository/source record has been observed. Earlier or later version history is not established.',
     );
+    expect(text).toContain('Authority and evidence trail');
+    expect(text).toContain('DSpace curated repository record');
+    expect(text).toContain('Derived projections only');
     expect(text).toContain('Observed release 2025.2');
     expect(text).toContain('Current observed record');
+    expect(text).toContain('Source version');
+    expect(text).toContain('2025.2');
+    expect(text).toContain('Version date');
+    expect(text).toContain('Source SHA-256');
+    expect(text).toContain(checksum);
+    expect(text).toContain('Provenance captured');
+    expect(text).toContain('Version of');
+    expect(text).toContain('version-history-example');
+    expect(text).toContain('Publisher-issued metadata revision.');
+    expect(text).toContain('What this record proves');
+    expect(text).toContain('Fixity:');
+    expect(text).toContain('Capture:');
+    expect(text).toContain('Lineage:');
+    expect(text).toContain('Not established');
     expect(text).not.toContain('TIGER_LINE 2024');
   });
 
-  it('renders multiple versions only when history is explicitly available', async () => {
+  it('renders multiple versions and lineage only when history is explicitly available', async () => {
     const priorVersion: ResearchArtifactVersion = {
       id: 'version-history-example-prior',
       label: 'Observed release 2025.1',
       releasedOn: '2025-06-01',
       current: false,
       versionLabel: '2025.1',
+      isVersionOf: 'version-history-example',
       sourceUrl: 'https://example.gov/research/version-history-example/2025.1',
     };
     const fixture = await renderVersionHistory('HISTORY_AVAILABLE', [
-      currentVersion,
+      { ...currentVersion, supersedes: priorVersion.id },
       priorVersion,
     ]);
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(
       'The repository has observed version-lineage records for this research artifact.',
     );
+    expect(text).toContain('Observed multi-version lineage');
     expect(text).toContain('Observed release 2025.2');
     expect(text).toContain('Observed release 2025.1');
+    expect(text).toContain('Supersedes');
+    expect(text).toContain('version-history-example-prior');
+    expect(text).toContain('Established from');
   });
 
   it('states that provenance is unavailable instead of inferring history', async () => {
@@ -125,6 +155,10 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
     expect(text).toContain(
       'Version provenance is not available for this research artifact.',
     );
+    expect(text).toContain('Authority and evidence trail');
+    expect(text).toContain('Version provenance unavailable');
     expect(text).not.toContain('Current observed record');
+    expect(text).not.toContain('Source SHA-256');
+    expect(text).not.toContain('What this record proves');
   });
 });

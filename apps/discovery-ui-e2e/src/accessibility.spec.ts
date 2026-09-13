@@ -109,7 +109,9 @@ test.describe('accessibility evidence', () => {
         'Only the current repository/source record has been observed. Earlier or later version history is not established.',
       ),
     ).toBeVisible();
-    await expect(page.getByText('Current observed record')).toBeVisible();
+    await expect(
+      page.getByText('Current observed record', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);
 
     const results = await new AxeBuilder({ page })
@@ -137,7 +139,9 @@ test.describe('accessibility evidence', () => {
         'Only the current repository/source record has been observed. Earlier or later version history is not established.',
       ),
     ).toBeVisible();
-    await expect(page.getByText('Current observed record')).toBeVisible();
+    await expect(
+      page.getByText('Current observed record', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);
 
     const results = await new AxeBuilder({ page })

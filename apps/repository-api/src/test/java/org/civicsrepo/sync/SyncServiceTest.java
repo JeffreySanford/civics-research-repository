@@ -41,10 +41,9 @@ class SyncServiceTest {
                 .anySatisfy(action -> {
                     assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.UPSERT_ITEM);
                     assertThat(action.getDetail()).contains("DSpace item payload");
-                    // 19, not 17: a harvested dataset now also declares its resource type and
-                    // access level, so the seeded and harvested descriptions of the same object
-                    // finally carry the same vocabulary.
-                    assertThat(action.getDetail()).contains("19 metadata fields");
+                    // 20: the harvested dataset declares resource type, access level, and one
+                    // explicit TIGER source-version label in addition to its descriptive fields.
+                    assertThat(action.getDetail()).contains("20 metadata fields");
                     assertThat(action.getDetail()).contains("3 file manifest entries");
                 });
     }

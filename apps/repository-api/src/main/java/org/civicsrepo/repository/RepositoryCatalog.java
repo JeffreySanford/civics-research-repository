@@ -1,5 +1,6 @@
 package org.civicsrepo.repository;
 
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.SearchResult;
 import org.civicsrepo.search.DiscoveryDocument;
@@ -100,6 +101,21 @@ public class RepositoryCatalog {
                 repositoryObjectMapper.edges(match.orElseThrow()), byId));
 
         return Optional.of(detail);
+    }
+
+    /**
+     * The current artifact-version evidence recorded on the matching DSpace item.
+     *
+     * <p>This returns one observed repository record, not reconstructed history. Phase C can add
+     * genuinely observed earlier/later records without changing the authority boundary established
+     * here.
+     */
+    public Optional<ResearchArtifactVersion> findObservedVersion(String researchObjectId) {
+        return readItems().stream()
+                .filter((item) -> repositoryObjectMapper.identifier(item).equalsIgnoreCase(researchObjectId))
+                .findFirst()
+                .map((item) -> RepositoryArtifactVersionMapper.toVersion(
+                        item, repositoryObjectMapper.identifier(item)));
     }
 
     /**

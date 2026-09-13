@@ -176,37 +176,154 @@
         <p class="version-history-note" role="note">
           {{ versionHistoryMessage(historyStatus) }}
         </p>
-        } @if (versions$ | async; as versions) {
+
+        <section
+          class="provenance-proof"
+          aria-labelledby="provenance-proof-heading"
+        >
+          <p class="eyebrow">Proof-oriented provenance</p>
+          <h3 id="provenance-proof-heading">Authority and evidence trail</h3>
+          <p>
+            This view separates authority from derived discovery data and states
+            unsupported evidence explicitly instead of filling gaps by
+            inference.
+          </p>
+          <dl class="provenance-proof-list">
+            <div>
+              <dt>Authority</dt>
+              <dd>
+                @if (detail.source === 'FEDERATED') { External publisher — {{
+                detail.publisher }} } @else { DSpace curated repository record }
+              </dd>
+            </div>
+            <div>
+              <dt>Authority source</dt>
+              <dd>{{ detail.sourceSystem }}</dd>
+            </div>
+            <div>
+              <dt>History knowledge</dt>
+              <dd>
+                @if (historyStatus === 'HISTORY_AVAILABLE') { Observed
+                multi-version lineage } @else if (historyStatus ===
+                'OBSERVED_CURRENT_ONLY') { Current observed record only } @else
+                { Version provenance unavailable }
+              </dd>
+            </div>
+            <div>
+              <dt>Discovery indexes</dt>
+              <dd>
+                Derived projections only; Solr/OpenSearch are not authority.
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (versions$ | async; as versions) {
         <ol class="version-list">
           @for (version of versions; track version.id) {
           <li>
-            <strong>{{ version.label }}</strong>
-            <span>{{ version.releasedOn | date: 'mediumDate' }}</span>
-            @if (version.current) {
-            <span class="status-pill">Current observed record</span>
-            } @if (version.versionLabel) {
-            <span>Source version: {{ version.versionLabel }}</span>
-            } @if (version.doi) {
-            <a
-              class="source-link"
-              [href]="'https://doi.org/' + version.doi"
-              target="_blank"
-              rel="noreferrer"
-              >DOI {{ version.doi }}</a
-            >
-            } @if (version.sourceUrl) {
-            <a
-              class="source-link"
-              [href]="version.sourceUrl"
-              target="_blank"
-              rel="noreferrer"
-              >Version source</a
-            >
-            }
+            <div class="version-heading">
+              <strong>{{ version.label }}</strong>
+              @if (version.current) {
+              <span class="status-pill">Current observed record</span>
+              }
+            </div>
+            <dl class="version-provenance-list">
+              @if (version.versionLabel) {
+              <div>
+                <dt>Source version</dt>
+                <dd>{{ version.versionLabel }}</dd>
+              </div>
+              } @if (version.versionDate) {
+              <div>
+                <dt>Version date</dt>
+                <dd>{{ version.versionDate | date: 'mediumDate' }}</dd>
+              </div>
+              } @if (version.releasedOn) {
+              <div>
+                <dt>Released</dt>
+                <dd>{{ version.releasedOn | date: 'mediumDate' }}</dd>
+              </div>
+              } @if (version.capturedAt) {
+              <div>
+                <dt>Provenance captured</dt>
+                <dd>{{ version.capturedAt | date: 'medium' }}</dd>
+              </div>
+              } @if (version.sourceSha256) {
+              <div>
+                <dt>Source SHA-256</dt>
+                <dd><code>{{ version.sourceSha256 }}</code></dd>
+              </div>
+              } @if (version.isVersionOf) {
+              <div>
+                <dt>Version of</dt>
+                <dd>{{ version.isVersionOf }}</dd>
+              </div>
+              } @if (version.supersedes) {
+              <div>
+                <dt>Supersedes</dt>
+                <dd>{{ version.supersedes }}</dd>
+              </div>
+              } @if (version.changeNote) {
+              <div>
+                <dt>Change note</dt>
+                <dd>{{ version.changeNote }}</dd>
+              </div>
+              }
+            </dl>
+
+            <div class="evidence-strength">
+              <h4>What this record proves</h4>
+              <ul class="evidence-checks">
+                <li>
+                  <strong>Observation:</strong> Current record is established by
+                  the authority path shown above.
+                </li>
+                <li>
+                  <strong>Fixity:</strong>
+                  @if (version.sourceSha256) { Established by the recorded
+                  SHA-256 digest. } @else { Not established; no source digest is
+                  recorded. }
+                </li>
+                <li>
+                  <strong>Capture:</strong>
+                  @if (version.capturedAt) { Established by an actual retained
+                  observation timestamp. } @else { Not established; sync time is
+                  not substituted for capture evidence. }
+                </li>
+                <li>
+                  <strong>Lineage:</strong>
+                  @if (historyStatus === 'HISTORY_AVAILABLE') { Established from
+                  observed version-lineage records. } @else { Not established;
+                  current-record evidence does not prove earlier or later
+                  versions. }
+                </li>
+              </ul>
+            </div>
+
+            <div class="version-links">
+              @if (version.doi) {
+              <a
+                class="source-link"
+                [href]="'https://doi.org/' + version.doi"
+                target="_blank"
+                rel="noreferrer"
+                >DOI {{ version.doi }}</a
+              >
+              } @if (version.sourceUrl) {
+              <a
+                class="source-link"
+                [href]="version.sourceUrl"
+                target="_blank"
+                rel="noreferrer"
+                >Version source</a
+              >
+              }
+            </div>
           </li>
           }
         </ol>
-        }
+        } }
       </section>
     </mat-tab>
     @if ( detail.source !== 'FEDERATED' && (detail.contentType === 'DATASET' ||
