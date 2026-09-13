@@ -1,11 +1,12 @@
 package org.civicsrepo.sync;
 
-import org.civicsrepo.generated.dto.SyncAction;
-import org.civicsrepo.generated.dto.SyncMode;
-import org.civicsrepo.generated.dto.SyncRequest;
 import java.util.List;
 import org.civicsrepo.dspace.DspaceItemPayload;
 import org.civicsrepo.dspace.DspaceItemWriteGateway;
+import org.civicsrepo.generated.dto.SyncAction;
+import org.civicsrepo.generated.dto.SyncMode;
+import org.civicsrepo.generated.dto.SyncRequest;
+import org.civicsrepo.repository.RepositoryCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -15,15 +16,22 @@ public class LoggingSyncActionRunner implements SyncActionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingSyncActionRunner.class);
 
     private final DspaceItemWriteGateway dspaceItemWriteGateway;
+    private final RepositoryCatalog repositoryCatalog;
 
-    public LoggingSyncActionRunner(DspaceItemWriteGateway dspaceItemWriteGateway) {
+    public LoggingSyncActionRunner(DspaceItemWriteGateway dspaceItemWriteGateway, RepositoryCatalog repositoryCatalog) {
         this.dspaceItemWriteGateway = dspaceItemWriteGateway;
+        this.repositoryCatalog = repositoryCatalog;
     }
 
     @Override
     public void run(SyncRequest request, List<SyncAction> actions, List<SourceObject> sourceObjects) {
         if (request.getMode() == SyncMode.APPLY) {
             applyDspaceMetadata(sourceObjects);
+            // APPLY mutates the DSpace system of record. A projection or detail request can warm
+            // RepositoryCatalog while that reconciliation is still in flight; without an explicit
+            // invalidation the public read path can then serve that partial/pre-APPLY snapshot for
+            // the remainder of the cache TTL even though a direct DIFF already sees fresh DSpace.
+            repositoryCatalog.invalidate();
         }
 
         for (SyncAction action : actions) {
