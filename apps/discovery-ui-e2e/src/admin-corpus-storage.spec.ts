@@ -185,8 +185,10 @@ test.describe('Admin Sync corpus storage evidence', () => {
       if (activationStarted) {
         activationProgressPolls += 1;
       }
+      // Match the scale-progress harness: the UI has independent render and completion
+      // observers, so keep the transient activation evidence available for several polls.
       const releaseActivation =
-        activationStarted && activationProgressPolls >= 2;
+        activationStarted && activationProgressPolls >= 8;
       await route.fulfill({
         contentType: 'application/json',
         json: {
