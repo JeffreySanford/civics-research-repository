@@ -119,6 +119,28 @@ class ResearchObjectServiceTest {
     }
 
     @Test
+    void versionHistoryUsesManagedRepositoryProvenanceEvenWhenFederatedDetailWinsResolution() {
+        FederatedResearchRecord record = record(Map.of());
+        String id = record.id();
+        ResearchArtifactVersion repositoryVersion = new ResearchArtifactVersion(id, "Persisted repository snapshot")
+                .current(true)
+                .versionLabel("TIGER2025")
+                .versionDate(LocalDate.of(2025, 9, 22))
+                .sourceUrl(URI.create("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip"));
+
+        when(federatedCatalog.findById(id)).thenReturn(Optional.of(record));
+        when(datasetService.findObservedRepositoryVersion(id)).thenReturn(Optional.of(repositoryVersion));
+
+        var history = service.getResearchObjectVersionHistory(codec.encode(id));
+
+        assertThat(history.getStatus()).isEqualTo(VersionHistoryStatus.OBSERVED_CURRENT_ONLY);
+        assertThat(history.getVersions()).containsExactly(repositoryVersion);
+        assertThat(history.getVersions().getFirst().getVersionLabel()).isEqualTo("TIGER2025");
+        verify(datasetService, never()).getDataset(id);
+        verify(datasetService).findObservedRepositoryVersion(id);
+    }
+
+    @Test
     void versionHistoryDoesNotInventRepositoryProvenanceWhenItWasNotRecorded() {
         String id = "fixture-only";
         ResearchObjectDetail detail = new ResearchObjectDetail(
@@ -138,6 +160,7 @@ class ResearchObjectServiceTest {
 
         when(federatedCatalog.findById(id)).thenReturn(Optional.empty());
         when(datasetService.getDataset(id)).thenReturn(detail);
+        when(datasetService.findObservedRepositoryVersion(id)).thenReturn(Optional.empty());
 
         var history = service.getResearchObjectVersionHistory(codec.encode(id));
 
@@ -147,7 +170,7 @@ class ResearchObjectServiceTest {
             assertThat(version.getCapturedAt()).isNull();
             assertThat(version.getSupersedes()).isNull();
         });
-        verify(datasetService, never()).findObservedRepositoryVersion(id);
+        verify(datasetService).findObservedRepositoryVersion(id);
     }
 
     @Test
