@@ -122,6 +122,9 @@ jobs:
       - name: Generate deterministic DSpace SAF packages
         run: pnpm run dspace:saf:generate
 
+      - name: Prepare DSpace seed entrypoint
+        run: chmod +x tools/dspace/seed-structure.sh
+
       - name: Start and seed DSpace 9
         run: |
           docker compose --profile dspace up -d dspace-rest
