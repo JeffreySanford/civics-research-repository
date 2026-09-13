@@ -214,7 +214,7 @@ test.describe('artifact version provenance', () => {
       ),
     ).toBeVisible();
     await expect(
-      page.getAllByText(
+      page.getByText(
         /Established from observed DSpace-native version-lineage records/,
       ),
     ).toHaveCount(2);
