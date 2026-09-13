@@ -1,8 +1,10 @@
-const approvalActions = new Set([
-  'reviewaction',
-  'editaction',
-  'finaleditaction',
+const workflowRolesByAction = new Map([
+  ['reviewaction', 'reviewer'],
+  ['editaction', 'editor'],
+  ['finaleditaction', 'finaleditor'],
 ]);
+
+const approvalActions = new Set(workflowRolesByAction.keys());
 
 export function firstWorkflowTask(json, relation) {
   return json?._embedded?.[relation]?.[0] ?? null;
@@ -13,6 +15,14 @@ export function workflowApprovalBody(action) {
     throw new Error(`Unsupported DSpace workflow action: ${action ?? 'absent'}`);
   }
   return new URLSearchParams({ submit_approve: 'true' }).toString();
+}
+
+export function workflowRoleForAction(action) {
+  const role = workflowRolesByAction.get(action);
+  if (!role) {
+    throw new Error(`Unsupported DSpace workflow action: ${action ?? 'absent'}`);
+  }
+  return role;
 }
 
 function requireWorkflow(condition, message) {
@@ -57,7 +67,10 @@ export async function advanceDspaceWorkflow({
       {},
       [200, 404],
     );
-    if (itemResult.response.status === 200 && itemResult.json?.inArchive === true) {
+    if (
+      itemResult.response.status === 200 &&
+      itemResult.json?.inArchive === true
+    ) {
       return transitions;
     }
 
@@ -71,15 +84,34 @@ export async function advanceDspaceWorkflow({
       `DSpace workflow item ${itemUuid} is not archived and exposes no pooled task.`,
     );
 
-    const groupHref = poolTask?._links?.group?.href;
-    requireWorkflow(
-      groupHref,
-      `DSpace pooled task ${poolTask.id} does not expose a workflow group.`,
+    const action = poolTask.action;
+    const workflowRole = workflowRoleForAction(action);
+    const workflowItemResult = await dspace(
+      `/api/workflow/workflowitems/search/item?uuid=${encodeURIComponent(itemUuid)}`,
+      session,
+      {},
+      [200, 204],
     );
-    const groupResult = await dspace(groupHref, session, {}, [200, 204]);
+    const workflowItem = workflowItemResult.json;
+    requireWorkflow(
+      workflowItemResult.response.status === 200 && workflowItem?.id != null,
+      `DSpace item ${itemUuid} did not resolve its WorkflowItem.`,
+    );
+    const collectionHref = workflowItem?._links?.collection?.href;
+    requireWorkflow(
+      collectionHref,
+      `DSpace WorkflowItem ${workflowItem.id} does not expose its collection.`,
+    );
+
+    const groupResult = await dspace(
+      `${collectionHref}/workflowGroups/${encodeURIComponent(workflowRole)}`,
+      session,
+      {},
+      [200, 204],
+    );
     requireWorkflow(
       groupResult.response.status === 200 && groupResult.json?.uuid,
-      `DSpace pooled task ${poolTask.id} did not resolve its workflow group.`,
+      `DSpace workflow role ${workflowRole} for pooled task ${poolTask.id} did not resolve its collection group.`,
     );
     const group = groupResult.json;
     const membersHref = group?._links?.epersons?.href;
@@ -123,8 +155,11 @@ export async function advanceDspaceWorkflow({
       claimedTask?.id != null,
       `DSpace did not return a claimed task for pooled task ${poolTask.id}.`,
     );
+    requireWorkflow(
+      claimedTask.action === action,
+      `DSpace claimed task ${claimedTask.id} changed action from ${action} to ${claimedTask.action ?? 'absent'}.`,
+    );
 
-    const action = claimedTask.action;
     const claimedTaskHref =
       claimedTask?._links?.self?.href ??
       `${dspaceBaseUrl}/api/workflow/claimedtasks/${claimedTask.id}`;
