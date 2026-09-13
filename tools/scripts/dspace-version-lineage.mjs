@@ -1,5 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import {
+  dspaceSessionCookie,
+  refreshDspaceSession,
+} from './dspace-session.mjs';
 
 const apiBaseUrl =
   process.env.CIVICS_EVIDENCE_API_URL ?? 'http://localhost:8080/api';
@@ -55,21 +59,6 @@ async function sync(mode) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ mode, source: 'TIGER_LINE' }),
   });
-}
-
-function responseCookies(response) {
-  if (typeof response.headers.getSetCookie === 'function') {
-    return response.headers.getSetCookie();
-  }
-  const combined = response.headers.get('set-cookie');
-  return combined ? [combined] : [];
-}
-
-function dspaceSessionCookie(response) {
-  return responseCookies(response)
-    .flatMap((value) => value.split(','))
-    .map((value) => value.trim().split(';', 1)[0])
-    .find((value) => value.startsWith('DSPACE-XSRF-COOKIE='));
 }
 
 async function login(csrfToken, cookie) {
@@ -133,6 +122,7 @@ async function dspace(pathOrUrl, session, init = {}, accepted = [200]) {
     ...init,
     headers: authenticatedHeaders(session, init.headers ?? {}),
   });
+  refreshDspaceSession(session, response);
   const text = await response.text();
   if (!accepted.includes(response.status)) {
     throw new Error(
