@@ -5,7 +5,7 @@ import {
   RepositoryDatasetsApi,
   RepositoryMapsApi,
   type ResearchObjectDetail,
-  type DatasetVersion,
+  type ResearchArtifactVersion,
   type ResearchArtifactVersionHistory,
   type MapLayer,
 } from 'repository-api-client';
@@ -44,12 +44,13 @@ const federatedDetail = {
   accessibilityEvidenceStatus: undefined,
 } as unknown as ResearchObjectDetail;
 
-const versions: DatasetVersion[] = [
+const versions: ResearchArtifactVersion[] = [
   {
     id: 'tiger-line-north-dakota-2025-current',
     label: 'Current',
     releasedOn: '2025-08-01',
     current: true,
+    versionLabel: 'TIGER2025',
   },
 ];
 
@@ -88,12 +89,19 @@ function setup(
 }
 
 describe('DatasetsEffects', () => {
-  it('loads detail, versions, and map layers together for one dataset', async () => {
+  it('loads detail, authoritative provenance, and map layers together for one dataset', async () => {
     const getDataset = vi.fn().mockReturnValue(of(detail));
-    const getDatasetVersions = vi.fn().mockReturnValue(of(versions));
+    const getResearchObjectVersions = vi
+      .fn()
+      .mockReturnValue(of(versionHistory));
+    const getDatasetVersions = vi.fn();
     const getDatasetMapLayers = vi.fn().mockReturnValue(of(mapLayers));
     const effects = setup(
-      { getDataset, getDatasetVersions } as unknown as RepositoryDatasetsApi,
+      {
+        getDataset,
+        getDatasetVersions,
+        getResearchObjectVersions,
+      } as unknown as RepositoryDatasetsApi,
       { getDatasetMapLayers } as unknown as RepositoryMapsApi,
       of(
         DatasetsActions.datasetOpened({
@@ -105,8 +113,9 @@ describe('DatasetsEffects', () => {
     const emitted = await firstValueFrom(effects.openDataset$);
 
     expect(getDataset).toHaveBeenCalledWith('tiger-line-north-dakota-2025');
-    expect(getDatasetVersions).toHaveBeenCalledWith(
-      'tiger-line-north-dakota-2025',
+    expect(getDatasetVersions).not.toHaveBeenCalled();
+    expect(getResearchObjectVersions).toHaveBeenCalledWith(
+      'dGlnZXItbGluZS1ub3J0aC1kYWtvdGEtMjAyNQ',
     );
     expect(getDatasetMapLayers).toHaveBeenCalledWith(
       'tiger-line-north-dakota-2025',
@@ -215,7 +224,7 @@ describe('DatasetsEffects', () => {
     const effects = setup(
       {
         getDataset: vi.fn().mockReturnValue(of(detail)),
-        getDatasetVersions: vi.fn().mockReturnValue(of(versions)),
+        getResearchObjectVersions: vi.fn().mockReturnValue(of(versionHistory)),
       } as unknown as RepositoryDatasetsApi,
       {
         getDatasetMapLayers: vi
@@ -241,21 +250,25 @@ describe('DatasetsEffects', () => {
   });
 
   it('uses a readable fallback message for a non-Error failure', async () => {
+    const getResearchObjectVersions = vi.fn();
+    const getDatasetMapLayers = vi.fn();
     const effects = setup(
       {
         getDataset: vi
           .fn()
           .mockReturnValue(throwError(() => ({ status: 404 }))),
-        getDatasetVersions: vi.fn().mockReturnValue(of(versions)),
+        getResearchObjectVersions,
       } as unknown as RepositoryDatasetsApi,
       {
-        getDatasetMapLayers: vi.fn().mockReturnValue(of(mapLayers)),
+        getDatasetMapLayers,
       } as unknown as RepositoryMapsApi,
       of(DatasetsActions.datasetOpened({ datasetId: 'missing' })),
     );
 
     const emitted = await firstValueFrom(effects.openDataset$);
 
+    expect(getResearchObjectVersions).not.toHaveBeenCalled();
+    expect(getDatasetMapLayers).not.toHaveBeenCalled();
     expect(emitted).toEqual(
       DatasetsActions.datasetFailed({
         error: {
