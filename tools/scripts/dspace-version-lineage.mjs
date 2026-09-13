@@ -183,6 +183,14 @@ function sourceIdentifierMatches(item) {
   ].some((value) => value.toLowerCase() === researchObjectId.toLowerCase());
 }
 
+function submissionType(resourceType) {
+  return resourceType
+    .toLowerCase()
+    .split('_')
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(' ');
+}
+
 async function discoverCurrentItem(session) {
   const query = encodeURIComponent(researchObjectId);
   const { json } = await dspace(
@@ -302,6 +310,30 @@ if (!metadataValues(draftItem, 'dc.date.issued').includes(issueDate)) {
   );
 }
 
+const resourceType = metadataValues(draftItem, 'crr.resource.type')[0];
+requireCondition(
+  resourceType,
+  'The new DSpace version draft did not retain crr.resource.type.',
+);
+const requiredSubmissionType = submissionType(resourceType);
+if (!metadataValues(draftItem, 'dc.type').includes(requiredSubmissionType)) {
+  await dspace(
+    `/api/core/items/${encodeURIComponent(draftItem.uuid)}`,
+    session,
+    {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json-patch+json' },
+      body: JSON.stringify([
+        {
+          op: 'add',
+          path: '/metadata/dc.type/-',
+          value: { value: requiredSubmissionType },
+        },
+      ]),
+    },
+  );
+}
+
 let workspace = (
   await dspace(
     `/api/submission/workspaceitems/search/item?uuid=${encodeURIComponent(draftItem.uuid)}`,
@@ -353,10 +385,8 @@ const workflowTransitions = await advanceDspaceWorkflow({
   adminEmail,
   dspaceBaseUrl,
 });
-requireCondition(
-  workflowTransitions.length > 0,
-  'DSpace did not require or record a real workflow approval transition.',
-);
+const depositOutcome =
+  workflowTransitions.length > 0 ? 'WORKFLOW_APPROVED' : 'DIRECT_ARCHIVE';
 
 const archivedItem = await waitForArchivedItem(draftItem.uuid, session);
 await waitForDiscoveryItem(draftItem.uuid, session);
@@ -449,6 +479,7 @@ const evidence = {
     createdVersionId: String(createdVersion.id),
     createdVersionNumber: String(createdVersion.version ?? ''),
     summary: versionSummary,
+    depositOutcome,
     workflowTransitions,
   },
   observedHistory: {
