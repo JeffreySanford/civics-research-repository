@@ -8,6 +8,9 @@ on:
       - '.github/workflows/metadata-fixture-regenerate.yml'
       - 'tools/scripts/generate-saf.mjs'
 
+permissions:
+  contents: write
+
 jobs:
   regenerate:
     runs-on: ubuntu-latest
@@ -16,14 +19,15 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: feat/open-census-metadata-profile
-          persist-credentials: false
 
       - name: Regenerate fixture catalog from authority catalog
         run: node tools/scripts/generate-saf.mjs
 
-      - name: Upload regenerated fixture catalog
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: metadata-fixture-${{ github.run_id }}
-          path: apps/repository-api/src/main/resources/discovery-fixture-catalog.json
-          if-no-files-found: error
+      - name: Commit generated fixture catalog
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/repository-api/src/main/resources/discovery-fixture-catalog.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore(metadata): regenerate fixture catalog'
+          git push origin HEAD:feat/open-census-metadata-profile
