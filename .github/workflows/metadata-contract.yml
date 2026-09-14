@@ -38,5 +38,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint OpenAPI contract
+        run: pnpm openapi:lint
+
+      - name: Check generated client drift
+        run: pnpm openapi:check
+
       - name: Test typed metadata contract
         run: pnpm nx test repository-api-client
