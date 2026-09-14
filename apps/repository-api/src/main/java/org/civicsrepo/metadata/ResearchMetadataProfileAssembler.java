@@ -26,7 +26,7 @@ public final class ResearchMetadataProfileAssembler {
                 detail.getId(),
                 detail.getContentType(),
                 detail.getTitle(),
-                detail.getSummary(),
+                detail.getAbstractText(),
                 detail.getPublisher(),
                 detail.getProgram(),
                 detail.getCitation(),
