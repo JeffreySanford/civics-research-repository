@@ -63,7 +63,7 @@ Primary types expected by resource:
 - `ScholarlyArticle` or the narrowest truthful `CreativeWork` type for publications;
 - `SoftwareSourceCode` for source code;
 - `CreativeWork` for methodology/supporting material where a more specific type would overstate semantics;
-- `ResearchProject` only if the currently supported Schema.org vocabulary and mapped data support the claim; otherwise `CreativeWork`/`Thing` with explicit additional type semantics.
+- `ResearchProject` only if the supported Schema.org vocabulary and mapped data support the claim; otherwise `CreativeWork`/`Thing` with explicit additional type semantics.
 
 Relevant common properties include:
 
@@ -157,9 +157,9 @@ Authoritative source facts
 
 ## 4. New normalized profile boundary
 
-Introduce a backend model conceptually named `ResearchMetadataProfile`.
+Introduce a backend domain model named `ResearchMetadataProfile`.
 
-The exact Java class decomposition may evolve during implementation, but the semantic boundary is fixed by this document.
+The implementation may split this boundary into focused Java records/classes for identity, access, distributions, people, relations, and version evidence, but every renderer must consume the same assembled `ResearchMetadataProfile` authority boundary rather than independently re-reading repository fields.
 
 The profile is assembled from:
 
@@ -169,7 +169,7 @@ The profile is assembled from:
 - normalized file/distribution information;
 - normalized creator identity and relations.
 
-The profile should contain normalized facts, not format-specific property names.
+The profile contains normalized facts, not format-specific property names.
 
 ### 4.1 Identity
 
@@ -291,16 +291,15 @@ The final implementation documentation will include a complete field-by-field ta
 
 Every DataCite-oriented export exposes a readiness assessment separate from the mapped metadata.
 
-Possible conceptual states:
+Readiness states are:
 
 - `REGISTRATION_READY`;
 - `MISSING_DOI`;
-- `MISSING_MANDATORY_METADATA`;
-- `NOT_APPLICABLE` only if a future resource type is intentionally excluded.
+- `MISSING_MANDATORY_METADATA`.
 
 A record is registration-ready only when:
 
-- DOI is present and syntactically valid enough for the CRR validator;
+- DOI is present and passes the CRR DOI syntax validator;
 - at least one creator is present;
 - title is present;
 - publisher is present;
@@ -311,8 +310,6 @@ The application does **not** register or mint the DOI.
 
 ### 6.2 Resource type mapping
 
-Initial intended mapping:
-
 | CRR type | DataCite resourceTypeGeneral |
 |---|---|
 | DATASET | Dataset |
@@ -322,7 +319,7 @@ Initial intended mapping:
 | SUPPORTING_MATERIAL | Other |
 | PROJECT | Project |
 
-The free-text `resourceType` should preserve the more specific CRR meaning where useful.
+The free-text `resourceType` preserves the more specific CRR meaning where useful.
 
 ### 6.3 Creators and ORCID
 
@@ -348,7 +345,7 @@ Truthful initial relation mappings:
 
 `uses` remains unmapped by default because `References`, `Requires`, and `IsDerivedFrom` each mean something narrower than generic use.
 
-The crosswalk must document this intentional loss rather than claiming universal relation coverage.
+The crosswalk documents this intentional loss rather than claiming universal relation coverage.
 
 ---
 
@@ -365,13 +362,13 @@ Schema.org output is generated from the normalized profile and included on publi
 - creator and ORCID must come from normalized author identity;
 - restricted resources may be indexed as metadata but must not expose a fake public download;
 - dataset distributions are emitted only for actual public source distributions/files;
-- JSON-LD generation remains backend-owned or shared-model-owned, not manually duplicated in templates.
+- JSON-LD generation remains backend-owned, not manually duplicated in templates.
 
 ### 7.2 Restricted dataset behavior
 
 For the existing LEHD restricted microdata fixture:
 
-- Schema.org type may remain `Dataset` because the described resource is genuinely a dataset;
+- Schema.org type remains `Dataset` because the described resource is genuinely a dataset;
 - `conditionsOfAccess` states the restricted access conditions;
 - authoritative FSRDC/access guidance is linked when recorded;
 - no `DataDownload` is emitted because CRR holds no downloadable confidential data;
@@ -411,7 +408,7 @@ A restricted dataset with no files may still have dataset-level metadata and acc
 
 ### 8.3 Restrictions
 
-The profile must support:
+The profile supports:
 
 - `accessRights` plain-language statement;
 - structured AccessRestriction where enough information is recorded;
@@ -428,25 +425,25 @@ Issue #115 extends the normalized internal model because the current `accessLeve
 
 Initial fields:
 
-- `accessMechanism` — controlled CRR value where possible (`FSRDC`, `SAP`, `REMOTE_ACCESS`, `PUBLISHER_WORKFLOW`, `OTHER`);
+- `accessMechanism` — controlled CRR value: `FSRDC`, `SAP`, `REMOTE_ACCESS`, `PUBLISHER_WORKFLOW`, `OTHER`;
 - `accessUrl` — authoritative application/request/access-information URL;
 - `accessInstructions` — human explanation of eligibility/process;
 - `restrictionBasis` — legal/policy basis when known.
 
 ### 9.1 DSpace managed metadata
 
-Proposed managed fields:
+Managed fields:
 
 - `crr.access.mechanism`;
 - `crr.access.url`;
 - `crr.access.instructions`;
 - `crr.access.restrictionbasis`.
 
-These fields must participate in DSpace APPLY/DIFF reconciliation with the same no-invention behavior as existing `crr.*` managed fields.
+These fields participate in DSpace APPLY/DIFF reconciliation with the same no-invention behavior as existing `crr.*` managed fields.
 
 ### 9.2 LEHD restricted fixture
 
-The existing `lehd-microdata-restricted` fixture becomes the primary restricted-access verification record.
+The existing `lehd-microdata-restricted` fixture is the primary restricted-access verification record.
 
 Expected semantics:
 
@@ -463,11 +460,11 @@ Expected semantics:
 
 ---
 
-## 10. Export service boundary
+## 10. Export service boundary and API contract
 
-Introduce a backend export service whose input is the normalized `ResearchMetadataProfile`.
+Introduce a backend `ResearchMetadataExportService` whose input is the assembled `ResearchMetadataProfile`.
 
-Conceptual responsibilities:
+Responsibilities:
 
 - build profile from canonical research identity;
 - render DataCite 4.7-oriented JSON;
@@ -479,12 +476,12 @@ Conceptual responsibilities:
 
 Format-specific logic must not leak into Angular components.
 
-### 10.1 Proposed API shape
+### 10.1 Exact API paths
 
-Exact path naming will be validated against current OpenAPI conventions during implementation, but the contract should resemble:
+The implementation uses these explicit endpoints:
 
 ```text
-GET /research/{researchId}/exports/profile
+GET /research/{researchId}/metadata-profile
 GET /research/{researchId}/exports/datacite
 GET /research/{researchId}/exports/schema-org
 GET /research/{researchId}/exports/dcat-us
@@ -493,15 +490,26 @@ GET /research/{researchId}/exports/bibtex
 GET /research/{researchId}/exports/ris
 ```
 
-Alternative accepted implementation: one typed export endpoint with explicit `format` values if that produces a cleaner generated client and content negotiation behavior.
+Response media types:
 
-Regardless of endpoint organization:
+- metadata profile: `application/json`;
+- DataCite: `application/json`;
+- Schema.org: `application/ld+json`;
+- DCAT-US: `application/json`;
+- citation: `text/plain; charset=UTF-8`;
+- BibTeX: `application/x-bibtex; charset=UTF-8` where supported by Spring content negotiation, otherwise documented `text/plain; charset=UTF-8` fallback;
+- RIS: `application/x-research-info-systems; charset=UTF-8` where supported, otherwise documented `text/plain; charset=UTF-8` fallback.
+
+API behavior:
 
 - the profile is assembled once through one backend authority path;
-- all renderers use the same profile;
-- DCAT-US requests for inapplicable resource types return an explicit non-applicable result/status, not a misleading document;
+- all renderers consume that profile;
+- `/exports/dcat-us` returns HTTP `409` with a typed `EXPORT_NOT_APPLICABLE` problem response for non-DCAT resource types rather than returning a misleading document;
+- DataCite export remains available for non-registration-ready records and carries its readiness state without inventing mandatory values;
 - malformed research IDs retain current 400 behavior;
-- unknown objects retain current not-found behavior.
+- unknown objects retain current 404 behavior.
+
+The OpenAPI contract must model these endpoints and typed error behavior explicitly.
 
 ---
 
@@ -520,8 +528,8 @@ BibTeX generation is backend-owned.
 Type mapping must be conservative. Examples:
 
 - PUBLICATION → an appropriate article/misc form only when publication metadata supports it;
-- DATASET → `@misc` if no more precise interoperable type is available in the supported formatter;
-- CODE → `@software` only if target BibTeX tooling/profile supports it; otherwise documented fallback;
+- DATASET → `@misc` when no more precise interoperable type is supported by the chosen BibTeX contract;
+- CODE → `@software` only if the chosen BibTeX contract supports it; otherwise documented fallback;
 - PROJECT/METHODOLOGY/SUPPORTING_MATERIAL → documented conservative fallback.
 
 ### 11.3 RIS
@@ -540,7 +548,7 @@ Both Angular experiences consume the backend export model.
 
 Add a compact `Cite / Export` area to research detail.
 
-Expected functions:
+Functions:
 
 - show canonical human citation;
 - copy citation;
@@ -556,10 +564,10 @@ Expected functions:
 
 Use the same backend export data with a mobile-appropriate presentation:
 
-- compact action group or disclosure;
+- compact action group/disclosure;
 - copy citation;
 - format links/actions large enough for touch;
-- no horizontally overflowing JSON preview required;
+- no horizontally overflowing JSON preview requirement;
 - source/access guidance remains prominent for restricted objects.
 
 ### 12.3 Accessibility contract
@@ -602,7 +610,7 @@ The export service must continue working if Solr/OpenSearch are rebuilt from zer
 
 Verification is a product requirement for #115, not a final cleanup task.
 
-Every implementation PR must include tests that prove both positive behavior and the important negative truth boundaries.
+Every implementation PR includes tests that prove both positive behavior and the important negative truth boundaries.
 
 ### 14.1 Verification layers
 
@@ -761,7 +769,7 @@ Against the real local/CI service stack:
 - fetch Schema.org export;
 - fetch applicable DCAT-US export;
 - verify restricted record remains fileless;
-- verify a publication does not claim DCAT applicability;
+- verify a publication returns DCAT not-applicable;
 - verify native DSpace version 2/1 lineage survives into relevant export relations;
 - verify Solr/OpenSearch rebuild is not required to generate full exports.
 
@@ -780,11 +788,23 @@ No #115 PR merges without:
 
 The export work is not allowed to weaken #114 evidence.
 
+### 14.2 Deterministic/golden-output verification
+
+Structured exports and citation formats must be deterministic for identical profile input.
+
+Tests must prove:
+
+- stable array ordering where order is semantic or exposed in committed evidence;
+- stable object construction/serialization sufficient for golden-file review;
+- no current timestamp is injected merely by rendering;
+- no random identifier is introduced by rendering;
+- golden examples are regenerated only when a reviewed semantic change occurs.
+
 ---
 
 ## 15. Dedicated standards validation command
 
-Add a repository-level command, tentatively:
+The required repository-level command is:
 
 ```text
 pnpm metadata:validate
@@ -792,7 +812,7 @@ pnpm metadata:validate
 
 Its responsibility is to validate representative generated metadata independently of Angular rendering.
 
-Expected validation sequence:
+Validation sequence:
 
 1. produce canonical representative profile fixtures;
 2. render DataCite-oriented JSON;
@@ -802,7 +822,8 @@ Expected validation sequence:
 6. validate DCAT-US documents with the pinned official JSON Schema 2020-12 definition;
 7. verify non-applicable resource types do not emit DCAT documents;
 8. verify restricted fixture has no public distribution download;
-9. fail non-zero on any violation.
+9. verify golden outputs are deterministic;
+10. fail non-zero on any violation.
 
 This command becomes a required CI gate rather than an optional developer utility.
 
@@ -813,6 +834,8 @@ External schemas used in CI must be pinned or vendored with provenance/version d
 ## 16. Three-PR implementation sequence
 
 ### PR 1 — Metadata profile foundation
+
+Branch: `feat/open-census-metadata-profile`
 
 Scope:
 
@@ -834,6 +857,8 @@ Exit criteria:
 
 ### PR 2 — Structured export engine
 
+Branch from merged PR 1: `feat/open-census-metadata-exports`
+
 Scope:
 
 - DataCite 4.7 renderer/readiness;
@@ -851,10 +876,13 @@ Exit criteria:
 - DataCite no-fake-DOI tests green;
 - DCAT-US JSON Schema validation green;
 - relation/version mapping tests green;
+- deterministic golden exports green;
 - generated clients drift-free;
 - live API evidence for representative records.
 
 ### PR 3 — Cite / Export UX and browser evidence
+
+Branch from merged PR 2: `feat/open-census-cite-export-ui`
 
 Scope:
 
@@ -886,9 +914,9 @@ Issue #115 closes only after PR 3 and all issue-level exit criteria pass.
 
 Documentation is a first-class output of #115.
 
-At completion the repository should contain, at minimum:
+At completion the repository contains, at minimum:
 
-### 17.1 `open-census-metadata-profile.md`
+### 17.1 `documentation/open-census-metadata-profile.md`
 
 A durable implementation reference containing:
 
@@ -906,7 +934,7 @@ A durable implementation reference containing:
 - distinction between Schema.org web discoverability and repository authority;
 - why DCAT-US is intentionally dataset-scoped.
 
-### 17.2 `metadata-export-verification.md`
+### 17.2 `documentation/metadata-export-verification.md`
 
 Operational verification guide containing:
 
@@ -932,7 +960,7 @@ Update repository architecture/status/demo documents so they accurately state:
 - no DOI minting;
 - no official Open Census implementation claim.
 
-### 17.4 Examples
+### 17.4 Generated examples
 
 Keep committed, deterministic examples for:
 
@@ -948,9 +976,9 @@ Examples should be generated by production renderers where practical to prevent 
 
 ## 18. CI evidence and artifact retention
 
-Where useful, CI should upload a small metadata-evidence artifact analogous to the DSpace provenance artifact.
+CI uploads a small metadata-evidence artifact analogous to the DSpace provenance artifact.
 
-Suggested artifact contents:
+Required artifact contents:
 
 ```text
 metadata-evidence/
@@ -967,7 +995,7 @@ metadata-evidence/
   validation-summary.json
 ```
 
-`validation-summary.json` should record:
+`validation-summary.json` records:
 
 - exact standards versions;
 - fixture identifiers;
@@ -975,7 +1003,8 @@ metadata-evidence/
 - DCAT applicability state;
 - schema validation result;
 - restricted-download assertion;
-- timestamp/build SHA.
+- deterministic-output assertion;
+- build SHA.
 
 No confidential or restricted microdata enters the artifact. Only metadata about the existing metadata-only restricted fixture is allowed.
 
@@ -983,13 +1012,13 @@ No confidential or restricted microdata enters the artifact. Only metadata about
 
 ## 19. Failure and error semantics
 
-The export layer should fail explicitly rather than silently downgrade truth.
+The export layer fails explicitly rather than silently downgrading truth.
 
 Examples:
 
-- missing DOI → DataCite export/readiness reports missing DOI, not generated DOI;
+- missing DOI → DataCite readiness reports missing DOI, not generated DOI;
 - missing creator → non-registration-ready DataCite result;
-- publication requested as DCAT-US → explicit not-applicable response;
+- publication requested as DCAT-US → HTTP 409 typed `EXPORT_NOT_APPLICABLE` response;
 - malformed canonical ID → 400;
 - unknown object → 404;
 - inaccessible repository history → profile can still expose current observed detail but must not synthesize version relationships;
@@ -1003,7 +1032,7 @@ Examples:
 
 This remains a public demo repository, but metadata correctness around restricted resources is security-relevant because bad metadata could imply access that does not exist.
 
-The design therefore forbids:
+The design forbids:
 
 - storing confidential LEHD microdata;
 - fabricating restricted-resource download links;
@@ -1021,7 +1050,7 @@ The restricted object is a citable metadata record describing a resource and its
 
 Exports are small metadata documents.
 
-Initial implementation should prefer deterministic on-demand generation from the normalized profile rather than introducing a separate export persistence/cache subsystem.
+Initial implementation uses deterministic on-demand generation from the normalized profile rather than introducing a separate export persistence/cache subsystem.
 
 Reasons:
 
@@ -1117,6 +1146,7 @@ Issue #115 is complete only when all statements below are proven with automated 
 19. MapLibre regression remains green.
 20. DSpace APPLY/DIFF provenance/version-lineage regression remains green.
 21. Verbose standards/crosswalk/verification documentation is committed and consistent with production behavior.
+22. Structured exports and evidence examples are deterministic for identical authoritative input.
 
 The user-facing and machine-facing result must answer:
 
