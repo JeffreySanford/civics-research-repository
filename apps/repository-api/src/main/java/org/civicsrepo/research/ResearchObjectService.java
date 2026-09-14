@@ -7,6 +7,8 @@ import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;
 import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.VersionHistoryStatus;
+import org.civicsrepo.metadata.ResearchMetadataProfile;
+import org.civicsrepo.metadata.ResearchMetadataProfileAssembler;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,16 +20,19 @@ public final class ResearchObjectService {
     private final FederatedMetadataCatalog federatedMetadataCatalog;
     private final FederatedResearchObjectMapper federatedMapper;
     private final DatasetService datasetService;
+    private final ResearchMetadataProfileAssembler researchMetadataProfileAssembler;
 
     public ResearchObjectService(
             ResearchIdCodec researchIdCodec,
             FederatedMetadataCatalog federatedMetadataCatalog,
             FederatedResearchObjectMapper federatedMapper,
-            DatasetService datasetService) {
+            DatasetService datasetService,
+            ResearchMetadataProfileAssembler researchMetadataProfileAssembler) {
         this.researchIdCodec = researchIdCodec;
         this.federatedMetadataCatalog = federatedMetadataCatalog;
         this.federatedMapper = federatedMapper;
         this.datasetService = datasetService;
+        this.researchMetadataProfileAssembler = researchMetadataProfileAssembler;
     }
 
     public ResearchObjectDetail getResearchObject(String researchIdToken) {
@@ -45,8 +50,21 @@ public final class ResearchObjectService {
     }
 
     public ResearchArtifactVersionHistory getResearchObjectVersionHistory(String researchIdToken) {
-        ResearchObjectDetail detail = getResearchObject(researchIdToken);
+        return buildVersionHistory(getResearchObject(researchIdToken));
+    }
 
+    /**
+     * Returns the immutable application metadata authority for one canonical research identity.
+     *
+     * <p>The detail is resolved exactly once, and version authority is derived from that same
+     * resolved identity before the generated DTOs are copied into the immutable profile.
+     */
+    public ResearchMetadataProfile getResearchMetadataProfile(String researchIdToken) {
+        ResearchObjectDetail detail = getResearchObject(researchIdToken);
+        return researchMetadataProfileAssembler.assemble(detail, buildVersionHistory(detail));
+    }
+
+    private ResearchArtifactVersionHistory buildVersionHistory(ResearchObjectDetail detail) {
         // Detail presentation may resolve through a federated authority first, but DSpace remains
         // authoritative for repository version evidence when the same canonical identity is held.
         List<ResearchArtifactVersion> repositoryVersions =
