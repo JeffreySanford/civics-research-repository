@@ -35,6 +35,7 @@ const detail = {
   files: [],
   citation: 'Version provenance contract example.',
   sourceUrl: 'https://example.gov/research/version-history-story',
+  subjects: ['Version provenance'],
   relatedResearch: [],
   contentType: 'DATASET',
   accessLevel: 'PUBLIC',
