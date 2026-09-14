@@ -1,4 +1,4 @@
-name: Metadata Task 3 RED
+name: Metadata Task 3 Verify
 
 on:
   push:
@@ -6,11 +6,14 @@ on:
       - feat/open-census-metadata-profile
     paths:
       - '.github/workflows/metadata-task3-red.yml'
+      - 'apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessMetadata.java'
+      - 'apps/repository-api/src/main/java/org/civicsrepo/sources/ResearchObjectMetadata.java'
+      - 'apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java'
       - 'apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java'
       - 'apps/repository-api/src/test/resources/catalog-metadata-reader-invalid-date.json'
 
 jobs:
-  red:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -29,16 +32,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify repository-api contract is RED
-        shell: bash
+      - name: Test full-fidelity catalog parsing
+        run: pnpm nx test repository-api
+
+      - name: Reject current-clock fabrication in catalog reader
         run: |
-          set +e
-          pnpm nx test repository-api > /tmp/task3-red.log 2>&1
-          status=$?
-          set -e
-          cat /tmp/task3-red.log
-          if [ "$status" -eq 0 ]; then
-            echo 'Expected Task 3 reader contract to fail before implementation.' >&2
+          if grep -F 'LocalDate.now()' apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java; then
+            echo 'CatalogMetadataReader must not fabricate release dates from the current clock.' >&2
             exit 1
           fi
-          grep -Eq 'accessGuidance|CatalogMetadataReaderTest|compilation failed|cannot find symbol' /tmp/task3-red.log
