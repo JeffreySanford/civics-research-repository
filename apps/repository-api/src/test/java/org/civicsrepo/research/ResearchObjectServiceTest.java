@@ -169,6 +169,7 @@ class ResearchObjectServiceTest {
                         "Fixture object.",
                         URI.create("https://example.gov/fixture"),
                         List.of(),
+                        List.of(),
                         ResearchObjectOrigin.FIXTURE,
                         SourceSystem.OTHER)
                 .releasedOn(LocalDate.of(2025, 1, 1));
@@ -207,6 +208,7 @@ class ResearchObjectServiceTest {
                         List.of(),
                         "U.S. Census Bureau. 2025 TIGER/Line.",
                         URI.create("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip"),
+                        List.of(),
                         List.of(),
                         ResearchObjectOrigin.REPOSITORY,
                         SourceSystem.CENSUS)
