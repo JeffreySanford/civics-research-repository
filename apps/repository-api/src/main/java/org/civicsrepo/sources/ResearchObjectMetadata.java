@@ -6,6 +6,7 @@ import java.util.List;
 import org.civicsrepo.generated.dto.AccessLevel;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
+import org.civicsrepo.metadata.ResearchAccessMetadata;
 
 /**
  * Normalized metadata for one research object, as a harvest adapter produces it.
@@ -42,14 +43,63 @@ public record ResearchObjectMetadata(
         String doi,
         List<ResearchAuthorMetadata> authors,
         List<ResearchObjectRelation> relations,
-        ResearchArtifactProvenance versionProvenance) {
+        ResearchArtifactProvenance versionProvenance,
+        ResearchAccessMetadata accessGuidance) {
 
     public ResearchObjectMetadata {
         authors = authors == null ? List.of() : List.copyOf(authors);
         relations = relations == null ? List.of() : List.copyOf(relations);
     }
 
-    /** Compatibility constructor for adapters/tests that do not yet expose artifact provenance. */
+    /** Compatibility constructor for callers that already supply artifact provenance. */
+    public ResearchObjectMetadata(
+            String id,
+            String title,
+            ResearchProgram program,
+            String publisher,
+            String summary,
+            String geography,
+            String geographicLevel,
+            Integer vintageYear,
+            LocalDate releasedOn,
+            String sourceUrl,
+            String documentationUrl,
+            String citation,
+            List<ResearchObjectFile> files,
+            ResearchObjectType contentType,
+            AccessLevel accessLevel,
+            String accessNote,
+            String license,
+            String doi,
+            List<ResearchAuthorMetadata> authors,
+            List<ResearchObjectRelation> relations,
+            ResearchArtifactProvenance versionProvenance) {
+        this(
+                id,
+                title,
+                program,
+                publisher,
+                summary,
+                geography,
+                geographicLevel,
+                vintageYear,
+                releasedOn,
+                sourceUrl,
+                documentationUrl,
+                citation,
+                files,
+                contentType,
+                accessLevel,
+                accessNote,
+                license,
+                doi,
+                authors,
+                relations,
+                versionProvenance,
+                null);
+    }
+
+    /** Compatibility constructor for adapters/tests that do not expose artifact provenance. */
     public ResearchObjectMetadata(
             String id,
             String title,
@@ -92,6 +142,7 @@ public record ResearchObjectMetadata(
                 doi,
                 authors,
                 relations,
+                null,
                 null);
     }
 
@@ -169,7 +220,8 @@ public record ResearchObjectMetadata(
                 null,
                 List.of(),
                 List.of(),
-                versionProvenance);
+                versionProvenance,
+                null);
     }
 
     /** One author, with an ORCID only where the researcher has a public one. */
