@@ -6,6 +6,8 @@ on:
       - feat/open-census-metadata-profile
     paths:
       - '.github/workflows/metadata-task3-red.yml'
+      - 'apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java'
+      - 'apps/repository-api/src/test/resources/catalog-metadata-reader-invalid-date.json'
 
 jobs:
   red:
