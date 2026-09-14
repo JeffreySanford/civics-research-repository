@@ -26,7 +26,7 @@ class SaipeCountyChoroplethServiceTest {
         assertThat(choropleth.getCounties()).hasSize(53);
         assertThat(choropleth.getCounties().getFirst().getPovertyRate()).isPositive();
 
-        Map<String, Object> geoJson = choropleth.getGeoJson();
+        Map<String, Object> geoJson = geoJson(choropleth.getGeoJson());
         assertThat(geoJson).containsEntry("geometryVintage", 2023);
         assertThat(geoJson).containsEntry("thematicVintage", 2023);
         assertThat(geoJson.get("geometrySourceUrl")).isEqualTo("https://example.test/tigerweb/2023/counties");
@@ -47,7 +47,8 @@ class SaipeCountyChoroplethServiceTest {
         assertThat(choropleth.getGeography()).isEqualTo("California");
         assertThat(choropleth.getCounties()).hasSize(10);
         @SuppressWarnings("unchecked")
-        var features = (java.util.List<Map<String, Object>>) choropleth.getGeoJson().get("features");
+        var features =
+                (java.util.List<Map<String, Object>>) geoJson(choropleth.getGeoJson()).get("features");
         assertThat(features).hasSize(10);
     }
 
@@ -90,6 +91,12 @@ class SaipeCountyChoroplethServiceTest {
                         fixtureGeoJson(stateFips, omittedGeoid));
             }
         };
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> geoJson(Object value) {
+        assertThat(value).isInstanceOf(Map.class);
+        return (Map<String, Object>) value;
     }
 
     private ObjectNode fixtureGeoJson(String stateFips, String omittedGeoid) {
