@@ -95,15 +95,14 @@ jobs:
           path.write_text(text)
           PY
 
-      - name: Generate and verify API contract
+      - name: Generate and test API contract
         run: |
           pnpm openapi:lint
           pnpm openapi:generate
-          pnpm openapi:check
           pnpm nx test repository-api-client
           git diff --check
 
-      - name: Commit generated contract
+      - name: Commit, verify drift, and push generated contract
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -112,4 +111,5 @@ jobs:
             exit 0
           fi
           git commit -m 'feat(metadata): extend research detail profile inputs'
+          pnpm openapi:check
           git push origin HEAD:feat/open-census-metadata-profile
