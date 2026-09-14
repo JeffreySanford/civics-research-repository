@@ -2233,6 +2233,12 @@
       "accessLevel": "RESTRICTED",
       "license": "Restricted under Title 13, U.S. Code. Not redistributable.",
       "accessNote": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center. No confidential records are held by this repository.",
+      "accessGuidance": {
+        "mechanism": "FSRDC",
+        "accessUrl": "https://www.census.gov/about/adrm/fsrdc.html",
+        "instructions": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.",
+        "restrictionBasis": "Title 13, U.S. Code"
+      },
       "authors": [],
       "relations": [
         {

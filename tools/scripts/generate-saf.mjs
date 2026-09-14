@@ -147,6 +147,7 @@ function buildResearchObject(entry) {
     access: entry.access ?? 'PUBLIC',
     license: entry.license ?? catalog.defaultLicense,
     accessNote: entry.accessNote,
+    accessGuidance: entry.accessGuidance ?? null,
     doi: entry.doi,
     authors: entry.authors ?? [],
     relations: entry.relations ?? [],
@@ -237,6 +238,22 @@ function writeItem(item) {
   // is how a reader can tell the two apart at a glance.
   if (item.accessNote) {
     crr += dcvalue('rights', 'accessnote', item.accessNote);
+  }
+  if (item.accessGuidance?.mechanism) {
+    crr += dcvalue('access', 'mechanism', item.accessGuidance.mechanism);
+  }
+  if (item.accessGuidance?.accessUrl) {
+    crr += dcvalue('access', 'url', item.accessGuidance.accessUrl);
+  }
+  if (item.accessGuidance?.instructions) {
+    crr += dcvalue('access', 'instructions', item.accessGuidance.instructions);
+  }
+  if (item.accessGuidance?.restrictionBasis) {
+    crr += dcvalue(
+      'access',
+      'restrictionbasis',
+      item.accessGuidance.restrictionBasis,
+    );
   }
   // Omitted rather than emitted blank. A DOI field present but empty reads as "no DOI exists",
   // which is a claim; absence reads as "not recorded", which is the truth.
@@ -401,6 +418,7 @@ function writeFixtureCatalog(catalogItems) {
       accessLevel: item.access,
       license: item.license,
       accessNote: item.accessNote,
+      ...(item.accessGuidance ? { accessGuidance: item.accessGuidance } : {}),
       doi: item.doi,
       authors: item.authors,
       relations: item.relations,
