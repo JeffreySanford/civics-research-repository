@@ -74,6 +74,7 @@ public class RepositoryObjectMapper {
                 files(item),
                 firstValue(item, "dc.identifier.citation").orElse(title(item)),
                 URI.create(sourceUrl(item)),
+                allValues(item, "dc.subject"),
                 relatedResearch,
                 ResearchObjectOrigin.REPOSITORY,
                 ResearchSourceSystemClassifier.forProgram(researchProgram))
