@@ -251,37 +251,37 @@ Each normalized relation retains:
 
 The final implementation documentation will include a complete field-by-field table. The table below defines the required mapping direction and interpretation.
 
-| CRR semantic | DSpace / DC | DataCite 4.7 | Schema.org | DCAT-US 3.0 | Notes |
-|---|---|---|---|---|---|
-| canonical research id | `crr.identifier.source`, `dc.identifier.other` | `alternateIdentifiers` when useful; never primary DOI unless actually DOI | `identifier` | `identifier` where applicable | CRR ID is not a DOI |
-| DOI | `crr.identifier.doi` | `doi` / Identifier | `identifier` as `PropertyValue` or DOI URL | `identifier` where appropriate | Preserve exact DOI |
-| object type | `crr.resource.type`, `dc.type` | `resourceType` + `resourceTypeGeneral` | most specific truthful `@type` | Dataset/DataService only where applicable | Never force non-data objects into DCAT |
-| title | `dc.title` | `titles` | `name` | `title` | Required in all applicable exports |
-| abstract | `dc.description.abstract` | Description/Abstract | `description` | `description` | No synthetic abstract |
-| publisher | `dc.publisher` | `publisher` | `publisher` | `publisher` | Organization where representable |
-| program | `crr.program` | Subject/contributor context only if truthful | `about` / additional property if useful | `programCode` only if valid federal code mapping exists | Do not misuse standard fields |
-| authors | `dc.contributor.author`, researcher fields | `creators` | `creator` | attribution only where profile supports | Name order preserved |
-| ORCID | researcher managed metadata | `nameIdentifiers` with ORCID scheme | `sameAs` or identifier | not forced | Normalize URL vs bare ORCID at rendering boundary |
-| release date | `dc.date.issued` | `publicationYear` + Date where applicable | `datePublished` | `issued` / `modified` only according to DCAT semantics | Publication year must come from an observed date/fact |
-| source URL | `crr.source.url`, `dc.identifier.uri` | alternate/related identifier if semantics fit | `url` | `landingPage` / distribution access URL depending role | DSpace handle may coexist but not replace source URL |
-| documentation URL | `crr.documentation.url`, `dc.relation.uri` | related identifier when semantics fit | `subjectOf` / related link if useful | `describedBy` where it is actually data documentation | Avoid semantic overreach |
-| citation | `dc.identifier.citation` | generated from DataCite-compatible metadata or retained citation | `citation` | related document/rights only if appropriate | Human citation remains explicit output |
-| license | `crr.rights.license` | `rightsList` / rights | `license` | distribution `license` | Restricted statement is not an open license |
-| access level | `crr.rights.access` | rights/description only where useful | `conditionsOfAccess` | `accessRights` + structured restrictions | Do not export obsolete DCAT-US `accessLevel` as v3 core |
-| access note | `crr.rights.accessnote` | Description/rights note if useful | `conditionsOfAccess` | `accessRights` / restriction objects | Preserve human wording |
-| access mechanism | new `crr.access.mechanism` | descriptive metadata only | `conditionsOfAccess` | access restriction / access URL | e.g. FSRDC, SAP, RAP |
-| access/application URL | new `crr.access.url` | alternate/related URL only if semantics fit | `url`/`conditionsOfAccess` context | distribution `accessURL` | Must be authoritative workflow URL |
-| restriction basis | new `crr.access.restrictionbasis` | rights description | `conditionsOfAccess` | access/use restriction | e.g. Title 13 statement when actually known |
-| geography | `dc.coverage.spatial` | `geoLocations` where sufficiently structured | `spatialCoverage` | structured `spatial` Location | Plain text may be lossy; document loss |
-| vintage | `crr.vintage` | alternate date/version context only where truthful | `temporalCoverage` or additional property if semantics fit | temporal/series semantics only when truthful | Vintage is not automatic version history |
-| version label | `crr.version.label` / DSpace native version | `version` | `version` | dataset series/version only when applicable | DSpace version label may be repository-specific |
-| version date | `crr.version.date` / DSpace native version date | Date | `dateModified`/version context if truthful | `modified` only when semantically correct | Do not confuse release date and repository version date |
-| isVersionOf | managed provenance / DSpace lineage | `IsVersionOf` | `isPartOf` is NOT a replacement; use explicit identifier/additional relation if needed | series relation only when appropriate | Keep relation semantics exact |
-| supersedes | managed provenance / DSpace adjacency | `IsNewVersionOf` when direction/meaning is established | no forced approximation | no forced approximation | Repository adjacency must support assertion |
-| source SHA-256 | `crr.provenance.sha256` | alternate identifier/description only if appropriate | `sha256` only for distributions/content when semantics fit | checksum only if profile supports and is actual distribution checksum | Never derive from URL |
-| captured-at | `crr.provenance.capturedat` | Date if role is accurately expressible | additional property only if useful | not forced | Sync time is not capture time |
-| relations | `crr.relation.edge` | `relatedIdentifiers` with exact relation type | `hasPart`, `isPartOf`, `citation`, etc. only if exact | DCAT relation only where applicable | Unmapped CRR relation stays documented rather than distorted |
-| files | `crr.file.manifest` plus DSpace bundles when available | formats/sizes/related identifiers as appropriate | `distribution` for dataset downloads | `distribution` | Restricted objects may intentionally have zero files |
+| CRR semantic           | DSpace / DC                                            | DataCite 4.7                                                              | Schema.org                                                                             | DCAT-US 3.0                                                           | Notes                                                        |
+| ---------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |
+| canonical research id  | `crr.identifier.source`, `dc.identifier.other`         | `alternateIdentifiers` when useful; never primary DOI unless actually DOI | `identifier`                                                                           | `identifier` where applicable                                         | CRR ID is not a DOI                                          |
+| DOI                    | `crr.identifier.doi`                                   | `doi` / Identifier                                                        | `identifier` as `PropertyValue` or DOI URL                                             | `identifier` where appropriate                                        | Preserve exact DOI                                           |
+| object type            | `crr.resource.type`, `dc.type`                         | `resourceType` + `resourceTypeGeneral`                                    | most specific truthful `@type`                                                         | Dataset/DataService only where applicable                             | Never force non-data objects into DCAT                       |
+| title                  | `dc.title`                                             | `titles`                                                                  | `name`                                                                                 | `title`                                                               | Required in all applicable exports                           |
+| abstract               | `dc.description.abstract`                              | Description/Abstract                                                      | `description`                                                                          | `description`                                                         | No synthetic abstract                                        |
+| publisher              | `dc.publisher`                                         | `publisher`                                                               | `publisher`                                                                            | `publisher`                                                           | Organization where representable                             |
+| program                | `crr.program`                                          | Subject/contributor context only if truthful                              | `about` / additional property if useful                                                | `programCode` only if valid federal code mapping exists               | Do not misuse standard fields                                |
+| authors                | `dc.contributor.author`, researcher fields             | `creators`                                                                | `creator`                                                                              | attribution only where profile supports                               | Name order preserved                                         |
+| ORCID                  | researcher managed metadata                            | `nameIdentifiers` with ORCID scheme                                       | `sameAs` or identifier                                                                 | not forced                                                            | Normalize URL vs bare ORCID at rendering boundary            |
+| release date           | `dc.date.issued`                                       | `publicationYear` + Date where applicable                                 | `datePublished`                                                                        | `issued` / `modified` only according to DCAT semantics                | Publication year must come from an observed date/fact        |
+| source URL             | `crr.source.url`, `dc.identifier.uri`                  | alternate/related identifier if semantics fit                             | `url`                                                                                  | `landingPage` / distribution access URL depending role                | DSpace handle may coexist but not replace source URL         |
+| documentation URL      | `crr.documentation.url`, `dc.relation.uri`             | related identifier when semantics fit                                     | `subjectOf` / related link if useful                                                   | `describedBy` where it is actually data documentation                 | Avoid semantic overreach                                     |
+| citation               | `dc.identifier.citation`                               | generated from DataCite-compatible metadata or retained citation          | `citation`                                                                             | related document/rights only if appropriate                           | Human citation remains explicit output                       |
+| license                | `crr.rights.license`                                   | `rightsList` / rights                                                     | `license`                                                                              | distribution `license`                                                | Restricted statement is not an open license                  |
+| access level           | `crr.rights.access`                                    | rights/description only where useful                                      | `conditionsOfAccess`                                                                   | `accessRights` + structured restrictions                              | Do not export obsolete DCAT-US `accessLevel` as v3 core      |
+| access note            | `crr.rights.accessnote`                                | Description/rights note if useful                                         | `conditionsOfAccess`                                                                   | `accessRights` / restriction objects                                  | Preserve human wording                                       |
+| access mechanism       | new `crr.access.mechanism`                             | descriptive metadata only                                                 | `conditionsOfAccess`                                                                   | access restriction / access URL                                       | e.g. FSRDC, SAP, RAP                                         |
+| access/application URL | new `crr.access.url`                                   | alternate/related URL only if semantics fit                               | `url`/`conditionsOfAccess` context                                                     | distribution `accessURL`                                              | Must be authoritative workflow URL                           |
+| restriction basis      | new `crr.access.restrictionbasis`                      | rights description                                                        | `conditionsOfAccess`                                                                   | access/use restriction                                                | e.g. Title 13 statement when actually known                  |
+| geography              | `dc.coverage.spatial`                                  | `geoLocations` where sufficiently structured                              | `spatialCoverage`                                                                      | structured `spatial` Location                                         | Plain text may be lossy; document loss                       |
+| vintage                | `crr.vintage`                                          | alternate date/version context only where truthful                        | `temporalCoverage` or additional property if semantics fit                             | temporal/series semantics only when truthful                          | Vintage is not automatic version history                     |
+| version label          | `crr.version.label` / DSpace native version            | `version`                                                                 | `version`                                                                              | dataset series/version only when applicable                           | DSpace version label may be repository-specific              |
+| version date           | `crr.version.date` / DSpace native version date        | Date                                                                      | `dateModified`/version context if truthful                                             | `modified` only when semantically correct                             | Do not confuse release date and repository version date      |
+| isVersionOf            | managed provenance / DSpace lineage                    | `IsVersionOf`                                                             | `isPartOf` is NOT a replacement; use explicit identifier/additional relation if needed | series relation only when appropriate                                 | Keep relation semantics exact                                |
+| supersedes             | managed provenance / DSpace adjacency                  | `IsNewVersionOf` when direction/meaning is established                    | no forced approximation                                                                | no forced approximation                                               | Repository adjacency must support assertion                  |
+| source SHA-256         | `crr.provenance.sha256`                                | alternate identifier/description only if appropriate                      | `sha256` only for distributions/content when semantics fit                             | checksum only if profile supports and is actual distribution checksum | Never derive from URL                                        |
+| captured-at            | `crr.provenance.capturedat`                            | Date if role is accurately expressible                                    | additional property only if useful                                                     | not forced                                                            | Sync time is not capture time                                |
+| relations              | `crr.relation.edge`                                    | `relatedIdentifiers` with exact relation type                             | `hasPart`, `isPartOf`, `citation`, etc. only if exact                                  | DCAT relation only where applicable                                   | Unmapped CRR relation stays documented rather than distorted |
+| files                  | `crr.file.manifest` plus DSpace bundles when available | formats/sizes/related identifiers as appropriate                          | `distribution` for dataset downloads                                                   | `distribution`                                                        | Restricted objects may intentionally have zero files         |
 
 ---
 
@@ -310,14 +310,14 @@ The application does **not** register or mint the DOI.
 
 ### 6.2 Resource type mapping
 
-| CRR type | DataCite resourceTypeGeneral |
-|---|---|
-| DATASET | Dataset |
-| PUBLICATION | Text |
-| CODE | Software |
-| METHODOLOGY | Text |
-| SUPPORTING_MATERIAL | Other |
-| PROJECT | Project |
+| CRR type            | DataCite resourceTypeGeneral |
+| ------------------- | ---------------------------- |
+| DATASET             | Dataset                      |
+| PUBLICATION         | Text                         |
+| CODE                | Software                     |
+| METHODOLOGY         | Text                         |
+| SUPPORTING_MATERIAL | Other                        |
+| PROJECT             | Project                      |
 
 The free-text `resourceType` preserves the more specific CRR meaning where useful.
 
@@ -331,17 +331,17 @@ ORCID mapping is emitted only when a valid recorded ORCID is present. The render
 
 Truthful initial relation mappings:
 
-| CRR/repository relation | DataCite relation |
-|---|---|
-| `hasPart` | `HasPart` |
-| inverse part relation if later modeled | `IsPartOf` |
-| `documents` | `Documents` |
-| inverse documentation if later modeled | `IsDocumentedBy` |
-| `isDerivedFrom` | `IsDerivedFrom` |
-| DSpace/native specific-version → conceptual artifact | `IsVersionOf` |
-| newer archived version → previous archived version | `IsNewVersionOf` only when adjacency/change semantics justify it |
-| previous archived version → newer archived version | `IsPreviousVersionOf` where direction is explicitly rendered |
-| `uses` | no default forced mapping |
+| CRR/repository relation                              | DataCite relation                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `hasPart`                                            | `HasPart`                                                        |
+| inverse part relation if later modeled               | `IsPartOf`                                                       |
+| `documents`                                          | `Documents`                                                      |
+| inverse documentation if later modeled               | `IsDocumentedBy`                                                 |
+| `isDerivedFrom`                                      | `IsDerivedFrom`                                                  |
+| DSpace/native specific-version → conceptual artifact | `IsVersionOf`                                                    |
+| newer archived version → previous archived version   | `IsNewVersionOf` only when adjacency/change semantics justify it |
+| previous archived version → newer archived version   | `IsPreviousVersionOf` where direction is explicitly rendered     |
+| `uses`                                               | no default forced mapping                                        |
 
 `uses` remains unmapped by default because `References`, `Requires`, and `IsDerivedFrom` each mean something narrower than generic use.
 

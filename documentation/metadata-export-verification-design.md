@@ -51,16 +51,16 @@ Use stable committed fixtures so CI evidence is reviewable and reproducible.
 
 Required fixture roles:
 
-| Fixture role | Intended proof |
-|---|---|
-| Public dataset | DataCite-oriented mapping, Schema.org Dataset, DCAT-US Dataset + Distributions |
-| DOI-bearing publication | real DOI, creators/ORCID, DataCite registration-readiness path, no DCAT |
-| Restricted LEHD dataset | FSRDC guidance, Title 13 statement, zero public downloads |
-| Partial metadata object | unknown facts remain absent and DataCite readiness fails explicitly |
-| Methodology object | textual research output, documentation relationships, no DCAT |
-| Project object | DataCite Project + Schema.org ResearchProject, no DCAT |
-| Code object | DataCite Software + Schema.org SoftwareSourceCode, no DCAT |
-| Versioned TIGER/Line object | DSpace-native repository versions 2 → 1 remain truthful in export relations |
+| Fixture role                | Intended proof                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| Public dataset              | DataCite-oriented mapping, Schema.org Dataset, DCAT-US Dataset + Distributions |
+| DOI-bearing publication     | real DOI, creators/ORCID, DataCite registration-readiness path, no DCAT        |
+| Restricted LEHD dataset     | FSRDC guidance, Title 13 statement, zero public downloads                      |
+| Partial metadata object     | unknown facts remain absent and DataCite readiness fails explicitly            |
+| Methodology object          | textual research output, documentation relationships, no DCAT                  |
+| Project object              | DataCite Project + Schema.org ResearchProject, no DCAT                         |
+| Code object                 | DataCite Software + Schema.org SoftwareSourceCode, no DCAT                     |
+| Versioned TIGER/Line object | DSpace-native repository versions 2 → 1 remain truthful in export relations    |
 
 The exact IDs must be recorded in the final runbook when implementation fixtures are finalized.
 
@@ -293,24 +293,24 @@ Minimum live evidence:
 
 Every #115 PR must preserve:
 
-| Gate | Required |
-|---|---|
-| repository API unit/integration tests | yes |
-| OpenAPI lint | yes |
-| generated Java/TypeScript client drift | yes |
-| frontend lint | yes |
-| frontend unit tests | yes |
-| frontend build | yes |
-| Storybook interactions | yes |
-| axe | yes |
-| live Solr/OpenSearch | yes |
-| Chromium evidence | yes |
-| Firefox evidence | yes |
-| WebKit evidence | yes |
-| MapLibre regression | yes |
-| DSpace provenance APPLY→DIFF | yes |
-| DSpace-native version lineage | yes |
-| `pnpm metadata:validate` | PR 2 onward |
+| Gate                                   | Required    |
+| -------------------------------------- | ----------- |
+| repository API unit/integration tests  | yes         |
+| OpenAPI lint                           | yes         |
+| generated Java/TypeScript client drift | yes         |
+| frontend lint                          | yes         |
+| frontend unit tests                    | yes         |
+| frontend build                         | yes         |
+| Storybook interactions                 | yes         |
+| axe                                    | yes         |
+| live Solr/OpenSearch                   | yes         |
+| Chromium evidence                      | yes         |
+| Firefox evidence                       | yes         |
+| WebKit evidence                        | yes         |
+| MapLibre regression                    | yes         |
+| DSpace provenance APPLY→DIFF           | yes         |
+| DSpace-native version lineage          | yes         |
+| `pnpm metadata:validate`               | PR 2 onward |
 
 PR 1 must add its new profile/access tests to normal CI even though the full export validator arrives in PR 2.
 

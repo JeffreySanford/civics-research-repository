@@ -85,11 +85,13 @@
 ## Task 1: Extend the API detail contract with profile inputs
 
 **Files:**
+
 - Modify: `schemas/openapi/repository-api.yaml`
 - Regenerate: `libs/repository/api-client/src/generated/repository-api.types.ts`
 - Modify test: `libs/repository/api-client/src/lib/repository-api-client.spec.ts`
 
 **Interfaces:**
+
 - OpenAPI `ResearchAccessGuidance` has optional `mechanism`, `accessUrl`, `instructions`, `restrictionBasis`.
 - `ResearchObjectDetail` gains optional `documentationUrl`, optional `geographicLevel`, required `subjects: string[]`, optional `accessGuidance`.
 - Generated Java DTO keeps the name `org.civicsrepo.generated.dto.ResearchAccessGuidance`; the internal source/profile type is deliberately named `ResearchAccessMetadata` to avoid a collision.
@@ -185,6 +187,7 @@ git commit -m "feat(metadata): extend research detail profile inputs"
 ## Task 2: Author structured restricted-access facts once in the catalog and SAF
 
 **Files:**
+
 - Modify: `tools/dspace/catalog.json`
 - Modify: `tools/scripts/generate-saf.mjs`
 - Modify: `tools/dspace/crr-types.xml`
@@ -192,6 +195,7 @@ git commit -m "feat(metadata): extend research detail profile inputs"
 - Create test: `tools/scripts/metadata-profile-contract.test.mjs`
 
 **Interfaces:**
+
 - `lehd-microdata-restricted` gains one structured object:
 
 ```json
@@ -270,7 +274,11 @@ if (item.accessGuidance?.instructions) {
   crr += dcvalue('access', 'instructions', item.accessGuidance.instructions);
 }
 if (item.accessGuidance?.restrictionBasis) {
-  crr += dcvalue('access', 'restrictionbasis', item.accessGuidance.restrictionBasis);
+  crr += dcvalue(
+    'access',
+    'restrictionbasis',
+    item.accessGuidance.restrictionBasis,
+  );
 }
 ```
 
@@ -301,12 +309,14 @@ git commit -m "feat(metadata): model structured restricted access"
 ## Task 3: Make catalog/source parsing full-fidelity and remove current-clock fabrication
 
 **Files:**
+
 - Create: `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessMetadata.java`
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/sources/ResearchObjectMetadata.java`
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java`
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java`
 
 **Interfaces:**
+
 - Internal record:
 
 ```java
@@ -423,6 +433,7 @@ git commit -m "fix(metadata): preserve catalog research semantics"
 ## Task 4: Persist structured access metadata through DSpace reconciliation
 
 **Files:**
+
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/dspace/DspaceManagedFields.java`
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/dspace/DspaceItemPayloadMapper.java`
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/dspace/DspaceItemPayloadMapperTest.java`
@@ -510,12 +521,14 @@ git commit -m "feat(dspace): persist structured access guidance"
 ## Task 5: Expose identical profile inputs from repository and fixture detail paths
 
 **Files:**
+
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/repository/RepositoryObjectMapper.java`
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/repository/FixtureCatalog.java`
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/repository/RepositoryObjectMapperTest.java`
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/repository/FixtureCatalogTest.java`
 
 **Interfaces:**
+
 - Repository and fixture `ResearchObjectDetail` expose the same `documentationUrl`, `geographicLevel`, `subjects`, `accessGuidance` values.
 - `accessGuidance` uses the generated OpenAPI DTO; the internal source/profile record remains `ResearchAccessMetadata`.
 
@@ -578,6 +591,7 @@ git commit -m "feat(metadata): expose profile inputs from repository"
 ## Task 6: Introduce the immutable `ResearchMetadataProfile` boundary
 
 **Files:**
+
 - Create: `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchMetadataProfile.java`
 - Create: `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchMetadataProfileAssembler.java`
 - Create test: `apps/repository-api/src/test/java/org/civicsrepo/metadata/ResearchMetadataProfileAssemblerTest.java`
@@ -585,6 +599,7 @@ git commit -m "feat(metadata): expose profile inputs from repository"
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/research/ResearchObjectServiceTest.java`
 
 **Interfaces:**
+
 - `ResearchMetadataProfile` is profile-owned and immutable. It may use existing enums (`ResearchObjectType`, `ResearchProgram`, `AccessLevel`, `FileFormat`, `VersionHistoryStatus`) but must not store generated mutable DTO objects.
 - Define nested records exactly for authors, files, relations, access and versions so PR 2 renderers depend only on this profile.
 
@@ -733,11 +748,13 @@ git commit -m "feat(metadata): add normalized research profile"
 ## Task 7: Add the stable `metadata:validate` foundation gate
 
 **Files:**
+
 - Modify: `tools/scripts/metadata-profile-contract.test.mjs`
 - Modify: `package.json`
 - Modify: `.github/workflows/ci.yml`
 
 **Interfaces:**
+
 - Stable command: `pnpm metadata:validate`.
 - PR 1 validates profile/catalog invariants and repository-api tests.
 - PR 2 extends the same command with DataCite/Schema.org/DCAT/citation renderer/schema validation; never rename it.
@@ -781,11 +798,13 @@ git commit -m "test(metadata): add profile validation gate"
 ## Task 8: Prove real DSpace restricted-access APPLY/readback/DIFF idempotence
 
 **Files:**
+
 - Create: `tools/scripts/dspace-access-guidance-idempotence.mjs`
 - Modify: `.github/workflows/ci.yml`
 - Modify: `documentation/metadata-export-verification-design.md`
 
 **Interfaces:**
+
 - Stable target: `lehd-microdata-restricted`.
 - Sync source/program: `LEHD`.
 - Required terminal proof: exact DSpace metadata + zero protected files + API parity + replay `SKIP_ITEM` for the restricted source identifier.
@@ -848,11 +867,13 @@ git commit -m "test(dspace): prove restricted access guidance replay"
 ## Task 9: Create permanent verbose crosswalk/authority documentation
 
 **Files:**
+
 - Modify: `documentation/open-science-research-objects.md`
 - Create: `documentation/metadata-profile-crosswalk.md`
 - Modify: `documentation/open-census-metadata-profile-review-checklist.md`
 
 **Interfaces:**
+
 - Permanent crosswalk columns: CRR semantic, internal/DSpace field, DataCite 4.7 target, Schema.org target, DCAT-US 3.0 target, cardinality, CRR requirement, loss/ambiguity, verification fixture, implementation status.
 - PR 1 target-standard rows are explicitly `DESIGNED — renderer in PR 2`, not represented as implemented.
 
@@ -861,12 +882,12 @@ git commit -m "test(dspace): prove restricted access guidance replay"
 Add:
 
 ```markdown
-| Semantic | DSpace field | Authority rule |
-|---|---|---|
-| Access mechanism | `crr.access.mechanism` | Named real access path such as FSRDC; does not grant access |
-| Access URL | `crr.access.url` | Authoritative public application/instructions URL; never protected content |
-| Access instructions | `crr.access.instructions` | Human eligibility/process instructions when recorded |
-| Restriction basis | `crr.access.restrictionbasis` | Legal/policy basis only when explicitly known |
+| Semantic            | DSpace field                  | Authority rule                                                             |
+| ------------------- | ----------------------------- | -------------------------------------------------------------------------- |
+| Access mechanism    | `crr.access.mechanism`        | Named real access path such as FSRDC; does not grant access                |
+| Access URL          | `crr.access.url`              | Authoritative public application/instructions URL; never protected content |
+| Access instructions | `crr.access.instructions`     | Human eligibility/process instructions when recorded                       |
+| Restriction basis   | `crr.access.restrictionbasis` | Legal/policy basis only when explicitly known                              |
 ```
 
 Explain how these complement `crr.rights.access` and `crr.rights.accessnote` rather than replacing them.
@@ -898,9 +919,11 @@ git commit -m "docs(metadata): document profile authority crosswalk"
 ## Task 10: Run the full PR-1 verification matrix before ready/merge
 
 **Files:**
+
 - No feature changes unless a gate reveals a real defect.
 
 **Interfaces:**
+
 - This task creates evidence only; never weaken assertions to make the branch green.
 
 - [ ] **Step 1: Protect unrelated local work**
