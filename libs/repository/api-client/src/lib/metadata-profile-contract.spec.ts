@@ -1,6 +1,23 @@
+import { readFileSync } from 'node:fs';
+
 import type { ResearchObjectDetail } from './repository-api-client';
 
+const generatedTypes = readFileSync(
+  new URL('../generated/repository-api.types.ts', import.meta.url),
+  'utf8',
+);
+
 describe('ResearchObjectDetail metadata profile contract', () => {
+  it('generates the structured access and profile fields from OpenAPI', () => {
+    expect(generatedTypes).toContain('ResearchAccessGuidance: {');
+    expect(generatedTypes).toContain('documentationUrl?: string;');
+    expect(generatedTypes).toContain('geographicLevel?: string;');
+    expect(generatedTypes).toContain('subjects: string[];');
+    expect(generatedTypes).toContain(
+      "accessGuidance?: components['schemas']['ResearchAccessGuidance'];",
+    );
+  });
+
   it('carries structured access guidance and profile inputs', () => {
     const detail: ResearchObjectDetail = {
       id: 'lehd-microdata-restricted',
