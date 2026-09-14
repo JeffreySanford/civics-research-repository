@@ -1,0 +1,116 @@
+name: Metadata Task 1 Apply
+
+on:
+  push:
+    branches:
+      - feat/open-census-metadata-profile
+    paths:
+      - '.github/workflows/metadata-task1-apply.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/open-census-metadata-profile
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply exact Task 1 OpenAPI contract
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('schemas/openapi/repository-api.yaml')
+          text = path.read_text()
+
+          schema_anchor = "    ResearchObjectDetail:\n"
+          schema = """    ResearchAccessGuidance:
+      type: object
+      additionalProperties: false
+      properties:
+        mechanism:
+          type: string
+        accessUrl:
+          type: string
+          format: uri
+        instructions:
+          type: string
+        restrictionBasis:
+          type: string
+    ResearchObjectDetail:
+"""
+          if text.count(schema_anchor) != 1:
+              raise SystemExit('ResearchObjectDetail schema anchor is not unique')
+          text = text.replace(schema_anchor, schema, 1)
+
+          required_anchor = """          origin,
+          sourceSystem,
+        ]
+"""
+          required_replacement = """          origin,
+          sourceSystem,
+          subjects,
+        ]
+"""
+          if text.count(required_anchor) != 1:
+              raise SystemExit('ResearchObjectDetail required-list anchor is not unique')
+          text = text.replace(required_anchor, required_replacement, 1)
+
+          property_anchor = """        sourceUrl:
+          type: string
+          format: uri
+        accessibilityEvidenceStatus:
+"""
+          property_replacement = """        sourceUrl:
+          type: string
+          format: uri
+        documentationUrl:
+          type: string
+          format: uri
+        geographicLevel:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        accessGuidance:
+          $ref: '#/components/schemas/ResearchAccessGuidance'
+        accessibilityEvidenceStatus:
+"""
+          if text.count(property_anchor) != 1:
+              raise SystemExit('ResearchObjectDetail property anchor is not unique')
+          text = text.replace(property_anchor, property_replacement, 1)
+
+          path.write_text(text)
+
+      - name: Generate and verify API contract
+        run: |
+          pnpm openapi:lint
+          pnpm openapi:generate
+          pnpm openapi:check
+          pnpm nx test repository-api-client
+          git diff --check
+
+      - name: Commit generated contract
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add schemas/openapi/repository-api.yaml libs/repository/api-client/src/generated/repository-api.types.ts
+          git diff --cached --exit-code && exit 0
+          git commit -m 'feat(metadata): extend research detail profile inputs'
+          git push origin HEAD:feat/open-census-metadata-profile
