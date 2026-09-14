@@ -59,11 +59,15 @@ jobs:
               raise SystemExit('ResearchObjectDetail schema anchor is not unique')
           text = text.replace(schema_anchor, schema, 1)
 
-          required_anchor = "          origin,\n          sourceSystem,\n        ]\n"
-          required_replacement = "          origin,\n          sourceSystem,\n          subjects,\n        ]\n"
-          if text.count(required_anchor) != 1:
-              raise SystemExit('ResearchObjectDetail required-list anchor is not unique')
-          text = text.replace(required_anchor, required_replacement, 1)
+          detail_start = text.index("    ResearchObjectDetail:\n")
+          detail_end = text.index("    DatasetFile:\n", detail_start)
+          detail = text[detail_start:detail_end]
+
+          required_anchor = "          sourceSystem,\n        ]\n"
+          required_replacement = "          sourceSystem,\n          subjects,\n        ]\n"
+          if detail.count(required_anchor) != 1:
+              raise SystemExit('ResearchObjectDetail required-list anchor is not unique within detail schema')
+          detail = detail.replace(required_anchor, required_replacement, 1)
 
           property_anchor = "        sourceUrl:\n          type: string\n          format: uri\n        accessibilityEvidenceStatus:\n"
           property_replacement = (
@@ -83,10 +87,11 @@ jobs:
               "          $ref: '#/components/schemas/ResearchAccessGuidance'\n"
               "        accessibilityEvidenceStatus:\n"
           )
-          if text.count(property_anchor) != 1:
-              raise SystemExit('ResearchObjectDetail property anchor is not unique')
-          text = text.replace(property_anchor, property_replacement, 1)
+          if detail.count(property_anchor) != 1:
+              raise SystemExit('ResearchObjectDetail property anchor is not unique within detail schema')
+          detail = detail.replace(property_anchor, property_replacement, 1)
 
+          text = text[:detail_start] + detail + text[detail_end:]
           path.write_text(text)
           PY
 
