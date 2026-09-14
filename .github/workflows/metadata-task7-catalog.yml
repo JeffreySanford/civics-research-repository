@@ -105,10 +105,9 @@ jobs:
           pnpm exec prettier --write tools/dspace/catalog.json
           pnpm dspace:saf:generate
           node --test tools/scripts/metadata-profile-contract.test.mjs
-          pnpm fixture:check
           git diff --check
 
-      - name: Commit authoritative catalog and generated fixture
+      - name: Commit and verify authoritative catalog output
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -117,4 +116,6 @@ jobs:
             apps/repository-api/src/main/resources/discovery-fixture-catalog.json
           git diff --cached --quiet && exit 0
           git commit -m 'feat(metadata): add code and ORCID representatives'
+          pnpm fixture:check
+          git diff --check
           git push origin HEAD:feat/open-census-metadata-profile
