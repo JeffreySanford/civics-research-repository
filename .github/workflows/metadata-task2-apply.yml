@@ -45,9 +45,8 @@ jobs:
       - name: Regenerate SAF and fixture
         run: pnpm dspace:saf:generate
 
-      - name: Verify focused metadata contract
+      - name: Verify generated Task 2 content before commit
         run: |
-          pnpm fixture:check
           node --test tools/scripts/metadata-profile-contract.test.mjs
 
           metadata='tools/dspace/saf/datasets/lehd-microdata-restricted/metadata_crr.xml'
@@ -55,10 +54,9 @@ jobs:
           grep -F '<dcvalue element="access" qualifier="url">https://www.census.gov/about/adrm/fsrdc.html</dcvalue>' "$metadata"
           grep -F '<dcvalue element="access" qualifier="instructions">Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.</dcvalue>' "$metadata"
           grep -F '<dcvalue element="access" qualifier="restrictionbasis">Title 13, U.S. Code</dcvalue>' "$metadata"
-
           git diff --check
 
-      - name: Commit Task 2 implementation
+      - name: Create local Task 2 commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -69,5 +67,21 @@ jobs:
             tools/scripts/metadata-profile-contract.test.mjs \
             apps/repository-api/src/main/resources/discovery-fixture-catalog.json
           git commit -m 'feat(metadata): model structured restricted access'
+
+      - name: Rebase and verify committed drift gate
+        run: |
           git pull --rebase origin feat/open-census-metadata-profile
-          git push origin HEAD:feat/open-census-metadata-profile
+          pnpm dspace:saf:generate
+          pnpm fixture:check
+          node --test tools/scripts/metadata-profile-contract.test.mjs
+
+          metadata='tools/dspace/saf/datasets/lehd-microdata-restricted/metadata_crr.xml'
+          grep -F '<dcvalue element="access" qualifier="mechanism">FSRDC</dcvalue>' "$metadata"
+          grep -F '<dcvalue element="access" qualifier="url">https://www.census.gov/about/adrm/fsrdc.html</dcvalue>' "$metadata"
+          grep -F '<dcvalue element="access" qualifier="instructions">Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.</dcvalue>' "$metadata"
+          grep -F '<dcvalue element="access" qualifier="restrictionbasis">Title 13, U.S. Code</dcvalue>' "$metadata"
+          git diff --check
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Push verified Task 2 commit
+        run: git push origin HEAD:feat/open-census-metadata-profile
