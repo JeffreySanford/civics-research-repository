@@ -50,7 +50,7 @@ class CatalogMetadataReaderTest {
         List<ResearchObjectMetadata> objects = invalidDateReader.forProgram(ResearchProgram.CPS);
 
         assertThat(objects).hasSize(1);
-        assertThat(objects.getFirst().releasedOn()).isNull();
+        assertThat(objects.get(0).releasedOn()).isNull();
     }
 
     private ResearchObjectMetadata object(String id) {
