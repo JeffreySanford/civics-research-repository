@@ -1,4 +1,4 @@
-name: Metadata Task 2 Apply
+name: Metadata Task 2 RED
 
 on:
   push:
@@ -7,90 +7,18 @@ on:
     paths:
       - '.github/workflows/metadata-task2-apply.yml'
 
-permissions:
-  contents: write
-
 jobs:
-  apply:
+  red:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: feat/open-census-metadata-profile
-          fetch-depth: 0
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
-
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Create Task 2 contract test
-        run: |
-          cat > tools/scripts/metadata-profile-contract.test.mjs <<'NODE'
-          import assert from 'node:assert/strict';
-          import { readFileSync } from 'node:fs';
-          import test from 'node:test';
-
-          const catalog = JSON.parse(
-            readFileSync('tools/dspace/catalog.json', 'utf8'),
-          );
-          const fixture = JSON.parse(
-            readFileSync(
-              'apps/repository-api/src/main/resources/discovery-fixture-catalog.json',
-              'utf8',
-            ),
-          );
-
-          const restricted = catalog.researchObjects.find(
-            (item) => item.id === 'lehd-microdata-restricted',
-          );
-          const fixtureRestricted = fixture.items.find(
-            (item) => item.id === 'lehd-microdata-restricted',
-          );
-
-          const expectedGuidance = {
-            mechanism: 'FSRDC',
-            accessUrl: 'https://www.census.gov/about/adrm/fsrdc.html',
-            instructions:
-              'Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.',
-            restrictionBasis: 'Title 13, U.S. Code',
-          };
-
-          test('restricted LEHD metadata exposes structured FSRDC guidance but no files', () => {
-            assert.ok(restricted, 'restricted LEHD catalog object must exist');
-            assert.equal(restricted.access, 'RESTRICTED');
-            assert.deepEqual(restricted.files, []);
-            assert.deepEqual(restricted.accessGuidance, expectedGuidance);
-          });
-
-          test('generated fixture preserves the catalog access guidance exactly', () => {
-            assert.ok(fixtureRestricted, 'restricted LEHD fixture object must exist');
-            assert.deepEqual(fixtureRestricted.accessGuidance, expectedGuidance);
-          });
-          NODE
-
-      - name: Verify RED for missing structured guidance
+      - name: Verify contract is RED before implementation
         shell: bash
         run: |
-          node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
-          import { readFileSync } from 'node:fs';
-
-          const catalog = JSON.parse(readFileSync('tools/dspace/catalog.json', 'utf8'));
-          const restricted = catalog.researchObjects.find(
-            (item) => item.id === 'lehd-microdata-restricted',
-          );
-          assert.ok(restricted, 'restricted LEHD catalog object must exist');
-          assert.equal(restricted.access, 'RESTRICTED');
-          assert.deepEqual(restricted.files, []);
-          NODE
-
           set +e
           node --test tools/scripts/metadata-profile-contract.test.mjs > /tmp/task2-red.log 2>&1
           status=$?
@@ -100,129 +28,4 @@ jobs:
             echo 'Expected Task 2 contract test to fail before implementation.' >&2
             exit 1
           fi
-          grep -q 'AssertionError' /tmp/task2-red.log || {
-            echo 'RED failure was not the expected assertion failure.' >&2
-            exit 1
-          }
-
-      - name: Add catalog authority, DSpace fields, and SAF projection
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              text = path.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected one anchor, found {count}')
-              path.write_text(text.replace(old, new, 1))
-
-          catalog = Path('tools/dspace/catalog.json')
-          catalog_anchor = (
-              '      "accessNote": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center. No confidential records are held by this repository.",\n'
-              '      "relations": [\n'
-          )
-          catalog_replacement = (
-              '      "accessNote": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center. No confidential records are held by this repository.",\n'
-              '      "accessGuidance": {\n'
-              '        "mechanism": "FSRDC",\n'
-              '        "accessUrl": "https://www.census.gov/about/adrm/fsrdc.html",\n'
-              '        "instructions": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.",\n'
-              '        "restrictionBasis": "Title 13, U.S. Code"\n'
-              '      },\n'
-              '      "relations": [\n'
-          )
-          replace_once(catalog, catalog_anchor, catalog_replacement)
-
-          generator = Path('tools/scripts/generate-saf.mjs')
-          replace_once(
-              generator,
-              '    accessNote: entry.accessNote,\n    doi: entry.doi,\n',
-              '    accessNote: entry.accessNote,\n    accessGuidance: entry.accessGuidance ?? null,\n    doi: entry.doi,\n',
-          )
-          replace_once(
-              generator,
-              "  if (item.accessNote) {\n    crr += dcvalue('rights', 'accessnote', item.accessNote);\n  }\n  // Omitted rather than emitted blank. A DOI field present but empty reads as \"no DOI exists\",\n",
-              "  if (item.accessNote) {\n    crr += dcvalue('rights', 'accessnote', item.accessNote);\n  }\n  if (item.accessGuidance?.mechanism) {\n    crr += dcvalue('access', 'mechanism', item.accessGuidance.mechanism);\n  }\n  if (item.accessGuidance?.accessUrl) {\n    crr += dcvalue('access', 'url', item.accessGuidance.accessUrl);\n  }\n  if (item.accessGuidance?.instructions) {\n    crr += dcvalue('access', 'instructions', item.accessGuidance.instructions);\n  }\n  if (item.accessGuidance?.restrictionBasis) {\n    crr += dcvalue(\n      'access',\n      'restrictionbasis',\n      item.accessGuidance.restrictionBasis,\n    );\n  }\n  // Omitted rather than emitted blank. A DOI field present but empty reads as \"no DOI exists\",\n",
-          )
-          replace_once(
-              generator,
-              '      accessNote: item.accessNote,\n      doi: item.doi,\n',
-              '      accessNote: item.accessNote,\n      accessGuidance: item.accessGuidance,\n      doi: item.doi,\n',
-          )
-
-          registry = Path('tools/dspace/crr-types.xml')
-          registry_anchor = '''  <dc-type>
-    <schema>crr</schema>
-    <element>identifier</element>
-    <qualifier>doi</qualifier>
-'''
-          registry_fields = '''  <dc-type>
-    <schema>crr</schema>
-    <element>access</element>
-    <qualifier>mechanism</qualifier>
-    <scope_note>Named mechanism for legitimate access or discovery of a restricted object; descriptive metadata only and does not grant access.</scope_note>
-  </dc-type>
-
-  <dc-type>
-    <schema>crr</schema>
-    <element>access</element>
-    <qualifier>url</qualifier>
-    <scope_note>Authoritative URL describing legitimate access or discovery for a restricted object; descriptive metadata only and does not grant access.</scope_note>
-  </dc-type>
-
-  <dc-type>
-    <schema>crr</schema>
-    <element>access</element>
-    <qualifier>instructions</qualifier>
-    <scope_note>Source-authored instructions for legitimate access or discovery of a restricted object; descriptive metadata only and does not grant access.</scope_note>
-  </dc-type>
-
-  <dc-type>
-    <schema>crr</schema>
-    <element>access</element>
-    <qualifier>restrictionbasis</qualifier>
-    <scope_note>Source-authored basis for the access restriction; descriptive metadata only and does not grant access.</scope_note>
-  </dc-type>
-
-'''
-          replace_once(registry, registry_anchor, registry_fields + registry_anchor)
-          PY
-
-      - name: Regenerate fixture and SAF
-        run: pnpm dspace:saf:generate
-
-      - name: Verify GREEN and deterministic parity
-        run: |
-          pnpm fixture:check
-          node --test tools/scripts/metadata-profile-contract.test.mjs
-
-          metadata='tools/dspace/saf/datasets/lehd-microdata-restricted/metadata_crr.xml'
-          grep -F '<dcvalue element="access" qualifier="mechanism">FSRDC</dcvalue>' "$metadata"
-          grep -F '<dcvalue element="access" qualifier="url">https://www.census.gov/about/adrm/fsrdc.html</dcvalue>' "$metadata"
-          grep -F '<dcvalue element="access" qualifier="instructions">Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.</dcvalue>' "$metadata"
-          grep -F '<dcvalue element="access" qualifier="restrictionbasis">Title 13, U.S. Code</dcvalue>' "$metadata"
-
-      - name: Format and validate changed files
-        run: |
-          pnpm exec prettier --write \
-            tools/dspace/catalog.json \
-            tools/scripts/generate-saf.mjs \
-            tools/scripts/metadata-profile-contract.test.mjs \
-            apps/repository-api/src/main/resources/discovery-fixture-catalog.json
-          pnpm fixture:check
-          node --test tools/scripts/metadata-profile-contract.test.mjs
-          git diff --check
-
-      - name: Commit Task 2
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            tools/dspace/catalog.json \
-            tools/dspace/crr-types.xml \
-            tools/scripts/generate-saf.mjs \
-            tools/scripts/metadata-profile-contract.test.mjs \
-            apps/repository-api/src/main/resources/discovery-fixture-catalog.json
-          git commit -m 'feat(metadata): model structured restricted access'
-          git push origin HEAD:feat/open-census-metadata-profile
+          grep -q 'AssertionError' /tmp/task2-red.log
