@@ -14,74 +14,75 @@
 
 ## Global Constraints
 
-- DataCite target is Metadata Schema **4.7**; this PR prepares facts/readiness inputs but does not render DataCite yet.
-- Schema.org structured output and DCAT-US 3.0 output are PR 2; do not leak format-specific property names into `ResearchMetadataProfile`.
+- DataCite target is Metadata Schema **4.7**; PR 1 prepares facts/readiness inputs but does not render DataCite.
+- Schema.org JSON-LD and DCAT-US 3.0 output are PR 2; no format-specific property names belong in `ResearchMetadataProfile`.
 - DSpace/application metadata remains authoritative for curated repository records.
 - Federated publishers remain authoritative for federated records.
-- Solr/OpenSearch remain discovery projections and must not be queried by the profile assembler.
-- Missing source facts mean unknown/no opinion. Never synthesize DOI, ORCID, release year, version lineage, checksum, capture time, or access facts.
+- Solr/OpenSearch remain disposable discovery projections; the profile assembler must not query them.
+- Missing source facts mean unknown/no opinion. Never synthesize DOI, ORCID, release year, version lineage, checksum, capture time, access mechanism, or restriction basis.
 - `vintageYear` does not establish artifact version history.
-- DSpace-native version history remains the only repository lineage authority when it is available.
-- Restricted metadata must never imply a local/protected file, direct confidential download, or authorization workflow.
-- New DSpace access fields must obey the existing APPLY → readback → DIFF `SKIP_ITEM` reconciliation contract.
-- Preserve the existing repository-augmented-field rule for `dc.identifier.uri`; DSpace handles are allowed extras and the publisher URI remains required.
-- Do not alter browser/map behavior in PR 1 except generated TypeScript types caused by the OpenAPI contract.
-- `tools/scripts/dspace-version-lineage.test.mjs` may exist as an untracked local file in the developer checkout; never clean or overwrite unrelated untracked files.
+- DSpace-native version history remains the repository lineage authority when available.
+- Restricted metadata must never imply a local/protected file, confidential download, or authorization workflow.
+- New DSpace access fields must obey the established APPLY → readback → DIFF `SKIP_ITEM` reconciliation contract.
+- Preserve the existing repository-augmented-field rule for `dc.identifier.uri`; DSpace handles are allowed extras while the publisher URI remains required.
+- Do not alter browser/map behavior in PR 1 except generated client types caused by the OpenAPI contract.
+- `tools/scripts/dspace-version-lineage.test.mjs` may exist as an unrelated untracked local file; never clean or overwrite it.
 
 ---
 
-## File/Responsibility Map
+## File / Responsibility Map
 
 ### New backend domain files
 
-- `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessGuidance.java` — source/application-neutral structured access facts.
-- `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchMetadataProfile.java` — normalized export/profile authority; no DataCite/Schema.org/DCAT names.
-- `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchMetadataProfileAssembler.java` — assembles one profile from detail + observed version history.
-- `apps/repository-api/src/test/java/org/civicsrepo/metadata/ResearchMetadataProfileAssemblerTest.java` — representative profile behavior and no-fabrication tests.
+- `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessMetadata.java` — source/application-neutral structured access facts.
+- `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchMetadataProfile.java` — immutable normalized export/profile authority with profile-owned nested records.
+- `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchMetadataProfileAssembler.java` — copies authoritative application facts into one deterministic profile.
+- `apps/repository-api/src/test/java/org/civicsrepo/metadata/ResearchMetadataProfileAssemblerTest.java` — representative profile/no-fabrication tests.
 
-### Existing source/sync files
+### Source / sync files
 
-- `apps/repository-api/src/main/java/org/civicsrepo/sources/ResearchObjectMetadata.java` — carry optional structured access guidance without breaking existing adapters.
-- `apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java` — stop collapsing every catalog object to `dataset(...)`; parse the full generated catalog faithfully.
-- `apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java` — full-fidelity catalog parsing and no-current-clock tests.
-- `apps/repository-api/src/main/java/org/civicsrepo/dspace/DspaceManagedFields.java` — register managed access guidance fields.
-- `apps/repository-api/src/main/java/org/civicsrepo/dspace/DspaceItemPayloadMapper.java` — write structured access guidance and tolerate absent release dates.
-- `apps/repository-api/src/test/java/org/civicsrepo/dspace/DspaceItemPayloadMapperTest.java` — source → DSpace payload coverage.
+- `apps/repository-api/src/main/java/org/civicsrepo/sources/ResearchObjectMetadata.java`
+- `apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java`
+- `apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java`
+- `apps/repository-api/src/main/java/org/civicsrepo/dspace/DspaceManagedFields.java`
+- `apps/repository-api/src/main/java/org/civicsrepo/dspace/DspaceItemPayloadMapper.java`
+- `apps/repository-api/src/test/java/org/civicsrepo/dspace/DspaceItemPayloadMapperTest.java`
+- `apps/repository-api/src/test/java/org/civicsrepo/dspace/DspaceItemDiffPlannerTest.java`
+- `apps/repository-api/src/test/java/org/civicsrepo/dspace/DspaceRestItemWriteGatewayTest.java`
 
-### Existing repository read files
+### Repository / fixture read files
 
-- `apps/repository-api/src/main/java/org/civicsrepo/repository/RepositoryObjectMapper.java` — read `crr.access.*`, documentation URL, geographic level, and subjects into detail.
-- `apps/repository-api/src/test/java/org/civicsrepo/repository/RepositoryObjectMapperTest.java` — repository → detail verification.
-- `apps/repository-api/src/main/java/org/civicsrepo/repository/FixtureCatalog.java` — map the generated fallback catalog to the same detail shape.
-- `apps/repository-api/src/test/java/org/civicsrepo/repository/FixtureCatalogTest.java` — fixture parity verification.
+- `apps/repository-api/src/main/java/org/civicsrepo/repository/RepositoryObjectMapper.java`
+- `apps/repository-api/src/test/java/org/civicsrepo/repository/RepositoryObjectMapperTest.java`
+- `apps/repository-api/src/main/java/org/civicsrepo/repository/FixtureCatalog.java`
+- `apps/repository-api/src/test/java/org/civicsrepo/repository/FixtureCatalogTest.java`
 
-### DSpace/catalog files
+### Catalog / DSpace files
 
-- `tools/dspace/crr-types.xml` — register `crr.access.mechanism`, `crr.access.url`, `crr.access.instructions`, `crr.access.restrictionbasis`.
-- `tools/dspace/catalog.json` — add explicit structured FSRDC guidance to `lehd-microdata-restricted`.
-- `tools/scripts/generate-saf.mjs` — write/read the new catalog properties into SAF and generated fixture JSON.
-- `tools/scripts/check-fixture-catalog.mjs` — unchanged unless its snapshot contract needs an explicit new assertion.
-- `apps/repository-api/src/main/resources/discovery-fixture-catalog.json` — regenerated output; never hand-edit.
+- `tools/dspace/catalog.json`
+- `tools/dspace/crr-types.xml`
+- `tools/scripts/generate-saf.mjs`
+- `apps/repository-api/src/main/resources/discovery-fixture-catalog.json` — generated; never hand-edit.
 
-### API/generated contract files
+### API / generated contract files
 
-- `schemas/openapi/repository-api.yaml` — add `ResearchAccessGuidance` plus optional detail fields needed by the normalized profile: documentation URL, geographic level, subjects, and access guidance.
-- `libs/repository/api-client/src/generated/repository-api.types.ts` — regenerate only through `pnpm openapi:generate`.
-- `libs/repository/api-client/src/lib/repository-api-client.spec.ts` — generated-contract smoke test updates.
+- `schemas/openapi/repository-api.yaml`
+- `libs/repository/api-client/src/generated/repository-api.types.ts` — regenerate only with `pnpm openapi:generate`.
+- `libs/repository/api-client/src/lib/repository-api-client.spec.ts`
 
-### Verification/docs files
+### Verification / docs files
 
-- `tools/scripts/metadata-profile-contract.test.mjs` — committed catalog/profile input invariants that are fast and browser-free.
-- `tools/scripts/dspace-access-guidance-idempotence.mjs` — real DSpace restricted-object APPLY/readback/DIFF proof.
-- `package.json` — introduce `metadata:validate` for the foundation and extend it in PR 2.
-- `.github/workflows/ci.yml` — run metadata validation and DSpace access-guidance replay in CI.
-- `documentation/open-science-research-objects.md` — document new managed fields and authority semantics.
-- `documentation/open-census-metadata-profile-design.md` — update only if implementation exposes a verified design correction; do not rewrite the design to match accidental code.
-- `documentation/metadata-export-verification-design.md` — evolve PR-1 sections from design wording to exact commands/evidence where proven.
+- `tools/scripts/metadata-profile-contract.test.mjs`
+- `tools/scripts/dspace-access-guidance-idempotence.mjs`
+- `package.json`
+- `.github/workflows/ci.yml`
+- `documentation/open-science-research-objects.md`
+- `documentation/metadata-profile-crosswalk.md`
+- `documentation/metadata-export-verification-design.md`
 
 ---
 
-### Task 1: Extend the API detail contract with structured access/profile inputs
+## Task 1: Extend the API detail contract with profile inputs
 
 **Files:**
 - Modify: `schemas/openapi/repository-api.yaml`
@@ -89,17 +90,16 @@
 - Modify test: `libs/repository/api-client/src/lib/repository-api-client.spec.ts`
 
 **Interfaces:**
-- Produces OpenAPI schema `ResearchAccessGuidance` with optional `mechanism`, `accessUrl`, `instructions`, `restrictionBasis` strings.
-- Extends `ResearchObjectDetail` with optional `documentationUrl`, optional `geographicLevel`, required `subjects: string[]`, and optional `accessGuidance: ResearchAccessGuidance`.
-- Later tasks consume generated Java DTO `ResearchAccessGuidance` and TypeScript `components['schemas']['ResearchAccessGuidance']`.
+- OpenAPI `ResearchAccessGuidance` has optional `mechanism`, `accessUrl`, `instructions`, `restrictionBasis`.
+- `ResearchObjectDetail` gains optional `documentationUrl`, optional `geographicLevel`, required `subjects: string[]`, optional `accessGuidance`.
+- Generated Java DTO keeps the name `org.civicsrepo.generated.dto.ResearchAccessGuidance`; the internal source/profile type is deliberately named `ResearchAccessMetadata` to avoid a collision.
 
 - [ ] **Step 1: Write the failing generated-client contract test**
 
-Add a detail fixture in `repository-api-client.spec.ts` that includes the new fields and asserts they survive the typed client response:
+Extend the existing typed detail fixture:
 
 ```ts
 const detail: ResearchObjectDetail = {
-  // existing required fields unchanged
   ...existingDetail,
   documentationUrl: 'https://www.census.gov/about/adrm/fsrdc.html',
   geographicLevel: 'National',
@@ -114,21 +114,17 @@ const detail: ResearchObjectDetail = {
 };
 ```
 
-Assert `result.accessGuidance?.mechanism === 'FSRDC'` and `result.subjects` contains `Title 13`.
+Assert the returned typed value preserves `FSRDC` and all three subjects.
 
-- [ ] **Step 2: Run the client test and confirm RED**
-
-Run:
+- [ ] **Step 2: Run the client test and verify RED**
 
 ```bash
-pnpm nx test repository-api-client --runInBand
+pnpm nx test repository-api-client
 ```
 
-Expected: TypeScript compile/test failure because the generated `ResearchObjectDetail` type does not yet expose the new fields.
+Expected: compile/test failure because generated types do not expose the new fields.
 
-- [ ] **Step 3: Add the exact OpenAPI schemas**
-
-Add:
+- [ ] **Step 3: Add the OpenAPI schema exactly**
 
 ```yaml
 ResearchAccessGuidance:
@@ -146,7 +142,7 @@ ResearchAccessGuidance:
       type: string
 ```
 
-Extend `ResearchObjectDetail.properties` with:
+Extend `ResearchObjectDetail.properties`:
 
 ```yaml
 documentationUrl:
@@ -162,22 +158,20 @@ accessGuidance:
   $ref: '#/components/schemas/ResearchAccessGuidance'
 ```
 
-Add `subjects` to `ResearchObjectDetail.required`; keep the other new fields optional because unknown facts must remain absent.
+Add `subjects` to `ResearchObjectDetail.required`. Keep the other fields optional because absence is meaningful.
 
-- [ ] **Step 4: Regenerate and verify contract drift is clean**
-
-Run:
+- [ ] **Step 4: Regenerate and verify**
 
 ```bash
 pnpm openapi:lint
 pnpm openapi:generate
 pnpm openapi:check
-pnpm nx test repository-api-client --runInBand
+pnpm nx test repository-api-client
 ```
 
 Expected: all PASS.
 
-- [ ] **Step 5: Commit the contract slice**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add schemas/openapi/repository-api.yaml \
@@ -188,93 +182,207 @@ git commit -m "feat(metadata): extend research detail profile inputs"
 
 ---
 
-### Task 2: Make catalog/source metadata full-fidelity and remove current-clock fabrication
+## Task 2: Author structured restricted-access facts once in the catalog and SAF
 
 **Files:**
-- Create: `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessGuidance.java`
-- Modify: `apps/repository-api/src/main/java/org/civicsrepo/sources/ResearchObjectMetadata.java`
-- Modify: `apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java`
-- Test: `apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java`
+- Modify: `tools/dspace/catalog.json`
+- Modify: `tools/scripts/generate-saf.mjs`
+- Modify: `tools/dspace/crr-types.xml`
+- Regenerate: `apps/repository-api/src/main/resources/discovery-fixture-catalog.json`
+- Create test: `tools/scripts/metadata-profile-contract.test.mjs`
 
 **Interfaces:**
-- `ResearchAccessGuidance(String mechanism, String accessUrl, String instructions, String restrictionBasis)` is a normalized fact record; every component may be null independently.
-- `ResearchObjectMetadata` gains final optional component `ResearchAccessGuidance accessGuidance` after `versionProvenance`.
-- Existing compatibility/dataset constructors continue to compile and pass `null` for access guidance.
-- `CatalogMetadataReader` must construct full `ResearchObjectMetadata`, not call `ResearchObjectMetadata.dataset(...)` for all records.
+- `lehd-microdata-restricted` gains one structured object:
 
-- [ ] **Step 1: Write failing restricted-object and publication tests**
-
-In `CatalogMetadataReaderTest`, assert that `forProgram(ResearchProgram.LEHD)` contains `lehd-microdata-restricted` with:
-
-```java
-assertThat(restricted.contentType()).isEqualTo(ResearchObjectType.DATASET);
-assertThat(restricted.accessLevel()).isEqualTo(AccessLevel.RESTRICTED);
-assertThat(restricted.files()).isEmpty();
-assertThat(restricted.accessGuidance().mechanism()).isEqualTo("FSRDC");
-assertThat(restricted.accessGuidance().restrictionBasis()).isEqualTo("Title 13, U.S. Code");
+```json
+"accessGuidance": {
+  "mechanism": "FSRDC",
+  "accessUrl": "https://www.census.gov/about/adrm/fsrdc.html",
+  "instructions": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.",
+  "restrictionBasis": "Title 13, U.S. Code"
+}
 ```
 
-Also select a known publication fixture and assert its `contentType`, DOI/authors/relations are not collapsed to dataset defaults.
+- DSpace metadata field names are fixed:
+  - `crr.access.mechanism`
+  - `crr.access.url`
+  - `crr.access.instructions`
+  - `crr.access.restrictionbasis`
 
-Add a package-private parse test for invalid/blank `releasedOn` input and assert the reader returns `null`, not `LocalDate.now()`.
+- [ ] **Step 1: Write the RED catalog contract test**
 
-- [ ] **Step 2: Run repository-api tests and confirm RED**
+Create `tools/scripts/metadata-profile-contract.test.mjs` using Node's built-in test runner:
 
-Run:
+```js
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+
+const catalog = JSON.parse(readFileSync('tools/dspace/catalog.json', 'utf8'));
+const restricted = catalog.researchObjects.find(
+  (item) => item.id === 'lehd-microdata-restricted',
+);
+
+test('restricted LEHD metadata exposes guidance but no files', () => {
+  assert.equal(restricted.access, 'RESTRICTED');
+  assert.deepEqual(restricted.files, []);
+  assert.equal(restricted.accessGuidance.mechanism, 'FSRDC');
+  assert.equal(
+    restricted.accessGuidance.accessUrl,
+    'https://www.census.gov/about/adrm/fsrdc.html',
+  );
+  assert.match(restricted.accessGuidance.restrictionBasis, /Title 13/);
+});
+```
+
+If `catalog.json` stores singleton objects under a differently named array, use that existing array name rather than introducing a second catalog section.
+
+- [ ] **Step 2: Run and verify RED**
 
 ```bash
-pnpm nx test repository-api
+node --test tools/scripts/metadata-profile-contract.test.mjs
 ```
 
-Expected: new assertions fail because the current reader uses `ResearchObjectMetadata.dataset(...)` and substitutes `LocalDate.now()`.
+Expected: FAIL because `accessGuidance` is absent.
 
-- [ ] **Step 3: Add the normalized access record and compatibility wiring**
+- [ ] **Step 3: Add the exact catalog facts and DSpace schema fields**
 
-Create:
+Add the object above to the existing `lehd-microdata-restricted` record. Register all four `crr.access.*` fields in `tools/dspace/crr-types.xml`. Each scope note must say the field describes legitimate access/discovery and does not grant access.
+
+- [ ] **Step 4: Extend SAF/fixture generation**
+
+`buildResearchObject(entry)` carries:
+
+```js
+accessGuidance: entry.accessGuidance ?? null,
+```
+
+`writeItem(item)` emits only recorded values:
+
+```js
+if (item.accessGuidance?.mechanism) {
+  crr += dcvalue('access', 'mechanism', item.accessGuidance.mechanism);
+}
+if (item.accessGuidance?.accessUrl) {
+  crr += dcvalue('access', 'url', item.accessGuidance.accessUrl);
+}
+if (item.accessGuidance?.instructions) {
+  crr += dcvalue('access', 'instructions', item.accessGuidance.instructions);
+}
+if (item.accessGuidance?.restrictionBasis) {
+  crr += dcvalue('access', 'restrictionbasis', item.accessGuidance.restrictionBasis);
+}
+```
+
+The generated fixture JSON must include `accessGuidance: item.accessGuidance` for singleton objects.
+
+- [ ] **Step 5: Regenerate and verify deterministic parity**
+
+```bash
+pnpm dspace:saf:generate
+pnpm fixture:check
+node --test tools/scripts/metadata-profile-contract.test.mjs
+```
+
+Expected: PASS. Review the generated fixture diff; it must contain the new guidance only where authored.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add tools/dspace/catalog.json tools/dspace/crr-types.xml \
+  tools/scripts/generate-saf.mjs \
+  tools/scripts/metadata-profile-contract.test.mjs \
+  apps/repository-api/src/main/resources/discovery-fixture-catalog.json
+git commit -m "feat(metadata): model structured restricted access"
+```
+
+---
+
+## Task 3: Make catalog/source parsing full-fidelity and remove current-clock fabrication
+
+**Files:**
+- Create: `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessMetadata.java`
+- Modify: `apps/repository-api/src/main/java/org/civicsrepo/sources/ResearchObjectMetadata.java`
+- Modify: `apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java`
+- Modify test: `apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java`
+
+**Interfaces:**
+- Internal record:
 
 ```java
-package org.civicsrepo.metadata;
-
-public record ResearchAccessGuidance(
+public record ResearchAccessMetadata(
         String mechanism,
         String accessUrl,
         String instructions,
         String restrictionBasis) {}
 ```
 
-Add `ResearchAccessGuidance accessGuidance` to `ResearchObjectMetadata`; preserve every existing constructor by delegating with `null` for the new final component.
+- `ResearchObjectMetadata` gains optional final component `ResearchAccessMetadata accessGuidance` after `versionProvenance`.
+- Existing compatibility constructors and `dataset(...)` convenience methods delegate with `null` access guidance.
+- `CatalogMetadataReader` constructs full `ResearchObjectMetadata` from generated catalog values instead of routing every item through `ResearchObjectMetadata.dataset(...)`.
 
-- [ ] **Step 4: Replace dataset-only catalog parsing with full parsing**
+- [ ] **Step 1: Write failing full-fidelity tests**
 
-`CatalogMetadataReader.toMetadata(...)` must parse:
+For `lehd-microdata-restricted` assert:
 
 ```java
-new ResearchObjectMetadata(
-    text(item, "id"),
-    text(item, "title"),
-    program,
-    text(item, "publisher"),
-    text(item, "summary"),
-    text(item, "geography"),
-    text(item, "geographyLevel"),
-    integerOrNull(item, "vintageYear"),
-    releasedOn(text(item, "releasedOn")),
-    text(item, "sourceUrl"),
-    text(item, "documentationUrl"),
-    text(item, "citation"),
-    files(item),
-    contentType(item),
-    accessLevel(item),
-    textOrNull(item, "accessNote"),
-    textOrNull(item, "license"),
-    textOrNull(item, "doi"),
-    authors(item),
-    relations(item),
-    null,
-    accessGuidance(item));
+assertThat(restricted.contentType()).isEqualTo(ResearchObjectType.DATASET);
+assertThat(restricted.accessLevel()).isEqualTo(AccessLevel.RESTRICTED);
+assertThat(restricted.accessNote()).contains("Federal Statistical Research Data Center");
+assertThat(restricted.files()).isEmpty();
+assertThat(restricted.accessGuidance().mechanism()).isEqualTo("FSRDC");
+assertThat(restricted.accessGuidance().restrictionBasis()).isEqualTo("Title 13, U.S. Code");
 ```
 
-Do not reuse `LocalDate.now()` as an error fallback:
+For a known publication object assert `PUBLICATION`, DOI/authors/relations remain present rather than being reset by dataset defaults.
+
+Add an invalid-date fixture/resource case and assert release date is `null`, not today's date.
+
+- [ ] **Step 2: Run and verify RED**
+
+```bash
+pnpm nx test repository-api
+```
+
+Expected: current reader loses non-dataset fields and substitutes `LocalDate.now()` for invalid/missing dates.
+
+- [ ] **Step 3: Add `ResearchAccessMetadata` and compatibility wiring**
+
+Create the record exactly as specified. Add it as the final optional component of `ResearchObjectMetadata`; update all delegating constructors with `null` so unrelated adapters continue compiling.
+
+- [ ] **Step 4: Parse the full generated catalog**
+
+Replace the unconditional `ResearchObjectMetadata.dataset(...)` call with a full constructor mapping:
+
+```java
+return new ResearchObjectMetadata(
+        text(item, "id"),
+        text(item, "title"),
+        program,
+        text(item, "publisher"),
+        text(item, "summary"),
+        text(item, "geography"),
+        text(item, "geographyLevel"),
+        integerOrNull(item, "vintageYear"),
+        releasedOn(text(item, "releasedOn")),
+        text(item, "sourceUrl"),
+        text(item, "documentationUrl"),
+        text(item, "citation"),
+        files(item),
+        contentType(item),
+        accessLevel(item),
+        textOrNull(item, "accessNote"),
+        textOrNull(item, "license"),
+        textOrNull(item, "doi"),
+        authors(item),
+        relations(item),
+        null,
+        accessGuidance(item));
+```
+
+Implement `authors`, `relations`, `contentType`, `accessLevel`, and `accessGuidance` using the generated fixture JSON already produced in Task 2.
+
+- [ ] **Step 5: Remove current-clock fallback**
 
 ```java
 private LocalDate releasedOn(String value) {
@@ -290,22 +398,20 @@ private LocalDate releasedOn(String value) {
 }
 ```
 
-The generated committed catalog contains valid release dates, so normal DSpace sync remains non-null in practice; Task 4 updates the payload mapper to be null-safe by contract.
+No code in this reader may call `LocalDate.now()`.
 
-- [ ] **Step 5: Run tests and verify GREEN**
-
-Run:
+- [ ] **Step 6: Run and verify GREEN**
 
 ```bash
 pnpm nx test repository-api
 ```
 
-Expected: PASS including restricted/full-fidelity/no-clock cases.
+Expected: PASS for dataset, publication, restricted and invalid-date cases.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessGuidance.java \
+git add apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchAccessMetadata.java \
   apps/repository-api/src/main/java/org/civicsrepo/sources/ResearchObjectMetadata.java \
   apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java \
   apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java
@@ -314,111 +420,7 @@ git commit -m "fix(metadata): preserve catalog research semantics"
 
 ---
 
-### Task 3: Author structured FSRDC guidance in the catalog and generated SAF
-
-**Files:**
-- Modify: `tools/dspace/catalog.json`
-- Modify: `tools/scripts/generate-saf.mjs`
-- Modify: `tools/dspace/crr-types.xml`
-- Regenerate: `apps/repository-api/src/main/resources/discovery-fixture-catalog.json`
-- Create test: `tools/scripts/metadata-profile-contract.test.mjs`
-
-**Interfaces:**
-- Catalog object `lehd-microdata-restricted` gains:
-
-```json
-"accessGuidance": {
-  "mechanism": "FSRDC",
-  "accessUrl": "https://www.census.gov/about/adrm/fsrdc.html",
-  "instructions": "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.",
-  "restrictionBasis": "Title 13, U.S. Code"
-}
-```
-
-- SAF uses exact managed fields:
-  - `crr.access.mechanism`
-  - `crr.access.url`
-  - `crr.access.instructions`
-  - `crr.access.restrictionbasis`
-
-- [ ] **Step 1: Write the RED catalog contract test**
-
-Create `metadata-profile-contract.test.mjs` using Node's built-in test runner. Read `tools/dspace/catalog.json` and assert:
-
-```js
-assert.equal(restricted.access, 'RESTRICTED');
-assert.deepEqual(restricted.files, []);
-assert.equal(restricted.accessGuidance.mechanism, 'FSRDC');
-assert.match(restricted.accessGuidance.accessUrl, /^https:\/\/www\.census\.gov\//);
-assert.match(restricted.accessGuidance.restrictionBasis, /Title 13/);
-```
-
-Also assert every PUBLIC object either has no `accessGuidance` or has no restrictive mechanism, preventing accidental restricted copy on public records.
-
-- [ ] **Step 2: Run and confirm RED**
-
-```bash
-node --test tools/scripts/metadata-profile-contract.test.mjs
-```
-
-Expected: FAIL because `accessGuidance` does not exist yet.
-
-- [ ] **Step 3: Add catalog guidance and DSpace schema registrations**
-
-Add the exact catalog object above. Register four `dc-type` entries in `crr-types.xml`, each with scope notes explicitly saying they are access/discovery guidance and do not grant authorization.
-
-- [ ] **Step 4: Extend SAF generation**
-
-`buildResearchObject(entry)` carries `accessGuidance: entry.accessGuidance ?? null`.
-
-In `writeItem(item)` add:
-
-```js
-if (item.accessGuidance?.mechanism) {
-  crr += dcvalue('access', 'mechanism', item.accessGuidance.mechanism);
-}
-if (item.accessGuidance?.accessUrl) {
-  crr += dcvalue('access', 'url', item.accessGuidance.accessUrl);
-}
-if (item.accessGuidance?.instructions) {
-  crr += dcvalue('access', 'instructions', item.accessGuidance.instructions);
-}
-if (item.accessGuidance?.restrictionBasis) {
-  crr += dcvalue(
-    'access',
-    'restrictionbasis',
-    item.accessGuidance.restrictionBasis,
-  );
-}
-```
-
-When writing `discovery-fixture-catalog.json`, include `accessGuidance: item.accessGuidance` so fixture/source/read paths share one input.
-
-- [ ] **Step 5: Regenerate and verify deterministic fixture parity**
-
-Run:
-
-```bash
-pnpm dspace:saf:generate
-pnpm fixture:check
-node --test tools/scripts/metadata-profile-contract.test.mjs
-```
-
-Expected: PASS. Confirm `git diff -- apps/repository-api/src/main/resources/discovery-fixture-catalog.json` contains only deterministic generated changes.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add tools/dspace/catalog.json tools/dspace/crr-types.xml \
-  tools/scripts/generate-saf.mjs \
-  tools/scripts/metadata-profile-contract.test.mjs \
-  apps/repository-api/src/main/resources/discovery-fixture-catalog.json
-git commit -m "feat(metadata): model structured restricted access"
-```
-
----
-
-### Task 4: Persist structured access guidance through sync without breaking reconciliation
+## Task 4: Persist structured access metadata through DSpace reconciliation
 
 **Files:**
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/dspace/DspaceManagedFields.java`
@@ -428,80 +430,69 @@ git commit -m "feat(metadata): model structured restricted access"
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/dspace/DspaceRestItemWriteGatewayTest.java`
 
 **Interfaces:**
-- `DspaceManagedFields` adds constants:
 
 ```java
-ACCESS_MECHANISM_FIELD = "crr.access.mechanism";
-ACCESS_URL_FIELD = "crr.access.url";
-ACCESS_INSTRUCTIONS_FIELD = "crr.access.instructions";
-ACCESS_RESTRICTION_BASIS_FIELD = "crr.access.restrictionbasis";
+public static final String ACCESS_MECHANISM_FIELD = "crr.access.mechanism";
+public static final String ACCESS_URL_FIELD = "crr.access.url";
+public static final String ACCESS_INSTRUCTIONS_FIELD = "crr.access.instructions";
+public static final String ACCESS_RESTRICTION_BASIS_FIELD = "crr.access.restrictionbasis";
 ```
 
-and includes all four in `ALL`.
+All four belong in `DspaceManagedFields.ALL`. None belongs in `REPOSITORY_AUGMENTED_FIELDS`.
 
-- [ ] **Step 1: Add RED payload assertions**
+- [ ] **Step 1: Add RED payload tests**
 
-Construct restricted `ResearchObjectMetadata` with `ResearchAccessGuidance` and assert the payload contains the four exact fields once each.
+Build restricted metadata with `ResearchAccessMetadata` and assert all four fields are written exactly once. Build a public/no-guidance object and assert none are written.
 
-Add a public/no-guidance case asserting none of the four fields are emitted.
+Also add a null release-date case asserting `dc.date.issued` is omitted instead of throwing or using today's date.
 
-Add a null-release-date case asserting `dc.date.issued` is omitted rather than throwing or using the current date.
-
-- [ ] **Step 2: Run tests and confirm RED**
+- [ ] **Step 2: Run and verify RED**
 
 ```bash
 pnpm nx test repository-api
 ```
 
-Expected: payload test fails on missing fields; null-date case fails on `metadata.releasedOn().format(...)`.
+- [ ] **Step 3: Implement managed fields and null-safe date writing**
 
-- [ ] **Step 3: Implement minimal managed-field/payload support**
-
-Add constants to `DspaceManagedFields.ALL`.
-
-Change required-field map construction so release date is inserted through `putIfPresent`:
+Replace direct `metadata.releasedOn().format(...)` insertion with:
 
 ```java
 putIfPresent(
-    fields,
-    "dc.date.issued",
-    metadata.releasedOn() == null
-        ? null
-        : metadata.releasedOn().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        fields,
+        "dc.date.issued",
+        metadata.releasedOn() == null
+                ? null
+                : metadata.releasedOn().format(DateTimeFormatter.ISO_LOCAL_DATE));
 ```
 
-For guidance:
+Write access values only when present:
 
 ```java
-ResearchAccessGuidance access = metadata.accessGuidance();
+ResearchAccessMetadata access = metadata.accessGuidance();
 if (access != null) {
     putIfPresent(fields, DspaceManagedFields.ACCESS_MECHANISM_FIELD, access.mechanism());
     putIfPresent(fields, DspaceManagedFields.ACCESS_URL_FIELD, access.accessUrl());
     putIfPresent(fields, DspaceManagedFields.ACCESS_INSTRUCTIONS_FIELD, access.instructions());
     putIfPresent(
-        fields,
-        DspaceManagedFields.ACCESS_RESTRICTION_BASIS_FIELD,
-        access.restrictionBasis());
+            fields,
+            DspaceManagedFields.ACCESS_RESTRICTION_BASIS_FIELD,
+            access.restrictionBasis());
 }
 ```
 
-Do not add any of these to `REPOSITORY_AUGMENTED_FIELDS`; DSpace does not own or append them.
+- [ ] **Step 4: Add diff/write semantics tests**
 
-- [ ] **Step 4: Add diff/write regression assertions**
+Prove all three behaviors:
 
-In planner/write-gateway tests prove:
+1. exact source/repository access values settle to no mutation / `SKIP_ITEM`;
+2. changed `crr.access.url` produces an update;
+3. absent source guidance follows the existing missing-source/no-op rule and does not clear richer repository guidance.
 
-1. exact matching guidance yields `SKIP_ITEM` / no patches;
-2. changed `accessUrl` yields one managed-field update;
-3. source guidance absent follows existing no-op semantics and does not clear richer repository guidance.
-
-- [ ] **Step 5: Run tests and verify GREEN**
+- [ ] **Step 5: Run and verify GREEN**
 
 ```bash
 pnpm nx test repository-api
 ```
-
-Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
@@ -516,7 +507,7 @@ git commit -m "feat(dspace): persist structured access guidance"
 
 ---
 
-### Task 5: Read the same profile inputs from DSpace and fixture detail paths
+## Task 5: Expose identical profile inputs from repository and fixture detail paths
 
 **Files:**
 - Modify: `apps/repository-api/src/main/java/org/civicsrepo/repository/RepositoryObjectMapper.java`
@@ -525,16 +516,12 @@ git commit -m "feat(dspace): persist structured access guidance"
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/repository/FixtureCatalogTest.java`
 
 **Interfaces:**
-- Both repository-backed and fixture-backed `ResearchObjectDetail` expose the same fields:
-  - `documentationUrl`
-  - `geographicLevel`
-  - `subjects`
-  - `accessGuidance`
-- Unknown values remain null/empty; invalid restrictive data never defaults to PUBLIC.
+- Repository and fixture `ResearchObjectDetail` expose the same `documentationUrl`, `geographicLevel`, `subjects`, `accessGuidance` values.
+- `accessGuidance` uses the generated OpenAPI DTO; the internal source/profile record remains `ResearchAccessMetadata`.
 
-- [ ] **Step 1: Write RED repository-mapper test**
+- [ ] **Step 1: Write RED repository mapper assertions**
 
-Build a `DspaceItem` containing:
+Create a DSpace item with:
 
 ```text
 crr.documentation.url=https://www.census.gov/about/adrm/fsrdc.html
@@ -543,61 +530,38 @@ dc.subject=LEHD
 dc.subject=Restricted use
 crr.access.mechanism=FSRDC
 crr.access.url=https://www.census.gov/about/adrm/fsrdc.html
-crr.access.instructions=Access requires an approved research proposal...
+crr.access.instructions=Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.
 crr.access.restrictionbasis=Title 13, U.S. Code
 ```
 
-Assert mapped detail contains the exact fields and no file is introduced.
+Assert mapped detail contains exactly those facts and no synthetic file.
 
-- [ ] **Step 2: Write RED fixture parity test**
+- [ ] **Step 2: Write RED fixture parity assertions**
 
-Read `lehd-microdata-restricted` from `FixtureCatalog` and assert the same detail values as the repository mapper case.
+Load `lehd-microdata-restricted` from `FixtureCatalog` and assert the same detail facts.
 
-- [ ] **Step 3: Run and confirm RED**
+- [ ] **Step 3: Run and verify RED**
 
 ```bash
 pnpm nx test repository-api
 ```
 
-Expected: new detail assertions fail.
-
 - [ ] **Step 4: Implement repository mapping**
 
-Use existing `firstValue`/metadata helpers. Build generated DTO guidance only if at least one structured access value exists:
+Add a helper that returns generated `org.civicsrepo.generated.dto.ResearchAccessGuidance` only when at least one managed access value exists. Preserve URI typing produced by the generator for `accessUrl`.
 
-```java
-private ResearchAccessGuidance accessGuidance(DspaceItem item) {
-    String mechanism = firstValue(item, DspaceManagedFields.ACCESS_MECHANISM_FIELD).orElse(null);
-    String accessUrl = firstValue(item, DspaceManagedFields.ACCESS_URL_FIELD).orElse(null);
-    String instructions = firstValue(item, DspaceManagedFields.ACCESS_INSTRUCTIONS_FIELD).orElse(null);
-    String restrictionBasis = firstValue(item, DspaceManagedFields.ACCESS_RESTRICTION_BASIS_FIELD).orElse(null);
-    if (Stream.of(mechanism, accessUrl, instructions, restrictionBasis).allMatch(Objects::isNull)) {
-        return null;
-    }
-    return new ResearchAccessGuidance()
-        .mechanism(mechanism)
-        .accessUrl(accessUrl == null ? null : URI.create(accessUrl))
-        .instructions(instructions)
-        .restrictionBasis(restrictionBasis);
-}
-```
-
-Use the generated DTO class name produced by Task 1; if the Java generator models `accessUrl` as `URI`, retain that type rather than converting back to string.
-
-Map `dc.subject` as a list without inventing values.
+Map subjects from `dc.subject`, documentation URL from `crr.documentation.url`, geographic level from `crr.geography.level`.
 
 - [ ] **Step 5: Implement fixture parity**
 
-Parse the same JSON `accessGuidance` object in `FixtureCatalog`. Set `subjects(textList(item.path("subjects")))`, `documentationUrl`, `geographicLevel`, and `accessGuidance` on `ResearchObjectDetail`.
+Parse `item.path("accessGuidance")` in `FixtureCatalog`; set the same generated DTO plus subjects, documentation URL and geographic level.
 
-- [ ] **Step 6: Run tests and verify GREEN**
+- [ ] **Step 6: Run and verify GREEN**
 
 ```bash
 pnpm nx test repository-api
 pnpm openapi:check
 ```
-
-Expected: PASS.
 
 - [ ] **Step 7: Commit**
 
@@ -611,7 +575,7 @@ git commit -m "feat(metadata): expose profile inputs from repository"
 
 ---
 
-### Task 6: Introduce the normalized `ResearchMetadataProfile` authority boundary
+## Task 6: Introduce the immutable `ResearchMetadataProfile` boundary
 
 **Files:**
 - Create: `apps/repository-api/src/main/java/org/civicsrepo/metadata/ResearchMetadataProfile.java`
@@ -621,41 +585,79 @@ git commit -m "feat(metadata): expose profile inputs from repository"
 - Modify test: `apps/repository-api/src/test/java/org/civicsrepo/research/ResearchObjectServiceTest.java`
 
 **Interfaces:**
-- `ResearchMetadataProfile` contains normalized facts only. Recommended decomposition:
+- `ResearchMetadataProfile` is profile-owned and immutable. It may use existing enums (`ResearchObjectType`, `ResearchProgram`, `AccessLevel`, `FileFormat`, `VersionHistoryStatus`) but must not store generated mutable DTO objects.
+- Define nested records exactly for authors, files, relations, access and versions so PR 2 renderers depend only on this profile.
+
+Required shape:
 
 ```java
 public record ResearchMetadataProfile(
-    String id,
-    ResearchObjectType type,
-    String title,
-    String abstractText,
-    String publisher,
-    ResearchProgram program,
-    String citation,
-    String doi,
-    URI sourceUrl,
-    URI documentationUrl,
-    String geography,
-    String geographicLevel,
-    Integer vintageYear,
-    LocalDate releasedOn,
-    List<String> subjects,
-    List<ResearchAuthor> authors,
-    AccessLevel accessLevel,
-    String accessNote,
-    String license,
-    org.civicsrepo.generated.dto.ResearchAccessGuidance accessGuidance,
-    List<DatasetFile> files,
-    List<ResearchRelation> relations,
-    ResearchArtifactVersionHistory versionHistory) {}
+        String id,
+        ResearchObjectType type,
+        String title,
+        String abstractText,
+        String publisher,
+        ResearchProgram program,
+        String citation,
+        String doi,
+        URI sourceUrl,
+        URI documentationUrl,
+        String geography,
+        String geographicLevel,
+        Integer vintageYear,
+        LocalDate releasedOn,
+        List<String> subjects,
+        List<Author> authors,
+        Access access,
+        List<Distribution> distributions,
+        List<Relation> relations,
+        VersionHistory versions) {
+
+    public record Author(String name, String orcid) {}
+
+    public record Access(
+            AccessLevel level,
+            String note,
+            String license,
+            ResearchAccessMetadata guidance) {}
+
+    public record Distribution(String id, String label, FileFormat format, URI url) {}
+
+    public record Relation(
+            String verb,
+            String targetId,
+            String targetTitle,
+            ResearchObjectType targetType,
+            AccessLevel targetAccessLevel,
+            String note) {}
+
+    public record VersionHistory(
+            VersionHistoryStatus status,
+            List<Version> items,
+            String note) {}
+
+    public record Version(
+            String id,
+            String label,
+            boolean current,
+            String versionLabel,
+            LocalDate versionDate,
+            LocalDate releasedOn,
+            String doi,
+            URI sourceUrl,
+            String sourceSha256,
+            OffsetDateTime capturedAt,
+            String isVersionOf,
+            String supersedes,
+            String changeNote) {}
+}
 ```
 
-If reusing generated DTOs inside the profile makes equality/testing awkward, introduce small immutable profile-owned records for author/file/relation/access instead. The non-negotiable rule is that renderers in PR 2 receive one profile object and do not re-read DSpace/search/fixture state themselves.
+Compact constructors copy every list with `List.copyOf(...)` and replace null lists with `List.of()`.
 
-- `ResearchMetadataProfileAssembler.assemble(ResearchObjectDetail detail, ResearchArtifactVersionHistory versions)` returns a deterministic immutable profile.
-- `ResearchObjectService.getResearchMetadataProfile(String researchIdToken)` resolves detail and version history through existing authority paths, then delegates to the assembler. It is internal service API in PR 1; no HTTP export endpoint yet.
+- `ResearchMetadataProfileAssembler.assemble(ResearchObjectDetail detail, ResearchArtifactVersionHistory history)` performs copying only; it has no repositories, clocks, HTTP clients or search dependencies.
 
-- [ ] **Step 1: Write RED profile tests for representative object classes**
+- [ ] **Step 1: Write RED representative profile tests**
 
 Cover at minimum:
 
@@ -664,60 +666,56 @@ Cover at minimum:
 3. methodology object;
 4. project object;
 5. code object;
-6. restricted LEHD dataset with zero files;
-7. versioned TIGER object with `HISTORY_AVAILABLE` 2 → 1;
+6. restricted LEHD dataset with zero distributions;
+7. versioned TIGER object with repository versions 2 → 1;
 8. partial metadata object.
 
-Assertions must include:
+Required assertions include:
 
 ```java
-assertThat(profile.doi()).isNull(); // when absent; never fabricated
-assertThat(profile.versionHistory().getStatus()).isEqualTo(HISTORY_AVAILABLE);
-assertThat(profile.accessGuidance().getMechanism()).isEqualTo("FSRDC");
-assertThat(profile.files()).isEmpty(); // restricted object
+assertThat(restricted.access().guidance().mechanism()).isEqualTo("FSRDC");
+assertThat(restricted.distributions()).isEmpty();
+assertThat(partial.doi()).isNull();
+assertThat(versioned.versions().status()).isEqualTo(VersionHistoryStatus.HISTORY_AVAILABLE);
+assertThat(versioned.versions().items()).hasSize(2);
+assertThat(versioned.versions().items().get(0).supersedes()).isEqualTo("dspace-version:1");
 ```
 
-For the partial object, assert unknown ORCID/DOI/documentation/access guidance stay absent. Do not assert fallback strings like `Unknown`.
+- [ ] **Step 2: Write RED determinism/no-inference tests**
 
-- [ ] **Step 2: Add determinism/no-inference RED tests**
+Assemble identical inputs twice and assert equality. Build a detail with `vintageYear=2025` and singleton `OBSERVED_CURRENT_ONLY` history; assert the profile still contains one version and no inferred predecessor.
 
-Assemble the same detail/history twice and assert equality. Also create a detail with `vintageYear=2025` but singleton version history and assert the profile retains singleton history; it must not create an inferred 2024/previous version.
-
-- [ ] **Step 3: Run and confirm RED**
+- [ ] **Step 3: Run and verify RED**
 
 ```bash
 pnpm nx test repository-api
 ```
 
-Expected: classes/methods do not exist.
+Expected: profile classes/methods do not exist.
 
-- [ ] **Step 4: Implement the immutable profile and assembler**
+- [ ] **Step 4: Implement profile + pure assembler**
 
-The assembler performs copying/normalization only. It must not call repositories, clocks, search indexes, network services, DOI resolvers, or ORCID services.
+Convert generated detail/history DTOs into the profile-owned nested records. Preserve nulls. Do not normalize unknown facts into display strings.
 
-Use `List.copyOf(...)` for collection components and preserve null as unknown.
+- [ ] **Step 5: Wire service authority without duplicate resolution**
 
-- [ ] **Step 5: Wire the service authority path**
-
-Inject `ResearchMetadataProfileAssembler` into `ResearchObjectService` and add:
+Refactor `ResearchObjectService` so existing version-history construction can accept an already resolved detail:
 
 ```java
 public ResearchMetadataProfile getResearchMetadataProfile(String researchIdToken) {
     ResearchObjectDetail detail = getResearchObject(researchIdToken);
-    ResearchArtifactVersionHistory versions = getResearchObjectVersionHistory(researchIdToken);
-    return researchMetadataProfileAssembler.assemble(detail, versions);
+    ResearchArtifactVersionHistory history = buildVersionHistory(detail);
+    return researchMetadataProfileAssembler.assemble(detail, history);
 }
 ```
 
-Do not create a controller route yet. PR 2 owns export endpoints and content types.
+`getResearchObjectVersionHistory(...)` should call the same private `buildVersionHistory(detail)` after resolving detail once. No new controller route is added in PR 1.
 
-- [ ] **Step 6: Run tests and verify GREEN**
+- [ ] **Step 6: Run and verify GREEN**
 
 ```bash
 pnpm nx test repository-api
 ```
-
-Expected: PASS across all representative profile cases.
 
 - [ ] **Step 7: Commit**
 
@@ -732,46 +730,29 @@ git commit -m "feat(metadata): add normalized research profile"
 
 ---
 
-### Task 7: Add a deterministic `metadata:validate` foundation gate
+## Task 7: Add the stable `metadata:validate` foundation gate
 
 **Files:**
-- Modify: `package.json`
 - Modify: `tools/scripts/metadata-profile-contract.test.mjs`
+- Modify: `package.json`
 - Modify: `.github/workflows/ci.yml`
 
 **Interfaces:**
-- `pnpm metadata:validate` is the stable command named in the verification design.
-- In PR 1 it validates the profile/input invariants and runs repository-api tests. PR 2 extends the same command with DataCite/Schema.org/DCAT/citation renderer/schema checks; it must not rename the command.
+- Stable command: `pnpm metadata:validate`.
+- PR 1 validates profile/catalog invariants and repository-api tests.
+- PR 2 extends the same command with DataCite/Schema.org/DCAT/citation renderer/schema validation; never rename it.
 
-- [ ] **Step 1: Expand the Node contract test before wiring the command**
+- [ ] **Step 1: Expand the fast contract test**
 
-Add checks that committed catalog fixtures include examples for every required profile role:
+Assert the committed catalog contains representative `DATASET`, `PUBLICATION`, `METHODOLOGY`, `PROJECT`, `CODE` objects; restricted LEHD has zero files + FSRDC guidance; at least one DOI-bearing publication has an ORCID author; no DOI, ORCID or access URL is stored as an empty string.
 
-```js
-for (const type of [
-  'DATASET',
-  'PUBLICATION',
-  'METHODOLOGY',
-  'PROJECT',
-  'CODE',
-]) {
-  assert.ok(items.some((item) => item.resourceType === type));
-}
-```
-
-Assert the restricted fixture has zero files and structured FSRDC guidance. Assert at least one DOI-bearing publication has an author with ORCID. Assert no object has an empty-string DOI/ORCID/access URL.
-
-- [ ] **Step 2: Add the package command**
-
-Add:
+- [ ] **Step 2: Add the package script**
 
 ```json
 "metadata:validate": "node --test tools/scripts/metadata-profile-contract.test.mjs && pnpm nx test repository-api"
 ```
 
-This is intentionally browser-free and deterministic. PR 2 appends renderer/schema validation to this exact command.
-
-- [ ] **Step 3: Run the gate locally**
+- [ ] **Step 3: Run locally**
 
 ```bash
 pnpm metadata:validate
@@ -779,27 +760,25 @@ pnpm metadata:validate
 
 Expected: PASS.
 
-- [ ] **Step 4: Add CI execution**
-
-In the normal workspace/quality CI job, add a named step after fixture/OpenAPI checks:
+- [ ] **Step 4: Add CI step without removing existing gates**
 
 ```yaml
 - name: Validate metadata profile foundation
   run: pnpm metadata:validate
 ```
 
-Do not remove existing `test:all`, OpenAPI, fixture, docs, accessibility, or browser gates.
+Place it after OpenAPI/fixture generation checks in the normal CI job.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add package.json tools/scripts/metadata-profile-contract.test.mjs .github/workflows/ci.yml
+git add tools/scripts/metadata-profile-contract.test.mjs package.json .github/workflows/ci.yml
 git commit -m "test(metadata): add profile validation gate"
 ```
 
 ---
 
-### Task 8: Prove real DSpace restricted-access APPLY/readback/DIFF idempotence
+## Task 8: Prove real DSpace restricted-access APPLY/readback/DIFF idempotence
 
 **Files:**
 - Create: `tools/scripts/dspace-access-guidance-idempotence.mjs`
@@ -807,52 +786,53 @@ git commit -m "test(metadata): add profile validation gate"
 - Modify: `documentation/metadata-export-verification-design.md`
 
 **Interfaces:**
-- Script operates on stable fixture `lehd-microdata-restricted`.
-- Evidence result must prove exact DSpace fields, zero file manifest/bitstreams for protected data, API detail parity, and a replay `SKIP_ITEM`.
-- Script must not delete/reseed volumes itself; CI owns clean environment orchestration.
+- Stable target: `lehd-microdata-restricted`.
+- Sync source/program: `LEHD`.
+- Required terminal proof: exact DSpace metadata + zero protected files + API parity + replay `SKIP_ITEM` for the restricted source identifier.
 
-- [ ] **Step 1: Write the script as assertions, not log-only diagnostics**
+- [ ] **Step 1: Implement assertions, not diagnostic logging**
 
-Required checks:
+The script must:
 
 ```text
-1. locate restricted item by crr.identifier.source
-2. assert crr.rights.access == RESTRICTED
-3. assert crr.access.mechanism == FSRDC
-4. assert crr.access.url == authoritative Census FSRDC URL
-5. assert crr.access.restrictionbasis contains Title 13
-6. assert crr.file.manifest is absent/empty
-7. assert no ORIGINAL bundle bitstream represents confidential microdata
-8. GET repository API detail and assert the same accessGuidance
-9. run DIFF for the applicable source/program
-10. assert action for the restricted item is SKIP_ITEM and not UPDATE_ITEM/CREATE_ITEM
+1. authenticate to DSpace using the established dspace-session helper
+2. locate the item whose crr.identifier.source is lehd-microdata-restricted
+3. assert crr.rights.access == RESTRICTED
+4. assert crr.access.mechanism == FSRDC
+5. assert crr.access.url == https://www.census.gov/about/adrm/fsrdc.html
+6. assert crr.access.instructions contains approved research proposal
+7. assert crr.access.restrictionbasis == Title 13, U.S. Code
+8. assert crr.file.manifest is absent/empty
+9. assert no ORIGINAL bundle contains confidential LEHD microdata
+10. GET repository API detail and assert identical accessGuidance
+11. POST /api/admin/sync with { mode: "DIFF", source: "LEHD" }
+12. identify the action for lehd-microdata-restricted and require SKIP_ITEM
+13. reject CREATE_ITEM or UPDATE_ITEM for that object
 ```
 
-If the current sync CLI cannot target the singleton without also processing its program, filter the returned action list by source identifier and assert that item specifically; do not weaken the assertion to “DIFF completed”.
-
-- [ ] **Step 2: Run against the local DSpace stack**
-
-From a working copy with DSpace already seeded:
-
-```bash
-node tools/scripts/dspace-access-guidance-idempotence.mjs
-```
-
-Expected final line:
+Final successful output:
 
 ```text
 DSPACE ACCESS GUIDANCE IDEMPOTENCE: PASS
 ```
 
-If APPLY is required to introduce the new fields in an existing local seed, run the repository's established APPLY once, then require the script's replay DIFF to settle. Never claim idempotence from the APPLY itself.
+- [ ] **Step 2: Run against local DSpace after APPLY has introduced new fields**
 
-- [ ] **Step 3: Add clean-run CI sequence**
+Use the repository's normal LEHD APPLY path once if the existing local item predates the fields, then execute:
 
-In the existing DSpace provenance job, after seed/readiness and before or alongside the #114 lineage proof, run the new access-guidance evidence script. Preserve the existing Phase B and Phase C scripts unchanged unless this feature genuinely requires a shared helper.
+```bash
+node tools/scripts/dspace-access-guidance-idempotence.mjs
+```
 
-- [ ] **Step 4: Document the exact evidence output**
+The proof is the replay DIFF, not the APPLY.
 
-Update `documentation/metadata-export-verification-design.md` PR-1 section with the command name and the exact fields asserted. Keep PR-2/PR-3 sections marked as future design scope without pretending they are implemented.
+- [ ] **Step 3: Add clean CI execution**
+
+Run the script in the existing DSpace provenance job after DSpace seed/readiness. Preserve Phase B provenance and Phase C native-lineage scripts as required regression evidence.
+
+- [ ] **Step 4: Update verification documentation with actual command/evidence**
+
+Document the exact command, source identifier, asserted fields, zero-file rule and `SKIP_ITEM` result. Do not mark PR-2/PR-3 renderer/browser evidence implemented yet.
 
 - [ ] **Step 5: Commit**
 
@@ -865,21 +845,20 @@ git commit -m "test(dspace): prove restricted access guidance replay"
 
 ---
 
-### Task 9: Update permanent metadata documentation and verify crosswalk foundation
+## Task 9: Create permanent verbose crosswalk/authority documentation
 
 **Files:**
 - Modify: `documentation/open-science-research-objects.md`
 - Create: `documentation/metadata-profile-crosswalk.md`
-- Modify: `documentation/open-census-metadata-profile-design.md` only for verified corrections
 - Modify: `documentation/open-census-metadata-profile-review-checklist.md`
 
 **Interfaces:**
-- `metadata-profile-crosswalk.md` is the permanent field-level crosswalk, separate from the architectural design.
-- PR 1 rows describe internal + DSpace authority and reserved target mappings; PR 2 fills verified serialized examples and validation status.
+- Permanent crosswalk columns: CRR semantic, internal/DSpace field, DataCite 4.7 target, Schema.org target, DCAT-US 3.0 target, cardinality, CRR requirement, loss/ambiguity, verification fixture, implementation status.
+- PR 1 target-standard rows are explicitly `DESIGNED — renderer in PR 2`, not represented as implemented.
 
-- [ ] **Step 1: Document the new DSpace fields verbosely**
+- [ ] **Step 1: Document structured access fields and authority rules**
 
-Add a table to `open-science-research-objects.md`:
+Add:
 
 ```markdown
 | Semantic | DSpace field | Authority rule |
@@ -890,20 +869,13 @@ Add a table to `open-science-research-objects.md`:
 | Restriction basis | `crr.access.restrictionbasis` | Legal/policy basis only when explicitly known |
 ```
 
-Explain the relationship between these fields and existing `crr.rights.access` / `crr.rights.accessnote`.
+Explain how these complement `crr.rights.access` and `crr.rights.accessnote` rather than replacing them.
 
-- [ ] **Step 2: Create the permanent crosswalk**
+- [ ] **Step 2: Create the permanent field-by-field crosswalk**
 
-Copy the approved semantic table from the design into `documentation/metadata-profile-crosswalk.md`, then add columns:
+Move the approved design table into `documentation/metadata-profile-crosswalk.md`; add cardinality/requirement/loss/fixture/status columns. Use explicit `DESIGNED — renderer in PR 2` statuses for external serialization columns.
 
-- `CRR requirement` (`REQUIRED`, `RECOMMENDED`, `OPTIONAL`);
-- `Cardinality`;
-- `Loss/ambiguity`;
-- `Verification fixture`.
-
-Do not mark a target-standard mapping as implemented until PR 2 adds and validates the renderer. Use explicit status text `DESIGNED — renderer in PR 2`, not TODO/TBD.
-
-- [ ] **Step 3: Run documentation checks**
+- [ ] **Step 3: Run docs + formatting checks**
 
 ```bash
 pnpm docs:check
@@ -917,32 +889,29 @@ Expected: PASS.
 ```bash
 git add documentation/open-science-research-objects.md \
   documentation/metadata-profile-crosswalk.md \
-  documentation/open-census-metadata-profile-design.md \
   documentation/open-census-metadata-profile-review-checklist.md
 git commit -m "docs(metadata): document profile authority crosswalk"
 ```
 
 ---
 
-### Task 10: Run the PR-1 verification matrix before opening/merging
+## Task 10: Run the full PR-1 verification matrix before ready/merge
 
 **Files:**
-- No feature files unless a failing gate reveals a real defect.
-- Update evidence docs only after commands actually pass.
+- No feature changes unless a gate reveals a real defect.
 
 **Interfaces:**
-- This task produces evidence, not new behavior.
-- Do not weaken assertions or skip gates to make the matrix green.
+- This task creates evidence only; never weaken assertions to make the branch green.
 
-- [ ] **Step 1: Protect local unrelated work**
+- [ ] **Step 1: Protect unrelated local work**
 
 ```bash
 git status --short --branch
 ```
 
-Confirm any unrelated untracked file such as `tools/scripts/dspace-version-lineage.test.mjs` is untouched. Do not run `git clean`.
+Confirm unrelated untracked files remain untouched. Never run `git clean`.
 
-- [ ] **Step 2: Run focused profile/contract gates**
+- [ ] **Step 2: Run focused metadata/contract gates**
 
 ```bash
 pnpm metadata:validate
@@ -954,7 +923,7 @@ pnpm docs:check
 
 Expected: all PASS.
 
-- [ ] **Step 3: Run repository/unit/build quality gates**
+- [ ] **Step 3: Run normal repository quality gates**
 
 ```bash
 pnpm format:check
@@ -965,61 +934,61 @@ pnpm build:all
 
 Expected: all PASS.
 
-- [ ] **Step 4: Run DSpace evidence on a clean/reproducible stack**
+- [ ] **Step 4: Run DSpace evidence without destroying the developer evidence volume**
 
-Use the existing CI-equivalent DSpace setup; do not destroy the developer's existing evidence volume merely to make a local test convenient. Require:
+Require:
 
 ```text
 DSpace seed/readiness: PASS
 Phase B provenance APPLY→DIFF: PASS
-Phase C native version lineage: PASS
+Phase C DSpace-native lineage: PASS
 Restricted access guidance APPLY/readback/DIFF: PASS
 ```
 
-The new feature must not regress #114.
+Use a disposable CI/worktree stack for destructive clean-seed proof rather than `docker compose down -v` against the developer's existing successful lineage state.
 
-- [ ] **Step 5: Push and inspect GitHub CI**
+- [ ] **Step 5: Push and inspect GitHub workflows**
 
-Do not mark the PR ready until normal CI is green. PR 1 intentionally has no new visible UI, but existing Browser Evidence / Storybook / live Solr/OpenSearch / cross-browser / MapLibre workflows must remain green because OpenAPI/client and fixture changes can regress application compilation or mocks.
+Even though PR 1 adds no visible UI, require existing normal CI, Storybook/axe, live Solr/OpenSearch, Chromium/Firefox/WebKit accessibility/comparison, and MapLibre regression workflows to remain green because generated clients and fixtures can break those surfaces.
 
-- [ ] **Step 6: Require evidence artifacts before merge**
+- [ ] **Step 6: Require evidence artifacts/logs**
 
-Confirm CI has machine-readable/log evidence for:
+Confirm GitHub evidence contains:
 
-- `metadata:validate`;
-- restricted DSpace access guidance;
-- existing DSpace provenance/version lineage;
+- `metadata:validate` success;
+- restricted DSpace access-guidance proof;
+- existing Phase B/Phase C DSpace proof;
 - normal repository quality gates.
 
-If the existing workflow does not upload a metadata-profile evidence artifact yet, add a small JSON summary under `artifacts/metadata-profile-evidence.json` generated deterministically by the validation script and upload it as `metadata-profile-evidence`. The artifact contains fixture IDs/check names/status only—no current timestamp unless supplied by GitHub workflow metadata outside the deterministic body.
+If CI lacks a metadata-profile artifact, generate deterministic `artifacts/metadata-profile-evidence.json` containing fixture IDs, named checks and statuses only, and upload it as `metadata-profile-evidence`. Do not put a renderer-time timestamp/random identifier in that JSON.
 
-- [ ] **Step 7: Final verification-before-completion**
+- [ ] **Step 7: Run final verification-before-completion**
 
-Invoke `superpowers:verification-before-completion`. Re-fetch the exact PR head SHA and workflow results. Only then mark ready/merge with an expected-head guard.
+Invoke `superpowers:verification-before-completion`. Re-fetch the exact PR head SHA and all required workflow results. Mark ready/merge only if the head is unchanged and all required evidence is green.
 
 ---
 
 ## PR 1 Definition of Done
 
-PR 1 is complete only when all statements below are evidenced:
+PR 1 is complete only when all of the following are evidenced:
 
 1. Catalog/source parsing preserves DATASET, PUBLICATION, METHODOLOGY, PROJECT, CODE and restricted semantics instead of collapsing them to datasets.
 2. Blank/invalid release dates no longer become the current date.
-3. Structured access mechanism, URL, instructions, and restriction basis can be authored once in the catalog.
-4. Those access facts are registered DSpace metadata fields.
-5. SAF generation carries them deterministically.
-6. Live sync writes them only when known.
-7. Repository readback and fixture fallback expose the same access/detail shape.
-8. Restricted LEHD remains metadata-only with zero confidential files/downloads.
+3. Structured access mechanism, URL, instructions and restriction basis are authored once in the catalog.
+4. Those facts are registered as managed DSpace metadata.
+5. SAF generation and generated fixture output carry them deterministically.
+6. Live sync writes access guidance only when known.
+7. Repository readback and fixture fallback expose the same detail shape.
+8. Restricted LEHD remains metadata-only with no confidential distribution.
 9. APPLY/readback/replay DIFF settles to `SKIP_ITEM` for the restricted object.
-10. `ResearchMetadataProfile` exists as the single renderer input boundary.
-11. Profile assembly uses detail + observed version history and never queries search projections.
-12. Representative dataset/publication/methodology/project/code/restricted/versioned/partial profile tests pass.
-13. Vintage does not manufacture version lineage.
-14. DOI/ORCID/access facts remain absent when unknown.
+10. `ResearchMetadataProfile` exists as the single future-renderer input boundary.
+11. Profile assembly uses resolved detail + observed version history and never queries search projections.
+12. Dataset/publication/methodology/project/code/restricted/versioned/partial profile tests pass.
+13. Vintage never manufactures lineage.
+14. DOI, ORCID and access facts remain absent when unknown.
 15. `pnpm metadata:validate` exists and is green locally and in CI.
 16. OpenAPI/generated-client drift is green.
-17. Existing #114 Phase B/Phase C DSpace evidence remains green.
-18. Normal CI, Storybook/axe, live Solr/OpenSearch, cross-browser and MapLibre regressions remain green.
-19. Permanent documentation explains every new field and authority boundary.
-20. No DataCite/Schema.org/DCAT renderer or UI behavior is prematurely implemented in PR 1.
+17. Existing #114 Phase B and Phase C DSpace evidence remains green.
+18. Existing Storybook/axe, live Solr/OpenSearch, cross-browser and MapLibre regressions remain green.
+19. Permanent documentation explains every new field, authority boundary, cardinality and lossy mapping.
+20. No DataCite/Schema.org/DCAT renderer or Cite/Export UI is prematurely implemented in PR 1.
