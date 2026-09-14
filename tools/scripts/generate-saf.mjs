@@ -376,8 +376,7 @@ if (Number.isFinite(areaLimit)) {
 }
 
 if (skipped.length > 0) {
-  console.log(`
-Skipped ${skipped.length} program/area combination(s) the publisher does not offer:`);
+  console.log(`\nSkipped ${skipped.length} program/area combination(s) the publisher does not offer:`);
   for (const reason of skipped) {
     console.log(`  ${reason}`);
   }
@@ -420,6 +419,7 @@ function writeFixtureCatalog(catalogItems) {
       accessNote: item.accessNote,
       ...(item.accessGuidance ? { accessGuidance: item.accessGuidance } : {}),
       doi: item.doi,
+      subjects: item.subjects,
       authors: item.authors,
       relations: item.relations,
       files: item.files.map((file) => ({
