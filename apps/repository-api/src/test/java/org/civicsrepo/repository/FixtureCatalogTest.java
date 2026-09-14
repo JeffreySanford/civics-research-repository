@@ -14,7 +14,8 @@ class FixtureCatalogTest {
         assertThat(detail.getDocumentationUrl())
                 .hasToString("https://www.census.gov/about/adrm/fsrdc.html");
         assertThat(detail.getGeographicLevel()).isEqualTo("National");
-        assertThat(detail.getSubjects()).containsExactly("LEHD", "Restricted use");
+        assertThat(detail.getSubjects())
+                .containsExactly("LEHD", "Restricted use", "Title 13", "Administrative records");
         assertThat(detail.getFiles()).isEmpty();
 
         assertThat(detail.getAccessGuidance()).isNotNull();
