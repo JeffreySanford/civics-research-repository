@@ -20,6 +20,7 @@ import org.civicsrepo.generated.dto.EvidenceStatus;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.AccessLevel;
+import org.civicsrepo.generated.dto.ResearchAccessGuidance;
 import org.civicsrepo.generated.dto.ResearchAuthor;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
@@ -182,15 +183,19 @@ public class FixtureCatalog {
                         files(item),
                         item.path("citation").asText(),
                         result.getSourceUrl(),
+                        textList(item.path("subjects")),
                         List.of(),
                         ResearchObjectOrigin.FIXTURE,
                         result.getSourceSystem())
                 .geography(result.getGeography())
+                .documentationUrl(uriOrNull(item, "documentationUrl"))
+                .geographicLevel(textOrNull(item, "geographyLevel"))
                 .vintageYear(result.getVintageYear())
                 .releasedOn(releasedOn(item))
                 .contentType(result.getContentType())
                 .accessLevel(result.getAccessLevel())
                 .accessNote(textOrNull(item, "accessNote"))
+                .accessGuidance(accessGuidance(item))
                 .license(textOrNull(item, "license"))
                 .doi(textOrNull(item, "doi"))
                 .authors(authors(item))
@@ -231,6 +236,25 @@ public class FixtureCatalog {
         }
     }
 
+    private ResearchAccessGuidance accessGuidance(JsonNode item) {
+        JsonNode access = item.path("accessGuidance");
+        String mechanism = textOrNull(access, "mechanism");
+        String accessUrl = textOrNull(access, "accessUrl");
+        String instructions = textOrNull(access, "instructions");
+        String restrictionBasis = textOrNull(access, "restrictionBasis");
+
+        if (mechanism == null && accessUrl == null && instructions == null && restrictionBasis == null) {
+            return null;
+        }
+
+        ResearchAccessGuidance guidance = new ResearchAccessGuidance();
+        guidance.setMechanism(mechanism);
+        guidance.setAccessUrl(accessUrl == null ? null : URI.create(accessUrl));
+        guidance.setInstructions(instructions);
+        guidance.setRestrictionBasis(restrictionBasis);
+        return guidance;
+    }
+
     private List<ResearchAuthor> authors(JsonNode item) {
         List<ResearchAuthor> authors = new ArrayList<>();
         for (JsonNode author : item.path("authors")) {
@@ -262,6 +286,11 @@ public class FixtureCatalog {
     private String textOrNull(JsonNode item, String field) {
         String value = item.path(field).asText("");
         return value.isBlank() ? null : value;
+    }
+
+    private URI uriOrNull(JsonNode item, String field) {
+        String value = textOrNull(item, field);
+        return value == null ? null : URI.create(value);
     }
 
     private List<DatasetFile> files(JsonNode item) {

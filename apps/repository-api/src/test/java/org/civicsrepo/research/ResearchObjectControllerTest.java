@@ -78,6 +78,7 @@ class ResearchObjectControllerTest {
                         "Example research object",
                         URI.create("https://catalog.data.gov/dataset/example"),
                         List.of(),
+                        List.of(),
                         ResearchObjectOrigin.FEDERATED,
                         SourceSystem.DATA_GOV)
                 .programName("Federal Highway Administration");

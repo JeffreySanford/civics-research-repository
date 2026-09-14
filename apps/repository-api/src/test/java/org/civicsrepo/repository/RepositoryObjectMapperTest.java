@@ -1,19 +1,21 @@
 package org.civicsrepo.repository;
 
-import org.civicsrepo.generated.dto.ResearchObjectDetail;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.civicsrepo.generated.dto.FileFormat;
+import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SearchResult;
-import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.SourceSystem;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class RepositoryObjectMapperTest {
@@ -59,6 +61,73 @@ class RepositoryObjectMapperTest {
         assertThat(detail.getFiles()).hasSize(2);
         assertThat(detail.getFiles().getFirst().getFormat()).isEqualTo(FileFormat.ZIP);
         assertThat(detail.getFiles().getLast().getFormat()).isEqualTo(FileFormat.PDF);
+    }
+
+    @Test
+    void mapsRestrictedProfileInputsWithoutSyntheticFiles() {
+        Map<String, String> metadata = new LinkedHashMap<>();
+        metadata.put("dc.title", "LEHD Longitudinal Employer-Household Dynamics microdata");
+        metadata.put("dc.publisher", "U.S. Census Bureau");
+        metadata.put("dc.description.abstract", "Restricted LEHD microdata.");
+        metadata.put("dc.coverage.spatial", "United States");
+        metadata.put("crr.identifier.source", "lehd-microdata-restricted");
+        metadata.put("crr.program", "LEHD");
+        metadata.put("crr.geography.level", "National");
+        metadata.put("crr.source.url", "https://www.census.gov/about/adrm/fsrdc.html");
+        metadata.put("crr.documentation.url", "https://www.census.gov/about/adrm/fsrdc.html");
+        metadata.put("crr.rights.access", "RESTRICTED");
+        metadata.put("crr.access.mechanism", "FSRDC");
+        metadata.put("crr.access.url", "https://www.census.gov/about/adrm/fsrdc.html");
+        metadata.put(
+                "crr.access.instructions",
+                "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.");
+        metadata.put("crr.access.restrictionbasis", "Title 13, U.S. Code");
+
+        JsonNode item = RepositoryFixtures.item(
+                "uuid-lehd-microdata-restricted",
+                "LEHD Longitudinal Employer-Household Dynamics microdata",
+                metadata);
+        ObjectNode itemMetadata = (ObjectNode) item.path("metadata");
+        var subjects = itemMetadata.putArray("dc.subject");
+        subjects.addObject()
+                .put("value", "LEHD")
+                .put("language", "en_US")
+                .putNull("authority")
+                .put("confidence", -1);
+        subjects.addObject()
+                .put("value", "Restricted use")
+                .put("language", "en_US")
+                .putNull("authority")
+                .put("confidence", -1);
+        subjects.addObject()
+                .put("value", "Title 13")
+                .put("language", "en_US")
+                .putNull("authority")
+                .put("confidence", -1);
+        subjects.addObject()
+                .put("value", "Administrative records")
+                .put("language", "en_US")
+                .putNull("authority")
+                .put("confidence", -1);
+
+        ResearchObjectDetail detail = mapper.toResearchObjectDetail(item, List.of());
+
+        assertThat(detail.getDocumentationUrl())
+                .hasToString("https://www.census.gov/about/adrm/fsrdc.html");
+        assertThat(detail.getGeographicLevel()).isEqualTo("National");
+        assertThat(detail.getSubjects())
+                .containsExactly("LEHD", "Restricted use", "Title 13", "Administrative records");
+        assertThat(detail.getFiles()).isEmpty();
+
+        assertThat(detail.getAccessGuidance()).isNotNull();
+        assertThat(detail.getAccessGuidance().getMechanism()).isEqualTo("FSRDC");
+        assertThat(detail.getAccessGuidance().getAccessUrl())
+                .hasToString("https://www.census.gov/about/adrm/fsrdc.html");
+        assertThat(detail.getAccessGuidance().getInstructions())
+                .isEqualTo(
+                        "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.");
+        assertThat(detail.getAccessGuidance().getRestrictionBasis())
+                .isEqualTo("Title 13, U.S. Code");
     }
 
     /** The source identifier is what the rest of the system addresses items by, not the DSpace UUID. */

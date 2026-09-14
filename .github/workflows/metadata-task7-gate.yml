@@ -1,0 +1,78 @@
+name: Metadata Task 7 Gate
+
+on:
+  push:
+    branches:
+      - feat/open-census-metadata-profile
+    paths:
+      - '.github/workflows/metadata-task7-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  install-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/open-census-metadata-profile
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install permanent metadata validation command and CI gate
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+
+          const packagePath = 'package.json';
+          const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+          const command =
+            'node --test tools/scripts/metadata-profile-contract.test.mjs && pnpm nx test repository-api';
+          pkg.scripts['metadata:validate'] = command;
+          writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
+
+          const ciPath = '.github/workflows/ci.yml';
+          let ci = readFileSync(ciPath, 'utf8');
+          const gate =
+            '      - name: Validate metadata profile foundation\n' +
+            '        run: pnpm metadata:validate\n';
+          if (!ci.includes(gate)) {
+            const anchor =
+              '      - name: Check the fixture catalog is current\n' +
+              '        run: pnpm run fixture:check\n';
+            if (!ci.includes(anchor)) {
+              throw new Error('CI fixture-check insertion anchor was not found.');
+            }
+            ci = ci.replace(anchor, `${anchor}\n${gate}`);
+          }
+          writeFileSync(ciPath, ci);
+          NODE
+
+          pnpm exec prettier --write package.json .github/workflows/ci.yml
+          pnpm exec prettier --check \
+            package.json \
+            .github/workflows/ci.yml \
+            tools/scripts/metadata-profile-contract.test.mjs
+          git diff --check
+
+      - name: Verify permanent metadata validation command
+        run: pnpm metadata:validate
+
+      - name: Commit permanent metadata validation gate
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json .github/workflows/ci.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'test(metadata): add profile validation gate'
+          git push origin HEAD:feat/open-census-metadata-profile

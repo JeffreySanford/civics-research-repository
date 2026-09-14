@@ -79,6 +79,10 @@ class DspaceItemPayloadMapperTest {
 
         assertThat(payload.metadata()).containsKey(DspaceManagedFields.RESOURCE_TYPE_FIELD);
         assertThat(payload.metadata()).containsKey(DspaceManagedFields.ACCESS_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.ACCESS_MECHANISM_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.ACCESS_URL_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.ACCESS_INSTRUCTIONS_FIELD);
+        assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.ACCESS_RESTRICTION_BASIS_FIELD);
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.DOI_FIELD);
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.LICENSE_FIELD);
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.RESEARCHER_FIELD);
@@ -90,6 +94,51 @@ class DspaceItemPayloadMapperTest {
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.IS_VERSION_OF_FIELD);
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.SUPERSEDES_FIELD);
         assertThat(payload.metadata()).doesNotContainKey(DspaceManagedFields.CHANGE_NOTE_FIELD);
+    }
+
+    @Test
+    void restrictedPayloadWritesStructuredAccessGuidanceExactlyOnce() {
+        ResearchObjectMetadata restricted = new CatalogMetadataReader().forProgram(ResearchProgram.LEHD).stream()
+                .filter((item) -> item.id().equals("lehd-microdata-restricted"))
+                .findFirst()
+                .orElseThrow();
+
+        var payload = mapper.toItemPayload(restricted);
+
+        assertThat(payload.metadata().get(DspaceManagedFields.ACCESS_MECHANISM_FIELD))
+                .extracting(DspaceMetadataValue::value)
+                .containsExactly("FSRDC");
+        assertThat(payload.metadata().get(DspaceManagedFields.ACCESS_URL_FIELD))
+                .extracting(DspaceMetadataValue::value)
+                .containsExactly("https://www.census.gov/about/adrm/fsrdc.html");
+        assertThat(payload.metadata().get(DspaceManagedFields.ACCESS_INSTRUCTIONS_FIELD))
+                .extracting(DspaceMetadataValue::value)
+                .containsExactly(
+                        "Access requires an approved research proposal and Special Sworn Status through a Federal Statistical Research Data Center.");
+        assertThat(payload.metadata().get(DspaceManagedFields.ACCESS_RESTRICTION_BASIS_FIELD))
+                .extracting(DspaceMetadataValue::value)
+                .containsExactly("Title 13, U.S. Code");
+        assertThat(payload.bitstreams()).isEmpty();
+    }
+
+    @Test
+    void payloadOmitsIssuedDateWhenSourceDateIsUnknown() {
+        var payload = mapper.toItemPayload(ResearchObjectMetadata.dataset(
+                "unknown-release-date",
+                "Unknown release date fixture",
+                ResearchProgram.CPS,
+                "U.S. Census Bureau",
+                "No source release date was observed.",
+                "United States",
+                "National",
+                2026,
+                null,
+                "https://example.gov/source",
+                "https://example.gov/docs",
+                "Unknown release date fixture.",
+                List.of()));
+
+        assertThat(payload.metadata()).doesNotContainKey("dc.date.issued");
     }
 
     @Test

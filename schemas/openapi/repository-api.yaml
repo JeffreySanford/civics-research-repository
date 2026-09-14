@@ -2384,6 +2384,19 @@ components:
           $ref: '#/components/schemas/SearchEngineComparison'
         openSearch:
           $ref: '#/components/schemas/SearchEngineComparison'
+    ResearchAccessGuidance:
+      type: object
+      additionalProperties: false
+      properties:
+        mechanism:
+          type: string
+        accessUrl:
+          type: string
+          format: uri
+        instructions:
+          type: string
+        restrictionBasis:
+          type: string
     ResearchObjectDetail:
       type: object
       required:
@@ -2400,6 +2413,7 @@ components:
           source,
           origin,
           sourceSystem,
+          subjects,
         ]
       properties:
         source:
@@ -2434,6 +2448,17 @@ components:
         sourceUrl:
           type: string
           format: uri
+        documentationUrl:
+          type: string
+          format: uri
+        geographicLevel:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        accessGuidance:
+          $ref: '#/components/schemas/ResearchAccessGuidance'
         accessibilityEvidenceStatus:
           $ref: '#/components/schemas/EvidenceStatus'
         relatedResearch:

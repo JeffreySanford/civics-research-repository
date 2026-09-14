@@ -1287,6 +1287,13 @@ export interface components {
       solr: components['schemas']['SearchEngineComparison'];
       openSearch: components['schemas']['SearchEngineComparison'];
     };
+    ResearchAccessGuidance: {
+      mechanism?: string;
+      /** Format: uri */
+      accessUrl?: string;
+      instructions?: string;
+      restrictionBasis?: string;
+    };
     ResearchObjectDetail: {
       source: components['schemas']['RepositorySource'];
       id: string;
@@ -1305,6 +1312,11 @@ export interface components {
       citation: string;
       /** Format: uri */
       sourceUrl: string;
+      /** Format: uri */
+      documentationUrl?: string;
+      geographicLevel?: string;
+      subjects: string[];
+      accessGuidance?: components['schemas']['ResearchAccessGuidance'];
       accessibilityEvidenceStatus?: components['schemas']['EvidenceStatus'];
       relatedResearch: components['schemas']['SearchResult'][];
       contentType?: components['schemas']['ResearchObjectType'];

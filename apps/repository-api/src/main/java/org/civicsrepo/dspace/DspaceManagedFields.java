@@ -24,6 +24,10 @@ public final class DspaceManagedFields {
     public static final String RESOURCE_TYPE_FIELD = "crr.resource.type";
     public static final String ACCESS_FIELD = "crr.rights.access";
     public static final String ACCESS_NOTE_FIELD = "crr.rights.accessnote";
+    public static final String ACCESS_MECHANISM_FIELD = "crr.access.mechanism";
+    public static final String ACCESS_URL_FIELD = "crr.access.url";
+    public static final String ACCESS_INSTRUCTIONS_FIELD = "crr.access.instructions";
+    public static final String ACCESS_RESTRICTION_BASIS_FIELD = "crr.access.restrictionbasis";
     public static final String LICENSE_FIELD = "crr.rights.license";
     public static final String DOI_FIELD = "crr.identifier.doi";
     public static final String RESEARCHER_FIELD = "crr.contributor.researcher";
@@ -71,6 +75,10 @@ public final class DspaceManagedFields {
             RESOURCE_TYPE_FIELD,
             ACCESS_FIELD,
             ACCESS_NOTE_FIELD,
+            ACCESS_MECHANISM_FIELD,
+            ACCESS_URL_FIELD,
+            ACCESS_INSTRUCTIONS_FIELD,
+            ACCESS_RESTRICTION_BASIS_FIELD,
             LICENSE_FIELD,
             DOI_FIELD,
             RESEARCHER_FIELD,

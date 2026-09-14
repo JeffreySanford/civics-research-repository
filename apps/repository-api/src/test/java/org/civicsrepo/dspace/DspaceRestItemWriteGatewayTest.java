@@ -207,6 +207,28 @@ class DspaceRestItemWriteGatewayTest {
     }
 
     @Test
+    void sourceWithoutStructuredGuidanceDoesNotRemoveRepositoryGuidance() {
+        JsonNode item = firstItem(
+                """
+                {
+                  "type": "item",
+                  "withdrawn": false,
+                  "metadata": {
+                    "crr.access.url": [
+                      {"value": "https://www.census.gov/about/adrm/fsrdc.html", "language": "en_US", "authority": null, "confidence": -1}
+                    ]
+                  }
+                }
+                """);
+
+        List<Map<String, Object>> operations = gateway.metadataPatchOperations(item, SOURCE_IDENTIFIER, sourcePayload);
+
+        assertThat(operations)
+                .noneSatisfy((operation) -> assertThat(operation.get("path").toString())
+                        .startsWith("/metadata/" + DspaceManagedFields.ACCESS_URL_FIELD));
+    }
+
+    @Test
     void skipsReconciliationWhenCredentialsAreNotConfigured() {
         assertThat(gateway.ensureItemMetadata(SOURCE_IDENTIFIER, sourcePayload)).isFalse();
     }

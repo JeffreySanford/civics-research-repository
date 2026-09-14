@@ -94,6 +94,34 @@
 
   <dc-type>
     <schema>crr</schema>
+    <element>access</element>
+    <qualifier>mechanism</qualifier>
+    <scope_note>Named mechanism for legitimate access or discovery of a restricted object; descriptive metadata only and does not grant access.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>access</element>
+    <qualifier>url</qualifier>
+    <scope_note>Authoritative URL describing legitimate access or discovery for a restricted object; descriptive metadata only and does not grant access.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>access</element>
+    <qualifier>instructions</qualifier>
+    <scope_note>Source-authored instructions for legitimate access or discovery of a restricted object; descriptive metadata only and does not grant access.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
+    <element>access</element>
+    <qualifier>restrictionbasis</qualifier>
+    <scope_note>Source-authored basis for the access restriction; descriptive metadata only and does not grant access.</scope_note>
+  </dc-type>
+
+  <dc-type>
+    <schema>crr</schema>
     <element>identifier</element>
     <qualifier>doi</qualifier>
     <scope_note>Persistent scholarly identifier, where one exists. Omitted rather than invented when it does not.</scope_note>
