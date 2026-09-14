@@ -65,7 +65,7 @@ replace_once(
     generator,
     "      accessNote: item.accessNote,\n      doi: item.doi,\n",
     "      accessNote: item.accessNote,\n"
-    "      accessGuidance: item.accessGuidance,\n"
+    "      ...(item.accessGuidance ? { accessGuidance: item.accessGuidance } : {}),\n"
     "      doi: item.doi,\n",
 )
 
