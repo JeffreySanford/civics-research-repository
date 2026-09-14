@@ -1,14 +1,19 @@
 package org.civicsrepo.repository;
 
-import org.civicsrepo.generated.dto.ResearchObjectDetail;
-import org.civicsrepo.generated.dto.SearchResult;
-import org.civicsrepo.generated.dto.RepositorySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import org.civicsrepo.dspace.DspaceManagedFields;
 import org.civicsrepo.dspace.DspaceRestClient;
+import org.civicsrepo.dspace.DspaceRestClient.DspaceVersionRecord;
 import org.civicsrepo.dspace.DspaceUnavailableException;
+import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
+import org.civicsrepo.generated.dto.SearchResult;
 import org.junit.jupiter.api.Test;
 
 class RepositoryCatalogTest {
@@ -56,6 +61,66 @@ class RepositoryCatalogTest {
     @Test
     void reportsAnUnknownDatasetAsAbsentRatherThanGuessing() {
         assertThat(catalog(ITEMS).findDataset("no-such-dataset")).isEmpty();
+    }
+
+    @Test
+    void singletonDspaceHistoryRemainsObservedCurrentOnlyAndPreservesSourceVersionEvidence() {
+        String id = "artifact-2025";
+        JsonNode currentItem = versionedItem(id, "Observed artifact", "TIGER2025");
+        List<DspaceVersionRecord> versions = List.of(new DspaceVersionRecord(
+                "101", "1", "2026-09-13T10:00:00.000", "Initial repository version", true, currentItem));
+
+        List<ResearchArtifactVersion> history =
+                catalog(List.of(currentItem), versions).findObservedVersionHistory(id);
+
+        assertThat(history).singleElement().satisfies(version -> {
+            assertThat(version.getId()).isEqualTo(id);
+            assertThat(version.getCurrent()).isTrue();
+            assertThat(version.getVersionLabel()).isEqualTo("TIGER2025");
+            assertThat(version.getSupersedes()).isNull();
+        });
+    }
+
+    @Test
+    void noDspaceHistoryRemainsObservedCurrentOnlyWithoutManufacturingLineage() {
+        String id = "artifact-2025";
+        JsonNode currentItem = versionedItem(id, "Observed artifact", "TIGER2025");
+
+        List<ResearchArtifactVersion> history =
+                catalog(List.of(currentItem), List.of()).findObservedVersionHistory(id);
+
+        assertThat(history).singleElement().satisfies(version -> {
+            assertThat(version.getId()).isEqualTo(id);
+            assertThat(version.getVersionLabel()).isEqualTo("TIGER2025");
+            assertThat(version.getIsVersionOf()).isNull();
+            assertThat(version.getSupersedes()).isNull();
+        });
+    }
+
+    @Test
+    void mapsMultipleObservedDspaceVersionsIntoRepositoryNativeLineage() {
+        String id = "artifact-2025";
+        JsonNode currentItem = versionedItem(id, "Observed artifact", "TIGER2025");
+        JsonNode previousItem = versionedItem(id, "Observed artifact", "TIGER2024");
+        List<DspaceVersionRecord> versions = List.of(
+                new DspaceVersionRecord(
+                        "102", "2", "2026-09-13T10:00:00.000", "Updated source capture", true, currentItem),
+                new DspaceVersionRecord(
+                        "101", "1", "2026-08-13T10:00:00.000", "Initial repository capture", false, previousItem));
+
+        List<ResearchArtifactVersion> history =
+                catalog(List.of(currentItem), versions).findObservedVersionHistory(id);
+
+        assertThat(history).hasSize(2);
+        assertThat(history).extracting(ResearchArtifactVersion::getId)
+                .containsExactly("dspace-version:102", "dspace-version:101");
+        assertThat(history).extracting(ResearchArtifactVersion::getVersionLabel)
+                .containsExactly("Repository version 2", "Repository version 1");
+        assertThat(history).extracting(ResearchArtifactVersion::getCurrent)
+                .containsExactly(true, false);
+        assertThat(history.getFirst().getIsVersionOf()).isEqualTo(id);
+        assertThat(history.getFirst().getSupersedes()).isEqualTo("dspace-version:101");
+        assertThat(history.get(1).getSupersedes()).isNull();
     }
 
     /** Related research is computed from the repository, so it reflects what is actually held. */
@@ -124,12 +189,30 @@ class RepositoryCatalogTest {
         assertThat(catalog.findAllResearchObjects()).isEmpty();
     }
 
+    private JsonNode versionedItem(String sourceIdentifier, String title, String sourceVersion) {
+        Map<String, String> metadata = new LinkedHashMap<>();
+        metadata.put("dc.title", title);
+        metadata.put("crr.identifier.source", sourceIdentifier);
+        metadata.put(DspaceManagedFields.VERSION_LABEL_FIELD, sourceVersion);
+        metadata.put(DspaceManagedFields.SOURCE_URL_FIELD, "https://example.gov/" + sourceVersion);
+        return RepositoryFixtures.item("uuid-" + sourceIdentifier, title, metadata);
+    }
+
     private RepositoryCatalog catalog(List<JsonNode> items) {
+        return catalog(items, List.of());
+    }
+
+    private RepositoryCatalog catalog(List<JsonNode> items, List<DspaceVersionRecord> versions) {
         return new RepositoryCatalog(
                 new DspaceRestClient(BASE_URL, "", "") {
                     @Override
                     public List<JsonNode> listAllItems(int maxItems) {
                         return items;
+                    }
+
+                    @Override
+                    public List<DspaceVersionRecord> listItemVersions(String itemUuid) {
+                        return versions;
                     }
                 },
                 mapper,

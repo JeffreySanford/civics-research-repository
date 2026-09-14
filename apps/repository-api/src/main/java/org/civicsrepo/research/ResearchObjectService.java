@@ -47,16 +47,22 @@ public final class ResearchObjectService {
     public ResearchArtifactVersionHistory getResearchObjectVersionHistory(String researchIdToken) {
         ResearchObjectDetail detail = getResearchObject(researchIdToken);
 
-        // Detail presentation may resolve through a federated authority first, but persisted DSpace
-        // provenance remains authoritative for version evidence when the same canonical identity is
-        // present in the repository.
-        ResearchArtifactVersion observed = datasetService
-                .findObservedRepositoryVersion(detail.getId())
-                .orElseGet(() -> observedFromDetail(detail));
+        // Detail presentation may resolve through a federated authority first, but DSpace remains
+        // authoritative for repository version evidence when the same canonical identity is held.
+        List<ResearchArtifactVersion> repositoryVersions =
+                datasetService.findObservedRepositoryVersionHistory(detail.getId());
+        List<ResearchArtifactVersion> versions = repositoryVersions.isEmpty()
+                ? List.of(observedFromDetail(detail))
+                : repositoryVersions;
 
-        return new ResearchArtifactVersionHistory(
-                        detail.getId(), VersionHistoryStatus.OBSERVED_CURRENT_ONLY, List.of(observed))
-                .note("Only the current repository/source record has been observed; earlier or later version history is not established.");
+        VersionHistoryStatus status = versions.size() > 1
+                ? VersionHistoryStatus.HISTORY_AVAILABLE
+                : VersionHistoryStatus.OBSERVED_CURRENT_ONLY;
+        String note = status == VersionHistoryStatus.HISTORY_AVAILABLE
+                ? "Multiple repository versions have been observed in DSpace; lineage reflects DSpace-native version history."
+                : "Only the current repository/source record has been observed; earlier or later version history is not established.";
+
+        return new ResearchArtifactVersionHistory(detail.getId(), status, versions).note(note);
     }
 
     /**

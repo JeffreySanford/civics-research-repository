@@ -30,6 +30,38 @@ const observedCurrentOnly = {
   ],
 };
 
+const historyAvailable = {
+  researchObjectId: 'tiger-line-north-dakota-2025',
+  status: 'HISTORY_AVAILABLE',
+  note: 'Multiple repository versions have been observed in DSpace; lineage reflects DSpace-native version history.',
+  versions: [
+    {
+      id: 'dspace-version:102',
+      label: '2025 TIGER/Line - Census Tracts - North Dakota',
+      current: true,
+      versionLabel: 'Repository version 2',
+      versionDate: '2026-09-13',
+      releasedOn: '2025-09-23',
+      sourceUrl:
+        'https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip',
+      isVersionOf: 'tiger-line-north-dakota-2025',
+      supersedes: 'dspace-version:101',
+      changeNote: 'Phase C observed DSpace lineage proof',
+    },
+    {
+      id: 'dspace-version:101',
+      label: '2025 TIGER/Line - Census Tracts - North Dakota',
+      current: false,
+      versionLabel: 'Repository version 1',
+      versionDate: '2026-08-13',
+      releasedOn: '2025-09-23',
+      sourceUrl:
+        'https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip',
+      isVersionOf: 'tiger-line-north-dakota-2025',
+    },
+  ],
+};
+
 test.describe('artifact version provenance', () => {
   test.beforeEach(async ({ page }) => {
     await mockRepositoryApi(page);
@@ -134,6 +166,59 @@ test.describe('artifact version provenance', () => {
       page.getByText(/sync time is not substituted for capture evidence/),
     ).toBeVisible();
     await expect(page.getByText(checksum)).toHaveCount(0);
+
+    await waitForStablePage(page);
+    const results = await new AxeBuilder({ page })
+      .withTags(axeEngineeringTags)
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test('renders observed DSpace-native current and prior lineage with keyboard semantics @wcag @section508', async ({
+    page,
+  }) => {
+    await page.route('**/api/research/*/versions', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        json: historyAvailable,
+      });
+    });
+
+    await page.goto('/datasets/tiger-line-north-dakota-2025');
+    const versionsTab = page.getByRole('tab', { name: 'Versions' });
+    await versionsTab.focus();
+    await expect(versionsTab).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(
+      page.getByRole('heading', { name: 'Versions and provenance' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Observed multi-version lineage'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('DSpace native item version history'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Current repository version', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('Repository version 2')).toBeVisible();
+    await expect(page.getByText('Repository version 1')).toBeVisible();
+    await expect(page.getByText('dspace-version:101')).toBeVisible();
+    await expect(
+      page.getByText('Phase C observed DSpace lineage proof'),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        /Prior repository version is established by the observed DSpace version history/,
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        /Established from observed DSpace-native version-lineage records/,
+      ),
+    ).toHaveCount(2);
+    await expect(page.getByText('TIGER_LINE 2024')).toHaveCount(0);
 
     await waitForStablePage(page);
     const results = await new AxeBuilder({ page })

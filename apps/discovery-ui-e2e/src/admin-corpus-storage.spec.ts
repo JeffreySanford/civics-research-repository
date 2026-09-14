@@ -68,6 +68,12 @@ test.describe('Admin Sync corpus storage evidence', () => {
     let scaleStarted = false;
     let scalePolls = 0;
     let scaleCompleted = false;
+    let activationStarted = false;
+    let activationProgressPolls = 0;
+    let resolveActivationProgressObserved!: () => void;
+    const activationProgressObserved = new Promise<void>((resolve) => {
+      resolveActivationProgressObserved = resolve;
+    });
 
     await page.route(`**/api/admin/corpus/storage`, async (route) => {
       const response = scaleCompleted
@@ -176,6 +182,13 @@ test.describe('Admin Sync corpus storage evidence', () => {
         return;
       }
 
+      if (activationStarted) {
+        activationProgressPolls += 1;
+      }
+      // Match the scale-progress harness: the UI has independent render and completion
+      // observers, so keep the transient activation evidence available for several polls.
+      const releaseActivation =
+        activationStarted && activationProgressPolls >= 8;
       await route.fulfill({
         contentType: 'application/json',
         json: {
@@ -192,12 +205,16 @@ test.describe('Admin Sync corpus storage evidence', () => {
           message: 'Building Solr and OpenSearch projections.',
         },
       });
+      if (releaseActivation) {
+        resolveActivationProgressObserved();
+      }
     });
 
     await page.route(
       `**/api/admin/reindex?profile=FEDERATED_10K`,
       async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, 900));
+        activationStarted = true;
+        await activationProgressObserved;
         await route.fulfill({
           contentType: 'application/json',
           json: {

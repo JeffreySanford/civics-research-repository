@@ -123,18 +123,28 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
     expect(text).not.toContain('TIGER_LINE 2024');
   });
 
-  it('renders multiple versions and lineage only when history is explicitly available', async () => {
+  it('renders DSpace-native current and prior lineage only when history is explicitly available', async () => {
     const priorVersion: ResearchArtifactVersion = {
-      id: 'version-history-example-prior',
-      label: 'Observed release 2025.1',
-      releasedOn: '2025-06-01',
+      id: 'dspace-version:101',
+      label: 'Version history example',
+      releasedOn: '2025-09-01',
       current: false,
-      versionLabel: '2025.1',
+      versionLabel: 'Repository version 1',
+      versionDate: '2026-08-13',
       isVersionOf: 'version-history-example',
-      sourceUrl: 'https://example.gov/research/version-history-example/2025.1',
+      sourceUrl: 'https://example.gov/research/version-history-example/2025.2',
     };
     const fixture = await renderVersionHistory('HISTORY_AVAILABLE', [
-      { ...currentVersion, supersedes: priorVersion.id },
+      {
+        ...currentVersion,
+        id: 'dspace-version:102',
+        label: 'Version history example',
+        versionLabel: 'Repository version 2',
+        versionDate: '2026-09-13',
+        isVersionOf: 'version-history-example',
+        supersedes: priorVersion.id,
+        changeNote: 'Phase C observed DSpace lineage proof',
+      },
       priorVersion,
     ]);
     const text = fixture.nativeElement.textContent as string;
@@ -142,11 +152,20 @@ describe('ResearchObjectDetailPage version-history semantics', () => {
       'The repository has observed version-lineage records for this research artifact.',
     );
     expect(text).toContain('Observed multi-version lineage');
-    expect(text).toContain('Observed release 2025.2');
-    expect(text).toContain('Observed release 2025.1');
+    expect(text).toContain('DSpace native item version history');
+    expect(text).toContain('Current repository version');
+    expect(text).toContain('Repository version');
+    expect(text).toContain('Repository version 2');
+    expect(text).toContain('Repository version 1');
     expect(text).toContain('Supersedes');
-    expect(text).toContain('version-history-example-prior');
-    expect(text).toContain('Established from');
+    expect(text).toContain('dspace-version:101');
+    expect(text).toContain('Phase C observed DSpace lineage proof');
+    expect(text).toContain(
+      'Prior repository version is established by the observed DSpace version history.',
+    );
+    expect(text).toContain(
+      'Established from observed DSpace-native version-lineage records.',
+    );
   });
 
   it('states that provenance is unavailable instead of inferring history', async () => {

@@ -4,8 +4,8 @@
 # frontend coverage, and a production Storybook build. Browser accessibility evidence remains
 # separate because it needs real browsers and longer failure artifacts.
 # `api` builds and tests the Spring Boot service inside its Gradle container image.
-# `dspace-provenance` proves observed version metadata survives a real DSpace APPLY and settles to
-# a no-op DIFF instead of relying only on mapper mocks.
+# `dspace-provenance` proves observed version metadata survives a real DSpace APPLY, settles to a
+# no-op DIFF, and then proves first-class DSpace multi-version lineage through the public API.
 name: CI
 
 on:
@@ -54,6 +54,9 @@ jobs:
 
       - name: Test CBP source preparation
         run: node --test tools/scripts/prepare-cbp-source.test.mjs
+
+      - name: Test DSpace REST helpers
+        run: node --test tools/scripts/dspace-session.test.mjs tools/scripts/dspace-workflow.test.mjs
 
       - name: Check the accessibility evidence manifest is current
         run: pnpm run evidence:check
@@ -136,22 +139,15 @@ jobs:
           mkdir -p browser-evidence-artifacts/corpus-archives
           docker compose up -d --build postgres solr opensearch repository-api
 
-      - name: Wait for repository API
-        shell: bash
+      - name: Wait for repository startup search projection
         run: |
-          set -euo pipefail
-          for attempt in $(seq 1 80); do
-            if curl -fsS http://localhost:8080/api/admin/sync >/dev/null; then
-              exit 0
-            fi
-            sleep 3
-          done
-          docker compose ps
-          docker compose --profile dspace logs --tail=200 repository-api dspace-rest dspace-postgres dspace-solr
-          exit 1
+          node --input-type=module -e "import { verifyStartupProfile } from './tools/scripts/compose-stack.mjs'; await verifyStartupProfile('CURATED_DEMO');"
 
       - name: Prove APPLY then DIFF settles and provenance reads back
         run: node tools/scripts/dspace-provenance-idempotence.mjs
+
+      - name: Prove real DSpace multi-version lineage reads back
+        run: node tools/scripts/dspace-version-lineage.mjs
 
       - name: Capture DSpace diagnostics on failure
         if: failure()

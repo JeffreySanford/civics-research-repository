@@ -76,7 +76,7 @@ public class DspaceItemDiffPlanner {
                 continue;
             }
 
-            if (!equivalent(sourceValues, existing.getOrDefault(field, List.of()))) {
+            if (!equivalent(field, sourceValues, existing.getOrDefault(field, List.of()))) {
                 differing.add(field);
             }
         }
@@ -84,20 +84,17 @@ public class DspaceItemDiffPlanner {
     }
 
     /** Unordered comparison of value/language pairs, matching how apply decides to patch. */
-    private boolean equivalent(List<DspaceMetadataValue> sourceValues, List<DspaceMetadataValue> existingValues) {
-        if (sourceValues.size() != existingValues.size()) {
-            return false;
-        }
-
-        List<List<String>> remaining = new ArrayList<>(sourceValues.stream()
+    private boolean equivalent(
+            String field, List<DspaceMetadataValue> sourceValues, List<DspaceMetadataValue> existingValues) {
+        List<List<String>> remainingExisting = new ArrayList<>(existingValues.stream()
                 .map(DspaceItemDiffPlanner::comparisonKey)
                 .toList());
-        for (DspaceMetadataValue existingValue : existingValues) {
-            if (!remaining.remove(comparisonKey(existingValue))) {
+        for (DspaceMetadataValue sourceValue : sourceValues) {
+            if (!remainingExisting.remove(comparisonKey(sourceValue))) {
                 return false;
             }
         }
-        return remaining.isEmpty();
+        return DspaceManagedFields.allowsRepositoryAdditionalValues(field) || remainingExisting.isEmpty();
     }
 
     private static List<String> comparisonKey(DspaceMetadataValue value) {

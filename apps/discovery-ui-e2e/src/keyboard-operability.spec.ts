@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockRepositoryApi } from './support/repository-api-mocks';
 
 /**
@@ -47,6 +47,18 @@ async function openRoute(page: Page, path: string): Promise<void> {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible({
     timeout: 10_000,
   });
+
+  if (path === '/maps') {
+    // Keyboard evidence depends on the application-owned control DOM, not on MapLibre's later
+    // overlay registration lifecycle. Wait for the map surface and all category controls so the
+    // visible-control snapshot is stable without turning rendering into an accessibility precondition.
+    await expect(page.getByTestId('discovery-map-canvas')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.locator('details.layer-category')).toHaveCount(4, {
+      timeout: 10_000,
+    });
+  }
 }
 
 async function openMapLayerCategories(page: Page): Promise<void> {
@@ -57,21 +69,12 @@ async function openMapLayerCategories(page: Page): Promise<void> {
   });
 }
 
+function visibleControls(page: Page): Locator {
+  return page.locator(INTERACTIVE).filter({ visible: true });
+}
+
 async function visibleControlCount(page: Page): Promise<number> {
-  return page.locator(INTERACTIVE).evaluateAll(
-    (nodes) =>
-      nodes.filter((node) => {
-        const element = node as HTMLElement;
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return (
-          style.display !== 'none' &&
-          style.visibility !== 'hidden' &&
-          rect.width > 0 &&
-          rect.height > 0
-        );
-      }).length,
-  );
+  return visibleControls(page).count();
 }
 
 async function focusedStamp(page: Page): Promise<string | null> {
@@ -167,32 +170,30 @@ test.describe('keyboard operability', () => {
     });
 
     /**
-     * K13/N19: ask the browser accessibility tree for each control's computed name.
+     * K13/N19: ask the browser accessibility tree for each exposed control's computed name.
      *
-     * Do not reimplement the accessible-name algorithm here. Native `<label for>`, wrapping labels,
-     * aria-labelledby, aria-label, and Material-generated relationships all belong to the browser's
-     * accessibility computation, which is exactly what Playwright's assertion exercises.
+     * Do not reimplement visibility or the accessible-name algorithm here. Closed `<details>`
+     * descendants can retain ordinary CSS box metrics while being excluded from the accessibility
+     * tree. Playwright owns both the visibility filter and the browser accessible-name computation.
+     * Route readiness above waits only for the application-owned control DOM before locator.all()
+     * snapshots the dynamic control list.
      */
     test(`${route.name} names every control it focuses @wcag @section508`, async ({
       page,
     }) => {
       await openRoute(page, route.path);
 
-      const controls = page.locator(INTERACTIVE);
-      const controlCount = await controls.count();
+      const controls = await visibleControls(page).all();
       const unnamed: string[] = [];
-      for (let index = 0; index < controlCount; index += 1) {
-        const control = controls.nth(index);
-        if (!(await control.isVisible())) {
-          continue;
-        }
-
+      for (const control of controls) {
         try {
           await expect(control).toHaveAccessibleName(/\S+/, { timeout: 2_000 });
         } catch {
-          unnamed.push(
-            (await control.evaluate((node) => node.outerHTML)).slice(0, 160),
-          );
+          if (await control.isVisible()) {
+            unnamed.push(
+              (await control.evaluate((node) => node.outerHTML)).slice(0, 160),
+            );
+          }
         }
       }
 

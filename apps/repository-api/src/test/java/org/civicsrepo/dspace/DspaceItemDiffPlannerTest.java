@@ -4,6 +4,7 @@ import org.civicsrepo.generated.dto.SyncAction;
 import org.civicsrepo.sources.OfflineSourceFileProbe;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +40,6 @@ class DspaceItemDiffPlannerTest {
      */
     @Test
     void ignoresDspaceOwnedMetadataThatSynchronizationDoesNotManage() {
-        // Only genuinely unmanaged fields belong here. dc.identifier.uri is managed, so DSpace
-        // replacing it with a handle URL is a real difference and must still be reported.
         DspaceItemPayload repositoryPayload = withMetadata(
                 sourcePayload,
                 Map.of(
@@ -52,6 +51,37 @@ class DspaceItemDiffPlannerTest {
                 plannerFor(Optional.of(repositoryPayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
 
         assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
+    }
+
+    @Test
+    void ignoresRepositoryAddedIdentifierUriWhenSourceUriRemainsPresent() {
+        List<DspaceMetadataValue> identifierUris =
+                new ArrayList<>(sourcePayload.metadata().get("dc.identifier.uri"));
+        identifierUris.add(new DspaceMetadataValue(
+                "http://localhost:4000/handle/123456789/160.2", null, null, -1));
+        DspaceItemPayload repositoryPayload =
+                withMetadata(sourcePayload, Map.of("dc.identifier.uri", List.copyOf(identifierUris)));
+
+        SyncAction action =
+                plannerFor(Optional.of(repositoryPayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
+
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
+    }
+
+    @Test
+    void updatesWhenSourceIdentifierUriIsMissingEvenIfRepositoryHandleExists() {
+        DspaceItemPayload repositoryPayload = withMetadata(
+                sourcePayload,
+                Map.of(
+                        "dc.identifier.uri",
+                        List.of(new DspaceMetadataValue(
+                                "http://localhost:4000/handle/123456789/160.2", null, null, -1))));
+
+        SyncAction action =
+                plannerFor(Optional.of(repositoryPayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
+
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.UPDATE_ITEM);
+        assertThat(action.getDetail()).contains("dc.identifier.uri");
     }
 
     @Test

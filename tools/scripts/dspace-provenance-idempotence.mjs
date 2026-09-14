@@ -7,6 +7,10 @@ const output = resolve(
   process.env.CIVICS_EVIDENCE_OUTPUT ??
     'browser-evidence-artifacts/dspace-provenance-idempotence.json',
 );
+const readbackOutput = resolve(
+  process.env.CIVICS_EVIDENCE_READBACK_OUTPUT ??
+    'browser-evidence-artifacts/dspace-provenance-readback.json',
+);
 const researchObjectId = 'tiger-line-north-dakota-2025';
 
 async function requestJson(path, init = {}) {
@@ -38,6 +42,11 @@ function requireCondition(condition, message) {
   }
 }
 
+async function writeEvidence(path, evidence) {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
+}
+
 const apply = await sync('APPLY');
 requireCondition(
   apply.status === 'APPLIED',
@@ -63,6 +72,25 @@ const token = Buffer.from(researchObjectId, 'utf8').toString('base64url');
 const history = await requestJson(`/research/${token}/versions`);
 const current =
   history.versions?.find((version) => version.current) ?? history.versions?.[0];
+
+// Persist the actual read-back before contract assertions run. If an assertion fails, the CI
+// artifact still contains the state that caused the failure instead of only container logs.
+const readbackEvidence = {
+  evidenceVersion: 1,
+  source: 'TIGER_LINE',
+  researchObjectId,
+  phase: 'READBACK_OBSERVED',
+  replayDiff: {
+    status: diff.status,
+    actionTypes: diffActions,
+    settled: true,
+  },
+  history,
+  selectedCurrent: current ?? null,
+};
+await writeEvidence(readbackOutput, readbackEvidence);
+console.log(JSON.stringify(readbackEvidence, null, 2));
+
 requireCondition(
   history.status === 'OBSERVED_CURRENT_ONLY',
   `Phase B must not claim multi-version history; received ${history.status}`,
@@ -111,6 +139,5 @@ const evidence = {
   },
 };
 
-await mkdir(dirname(output), { recursive: true });
-await writeFile(output, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
+await writeEvidence(output, evidence);
 console.log(JSON.stringify(evidence, null, 2));

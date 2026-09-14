@@ -2,12 +2,12 @@ package org.civicsrepo.datasets;
 
 import java.util.List;
 import java.util.Optional;
-import org.civicsrepo.repository.FixtureCatalog;
-import org.civicsrepo.repository.RepositoryCatalog;
-import org.civicsrepo.generated.dto.ResearchArtifactVersion;
-import org.civicsrepo.generated.dto.ResearchObjectDetail;
 import org.civicsrepo.generated.dto.DatasetVersion;
 import org.civicsrepo.generated.dto.RepositorySource;
+import org.civicsrepo.generated.dto.ResearchArtifactVersion;
+import org.civicsrepo.generated.dto.ResearchObjectDetail;
+import org.civicsrepo.repository.FixtureCatalog;
+import org.civicsrepo.repository.RepositoryCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +58,15 @@ public class DatasetService {
                 : repositoryCatalog.findObservedVersion(researchObjectId);
     }
 
+    /**
+     * Observed repository lineage, using DSpace-native history only when multiple versions exist.
+     */
+    public List<ResearchArtifactVersion> findObservedRepositoryVersionHistory(String researchObjectId) {
+        return repositoryCatalog == null
+                ? List.of()
+                : repositoryCatalog.findObservedVersionHistory(researchObjectId);
+    }
+
     public List<DatasetVersion> getDatasetVersions(String datasetId) {
         ResearchObjectDetail detail = getDataset(datasetId);
         return List.of(new DatasetVersion(datasetId, detail.getTitle(), true)
@@ -67,5 +76,4 @@ public class DatasetService {
     private ResponseStatusException notFound(String datasetId) {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, "Dataset not found: " + datasetId);
     }
-
 }
