@@ -11,6 +11,8 @@ on:
       - 'apps/repository-api/src/main/java/org/civicsrepo/sources/CatalogMetadataReader.java'
       - 'apps/repository-api/src/test/java/org/civicsrepo/sources/CatalogMetadataReaderTest.java'
       - 'apps/repository-api/src/test/resources/catalog-metadata-reader-invalid-date.json'
+      - 'apps/repository-api/src/test/java/org/civicsrepo/maps/SaipeCountyChoroplethServiceTest.java'
+      - 'apps/repository-api/src/test/java/org/civicsrepo/maps/PopulationEstimatesServiceTest.java'
 
 jobs:
   verify:
