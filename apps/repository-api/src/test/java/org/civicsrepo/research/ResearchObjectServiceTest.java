@@ -190,6 +190,38 @@ class ResearchObjectServiceTest {
     }
 
     @Test
+    void metadataProfileResolvesDetailOnceAndReusesObservedVersionAuthority() {
+        String id = "tiger-line-north-dakota-2025";
+        ResearchObjectDetail detail = repositoryDetail(id);
+        ResearchArtifactVersion current = new ResearchArtifactVersion(
+                        "dspace-version:102", detail.getTitle())
+                .current(true)
+                .versionLabel("Repository version 2")
+                .isVersionOf(id)
+                .supersedes("dspace-version:101");
+        ResearchArtifactVersion previous = new ResearchArtifactVersion(
+                        "dspace-version:101", detail.getTitle())
+                .current(false)
+                .versionLabel("Repository version 1")
+                .isVersionOf(id);
+
+        when(federatedCatalog.findById(id)).thenReturn(Optional.empty());
+        when(datasetService.getDataset(id)).thenReturn(detail);
+        when(datasetService.findObservedRepositoryVersionHistory(id))
+                .thenReturn(List.of(current, previous));
+
+        var profile = service.getResearchMetadataProfile(codec.encode(id));
+
+        assertThat(profile.id()).isEqualTo(id);
+        assertThat(profile.versions().status()).isEqualTo(VersionHistoryStatus.HISTORY_AVAILABLE);
+        assertThat(profile.versions().items().stream().map(version -> version.id()).toList())
+                .containsExactly("dspace-version:102", "dspace-version:101");
+        verify(federatedCatalog).findById(id);
+        verify(datasetService).getDataset(id);
+        verify(datasetService).findObservedRepositoryVersionHistory(id);
+    }
+
+    @Test
     void rejectsMalformedTokenAsBadRequestBeforeCatalogLookup() {
         assertThatThrownBy(() -> service.getResearchObject("bad/token="))
                 .isInstanceOfSatisfying(ResponseStatusException.class, exception ->
