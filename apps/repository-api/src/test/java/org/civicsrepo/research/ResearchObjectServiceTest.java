@@ -25,6 +25,7 @@ import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SourceSystem;
 import org.civicsrepo.generated.dto.VersionHistoryStatus;
+import org.civicsrepo.metadata.ResearchMetadataProfileAssembler;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,8 +35,12 @@ class ResearchObjectServiceTest {
     private final FederatedMetadataCatalog federatedCatalog = mock(FederatedMetadataCatalog.class);
     private final DatasetService datasetService = mock(DatasetService.class);
     private final FederatedResearchObjectMapper mapper = new FederatedResearchObjectMapper();
-    private final ResearchObjectService service =
-            new ResearchObjectService(codec, federatedCatalog, mapper, datasetService);
+    private final ResearchObjectService service = new ResearchObjectService(
+            codec,
+            federatedCatalog,
+            mapper,
+            datasetService,
+            new ResearchMetadataProfileAssembler());
 
     @Test
     void resolvesFederatedMetadataWithoutFallingIntoDatasetDetail() {
