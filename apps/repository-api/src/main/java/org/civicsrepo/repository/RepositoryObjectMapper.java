@@ -6,6 +6,7 @@ import org.civicsrepo.generated.dto.DatasetFile;
 import org.civicsrepo.generated.dto.EvidenceStatus;
 import org.civicsrepo.generated.dto.FileFormat;
 import org.civicsrepo.generated.dto.AccessLevel;
+import org.civicsrepo.generated.dto.ResearchAccessGuidance;
 import org.civicsrepo.generated.dto.ResearchAuthor;
 import org.civicsrepo.generated.dto.ResearchObjectOrigin;
 import org.civicsrepo.generated.dto.ResearchObjectType;
@@ -79,11 +80,14 @@ public class RepositoryObjectMapper {
                 ResearchObjectOrigin.REPOSITORY,
                 ResearchSourceSystemClassifier.forProgram(researchProgram))
                 .geography(firstValue(item, "dc.coverage.spatial").orElse("United States"))
+                .documentationUrl(firstValue(item, "crr.documentation.url").map(URI::create).orElse(null))
+                .geographicLevel(firstValue(item, "crr.geography.level").orElse(null))
                 .vintageYear(vintageYear(item).orElse(null))
                 .releasedOn(releasedOn(item).orElse(null))
                 .contentType(contentType(item))
                 .accessLevel(accessLevel(item))
                 .accessNote(firstValue(item, "crr.rights.accessnote").orElse(null))
+                .accessGuidance(accessGuidance(item))
                 .license(firstValue(item, "crr.rights.license").orElse(null))
                 .doi(firstValue(item, "crr.identifier.doi").orElse(null))
                 .authors(authors(item))
@@ -148,6 +152,28 @@ public class RepositoryObjectMapper {
                     }
                 })
                 .orElse(AccessLevel.PUBLIC);
+    }
+
+    /** Structured access facts are present only when DSpace actually stores at least one of them. */
+    private ResearchAccessGuidance accessGuidance(JsonNode item) {
+        Optional<String> mechanism = firstValue(item, "crr.access.mechanism");
+        Optional<String> accessUrl = firstValue(item, "crr.access.url");
+        Optional<String> instructions = firstValue(item, "crr.access.instructions");
+        Optional<String> restrictionBasis = firstValue(item, "crr.access.restrictionbasis");
+
+        if (mechanism.isEmpty()
+                && accessUrl.isEmpty()
+                && instructions.isEmpty()
+                && restrictionBasis.isEmpty()) {
+            return null;
+        }
+
+        ResearchAccessGuidance guidance = new ResearchAccessGuidance();
+        mechanism.ifPresent(guidance::setMechanism);
+        accessUrl.map(URI::create).ifPresent(guidance::setAccessUrl);
+        instructions.ifPresent(guidance::setInstructions);
+        restrictionBasis.ifPresent(guidance::setRestrictionBasis);
+        return guidance;
     }
 
     private List<ResearchAuthor> authors(JsonNode item) {
