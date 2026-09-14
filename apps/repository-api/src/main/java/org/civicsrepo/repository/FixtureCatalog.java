@@ -182,6 +182,7 @@ public class FixtureCatalog {
                         files(item),
                         item.path("citation").asText(),
                         result.getSourceUrl(),
+                        textList(item.path("subjects")),
                         List.of(),
                         ResearchObjectOrigin.FIXTURE,
                         result.getSourceSystem())
