@@ -46,3 +46,10 @@ jobs:
 
       - name: Test typed metadata contract
         run: pnpm nx test repository-api-client
+
+      - name: Verify catalog, SAF, and fixture metadata parity
+        run: |
+          pnpm dspace:saf:generate
+          pnpm fixture:check
+          node --test tools/scripts/metadata-profile-contract.test.mjs
+          git diff --check
