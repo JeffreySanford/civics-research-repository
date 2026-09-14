@@ -845,7 +845,8 @@
       "doi": "10.3386/w32252",
       "authors": [
         {
-          "name": "David Card"
+          "name": "David Card",
+          "orcid": "0000-0001-6914-6698"
         },
         {
           "name": "Jesse Rothstein"
@@ -1070,6 +1071,46 @@
         }
       ],
       "files": []
+    },
+    {
+      "id": "census-data-api-mcp-v0-1-2-beta",
+      "enabled": true,
+      "resourceType": "CODE",
+      "program": "OTHER",
+      "title": "U.S. Census Bureau Data API MCP v0.1.2-beta",
+      "abstract": "Official U.S. Census Bureau Model Context Protocol server that connects AI assistants with the Census Data API and other official Census Bureau sources.",
+      "publisher": "census",
+      "issued": "2026-03-06",
+      "vintage": 2026,
+      "geography": "United States",
+      "geographyLevel": "National",
+      "sourceUrl": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp/releases/tag/v0.1.2-beta",
+      "documentationUrl": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp",
+      "citation": "U.S. Census Bureau. U.S. Census Bureau Data API MCP, v0.1.2-beta. March 6, 2026.",
+      "subjects": [
+        "Census Data API",
+        "Model Context Protocol",
+        "Software",
+        "AI assistants"
+      ],
+      "access": "PUBLIC",
+      "license": "CC0-1.0 (Creative Commons Zero v1.0 Universal).",
+      "authors": [],
+      "relations": [],
+      "files": [
+        {
+          "id": "source-archive",
+          "label": "v0.1.2-beta source archive",
+          "format": "ZIP",
+          "url": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp/archive/refs/tags/v0.1.2-beta.zip"
+        },
+        {
+          "id": "source-repository",
+          "label": "Official Census Bureau source repository",
+          "format": "OTHER",
+          "url": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp"
+        }
+      ]
     }
   ]
 }

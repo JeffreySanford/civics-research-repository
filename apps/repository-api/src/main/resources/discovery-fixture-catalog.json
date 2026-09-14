@@ -1975,6 +1975,45 @@
       ]
     },
     {
+      "id": "census-data-api-mcp-v0-1-2-beta",
+      "title": "U.S. Census Bureau Data API MCP v0.1.2-beta",
+      "program": "OTHER",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Official U.S. Census Bureau Model Context Protocol server that connects AI assistants with the Census Data API and other official Census Bureau sources.",
+      "geography": "United States",
+      "geographyLevel": "National",
+      "vintageYear": 2026,
+      "releasedOn": "2026-03-06",
+      "citation": "U.S. Census Bureau. U.S. Census Bureau Data API MCP, v0.1.2-beta. March 6, 2026.",
+      "sourceUrl": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp/releases/tag/v0.1.2-beta",
+      "documentationUrl": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp",
+      "contentType": "CODE",
+      "accessLevel": "PUBLIC",
+      "license": "CC0-1.0 (Creative Commons Zero v1.0 Universal).",
+      "subjects": [
+        "Census Data API",
+        "Model Context Protocol",
+        "Software",
+        "AI assistants"
+      ],
+      "authors": [],
+      "relations": [],
+      "files": [
+        {
+          "id": "source-archive",
+          "label": "v0.1.2-beta source archive",
+          "format": "ZIP",
+          "url": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp/archive/refs/tags/v0.1.2-beta.zip"
+        },
+        {
+          "id": "source-repository",
+          "label": "Official Census Bureau source repository",
+          "format": "OTHER",
+          "url": "https://github.com/uscensusbureau/us-census-bureau-data-api-mcp"
+        }
+      ]
+    },
+    {
       "id": "ces-spatial-mismatch-project",
       "title": "Spatial mismatch and workplace location in US labor markets",
       "program": "LEHD",
@@ -2093,7 +2132,8 @@
       ],
       "authors": [
         {
-          "name": "David Card"
+          "name": "David Card",
+          "orcid": "0000-0001-6914-6698"
         },
         {
           "name": "Jesse Rothstein"
