@@ -31,72 +31,64 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply exact Task 1 OpenAPI contract
-        shell: python
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           path = Path('schemas/openapi/repository-api.yaml')
           text = path.read_text()
 
           schema_anchor = "    ResearchObjectDetail:\n"
-          schema = """    ResearchAccessGuidance:
-      type: object
-      additionalProperties: false
-      properties:
-        mechanism:
-          type: string
-        accessUrl:
-          type: string
-          format: uri
-        instructions:
-          type: string
-        restrictionBasis:
-          type: string
-    ResearchObjectDetail:
-"""
+          schema = (
+              "    ResearchAccessGuidance:\n"
+              "      type: object\n"
+              "      additionalProperties: false\n"
+              "      properties:\n"
+              "        mechanism:\n"
+              "          type: string\n"
+              "        accessUrl:\n"
+              "          type: string\n"
+              "          format: uri\n"
+              "        instructions:\n"
+              "          type: string\n"
+              "        restrictionBasis:\n"
+              "          type: string\n"
+              "    ResearchObjectDetail:\n"
+          )
           if text.count(schema_anchor) != 1:
               raise SystemExit('ResearchObjectDetail schema anchor is not unique')
           text = text.replace(schema_anchor, schema, 1)
 
-          required_anchor = """          origin,
-          sourceSystem,
-        ]
-"""
-          required_replacement = """          origin,
-          sourceSystem,
-          subjects,
-        ]
-"""
+          required_anchor = "          origin,\n          sourceSystem,\n        ]\n"
+          required_replacement = "          origin,\n          sourceSystem,\n          subjects,\n        ]\n"
           if text.count(required_anchor) != 1:
               raise SystemExit('ResearchObjectDetail required-list anchor is not unique')
           text = text.replace(required_anchor, required_replacement, 1)
 
-          property_anchor = """        sourceUrl:
-          type: string
-          format: uri
-        accessibilityEvidenceStatus:
-"""
-          property_replacement = """        sourceUrl:
-          type: string
-          format: uri
-        documentationUrl:
-          type: string
-          format: uri
-        geographicLevel:
-          type: string
-        subjects:
-          type: array
-          items:
-            type: string
-        accessGuidance:
-          $ref: '#/components/schemas/ResearchAccessGuidance'
-        accessibilityEvidenceStatus:
-"""
+          property_anchor = "        sourceUrl:\n          type: string\n          format: uri\n        accessibilityEvidenceStatus:\n"
+          property_replacement = (
+              "        sourceUrl:\n"
+              "          type: string\n"
+              "          format: uri\n"
+              "        documentationUrl:\n"
+              "          type: string\n"
+              "          format: uri\n"
+              "        geographicLevel:\n"
+              "          type: string\n"
+              "        subjects:\n"
+              "          type: array\n"
+              "          items:\n"
+              "            type: string\n"
+              "        accessGuidance:\n"
+              "          $ref: '#/components/schemas/ResearchAccessGuidance'\n"
+              "        accessibilityEvidenceStatus:\n"
+          )
           if text.count(property_anchor) != 1:
               raise SystemExit('ResearchObjectDetail property anchor is not unique')
           text = text.replace(property_anchor, property_replacement, 1)
 
           path.write_text(text)
+          PY
 
       - name: Generate and verify API contract
         run: |
@@ -111,6 +103,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add schemas/openapi/repository-api.yaml libs/repository/api-client/src/generated/repository-api.types.ts
-          git diff --cached --exit-code && exit 0
+          if git diff --cached --quiet; then
+            exit 0
+          fi
           git commit -m 'feat(metadata): extend research detail profile inputs'
           git push origin HEAD:feat/open-census-metadata-profile
