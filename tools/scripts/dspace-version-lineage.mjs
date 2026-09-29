@@ -11,13 +11,9 @@ const apiBaseUrl =
 const dspaceBaseUrl =
   process.env.DSPACE_BASE_URL ?? 'http://localhost:8081/server';
 const adminEmail =
-  process.env.CIVICS_DSPACE_ADMIN_EMAIL ??
-  process.env.DSPACE_SEED_ADMIN_EMAIL ??
-  'admin@civics.local';
+  process.env.CIVICS_DSPACE_ADMIN_EMAIL ?? 'admin@civics.local';
 const adminPassword =
-  process.env.CIVICS_DSPACE_ADMIN_PASSWORD ??
-  process.env.DSPACE_SEED_ADMIN_PASSWORD ??
-  'local-demo-not-a-secret';
+  process.env.CIVICS_DSPACE_ADMIN_PASSWORD ?? 'civics-admin';
 const output = resolve(
   process.env.CIVICS_LINEAGE_EVIDENCE_OUTPUT ??
     'browser-evidence-artifacts/dspace-version-lineage.json',

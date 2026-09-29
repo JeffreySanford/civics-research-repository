@@ -1,10 +1,10 @@
 #!/bin/sh
 set -eu
 
-admin_email="${DSPACE_SEED_ADMIN_EMAIL:-admin@civics.local}"
+admin_email="${CIVICS_DSPACE_ADMIN_EMAIL:-admin@civics.local}"
 admin_first="${DSPACE_SEED_ADMIN_FIRST:-Civics}"
 admin_last="${DSPACE_SEED_ADMIN_LAST:-Administrator}"
-admin_password="${DSPACE_SEED_ADMIN_PASSWORD:-civics-admin}"
+admin_password="${CIVICS_DSPACE_ADMIN_PASSWORD:-civics-admin}"
 community_name="${DSPACE_SEED_COMMUNITY:-Census Public Research Data}"
 collection_name="${DSPACE_SEED_COLLECTION:-TIGER/Line Geospatial Files}"
 
