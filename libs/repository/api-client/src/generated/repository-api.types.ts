@@ -61,6 +61,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/research/{researchId}/metadata-profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the canonical normalized metadata profile for a research object.
+     * @description Resolves the research object through the existing canonical detail and observed-version authority path, then returns one immutable normalized metadata profile. Missing facts remain unknown; restricted metadata never implies access or a downloadable distribution.
+     */
+    get: operations['getResearchMetadataProfile'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/research/{researchId}/versions': {
     parameters: {
       query?: never;
@@ -1287,6 +1307,80 @@ export interface components {
       solr: components['schemas']['SearchEngineComparison'];
       openSearch: components['schemas']['SearchEngineComparison'];
     };
+    ResearchMetadataProfile: {
+      id: string;
+      type: components['schemas']['ResearchObjectType'];
+      title: string;
+      abstractText?: string;
+      publisher: string;
+      program: components['schemas']['ResearchProgram'];
+      citation?: string;
+      doi?: string;
+      /** Format: uri */
+      sourceUrl?: string;
+      /** Format: uri */
+      documentationUrl?: string;
+      geography?: string;
+      geographicLevel?: string;
+      vintageYear?: number;
+      /** Format: date */
+      releasedOn?: string;
+      subjects: string[];
+      authors: components['schemas']['ResearchMetadataAuthor'][];
+      access: components['schemas']['ResearchMetadataAccess'];
+      distributions: components['schemas']['ResearchMetadataDistribution'][];
+      relations: components['schemas']['ResearchMetadataRelation'][];
+      versions?: components['schemas']['ResearchMetadataVersionHistory'];
+    };
+    ResearchMetadataAuthor: {
+      name: string;
+      orcid?: string;
+    };
+    ResearchMetadataAccess: {
+      level?: components['schemas']['AccessLevel'];
+      note?: string;
+      license?: string;
+      guidance?: components['schemas']['ResearchAccessGuidance'];
+    };
+    ResearchMetadataDistribution: {
+      id: string;
+      label: string;
+      format: components['schemas']['FileFormat'];
+      /** Format: uri */
+      url: string;
+    };
+    ResearchMetadataRelation: {
+      verb?: string;
+      targetId?: string;
+      targetTitle?: string;
+      targetType?: components['schemas']['ResearchObjectType'];
+      targetAccessLevel?: components['schemas']['AccessLevel'];
+      note?: string;
+    };
+    ResearchMetadataVersionHistory: {
+      status: components['schemas']['VersionHistoryStatus'];
+      items: components['schemas']['ResearchMetadataVersion'][];
+      note?: string;
+    };
+    ResearchMetadataVersion: {
+      id: string;
+      label: string;
+      current: boolean;
+      versionLabel?: string;
+      /** Format: date */
+      versionDate?: string;
+      /** Format: date */
+      releasedOn?: string;
+      doi?: string;
+      /** Format: uri */
+      sourceUrl?: string;
+      sourceSha256?: string;
+      /** Format: date-time */
+      capturedAt?: string;
+      isVersionOf?: string;
+      supersedes?: string;
+      changeNote?: string;
+    };
     ResearchAccessGuidance: {
       mechanism?: string;
       /** Format: uri */
@@ -2287,6 +2381,33 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ResearchObjectDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalServerError'];
+      503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getResearchMetadataProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description URL-safe Base64 identity token for the canonical local research-object identifier. The token keeps namespaced external identifiers containing slashes and URLs inside one path segment without changing the underlying identity used by persistence and discovery. */
+        researchId: components['parameters']['ResearchId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Canonical normalized research metadata profile. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ResearchMetadataProfile'];
         };
       };
       400: components['responses']['BadRequest'];

@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.net.URI;
 import java.util.List;
+import org.civicsrepo.generated.dto.AccessLevel;
+import org.civicsrepo.generated.dto.ResearchObjectType;
+import org.civicsrepo.metadata.ResearchMetadataProfile;
 import org.civicsrepo.generated.dto.RepositorySource;
 import org.civicsrepo.generated.dto.ResearchArtifactVersion;
 import org.civicsrepo.generated.dto.ResearchArtifactVersionHistory;
@@ -64,6 +67,48 @@ class ResearchObjectControllerTest {
                 .andExpect(jsonPath("$.versions.length()").value(1))
                 .andExpect(jsonPath("$.versions[0].id").value("DATA_GOV:https://example.gov"))
                 .andExpect(jsonPath("$.versions[0].current").value(true));
+    }
+
+    @Test
+    void serializesCanonicalMetadataProfile() throws Exception {
+        String token = "REFUQV9HT1Y6aHR0cHM6Ly9leGFtcGxlLmdvdg";
+
+        ResearchMetadataProfile profile = new ResearchMetadataProfile(
+                "lehd-microdata-restricted",
+                ResearchObjectType.DATASET,
+                "LEHD Longitudinal Employer-Household Dynamics microdata",
+                "Restricted-use LEHD research metadata.",
+                "U.S. Census Bureau",
+                ResearchProgram.LEHD,
+                "U.S. Census Bureau. LEHD microdata.",
+                null,
+                URI.create("https://www.census.gov/programs-surveys/ces/data/restricted-use-data.html"),
+                URI.create("https://www.census.gov/about/adrm/fsrdc.html"),
+                "United States",
+                "National",
+                2025,
+                null,
+                List.of("LEHD", "Restricted use", "Title 13"),
+                List.of(),
+                new ResearchMetadataProfile.Access(
+                        AccessLevel.RESTRICTED,
+                        "No confidential records are held by this repository.",
+                        "Restricted under Title 13, U.S. Code. Not redistributable.",
+                        null),
+                List.of(),
+                List.of(),
+                null);
+
+        given(researchObjectService.getResearchMetadataProfile(token))
+                .willReturn(profile);
+
+        mockMvc.perform(get("/research/{researchId}/metadata-profile", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("lehd-microdata-restricted"))
+                .andExpect(jsonPath("$.type").value("DATASET"))
+                .andExpect(jsonPath("$.program").value("LEHD"))
+                .andExpect(jsonPath("$.access.level").value("RESTRICTED"))
+                .andExpect(jsonPath("$.distributions.length()").value(0));
     }
 
     private ResearchObjectDetail detail() {

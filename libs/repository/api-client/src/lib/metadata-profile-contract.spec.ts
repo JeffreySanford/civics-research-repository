@@ -8,6 +8,15 @@ const generatedTypes = readFileSync(
 );
 
 describe('ResearchObjectDetail metadata profile contract', () => {
+  it('generates the canonical metadata profile endpoint and schema', () => {
+    expect(generatedTypes).toContain(
+      "'/research/{researchId}/metadata-profile':",
+    );
+    expect(generatedTypes).toContain('ResearchMetadataProfile: {');
+    expect(generatedTypes).toContain('ResearchMetadataAccess: {');
+    expect(generatedTypes).toContain('ResearchMetadataVersionHistory: {');
+  });
+
   it('generates the structured access and profile fields from OpenAPI', () => {
     expect(generatedTypes).toContain('ResearchAccessGuidance: {');
     expect(generatedTypes).toContain('documentationUrl?: string;');
