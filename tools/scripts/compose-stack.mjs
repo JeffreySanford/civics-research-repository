@@ -496,9 +496,9 @@ export async function verifyStartupProfile(profile = 'CURATED_DEMO') {
           return false;
         }
 
-        // A durable non-demo activation is deliberately preserved by SearchIndexStartupRunner.
-        // Verify the persisted active profile and the rehydrated non-empty repository projection
-        // instead of waiting forever for a CURATED_DEMO activation Java correctly never started.
+        // SearchIndexStartupRunner rehydrates a durable activation without starting a new progress
+        // operation. Verify the active profile and non-empty repository projection instead of
+        // waiting forever on the intentionally IDLE progress endpoint.
         const [storageResponse, projectionResponse] = await Promise.all([
           fetch(`${API_URL}/admin/corpus/storage`),
           fetch(`${API_URL}/admin/reindex`),
@@ -517,8 +517,10 @@ export async function verifyStartupProfile(profile = 'CURATED_DEMO') {
           typeof projection?.projectionId === 'string' &&
           /^[0-9a-f]{64}$/u.test(projection.projectionId);
 
-        if (activeProfile && activeProfile !== profile && projectionReady) {
-          preservedProfile = activeProfile;
+        if (activeProfile && projectionReady) {
+          if (activeProfile !== profile) {
+            preservedProfile = activeProfile;
+          }
           return true;
         }
         return false;

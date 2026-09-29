@@ -70,7 +70,7 @@ class PopulationEstimatesServiceTest {
         @SuppressWarnings("unchecked")
         var features =
                 (List<Map<String, Object>>)
-                        choropleth.getGeoJson()
+                        geoJson(choropleth.getGeoJson())
                                 .get("features");
 
         assertThat(features).hasSize(53);
@@ -390,6 +390,12 @@ class PopulationEstimatesServiceTest {
                         root);
             }
         };
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> geoJson(Object value) {
+        assertThat(value).isInstanceOf(Map.class);
+        return (Map<String, Object>) value;
     }
 
     private Set<String> productionGeoids(

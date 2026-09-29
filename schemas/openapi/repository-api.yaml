@@ -109,6 +109,33 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /research/{researchId}/metadata-profile:
+    get:
+      tags: [Datasets]
+      operationId: getResearchMetadataProfile
+      summary: Get the canonical normalized metadata profile for a research object.
+      description: >-
+        Resolves the research object through the existing canonical detail and observed-version
+        authority path, then returns one immutable normalized metadata profile. Missing facts remain
+        unknown; restricted metadata never implies access or a downloadable distribution.
+      parameters:
+        - $ref: '#/components/parameters/ResearchId'
+      responses:
+        '200':
+          description: Canonical normalized research metadata profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchMetadataProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
   /research/{researchId}/versions:
     get:
       tags: [Datasets]
@@ -2384,6 +2411,194 @@ components:
           $ref: '#/components/schemas/SearchEngineComparison'
         openSearch:
           $ref: '#/components/schemas/SearchEngineComparison'
+    ResearchMetadataProfile:
+      type: object
+      required:
+        - id
+        - type
+        - title
+        - publisher
+        - program
+        - subjects
+        - authors
+        - access
+        - distributions
+        - relations
+      properties:
+        id:
+          type: string
+        type:
+          $ref: '#/components/schemas/ResearchObjectType'
+        title:
+          type: string
+        abstractText:
+          type: string
+        publisher:
+          type: string
+        program:
+          $ref: '#/components/schemas/ResearchProgram'
+        citation:
+          type: string
+        doi:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        documentationUrl:
+          type: string
+          format: uri
+        geography:
+          type: string
+        geographicLevel:
+          type: string
+        vintageYear:
+          type: integer
+        releasedOn:
+          type: string
+          format: date
+        subjects:
+          type: array
+          items:
+            type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchMetadataAuthor'
+        access:
+          $ref: '#/components/schemas/ResearchMetadataAccess'
+        distributions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchMetadataDistribution'
+        relations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchMetadataRelation'
+        versions:
+          $ref: '#/components/schemas/ResearchMetadataVersionHistory'
+
+    ResearchMetadataAuthor:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        orcid:
+          type: string
+
+    ResearchMetadataAccess:
+      type: object
+      properties:
+        level:
+          $ref: '#/components/schemas/AccessLevel'
+        note:
+          type: string
+        license:
+          type: string
+        guidance:
+          $ref: '#/components/schemas/ResearchAccessGuidance'
+
+    ResearchMetadataDistribution:
+      type: object
+      required:
+        - id
+        - label
+        - format
+        - url
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        format:
+          $ref: '#/components/schemas/FileFormat'
+        url:
+          type: string
+          format: uri
+
+    ResearchMetadataRelation:
+      type: object
+      properties:
+        verb:
+          type: string
+        targetId:
+          type: string
+        targetTitle:
+          type: string
+        targetType:
+          $ref: '#/components/schemas/ResearchObjectType'
+        targetAccessLevel:
+          $ref: '#/components/schemas/AccessLevel'
+        note:
+          type: string
+
+    ResearchMetadataVersionHistory:
+      type: object
+      required:
+        - status
+        - items
+      properties:
+        status:
+          $ref: '#/components/schemas/VersionHistoryStatus'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchMetadataVersion'
+        note:
+          type: string
+
+    ResearchMetadataVersion:
+      type: object
+      required:
+        - id
+        - label
+        - current
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        current:
+          type: boolean
+        versionLabel:
+          type: string
+        versionDate:
+          type: string
+          format: date
+        releasedOn:
+          type: string
+          format: date
+        doi:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        sourceSha256:
+          type: string
+        capturedAt:
+          type: string
+          format: date-time
+        isVersionOf:
+          type: string
+        supersedes:
+          type: string
+        changeNote:
+          type: string
+
+    ResearchAccessGuidance:
+      type: object
+      additionalProperties: false
+      properties:
+        mechanism:
+          type: string
+        accessUrl:
+          type: string
+          format: uri
+        instructions:
+          type: string
+        restrictionBasis:
+          type: string
     ResearchObjectDetail:
       type: object
       required:
@@ -2400,6 +2615,7 @@ components:
           source,
           origin,
           sourceSystem,
+          subjects,
         ]
       properties:
         source:
@@ -2434,6 +2650,17 @@ components:
         sourceUrl:
           type: string
           format: uri
+        documentationUrl:
+          type: string
+          format: uri
+        geographicLevel:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        accessGuidance:
+          $ref: '#/components/schemas/ResearchAccessGuidance'
         accessibilityEvidenceStatus:
           $ref: '#/components/schemas/EvidenceStatus'
         relatedResearch:
@@ -3977,6 +4204,7 @@ components:
         [
           TIGER_LINE,
           LODES,
+          LEHD,
           ACS_PUMS,
           SIPP,
           CPS,

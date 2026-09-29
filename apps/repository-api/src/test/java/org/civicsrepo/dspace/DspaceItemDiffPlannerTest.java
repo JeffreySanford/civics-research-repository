@@ -138,6 +138,54 @@ class DspaceItemDiffPlannerTest {
         assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
     }
 
+    @Test
+    void skipsWhenStructuredAccessGuidanceMatchesRepository() {
+        DspaceItemPayload structuredSource = withMetadata(
+                sourcePayload,
+                Map.of(
+                        DspaceManagedFields.ACCESS_URL_FIELD,
+                        values("https://www.census.gov/about/adrm/fsrdc.html")));
+
+        SyncAction action = plannerFor(Optional.of(structuredSource))
+                .planItemDiff("tiger-line-north-dakota-2025", structuredSource);
+
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
+    }
+
+    @Test
+    void updatesWhenStructuredAccessGuidanceChanges() {
+        DspaceItemPayload structuredSource = withMetadata(
+                sourcePayload,
+                Map.of(
+                        DspaceManagedFields.ACCESS_URL_FIELD,
+                        values("https://www.census.gov/about/adrm/fsrdc.html")));
+        DspaceItemPayload repositoryPayload = withMetadata(
+                structuredSource,
+                Map.of(
+                        DspaceManagedFields.ACCESS_URL_FIELD,
+                        values("https://example.gov/old-access-path")));
+
+        SyncAction action = plannerFor(Optional.of(repositoryPayload))
+                .planItemDiff("tiger-line-north-dakota-2025", structuredSource);
+
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.UPDATE_ITEM);
+        assertThat(action.getDetail()).contains(DspaceManagedFields.ACCESS_URL_FIELD);
+    }
+
+    @Test
+    void sourceWithoutStructuredGuidanceDoesNotClearRepositoryGuidance() {
+        DspaceItemPayload repositoryPayload = withMetadata(
+                sourcePayload,
+                Map.of(
+                        DspaceManagedFields.ACCESS_URL_FIELD,
+                        values("https://www.census.gov/about/adrm/fsrdc.html")));
+
+        SyncAction action =
+                plannerFor(Optional.of(repositoryPayload)).planItemDiff("tiger-line-north-dakota-2025", sourcePayload);
+
+        assertThat(action.getActionType()).isEqualTo(SyncAction.ActionTypeEnum.SKIP_ITEM);
+    }
+
     private DspaceItemDiffPlanner plannerFor(Optional<DspaceItemPayload> existing) {
         return new DspaceItemDiffPlanner((sourceIdentifier) -> existing);
     }

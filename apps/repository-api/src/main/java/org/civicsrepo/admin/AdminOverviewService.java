@@ -178,6 +178,7 @@ public class AdminOverviewService {
         return switch (source) {
             case TIGER_LINE -> ResearchProgram.TIGER_LINE;
             case LODES -> ResearchProgram.LODES;
+            case LEHD -> ResearchProgram.LEHD;
             case ACS_PUMS -> ResearchProgram.ACS;
             case SIPP -> ResearchProgram.SIPP;
             case CPS -> ResearchProgram.CPS;

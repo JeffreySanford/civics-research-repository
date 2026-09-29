@@ -30,6 +30,7 @@ public final class FederatedResearchObjectMapper {
                         List.of(),
                         citation(record),
                         record.sourceUrl(),
+                        record.subjects(),
                         List.of(),
                         ResearchObjectOrigin.FEDERATED,
                         SourceSystem.fromValue(record.sourceSystem().name()))

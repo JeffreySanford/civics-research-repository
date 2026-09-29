@@ -132,7 +132,8 @@
     "verify:sources:all": "node tools/scripts/verify-source-urls.mjs --all",
     "catalog:harvest": "node tools/scripts/harvest-catalog.mjs",
     "quality:all": "pnpm run format:check && pnpm run openapi:lint && pnpm run openapi:check && pnpm run fixture:check && pnpm run evidence:check && pnpm run docs:check && pnpm run performance:test && pnpm run lint && pnpm run test:all && pnpm run build:all && pnpm run e2e:reports",
-    "research:spatial:semantics": "node --env-file-if-exists=.env tools/scripts/data-gov-spatial-source-semantics.mjs --expect 500000"
+    "research:spatial:semantics": "node --env-file-if-exists=.env tools/scripts/data-gov-spatial-source-semantics.mjs --expect 500000",
+    "metadata:validate": "node --test tools/scripts/metadata-profile-contract.test.mjs && pnpm nx test repository-api && pnpm nx test repository-api-client"
   },
   "dependencies": {
     "@angular/animations": "22.1.1",

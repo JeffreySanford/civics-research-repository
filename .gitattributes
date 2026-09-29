@@ -10,3 +10,6 @@
 *.ico binary
 *.pdf binary
 *.zip binary
+
+# Linux shell scripts bind-mounted into DSpace containers require LF.
+tools/dspace/*.sh text eol=lf

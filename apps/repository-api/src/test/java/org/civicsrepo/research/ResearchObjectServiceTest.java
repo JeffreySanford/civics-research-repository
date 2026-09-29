@@ -25,6 +25,7 @@ import org.civicsrepo.generated.dto.ResearchObjectType;
 import org.civicsrepo.generated.dto.ResearchProgram;
 import org.civicsrepo.generated.dto.SourceSystem;
 import org.civicsrepo.generated.dto.VersionHistoryStatus;
+import org.civicsrepo.metadata.ResearchMetadataProfileAssembler;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,8 +35,12 @@ class ResearchObjectServiceTest {
     private final FederatedMetadataCatalog federatedCatalog = mock(FederatedMetadataCatalog.class);
     private final DatasetService datasetService = mock(DatasetService.class);
     private final FederatedResearchObjectMapper mapper = new FederatedResearchObjectMapper();
-    private final ResearchObjectService service =
-            new ResearchObjectService(codec, federatedCatalog, mapper, datasetService);
+    private final ResearchObjectService service = new ResearchObjectService(
+            codec,
+            federatedCatalog,
+            mapper,
+            datasetService,
+            new ResearchMetadataProfileAssembler());
 
     @Test
     void resolvesFederatedMetadataWithoutFallingIntoDatasetDetail() {
@@ -169,6 +174,7 @@ class ResearchObjectServiceTest {
                         "Fixture object.",
                         URI.create("https://example.gov/fixture"),
                         List.of(),
+                        List.of(),
                         ResearchObjectOrigin.FIXTURE,
                         SourceSystem.OTHER)
                 .releasedOn(LocalDate.of(2025, 1, 1));
@@ -185,6 +191,38 @@ class ResearchObjectServiceTest {
             assertThat(version.getCapturedAt()).isNull();
             assertThat(version.getSupersedes()).isNull();
         });
+        verify(datasetService).findObservedRepositoryVersionHistory(id);
+    }
+
+    @Test
+    void metadataProfileResolvesDetailOnceAndReusesObservedVersionAuthority() {
+        String id = "tiger-line-north-dakota-2025";
+        ResearchObjectDetail detail = repositoryDetail(id);
+        ResearchArtifactVersion current = new ResearchArtifactVersion(
+                        "dspace-version:102", detail.getTitle())
+                .current(true)
+                .versionLabel("Repository version 2")
+                .isVersionOf(id)
+                .supersedes("dspace-version:101");
+        ResearchArtifactVersion previous = new ResearchArtifactVersion(
+                        "dspace-version:101", detail.getTitle())
+                .current(false)
+                .versionLabel("Repository version 1")
+                .isVersionOf(id);
+
+        when(federatedCatalog.findById(id)).thenReturn(Optional.empty());
+        when(datasetService.getDataset(id)).thenReturn(detail);
+        when(datasetService.findObservedRepositoryVersionHistory(id))
+                .thenReturn(List.of(current, previous));
+
+        var profile = service.getResearchMetadataProfile(codec.encode(id));
+
+        assertThat(profile.id()).isEqualTo(id);
+        assertThat(profile.versions().status()).isEqualTo(VersionHistoryStatus.HISTORY_AVAILABLE);
+        assertThat(profile.versions().items().stream().map(version -> version.id()).toList())
+                .containsExactly("dspace-version:102", "dspace-version:101");
+        verify(federatedCatalog).findById(id);
+        verify(datasetService).getDataset(id);
         verify(datasetService).findObservedRepositoryVersionHistory(id);
     }
 
@@ -207,6 +245,7 @@ class ResearchObjectServiceTest {
                         List.of(),
                         "U.S. Census Bureau. 2025 TIGER/Line.",
                         URI.create("https://www2.census.gov/geo/tiger/TIGER2025/TRACT/tl_2025_38_tract.zip"),
+                        List.of(),
                         List.of(),
                         ResearchObjectOrigin.REPOSITORY,
                         SourceSystem.CENSUS)

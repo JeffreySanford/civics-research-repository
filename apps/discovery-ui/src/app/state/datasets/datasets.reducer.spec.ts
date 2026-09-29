@@ -16,6 +16,7 @@ describe('datasetsReducer', () => {
     files: [],
     citation: 'U.S. Census Bureau. TIGER/Line.',
     sourceUrl: 'https://example.test/tiger',
+    subjects: ['Census tracts', 'North Dakota'],
     accessibilityEvidenceStatus: 'AUTOMATED_PASS' as const,
     relatedResearch: [],
     origin: 'REPOSITORY' as const,

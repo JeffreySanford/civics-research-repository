@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "id": "cps-invalid-release-date",
+      "title": "CPS object with invalid release date",
+      "program": "CPS",
+      "publisher": "U.S. Census Bureau",
+      "summary": "Test fixture proving an invalid source date remains unknown.",
+      "geography": "United States",
+      "geographyLevel": "National",
+      "vintageYear": 2026,
+      "releasedOn": "not-a-date",
+      "citation": "Test fixture only.",
+      "sourceUrl": "https://www.census.gov/programs-surveys/cps.html",
+      "documentationUrl": "https://www.census.gov/programs-surveys/cps/technical-documentation.html",
+      "contentType": "DATASET",
+      "accessLevel": "PUBLIC",
+      "authors": [],
+      "relations": [],
+      "files": []
+    }
+  ]
+}

@@ -29,6 +29,7 @@ const detail = {
   files: [],
   citation: 'Version history example.',
   sourceUrl: 'https://example.gov/research/version-history-example',
+  subjects: ['Version provenance'],
   relatedResearch: [],
   contentType: 'DATASET',
   accessLevel: 'PUBLIC',

@@ -17,22 +17,30 @@ public class DspaceItemPayloadMapper {
                 metadata.files().stream().map(this::toBitstreamPayload).toList();
 
         Map<String, List<DspaceMetadataValue>> fields = new LinkedHashMap<>(Map.ofEntries(
-                        entry("dc.title", metadata.title()),
-                        entry("dc.contributor.author", metadata.publisher()),
-                        entry("dc.publisher", metadata.publisher()),
-                        entry("dc.description.abstract", metadata.summary()),
-                        entry("dc.date.issued", metadata.releasedOn().format(DateTimeFormatter.ISO_LOCAL_DATE)),
-                        entry("dc.identifier.uri", metadata.sourceUrl()),
-                        entry("dc.relation.uri", metadata.documentationUrl()),
-                        entry("dc.identifier.citation", metadata.citation()),
-                        entry("dc.subject", metadata.program().getValue()),
-                        entry("dc.coverage.spatial", metadata.geography()),
-                        entry("crr.identifier.source", metadata.id()),
-                        entry("crr.program", metadata.program().getValue()),
-                        entry("crr.geography.level", metadata.geographicLevel()),
-                        entry("crr.vintage", metadata.vintageYear().toString()),
-                        entry("crr.source.url", metadata.sourceUrl()),
+                entry("dc.title", metadata.title()),
+                entry("dc.contributor.author", metadata.publisher()),
+                entry("dc.publisher", metadata.publisher()),
+                entry("dc.description.abstract", metadata.summary()),
+                entry("dc.identifier.uri", metadata.sourceUrl()),
+                entry("dc.relation.uri", metadata.documentationUrl()),
+                entry("dc.identifier.citation", metadata.citation()),
+                entry("dc.subject", metadata.program().getValue()),
+                entry("dc.coverage.spatial", metadata.geography()),
+                entry("crr.identifier.source", metadata.id()),
+                entry("crr.program", metadata.program().getValue()),
+                entry("crr.geography.level", metadata.geographicLevel()),
+                entry("crr.vintage", metadata.vintageYear().toString()),
+                entry("crr.source.url", metadata.sourceUrl()),
                 entry("crr.documentation.url", metadata.documentationUrl())));
+
+        // An unknown source release date is not replaced with a guessed date. Omitting the field
+        // preserves the distinction between "not observed" and an actual publisher-issued date.
+        putIfPresent(
+                fields,
+                "dc.date.issued",
+                metadata.releasedOn() == null
+                        ? null
+                        : metadata.releasedOn().format(DateTimeFormatter.ISO_LOCAL_DATE));
 
         // Research-object fields, written only when the adapter has something to say. An absent
         // value is skipped rather than written empty, because the reconciliation treats a missing
@@ -42,6 +50,20 @@ public class DspaceItemPayloadMapper {
         putIfPresent(fields, DspaceManagedFields.ACCESS_NOTE_FIELD, metadata.accessNote());
         putIfPresent(fields, DspaceManagedFields.LICENSE_FIELD, metadata.license());
         putIfPresent(fields, DspaceManagedFields.DOI_FIELD, metadata.doi());
+
+        var accessGuidance = metadata.accessGuidance();
+        if (accessGuidance != null) {
+            putIfPresent(fields, DspaceManagedFields.ACCESS_MECHANISM_FIELD, accessGuidance.mechanism());
+            putIfPresent(fields, DspaceManagedFields.ACCESS_URL_FIELD, accessGuidance.accessUrl());
+            putIfPresent(
+                    fields,
+                    DspaceManagedFields.ACCESS_INSTRUCTIONS_FIELD,
+                    accessGuidance.instructions());
+            putIfPresent(
+                    fields,
+                    DspaceManagedFields.ACCESS_RESTRICTION_BASIS_FIELD,
+                    accessGuidance.restrictionBasis());
+        }
 
         ResearchObjectMetadata.ResearchArtifactProvenance provenance = metadata.versionProvenance();
         if (provenance != null) {

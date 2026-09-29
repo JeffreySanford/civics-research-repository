@@ -252,8 +252,8 @@ services:
       - /seed/seed-structure.sh
     environment:
       DSPACE_INSTALL: /dspace
-      DSPACE_SEED_ADMIN_EMAIL: '${DSPACE_SEED_ADMIN_EMAIL:-admin@civics.local}'
-      DSPACE_SEED_ADMIN_PASSWORD: '${DSPACE_SEED_ADMIN_PASSWORD:-local-demo-not-a-secret}'
+      CIVICS_DSPACE_ADMIN_EMAIL: '${CIVICS_DSPACE_ADMIN_EMAIL:-admin@civics.local}'
+      CIVICS_DSPACE_ADMIN_PASSWORD: '${CIVICS_DSPACE_ADMIN_PASSWORD:-civics-admin}'
       db__P__url: jdbc:postgresql://dspace-postgres:5432/dspace
       db__P__username: dspace
       db__P__password: dspace
