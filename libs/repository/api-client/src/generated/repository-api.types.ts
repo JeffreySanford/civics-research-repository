@@ -2189,6 +2189,7 @@ export interface components {
     SyncSource:
       | 'TIGER_LINE'
       | 'LODES'
+      | 'LEHD'
       | 'ACS_PUMS'
       | 'SIPP'
       | 'CPS'
