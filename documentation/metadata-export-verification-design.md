@@ -1,6 +1,6 @@
 # Metadata Export Verification Design
 
-Status: **Companion verification contract for issue #115**  
+Status: **Companion verification contract for issue #115**
 Primary design: `documentation/open-census-metadata-profile-design.md`
 
 ## Purpose

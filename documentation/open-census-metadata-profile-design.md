@@ -1,8 +1,8 @@
 # Open Census Metadata Profile and Structured Export Design
 
-Status: **Design contract for issue #115**  
-Depends on: **#114 — authoritative observed artifact version/provenance semantics**  
-Target branch: `feat/open-census-metadata-profile`  
+Status: **Design contract for issue #115**
+Depends on: **#114 — authoritative observed artifact version/provenance semantics**
+Target branch: `feat/open-census-metadata-profile`
 Implementation strategy: **three independently verifiable PR slices**
 
 ## 1. Purpose
