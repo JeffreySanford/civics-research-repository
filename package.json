@@ -195,7 +195,7 @@
     "eslint-plugin-playwright": "^1.6.2",
     "http-server": "14.1.1",
     "jsdom": "^27.1.0",
-    "nx": "23.1.1",
+    "nx": "23.2.1",
     "openapi-typescript": "7.13.0",
     "prettier": "~3.6.2",
     "storybook": "^10.5.0",
